@@ -1937,15 +1937,10 @@ Decode transactions that haven't been decoded yet
 
       {
           "async_query": false,
-          "data": [{
-              "evm_chain": "ethereum",
-              "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12", "0xed8Bdb5895B8B7f9Fdb3C087628FD8410E853D48"]
-          }, {
-              "evm_chain": "optimism"
-          }]
+          "evm_chains": ["ethereum", "optimism"]
       }
 
-   :reqjson list data: A list of data explaining what transactions to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and an ``"addresses"`` key which is an optional list of addresses for which to request decoding of pending transactions in that chain. If the list of addresses is not passed or is null then all transactions for that chain are decoded. Passing an empty list is not allowed.
+   :reqjson list evm_chains: A list specifying the evm chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions. If the list is not provided all transactions from all the chains will be decoded. 
 
    **Example Response**:
 

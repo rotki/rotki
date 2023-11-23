@@ -178,19 +178,13 @@ class DBEvmTransactionJoinsFilter(DBFilter):
 class DBTransactionsPendingDecodingFilter(DBFilter):
     """
     This filter is used to find the ethereum transactions that have not been decoded yet
-    using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by addresses
-    and chain.
+    using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by chain.
     """
-    addresses: Optional[list[ChecksumEvmAddress]]
     chain_id: Optional[ChainID]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters = ['B.tx_id is NULL']
-        bindings: list[Union[int, ChecksumEvmAddress]] = []
-        if self.addresses is not None:
-            bindings = [*self.addresses, *self.addresses]
-            questionmarks = ','.join('?' * len(self.addresses))
-            query_filters.append(f'(C.from_address IN ({questionmarks}) OR C.to_address IN ({questionmarks}))')  # noqa: E501
+        bindings: list[int] = []
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
             query_filters.append('C.chain_id=?')
@@ -1700,7 +1694,6 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
     def make(
             cls: type['TransactionsNotDecodedFilterQuery'],
             limit: Optional[int] = None,
-            addresses: Optional[list[ChecksumEvmAddress]] = None,
             chain_id: Optional[ChainID] = None,
     ) -> 'TransactionsNotDecodedFilterQuery':
         filter_query = cls.create(
@@ -1710,10 +1703,9 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
             order_by_rules=None,
         )
         filters: list[DBFilter] = []
-        if addresses is not None or chain_id is not None:
+        if chain_id is not None:
             filters.append(DBTransactionsPendingDecodingFilter(
                 and_op=True,
-                addresses=addresses,
                 chain_id=chain_id,
             ))
 

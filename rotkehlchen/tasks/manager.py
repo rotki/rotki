@@ -423,7 +423,6 @@ class TaskManager:
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
             number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-                addresses=None,
                 chain_id=blockchain.to_chain_id(),
             )
             if number_of_tx_to_decode == 0:

@@ -486,7 +486,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def get_and_decode_undecoded_transactions(
             self,
             limit: Optional[int] = None,
-            addresses: Optional[list[ChecksumEvmAddress]] = None,
             send_ws_notifications: bool = False,
     ) -> None:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
@@ -499,13 +498,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             hashes = self.dbevmtx.get_transaction_hashes_not_decoded(
                 chain_id=self.evm_inquirer.chain_id,
                 limit=limit,
-                addresses=addresses,
             )
-            self.decode_transaction_hashes(
-                ignore_cache=False,
-                tx_hashes=hashes,
-                send_ws_notifications=send_ws_notifications,
-            )
+            if len(hashes) != 0:
+                log.debug(f'Will decode {len(hashes)} transactions for {self.evm_inquirer.chain_name}')  # noqa: E501
+                self.decode_transaction_hashes(
+                    ignore_cache=False,
+                    tx_hashes=hashes,
+                    send_ws_notifications=send_ws_notifications,
+                )
             log.debug(f'Finished task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
 
     def decode_transaction_hashes(

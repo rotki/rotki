@@ -199,9 +199,9 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
 
     # check that the transactions have not been decoded
-    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
+    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)
     assert len(hashes) == 1
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None, addresses=None)  # noqa: E501
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
 
     # decode evm transactions using the optimism decoder and without providing any tx hash
@@ -209,9 +209,9 @@ def test_query_and_decode_transactions_works_with_different_chains(
 
     # verify that the optimism transactions got decoded but not the
     # ethereum one (would raise an error if tried)
-    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
+    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)
     assert len(hashes) == 0
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None, addresses=None)  # noqa: E501
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
 
 
