@@ -13,6 +13,7 @@ const serializer = {
 };
 
 export const useDynamicMessages = createSharedComposable(() => {
+  const branch = checkIfDevelopment() ? 'develop' : 'main';
   const welcomeMessages = useSessionStorage<WelcomeSchema>(
     'rotki.messages.welcome',
     null,
@@ -83,7 +84,7 @@ export const useDynamicMessages = createSharedComposable(() => {
   const getWelcomeData = async (): Promise<WelcomeSchema | null> => {
     try {
       const response = await api.instance.get<WelcomeSchema>(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json'
+        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/welcome.json`
       );
       return WelcomeSchema.parse(getData(response));
     } catch (e: any) {
@@ -97,7 +98,7 @@ export const useDynamicMessages = createSharedComposable(() => {
   const getDashboardData = async (): Promise<DashboardSchema | null> => {
     try {
       const response = await api.instance.get<DashboardSchema>(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json'
+        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/dashboard.json`
       );
       return DashboardSchema.parse(getData(response));
     } catch (e: any) {

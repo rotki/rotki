@@ -39,11 +39,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(200), ctx.json([testDash]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json({}))
       )
     );
@@ -58,11 +58,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(200), ctx.json([testDash]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json({}))
       )
     );
@@ -77,11 +77,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json([]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) =>
           res(
             ctx.status(200),
@@ -104,11 +104,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json([]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) =>
           res(
             ctx.status(200),
@@ -129,11 +129,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json([]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) =>
           res(
             ctx.status(200),
@@ -158,11 +158,11 @@ describe('useDynamicMessages', () => {
 
     server.use(
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/dashboard.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json([]))
       ),
       rest.get(
-        'https://raw.githubusercontent.com/rotki/data/main/messages/welcome.json',
+        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
         (req, res, ctx) => res(ctx.status(404), ctx.json({}))
       )
     );

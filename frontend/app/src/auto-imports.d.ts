@@ -672,6 +672,7 @@ declare global {
   const useTxQueryStatusStore: typeof import('./store/history/query-status/tx-query-status')['useTxQueryStatusStore']
   const useUniswapApi: typeof import('./composables/api/defi/uniswap')['useUniswapApi']
   const useUniswapStore: typeof import('./store/defi/uniswap/index')['useUniswapStore']
+  const useUpdateMessage: typeof import('./composables/update-message')['useUpdateMessage']
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams']
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia']
   const useUserNotesApi: typeof import('./composables/api/session/user-notes')['useUserNotesApi']
@@ -1391,6 +1392,7 @@ declare module 'vue' {
     readonly useTxQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/tx-query-status')['useTxQueryStatusStore']>
     readonly useUniswapApi: UnwrapRef<typeof import('./composables/api/defi/uniswap')['useUniswapApi']>
     readonly useUniswapStore: UnwrapRef<typeof import('./store/defi/uniswap/index')['useUniswapStore']>
+    readonly useUpdateMessage: UnwrapRef<typeof import('./composables/update-message')['useUpdateMessage']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useUserNotesApi: UnwrapRef<typeof import('./composables/api/session/user-notes')['useUserNotesApi']>
@@ -2104,6 +2106,7 @@ declare module '@vue/runtime-core' {
     readonly useTxQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/tx-query-status')['useTxQueryStatusStore']>
     readonly useUniswapApi: UnwrapRef<typeof import('./composables/api/defi/uniswap')['useUniswapApi']>
     readonly useUniswapStore: UnwrapRef<typeof import('./store/defi/uniswap/index')['useUniswapStore']>
+    readonly useUpdateMessage: UnwrapRef<typeof import('./composables/update-message')['useUpdateMessage']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useUserNotesApi: UnwrapRef<typeof import('./composables/api/session/user-notes')['useUserNotesApi']>
