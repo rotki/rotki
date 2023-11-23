@@ -985,7 +985,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         if len(new_events) != 0:
             with self.db.user_write() as write_cursor:
-                try:
+                try:  # duplicates should be handled due to INSERT OR IGNORE and UNIQUE(event_identifier, sequence_index)  # noqa: E501
                     self.history_events_db.add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
                 except InputError as e:  # not catching IntegrityError. event asset is resolved
                     self.msg_aggregator.add_error(

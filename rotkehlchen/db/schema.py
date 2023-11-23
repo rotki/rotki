@@ -517,7 +517,8 @@ CREATE TABLE IF NOT EXISTS skipped_external_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
     data TEXT NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    extra_data TEXT
+    extra_data TEXT,
+    UNIQUE(data, location)
 );
 """
 

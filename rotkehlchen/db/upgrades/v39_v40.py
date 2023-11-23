@@ -298,7 +298,8 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     identifier INTEGER NOT NULL PRIMARY KEY,
     data TEXT NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    extra_data TEXT
+    extra_data TEXT,
+    UNIQUE(data, location)
     );""")
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS accounting_rules(
