@@ -1859,6 +1859,17 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     cursor.execute('SELECT value FROM settings where name=?', ('taxable_ledger_actions',))
     assert 'airdrop' in json.loads(cursor.fetchone()[0])
 
+    # check the renaming of the VELO asset
+    bnb_velo_asset_id = 'eip155:56/erc20:0xf486ad071f3bEE968384D2E39e2D8aF0fCf6fd46'
+    assert cursor.execute(
+        'SELECT asset FROM history_events WHERE identifier IN (?, ?)',
+        ('10000', '10001'),
+    ).fetchall() == [('VELO',), (bnb_velo_asset_id,)]
+    assert cursor.execute(
+        'SELECT base_asset FROM trades WHERE id=?',
+        ('1a1ee5',),
+    ).fetchall() == [('VELO',)]
+
     cursor.close()
     db_v39.logout()
     # Execute upgrade
@@ -1933,6 +1944,20 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         count_cost_basis_pnl=False,
         accounting_treatment=None,
     ).serialize() == TxEventSettings.deserialize_from_db(accounting_row[4:]).serialize()
+
+    # check that the replacement for the VELO asset worked
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM assets WHERE identifier=?',
+        ('VELO',),
+    ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT asset FROM history_events WHERE identifier IN (?, ?)',
+        ('10000', '10001'),
+    ).fetchall() == [(bnb_velo_asset_id,)] * 2
+    assert cursor.execute(
+        'SELECT base_asset FROM trades WHERE id=?',
+        ('1a1ee5',),
+    ).fetchall() == [(bnb_velo_asset_id,)]
 
 
 def test_latest_upgrade_correctness(user_data_dir):
