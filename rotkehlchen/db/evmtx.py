@@ -264,7 +264,6 @@ class DBEvmTx:
             self,
             chain_id: Optional[ChainID],
             limit: Optional[int],
-            addresses: Optional[list[ChecksumEvmAddress]],
     ) -> list[EVMTxHash]:
         """Get transaction hashes for the transactions that have not been decoded.
         Optionally by chain id.
@@ -275,7 +274,6 @@ class DBEvmTx:
         """
         query, bindings = TransactionsNotDecodedFilterQuery.make(
             limit=limit,
-            addresses=addresses,
             chain_id=chain_id,
         ).prepare()
         querystr = 'SELECT C.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY + query
@@ -287,7 +285,6 @@ class DBEvmTx:
     def count_hashes_not_decoded(
             self,
             chain_id: Optional[ChainID],
-            addresses: Optional[list[ChecksumEvmAddress]],
     ) -> int:
         """
         Count the number of transactions queried that have not been decoded. When the addresses
@@ -295,7 +292,6 @@ class DBEvmTx:
         """
         query, bindings = TransactionsNotDecodedFilterQuery.make(
             limit=None,
-            addresses=addresses,
             chain_id=chain_id,
         ).prepare()
 

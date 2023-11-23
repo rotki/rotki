@@ -40,8 +40,6 @@ from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
-    TEST_ADDR3,
-    extended_transactions_setup_test,
     setup_ethereum_transactions_test,
     txreceipt_to_data,
 )
@@ -1585,7 +1583,11 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_decoding_missing_transactions(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: WebsocketReader,
+) -> None:
     """Test that decoding all pending transactions works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     transactions, _ = setup_ethereum_transactions_test(
@@ -1598,10 +1600,16 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         api_url_for(
             rotkehlchen_api_server,
             'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': False, 'data': [{'evm_chain': 'ethereum'}]},
+        ), json={'async_query': False, 'evm_chains': ['ethereum']},
     )
     result = assert_proper_response_with_result(response)
     assert result['decoded_tx_number']['ethereum'] == len(transactions)
+
+    websocket_connection.wait_until_messages_num(num=4, timeout=4)
+    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 0}}  # noqa: E501
+    assert websocket_connection.pop_message()
+    assert websocket_connection.pop_message()
+    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 2}}  # noqa: E501
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -1627,77 +1635,11 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         api_url_for(
             rotkehlchen_api_server,
             'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': True, 'data': [{'evm_chain': 'ethereum'}]},
+        ), json={'async_query': True},
     )
     result = assert_proper_response_with_result(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert outcome['result']['decoded_tx_number'] == {}
-
-
-@pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_decoding_missing_transactions_by_address(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: WebsocketReader,
-) -> None:
-    """Test that decoding all pending transactions works fine when a filter by address is set"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    transactions, _ = extended_transactions_setup_test(
-        database=rotki.data.db,
-        transaction_already_queried=True,
-        one_receipt_in_db=True,
-        second_receipt_in_db=True,
-    )
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': False, 'data': [{'evm_chain': 'ethereum', 'addresses': [TEST_ADDR1, TEST_ADDR3]}]},  # noqa: E501
-    )
-    result = assert_proper_response_with_result(response)
-
-    transactions_filtered = []
-    for transaction in transactions:
-        tx_addreses = (transaction.from_address, transaction.to_address)
-        if TEST_ADDR1 in tx_addreses or TEST_ADDR3 in tx_addreses:
-            transactions_filtered.append(transaction)
-
-    assert result['decoded_tx_number']['ethereum'] == len(transactions_filtered)
-
-    dbevents = DBHistoryEvents(rotki.data.db)
-    with rotki.data.db.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
-            cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[transactions[0].tx_hash],
-            ),
-            has_premium=True,
-        )
-        assert len(events) == 3
-        events = dbevents.get_history_events(
-            cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[transactions[1].tx_hash],
-            ),
-            has_premium=True,
-        )
-        assert len(events) == 0
-        events = dbevents.get_history_events(
-            cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[transactions[2].tx_hash],
-            ),
-            has_premium=True,
-        )
-        assert len(events) == 2
-
-    # check that the different steps for decoding got correctly notified by ws messages
-    websocket_connection.wait_until_messages_num(num=3, timeout=4)
-    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 0}}  # noqa: E501
-    assert websocket_connection.pop_message()
-    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 2}}  # noqa: E501
 
 
 @pytest.mark.parametrize('have_decoders', [True])

@@ -93,6 +93,7 @@ from rotkehlchen.types import (
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
+    ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
     ExchangeLocationID,
@@ -141,12 +142,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import (
-    EvmPendingTransactionDecodingApiData,
-    IncludeExcludeFilterData,
-    ModuleWithBalances,
-    ModuleWithStats,
-)
+from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -345,38 +341,23 @@ class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     data = NonEmptyList(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
 
 
-class SingleEvmPendingTransactionDecodingSchema(Schema):
-    evm_chain = EvmChainNameField(required=True)
-    addresses = fields.List(EvmAddressField(), load_default=None)
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        addresses = data.get('addresses')
-        if addresses is not None and len(addresses) == 0:
-            raise ValidationError(
-                message='Empty list of addresses is a noop. Did you mean to omit the list?',
-                field_name='addresses',
-            )
-
-
 class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
-    data = fields.List(fields.Nested(SingleEvmPendingTransactionDecodingSchema), required=True)
+    evm_chains = fields.List(
+        EvmChainNameField(limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)),
+        load_default=EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    )
 
     @validates_schema
     def validate_schema(
             self,
-            data: list[EvmPendingTransactionDecodingApiData],
+            evm_chains: list[ChainID],
             **_kwargs: Any,
     ) -> None:
 
-        if len(data) == 0:
+        if len(evm_chains) == 0:
             raise ValidationError(
-                message='The list of data should not be empty',
-                field_name='data',
+                message='The list of evm chains should not be empty',
+                field_name='evm_chains',
             )
 
 

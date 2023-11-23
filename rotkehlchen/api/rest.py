@@ -47,11 +47,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.api.v1.types import (
-    EvmPendingTransactionDecodingApiData,
-    EvmTransactionDecodingApiData,
-    IncludeExcludeFilterData,
-)
+from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData, IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -208,6 +204,7 @@ from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_LOCATIONS,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
@@ -2750,7 +2747,7 @@ class RestAPI:
     @async_api_call()
     def decode_pending_evm_transactions(
             self,
-            data: list[EvmPendingTransactionDecodingApiData],
+            evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> dict[str, Any]:
         """
         This method should be called after querying ethereum transactions and does the following:
@@ -2765,22 +2762,16 @@ class RestAPI:
         """
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         result = {}
-        for entry in data:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
+        for evm_chain in evm_chains:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
             # make sure that all the receipts are already queried
-            chain_manager.transactions.get_receipts_for_transactions_missing_them(
-                addresses=entry['addresses'],
-            )
-            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-                addresses=entry['addresses'],
-                chain_id=entry['evm_chain'],
-            )
+            chain_manager.transactions.get_receipts_for_transactions_missing_them()
+            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(chain_id=evm_chain)
             if amount_of_tx_to_decode > 0:
                 chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(
-                    addresses=entry['addresses'],
                     send_ws_notifications=True,
                 )
-                result[entry['evm_chain'].to_name()] = amount_of_tx_to_decode
+                result[evm_chain.to_name()] = amount_of_tx_to_decode
 
         return {
             'result': {'decoded_tx_number': result},
@@ -2793,7 +2784,7 @@ class RestAPI:
         pending_transactions_to_decode = {}
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain, addresses=None)) != 0:
+            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
                 pending_transactions_to_decode[chain.to_name()] = tx_count
 
         return _wrap_in_ok_result(pending_transactions_to_decode)

@@ -208,6 +208,7 @@ from rotkehlchen.serialization.schemas import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     AddressbookEntry,
@@ -234,12 +235,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import (
-    EvmPendingTransactionDecodingApiData,
-    EvmTransactionDecodingApiData,
-    ModuleWithBalances,
-    ModuleWithStats,
-)
+from .types import EvmTransactionDecodingApiData, ModuleWithBalances, ModuleWithStats
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -626,11 +622,11 @@ class EvmPendingTransactionsDecodingResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            data: list[EvmPendingTransactionDecodingApiData],
+            evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> Response:
         return self.rest_api.decode_pending_evm_transactions(
             async_query=async_query,
-            data=data,
+            evm_chains=evm_chains,
         )
 
     @require_loggedin_user()
