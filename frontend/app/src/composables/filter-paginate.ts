@@ -218,7 +218,7 @@ export const usePaginationFilters = <
         }
 
         logger.error(error);
-        if (code && ['400', '500'].includes(code)) {
+        if (Number(code) >= 400) {
           notify({
             title: t('error.generic.title'),
             message: t('error.generic.message', { code, message, path }),
