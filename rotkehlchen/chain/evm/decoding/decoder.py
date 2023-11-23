@@ -506,7 +506,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 tx_hashes=hashes,
                 send_ws_notifications=send_ws_notifications,
             )
-            log.debug(f'Finished task decoding transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
+            log.debug(f'Finished task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
 
     def decode_transaction_hashes(
             self,

@@ -89,33 +89,41 @@ KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
-def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
-    """Turns a kraken ledger entry to our history event type
+def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, HistoryEventSubType]:
+    """Turns a kraken ledger entry to our history event type, subtype combination
 
     Though they are very similar to our current event types we keep this mapping function
     since there is some minor differences and if we ever want to change our types we
     can do so without breaking kraken.
 
+    Docs: https://support.kraken.com/hc/en-us/articles/360001169383-How-to-interpret-Ledger-history-fields
+
     Returns Informational type for any kraken event that we don't know how to process
     """
+    event_type = HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
+    event_subtype = HistoryEventSubType.NONE  # may be further edited down out of this function
     if value == 'trade':
-        return HistoryEventType.TRADE
+        event_type = HistoryEventType.TRADE
     if value == 'staking':
-        return HistoryEventType.STAKING
+        event_type = HistoryEventType.STAKING
     if value == 'deposit':
-        return HistoryEventType.DEPOSIT
+        event_type = HistoryEventType.DEPOSIT
     if value == 'withdrawal':
-        return HistoryEventType.WITHDRAWAL
+        event_type = HistoryEventType.WITHDRAWAL
     if value == 'spend':
-        return HistoryEventType.SPEND
+        event_type = HistoryEventType.SPEND
     if value == 'receive':
-        return HistoryEventType.RECEIVE
+        event_type = HistoryEventType.RECEIVE
     if value == 'transfer':
-        return HistoryEventType.TRANSFER
+        event_type = HistoryEventType.TRANSFER
     if value == 'adjustment':
-        return HistoryEventType.ADJUSTMENT
+        event_type = HistoryEventType.ADJUSTMENT
+    if value == 'invite bonus':
+        event_type = HistoryEventType.ADJUSTMENT
+        event_subtype = HistoryEventSubType.REWARD
 
-    return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
+    # we ignore margin, rollover, settled since they are for margin trades
+    return event_type, event_subtype
 
 
 def _check_and_get_response(response: Response, method: str) -> Union[str, dict]:
@@ -1050,17 +1058,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 events_source=f'{query_start_ts} to {query_end_ts}',
                 save_skipped_events=True,
             )
-            if len(new_events) != 0:
+            if len(new_events) != 0 and with_errors is False:
                 with self.db.user_write() as write_cursor:
                     ranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=range_query_name,
-                        queried_ranges=[(start_ts, end_ts)] + ranges_to_query,
+                        queried_ranges=[(query_start_ts, query_end_ts)],
                     )
 
             if with_errors is True:
                 return True  # we had errors so stop any further queries and quit
-
         return False  # no errors
 
     def history_event_from_kraken(
@@ -1077,6 +1084,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         If `save_skipped_events` is True then any events that are skipped are saved
         in the DB for processing later.
+
+        Information on how to interpret Kraken ledger type field: https://support.kraken.com/hc/en-us/articles/360001169383-How-to-interpret-Ledger-history-fields
         """
         group_events: list[tuple[int, HistoryEvent]] = []
         skipped = False
@@ -1097,9 +1106,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     value=raw_event['time'], name='time', location='kraken ledger processing',
                 ) * 1000).to_int(exact=False))
 
-                event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
+                event_type, event_subtype = kraken_ledger_entry_type_to_ours(raw_event['type'])
                 asset = asset_from_kraken(raw_event['asset'])
-                event_subtype = HistoryEventSubType.NONE
                 notes = None
                 raw_amount = deserialize_fval(
                     raw_event['amount'],
