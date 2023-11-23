@@ -119,7 +119,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
     if value == 'adjustment':
         event_type = HistoryEventType.ADJUSTMENT
     if value == 'invite bonus':
-        event_type = HistoryEventType.ADJUSTMENT
+        event_type = HistoryEventType.RECEIVE
         event_subtype = HistoryEventSubType.REWARD
 
     # we ignore margin, rollover, settled since they are for margin trades
