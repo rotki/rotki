@@ -495,6 +495,16 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler):
             'SELECT * FROM multiasset_mappings ORDER BY collection_id, asset',
         )) == old_multiasset_mappings
 
+        # test that the VELO asset got deleted
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?',
+            ('VELO',),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM common_asset_details WHERE identifier=?',
+            ('VELO',),
+        ).fetchone()[0] == 0
+
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])

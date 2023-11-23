@@ -365,15 +365,42 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_decoded_events')
 
 
+def _replace_velo_identifier(write_cursor: 'DBCursor') -> None:
+    """
+    Replace VELO with the binance version of the token. This is done as part of a consolidation
+    process where we added VELO V1 and VELO V2 from Velodrome but our database also contained a
+    VELO asset and a BNB version of it both not related to velodrome. As part of upgrade to V6
+    of the global DB we are replacing this VELO asset (not token) with its BNB version.
+
+    Code taken from replace_asset_identifier
+    """
+    log.debug('Enter _replace_velo_identifier')
+    target_asset_identifier = 'eip155:56/erc20:0xf486ad071f3bEE968384D2E39e2D8aF0fCf6fd46'
+    source_identifier = 'VELO'
+
+    write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+    write_cursor.execute(
+        'DELETE from assets WHERE identifier=?;',
+        (target_asset_identifier,),
+    )
+    write_cursor.executescript('PRAGMA foreign_keys = ON;')
+    write_cursor.execute(
+        'UPDATE assets SET identifier=? WHERE identifier=?;',
+        (target_asset_identifier, source_identifier),
+    )
+    log.debug('Exit _replace_velo_identifier')
+
+
 def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v39 to v40. This was in v1.31.0 release.
 
         - Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550
         - Purge kraken events
         - Create new tables
+        - Replace VELO asset in favor of the binance chain version
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(9)
+    progress_handler.set_total_steps(10)
     with db.user_write() as write_cursor:
         _add_new_tables(write_cursor)
         progress_handler.new_step()
@@ -390,6 +417,8 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _migrate_ledger_actions(write_cursor, db.conn)
         progress_handler.new_step()
         _reset_decoded_events(write_cursor)
+        progress_handler.new_step()
+        _replace_velo_identifier(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

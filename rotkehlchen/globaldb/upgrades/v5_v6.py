@@ -99,11 +99,29 @@ def _fix_asset_in_multiasset_mappings(cursor: 'DBCursor') -> None:
     log.debug('Exit _fix_asset_in_multiasset_mappings')
 
 
+def _remove_velo_asset(cursor: 'DBCursor') -> None:
+    """
+    Remove the VELO asset from the global DB
+
+    This is done as part of a consolidation process where we added VELO V1 and VELO V2 from
+    Velodrome but our database also contained a VELO asset and a BNB version of it both not
+    related to velodrome. As part of upgrade to V6 of the global DB we are replacing this VELO
+    asset (not token) with its BNB version.
+
+    The replacement took place in the upgrade to version 40 of the user db and in the global DB
+    we only need to remove it.
+    """
+    log.debug('Enter _remove_velo_asset')
+    cursor.execute('DELETE FROM assets WHERE identifier=?', ('VELO',))
+    log.debug('Exit _remove_velo_asset')
+
+
 def migrate_to_v6(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
     - Adds the `unique_cache` table.
     - Fixes the multiassets mappings ids to use checksummed addresses
     - Upgrades the multiasset_mappings to have unique collection_id+asset
+    - Removes the VELO asset from the database
 
     This upgrade takes place in v1.31.0
     """
@@ -113,3 +131,4 @@ def migrate_to_v6(connection: 'DBConnection') -> None:
         _create_and_populate_unique_cache_table(cursor)
         _fix_asset_in_multiasset_mappings(cursor)
         _update_multiasset_mappings(cursor)
+        _remove_velo_asset(cursor)

@@ -361,7 +361,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
             counterparty=CPT_VELODROME,
             address=pool,
             product=EvmProduct.POOL,
-            notes=f'Remove 205.545843 USDC from velodrome pool {pool}',
+            notes=f'Remove 205.545843 USDC.e from velodrome pool {pool}',
         ),
     ]
     assert events == expected_events
