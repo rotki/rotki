@@ -23,6 +23,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.UPDATE: EventCategory.UPDATE_PROJECT,
         HistoryEventSubType.APPLY: EventCategory.APPLY,
         HistoryEventSubType.APPROVE: EventCategory.APPROVAL,
+        HistoryEventSubType.ATTEST: EventCategory.ATTEST,
     }, HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
         HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
@@ -84,6 +85,8 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 # possible color values
 # success=green, error=red, warning=yellow/orangish, info=blue,
 # primary=our primary blue color, secondary=somewhat gray
+# IMPORTANT: All icons added here need to also be packaged in the frontend
+# here frontend/app/src/plugins/rui/index.ts
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
@@ -203,6 +206,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.STAKE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='Unstake',
         icon='folder-reduce-line',
+    )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
+        label='Attest',
+        icon='quill-pen-line',
     )},
 }
 
