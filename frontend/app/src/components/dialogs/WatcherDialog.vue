@@ -93,7 +93,7 @@ const operations = computed(() => {
 
 const existingWatchersIcon = (identifier: string): string => {
   const edit = get(existingWatchersEdit);
-  return edit[identifier] ? 'mdi-check' : 'mdi-pencil';
+  return edit[identifier] ? 'check-line' : 'pencil-line';
 };
 
 const validateSettingChange = (
@@ -232,6 +232,9 @@ const cancel = () => {
   set(existingWatchersEdit, edit);
   clear();
 };
+
+const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
+const percent = '%';
 </script>
 
 <template>
@@ -242,181 +245,142 @@ const cancel = () => {
     class="watcher-dialog"
     @keydown.esc.stop="cancel()"
   >
-    <Card>
-      <template #title> {{ title }} </template>
-      <VRow align="center" class="watcher-dialog__body">
-        <VCol cols="12">
-          {{ message }}
-        </VCol>
-        <VCol v-if="!preselectWatcherType" cols="12">
-          <VSelect
-            v-model="watcherType"
-            :items="watcherTypes"
-            :label="t('watcher_dialog.labels.type')"
-            dense
-            outlined
-            required
-          />
-        </VCol>
-        <VCol v-if="loadedWatchers.length > 0" cols="12">
-          <VRow>
-            <VCol cols="5">
-              <VDivider />
-            </VCol>
-            <VCol class="pa-0 text-center" cols="2">
-              {{ t('watcher_dialog.edit') }}
-            </VCol>
-            <VCol cols="5">
-              <VDivider />
-            </VCol>
-          </VRow>
-          <VRow
-            v-for="(watcher, key) in loadedWatchers"
-            :key="key"
-            align="center"
-          >
-            <VCol cols="6">
-              <VSelect
-                :filled="!existingWatchersEdit[watcher.identifier]"
-                :items="operations"
-                :label="t('watcher_dialog.labels.operation')"
-                :readonly="!existingWatchersEdit[watcher.identifier]"
-                :value="loadedWatchers[key].args.op"
-                dense
-                hide-details
-                outlined
-                required
-                @input="loadedWatchers[key].args.op = $event"
-              />
-            </VCol>
-            <VCol cols="4">
-              <VTextField
-                :filled="!existingWatchersEdit[watcher.identifier]"
-                :label="watcherValueLabel"
-                :readonly="!existingWatchersEdit[watcher.identifier]"
-                :value="loadedWatchers[key].args.ratio"
-                dense
-                hide-details
-                outlined
-                suffix="%"
-                @input="loadedWatchers[key].args.ratio = $event"
-              />
-            </VCol>
-            <VCol class="flex items-center justify-between" cols="2">
-              <VBtn icon @click="editWatcher(loadedWatchers[key])">
-                <VIcon small>
-                  {{ existingWatchersIcon(watcher.identifier) }}
-                </VIcon>
-              </VBtn>
-              <VBtn icon @click="deleteWatcher(watcher.identifier)">
-                <VIcon small> mdi-delete </VIcon>
-              </VBtn>
-            </VCol>
-          </VRow>
-        </VCol>
-        <VCol cols="12">
-          <VRow>
-            <VCol cols="5">
-              <VDivider />
-            </VCol>
-            <VCol class="pa-0 text-center justify-center" cols="2">
-              {{ t('watcher_dialog.add_watcher') }}
-            </VCol>
-            <VCol cols="5">
-              <VDivider />
-            </VCol>
-          </VRow>
-          <VRow align="center">
-            <VCol cols="6">
-              <VSelect
-                v-model="watcherOperation"
-                :disabled="!watcherType"
-                :items="operations"
-                :label="t('watcher_dialog.labels.operation')"
-                dense
-                hide-details
-                outlined
-                required
-              />
-            </VCol>
-            <VCol cols="5">
-              <VTextField
-                v-model="watcherValue"
-                :label="watcherValueLabel"
-                dense
-                hide-details
-                outlined
-                suffix="%"
-              />
-            </VCol>
-            <VCol class="flex items-center justify-center" cols="1">
-              <VBtn
-                :disabled="watcherOperation === null || watcherValue === null"
-                icon
-                @click="addWatcher()"
-              >
-                <VIcon> mdi-plus </VIcon>
-              </VBtn>
-            </VCol>
-          </VRow>
-        </VCol>
-      </VRow>
-      <template #buttons>
-        <div class="watcher-dialog__actions">
-          <div
-            :class="`text-caption flex-1 watcher-dialog__actions__messages watcher-dialog__actions__messages--${validationStatus} py-2 px-4 mb-4`"
-          >
-            {{ validationMessage }}
+    <CreateLabel #default="{ label }">
+      <div class="flex justify-center items-center gap-4">
+        <RuiDivider class="flex-grow" />
+        <div class="text-center">{{ label }}</div>
+        <RuiDivider class="flex-grow" />
+      </div>
+    </CreateLabel>
+
+    <RuiCard>
+      <template #header> {{ title }} </template>
+      <template #subheader>{{ message }}</template>
+
+      <VSelect
+        v-if="!preselectWatcherType"
+        v-model="watcherType"
+        :items="watcherTypes"
+        :label="t('watcher_dialog.labels.type')"
+        dense
+        outlined
+        required
+      />
+
+      <div v-if="loadedWatchers.length > 0" class="flex flex-col gap-4">
+        <ReuseLabel :label="t('watcher_dialog.edit')" />
+        <div
+          v-for="(watcher, key) in loadedWatchers"
+          :key="key"
+          class="flex items-center gap-4"
+        >
+          <div class="grid grid-cols-2 gap-4">
+            <VSelect
+              :class="{
+                'bg-rui-grey-100 dark:bg-rui-grey-800':
+                  !existingWatchersEdit[watcher.identifier]
+              }"
+              :items="operations"
+              :label="t('watcher_dialog.labels.operation')"
+              :readonly="!existingWatchersEdit[watcher.identifier]"
+              :value="loadedWatchers[key].args.op"
+              dense
+              hide-details
+              outlined
+              required
+              @input="loadedWatchers[key].args.op = $event"
+            />
+
+            <RuiTextField
+              :class="{
+                'bg-rui-grey-100 dark:bg-rui-grey-800':
+                  !existingWatchersEdit[watcher.identifier]
+              }"
+              :label="watcherValueLabel"
+              :readonly="!existingWatchersEdit[watcher.identifier]"
+              :value="loadedWatchers[key].args.ratio"
+              dense
+              color="primary"
+              hide-details
+              variant="outlined"
+              @input="loadedWatchers[key].args.ratio = $event"
+            >
+              <template #append>{{ percent }}</template>
+            </RuiTextField>
           </div>
-          <VBtn
-            depressed
-            color="primary"
-            class="watcher-dialog__buttons__close"
-            @click="cancel()"
-          >
-            {{ t('common.actions.close') }}
-          </VBtn>
+
+          <div class="flex items-center gap-2 justify-end">
+            <RuiButton
+              variant="text"
+              size="sm"
+              icon
+              @click="editWatcher(loadedWatchers[key])"
+            >
+              <RuiIcon :name="existingWatchersIcon(watcher.identifier)" />
+            </RuiButton>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              @click="deleteWatcher(watcher.identifier)"
+            >
+              <RuiIcon name="delete-bin-5-line" />
+            </RuiButton>
+          </div>
         </div>
+      </div>
+
+      <div class="flex flex-col gap-4 mt-4">
+        <ReuseLabel :label="t('watcher_dialog.add_watcher')" />
+        <div class="flex items-center justify-between gap-4">
+          <div class="grid grid-cols-2 gap-4">
+            <VSelect
+              v-model="watcherOperation"
+              :disabled="!watcherType"
+              :items="operations"
+              :label="t('watcher_dialog.labels.operation')"
+              dense
+              hide-details
+              outlined
+              required
+            />
+
+            <RuiTextField
+              v-model="watcherValue"
+              :label="watcherValueLabel"
+              color="primary"
+              dense
+              hide-details
+              variant="outlined"
+            >
+              <template #append> {{ percent }} </template>
+            </RuiTextField>
+          </div>
+
+          <RuiButton
+            :disabled="watcherOperation === null || watcherValue === null"
+            variant="text"
+            icon
+            size="sm"
+            @click="addWatcher()"
+          >
+            <RuiIcon name="add-line" />
+          </RuiButton>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="text-caption flex-grow py-2 px-4 mb-4">
+          {{ validationMessage }}
+        </div>
+        <RuiButton
+          color="primary"
+          class="watcher-dialog__buttons__close"
+          @click="cancel()"
+        >
+          {{ t('common.actions.close') }}
+        </RuiButton>
       </template>
-    </Card>
+    </RuiCard>
   </VDialog>
 </template>
-
-<style lang="scss" scoped>
-.watcher-dialog {
-  &__body {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.v-text-field--filled) {
-      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-
-      .v-text-field {
-        &__suffix {
-          margin-top: 0;
-        }
-      }
-    }
-  }
-
-  &__actions {
-    width: 100%;
-    justify-content: space-between;
-
-    &__messages {
-      min-height: 2.5em;
-      width: 100%;
-      border-radius: 8px;
-
-      &--success {
-        background-color: var(--v-success-lighten4);
-        color: var(--v-success-darken2);
-      }
-
-      &--error {
-        background-color: var(--v-error-lighten4);
-        color: var(--v-error-darken2);
-      }
-    }
-  }
-}
-</style>
