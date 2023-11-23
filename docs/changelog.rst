@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Attestation events for the Ethereum Attestation service in Mainnet, Optimism, Arbitrum One and Base will be properly shown to the user.
 * :feature:`-` Compound v3 reward claims should now be shown properly
 * :bug:`-` Uniswap Swaps with the Universal router would be decoded correctly.
 * :bug:`-` There will be no duplicated balances in cases where the native token balance is zero.

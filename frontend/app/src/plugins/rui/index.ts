@@ -116,6 +116,7 @@ import {
   RiPushpinLine,
   RiQuestionLine,
   RiQuestionnaireLine,
+  RiQuillPenLine,
   RiRefreshLine,
   RiRefund2Line,
   RiRepeat2Line,
@@ -319,6 +320,7 @@ Vue.use(RuiPlugin, {
     RiFolderAddLine,
     RiFolderReduceLine,
     RiPriceTagLine,
-    RiUploadLine
+    RiUploadLine,
+    RiQuillPenLine
   ]
 });
