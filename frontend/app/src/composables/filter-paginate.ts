@@ -1,4 +1,6 @@
+import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
+import { type AxiosError } from 'axios';
 import { isEmpty, isEqual, keys, pick } from 'lodash-es';
 import { type ZodSchema } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
@@ -56,6 +58,8 @@ export const usePaginationFilters = <
     };
   } = {}
 ) => {
+  const { t } = useI18n();
+  const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<V>> = ref(
@@ -202,7 +206,27 @@ export const usePaginationFilters = <
     {
       immediate: false,
       resetOnExecute: false,
-      delay: 0
+      delay: 0,
+      onError(e) {
+        const error = e as AxiosError<{ message: string }>;
+        const path = error.config?.url;
+        let { message, code } = error;
+
+        if (error.response) {
+          message = error.response.data.message;
+          code = error.response.status.toString();
+        }
+
+        logger.error(error);
+        if (Number(code) >= 400) {
+          notify({
+            title: t('error.generic.title'),
+            message: t('error.generic.message', { code, message, path }),
+            severity: Severity.ERROR,
+            display: true
+          });
+        }
+      }
     }
   );
 

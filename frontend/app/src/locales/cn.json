@@ -1923,7 +1923,11 @@
     }
   },
   "error": {
-    "process_running": "一个 rotki 后端进程已经在运行。已知这会导致应用程序的运行出现问题。请终止这些进程 pids: [{pids}] 并重新启动应用程序。"
+    "process_running": "一个 rotki 后端进程已经在运行。已知这会导致应用程序的运行出现问题。请终止这些进程 pids: [{pids}] 并重新启动应用程序。",
+    "generic": {
+      "title": "出了些问题",
+      "message": "我们在处理您的请求时遇到内部错误。如果此问题仍然存在，请联系我们的支持团队并提供以下详细信息：\\n错误代码：{code}\\n错误消息：{message}\\n路径：{path}"
+    }
   },
   "error_screen": {
     "backend_error": "后端有问题。",

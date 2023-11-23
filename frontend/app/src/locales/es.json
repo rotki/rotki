@@ -1880,7 +1880,11 @@
     }
   },
   "error": {
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
+    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application.",
+    "generic": {
+      "title": "Algo salió mal",
+      "message": "Encontramos un error interno al procesar su solicitud. Si este problema persiste, comuníquese con nuestro equipo de soporte con los detalles a continuación: \nCódigo de error: {code} \nMensaje de error: {message} \nRuta: {path}"
+    }
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
