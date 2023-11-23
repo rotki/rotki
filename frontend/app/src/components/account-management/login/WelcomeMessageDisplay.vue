@@ -20,9 +20,7 @@ const fetchSvg = async () => {
     !url ||
     !(
       checkIfDevelopment() ||
-      url.startsWith(
-        `https://raw.githubusercontent.com/rotki/data/main/messages/`
-      )
+      url.startsWith(`https://raw.githubusercontent.com/rotki/data`)
     )
   ) {
     return;
