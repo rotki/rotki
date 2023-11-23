@@ -12,6 +12,10 @@ export interface TaskMeta {
   readonly title: string;
   readonly description?: string;
   readonly ignoreResult?: boolean;
+  readonly action?: {
+    label: string;
+    action: () => void;
+  };
 }
 
 export interface ExchangeMeta extends TaskMeta {

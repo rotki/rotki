@@ -3865,9 +3865,6 @@
       },
       "title": "Ethereum Transaction Query Status"
     },
-    "redecode_events": {
-      "title": "Redecode EVM Events"
-    },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
     "unignore": "Unignore Tx in Accounting"

@@ -6,59 +6,65 @@ defineProps<{
 }>();
 
 const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>
   <VDialog width="1200">
     <template #activator="{ on }">
-      <VBtn text class="ml-4" v-on="on">
+      <RuiButton variant="text" class="ml-4" v-on="on">
         {{ t('common.details') }}
-        <VIcon small>mdi-chevron-right</VIcon>
-      </VBtn>
+        <template #append>
+          <RuiIcon name="arrow-right-s-line" />
+        </template>
+      </RuiButton>
     </template>
     <template #default="dialog">
-      <VCard :class="css.card">
-        <VCardTitle class="flex justify-between pb-0">
-          <div>
-            <slot name="title" />
+      <RuiCard>
+        <template #custom-header>
+          <div class="flex justify-between gap-4 p-4 pb-0 items-start">
+            <div>
+              <h6 class="text-h6">
+                <slot name="title" />
+              </h6>
+              <div class="text-caption">
+                <slot name="current" />
+              </div>
+            </div>
+            <RuiButton icon variant="text" @click="dialog.value = false">
+              <RuiIcon name="close-line" />
+            </RuiButton>
           </div>
-          <VBtn icon @click="dialog.value = false">
-            <VIcon>mdi-close</VIcon>
-          </VBtn>
-        </VCardTitle>
+        </template>
 
-        <slot name="current" />
-
-        <div class="px-6 pb-4">
-          <div v-for="item in items" :key="getKey(item)" :class="css.item">
+        <div>
+          <div
+            v-for="item in items"
+            :key="getKey(item)"
+            class="border-t border-default py-3"
+          >
             <div class="flex items-center">
               <slot name="item" :item="item" />
 
-              <VTooltip v-if="showTooltip ? showTooltip(item) : true" bottom>
-                <template #activator="{ on }">
-                  <VIcon class="ml-2" v-on="on"> mdi-help-circle </VIcon>
+              <RuiTooltip
+                v-if="showTooltip ? showTooltip(item) : true"
+                class="cursor-pointer"
+                open-delay="400"
+                tooltip-class="max-w-[12rem]"
+              >
+                <template #activator>
+                  <RuiIcon
+                    class="ml-2 text-rui-text-secondary"
+                    name="question-line"
+                  />
                 </template>
 
                 <slot name="tooltip" :item="item" />
-              </VTooltip>
+              </RuiTooltip>
             </div>
             <slot name="steps" :item="item" />
           </div>
         </div>
-      </VCard>
+      </RuiCard>
     </template>
   </VDialog>
 </template>
-
-<style module lang="scss">
-.item {
-  padding: 1rem 0;
-  border-top: 1px solid var(--v-rotki-light-grey-darken1);
-}
-
-.card {
-  width: 100%;
-  overflow: auto;
-}
-</style>

@@ -9,7 +9,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type AccountingRuleEntry } from '@/types/settings/accounting';
-import { toEvmChainAndTxHash } from '@/utils/history';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -135,8 +134,9 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 
-const { refreshTransactions, fetchTransactionEvents } =
-  useHistoryTransactions();
+const { refreshTransactions } = useHistoryTransactions();
+
+const { fetchTransactionEvents } = useHistoryTransactionDecoding();
 
 const vueRouter = useRouter();
 
@@ -274,8 +274,8 @@ const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
 const redecodeAllEvmEvents = () => {
   show(
     {
-      title: t('transactions.redecode_events.title'),
-      message: t('transactions.redecode_events.confirmation')
+      title: t('transactions.events_decoding.redecode_all'),
+      message: t('transactions.events_decoding.confirmation')
     },
     () => redecodeAllEvmEventsHandler()
   );
@@ -459,7 +459,7 @@ watch(
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.HISTORY_EVENTS);
+const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
@@ -610,6 +610,17 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
   entryTypes,
   type => isOnlineHistoryEventType(type)
 );
+
+const decodingStatusDialogOpen: Ref<boolean> = ref(false);
+
+const route = useRoute();
+
+watchImmediate(route, async route => {
+  if (route.query.openDecodingStatusDialog) {
+    set(decodingStatusDialogOpen, true);
+    await vueRouter.replace({ query: {} });
+  }
+});
 </script>
 
 <template>
@@ -645,32 +656,33 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
         </template>
         {{ t('transactions.actions.add_event') }}
       </RuiButton>
-      <VMenu offset-y left :close-on-content-click="false">
+      <VMenu offset-y left eager>
         <template #activator="{ on }">
           <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
             <RuiIcon name="more-2-fill" />
           </RuiButton>
         </template>
         <VList>
-          <RuiButton
-            v-if="includeEvmEvents"
-            variant="text"
-            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
-            :disabled="refreshing || eventTaskLoading"
-            @click="redecodeAllEvmEvents()"
-          >
-            <template #prepend>
-              <RuiIcon v-if="!eventTaskLoading" name="restart-line" />
-              <RuiProgress
-                v-else
-                circular
-                variant="indeterminate"
-                size="24"
-                thickness="2"
+          <template v-if="includeEvmEvents">
+            <RuiButton
+              variant="text"
+              class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
+              @click.stop="decodingStatusDialogOpen = true"
+            >
+              <template #prepend>
+                <RuiIcon name="file-info-line" />
+                {{ t('transactions.events_decoding.title') }}
+              </template>
+            </RuiButton>
+
+            <VDialog v-model="decodingStatusDialogOpen" max-width="600">
+              <HistoryEventsDecodingStatus
+                v-if="decodingStatusDialogOpen"
+                :refreshing="refreshing"
+                @redecode-all-evm-events="redecodeAllEvmEvents()"
               />
-            </template>
-            {{ t('transactions.redecode_events.title') }}
-          </RuiButton>
+            </VDialog>
+          </template>
 
           <RuiButton
             variant="text"

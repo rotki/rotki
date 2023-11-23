@@ -723,6 +723,7 @@
     "compareTextByKeyword": true,
     "getTextToken": true,
     "useDynamicMessages": true,
-    "useUpdateMessage": true
+    "useUpdateMessage": true,
+    "useHistoryTransactionDecoding": true
   }
 }

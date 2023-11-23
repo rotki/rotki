@@ -24,10 +24,7 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
     </template>
 
     <template #current>
-      <TransactionQueryStatusCurrent
-        :only-chains="onlyChains"
-        class="px-6 pb-4 text-caption"
-      />
+      <TransactionQueryStatusCurrent :only-chains="onlyChains" />
     </template>
 
     <template #item="{ item }">

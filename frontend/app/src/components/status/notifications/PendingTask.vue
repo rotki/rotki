@@ -16,7 +16,7 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
 <template>
   <div class="flex items-center justify-between flex-nowrap break-all gap-4">
     <div>
-      <div class="whitespace-nowrap overflow-hidden text-ellipsis">
+      <div class="break-normal overflow-hidden text-ellipsis">
         {{ task.meta.title }}
       </div>
       <div
@@ -27,6 +27,16 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
       </div>
       <div class="text-caption text-sm">
         {{ time }}
+      </div>
+      <div v-if="task.meta.action" class="mt-2">
+        <RuiButton
+          variant="text"
+          size="sm"
+          color="primary"
+          @click="task.meta.action.action()"
+        >
+          {{ task.meta.action.label }}
+        </RuiButton>
       </div>
     </div>
     <RuiProgress

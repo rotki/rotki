@@ -37,7 +37,7 @@ const css = useCssModule();
           color="green"
           :complete="isStepCompleted(item, index)"
         >
-          <div :class="isStepCompleted(item, index) ? 'green--text' : ''">
+          <div :class="isStepCompleted(item, index) ? 'text-rui-success' : ''">
             {{ step }}
           </div>
           <VProgressCircular

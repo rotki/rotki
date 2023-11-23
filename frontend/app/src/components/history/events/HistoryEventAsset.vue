@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type HistoryEventEntry } from '@/types/history/events';
 import { CURRENCY_USD } from '@/types/currencies';
-import { useAssetPageNavigation } from '@/composables/assets/navigation';
 
 const props = defineProps<{
   event: HistoryEventEntry;

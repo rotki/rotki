@@ -17,37 +17,44 @@ const css = useCssModule();
 <template>
   <tr v-if="items.length > 0" :class="css.tr">
     <td :colspan="colspan" class="py-2">
-      <div class="flex">
-        <div v-if="finished" class="pr-2">
-          <VBtn icon @click="emit('reset')">
-            <VIcon>mdi-close</VIcon>
-          </VBtn>
-        </div>
-        <div class="pr-2">
-          <VBtn
-            v-if="items.length > 1 && !finished"
-            icon
-            @click="openStatusDropdown = !openStatusDropdown"
-          >
-            <VIcon v-if="openStatusDropdown"> mdi-chevron-up </VIcon>
-            <VIcon v-else> mdi-chevron-down </VIcon>
-          </VBtn>
-        </div>
+      <div class="flex items-start gap-3">
+        <RuiButton
+          v-if="finished"
+          class="mt-0.5"
+          size="sm"
+          icon
+          variant="text"
+          @click="emit('reset')"
+        >
+          <RuiIcon name="close-line" />
+        </RuiButton>
+        <RuiButton
+          v-else-if="items.length > 1 && !finished"
+          class="mt-0.5"
+          icon
+          size="sm"
+          variant="text"
+          @click="openStatusDropdown = !openStatusDropdown"
+        >
+          <RuiIcon v-if="openStatusDropdown" name="arrow-up-s-line" />
+          <RuiIcon v-else name="arrow-down-s-line" />
+        </RuiButton>
+
         <div
           v-if="finished || (!openStatusDropdown && items.length > 1)"
-          class="py-2 flex items-center"
+          class="py-2 flex items-center gap-3"
         >
-          <div class="mr-4">
-            <VProgressCircular
+          <div class="flex">
+            <RuiProgress
               v-if="!finished"
-              size="20"
               color="primary"
-              width="2"
-              indeterminate
+              size="20"
+              thickness="2"
+              variant="indeterminate"
+              circular
             />
-            <VIcon v-else color="green" :class="css['check-icon']">
-              mdi-check-circle
-            </VIcon>
+
+            <SuccessDisplay v-else size="20" success />
           </div>
 
           <slot name="current" />
@@ -88,9 +95,5 @@ const css = useCssModule();
 
 .row {
   display: flex;
-}
-
-.check-icon {
-  margin: -2px;
 }
 </style>

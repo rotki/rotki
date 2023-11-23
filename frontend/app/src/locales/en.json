@@ -647,6 +647,14 @@
           "message": "Failed to retrieve the associated locations: {message}",
           "title": "Fetch associated locations"
         }
+      },
+      "fetch_undecoded_events": {
+        "error": {
+          "message": "Failed to query breakdown for EVM undecoded events: {message}"
+        },
+        "task": {
+          "title": "Retrieving breakdown for EVM undecoded events."
+        }
       }
     },
     "history_events": {
@@ -4246,6 +4254,22 @@
         "show": "Show events ({length})"
       }
     },
+    "events_decoding": {
+      "actions": {
+        "redecode_missing_events": "Redecode missing events"
+      },
+      "confirmation": "This action will redecode all events except the customized ones, and may take a long time depending on the amount of events to process. Are you sure you want to continue?",
+      "decoded": {
+        "true": "All events have been decoded.",
+        "false": "Some events need to be decoded."
+      },
+      "events_processed": "{processed} / {total} events processed",
+      "progress": "Progress",
+      "redecode_all": "Redecode all EVM Events",
+      "see_progress": "See Progress",
+      "title": "EVM events decoding status",
+      "undecoded_events": "Undecoded events"
+    },
     "filter": {
       "account": "Filter by account",
       "address": "filter by counterparty address",
@@ -4305,10 +4329,6 @@
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "title": "History Events Query Status"
-    },
-    "redecode_events": {
-      "confirmation": "This action will redecode all events except the customized ones, and may take a long time depending on the amount of events to process. Are you sure you want to continue?",
-      "title": "Redecode EVM Events"
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",

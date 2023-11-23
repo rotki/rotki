@@ -10,6 +10,7 @@ import {
   type BalanceSnapshotError,
   type DbUploadResult,
   type EvmTransactionQueryData,
+  type EvmUndecodedTransactionsData,
   type HistoryEventsQueryData,
   MESSAGE_WARNING,
   type MissingApiKey,
@@ -26,6 +27,7 @@ import { SYNC_UPLOAD } from '@/types/session/sync';
 export const useMessageHandling = () => {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
+  const { setEvmUndecodedTransactions } = useHistoryStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } =
     useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
@@ -46,6 +48,12 @@ export const useMessageHandling = () => {
 
   const handleEvmTransactionsStatus = (data: EvmTransactionQueryData): void => {
     setTxQueryStatus(data);
+  };
+
+  const handleEvmUndecodedTransaction = (
+    data: EvmUndecodedTransactionsData
+  ): void => {
+    setEvmUndecodedTransactions(data);
   };
 
   const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
@@ -232,6 +240,8 @@ export const useMessageHandling = () => {
       notifications.push(handleLegacyMessage(data.value, isWarning));
     } else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
       handleEvmTransactionsStatus(message.data);
+    } else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
+      handleEvmUndecodedTransaction(message.data);
     } else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       handleHistoryEventsStatus(message.data);
     } else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
@@ -271,6 +281,8 @@ export const useMessageHandling = () => {
         notifications.push(handleSnapshotError(object));
       } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
         await handleEvmTransactionsStatus(object);
+      } else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
+        await handleEvmUndecodedTransaction(object);
       } else if (object.type === SocketMessageType.DB_UPGRADE_STATUS) {
         await updateDbUpgradeStatus(object);
       } else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS) {
