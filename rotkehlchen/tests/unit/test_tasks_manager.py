@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -450,3 +451,34 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()
         assert len(rotki.task_manager.running_greenlets) == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
+    task_manager.potential_tasks = [task_manager._maybe_query_withdrawals]
+    query_patch = patch.object(
+        task_manager.chains_aggregator.get_module('eth2'),
+        'query_services_for_validator_withdrawals',
+        side_effect=lambda *args, **kwargs: None,
+    )
+
+    with query_patch as query_mock:
+        task_manager.schedule()
+        gevent.sleep(0)  # context switch for execution of task
+        assert query_mock.call_count == 1
+
+        # test the used query ranges
+        for hours_ago, expected_call_count, msg in (
+                (5, 2, 'should have ran again'),
+                (1, 2, 'should not have ran again'),
+        ):
+            with task_manager.database.user_write() as write_cursor:
+                for address in ethereum_accounts:
+                    write_cursor.execute(
+                        'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?)',  # noqa: E501
+                        (f'{WITHDRAWALS_TS_PREFIX}_{address}', 0, ts_now() - 3600 * hours_ago),
+                    )
+            task_manager.schedule()
+            gevent.sleep(0)  # context switch for execution of task
+            assert query_mock.call_count == expected_call_count, msg
