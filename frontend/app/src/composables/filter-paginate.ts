@@ -58,6 +58,8 @@ export const usePaginationFilters = <
     };
   } = {}
 ) => {
+  const { t } = useI18n();
+  const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<V>> = ref(
@@ -206,8 +208,6 @@ export const usePaginationFilters = <
       resetOnExecute: false,
       delay: 0,
       onError(e) {
-        const { notify } = useNotificationsStore();
-        const { t } = useI18n();
         const error = e as AxiosError<{ message: string }>;
         const path = error.config?.url;
         let { message, code } = error;
@@ -218,7 +218,7 @@ export const usePaginationFilters = <
         }
 
         logger.error(error);
-        if (code === '500') {
+        if (code && ['400', '500'].includes(code)) {
           notify({
             title: t('error.generic.title'),
             message: t('error.generic.message', { code, message, path }),
