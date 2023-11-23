@@ -3258,6 +3258,7 @@ class DBHandler:
             data: dict[str, Any],
             extra_data: Optional[dict[str, Any]],
     ) -> None:
+        """Add a skipped external event to the DB. Duplicates are ignored."""
         serialized_extra_data = None
         if extra_data is not None:
             serialized_extra_data = json.dumps(extra_data, separators=(',', ':'))

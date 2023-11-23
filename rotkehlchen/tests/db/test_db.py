@@ -1842,3 +1842,17 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
         with pytest.raises(DBSchemaError) as exception_info:
             connection.schema_sanity_check()
     assert "Tables {'user_notes'} are missing" in str(exception_info.value)
+
+
+def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
+    """Test that adding same skipped event twice in the DB does not duplicate it"""
+    data = {'event': 'someid', 'time': 'atime'}
+    with database.user_write() as write_cursor:
+        for _ in range(2):
+            database.add_skipped_external_event(
+                write_cursor=write_cursor,
+                location=Location.KRAKEN,
+                data=data,
+                extra_data=None,
+            )
+            assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
