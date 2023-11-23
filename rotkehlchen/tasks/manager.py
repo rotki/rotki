@@ -571,8 +571,8 @@ class TaskManager:
         if len(end_timestamps) != len(addresses):
             should_query = True
         else:
-            for end_ts in end_timestamps:
-                if now - end_ts >= HOUR_IN_SECONDS * 3:
+            for entry in end_timestamps:
+                if now - entry[0] >= HOUR_IN_SECONDS * 3:
                     should_query = True
                     break
 
