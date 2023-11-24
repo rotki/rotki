@@ -1577,7 +1577,7 @@ You can ignore/un-ignore the assets by toggling the switch on the table. You can
 
 You can also ignore assets by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore a selected asset.
 
-It is also possible to ignore NFTs. To do this navigate to ``Accounts & Balances > Non fungible balances`` and toggle the ignore NFT switch. Then you can use the filter to view the ignored NFTs.
+It is also possible to ignore NFTs. To do this navigate to :menuselection:`Accounts & Balances > Non fungible balances` and toggle the ignore NFT switch. Then you can use the filter to view the ignored NFTs.
 
 .. image:: images/rotki_ignore_nfts.png
    :alt: Ignoring NFTs
@@ -1586,7 +1586,7 @@ It is also possible to ignore NFTs. To do this navigate to ``Accounts & Balances
 Adding missing prices
 **********************
 
-Sometimes rotki might be unable to retrieve prices for some assets. In order to always have the ability to show a price we provide two types of manual price additions: ``Latest prices`` and ``Historical prices``.
+Sometimes rotki might be unable to retrieve prices for some assets. In order to always have the ability to show a price we provide two types of manual price additions: :menuselection:`Manual Prices > Latest Prices` and :menuselection:`Manual Prices > Historical Prices`.
 
 - Latest price: Will be the price displayed when we need to display the current price of an asset.
 - Historical price: The price used in a specific time in the past for an asset.
