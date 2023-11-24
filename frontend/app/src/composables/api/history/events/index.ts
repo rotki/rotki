@@ -12,7 +12,6 @@ import {
 import { type CollectionResponse } from '@/types/collection';
 import {
   type AddTransactionHashPayload,
-  type AddressesAndEvmChainPayload,
   type EditHistoryEventPayload,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
@@ -86,14 +85,14 @@ export const useHistoryEventsApi = () => {
   };
 
   const reDecodeMissingTransactionEvents = async <T>(
-    data: AddressesAndEvmChainPayload[],
+    evmChains: string[],
     asyncQuery = true
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/blockchains/evm/transactions/decode',
       snakeCaseTransformer({
         asyncQuery,
-        data
+        evmChains
       }),
       { validateStatus: validStatus }
     );
