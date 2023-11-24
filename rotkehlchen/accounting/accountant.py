@@ -46,7 +46,6 @@ class Accountant:
             msg_aggregator: MessagesAggregator,
             chains_aggregator: 'ChainsAggregator',
             premium: Optional[Premium],
-            use_dummy_pot: bool = False,
     ) -> None:
         self.db = db
         self.msg_aggregator = msg_aggregator
@@ -59,7 +58,7 @@ class Accountant:
                 database=db,
                 evm_accounting_aggregators=evm_accounting_aggregators,
                 msg_aggregator=msg_aggregator,
-                is_dummy_pot=use_dummy_pot,
+                is_dummy_pot=False,
             ),
         ]
 

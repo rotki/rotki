@@ -3,8 +3,10 @@ import os
 import shutil
 import sys
 from collections import defaultdict
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Optional
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -186,13 +188,20 @@ def fixture_accountant(
                 version=999999,  # only for logs
             )
 
-    accountant = Accountant(
-        db=database,
-        chains_aggregator=blockchain,
-        msg_aggregator=function_scope_messages_aggregator,
-        premium=premium,
-        use_dummy_pot=use_dummy_pot,
-    )
+    with ExitStack() as stack:
+        if use_dummy_pot:  # don't load ignored assets if dummy
+            stack.enter_context(patch.object(database, 'get_ignored_asset_ids', lambda _: set()))
+
+        with stack:
+            accountant = Accountant(
+                db=database,
+                chains_aggregator=blockchain,
+                msg_aggregator=function_scope_messages_aggregator,
+                premium=premium,
+            )
+
+        if use_dummy_pot:  # set the dummy behavior
+            accountant.pots[0].is_dummy_pot = use_dummy_pot
 
     if accounting_initialize_parameters:
         with accountant.db.conn.read_ctx() as cursor:
