@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
+
 * :release:`1.31.0 <2023-11-24>`
 * :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.
 * :feature:`-` Attestation events for the Ethereum Attestation service in Mainnet, Optimism, Arbitrum One and Base will be properly shown to the user.
