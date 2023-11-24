@@ -30,7 +30,7 @@ const headers: DataTableColumn[] = [
     label: t('common.location'),
     key: 'location',
     align: 'center',
-    cellClass: 'py-0'
+    cellClass: 'py-3'
   },
   {
     label: t('transactions.events.skipped.headers.number'),
@@ -170,6 +170,7 @@ const reProcessSkippedEvents = async () => {
         :cols="headers"
         :rows="locationsData"
         dense
+        striped
         outlined
         :empty="{
           description: t('transactions.events.skipped.no_skipped_events')

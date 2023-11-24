@@ -64,6 +64,7 @@ import {
   RiFileCopyLine,
   RiFileDownloadLine,
   RiFileEditLine,
+  RiFileInfoLine,
   RiFileList3Line,
   RiFileSettingsLine,
   RiFileTextLine,
@@ -94,6 +95,7 @@ import {
   RiLineChartLine,
   RiLink,
   RiLinksLine,
+  RiListCheck2,
   RiListRadio,
   RiListUnordered,
   RiLock2Fill,
@@ -321,6 +323,8 @@ Vue.use(RuiPlugin, {
     RiFolderReduceLine,
     RiPriceTagLine,
     RiUploadLine,
-    RiQuillPenLine
+    RiQuillPenLine,
+    RiFileInfoLine,
+    RiListCheck2
   ]
 });

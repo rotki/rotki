@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
-import { useAccountingRuleMappings } from '@/composables/settings/accounting/rule-mapping';
 
 const props = defineProps<{
   identifier: string;

@@ -36,6 +36,16 @@ export const EvmTransactionQueryData = z
   })
   .merge(EvmChainAddress);
 
+export const EvmUndecodedTransactionsData = z.object({
+  evmChain: z.string(),
+  processed: z.number(),
+  total: z.number()
+});
+
+export type EvmUndecodedTransactionsData = z.infer<
+  typeof EvmUndecodedTransactionsData
+>;
+
 export const HistoryEventsQueryStatus = {
   QUERYING_EVENTS_STARTED: 'querying_events_started',
   QUERYING_EVENTS_STATUS_UPDATE: 'querying_events_status_update',
@@ -140,6 +150,7 @@ export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
+  EVM_UNDECODED_TRANSACTIONS: 'evm_undecoded_transactions',
   HISTORY_EVENTS_STATUS: 'history_events_status',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   DB_UPGRADE_STATUS: 'db_upgrade_status',

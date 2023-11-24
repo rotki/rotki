@@ -3983,9 +3983,6 @@
       },
       "title": "evm交易查询状态"
     },
-    "redecode_events": {
-      "title": "重新解码 EVM 事件"
-    },
     "refresh_tooltip": "获取最新事件",
     "title": "历史事件",
     "unignore": "在会计中忽略交易"

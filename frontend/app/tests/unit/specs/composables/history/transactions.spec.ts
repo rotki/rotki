@@ -62,8 +62,9 @@ describe('composables::history/events/tx', async () => {
 
     const editEvent = { ...event, identifier: 1 };
 
-    const { addTransactionHash, fetchTransactionEvents, refreshTransactions } =
+    const { addTransactionHash, refreshTransactions } =
       useHistoryTransactions();
+    const { fetchTransactionEvents } = useHistoryTransactionDecoding();
     const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent } =
       useHistoryEvents();
 

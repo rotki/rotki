@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { getAddressFromEvmIdentifier } from '@/utils/assets';
-import { useAssetPageNavigation } from '@/composables/assets/navigation';
-
 const props = withDefaults(
   defineProps<{
     asset: string;

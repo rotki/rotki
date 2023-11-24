@@ -30,10 +30,7 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
     </template>
 
     <template #current>
-      <HistoryEventsQueryStatusCurrent
-        :locations="locations"
-        class="px-6 pb-4 text-caption"
-      />
+      <HistoryEventsQueryStatusCurrent :locations="locations" />
     </template>
 
     <template #item="{ item }">

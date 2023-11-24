@@ -84,6 +84,21 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
+  const getUnDecodedTransactionEventsBreakdown =
+    async (): Promise<PendingTask> => {
+      const response = await api.instance.get<ActionResult<PendingTask>>(
+        '/blockchains/evm/transactions/decode',
+        {
+          params: snakeCaseTransformer({
+            asyncQuery: true
+          }),
+          validateStatus: validStatus
+        }
+      );
+
+      return handleResponse(response);
+    };
+
   const reDecodeMissingTransactionEvents = async <T>(
     evmChains: string[],
     asyncQuery = true
@@ -277,6 +292,7 @@ export const useHistoryEventsApi = () => {
     fetchEvmTransactionsTask,
     deleteEvmTransactions,
     decodeHistoryEvents,
+    getUnDecodedTransactionEventsBreakdown,
     reDecodeMissingTransactionEvents,
     addHistoryEvent,
     editHistoryEvent,
