@@ -2718,6 +2718,7 @@ class RestAPI:
                 decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
                     ignore_cache=ignore_cache,
                     tx_hashes=entry['tx_hashes'],
+                    send_ws_notifications=True,
                 )
                 if entry['tx_hashes'] is not None and task_manager is not None:
                     # Trigger the task to query the missing prices for the decoded events
