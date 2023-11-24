@@ -98,6 +98,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
       :popper="{ placement: 'top' }"
       open-delay="400"
       :disabled="!truncated && !aliasName"
+      class="truncate mr-auto"
     >
       <template #activator>
         <span
@@ -153,7 +154,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   }
 
   &__divider {
-    @apply h-[1.75rem] ml-auto px-0.5 border-black/[.12] dark:border-white/[.12];
+    @apply h-[1.75rem] mx-1 border-black/[.12] dark:border-white/[.12];
   }
 
   &__actions {
