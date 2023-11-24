@@ -87,17 +87,26 @@ class EventsAccountant:
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             fee_event = None
-            next_event = cast(HistoryBaseEntry, events_iterator.peek())
-            if next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                fee_event = cast(HistoryBaseEntry, next(events_iterator))
-            in_event = next(events_iterator, None)
-            if in_event is None:
+            next_event = events_iterator.peek(None)
+            if next_event is None:
                 log.error(
                     f'Tried to process accounting swap but could not find the in '
                     f'event for {event}',
                 )
                 return 1
-            in_event = cast(HistoryBaseEntry, in_event)
+
+            next_event = cast(HistoryBaseEntry, next_event)
+            if next_event.event_identifier != event.event_identifier:
+                log.error(
+                    f'Tried to process accounting swap but the in '
+                    f'event for {event} is not there',
+                )
+                return 1
+            in_event = cast(HistoryBaseEntry, next(events_iterator))
+
+            next_event = cast(HistoryBaseEntry, events_iterator.peek(None))
+            if next_event and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                fee_event = cast(HistoryBaseEntry, next(events_iterator))
 
             return self._process_swap(
                 timestamp=timestamp,

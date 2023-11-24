@@ -254,7 +254,7 @@ def test_missing_accounting_rules_accounting_treatment(
 
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
-def test_events_affeced_by_others_accounting_treatment(
+def test_events_affected_by_others_accounting_treatment(
         database: 'DBHandler',
         accountant: Accountant,
 ) -> None:
@@ -313,7 +313,7 @@ def test_events_affeced_by_others_accounting_treatment(
 
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
-def test_events_affeced_by_others_accounting_treatment_with_fee(
+def test_events_affected_by_others_accounting_treatment_with_fee(
         database: 'DBHandler',
         accountant: Accountant,
 ) -> None:
@@ -323,9 +323,9 @@ def test_events_affeced_by_others_accounting_treatment_with_fee(
     """
     db = DBAccountingRules(database)
     db.add_accounting_rule(
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-        counterparty=CPT_COMPOUND,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        counterparty=CPT_COWSWAP,
         rule=TxEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
@@ -342,33 +342,33 @@ def test_events_affeced_by_others_accounting_treatment_with_fee(
         location=Location.ETHEREUM,
         asset=A_CUSDC,
         balance=Balance(amount=ONE),
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-        counterparty=CPT_COMPOUND,
-        notes='my notes',
-    )
-    fee_event = EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=1,
-        timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
-        asset=A_CUSDC,
-        balance=Balance(amount=ONE),
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        counterparty=CPT_COMPOUND,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        counterparty=CPT_COWSWAP,
         notes='my notes',
     )
     remove_asset = EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=2,
+        sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
         asset=A_USDC,
         balance=Balance(amount=ONE),
-        event_type=HistoryEventType.WITHDRAWAL,
-        event_subtype=HistoryEventSubType.REMOVE_ASSET,
-        counterparty=CPT_COMPOUND,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        counterparty=CPT_COWSWAP,
+        notes='my notes',
+    )
+    fee_event = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_CUSDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        counterparty=CPT_COWSWAP,
         notes='my notes',
     )
 

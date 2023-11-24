@@ -217,7 +217,7 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
                 fee_event = self.base.make_event_next_index(
                     tx_hash=transaction.tx_hash,
                     timestamp=transaction.timestamp,
-                    event_type=HistoryEventType.SPEND,
+                    event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=swap_data.from_asset,
                     balance=Balance(amount=swap_data.fee_amount),
@@ -265,7 +265,7 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
             spend_event.notes = f'Swap {spend_event.balance.amount} {spend_event.asset.symbol_or_name()} in cowswap'  # noqa: E501
             receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a swap in cowswap'  # noqa: E501
             maybe_reshuffle_events(
-                ordered_events=[spend_event, fee_event, receive_event],
+                ordered_events=[spend_event, receive_event, fee_event],
                 events_list=decoded_events,
             )
 

@@ -338,10 +338,15 @@ def _events_to_consume(
     if (raw_treatment := cursor.fetchone()) is not None and raw_treatment[0] is not None:
         accounting_treatment = TxAccountingTreatment.deserialize_from_db(raw_treatment[0])
         if accounting_treatment == TxAccountingTreatment.SWAP:
+            _, peeked_event = events_iterator.peek((None, None))
+            if peeked_event is None or peeked_event.event_identifier != event.event_identifier:
+                log.error(f'Event with {event.event_identifier=} should have a SWAP IN event')
+                return ids_processed
             _, next_event = next(events_iterator)
             ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
-            _, peeked_event = events_iterator.peek()
-            if peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+
+            _, peeked_event = events_iterator.peek((None, None))
+            if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
                 # consume the related fee if it exists
                 _, next_event = next(events_iterator)
                 ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
@@ -363,11 +368,16 @@ def _events_to_consume(
     processed_events_num = callback(
         pot=pot,
         event=event,  # type: ignore[arg-type] # mypy doesn't recognize that this is an evm event
-        other_events=iter(next_events),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
+        other_events=peekable(next_events),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
     )
 
     for _ in range(processed_events_num - 1):  # -1 because we exclude the current event here
-        _, next_event = next(events_iterator)
+        try:
+            _, next_event = next(events_iterator)
+        except StopIteration:
+            log.error('Failed to get an expected event from iterator during missing accounting rules check')  # noqa: E501
+            return ids_processed
+
         ids_processed.append(next_event.identifier)  # type: ignore
 
     return ids_processed
