@@ -915,11 +915,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
+        "description": "Failed to retrieve missing events from transactions for {evmChain} chain: {error}",
         "title": "Retrieving missing events from transactions"
       },
       "task": {
-        "description": "Retrieving transactions events for address: {address} ({evmChain})",
+        "description": "Retrieving transactions events for {evmChain} chain",
         "title": "Evm Transaction Missing Events Retrieval"
       }
     },
