@@ -436,10 +436,12 @@ def query_missing_accounting_rules(
                 continue
 
             if (
+                    event.event_type == HistoryEventType.INFORMATIONAL or
+                    # staking events all have a process() function for accounting
                     isinstance(event, EthStakingEvent) or
                     (isinstance(event, EvmEvent) and event.event_identifier.startswith('BP1_'))
             ):
-                # staking events all have a process() function for accounting
+
                 accountant.processable_events_cache.add(event.identifier, False)  # type: ignore
                 current_event_index += 1
                 continue
