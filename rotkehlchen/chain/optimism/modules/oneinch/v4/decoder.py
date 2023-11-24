@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
-from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv4DecoderBase
+from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4DecoderBase
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 ONEINCH_V4_ROUTER_OP = string_to_evm_address('0x1111111254760F7ab3F16433eea9304126DCd199')
 
 
-class Oneinchv4Decoder(Oneinchv4DecoderBase):
+class Oneinchv4Decoder(Oneinchv3n4DecoderBase):
 
     def __init__(
             self,
