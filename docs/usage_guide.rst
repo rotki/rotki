@@ -823,7 +823,7 @@ To have your loopring balances detected you will need an API Key from loopring. 
    :alt: Get loopring keys
    :align: center
 
-Then in rotki you need to add the API key. Go to API Keys > External Services > Loopring and paste the key that you obtained in the loopring website.
+Then in rotki you need to add the API key. Go to  :menuselection:`API Keys > External Services > Loopring` and paste the key that you obtained in the loopring website.
 
 .. image:: images/loopring_add_key.png
    :alt: Add loopring key
@@ -833,12 +833,6 @@ After following these steps your balances in the dashboard will be updated inclu
 
 .. image:: images/loopring_balances.png
    :alt: Loopring balances in the UI
-   :align: center
-
-The loopring account balances are also visible in the blockchain accounts view.
-
-.. image:: images/loopring_balances_account.gif
-   :alt: Loopring balances for an account
    :align: center
 
 Rotki Generic Import
@@ -907,7 +901,7 @@ A list of supported locations in rotki are ``"external"``, ``"kraken"``, ``"polo
 Tracking accounts and balances
 **********************************
 
-To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manual Balances including fiat) you need to visit the "Accounts & Balances" section from the left sidebar.
+To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manual Balances including fiat) you need to visit the :menuselection:`Accounts & Balances` section from the left sidebar.
 
 .. image:: images/sc_accounts_balances.png
    :alt: Accounts & Balances page
@@ -919,7 +913,7 @@ Adding Manual Balances
 
 With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
 
-To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon.
+To add or modify a manually tracked balance navigate to the :menuselection:`Manual Balances` sub-page and click the "Add Manual Balance" button on the top right.
 There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
 
 .. image:: images/sc_manually_tracked_balances.png
@@ -946,10 +940,7 @@ For now, the following chains are supported in Rotki (and the list will be growi
 - Base
 - Gnosis
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
-
-When scrolling through the page the "+" will automatically switch the pre-selected chain based on the context. For example
-if the table displaying the screen center is the BTC table then BTC will be pre-selected when pressing "+".
+To add or modify an account navigate to the :menuselection:`Blockchain Balances` sub-page and click the "Add Account" button on the top right. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
 .. image:: images/add_blockchain_account.png
    :alt: Add a blockchain account
@@ -1006,10 +997,6 @@ Token detection
 ===============
 
 For every evm address it is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking on ``RE-DETECT TOKENS``.
-
-.. image:: images/tokens_detection.png
-   :alt: Detecting tokens
-   :align: center
 
 Checking Exchange Balances
 ===========================
@@ -1074,7 +1061,7 @@ An estimation of the value of the NFTs you own is counted into your total net wo
    :alt: NFT Value Dashboard
    :align: center
 
-If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` in the NFTs table in the dashboard or by going to ``Blockchains & Accounts`` -> ``Non-fungible balances``. And then click on the pen icon for the NFT you are interested in.
+If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` button in the NFTs table in the dashboard or by going to :menuselection:`Blockchains & Accounts --> Non Fungible balances`. And then click on the pen icon for the NFT you are interested in.
 
 For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered, this can be done here by clicking on the icon highlighted below.
 
@@ -1109,8 +1096,7 @@ ETH2 Staking
 
 There are two ways to track ETH2 Staking. The first is by adding tracking the account of an ETH account that deposited
 the ETH for the validator. This will auto-detect any associated validators with the ETH1 address and it will start
-tracking them. The second way is by adding a validator using the add ``(+)`` button in the ``Blockchain Balances`` tab
-under ``Accounts & Balances``. It can be added using its public key, its index or both of them for a faster query. Finally it
+tracking them. The second way is by adding a validator using the ``Add account button`` in the :menuselection:`Blockchain Balances --> Accounts & Balances` page. It can be added using its public key, its index or both of them for a faster query. Finally it
 is also possible to customize the proportion of the validator owned for users who share one validator with more people.
 
 .. image:: images/rotki_eth2_add_validator.png
@@ -1213,7 +1199,7 @@ Snapshots
 =========
 
 The application will on login snapshot to disk the information about balances from all the tracked sources every 24 hours (by default. The number of hours is configurable). This information is saved directly to your local database.
-You can force a snapshot taking by clicking in the floppy disk icon at the top bar and then on `Force Save`
+You can force a snapshot taking by clicking in the ``cloud icon`` at the top bar and then on `Force Save`
 
 .. image:: images/rotki_snapshot_forcing.png
    :alt: Force snapshots saves
@@ -1235,7 +1221,7 @@ If you choose to edit the snapshot you can modify the values per asset and locat
    :alt: Edit snapshot
    :align: center
 
-Finally information about snapshots can be imported back into the app using the files you exported with the suffix ``_import```. To import them use the import functionality by clicking on the save disk icon at the top bar.
+Finally information about snapshots can be imported back into the app using the files you exported with the suffix ``_import```. To import them use the import functionality by clicking on the ``Arrow down button`` near the chart and then click ``Import``.
 
 .. image:: images/import_snapshot.png
    :alt: Import snapshots information
