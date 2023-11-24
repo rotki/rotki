@@ -1252,7 +1252,8 @@ Adding manual trades
 
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
-On the left sidebar click on History and then the Trades button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` button will open a menu like the following.
+You can go to this page via :menuselection:`History --> Exch. Trades`.
+Clicking on the ``Add an external trade`` button will open a menu like the following.
 
 .. image:: images/external_trade.png
    :alt: Add an external trade
@@ -1290,11 +1291,6 @@ You can filter using the following keys:
    :align: center
 
 When selecting a filter, by clicking or typing the filter you will get some suggestions based on the available data.
-
-.. note::
-
-    At the moment it is not possible to select the available filters using the keyboard arrows or tab.
-    This is a feature that will become available in the future.
 
 When a suggestion appears you can navigate to the next available suggestion using the tab button or you can also change
 the select suggestion using the up/down arrows in your keyboard. You can submit the selected filter by pressing enter.
