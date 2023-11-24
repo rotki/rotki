@@ -1,7 +1,8 @@
 import logging
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
+from more_itertools import peekable
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -309,7 +310,7 @@ class DBAccountingRules:
 def _events_to_consume(
         cursor: 'DBCursor',
         callbacks: dict[int, tuple[int, EventsAccountantCallback]],
-        events_iterator: Iterator[tuple[tuple[Any, ...], 'HistoryBaseEntry']],
+        events_iterator: "peekable[tuple[tuple[Any, ...], 'HistoryBaseEntry']]",
         next_events: Sequence[HistoryBaseEntry],
         event: HistoryBaseEntry,
         pot: 'AccountingPot',
@@ -337,10 +338,16 @@ def _events_to_consume(
     if (raw_treatment := cursor.fetchone()) is not None and raw_treatment[0] is not None:
         accounting_treatment = TxAccountingTreatment.deserialize_from_db(raw_treatment[0])
         if accounting_treatment == TxAccountingTreatment.SWAP:
+            _, peeked_event = events_iterator.peek((None, None))
+            if peeked_event is None or peeked_event.event_identifier != event.event_identifier:
+                log.error(f'Event with {event.event_identifier=} should have a SWAP IN event')
+                return ids_processed
             _, next_event = next(events_iterator)
             ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
-        else:
-            for _ in range(2):  # swap_with_fee consumes two events
+
+            _, peeked_event = events_iterator.peek((None, None))
+            if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                # consume the related fee if it exists
                 _, next_event = next(events_iterator)
                 ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
 
@@ -361,11 +368,16 @@ def _events_to_consume(
     processed_events_num = callback(
         pot=pot,
         event=event,  # type: ignore[arg-type] # mypy doesn't recognize that this is an evm event
-        other_events=iter(next_events),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
+        other_events=peekable(next_events),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
     )
 
     for _ in range(processed_events_num - 1):  # -1 because we exclude the current event here
-        _, next_event = next(events_iterator)
+        try:
+            _, next_event = next(events_iterator)
+        except StopIteration:
+            log.error('Failed to get an expected event from iterator during missing accounting rules check')  # noqa: E501
+            return ids_processed
+
         ids_processed.append(next_event.identifier)  # type: ignore
 
     return ids_processed
@@ -406,7 +418,7 @@ def query_missing_accounting_rules(
     ]
 
     callbacks = evm_accounting_aggregator.get_accounting_callbacks()
-    bindings_and_events_iterator = zip(bindings, related_events)
+    bindings_and_events_iterator = peekable(zip(bindings, related_events))
     with db.conn.read_ctx() as cursor:
         # index to keep the current event in the list of related events. It is used in the
         # callbacks since we need to process events but we don't want to consume the current

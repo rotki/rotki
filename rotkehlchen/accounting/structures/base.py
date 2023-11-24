@@ -1,6 +1,5 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
@@ -30,6 +29,8 @@ from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 from .balance import Balance
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
     from rotkehlchen.accounting.pot import AccountingPot
 
 
@@ -441,7 +442,7 @@ class HistoryEvent(HistoryBaseEntry):
     def process(
             self,
             accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
     ) -> int:
         if self.location == Location.KRAKEN:
             if (  # LEF: Why the heck do we have this here? Perhaps to ignore all the ledger events that comprise the trades  # noqa: E501

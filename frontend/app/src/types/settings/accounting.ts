@@ -6,8 +6,7 @@ import {
 } from '@/types/common';
 
 export enum AccountingTreatment {
-  SWAP = 'swap',
-  SWAP_WITH_FEE = 'swap with fee'
+  SWAP = 'swap'
 }
 
 const AccountingTreatmentEnum = z.nativeEnum(AccountingTreatment);
