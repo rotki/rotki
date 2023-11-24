@@ -127,6 +127,7 @@ declare global {
   const getTextToken: typeof import('./utils/text')['getTextToken']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
+  const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
@@ -848,6 +849,7 @@ declare module 'vue' {
     readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
@@ -1563,6 +1565,7 @@ declare module '@vue/runtime-core' {
     readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>

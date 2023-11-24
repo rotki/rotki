@@ -92,9 +92,7 @@ const isDateOnLimit = (date: string): boolean => {
 
   const timezone = get(selectedTimezone);
 
-  const dateStringToDate = dayjs
-    .tz(date, format, timezone)
-    .tz(dayjs.tz.guess());
+  const dateStringToDate = dayjs.tz(date, format, timezone).tz(guessTimezone());
 
   return !dateStringToDate.isAfter(now);
 };
@@ -160,7 +158,7 @@ const onValueChange = (value: string) => {
   const changedDateTimezone = convertDateByTimezone(
     value,
     DateFormat.DateMonthYearHourMinuteSecond,
-    dayjs.tz.guess(),
+    guessTimezone(),
     get(selectedTimezone),
     millisecondsVal
   );
@@ -183,26 +181,6 @@ watch(selectedTimezone, () => onValueChange(get(value)));
 
 const imask: Ref<InputMask<any> | null> = ref(null);
 
-const getDefaultTimezoneName = (offset: number) => {
-  let hour = offset / 60;
-  if (!Number.isInteger(offset)) {
-    hour = 0;
-  }
-
-  const isPositive = hour > 0;
-  return `Etc/GMT${isPositive ? '+' : ''}hour`;
-};
-
-const setCurrentTimezone = () => {
-  const guessedTimezone = dayjs.tz.guess();
-  const offset = dayjs().utcOffset() / 60;
-  const doesTimezoneExist = timezones.find(
-    timezone => timezone === guessedTimezone
-  );
-
-  set(selectedTimezone, doesTimezoneExist ?? getDefaultTimezoneName(offset));
-};
-
 const input = (dateTime: string) => {
   emit('input', dateTime);
 };
@@ -213,7 +191,7 @@ const emitIfValid = (value: string) => {
       value,
       get(dateInputFormat),
       get(selectedTimezone),
-      dayjs.tz.guess(),
+      guessTimezone(),
       get(milliseconds)
     );
 
@@ -327,7 +305,7 @@ const initImask = () => {
 };
 
 onMounted(() => {
-  setCurrentTimezone();
+  set(selectedTimezone, guessTimezone());
   initImask();
 });
 

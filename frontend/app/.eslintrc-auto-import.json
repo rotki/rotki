@@ -724,6 +724,7 @@
     "getTextToken": true,
     "useDynamicMessages": true,
     "useUpdateMessage": true,
-    "useHistoryTransactionDecoding": true
+    "useHistoryTransactionDecoding": true,
+    "guessTimezone": true
   }
 }

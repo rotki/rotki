@@ -42,6 +42,8 @@ Changelog
 * :bug:`6717` Fixes an issue causing the graph for some multichain assets to not be displayed correctly.
 * :bug:`6169` Handle some kraken event categories better and show them in the UI. Categories like failed withdrawals, moving funds from/to staking and credits of forked assets or delisted asset trades.
 * :bug:`-` Users will be able to import custom assets from the assets backup file.
+* :bug:`-` Fix issue for some users where the datepicker field is not automatically filled with current datetime
+* :bug:`-` Fix issue with editing ledger entries whose rate is not set.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
