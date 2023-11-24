@@ -27,6 +27,6 @@ withDefaults(
       :height="20"
       :src="tag.icon"
     />
-    <span>{{ tag.name }}</span>
+    {{ tag.name }}
   </VChip>
 </template>
