@@ -1456,7 +1456,7 @@ Inspecting list of assets
 =========================
 
 You can now manage the list of supported assets by your local rotki instance.
-You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; managed assets, custom assets, and newly detected assets.
+You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; managed assets, custom assets, and newly detected tokens.
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
@@ -1467,6 +1467,10 @@ Adding/editing an asset
 
 .. image:: images/rotki_add_edit_asset.png
    :alt: Add or edit an asset
+   :align: center
+
+.. image:: images/rotki_add_edit_asset_icon.png
+   :alt: Add or edit an asset icon
    :align: center
 
 When you press the + button on the top right, or edit an existing asset you can see the Asset form.
@@ -1520,13 +1524,13 @@ You can fill in the following fields:
 2. The type of custom asset being represented. It's just a string. The type field remembers all previously used types. This is required.
 3. The note to be added to the custom asset. This is optional.
 
-Newly detected assets
+Newly detected tokens
 =====================
 
-All newly detected EVM tokens will appear in the list of newly detected assets. You should inspect this list often and accept valid tokens and reject spam assets by adding them to the ignored tokens list.
+All newly detected EVM tokens will appear in the list of newly detected tokens. You should inspect this list often and accept valid tokens and reject spam assets by adding them to the ignored tokens list.
 
-.. image:: images/rotki_manage_newly_detected_assets.png
-   :alt: Manage newly detected assets
+.. image:: images/rotki_manage_newly_detected_tokens.png
+   :alt: Manage newly detected tokens
    :align: center
 
 Merging two assets
@@ -1573,7 +1577,7 @@ You can ignore/un-ignore the assets by toggling the switch on the table. You can
 
 You can also ignore assets by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore a selected asset.
 
-It is also possible to ignore NFTs. To do this navigate to ``Accounts & Balances > Non fungible balances`` and toggle the ignore NFT switch. Then you can use the filter to view the ignored NFTs.
+It is also possible to ignore NFTs. To do this navigate to :menuselection:`Accounts & Balances > Non fungible balances` and toggle the ignore NFT switch. Then you can use the filter to view the ignored NFTs.
 
 .. image:: images/rotki_ignore_nfts.png
    :alt: Ignoring NFTs
@@ -1582,7 +1586,7 @@ It is also possible to ignore NFTs. To do this navigate to ``Accounts & Balances
 Adding missing prices
 **********************
 
-Sometimes rotki might be unable to retrieve prices for some assets. In order to always have the ability to show a price we provide two types of manual price additions: ``Latest prices`` and ``Historical prices``.
+Sometimes rotki might be unable to retrieve prices for some assets. In order to always have the ability to show a price we provide two types of manual price additions: :menuselection:`Manual Prices > Latest Prices` and :menuselection:`Manual Prices > Historical Prices`.
 
 - Latest price: Will be the price displayed when we need to display the current price of an asset.
 - Historical price: The price used in a specific time in the past for an asset.
