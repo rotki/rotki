@@ -2,14 +2,12 @@ import { groupBy } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { type PendingTask, type TaskMeta } from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
-import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import {
   type EvmChainAndTxHash,
   type TransactionHashAndEvmChainPayload
 } from '@/types/history/events';
 import { type Writeable } from '@/types';
-import router from '@/router';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n();
@@ -97,18 +95,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
           { evmChain }
         ),
         evmChain,
-        all: false,
-        action: {
-          label: t('transactions.events_decoding.see_progress'),
-          action: () => {
-            router.push({
-              path: Routes.HISTORY_EVENTS,
-              query: {
-                openDecodingStatusDialog: 'true'
-              }
-            });
-          }
-        }
+        all: false
       };
 
       await awaitTask(taskId, taskType, taskMeta, true);
@@ -180,18 +167,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       const taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
         description: t('actions.transactions_redecode.task.description'),
-        all: true,
-        action: {
-          label: t('transactions.events_decoding.see_progress'),
-          action: () => {
-            router.push({
-              path: Routes.HISTORY_EVENTS,
-              query: {
-                openDecodingStatusDialog: 'true'
-              }
-            });
-          }
-        }
+        all: true
       };
 
       const { result } = await awaitTask<boolean, TaskMeta>(

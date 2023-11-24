@@ -28,16 +28,6 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
       <div class="text-caption text-sm">
         {{ time }}
       </div>
-      <div v-if="task.meta.action" class="mt-2">
-        <RuiButton
-          variant="text"
-          size="sm"
-          color="primary"
-          @click="task.meta.action.action()"
-        >
-          {{ task.meta.action.label }}
-        </RuiButton>
-      </div>
     </div>
     <RuiProgress
       color="primary"

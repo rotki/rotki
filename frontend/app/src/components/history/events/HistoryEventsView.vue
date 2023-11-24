@@ -272,16 +272,22 @@ const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
 };
 
 const redecodeAllEvmEvents = () => {
+  set(decodingStatusDialogPersistent, true);
   show(
     {
       title: t('transactions.events_decoding.redecode_all'),
       message: t('transactions.events_decoding.confirmation')
     },
-    () => redecodeAllEvmEventsHandler()
+    () => redecodeAllEvmEventsHandler(),
+    () => {
+      set(decodingStatusDialogPersistent, false);
+    }
   );
 };
 
 const redecodeAllEvmEventsHandler = async () => {
+  set(decodingStatusDialogPersistent, false);
+
   const chains = get(onlyChains);
   const evmChains: { evmChain: string }[] = [];
 
@@ -611,8 +617,8 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
   type => isOnlineHistoryEventType(type)
 );
 
+const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
 const decodingStatusDialogOpen: Ref<boolean> = ref(false);
-
 const route = useRoute();
 
 watchImmediate(route, async route => {
@@ -656,32 +662,63 @@ watchImmediate(route, async route => {
         </template>
         {{ t('transactions.actions.add_event') }}
       </RuiButton>
-      <VMenu offset-y left eager>
-        <template #activator="{ on }">
-          <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
-            <RuiIcon name="more-2-fill" />
+
+      <VDialog
+        v-model="decodingStatusDialogOpen"
+        max-width="600"
+        :persistent="decodingStatusDialogPersistent"
+      >
+        <HistoryEventsDecodingStatus
+          v-if="decodingStatusDialogOpen"
+          :refreshing="refreshing"
+          @redecode-all-evm-events="redecodeAllEvmEvents()"
+        >
+          <RuiButton
+            variant="text"
+            icon
+            @click="decodingStatusDialogOpen = false"
+          >
+            <RuiIcon name="close-line" />
           </RuiButton>
+        </HistoryEventsDecodingStatus>
+      </VDialog>
+
+      <VMenu offset-y left>
+        <template #activator="{ on }">
+          <RuiBadge
+            :value="eventTaskLoading"
+            color="primary"
+            dot
+            placement="top"
+            offset-y="12"
+            offset-x="-12"
+          >
+            <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
+              <RuiIcon name="more-2-fill" />
+            </RuiButton>
+          </RuiBadge>
         </template>
         <VList>
           <template v-if="includeEvmEvents">
             <RuiButton
               variant="text"
               class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
-              @click.stop="decodingStatusDialogOpen = true"
+              @click="decodingStatusDialogOpen = true"
             >
               <template #prepend>
-                <RuiIcon name="file-info-line" />
-                {{ t('transactions.events_decoding.title') }}
+                <RuiBadge
+                  :value="eventTaskLoading"
+                  color="primary"
+                  dot
+                  placement="top"
+                  offset-y="4"
+                  offset-x="-4"
+                >
+                  <RuiIcon name="file-info-line" />
+                </RuiBadge>
               </template>
+              {{ t('transactions.events_decoding.title') }}
             </RuiButton>
-
-            <VDialog v-model="decodingStatusDialogOpen" max-width="600">
-              <HistoryEventsDecodingStatus
-                v-if="decodingStatusDialogOpen"
-                :refreshing="refreshing"
-                @redecode-all-evm-events="redecodeAllEvmEvents()"
-              />
-            </VDialog>
           </template>
 
           <RuiButton

@@ -4266,7 +4266,6 @@
       "events_processed": "{processed} / {total} events processed",
       "progress": "Progress",
       "redecode_all": "Redecode all EVM Events",
-      "see_progress": "See Progress",
       "title": "EVM events decoding status",
       "undecoded_events": "Undecoded events"
     },

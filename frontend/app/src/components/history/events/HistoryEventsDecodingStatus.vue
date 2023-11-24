@@ -114,8 +114,13 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 
 <template>
   <RuiCard>
-    <template #header>
-      {{ t('transactions.events_decoding.title') }}
+    <template #custom-header>
+      <div class="flex justify-between gap-4 p-4 pb-0">
+        <h6 class="text-h6">
+          {{ t('transactions.events_decoding.title') }}
+        </h6>
+        <slot />
+      </div>
     </template>
 
     <div v-if="locationsData.length > 0">
@@ -124,7 +129,10 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
       </div>
 
       <DefineProgress #default="{ data }">
-        <div class="flex flex-col justify-center gap-3">
+        <div
+          v-if="refreshing || eventTaskLoading"
+          class="flex flex-col justify-center gap-3"
+        >
           <RuiProgress
             class="max-w-[5rem] mx-auto"
             thickness="2"
@@ -141,6 +149,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             </template>
           </i18n>
         </div>
+        <div v-else>-</div>
       </DefineProgress>
 
       <RuiDataTable
