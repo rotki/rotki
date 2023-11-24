@@ -1,10 +1,11 @@
-from collections.abc import Iterator
 from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, Protocol, Union
 
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
@@ -15,7 +16,7 @@ class EventsAccountantCallback(Protocol):
             self,
             pot: 'AccountingPot',
             event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],
+            other_events: "peekable['EvmEvent']",
     ) -> int:
         """
         Callback to be called by the accounting module.
@@ -28,7 +29,6 @@ class EventsAccountantCallback(Protocol):
 
 class TxAccountingTreatment(DBCharEnumMixIn):
     SWAP = auto()
-    SWAP_WITH_FEE = auto()
 
 
 ACCOUNTING_SETTING_DB_TUPLE = tuple[

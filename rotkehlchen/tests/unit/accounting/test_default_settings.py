@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
-from rotkehlchen.accounting.accountant import Accountant
+from more_itertools import peekable
 
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis.base import (
     AssetAcquisitionEvent,
     CostBasisInfo,
@@ -122,7 +123,7 @@ def _gain_one_ether(
     )
     consumed_num = events_accountant.process(
         event=eth_gain_event,
-        events_iterator=iter([]),
+        events_iterator=peekable([]),
     )
     assert consumed_num == 1
 
@@ -141,7 +142,7 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     )
     consumed_num = accounting_pot.events_accountant.process(
         event=event,
-        events_iterator=iter([]),
+        events_iterator=peekable([]),
     )
 
     assert consumed_num == 1
@@ -232,7 +233,7 @@ def test_accounting_spend_settings(
     )
     consumed_num = accounting_pot.events_accountant.process(
         event=spend_event,
-        events_iterator=iter([]),
+        events_iterator=peekable([]),
     )
     assert consumed_num == 1
 
@@ -320,7 +321,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     )
     consumed_num = accounting_pot.events_accountant.process(
         event=swap_spend_event,
-        events_iterator=iter([swap_receive_event]),
+        events_iterator=peekable([swap_receive_event]),
     )
     assert consumed_num == 2
     acquisition_event = AssetAcquisitionEvent(

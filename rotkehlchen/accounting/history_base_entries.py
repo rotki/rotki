@@ -1,44 +1,26 @@
 import logging
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
-from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.rules import AccountingRulesManager
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import EventDirection
+from rotkehlchen.accounting.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants import ONE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
+    from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 T = TypeVar('T', bound=HistoryBaseEntry)
-
-
-def history_base_entries_iterator(
-        events_iterator: Iterator[AccountingEventMixin],
-        associated_event: T,
-) -> Iterator[T]:
-    """
-    Takes an iterator of accounting events and transforms it into a history base entries iterator.
-    Takes associated event as an argument to be able to log it in case of errors.
-    """
-    for event in events_iterator:
-        if isinstance(event, type(associated_event)) is False:
-            log.error(
-                f'At accounting for event {associated_event.notes} with identifier '
-                f'{associated_event.event_identifier} we expected to take an additional '
-                f'event but found a non {type(associated_event)} event',
-            )
-            return
-
-        yield event  # type: ignore[misc]  # event is guaranteed to be of type T
 
 
 class EventsAccountant:
@@ -66,7 +48,7 @@ class EventsAccountant:
     def process(
             self,
             event: HistoryBaseEntry,
-            events_iterator: Iterator[AccountingEventMixin],
+            events_iterator: "peekable['AccountingEventMixin']",
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
         try:
@@ -95,30 +77,27 @@ class EventsAccountant:
         if isinstance(event, EvmEvent) and event_callback is not None:
             event_callback(
                 pot=self.pot,
-                event=event,
-                other_events=history_base_entries_iterator(events_iterator, event),
+                event=event,  # ignore is due to callbacks being only for evm events
+                other_events=events_iterator,  # type: ignore
             )
 
         general_extra_data = {}
         if isinstance(event, EvmEvent):
             general_extra_data['tx_hash'] = event.tx_hash.hex()
-        if event_settings.accounting_treatment in (TxAccountingTreatment.SWAP, TxAccountingTreatment.SWAP_WITH_FEE):  # noqa: E501
+
+        if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             fee_event = None
-            if event_settings.accounting_treatment == TxAccountingTreatment.SWAP_WITH_FEE:
-                fee_event = next(history_base_entries_iterator(events_iterator, event), None)
-                if fee_event is None:
-                    log.error(
-                        f'Tried to process accounting swap but could not find '
-                        f'the fee event for {event}',
-                    )
-                    return 1
-            in_event = next(history_base_entries_iterator(events_iterator, event), None)
+            next_event = cast(HistoryBaseEntry, events_iterator.peek())
+            if next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                fee_event = cast(HistoryBaseEntry, next(events_iterator))
+            in_event = next(events_iterator, None)
             if in_event is None:
                 log.error(
                     f'Tried to process accounting swap but could not find the in '
                     f'event for {event}',
                 )
                 return 1
+            in_event = cast(HistoryBaseEntry, in_event)
 
             return self._process_swap(
                 timestamp=timestamp,

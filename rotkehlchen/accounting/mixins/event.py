@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterator
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
@@ -8,6 +7,8 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.types import ActionType
 
@@ -59,7 +60,7 @@ class AccountingEventMixin(metaclass=ABCMeta):
     def process(
             self,
             accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],
+            events_iterator: "peekable['AccountingEventMixin']",
     ) -> int:
         """Processes the event for accounting and adds to the respective pot's processed events.
 

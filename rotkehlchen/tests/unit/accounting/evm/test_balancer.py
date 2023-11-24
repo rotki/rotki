@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from more_itertools import peekable
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
@@ -122,9 +123,9 @@ DEPOSIT_ENTRIES = [
 def test_balancer_multiple_deposit(accountant: 'Accountant'):
     """Test that the default accounting settings for balancer are correct"""
     pot = accountant.pots[0]
-    events_iterator = iter(DEPOSIT_ENTRIES)
+    events_iterator = peekable(DEPOSIT_ENTRIES)
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
     expected_events = [
         ProcessedAccountingEvent(

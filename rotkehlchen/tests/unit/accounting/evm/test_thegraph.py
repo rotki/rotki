@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from more_itertools import peekable
+
 from rotkehlchen.accounting.cost_basis.base import (
     AssetAcquisitionEvent,
     CostBasisInfo,
     MatchedAcquisition,
 )
-
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
@@ -34,7 +35,7 @@ HASH1, HASH2, HASH3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_delegation_reward(accountant: 'Accountant'):
     pot = accountant.pots[0]
-    events_iterator = iter([EvmEvent(
+    events_iterator = peekable([EvmEvent(
         tx_hash=HASH1,
         sequence_index=358,
         timestamp=TSMS1,
@@ -88,7 +89,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         address=None,
     )])
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
     matched_acquisitions = [MatchedAcquisition(
         amount=FVal('5'),

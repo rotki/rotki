@@ -1,10 +1,9 @@
 import json
 import logging
-from collections.abc import Iterator
 from enum import auto
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
-from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
@@ -34,6 +33,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
+    from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
 
 
@@ -282,6 +284,6 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
     def process(
             self,
             accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
     ) -> int:
         return accounting.events_accountant.process(self, events_iterator)

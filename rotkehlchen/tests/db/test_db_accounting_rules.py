@@ -1,5 +1,7 @@
 from collections.abc import Sequence
+
 import pytest
+
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -197,7 +199,7 @@ def test_missing_accounting_rules_accounting_treatment(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
-            accounting_treatment=TxAccountingTreatment.SWAP_WITH_FEE,
+            accounting_treatment=TxAccountingTreatment.SWAP,
         ),
         links={},
     )
@@ -328,7 +330,7 @@ def test_events_affeced_by_others_accounting_treatment_with_fee(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
-            accounting_treatment=TxAccountingTreatment.SWAP_WITH_FEE,
+            accounting_treatment=TxAccountingTreatment.SWAP,
         ),
         links={},
     )

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from more_itertools import peekable
 
 from rotkehlchen.accounting.cost_basis.base import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -87,9 +88,9 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         address=contract_address,
     )]
     pot = accountant.pots[0]
-    events_iterator = iter(events)
+    events_iterator = peekable(events)
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
     extra_data = {
         'group_id': '1' + tx_hash.hex() + '13',  # pylint: disable=no-member
