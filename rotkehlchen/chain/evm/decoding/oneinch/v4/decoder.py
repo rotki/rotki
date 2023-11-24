@@ -35,7 +35,8 @@ if TYPE_CHECKING:
 from rotkehlchen.chain.ethereum.modules.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
 
 
-class Oneinchv4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
+class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
+    """Base class for Oneinch v3 and v4"""
 
     def __init__(
             self,
@@ -123,7 +124,11 @@ class Oneinchv4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
                 in_event = event
-            elif event.event_type == HistoryEventType.SPEND and event.event_subtype != HistoryEventSubType.FEE and event.location_label == sender:  # noqa: E501
+            elif (
+                    event.event_type in (HistoryEventType.SPEND, HistoryEventType.TRADE) and
+                    event.event_subtype != HistoryEventSubType.FEE and
+                    event.location_label == sender
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = self.counterparty

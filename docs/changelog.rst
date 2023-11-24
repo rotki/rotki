@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.
 * :feature:`-` Attestation events for the Ethereum Attestation service in Mainnet, Optimism, Arbitrum One and Base will be properly shown to the user.
 * :feature:`-` Compound v3 reward claims should now be shown properly
 * :bug:`-` Uniswap Swaps with the Universal router would be decoded correctly.
