@@ -520,3 +520,75 @@ def test_events_affected_by_others_callbacks_with_fitlers(
         events=db_events[1:],
         accountant=accountant,
     ) == [False, False]
+
+
+@pytest.mark.parametrize('accountant_without_rules', [True])
+@pytest.mark.parametrize('use_dummy_pot', [True])
+def test_correct_accounting_treatment_is_selected(
+        database: 'DBHandler',
+        accountant: Accountant,
+) -> None:
+    """
+    Test that if an event is affected by both a rule with counterparty and a generic rule
+    then the accounting treatment from the one with counterparty is used
+    """
+    db = DBAccountingRules(database)
+    db.add_accounting_rule(  # this rule shouldn't affect the event
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        counterparty=NO_ACCOUNTING_COUNTERPARTY,
+        rule=TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            accounting_treatment=None,
+        ),
+        links={},
+    )
+    db.add_accounting_rule(
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        counterparty=CPT_COMPOUND,
+        rule=TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            accounting_treatment=TxAccountingTreatment.SWAP,
+        ),
+        links={},
+    )
+
+    tx_hash = make_evm_tx_hash()
+    return_wrapped = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_CUSDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        counterparty=CPT_COMPOUND,
+        notes='my notes',
+    )
+    remove_asset = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_USDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_COMPOUND,
+        notes='my notes',
+    )
+
+    events = _store_and_retrieve_events([return_wrapped, remove_asset], database)
+    assert query_missing_accounting_rules(
+        db=database,
+        accounting_pot=accountant.pots[0],
+        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        events=events,
+        accountant=accountant,
+    ) == [False, False]
