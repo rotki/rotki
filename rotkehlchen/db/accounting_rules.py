@@ -324,18 +324,24 @@ def _events_to_consume(
     if counterparty == CPT_GAS:  # avoid checking the case of gas in evm events
         return ids_processed
 
-    # query the accounting rule for the related event
-    cursor.execute(
-        'SELECT accounting_treatment FROM accounting_rules WHERE (type=? AND subtype=? AND (counterparty=? OR counterparty=?))',  # noqa: E501
-        (
-            event.event_type.serialize(),
-            event.event_subtype.serialize(),
-            NO_ACCOUNTING_COUNTERPARTY if counterparty is None else counterparty,
-            NO_ACCOUNTING_COUNTERPARTY,
-        ),
-    )
+    # query the accounting rule for the related event. First check using the counterparty
+    # and if it doesn't exist then check for a generic rule
+    query = 'SELECT accounting_treatment FROM accounting_rules WHERE type=? AND subtype=? AND counterparty=?'  # noqa: E501
+    event_type = event.event_type.serialize()
+    event_subtype = event.event_subtype.serialize()
 
-    if (raw_treatment := cursor.fetchone()) is not None and raw_treatment[0] is not None:
+    raw_treatment = cursor.execute(
+        query,
+        (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY if counterparty is None else counterparty),  # noqa: E501
+    ).fetchone()
+
+    if raw_treatment is None and counterparty is not None:
+        raw_treatment = cursor.execute(
+            query,
+            (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY),
+        ).fetchone()
+
+    if raw_treatment is not None and raw_treatment[0] is not None:
         accounting_treatment = TxAccountingTreatment.deserialize_from_db(raw_treatment[0])
         if accounting_treatment == TxAccountingTreatment.SWAP:
             _, peeked_event = events_iterator.peek((None, None))
