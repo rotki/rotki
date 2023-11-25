@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 from web3 import Web3
@@ -92,7 +92,7 @@ class WeightedNode:
 
 class EvmAccount(NamedTuple):
     address: ChecksumEvmAddress
-    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
+    chain_id: SUPPORTED_CHAIN_IDS | None = None
 
 
 class Web3Node(NamedTuple):
@@ -105,7 +105,7 @@ class Web3Node(NamedTuple):
 ASSET_ID_RE = re.compile(r'eip155:(.*?)/(.*?):(.*)')
 
 
-def asset_id_is_evm_token(asset_id: str) -> Optional[tuple[ChainID, ChecksumEvmAddress]]:
+def asset_id_is_evm_token(asset_id: str) -> tuple[ChainID, ChecksumEvmAddress] | None:
     """Takes an asset identifier and checks if it's an evm token.
 
     If it is, returns chain ID and token address. If not it returns None

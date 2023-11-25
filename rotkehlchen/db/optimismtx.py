@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -22,7 +22,7 @@ class DBOptimismTx(DBEvmTx):
             self,
             write_cursor: 'DBCursor',
             evm_transactions: list[OptimismTransaction],  # type: ignore[override]
-            relevant_address: Optional[ChecksumEvmAddress],
+            relevant_address: ChecksumEvmAddress | None,
     ) -> None:
         """Adds optimism transactions to the database"""
         super().add_evm_transactions(

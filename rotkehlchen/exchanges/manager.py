@@ -45,7 +45,7 @@ class ExchangeManager:
     def connected_and_syncing_exchanges_num(self) -> int:
         return len(list(self.iterate_exchanges()))
 
-    def get_exchange(self, name: str, location: Location) -> Optional[ExchangeInterface]:
+    def get_exchange(self, name: str, location: Location) -> ExchangeInterface | None:
         """Get the exchange object for an exchange with a given name and location
 
         Returns None if it can not be found
@@ -74,12 +74,12 @@ class ExchangeManager:
             self,
             name: str,
             location: Location,
-            new_name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
+            new_name: str | None,
+            api_key: ApiKey | None,
+            api_secret: ApiSecret | None,
+            passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_selected_trade_pairs: Optional[list[str]],
+            binance_selected_trade_pairs: list[str] | None,
     ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -200,7 +200,7 @@ class ExchangeManager:
             api_key: ApiKey,
             api_secret: ApiSecret,
             database: 'DBHandler',
-            passphrase: Optional[str] = None,
+            passphrase: str | None = None,
             **kwargs: Any,
     ) -> tuple[bool, str]:
         """

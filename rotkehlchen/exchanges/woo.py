@@ -3,9 +3,10 @@ import hmac
 import logging
 import urllib
 from collections import defaultdict
+from collections.abc import Callable
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import requests
 
@@ -228,7 +229,7 @@ class Woo(ExchangeInterface):
             self,
             endpoint: str,
             method: Literal['GET', 'POST'] = 'GET',
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> dict:
         """
         Query a  Woo API endpoint
@@ -304,7 +305,7 @@ class Woo(ExchangeInterface):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['data', 'rows'],
-    ) -> Union[list[Trade], list[AssetMovement], list]:
+    ) -> list[Trade] | (list[AssetMovement] | list):
         """Request a Woo API endpoint paginating via an options attribute."""
         assert list(options.keys()) == sorted(options.keys())  # options need to be in alphabetic order as stated in their api: https://docs.woo.org/#example  # noqa: E501
         results = []

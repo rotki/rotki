@@ -20,11 +20,11 @@ class ExternalServiceWithApiKey:
 
     def __init__(self, database: Optional['DBHandler'], service_name: ExternalService) -> None:
         self.db = database
-        self.api_key: Optional[ApiKey] = None
+        self.api_key: ApiKey | None = None
         self.service_name = service_name
         self.last_ts = Timestamp(0)
 
-    def _get_api_key(self) -> Optional[ApiKey]:
+    def _get_api_key(self) -> ApiKey | None:
         """A function to get the API key from the DB (if we have one initialized)"""
         if not self.db:
             return None

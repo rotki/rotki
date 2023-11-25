@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import requests
@@ -174,7 +174,7 @@ class Bitcoinde(ExchangeInterface):
             self,
             verb: Literal['get', 'post'],
             path: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> dict:
         """
         Queries Bitcoin.de with the given verb for the given path and options

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -44,9 +44,9 @@ log = RotkehlchenLogsAdapter(logger)
 class CompoundBalance(NamedTuple):
     balance_type: BalanceType
     balance: Balance
-    apy: Optional[FVal]
+    apy: FVal | None
 
-    def serialize(self) -> dict[str, Union[Optional[str], dict[str, str]]]:
+    def serialize(self) -> dict[str, str | None | dict[str, str]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2) if self.apy else None,
@@ -87,7 +87,7 @@ class Compound(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.comp = A_COMP.resolve_to_evm_token()
 
-    def _get_apy(self, address: ChecksumEvmAddress, supply: bool) -> Optional[FVal]:
+    def _get_apy(self, address: ChecksumEvmAddress, supply: bool) -> FVal | None:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
 
         try:
@@ -224,7 +224,7 @@ class Compound(EthereumModule):
                     event.balance.amount -
                     profit_so_far[address][event.asset].amount
                 )
-                profit: Optional[Balance]
+                profit: Balance | None
                 if profit_amount >= 0:
                     usd_price = query_usd_price_zero_if_error(
                         asset=event.asset,

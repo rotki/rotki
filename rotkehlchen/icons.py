@@ -5,7 +5,7 @@ import shutil
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import gevent
 import requests
@@ -44,7 +44,7 @@ def _build_http_header_for_images(image_path: Path) -> dict[str, str]:
     return {'mimetype': f'image/{http_type}', 'Content-Type': f'image/{http_type}'}
 
 
-def check_if_image_is_cached(image_path: Path, match_header: Optional[str]) -> Optional[Response]:
+def check_if_image_is_cached(image_path: Path, match_header: str | None) -> Response | None:
     """Checks whether the file at `image_path` is an already cached image.
 
     Returns a response indicating the image has not been modified if that's the case,
@@ -84,7 +84,7 @@ def create_image_response(image_path: Path) -> Response:
     return response
 
 
-def maybe_create_image_response(image_path: Optional[Path]) -> Response:
+def maybe_create_image_response(image_path: Path | None) -> Response:
     """Checks whether the file at `image_path` exists.
 
     Returns a response with the image if it exists, otherwise a NOT FOUND response.
@@ -127,7 +127,7 @@ class IconManager:
     def iconfile_path(self, asset: AssetWithNameAndType) -> Path:
         return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'
 
-    def custom_iconfile_path(self, asset: Asset) -> Optional[Path]:
+    def custom_iconfile_path(self, asset: Asset) -> Path | None:
         asset_id_quoted = urllib.parse.quote_plus(asset.identifier)
         for suffix in ALLOWED_ICON_EXTENSIONS:
             icon_path = self.custom_icons_dir / f'{asset_id_quoted}{suffix}'
@@ -139,7 +139,7 @@ class IconManager:
     def asset_icon_path(
             self,
             asset: AssetWithNameAndType,
-    ) -> Optional[Path]:
+    ) -> Path | None:
         # First try with the custom icon path
         custom_icon_path = self.custom_iconfile_path(asset)
         if custom_icon_path is not None:
@@ -190,7 +190,7 @@ class IconManager:
     def get_icon(
             self,
             asset: AssetWithNameAndType,
-    ) -> tuple[Optional[Path], bool]:
+    ) -> tuple[Path | None, bool]:
         """
         Returns the file path of the requested icon and whether it has been scheduled to be
         queried if the file is not in the system and is possible to obtain it from coingecko.

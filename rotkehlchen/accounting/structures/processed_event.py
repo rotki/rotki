@@ -1,8 +1,9 @@
 import builtins
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Literal, Optional, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -42,7 +43,7 @@ class ProcessedAccountingEvent:
     taxable_amount: FVal
     price: Price
     pnl: PNL
-    cost_basis: Optional[CostBasisInfo]
+    cost_basis: CostBasisInfo | None
     index: int
     # This is set only for some events to remember extra data that can be used later
     # such as the transaction hash of an event
@@ -65,7 +66,7 @@ class ProcessedAccountingEvent:
             self,
             ts_converter: Callable[[Timestamp], str],
             export_type: Literal[AccountingEventExportType.CSV],
-            evm_explorer: Optional[str],
+            evm_explorer: str | None,
     ) -> dict[str, Any]:
         ...
 
@@ -81,7 +82,7 @@ class ProcessedAccountingEvent:
             self,
             ts_converter: Callable[[Timestamp], str],
             export_type: AccountingEventExportType,
-            evm_explorer: Optional[str] = None,
+            evm_explorer: str | None = None,
     ) -> dict[str, Any]:
         """These are the fields that will appear in CSV, report API and are also exported to the
         database.

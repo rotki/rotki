@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
@@ -61,7 +61,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             action: str,
             base_asset_balance: AssetBalance,
             quote_asset_balance: AssetBalance,
-            fee_asset_balance: Optional[AssetBalance],
+            fee_asset_balance: AssetBalance | None,
             memo: str,
     ) -> None:
         """
@@ -132,7 +132,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             location: Location,
             action: str,
             asset_balance: AssetBalance,
-            fee_asset_balance: Optional[AssetBalance],
+            fee_asset_balance: AssetBalance | None,
             memo: str,
     ) -> None:
         """

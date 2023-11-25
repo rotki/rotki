@@ -1,6 +1,6 @@
 import os
 from http import HTTPStatus
-from typing import Literal, Optional
+from typing import Literal
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
@@ -37,7 +37,7 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
     return do_mock_query_last_metadata
 
 
-def mock_get_backup(saved_data: Optional[bytes]):
+def mock_get_backup(saved_data: bytes | None):
     def do_mock_get_backup(url, timeout, params, data=None):  # pylint: disable=unused-argument
         if data is not None:
             assert len(data) == 1
@@ -55,7 +55,7 @@ def create_patched_requests_get_for_premium(
         metadata_last_modify_ts=None,
         metadata_data_hash=None,
         metadata_data_size=None,
-        saved_data: Optional[bytes] = None,
+        saved_data: bytes | None = None,
         consider_authentication_invalid: bool = False,
 ):
     def mocked_get(url, *args, **kwargs):
@@ -89,10 +89,10 @@ def create_patched_premium(
         premium_credentials: PremiumCredentials,
         username: str,
         patch_get: bool,
-        metadata_last_modify_ts: Optional[Timestamp] = None,
-        metadata_data_hash: Optional[str] = None,
-        metadata_data_size: Optional[int] = None,
-        saved_data: Optional[bytes] = None,
+        metadata_last_modify_ts: Timestamp | None = None,
+        metadata_data_hash: str | None = None,
+        metadata_data_size: int | None = None,
+        saved_data: bytes | None = None,
         consider_authentication_invalid: bool = False,
 ):
     premium = Premium(credentials=premium_credentials, username=username)
@@ -136,7 +136,7 @@ def setup_starting_environment(
         newer_remote_db: bool,
         db_can_sync_setting: bool,
         premium_credentials: PremiumCredentials,
-        remote_data: Optional[bytes],
+        remote_data: bytes | None,
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
         sync_database: bool = True,
 ):
@@ -176,7 +176,7 @@ def setup_starting_environment(
         saved_data=remote_data,
     )
 
-    given_premium_credentials: Optional[PremiumCredentials]
+    given_premium_credentials: PremiumCredentials | None
     if first_time:
         given_premium_credentials = premium_credentials
         create_new = True

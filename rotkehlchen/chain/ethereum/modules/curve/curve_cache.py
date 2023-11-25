@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -71,9 +71,9 @@ class CurvePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
     lp_token_address: ChecksumEvmAddress
-    gauge_address: Optional[ChecksumEvmAddress]
+    gauge_address: ChecksumEvmAddress | None
     coins: list[ChecksumEvmAddress]
-    underlying_coins: Optional[list[ChecksumEvmAddress]]
+    underlying_coins: list[ChecksumEvmAddress] | None
 
 
 def read_curve_pools_and_gauges() -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501
@@ -345,7 +345,7 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
 def query_curve_data_from_chain(
         ethereum: 'EthereumInquirer',
         existing_pools: list[ChecksumEvmAddress],
-) -> Optional[list[CurvePoolData]]:
+) -> list[CurvePoolData] | None:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from metaregistry.
 
@@ -431,7 +431,7 @@ def query_curve_data_from_chain(
     return new_pools
 
 
-def query_curve_data(inquirer: 'EthereumInquirer') -> Optional[list[CurvePoolData]]:
+def query_curve_data(inquirer: 'EthereumInquirer') -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
 
@@ -450,7 +450,7 @@ def query_curve_data(inquirer: 'EthereumInquirer') -> Optional[list[CurvePoolDat
             for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
         ]
     try:
-        pools_data: Optional[list[CurvePoolData]] = query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501
+        pools_data: list[CurvePoolData] | None = query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501
     except (RemoteError, UnableToDecryptRemoteData) as e:
         log.error(f'Could not query curve api due to: {e}. Will query metaregistry on chain')
         try:

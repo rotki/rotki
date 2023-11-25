@@ -1,4 +1,3 @@
-from typing import Optional
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
@@ -11,7 +10,7 @@ def evm_address_to_identifier(
         address: str,
         chain_id: ChainID,
         token_type: EvmTokenKind,
-        collectible_id: Optional[str] = None,
+        collectible_id: str | None = None,
 ) -> str:
     """Format EVM token information into the CAIPs identifier format"""
     ident = f'{EVM_CHAIN_DIRECTIVE}:{chain_id.value}/{token_type!s}:{address}'

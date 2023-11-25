@@ -4,7 +4,7 @@ import shutil
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -37,7 +37,7 @@ from rotkehlchen.utils.misc import ts_now
 
 def check_proper_unlock_result(
         response_data: dict[str, Any],
-        settings_to_check: Optional[dict[str, Any]] = None,
+        settings_to_check: dict[str, Any] | None = None,
 ) -> None:
 
     assert isinstance(response_data['exchanges'], list)

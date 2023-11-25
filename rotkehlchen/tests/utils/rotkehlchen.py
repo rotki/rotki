@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 from unittest.mock import _patch, patch
 
 import requests
@@ -47,8 +47,8 @@ class BalancesTestSetup(NamedTuple):
     beaconchain_patch: _patch
     evmtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
-    defi_balances_addition_method_patch: Optional[_patch]
-    defichad_query_balances_patch: Optional[_patch]
+    defi_balances_addition_method_patch: _patch | None
+    defichad_query_balances_patch: _patch | None
 
     def enter_all_patches(self, stack: ExitStack):
         stack.enter_context(self.poloniex_patch)
@@ -74,18 +74,18 @@ class BalancesTestSetup(NamedTuple):
 
 def setup_balances(
         rotki,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
-        btc_accounts: Optional[list[BTCAddress]],
-        eth_balances: Optional[list[str]] = None,
-        token_balances: Optional[dict[EvmToken, list[str]]] = None,
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
+        btc_accounts: list[BTCAddress] | None,
+        eth_balances: list[str] | None = None,
+        token_balances: dict[EvmToken, list[str]] | None = None,
         populate_detected_tokens: bool = True,
-        liabilities: Optional[dict[EvmToken, list[str]]] = None,
-        btc_balances: Optional[list[str]] = None,
-        manually_tracked_balances: Optional[list[ManuallyTrackedBalance]] = None,
-        manual_current_prices: Optional[list[tuple[Asset, Asset, Price]]] = None,
-        original_queries: Optional[list[str]] = None,
-        extra_flags: Optional[list[str]] = None,
-        defi_balances: Optional[dict[ChecksumEvmAddress, list[DefiProtocolBalances]]] = None,
+        liabilities: dict[EvmToken, list[str]] | None = None,
+        btc_balances: list[str] | None = None,
+        manually_tracked_balances: list[ManuallyTrackedBalance] | None = None,
+        manual_current_prices: list[tuple[Asset, Asset, Price]] | None = None,
+        original_queries: list[str] | None = None,
+        extra_flags: list[str] | None = None,
+        defi_balances: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] | None = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
@@ -133,7 +133,7 @@ def setup_balances(
     else:
         btc_balances = []
 
-    eth_map: dict[ChecksumEvmAddress, dict[Union[str, EvmToken], Any]] = {}
+    eth_map: dict[ChecksumEvmAddress, dict[str | EvmToken, Any]] = {}
     with rotki.data.db.user_write() as write_cursor:
         for idx, acc in enumerate(ethereum_accounts):
             eth_map[acc] = {}

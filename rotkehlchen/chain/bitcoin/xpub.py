@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from gevent.lock import Semaphore
 
@@ -28,9 +28,9 @@ log = RotkehlchenLogsAdapter(logger)
 class XpubData(NamedTuple):
     xpub: HDKey
     blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH]
-    derivation_path: Optional[str] = None
-    label: Optional[str] = None
-    tags: Optional[list[str]] = None
+    derivation_path: str | None = None
+    label: str | None = None
+    tags: list[str] | None = None
 
     def serialize_derivation_path_for_db(self) -> str:
         """
@@ -57,7 +57,7 @@ class XpubData(NamedTuple):
         return hash(self) == hash(other)
 
 
-def deserialize_derivation_path_for_db(path: str) -> Optional[str]:
+def deserialize_derivation_path_for_db(path: str) -> str | None:
     """
     In rotki we store non-existing path as None but in sql it must be ''
     https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys

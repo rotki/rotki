@@ -3,20 +3,10 @@ import hmac
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    NamedTuple,
-    Optional,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, cast, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -90,7 +80,7 @@ API_WALLET_MIN_RESULT_LENGTH = 3
 API_TRADES_MIN_RESULT_LENGTH = 11
 API_MOVEMENTS_MIN_RESULT_LENGTH = 22
 
-DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]  # ... due to keyword args
+DeserializationMethod = Callable[..., Trade | AssetMovement]  # ... due to keyword args
 
 
 class CurrenciesResponse(NamedTuple):
@@ -112,8 +102,8 @@ class ExchangePairsResponse(NamedTuple):
 
 
 class ErrorResponseData(NamedTuple):
-    error_code: Optional[int] = None
-    reason: Optional[str] = None
+    error_code: int | None = None
+    reason: str | None = None
 
 
 class Bitfinex(ExchangeInterface):
@@ -156,7 +146,7 @@ class Bitfinex(ExchangeInterface):
                 'trades',
                 'wallets',
             ],
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> Response:
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
         """
@@ -241,7 +231,7 @@ class Bitfinex(ExchangeInterface):
             self,
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> Union[list[Trade], list[AssetMovement], list]:
+    ) -> list[Trade] | (list[AssetMovement] | list):
         """Request a Bitfinex API v2 endpoint paginating via an options
         attribute.
 
@@ -268,7 +258,7 @@ class Bitfinex(ExchangeInterface):
 
         call_options = options.copy()
         limit = options['limit']
-        results: Union[list[Trade], list[AssetMovement], list] = []
+        results: list[Trade] | (list[AssetMovement] | list) = []
         processed_result_ids: set[int] = set()
         retries_left = API_REQUEST_RETRY_TIMES
         while retries_left >= 0:
@@ -382,7 +372,7 @@ class Bitfinex(ExchangeInterface):
             options: dict[str, Any],
             raw_results: list[list[Any]],
             processed_result_ids: set[int],
-    ) -> Union[list[Trade], list[AssetMovement], list]:
+    ) -> list[Trade] | (list[AssetMovement] | list):
         deserialization_method: DeserializationMethod
         if case == 'trades':
             deserialization_method = self._deserialize_trade
@@ -402,7 +392,7 @@ class Bitfinex(ExchangeInterface):
         if case == 'asset_movements':
             raw_results.sort(key=lambda raw_result: raw_result[id_index])
 
-        results: Union[list[Trade], list[AssetMovement], list] = []
+        results: list[Trade] | (list[AssetMovement] | list) = []
         for raw_result in raw_results:
             if len(raw_result) < expected_raw_result_length:
                 log.error(
@@ -749,11 +739,7 @@ class Bitfinex(ExchangeInterface):
             self,
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
-    ) -> Union[
-        list,
-        tuple[bool, str],
-        ExchangeQueryBalances,
-    ]:
+    ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
         """This function processes not successful responses for the cases listed
         in `case`.
         """

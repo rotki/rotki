@@ -1,5 +1,5 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, cast
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
@@ -100,7 +100,7 @@ def search_for_addresses_names(
     return prioritized_addresses
 
 
-FetcherFunc = Callable[[DBHandler, OptionalChainAddress], Optional[str]]
+FetcherFunc = Callable[[DBHandler, OptionalChainAddress], str | None]
 
 
 class NamePrioritizer:
@@ -130,7 +130,7 @@ class NamePrioritizer:
                         f'address name fetcher for "{name_source}" is not implemented',
                     )
 
-                name: Optional[str] = fetcher(self._db, chain_address)
+                name: str | None = fetcher(self._db, chain_address)
                 if name is None:
                     continue
                 top_prio_names.append(AddressbookEntry(
@@ -146,7 +146,7 @@ class NamePrioritizer:
 def _blockchain_address_to_name(
         db: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the label of an evm blockchain account with the given address or
     None if there is no such account or the account has no label set or blockchain is
     not specified.
@@ -161,7 +161,7 @@ def _blockchain_address_to_name(
 def _private_addressbook_address_to_name(
         db: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the name of a private addressbook entry with the given address or
     None if there is no such entry or the entry has no name set.
     """
@@ -175,7 +175,7 @@ def _private_addressbook_address_to_name(
 def _global_addressbook_address_to_name(
         db: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the name of a global addressbook entry with the given address or
     None if there is no such entry or the entry has no name set.
     """
@@ -189,7 +189,7 @@ def _global_addressbook_address_to_name(
 def _hardcoded_address_to_name(
         _: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the name of a known address or None if there is no such address"""
     if chain_address.blockchain != SupportedBlockchain.ETHEREUM:
         return None
@@ -199,7 +199,7 @@ def _hardcoded_address_to_name(
 def _token_mappings_address_to_name(
         _: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the token name for a token address/chain id combination
     in the global database or None if the address is no token address
     """
@@ -211,7 +211,7 @@ def _token_mappings_address_to_name(
 def _ens_address_to_name(
         db: DBHandler,
         chain_address: OptionalChainAddress,
-) -> Optional[str]:
+) -> str | None:
     """Returns the ens name for an address or None if the address doesn't have one"""
     db_ens = DBEns(db)
     with db.conn.read_ctx() as cursor:

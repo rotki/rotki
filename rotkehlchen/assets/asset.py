@@ -250,8 +250,8 @@ class AssetWithSymbol(AssetWithNameAndType, metaclass=abc.ABCMeta):
 
 class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
     # None means no special mapping. '' means not supported
-    cryptocompare: Optional[str] = field(init=False)
-    coingecko: Optional[str] = field(init=False)
+    cryptocompare: str | None = field(init=False)
+    coingecko: str | None = field(init=False)
 
     def to_cryptocompare(self) -> str:
         """
@@ -315,10 +315,10 @@ class FiatAsset(AssetWithOracles):
     def initialize(
             cls: type['FiatAsset'],
             identifier: str,
-            name: Optional[str] = None,
-            symbol: Optional[str] = None,
-            coingecko: Optional[str] = None,
-            cryptocompare: Optional[str] = '',
+            name: str | None = None,
+            symbol: str | None = None,
+            coingecko: str | None = None,
+            cryptocompare: str | None = '',
     ) -> 'FiatAsset':
         asset = FiatAsset(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.FIAT)
@@ -331,7 +331,7 @@ class FiatAsset(AssetWithOracles):
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class CryptoAsset(AssetWithOracles):
-    started: Optional[Timestamp] = field(init=False)
+    started: Timestamp | None = field(init=False)
     forked: Optional['CryptoAsset'] = field(init=False)
     swapped_for: Optional['CryptoAsset'] = field(init=False)
 
@@ -359,11 +359,11 @@ class CryptoAsset(AssetWithOracles):
             cls: type['CryptoAsset'],
             identifier: str,
             asset_type: AssetType,
-            name: Optional[str] = None,
-            symbol: Optional[str] = None,
-            coingecko: Optional[str] = None,
-            cryptocompare: Optional[str] = '',
-            started: Optional[Timestamp] = None,
+            name: str | None = None,
+            symbol: str | None = None,
+            coingecko: str | None = None,
+            cryptocompare: str | None = '',
+            started: Timestamp | None = None,
             forked: Optional['CryptoAsset'] = None,
             swapped_for: Optional['CryptoAsset'] = None,
     ) -> 'CryptoAsset':
@@ -398,7 +398,7 @@ class CryptoAsset(AssetWithOracles):
 
 
 class CustomAsset(AssetWithNameAndType):
-    notes: Optional[str] = field(init=False)
+    notes: str | None = field(init=False)
     custom_asset_type: str = field(init=False)
 
     @classmethod
@@ -407,7 +407,7 @@ class CustomAsset(AssetWithNameAndType):
             identifier: str,
             name: str,
             custom_asset_type: str,
-            notes: Optional[str] = None,
+            notes: str | None = None,
     ) -> 'CustomAsset':
         asset = CustomAsset(identifier=identifier)
         object.__setattr__(asset, 'asset_type', AssetType.CUSTOM_ASSET)
@@ -419,7 +419,7 @@ class CustomAsset(AssetWithNameAndType):
     @classmethod
     def deserialize_from_db(
             cls: type['CustomAsset'],
-            entry: tuple[str, str, str, Optional[str]],
+            entry: tuple[str, str, str, str | None],
     ) -> 'CustomAsset':
         """
         Takes a `custom_asset` entry from DB and turns it into a `CustomAsset` instance.
@@ -433,7 +433,7 @@ class CustomAsset(AssetWithNameAndType):
             notes=entry[3],
         )
 
-    def serialize_for_db(self) -> tuple[str, str, Optional[str]]:
+    def serialize_for_db(self) -> tuple[str, str, str | None]:
         return (
             self.identifier,
             self.custom_asset_type,
@@ -457,14 +457,14 @@ EthereumTokenDBTuple = tuple[
     str,                  # address
     str,                  # chain id
     str,                  # token type
-    Optional[int],        # decimals
-    Optional[str],        # name
-    Optional[str],        # symbol
-    Optional[int],        # started
-    Optional[str],        # swapped_for
-    Optional[str],        # coingecko
-    Optional[str],        # cryptocompare
-    Optional[str],        # protocol
+    int | None,        # decimals
+    str | None,        # name
+    str | None,        # symbol
+    int | None,        # started
+    str | None,        # swapped_for
+    str | None,        # coingecko
+    str | None,        # cryptocompare
+    str | None,        # protocol
 ]
 
 
@@ -500,16 +500,16 @@ class EvmToken(CryptoAsset):
             address: ChecksumEvmAddress,
             chain_id: ChainID,
             token_kind: EvmTokenKind,
-            name: Optional[str] = None,
-            symbol: Optional[str] = None,
-            started: Optional[Timestamp] = None,
-            forked: Optional[CryptoAsset] = None,
-            swapped_for: Optional[CryptoAsset] = None,
-            coingecko: Optional[str] = None,
-            cryptocompare: Optional[str] = '',
-            decimals: Optional[int] = None,
-            protocol: Optional[str] = None,
-            underlying_tokens: Optional[list[UnderlyingToken]] = None,
+            name: str | None = None,
+            symbol: str | None = None,
+            started: Timestamp | None = None,
+            forked: CryptoAsset | None = None,
+            swapped_for: CryptoAsset | None = None,
+            coingecko: str | None = None,
+            cryptocompare: str | None = '',
+            decimals: int | None = None,
+            protocol: str | None = None,
+            underlying_tokens: list[UnderlyingToken] | None = None,
     ) -> 'EvmToken':
         identifier = evm_address_to_identifier(
             address=address,
@@ -537,7 +537,7 @@ class EvmToken(CryptoAsset):
     def deserialize_from_db(
             cls: type['EvmToken'],
             entry: EthereumTokenDBTuple,
-            underlying_tokens: Optional[list[UnderlyingToken]] = None,
+            underlying_tokens: list[UnderlyingToken] | None = None,
     ) -> 'EvmToken':
         """May raise UnknownAsset if the swapped for asset can't be recognized
         That error would be bad because it would mean somehow an unknown id made it into the DB
@@ -600,8 +600,8 @@ class Nft(EvmToken):
             cls: type['EvmToken'],
             identifier: str,
             chain_id: ChainID,
-            name: Optional[str] = None,
-            symbol: Optional[str] = None,
+            name: str | None = None,
+            symbol: str | None = None,
     ) -> 'Nft':
         # TODO: This needs to change once we correctly track NFTs
         asset = Nft(identifier=identifier, direct_field_initialization=True)

@@ -1,7 +1,7 @@
 import os
 import platform
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import gevent
 import psutil
@@ -18,7 +18,7 @@ else:
 
 
 def _wait_for_listening_port(
-        port_number: int, tries: int = 10, sleep: float = 0.1, pid: Optional[int] = None,
+        port_number: int, tries: int = 10, sleep: float = 0.1, pid: int | None = None,
 ) -> None:
     if pid is None:
         pid = os.getpid()
@@ -60,8 +60,8 @@ def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
 
 
 def assert_proper_response(
-        response: Optional[requests.Response],
-        status_code: Optional[HTTPStatus] = HTTPStatus.OK,
+        response: requests.Response | None,
+        status_code: HTTPStatus | None = HTTPStatus.OK,
 ) -> None:
     assert (
         response is not None and
@@ -79,8 +79,8 @@ def assert_simple_ok_response(response: requests.Response) -> None:
 
 
 def assert_proper_response_with_result(
-        response: Optional[requests.Response],
-        message: Optional[str] = None,
+        response: requests.Response | None,
+        message: str | None = None,
         status_code: HTTPStatus = HTTPStatus.OK,
 ) -> Any:
     assert_proper_response(response, status_code)
@@ -95,8 +95,8 @@ def assert_proper_response_with_result(
 
 def _check_error_response_properties(
         response_data: dict[str, Any],
-        contained_in_msg: Optional[Union[str, list[str]]],
-        status_code: Optional[HTTPStatus],
+        contained_in_msg: str | list[str] | None,
+        status_code: HTTPStatus | None,
         result_exists: bool,
 ):
     if status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
@@ -113,8 +113,8 @@ def _check_error_response_properties(
 
 
 def assert_error_response(
-        response: Optional[requests.Response],
-        contained_in_msg: Optional[Union[str, list[str]]] = None,
+        response: requests.Response | None,
+        contained_in_msg: str | list[str] | None = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):
@@ -132,9 +132,9 @@ def assert_error_response(
 
 
 def assert_error_async_response(
-        response_data: Optional[dict[str, Any]],
-        contained_in_msg: Optional[Union[str, list[str]]] = None,
-        status_code: Optional[HTTPStatus] = HTTPStatus.BAD_REQUEST,
+        response_data: dict[str, Any] | None,
+        contained_in_msg: str | list[str] | None = None,
+        status_code: HTTPStatus | None = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):
     assert response_data is not None and response_data.get('status_code') == status_code

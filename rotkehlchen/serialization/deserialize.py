@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
 
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def deserialize_fee(fee: Optional[str]) -> Fee:
+def deserialize_fee(fee: str | None) -> Fee:
     """Deserializes a fee from a json entry. Fee in the JSON entry can also be null
     in which case a ZERO fee is returned.
 
@@ -55,7 +56,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
     return result
 
 
-def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
+def deserialize_timestamp(timestamp: int | (str | FVal)) -> Timestamp:
     """Deserializes a timestamp from a json entry. Given entry can either be a
     string or an int.
 
@@ -97,7 +98,7 @@ def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
 
 
 def deserialize_timestamp_from_date(
-        date: Optional[str],
+        date: str | None,
         formatstr: str,
         location: str,
         skip_milliseconds: bool = False,
@@ -156,7 +157,7 @@ def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:
     )
 
 
-def deserialize_timestamp_from_floatstr(time: Union[str, FVal, float]) -> Timestamp:
+def deserialize_timestamp_from_floatstr(time: str | (FVal | float)) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
 
@@ -171,7 +172,7 @@ def deserialize_timestamp_from_floatstr(time: Union[str, FVal, float]) -> Timest
 
     if isinstance(time, int):
         return Timestamp(time)
-    if isinstance(time, (float, str)):
+    if isinstance(time, float | str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
         except ConversionError as e:
@@ -220,7 +221,7 @@ def deserialize_fval(
 
 
 def deserialize_optional_to_fval(
-        value: Optional[AcceptableFValInitInput],
+        value: AcceptableFValInitInput | None,
         name: str,
         location: str,
 ) -> FVal:
@@ -236,10 +237,10 @@ def deserialize_optional_to_fval(
 
 
 def deserialize_optional_to_optional_fval(
-        value: Optional[AcceptableFValInitInput],
+        value: AcceptableFValInitInput | None,
         name: str,
         location: str,
-) -> Optional[FVal]:
+) -> FVal | None:
     """
     Deserializes an FVal from a field that was optional and if None returns None
     """
@@ -250,7 +251,7 @@ def deserialize_optional_to_optional_fval(
 
 
 def deserialize_fval_or_zero(
-        value: Optional[AcceptableFValInitInput],
+        value: AcceptableFValInitInput | None,
         name: str,
         location: str,
 ) -> FVal:
@@ -339,7 +340,7 @@ def deserialize_trade_pair(pair: str) -> TradePair:
 
 
 def deserialize_asset_movement_category(
-        value: Union[str, HistoryEventType],
+        value: str | HistoryEventType,
 ) -> AssetMovementCategory:
     """Takes a string and determines whether to accept it as an asset movement category
 
@@ -452,7 +453,7 @@ def deserialize_int_from_hex(symbol: str, location: str) -> int:
     return result
 
 
-def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> int:
+def deserialize_int_from_hex_or_int(symbol: str | int, location: str) -> int:
     """Takes a symbol which can either be an int or a hex string and
     turns it into an integer
 
@@ -484,7 +485,7 @@ X = TypeVar('X')
 Y = TypeVar('Y')
 
 
-def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Optional[Y]:
+def deserialize_optional(input_val: X | None, fn: Callable[[X], Y]) -> Y | None:
     """An optional deserialization wrapper for any deserialize function"""
     if input_val is None:
         return None
@@ -542,7 +543,7 @@ def deserialize_evm_transaction(
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
         parent_tx_hash: Optional['EVMTxHash'] = None,
-) -> tuple[Union[EvmTransaction, EvmInternalTransaction], Optional[dict[str, Any]]]:
+) -> tuple[EvmTransaction | EvmInternalTransaction, dict[str, Any] | None]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
     so evm inquirer is used to fetch it.

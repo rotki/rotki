@@ -3,7 +3,7 @@ import logging
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
@@ -37,7 +37,7 @@ def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
     return summary
 
 
-def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Optional[Path]) -> Path:
+def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Path | None) -> Path:
     """
     Export the skipped events in a CSV file.
 

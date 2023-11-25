@@ -1,6 +1,6 @@
 import logging
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
@@ -40,7 +40,7 @@ class BaseDecoderTools:
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
-            address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
+            address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
     ) -> None:
         self.database = database
         self.evm_inquirer = evm_inquirer
@@ -76,7 +76,7 @@ class BaseDecoderTools:
     def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
         return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501
 
-    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:  # pylint: disable=unused-argument
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.
@@ -86,10 +86,8 @@ class BaseDecoderTools:
     def decode_direction(
             self,
             from_address: ChecksumEvmAddress,
-            to_address: Optional[ChecksumEvmAddress],
-    ) -> Optional[
-        tuple[HistoryEventType, HistoryEventSubType, Optional[str], ChecksumEvmAddress, str, str]
-    ]:
+            to_address: ChecksumEvmAddress | None,
+    ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, ChecksumEvmAddress, str, str] | None:  # noqa: E501
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as.
 
@@ -105,7 +103,7 @@ class BaseDecoderTools:
         from_exchange = self.address_is_exchange(from_address)
         to_exchange = self.address_is_exchange(to_address) if to_address else None
 
-        counterparty: Optional[str] = None
+        counterparty: str | None = None
         event_subtype = HistoryEventSubType.NONE
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
@@ -222,12 +220,12 @@ class BaseDecoderTools:
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            counterparty: Optional[str] = None,
-            product: Optional[EvmProduct] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            extra_data: Optional[dict[str, Any]] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            counterparty: str | None = None,
+            product: EvmProduct | None = None,
+            address: ChecksumEvmAddress | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
@@ -256,12 +254,12 @@ class BaseDecoderTools:
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            counterparty: Optional[str] = None,
-            product: Optional[EvmProduct] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            extra_data: Optional[dict[str, Any]] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            counterparty: str | None = None,
+            product: EvmProduct | None = None,
+            address: ChecksumEvmAddress | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
         """Convenience function on top of make_event to use transaction and ReceiptLog"""
         return self.make_event(
@@ -288,12 +286,12 @@ class BaseDecoderTools:
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            counterparty: Optional[str] = None,
-            product: Optional[EvmProduct] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            extra_data: Optional[dict[str, Any]] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            counterparty: str | None = None,
+            product: EvmProduct | None = None,
+            address: ChecksumEvmAddress | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
         """Convenience function on top of make_event to use next sequence index"""
         return self.make_event(
@@ -339,7 +337,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             database: 'DBHandler',
             evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyOptimismSuperchainInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
-            address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
+            address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
     ) -> None:
         super().__init__(
             database=database,
@@ -349,7 +347,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
         )
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
 
-    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.

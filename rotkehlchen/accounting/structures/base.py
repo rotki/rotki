@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -44,11 +44,11 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # sequence_index
     int,            # timestamp
     str,            # location
-    Optional[str],  # location label
+    str | None,  # location label
     str,            # asset
     str,            # amount
     str,            # usd value
-    Optional[str],  # notes
+    str | None,  # notes
     str,            # type
     str,            # subtype
 ]
@@ -75,9 +75,9 @@ class HistoryBaseEntryData(TypedDict):
     event_subtype: HistoryEventSubType
     asset: Asset
     balance: Balance
-    location_label: Optional[str]
-    notes: Optional[str]
-    identifier: Optional[int]
+    location_label: str | None
+    notes: str | None
+    identifier: int | None
 
 
 T = TypeVar('T', bound='HistoryBaseEntry')
@@ -99,9 +99,9 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             event_subtype: HistoryEventSubType,
             asset: Asset,
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            identifier: Optional[int] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            identifier: int | None = None,
     ) -> None:
         """
         - `event_identifier`: the identifier shared between related events
@@ -259,7 +259,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             ignored_ids_mapping: dict[ActionType, set[str]],
             hidden_event_ids: list[int],
             missing_accounting_rule: bool,
-            grouped_events_num: Optional[int] = None,
+            grouped_events_num: int | None = None,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
         result: dict[str, Any] = {'entry': self.serialize()}
@@ -375,9 +375,9 @@ class HistoryEvent(HistoryBaseEntry):
             event_subtype: HistoryEventSubType,
             asset: Asset,
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            identifier: Optional[int] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            identifier: int | None = None,
     ) -> None:
         super().__init__(
             event_identifier=event_identifier,
@@ -515,7 +515,7 @@ class StakingEvent:
 def get_event_type_identifier(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
-        counterparty: Optional[str] = None,
+        counterparty: str | None = None,
 ) -> int:
     key = f'{event_type.serialize()}{event_subtype.serialize()}'
     if counterparty is not None:

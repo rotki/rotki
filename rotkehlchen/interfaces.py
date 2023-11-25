@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Optional
+from typing import Any
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.types import Price, Timestamp
@@ -16,7 +16,7 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         """Denotes if the oracles has been rate limited in the last ``seconds``"""
 
@@ -47,7 +47,7 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         """Checks if it's okay to query historical price"""
 

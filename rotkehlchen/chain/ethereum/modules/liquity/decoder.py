@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType

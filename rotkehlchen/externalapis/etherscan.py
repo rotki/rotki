@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from enum import Enum, auto
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import gevent
 import requests
@@ -128,8 +128,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'getLogs',
                 'txsBeaconWithdrawal',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> list[dict[str, Any]]:
         ...
 
@@ -141,9 +141,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'eth_getTransactionReceipt',
                 'eth_getTransactionByHash',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Optional[dict[str, Any]]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> dict[str, Any] | None:
         ...
 
     @overload
@@ -153,9 +153,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal[
                 'getcontractcreation',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Optional[list[dict[str, Any]]]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | None:
         ...
 
     @overload
@@ -165,9 +165,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal[
                 'getabi',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Optional[str]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> str | None:
         ...
 
     @overload
@@ -177,8 +177,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal[
                 'eth_getBlockByNumber',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
         ...
 
@@ -194,8 +194,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'eth_call',
                 'getblocknobytime',
             ],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> str:
         ...
 
@@ -203,9 +203,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             module: str,
             action: str,
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any], None]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | (str | (list[EvmTransaction] | (dict[str, Any] | None))):
         """Queries etherscan
 
         May raise:
@@ -352,7 +352,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         options['endBlock'] = str(to_block)
         return options
 
-    def _maybe_paginate(self, result: list[dict[str, Any]], options: dict[str, Any]) -> Optional[dict[str, Any]]:  # noqa: E501
+    def _maybe_paginate(self, result: list[dict[str, Any]], options: dict[str, Any]) -> dict[str, Any] | None:  # noqa: E501
         """Check if the results have hit the pagination limit.
         If yes adjust the options accordingly. Otherwise signal we are done"""
         if len(result) != ETHERSCAN_QUERY_LIMIT:
@@ -369,27 +369,27 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
     @overload
     def get_transactions(
             self,
-            account: Optional[ChecksumEvmAddress],
+            account: ChecksumEvmAddress | None,
             action: Literal['txlistinternal'],
-            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
     @overload
     def get_transactions(
             self,
-            account: Optional[ChecksumEvmAddress],
+            account: ChecksumEvmAddress | None,
             action: Literal['txlist'],
-            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
     def get_transactions(
             self,
-            account: Optional[ChecksumEvmAddress],
+            account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
-            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
-    ) -> Union[Iterator[list[EvmTransaction]], Iterator[list[EvmInternalTransaction]]]:
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+    ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Gets a list of transactions (either normal or internal) for an account.
 
         Can specify a given timestamp or block period.
@@ -412,7 +412,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
 
-        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []
+        transactions: list[EvmTransaction] | list[EvmInternalTransaction] = []
         is_internal = action == 'txlistinternal'
         chain_id = self.chain.to_chain_id()
         while True:
@@ -487,8 +487,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
     def get_token_transaction_hashes(
             self,
             account: ChecksumEvmAddress,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
     ) -> Iterator[list[EVMTxHash]]:
         options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
@@ -578,7 +578,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
+    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> dict[str, Any] | None:
         """
         Gets a transaction object by hash
 
@@ -599,7 +599,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> dict[str, Any] | None:
         """Gets the receipt for the given transaction hash
 
         May raise:
@@ -636,7 +636,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             contract_address: ChecksumEvmAddress,
             topics: list[str],
             from_block: int,
-            to_block: Union[int, str] = 'latest',
+            to_block: int | str = 'latest',
     ) -> list[dict[str, Any]]:
         """Performs the etherscan style of eth_getLogs as explained here:
         https://etherscan.io/apis#logs
@@ -686,7 +686,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         return number
 
-    def get_contract_creation_hash(self, address: ChecksumEvmAddress) -> Optional[EVMTxHash]:
+    def get_contract_creation_hash(self, address: ChecksumEvmAddress) -> EVMTxHash | None:
         """Get the contract creation block from etherscan for the given address.
 
         Returns `None` if the address is not a contract.
@@ -702,7 +702,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         )
         return deserialize_evm_tx_hash(result[0]['txHash']) if result is not None else None
 
-    def get_contract_abi(self, address: ChecksumEvmAddress) -> Optional[str]:
+    def get_contract_abi(self, address: ChecksumEvmAddress) -> str | None:
         """Get the contract abi from etherscan for the given address if verified.
 
         Returns `None` if the address is not a verified contract.
@@ -724,6 +724,6 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         except json.JSONDecodeError:
             return None
 
-    def _additional_transaction_processing(self, tx: Union[EvmTransaction, EvmInternalTransaction]) -> Union[EvmTransaction, EvmInternalTransaction]:  # noqa: E501
+    def _additional_transaction_processing(self, tx: EvmTransaction | EvmInternalTransaction) -> EvmTransaction | EvmInternalTransaction:  # noqa: E501
         """Performs additional processing on chain-specific tx attributes"""
         return tx

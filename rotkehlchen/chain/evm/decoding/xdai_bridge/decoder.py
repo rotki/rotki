@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -36,7 +36,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             deposit_topic: bytes,
-            withdrawal_topic: Optional[bytes],  # withdrawal is currently unsupported on gnosis
+            withdrawal_topic: bytes | None,  # withdrawal is currently unsupported on gnosis
             bridge_address: ChecksumEvmAddress,
             bridged_asset: 'Asset',
             source_chain: ChainID,

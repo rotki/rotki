@@ -3,7 +3,7 @@ import os
 import shutil
 import traceback
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -101,7 +101,7 @@ UPGRADES_LIST = [
 class DBUpgradeProgressHandler(ProgressUpdater):
     """Class to notify users through websockets about progress of upgrading the database."""
 
-    def _notify_frontend(self, step_name: Optional[str] = None) -> None:
+    def _notify_frontend(self, step_name: str | None = None) -> None:
         """Sends to the user through websockets all information about db upgrading progress."""
         self.messages_aggregator.add_message(
             message_type=WSMessageType.DB_UPGRADE_STATUS,

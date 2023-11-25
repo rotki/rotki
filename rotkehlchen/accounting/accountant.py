@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import gevent
 from more_itertools import peekable
@@ -45,7 +45,7 @@ class Accountant:
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             chains_aggregator: 'ChainsAggregator',
-            premium: Optional[Premium],
+            premium: Premium | None,
     ) -> None:
         self.db = db
         self.msg_aggregator = msg_aggregator
@@ -304,7 +304,7 @@ class Accountant:
         consumed_events = event.process(self.pots[0], events_iterator)
         return consumed_events, prev_time
 
-    def export(self, directory_path: Optional[Path]) -> tuple[bool, str]:
+    def export(self, directory_path: Path | None) -> tuple[bool, str]:
         """Export the PnL report. Only CSV for now
 
         If a directory is given, it simply exports all event.csv in the given directory.

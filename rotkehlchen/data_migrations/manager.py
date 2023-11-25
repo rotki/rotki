@@ -1,6 +1,7 @@
 import logging
 import traceback
-from typing import TYPE_CHECKING, Callable, NamedTuple
+from collections.abc import Callable
+from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2

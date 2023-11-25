@@ -1,7 +1,7 @@
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -40,7 +40,7 @@ class EvmProxiesInquirer:
         """Reset the last query timestamps, effectively cleaning the caches"""
         self.last_proxy_mapping_query_ts = 0
 
-    def get_account_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+    def get_account_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         """Checks if a DS proxy exists for the given address and returns it if it does.
 
         May raise:

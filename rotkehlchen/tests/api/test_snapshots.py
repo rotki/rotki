@@ -5,7 +5,7 @@ import tempfile
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -107,7 +107,7 @@ def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', t
 def _write_balances_csv_row(
         writer: 'csv.DictWriter',
         timestamp: Timestamp,
-        include_unknown_asset: Optional[bool] = None,
+        include_unknown_asset: bool | None = None,
 ) -> None:
     if include_unknown_asset:
         writer.writerow(
@@ -318,7 +318,7 @@ def assert_csv_export_response(
         main_currency: AssetWithOracles,
         is_download=False,
         expected_entries=2,
-        timestamp_validation_data: Optional[tuple[Timestamp, bool]] = None,
+        timestamp_validation_data: tuple[Timestamp, bool] | None = None,
 ):
     if is_download:
         assert response.status_code == HTTPStatus.OK

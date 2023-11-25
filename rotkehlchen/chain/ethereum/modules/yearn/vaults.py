@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from gevent.lock import Semaphore
 
@@ -120,7 +120,7 @@ class YearnVaultBalance(NamedTuple):
     vault_token: CryptoAsset
     underlying_value: Balance
     vault_value: Balance
-    roi: Optional[FVal]
+    roi: FVal | None
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
@@ -168,7 +168,7 @@ class YearnVaults(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
@@ -636,7 +636,7 @@ class YearnVaults(EthereumModule):
                 total -= event.from_value
             else:  # withdraws
                 profit_amount = total.amount + event.to_value.amount - profit_so_far.amount
-                profit: Optional[Balance]
+                profit: Balance | None
                 if profit_amount >= 0:
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
@@ -661,7 +661,7 @@ class YearnVaults(EthereumModule):
             address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
-    ) -> Optional[YearnVaultHistory]:
+    ) -> YearnVaultHistory | None:
         """Queries for vault events history and saves it in the database"""
         from_block = max(from_block, vault.contract.deployed_block)
         with self.database.conn.read_ctx() as cursor:

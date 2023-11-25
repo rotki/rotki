@@ -6,7 +6,7 @@ from contextlib import suppress
 from enum import Enum, auto
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import requests
 
@@ -105,11 +105,11 @@ class ParsedAssetData(NamedTuple):
     asset_type: AssetType
     name: str
     symbol: str
-    started: Optional[Timestamp]
-    swapped_for: Optional[str]
-    coingecko: Optional[str]
-    cryptocompare: Optional[str]
-    forked: Optional[str]
+    started: Timestamp | None
+    swapped_for: str | None
+    coingecko: str | None
+    cryptocompare: str | None
+    forked: str | None
 
 
 class AssetsUpdater:
@@ -172,7 +172,7 @@ class AssetsUpdater:
         self.last_remote_checked_version = remote_version
         return self.local_assets_version, remote_version, new_asset_changes
 
-    def _parse_value(self, value: str) -> Optional[Union[str, int]]:
+    def _parse_value(self, value: str) -> str | int | None:
         match = self.string_re.match(value)
         if match is not None:
             return match.group(1)
@@ -194,7 +194,7 @@ class AssetsUpdater:
             )
         return result
 
-    def _parse_optional_str(self, value: str, name: str, insert_text: str) -> Optional[str]:
+    def _parse_optional_str(self, value: str, name: str, insert_text: str) -> str | None:
         result = self._parse_value(value)
         if result is not None and not isinstance(result, str):
             raise DeserializationError(
@@ -202,7 +202,7 @@ class AssetsUpdater:
             )
         return result
 
-    def _parse_optional_int(self, value: str, name: str, insert_text: str) -> Optional[int]:
+    def _parse_optional_int(self, value: str, name: str, insert_text: str) -> int | None:
         result = self._parse_value(value)
         if result is not None and not isinstance(result, int):
             raise DeserializationError(
@@ -248,7 +248,7 @@ class AssetsUpdater:
     def _parse_evm_token_data(
             self,
             insert_text: str,
-    ) -> tuple[ChecksumEvmAddress, Optional[int], Optional[str], Optional[ChainID], Optional[EvmTokenKind]]:  # noqa: E501
+    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, EvmTokenKind | None]:
         """
         Read information related to evm assets from the insert line. May raise:
         - DeserializationError: if the regex didn't work or we failed to deserialize any value
@@ -416,7 +416,7 @@ class AssetsUpdater:
             self,
             connection: 'DBConnection',
             remote_asset_data: AssetData,
-            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             action: str,
             full_insert: str,
             version: int,
@@ -425,7 +425,7 @@ class AssetsUpdater:
         Given the already processed information for an asset try to store it in the globaldb
         and if it is not possible due to conflicts mark it to resolve later.
         """
-        local_asset: Optional[Asset] = None
+        local_asset: Asset | None = None
         with suppress(UnknownAsset):
             # we avoid querying the packaged db to prevent the copy of constant assets
             local_asset = Asset(remote_asset_data.identifier).check_existence(query_packaged_db=False)  # noqa: E501
@@ -482,7 +482,7 @@ class AssetsUpdater:
             connection: 'DBConnection',
             version: int,
             text: str,
-            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             update_file_type: UpdateFileType,
     ) -> None:
         """
@@ -557,9 +557,9 @@ class AssetsUpdater:
 
     def perform_update(
             self,
-            up_to_version: Optional[int],
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
-    ) -> Optional[list[dict[str, Any]]]:
+            up_to_version: int | None,
+            conflicts: dict[Asset, Literal['remote', 'local']] | None,
+    ) -> list[dict[str, Any]] | None:
         """Performs an asset update by downloading new changes from the remote
 
         If `up_to_version` is given then changes up to and including that version are made.
@@ -627,8 +627,8 @@ class AssetsUpdater:
     def _perform_update(
             self,
             connection: 'DBConnection',
-            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
-            up_to_version: Optional[int],
+            assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
+            up_to_version: int | None,
             updates: dict[int, dict[UpdateFileType, str]],
     ) -> None:
         """
@@ -675,7 +675,7 @@ class AssetsUpdater:
             self,
             local_schema_version: int,
             infojson: dict[str, Any],
-            up_to_version: Optional[int],
+            up_to_version: int | None,
     ) -> dict[int, dict[UpdateFileType, str]]:
         """
         Query the assets update repository to retrieve the pending updates before trying to

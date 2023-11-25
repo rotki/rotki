@@ -3,7 +3,7 @@ from abc import ABCMeta
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from gevent.lock import Semaphore
 
@@ -154,7 +154,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             self,
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
-            location_string: Optional[str] = None,
+            location_string: str | None = None,
     ) -> None:
         """Helper function to abstract tx querying functionality for different range types"""
         for new_transactions in self.evm_inquirer.etherscan.get_transactions(
@@ -243,9 +243,9 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def _query_and_save_internal_transactions_for_range_or_parent_hash(
             self,
-            address: Optional[ChecksumEvmAddress],
-            period_or_hash: Union[TimestampOrBlockRange, EVMTxHash],
-            location_string: Optional[str] = None,
+            address: ChecksumEvmAddress | None,
+            period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            location_string: str | None = None,
     ) -> None:
         """Helper function to abstract internal tx querying for different range types
         or for a specific parent transaction hash.
@@ -635,8 +635,8 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def get_receipts_for_transactions_missing_them(
             self,
-            limit: Optional[int] = None,
-            addresses: Optional[list[ChecksumEvmAddress]] = None,
+            limit: int | None = None,
+            addresses: list[ChecksumEvmAddress] | None = None,
     ) -> None:
         """
         Searches the database for up to `limit` transactions that have no corresponding receipt

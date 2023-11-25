@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
@@ -33,7 +34,7 @@ class Uniswapv1Decoder(DecoderInterface):
 
     def _maybe_decode_swap(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list['EvmEvent'],

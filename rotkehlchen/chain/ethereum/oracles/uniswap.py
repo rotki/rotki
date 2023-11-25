@@ -2,7 +2,7 @@ import abc
 import logging
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -66,7 +66,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+            seconds: int | None = None,  # pylint: disable=unused-argument
     ) -> bool:
         return False
 

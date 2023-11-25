@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import re
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import gevent
 import requests
@@ -42,10 +42,10 @@ log = RotkehlchenLogsAdapter(logger)
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)  # noqa: E501
 class Collection:
     name: str
-    banner_image: Optional[str]
-    description: Optional[str]
+    banner_image: str | None
+    description: str | None
     large_image: str
-    floor_price: Optional[FVal] = None
+    floor_price: FVal | None = None
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -59,14 +59,14 @@ class Collection:
 
 class NFT(NamedTuple):
     token_identifier: str
-    background_color: Optional[str]
-    image_url: Optional[str]
-    name: Optional[str]
-    external_link: Optional[str]
-    permalink: Optional[str]
+    background_color: str | None
+    image_url: str | None
+    name: str | None
+    external_link: str | None
+    permalink: str | None
     price_eth: FVal
     price_usd: FVal
-    collection: Optional[Collection]
+    collection: Collection | None
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -96,15 +96,15 @@ class Opensea(ExternalServiceWithApiKey):
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',  # noqa: E501
         })
         self.collections: dict[str, Collection] = {}
-        self.backup_key: Optional[str] = None
+        self.backup_key: str | None = None
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
 
     @overload
     def _query(
             self,
             endpoint: Literal['assets', 'collectionstats', 'asset'],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
         ...
 
@@ -112,17 +112,17 @@ class Opensea(ExternalServiceWithApiKey):
     def _query(
             self,
             endpoint: Literal['collections'],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> list[dict[str, Any]]:
         ...
 
     def _query(
             self,
             endpoint: Literal['assets', 'collections', 'collectionstats', 'asset'],
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Union[list[dict[str, Any]], dict[str, Any]]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | dict[str, Any]:
         """May raise RemoteError"""
         api_key = self._get_api_key()
         if api_key is not None:
@@ -205,7 +205,7 @@ class Opensea(ExternalServiceWithApiKey):
             )
 
         try:
-            last_sale: Optional[dict[str, Any]] = entry.get('last_sale')
+            last_sale: dict[str, Any] | None = entry.get('last_sale')
             if last_sale is not None and last_sale.get('payment_token') is not None:
                 if last_sale['payment_token']['symbol'] in {'ETH', 'WETH'}:
                     payment_asset = self.eth_asset
@@ -344,7 +344,7 @@ class Opensea(ExternalServiceWithApiKey):
     def get_nft_image(
             self,
             nft_address: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Returns the url of the image of an nft or None in error"""
         match = ERC721_RE.search(nft_address)
         if match is None:

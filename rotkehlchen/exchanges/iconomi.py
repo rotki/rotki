@@ -5,7 +5,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import requests
@@ -121,7 +121,7 @@ class Iconomi(ExchangeInterface):
             self,
             verb: Literal['get', 'post'],
             path: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
             authenticated: bool = True,
     ) -> Any:
         """

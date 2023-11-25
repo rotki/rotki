@@ -1,6 +1,5 @@
 import random
 from contextlib import ExitStack
-from typing import Optional
 
 import requests
 
@@ -19,8 +18,8 @@ def query_api_create_and_get_report(
         start_ts: Timestamp,
         end_ts: Timestamp,
         prepare_mocks: bool,
-        events_offset: Optional[int] = None,
-        events_limit: Optional[int] = None,
+        events_offset: int | None = None,
+        events_limit: int | None = None,
         events_ascending_timestamp: bool = False,
 ):
     async_query = random.choice([False, True])

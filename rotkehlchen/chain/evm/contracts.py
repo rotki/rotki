@@ -1,17 +1,7 @@
 import json
 import logging
 from collections.abc import Sequence
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    NamedTuple,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, Literal, NamedTuple, TypeVar, overload
 
 from eth_typing.abi import Decodable
 from web3 import Web3
@@ -44,8 +34,8 @@ class EvmContract(NamedTuple):
             self,
             node_inquirer: 'EvmNodeInquirer',
             method_name: str,
-            arguments: Optional[list[Any]] = None,
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            arguments: list[Any] | None = None,
+            call_order: Sequence['WeightedNode'] | None = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return node_inquirer.call_contract(
@@ -62,8 +52,8 @@ class EvmContract(NamedTuple):
             node_inquirer: 'EvmNodeInquirer',
             event_name: str,
             argument_filters: dict[str, Any],
-            to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            to_block: int | Literal['latest'] = 'latest',
+            call_order: Sequence['WeightedNode'] | None = None,
     ) -> Any:
         return node_inquirer.get_logs(
             contract_address=self.address,
@@ -81,8 +71,8 @@ class EvmContract(NamedTuple):
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
-            to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            to_block: int | Literal['latest'] = 'latest',
+            call_order: Sequence['WeightedNode'] | None = None,
     ) -> Any:
         return node_inquirer.get_logs(
             contract_address=self.address,
@@ -94,7 +84,7 @@ class EvmContract(NamedTuple):
             call_order=call_order,
         )
 
-    def encode(self, method_name: str, arguments: Optional[list[Any]] = None) -> str:
+    def encode(self, method_name: str, arguments: list[Any] | None = None) -> str:
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         return contract.encodeABI(method_name, args=arguments if arguments else [])
 
@@ -102,7 +92,7 @@ class EvmContract(NamedTuple):
             self,
             result: Decodable,
             method_name: str,
-            arguments: Optional[list[Any]] = None,
+            arguments: list[Any] | None = None,
     ) -> tuple[Any, ...]:
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         fn_abi = contract._find_matching_fn_abi(
@@ -116,7 +106,7 @@ class EvmContract(NamedTuple):
             self,
             tx_log: 'EvmTxReceiptLog',
             event_name: str,
-            argument_names: Optional[Sequence[str]],
+            argument_names: Sequence[str] | None,
     ) -> tuple[list, list]:
         """Decodes an event by finding the event ABI in the given contract's abi
 
@@ -159,7 +149,7 @@ class EvmContracts(Generic[T]):
             self,
             address: ChecksumEvmAddress,
             fallback_to_packaged_db: bool = True,
-    ) -> Optional[EvmContract]:
+    ) -> EvmContract | None:
         """
         Returns contract data by address if found. Can fall back to packaged global db if
         not found in the normal global DB
@@ -231,7 +221,7 @@ class EvmContracts(Generic[T]):
             cls,
             name: str,
             fallback_to_packaged_db: bool = False,
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """Gets abi of an evm contract from the abi json file and optionally falls back to
         the packaged db if the abi is not found.
 

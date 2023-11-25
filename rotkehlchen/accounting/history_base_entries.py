@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.rules import AccountingRulesManager
@@ -137,7 +137,7 @@ class EventsAccountant:
             timestamp: Timestamp,
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
-            fee_event: Optional[HistoryBaseEntry],
+            fee_event: HistoryBaseEntry | None,
             event_settings: BaseEventSettings,
             general_extra_data: dict[str, Any],
     ) -> int:

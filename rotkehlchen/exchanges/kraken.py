@@ -9,7 +9,7 @@ import logging
 import operator
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
 import gevent
@@ -126,7 +126,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
     return event_type, event_subtype
 
 
-def _check_and_get_response(response: Response, method: str) -> Union[str, dict]:
+def _check_and_get_response(response: Response, method: str) -> str | dict:
     """Checks the kraken response and if it's succesfull returns the result.
 
     If there is recoverable error a string is returned explaining the error
@@ -185,7 +185,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            kraken_account_type: Optional[KrakenAccountType] = None,
+            kraken_account_type: KrakenAccountType | None = None,
     ):
         super().__init__(
             name=name,
@@ -201,7 +201,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         self.last_query_ts = 0
         self.history_events_db = DBHistoryEvents(self.db)
 
-    def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
+    def set_account_type(self, account_type: KrakenAccountType | None) -> None:
         if account_type is None:
             account_type = DEFAULT_KRAKEN_ACCOUNT_TYPE
 
@@ -260,7 +260,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
     def _validate_single_api_key_action(
             self,
             method_str: str,
-            req: Optional[dict[str, Any]] = None,
+            req: dict[str, Any] | None = None,
     ) -> tuple[bool, str]:
         try:
             self.api_query(method_str, req)
@@ -297,7 +297,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         else:
             self.call_counter += 1
 
-    def _query_public(self, method: str, req: Optional[dict] = None) -> Union[dict, str]:
+    def _query_public(self, method: str, req: dict | None = None) -> dict | str:
         """API queries that do not require a valid key/secret pair.
 
         Arguments:
@@ -315,7 +315,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)
 
-    def api_query(self, method: str, req: Optional[dict] = None) -> dict:
+    def api_query(self, method: str, req: dict | None = None) -> dict:
         tries = KRAKEN_QUERY_TRIES
         query_method = (
             self._query_public if method in KRAKEN_PUBLIC_METHODS else self._query_private
@@ -366,7 +366,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
         )
 
-    def _query_private(self, method: str, req: Optional[dict] = None) -> Union[dict, str]:
+    def _query_private(self, method: str, req: dict | None = None) -> dict | str:
         """API queries that require a valid key/secret pair.
 
         Arguments:
@@ -479,7 +479,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             keyname: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            extra_dict: Optional[dict] = None,
+            extra_dict: dict | None = None,
     ) -> tuple[list, bool]:
         """ Abstracting away the functionality of querying a kraken endpoint where
         you need to check the 'count' of the returned results and provide sufficient
@@ -593,10 +593,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             endpoint: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            offset: Optional[int] = None,
-            extra_dict: Optional[dict] = None,
+            offset: int | None = None,
+            extra_dict: dict | None = None,
     ) -> dict:
-        request: dict[str, Union[Timestamp, int]] = {}
+        request: dict[str, Timestamp | int] = {}
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
@@ -708,7 +708,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             trade_parts: list[HistoryEvent],
             adjustments: list[HistoryEvent],
-    ) -> Optional[Trade]:
+    ) -> Trade | None:
         """Processes events from trade parts to a trade. If it's an adjustment
         adds it to a separate list"""
         if trade_parts[0].event_type == HistoryEventType.ADJUSTMENT:
@@ -834,8 +834,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             rate = Price(receive_part.balance.amount / amount)
 
         # If kfee was found we use it as the fee for the trade
-        fee: Optional[Fee] = None
-        fee_asset: Optional[Asset] = None
+        fee: Fee | None = None
+        fee_asset: Asset | None = None
         if kfee_part is not None and fee_part is None:
             fee = Fee(kfee_part.balance.amount)
             fee_asset = A_KFEE

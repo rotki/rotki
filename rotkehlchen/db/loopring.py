@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -33,7 +33,7 @@ class DBLoopring:
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-    ) -> Optional[int]:
+    ) -> int | None:
         cursor.execute(
             'SELECT value FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),

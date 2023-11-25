@@ -1,7 +1,7 @@
 import os
 import signal
+from collections.abc import Callable
 from types import FrameType
-from typing import Callable
 
 from .constants import INTERVAL_SECONDS
 

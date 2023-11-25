@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Final
 
 from web3.types import BlockIdentifier
 
@@ -37,7 +38,7 @@ def lp_price_from_uniswaplike_pool_contract(
         token_price_func: Callable,
         token_price_func_args: list[Any],
         block_identifier: BlockIdentifier,
-) -> Optional[Price]:
+) -> Price | None:
     """
     This works for any uniswap like LP token. It calculates the price for an LP token the contract
     of which is also the contract of the pool it represents. For example velodrome or uniswap lp

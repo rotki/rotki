@@ -3,7 +3,7 @@ import sys
 from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -34,7 +34,7 @@ def fixture_username():
 
 
 @pytest.fixture(name='ignored_assets')
-def fixture_ignored_assets() -> Optional[list[Asset]]:
+def fixture_ignored_assets() -> list[Asset] | None:
     return None
 
 
@@ -76,15 +76,15 @@ def _init_database(
         data_dir: Path,
         password: str,
         msg_aggregator: MessagesAggregator,
-        db_settings: Optional[dict[str, Any]],
-        ignored_assets: Optional[list[Asset]],
+        db_settings: dict[str, Any] | None,
+        ignored_assets: list[Asset] | None,
         blockchain_accounts: BlockchainAccounts,
         include_etherscan_key: bool,
         include_cryptocompare_key: bool,
         tags: list[dict[str, Any]],
         manually_tracked_balances: list[ManuallyTrackedBalance],
         data_migration_version: int,
-        use_custom_database: Optional[str],
+        use_custom_database: str | None,
         sql_vm_instructions_cb: int,
         perform_upgrades_at_unlock: bool,
 ) -> DBHandler:
@@ -139,7 +139,7 @@ def database(
         new_db_unlock_actions,
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
-) -> Generator[Optional[DBHandler], None, None]:
+) -> Generator[DBHandler | None, None, None]:
     if not start_with_logged_in_user:
         yield None
     else:
@@ -167,10 +167,10 @@ def database(
 
 
 @pytest.fixture(name='db_settings')
-def fixture_db_settings() -> Optional[dict[str, Any]]:
+def fixture_db_settings() -> dict[str, Any] | None:
     return None
 
 
 @pytest.fixture(name='use_custom_database')
-def fixture_use_custom_database() -> Optional[str]:
+def fixture_use_custom_database() -> str | None:
     return None

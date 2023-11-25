@@ -1,7 +1,8 @@
+from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
 from shutil import copyfile
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -29,7 +30,7 @@ def fixture_generatable_user_ethereum_tokens() -> bool:
 
 
 @pytest.fixture(name='user_ethereum_tokens')
-def fixture_user_ethereum_tokens() -> Optional[Union[list[EvmToken], Callable]]:
+def fixture_user_ethereum_tokens() -> list[EvmToken] | Callable | None:
     return None
 
 
@@ -161,7 +162,7 @@ def fixture_globaldb(
 
 
 @pytest.fixture(name='custom_globaldb')
-def fixture_custom_globaldb() -> Optional[int]:
+def fixture_custom_globaldb() -> int | None:
     return None
 
 

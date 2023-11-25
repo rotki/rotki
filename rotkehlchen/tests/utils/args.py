@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
@@ -8,10 +8,10 @@ from rotkehlchen.constants.misc import (
 
 
 class ConfigurationArgs(NamedTuple):
-    data_dir: Optional[str]
-    ethrpc_endpoint: Optional[str]
-    logfile: Optional[str]
-    logtarget: Optional[str]
+    data_dir: str | None
+    ethrpc_endpoint: str | None
+    logfile: str | None
+    logtarget: str | None
     loglevel: str
     logfromothermodules: bool
     max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB
@@ -20,8 +20,8 @@ class ConfigurationArgs(NamedTuple):
 
 
 def default_args(
-        data_dir: Optional[str] = None,
-        ethrpc_endpoint: Optional[str] = None,
+        data_dir: str | None = None,
+        ethrpc_endpoint: str | None = None,
         max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB,
         loglevel: str = 'debug',
 ):

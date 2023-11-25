@@ -11,7 +11,7 @@ from http import HTTPStatus
 from json import JSONDecodeError
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import py
 import pytest
@@ -190,7 +190,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
     # pytest-deadfixtures ignore
     """
 
-    def before_record_response(response: dict[str, Any]) -> Optional[dict[str, Any]]:
+    def before_record_response(response: dict[str, Any]) -> dict[str, Any] | None:
         if (
             'RECORD_CASSETTES' in os.environ and
             response['status']['code'] != HTTPStatus.OK or

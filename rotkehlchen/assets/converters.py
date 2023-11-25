@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
@@ -1046,7 +1046,7 @@ def asset_from_binance(binance_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> AssetWithOracles:
+def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset

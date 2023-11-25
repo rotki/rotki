@@ -1,6 +1,6 @@
 import json
 from json.decoder import JSONDecodeError
-from typing import Any, Optional, Union
+from typing import Any
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -21,7 +21,7 @@ class RKLEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         if isinstance(obj, FVal):
             return str(obj)
-        if isinstance(obj, (TradeType, Location)):
+        if isinstance(obj, TradeType | Location):
             return str(obj)
         if isinstance(obj, float):
             raise ValueError('Trying to json encode a float.')
@@ -58,7 +58,7 @@ def jsonloads_list(data: str) -> list:
     return value
 
 
-def rlk_jsondumps(data: Union[dict, list]) -> str:
+def rlk_jsondumps(data: dict | list) -> str:
     return json.dumps(data, cls=RKLEncoder)
 
 
@@ -75,7 +75,7 @@ def pretty_json_dumps(data: dict) -> str:
 def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: Optional[list[UnderlyingToken]],
+        underlying_tokens: list[UnderlyingToken] | None,
 ) -> AssetWithOracles:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class
@@ -129,7 +129,7 @@ def deserialize_asset_with_oracles_from_db(
 def deserialize_generic_asset_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: Optional[list[UnderlyingToken]],
+        underlying_tokens: list[UnderlyingToken] | None,
 ) -> AssetWithNameAndType:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class

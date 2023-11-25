@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import auto
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, EVMTxHash
@@ -9,7 +9,7 @@ from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 class EvmTransactionDecodingApiData(TypedDict):
     evm_chain: SUPPORTED_CHAIN_IDS
-    tx_hashes: Optional[list[EVMTxHash]]
+    tx_hashes: list[EVMTxHash] | None
 
 
 class EvmPendingTransactionDecodingApiData(TypedDict):

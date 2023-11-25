@@ -3,7 +3,7 @@ import logging.config
 import re
 from collections.abc import MutableMapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import gevent
 
@@ -18,7 +18,7 @@ TRACE = logging.DEBUG - 5
 def add_logging_level(
         level_name: str,
         level_num: int,
-        method_name: Optional[str] = None,
+        method_name: str | None = None,
 ) -> None:
     """
     Comprehensively adds a new logging level to the `logging` module and the

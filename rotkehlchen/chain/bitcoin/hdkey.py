@@ -5,7 +5,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from enum import auto
-from typing import NamedTuple, Optional, Union, cast
+from typing import NamedTuple, Optional, cast
 
 from base58check import b58decode, b58encode
 from coincurve import PrivateKey, PublicKey
@@ -132,25 +132,25 @@ def _parse_prefix(prefix: bytes) -> PrefixParsingResult:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class HDKey:
 
-    path: Optional[str]
+    path: str | None
     network: str
-    depth: Optional[int]
-    parent_fingerprint: Optional[bytes]
-    index: Optional[int]
+    depth: int | None
+    parent_fingerprint: bytes | None
+    index: int | None
     parent: Optional['HDKey']  # forward type reference
-    chain_code: Optional[bytes]
+    chain_code: bytes | None
     fingerprint: bytes
-    xpub: Optional[str]
-    xpub_type: Optional[XpubType]
+    xpub: str | None
+    xpub_type: XpubType | None
     pubkey: PublicKey
-    privkey: Optional[PrivateKey]
+    privkey: PrivateKey | None
     hint: str
 
     @staticmethod
     def from_xpub(
             xpub: str,
-            xpub_type: Optional[XpubType] = None,
-            path: Optional[str] = None,
+            xpub_type: XpubType | None = None,
+            path: str | None = None,
     ) -> 'HDKey':
         """
         Instantiate an HDKey from an xpub. Populates all possible fields
@@ -210,7 +210,7 @@ class HDKey:
         )
 
     @staticmethod
-    def _normalize_index(idx: Union[int, str]) -> int:
+    def _normalize_index(idx: int | str) -> int:
         """
         Normalizes an index so that we can accept ints or strings
         Args:
@@ -236,7 +236,7 @@ class HDKey:
         Returns
             HDKey: the new child object
         """
-        path: Optional[str]
+        path: str | None
         if self.path is not None:
             path = f'{self.path}/{index!s}'
         else:
@@ -344,7 +344,7 @@ class HDKey:
             current_node = current_node.derive_child(path_nodes[i])
         return current_node
 
-    def derive_child(self, idx: Union[int, str]) -> 'HDKey':
+    def derive_child(self, idx: int | str) -> 'HDKey':
         """
         Derives a bip32 child node from the current node
         Args:

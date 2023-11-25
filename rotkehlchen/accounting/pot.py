@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.cost_basis.prefork import (
@@ -74,7 +74,7 @@ class AccountingPot(CustomizableDateMixin):
             pot=self,
         )
         self.query_start_ts = self.query_end_ts = Timestamp(0)
-        self.report_id: Optional[int] = None
+        self.report_id: int | None = None
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
         dbpnl = DBAccountingReports(self.database)
@@ -140,8 +140,8 @@ class AccountingPot(CustomizableDateMixin):
             asset: Asset,
             amount: FVal,
             taxable: bool,
-            given_price: Optional[Price] = None,
-            extra_data: Optional[dict] = None,
+            given_price: Price | None = None,
+            extra_data: dict | None = None,
             **kwargs: Any,  # to be able to consume args given by add_asset_change_event
     ) -> None:
         """Add an asset acquisition event for the pot and count it in PnL if needed.
@@ -218,11 +218,11 @@ class AccountingPot(CustomizableDateMixin):
             asset: Asset,
             amount: FVal,
             taxable: bool,
-            given_price: Optional[Price] = None,
+            given_price: Price | None = None,
             taxable_amount_ratio: FVal = ONE,
             count_entire_amount_spend: bool = True,
             count_cost_basis_pnl: bool = True,
-            extra_data: Optional[dict[str, Any]] = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> tuple[FVal, FVal]:
         """Add an asset spend event for the pot and count it in PnL if needed
 
@@ -315,7 +315,7 @@ class AccountingPot(CustomizableDateMixin):
             asset: Asset,
             amount: FVal,
             taxable: bool,
-            given_price: Optional[Price] = None,
+            given_price: Price | None = None,
             **kwargs: Any,
     ) -> None:
         if self.is_dummy_pot:
@@ -341,8 +341,8 @@ class AccountingPot(CustomizableDateMixin):
             asset_in: Asset,
             amount_out: FVal,
             asset_out: Asset,
-            fee_info: Optional[tuple[FVal, Asset]],
-    ) -> Optional[tuple[Price, Price]]:
+            fee_info: tuple[FVal, Asset] | None,
+    ) -> tuple[Price, Price] | None:
         """
         Calculates the prices for assets going in and out of a swap/trade.
 

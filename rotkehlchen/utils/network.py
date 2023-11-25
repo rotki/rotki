@@ -1,7 +1,8 @@
 import json
 import logging
+from collections.abc import Callable
 from http import HTTPStatus
-from typing import Any, Callable, Literal, Union, overload
+from typing import Any, Literal, overload
 
 import gevent
 import requests
@@ -20,7 +21,7 @@ def request_get(
         timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
         backoff_in_seconds: float = 0,
-) -> Union[dict, list]:
+) -> dict | list:
     """
     May raise:
     - UnableToDecryptRemoteData from request_get
@@ -129,7 +130,7 @@ def query_file(url: str, is_json: Literal[False]) -> str:
     ...
 
 
-def query_file(url: str, is_json: bool = False) -> Union[str, dict[str, Any]]:
+def query_file(url: str, is_json: bool = False) -> str | dict[str, Any]:
     """
     Query the given file url and return the contents of the file
     May raise:

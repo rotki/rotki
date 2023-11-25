@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -46,7 +46,7 @@ class ConvexBalances(ProtocolWithGauges):
         )
         self.cvx = A_CVX.resolve_to_evm_token()
 
-    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
+    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
         if event.extra_data is None:
             return None
         return event.extra_data.get('gauge_address')  # can be None

@@ -1,13 +1,13 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
 from operator import attrgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
+    Concatenate,
     Literal,
     NamedTuple,
-    Optional,
     Protocol,
     TypeVar,
     Union,
@@ -15,7 +15,7 @@ from typing import (
 )
 
 from eth_utils import is_checksum_address
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -127,9 +127,9 @@ class DBAssetBalance:
 
     def serialize(
             self,
-            currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+            currency_and_price: tuple[AssetWithOracles, Price] | None = None,
             display_date_in_localtime: bool = True,
-    ) -> dict[str, Union[str, int]]:
+    ) -> dict[str, str | int]:
         """Serializes a `DBAssetBalance` to dict.
         It accepts an `export_data` tuple of the user's local currency and the value of the
         currency in USD e.g (EUR, 1.01). If provided, the data is serialized for human consumption.
@@ -198,9 +198,9 @@ class LocationData(NamedTuple):
 
     def serialize(
             self,
-            currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+            currency_and_price: tuple[AssetWithOracles, Price] | None = None,
             display_date_in_localtime: bool = True,
-    ) -> dict[str, Union[str, int]]:
+    ) -> dict[str, str | int]:
         if currency_and_price:
             return {
                 'timestamp': timestamp_to_date(
@@ -220,7 +220,7 @@ class LocationData(NamedTuple):
 
 class Tag(NamedTuple):
     name: str
-    description: Optional[str]
+    description: str | None
     background_color: HexColorCode
     foreground_color: HexColorCode
 
@@ -235,9 +235,9 @@ def str_to_bool(s: str) -> bool:
 def form_query_to_filter_timestamps(
         query: str,
         timestamp_attribute: str,
-        from_ts: Optional[Timestamp],
-        to_ts: Optional[Timestamp],
-) -> tuple[str, Union[tuple, tuple[Timestamp], tuple[Timestamp, Timestamp]]]:
+        from_ts: Timestamp | None,
+        to_ts: Timestamp | None,
+) -> tuple[str, tuple | (tuple[Timestamp] | tuple[Timestamp, Timestamp])]:
     """Formulates the query string and its bindings to filter for timestamps"""
     got_from_ts = from_ts is not None
     got_to_ts = to_ts is not None
@@ -259,7 +259,7 @@ def form_query_to_filter_timestamps(
     return query, tuple(bindings)
 
 
-def deserialize_tags_from_db(val: Optional[str]) -> Optional[list[str]]:
+def deserialize_tags_from_db(val: str | None) -> list[str] | None:
     """Read tags from the DB and turn it into a List of tags"""
     if val is None:
         tags = None
@@ -300,7 +300,7 @@ def _prepare_tag_mappings(
 
 def insert_tag_mappings(
         write_cursor: 'DBCursor',
-        data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
+        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
         object_reference_keys: list[
             Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -321,7 +321,7 @@ def insert_tag_mappings(
 
 def replace_tag_mappings(
         write_cursor: 'DBCursor',
-        data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
+        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
         object_reference_keys: list[
             Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -448,9 +448,9 @@ def update_table_schema(
         write_cursor: 'DBCursor',
         table_name: str,
         schema: str,
-        insert_columns: Optional[str] = None,
+        insert_columns: str | None = None,
         insert_order: str = '',
-        insert_where: Optional[str] = None,
+        insert_where: str | None = None,
 ) -> bool:
     """Update the schema of a given table. Need to provide:
     1. The name

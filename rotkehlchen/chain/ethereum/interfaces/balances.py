@@ -1,8 +1,8 @@
 import abc
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Literal, Optional
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -56,7 +57,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
 
     def addresses_with_activity(
             self,
-            products: Optional[list['EvmProduct']],
+            products: list['EvmProduct'] | None,
             event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
     ) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
         """
@@ -85,7 +86,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
 
         return addresses_with_activity
 
-    def addresses_with_deposits(self, products: Optional[list['EvmProduct']]) -> dict[ChecksumEvmAddress, list['EvmEvent']]:  # noqa: E501
+    def addresses_with_deposits(self, products: list['EvmProduct'] | None) -> dict[ChecksumEvmAddress, list['EvmEvent']]:  # noqa: E501
         return self.addresses_with_activity(products, self.deposit_event_types)
 
     # --- Methods to be implemented by all subclasses
@@ -155,7 +156,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
             address: ChecksumEvmAddress,
             staking_addresses: list[ChecksumEvmAddress],
             tokens: list['EvmToken'],
-            call_order: Optional[Sequence[WeightedNode]],
+            call_order: Sequence[WeightedNode] | None,
     ) -> dict['EvmToken', 'FVal']:
         """
         Queries balances for contracts that implement balanceOf and have an underlying token
@@ -221,7 +222,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
     # --- Methods to be implemented by all subclasses
 
     @abc.abstractmethod
-    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
+    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
         """
         Common method for all the classes implementing this interface. It returns the gauge
         address from the event that represents the gauge deposit action or None.

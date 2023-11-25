@@ -1,5 +1,5 @@
 from enum import auto
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Any, Protocol
 
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
@@ -35,7 +35,7 @@ ACCOUNTING_SETTING_DB_TUPLE = tuple[
     int,  # taxable
     int,  # count_entire_amount_spend
     int,  # count_cost_basis_pnl
-    Union[str, None],  # accounting_treatment
+    str | None,  # accounting_treatment
 ]
 
 
@@ -46,7 +46,7 @@ class BaseEventSettings:
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            accounting_treatment: Optional[TxAccountingTreatment] = None,
+            accounting_treatment: TxAccountingTreatment | None = None,
     ):
         self.taxable = taxable
         self.count_entire_amount_spend = count_entire_amount_spend
@@ -92,8 +92,8 @@ class TxEventSettings(BaseEventSettings):
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            accounting_treatment: Optional[TxAccountingTreatment] = None,
-            accountant_cb: Optional[EventsAccountantCallback] = None,
+            accounting_treatment: TxAccountingTreatment | None = None,
+            accountant_cb: EventsAccountantCallback | None = None,
     ):
         super().__init__(
             taxable=taxable,

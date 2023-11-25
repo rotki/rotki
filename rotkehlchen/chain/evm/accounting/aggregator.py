@@ -4,7 +4,7 @@ import pkgutil
 from collections.abc import Sequence
 from contextlib import suppress
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.errors.misc import ModuleLoadingError
@@ -36,7 +36,7 @@ class EVMAccountingAggregator:
             node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
             modules_path: str,
-            airdrops_list: Optional[Sequence[CounterpartyDetails]] = None,
+            airdrops_list: Sequence[CounterpartyDetails] | None = None,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
@@ -46,7 +46,7 @@ class EVMAccountingAggregator:
         self.initialize_all_accountants()
 
     def _recursively_initialize_accountants(
-            self, package: Union[str, ModuleType],
+            self, package: str | ModuleType,
     ) -> None:
         modules_prefix_length = len(self.modules_path) + 1  # +1 is for '.'
         if isinstance(package, str):

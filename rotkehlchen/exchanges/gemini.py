@@ -6,7 +6,7 @@ from base64 import b64encode
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import gevent
 import requests
@@ -49,6 +49,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -170,7 +171,7 @@ class Gemini(ExchangeInterface):
             self,
             method: Literal['get', 'post'],
             endpoint: str,
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> requests.Response:
         """Queries endpoint until anything but 429 is returned
 
@@ -249,7 +250,7 @@ class Gemini(ExchangeInterface):
     def _private_api_query(
             self,
             endpoint: Literal['roles'],
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         ...
 
@@ -257,15 +258,15 @@ class Gemini(ExchangeInterface):
     def _private_api_query(
             self,
             endpoint: Literal['balances', 'mytrades', 'transfers', 'balances/earn'],
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> list[Any]:
         ...
 
     def _private_api_query(
             self,
             endpoint: str,
-            options: Optional[dict[str, Any]] = None,
-    ) -> Union[dict[str, Any], list[Any]]:
+            options: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | list[Any]:
         """Performs a Gemini API Query for a private endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -275,7 +276,7 @@ class Gemini(ExchangeInterface):
         permissions for the endpoint
         """
         response = self._query_continuously(method='post', endpoint=endpoint, options=options)
-        json_ret: Union[list[Any], dict[str, Any]]
+        json_ret: list[Any] | dict[str, Any]
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise GeminiPermissionError(
                 f'API key does not have permission for {endpoint}',
@@ -290,7 +291,7 @@ class Gemini(ExchangeInterface):
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
-        deserialization_fn: Union[Callable[[str], dict[str, Any]], Callable[[str], list[Any]]]
+        deserialization_fn: Callable[[str], dict[str, Any]] | Callable[[str], list[Any]]
         deserialization_fn = jsonloads_dict if endpoint == 'roles' else jsonloads_list
 
         try:

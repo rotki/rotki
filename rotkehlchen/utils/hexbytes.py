@@ -17,14 +17,14 @@ def hexstring_to_bytes(hexstr: str) -> bytes:
         raise DeserializationError(f'Failed to turn {hexstr} to bytes') from e
 
 
-def to_bytes(val: Union[Web3HexBytes, bytearray, bytes, str]) -> bytes:
+def to_bytes(val: Web3HexBytes | (bytearray | (bytes | str))) -> bytes:
     """
     Equivalent to: `eth_utils.hexstr_if_str(eth_utils.to_bytes, val)` .
 
     Convert a hex string, integer, or bool, to a bytes representation.
     Alternatively, pass through bytes or bytearray as a bytes value.
     """
-    if isinstance(val, (Web3HexBytes, bytearray)):
+    if isinstance(val, Web3HexBytes | bytearray):
         return bytes(val)
     if isinstance(val, bytes):
         return val
@@ -45,7 +45,7 @@ class HexBytes(bytes):
     """
     def __new__(
             cls: type[bytes],
-            val: Union[Web3HexBytes, bytearray, bytes, str],
+            val: Web3HexBytes | (bytearray | (bytes | str)),
     ) -> 'HexBytes':
         bytesval = to_bytes(val)
         return cast(HexBytes, super().__new__(cls, bytesval))  # type: ignore  # https://github.com/python/typeshed/issues/2630
@@ -69,7 +69,7 @@ class HexBytes(bytes):
     def __getitem__(self, key: slice) -> 'HexBytes':
         ...
 
-    def __getitem__(self, key: Union[int, slice]) -> Union[int, bytes, 'HexBytes']:
+    def __getitem__(self, key: int | slice) -> Union[int, bytes, 'HexBytes']:
         result = super().__getitem__(key)
         if hasattr(result, 'hex'):
             return type(self)(result)  # type: ignore  # cant be an int

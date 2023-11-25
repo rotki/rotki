@@ -32,7 +32,7 @@ class FVal:
                 # This elif has to come before the isinstance(int) check due to
                 # https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
                 raise ValueError('Invalid type bool for data given to FVal constructor')
-            elif isinstance(data, (Decimal, int, str)):
+            elif isinstance(data, Decimal | int | str):
                 self.num = Decimal(data)
             elif isinstance(data, FVal):
                 self.num = data.num
@@ -71,7 +71,7 @@ class FVal:
         return self.num.compare_signal(evaluated_other) in (Decimal('1'), Decimal('0'))
 
     def __eq__(self, other: object) -> bool:
-        evaluated_other: Union[Decimal, int]
+        evaluated_other: Decimal | int
         if isinstance(other, FVal):
             evaluated_other = other.num
         elif not isinstance(other, int):
@@ -180,7 +180,7 @@ class FVal:
         return diff_num <= evaluated_max_diff.num
 
 
-def _evaluate_input(other: Any) -> Union[Decimal, int]:
+def _evaluate_input(other: Any) -> Decimal | int:
     """Evaluate 'other' and return its Decimal representation"""
     if isinstance(other, FVal):
         return other.num

@@ -1,4 +1,3 @@
-from typing import Optional, Union
 
 import bech32
 from base58 import b58decode_check, b58encode_check
@@ -77,7 +76,7 @@ def _b32encode(inputs: list) -> str:
     return out
 
 
-def _address_type(address_type: str, version: Union[str, int]) -> tuple[str, int, bool]:
+def _address_type(address_type: str, version: str | int) -> tuple[str, int, bool]:
     for mapping in _VERSION_MAP[address_type]:
         if version in (mapping[0], mapping[1]):
             return mapping
@@ -96,7 +95,7 @@ def _code_list_to_string(code_list: list[int]) -> bytes:
     return output
 
 
-def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
+def legacy_to_cash_address(address: str) -> BTCAddress | None:
     """
     Converts a legacy BCH address to CashAddr format.
     Code is taken from:
@@ -119,7 +118,7 @@ def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
         return None
 
 
-def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
+def cash_to_legacy_address(address: str) -> BTCAddress | None:
     """
     Converts a legacy BCH address to CashAddr format.
     Code is taken from:

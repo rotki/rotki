@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -453,7 +454,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
     def _decode_sai_cdp_migration(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument

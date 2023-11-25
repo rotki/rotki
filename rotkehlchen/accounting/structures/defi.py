@@ -1,7 +1,7 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
@@ -47,16 +47,16 @@ class DefiEvent(AccountingEventMixin):
     timestamp: Timestamp
     wrapped_event: Any
     event_type: DefiEventType
-    got_asset: Optional[CryptoAsset]
+    got_asset: CryptoAsset | None
     got_balance: Optional['Balance']
-    spent_asset: Optional[CryptoAsset]
+    spent_asset: CryptoAsset | None
     spent_balance: Optional['Balance']
-    pnl: Optional[list['AssetBalance']]
+    pnl: list['AssetBalance'] | None
     # If this is true then both got and spent asset count in cost basis
     # So it will count as if you got asset at given amount and price of timestamp
     # and spent asset at given amount and price of timestamp
     count_spent_got_cost_basis: bool
-    tx_hash: Optional[EVMTxHash] = None
+    tx_hash: EVMTxHash | None = None
 
     def __str__(self) -> str:
         """Default string constructor"""

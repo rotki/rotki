@@ -4,7 +4,7 @@ import re
 import sys
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import gevent
 from gevent.lock import Semaphore
@@ -69,7 +69,7 @@ class Eth2(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
             beaconchain: 'BeaconChain',
     ) -> None:
@@ -145,7 +145,7 @@ class Eth2(EthereumModule):
         usd_price = Inquirer().find_usd_price(A_ETH)
         dbeth2 = DBEth2(self.database)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
-        validators: Union[list[ValidatorID], list[Eth2Validator]]
+        validators: list[ValidatorID] | list[Eth2Validator]
         if fetch_validators_for_eth1:
             validators = self.fetch_and_update_eth1_validator_data(addresses)
         else:
@@ -400,8 +400,8 @@ class Eth2(EthereumModule):
 
     def add_validator(
             self,
-            validator_index: Optional[int],
-            public_key: Optional[Eth2PubKey],
+            validator_index: int | None,
+            public_key: Eth2PubKey | None,
             ownership_proportion: FVal,
     ) -> None:
         """Adds the given validator to the DB. Due to marshmallow here at least

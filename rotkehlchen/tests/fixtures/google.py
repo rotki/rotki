@@ -4,7 +4,7 @@ import warnings as test_warnings
 from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from google.oauth2.service_account import Credentials
@@ -179,7 +179,7 @@ class GoogleService:
 
 
 @pytest.fixture(scope='session', name='session_google_service')
-def fixture_session_google_service() -> Generator[Optional[GoogleService], None, None]:
+def fixture_session_google_service() -> Generator[GoogleService | None, None, None]:
     service = None
     credentials_file_path = os.environ.get('GOOGLE_CREDENTIALS_FILE', None)
     if credentials_file_path is None:
@@ -210,7 +210,7 @@ def fixture_upload_csv_to_google() -> bool:
 
 
 @pytest.fixture(name='google_service')
-def fixture_google_service(session_google_service, upload_csv_to_google) -> Optional[GoogleService]:  # noqa: E501
+def fixture_google_service(session_google_service, upload_csv_to_google) -> GoogleService | None:
     if session_google_service is None:
         return None
 

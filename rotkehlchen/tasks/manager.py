@@ -1,7 +1,8 @@
 import logging
 import random
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, NamedTuple
+from collections.abc import Callable
+from typing import TYPE_CHECKING, NamedTuple
 
 import gevent
 

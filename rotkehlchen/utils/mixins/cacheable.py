@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from copy import deepcopy
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.utils.misc import ts_now
 

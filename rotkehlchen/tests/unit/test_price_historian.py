@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -93,7 +93,7 @@ def test_fiat_to_fiat(
             from_fiat_currency: 'FiatAsset',
             to_fiat_currency: 'FiatAsset',
             timestamp: Timestamp,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         """
         Mock query for price checking that the assets are the expected and so is
         the timestamp queried.

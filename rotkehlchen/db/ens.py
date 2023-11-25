@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -20,7 +20,7 @@ class DBEns:
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            name: Optional[str],
+            name: str | None,
             now: Timestamp,
     ) -> None:
         """Adds an ens mapping to the DB for an address
@@ -41,7 +41,7 @@ class DBEns:
             self,
             cursor: 'DBCursor',
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, Union[EnsMapping, Timestamp]]:
+    ) -> dict[ChecksumEvmAddress, EnsMapping | Timestamp]:
         """Returns a mapping of addresses to ens mappings if found in the DB
 
         - If the address has a name mapping in the DB it is returned as part of the dict
@@ -69,7 +69,7 @@ class DBEns:
     def update_values(
             self,
             write_cursor: 'DBCursor',
-            ens_lookup_results: dict[ChecksumEvmAddress, Optional[str]],
+            ens_lookup_results: dict[ChecksumEvmAddress, str | None],
             mappings_to_send: dict[ChecksumEvmAddress, str],
     ) -> dict[ChecksumEvmAddress, str]:
         """Update the ENS mapping values in the DB and return updates mappings to return via api"""

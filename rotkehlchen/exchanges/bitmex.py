@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 import requests
@@ -156,8 +156,8 @@ class Bitmex(ExchangeInterface):
             self,
             verb: str,
             path: str,
-            options: Optional[dict] = None,
-    ) -> Union[list, dict]:
+            options: dict | None = None,
+    ) -> list | dict:
         """
         Queries Bitmex with the given verb for the given path and options
         """
@@ -224,7 +224,7 @@ class Bitmex(ExchangeInterface):
             self,
             verb: str,
             path: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> dict:
         result = self._api_query(verb, path, options)
         assert isinstance(result, dict)  # pylint: disable=isinstance-second-argument-not-valid-type
@@ -234,7 +234,7 @@ class Bitmex(ExchangeInterface):
             self,
             verb: str,
             path: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> list:
         result = self._api_query(verb, path, options)
         assert isinstance(result, list)  # pylint: disable=isinstance-second-argument-not-valid-type

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional, get_args
+from typing import TYPE_CHECKING, Any, get_args
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -57,7 +57,7 @@ class DBEvmTx:
             self,
             write_cursor: 'DBCursor',
             evm_transactions: list[EvmTransaction],
-            relevant_address: Optional[ChecksumEvmAddress],
+            relevant_address: ChecksumEvmAddress | None,
     ) -> None:
         """Adds evm transactions to the database"""
         tx_tuples = [(
@@ -102,7 +102,7 @@ class DBEvmTx:
             self,
             write_cursor: 'DBCursor',
             transactions: list[EvmInternalTransaction],
-            relevant_address: Optional[ChecksumEvmAddress],
+            relevant_address: ChecksumEvmAddress | None,
     ) -> None:
         """Adds evm internal transactions to the database"""
         tx_tuples = [(
@@ -206,7 +206,7 @@ class DBEvmTx:
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
-    def purge_evm_transaction_data(self, chain: Optional[SUPPORTED_EVM_CHAINS]) -> None:
+    def purge_evm_transaction_data(self, chain: SUPPORTED_EVM_CHAINS | None) -> None:
         """Deletes all evm transaction related data from the DB"""
         query_ranges_tuples = []
         delete_query = 'DELETE FROM evm_transactions'
@@ -233,8 +233,8 @@ class DBEvmTx:
 
     def get_transaction_hashes_no_receipt(
             self,
-            tx_filter_query: Optional[EvmTransactionsFilterQuery],
-            limit: Optional[int],
+            tx_filter_query: EvmTransactionsFilterQuery | None,
+            limit: int | None,
     ) -> list[EVMTxHash]:
         cursor = self.db.conn.cursor()
         querystr = 'SELECT DISTINCT evm_transactions.tx_hash FROM evm_transactions '
@@ -262,8 +262,8 @@ class DBEvmTx:
 
     def get_transaction_hashes_not_decoded(
             self,
-            chain_id: Optional[ChainID],
-            limit: Optional[int],
+            chain_id: ChainID | None,
+            limit: int | None,
     ) -> list[EVMTxHash]:
         """Get transaction hashes for the transactions that have not been decoded.
         Optionally by chain id.
@@ -284,7 +284,7 @@ class DBEvmTx:
 
     def count_hashes_not_decoded(
             self,
-            chain_id: Optional[ChainID],
+            chain_id: ChainID | None,
     ) -> int:
         """
         Count the number of transactions queried that have not been decoded. When the addresses
@@ -376,7 +376,7 @@ class DBEvmTx:
             cursor: 'DBCursor',
             tx_hash: EVMTxHash,
             chain_id: ChainID,
-    ) -> Optional[EvmTxReceipt]:
+    ) -> EvmTxReceipt | None:
         """Get the evm receipt for the given tx_hash and chain id"""
         chain_id_serialized = chain_id.serialize_for_db()
         result = cursor.execute(

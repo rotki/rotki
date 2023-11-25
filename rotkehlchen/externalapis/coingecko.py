@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Literal, NamedTuple, Optional, Union, overload
+from typing import Any, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
 import requests
@@ -505,15 +505,15 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         set_user_agent(self.session)
-        self.all_coins_cache: Optional[dict[str, dict[str, Any]]] = None
+        self.all_coins_cache: dict[str, dict[str, Any]] | None = None
         self.last_rate_limit = 0
 
     @overload
     def _query(
             self,
             module: Literal['coins/list'],
-            subpath: Optional[str] = None,
-            options: Optional[dict[str, str]] = None,
+            subpath: str | None = None,
+            options: dict[str, str] | None = None,
     ) -> list[dict[str, Any]]:
         ...
 
@@ -521,17 +521,17 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
     def _query(
             self,
             module: Literal['coins', 'simple/price'],
-            subpath: Optional[str] = None,
-            options: Optional[dict[str, str]] = None,
+            subpath: str | None = None,
+            options: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         ...
 
     def _query(
             self,
             module: str,
-            subpath: Optional[str] = None,
-            options: Optional[dict[str, str]] = None,
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+            subpath: str | None = None,
+            options: dict[str, str] | None = None,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         """Performs a coingecko query
 
         May raise:
@@ -643,7 +643,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             location: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         vs_currency = to_asset.identifier.lower()
         if vs_currency not in COINGECKO_SIMPLE_VS_CURRENCIES:
             log.warning(
@@ -710,13 +710,13 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             from_asset: Asset,  # pylint: disable=unused-argument
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         return not self.is_penalized()
 
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         if seconds is None:
             return False

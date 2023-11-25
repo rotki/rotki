@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -38,7 +38,7 @@ class EvmManager(metaclass=ABCMeta):  # noqa: B024
             self,
             address: ChecksumEvmAddress,
             block_number: int,
-    ) -> Optional[FVal]:
+    ) -> FVal | None:
         """Attempts to get a historical eth balance from the local own node only.
         If there is no node or the node can't query historical balance (not archive) then
         returns None"""

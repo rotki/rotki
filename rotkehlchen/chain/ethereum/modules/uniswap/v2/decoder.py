@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import (
@@ -73,7 +74,7 @@ class Uniswapv2Decoder(DecoderInterface):
 
     def _maybe_decode_v2_swap(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
@@ -103,7 +104,7 @@ class Uniswapv2Decoder(DecoderInterface):
 
     def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list['EvmEvent'],

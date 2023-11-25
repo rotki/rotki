@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
@@ -44,7 +45,7 @@ class Balancerv1Decoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> Optional[list[dict[str, Any]]]:  # noqa: E501
+    def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> list[dict[str, Any]] | None:  # noqa: E501
         """Read the list of logs in search for a Balancer v1 event and return the information
         needed to decode the transfers made in the transaction to/from the ds proxy
         """

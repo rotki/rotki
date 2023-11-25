@@ -2,7 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import requests
@@ -37,7 +37,7 @@ AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_balances(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
 ) -> None:
     """Check querying the aave balances endpoint works. Uses real data.
 
@@ -105,7 +105,7 @@ def test_query_aave_balances(
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
 ) -> None:
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -136,7 +136,7 @@ def test_query_aave_balances_module_not_activated(
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_defi_borrowing(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
 ) -> None:
     """Checks that the apr/apy values are correctly returned from the API for a mocked position"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
