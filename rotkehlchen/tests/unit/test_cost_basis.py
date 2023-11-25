@@ -1164,7 +1164,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
         end_ts=Timestamp(1677593077),
         history_list=history,  # type: ignore[arg-type]  # invariant problem
     )
-    for event, expected_pnl in zip(accountant.pots[0].processed_events, expected_pnls):
+    for event, expected_pnl in zip(accountant.pots[0].processed_events, expected_pnls, strict=True):  # noqa: E501
         assert event.pnl.taxable == expected_pnl
 
 

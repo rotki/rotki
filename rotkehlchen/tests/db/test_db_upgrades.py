@@ -60,7 +60,7 @@ def assert_tx_hash_is_bytes(
     - Checks that comparing the entries after converting the bytes to its string equivalent yields
     the same as its `old` counterpart.
     """
-    for _old, _new in zip(old, new):
+    for _old, _new in zip(old, new, strict=True):
         assert isinstance(_new[tx_hash_index], bytes)
         assert isinstance(_old[tx_hash_index], str)
         _old = list(_old)
@@ -813,7 +813,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         ('_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7',),
     ]
     with db_v34.conn.read_ctx() as cursor:
-        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps, strict=True):
             cursor.execute(f'SELECT time from {table_name}')
             assert cursor.fetchall() == expected_result
 
@@ -937,7 +937,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     ]
 
     with db_v35.conn.read_ctx() as cursor:
-        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps, strict=True):
             cursor.execute(f'SELECT timestamp from {table_name}')
             assert cursor.fetchall() == expected_result
         cursor.execute('SELECT blockchain from web3_nodes LIMIT 1')

@@ -389,7 +389,7 @@ class Inquirer:
         instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
-        for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
+        for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances, strict=True):  # noqa: E501
             if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
                 instance._oracles_not_onchain.append(oracle)
                 instance._oracle_instances_not_onchain.append(oracle_instance)
@@ -432,7 +432,7 @@ class Inquirer:
         price = ZERO_PRICE
         oracle_queried = CurrentPriceOracle.BLOCKCHAIN
         used_main_currency = False
-        for oracle, oracle_instance in zip(oracles, oracle_instances):
+        for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             if (
                 isinstance(oracle_instance, CurrentPriceOracleInterface) and
                 (

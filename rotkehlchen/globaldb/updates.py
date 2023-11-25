@@ -492,62 +492,68 @@ class AssetsUpdater:
         If conflicts appear while processing the assets those are handled. Deserialization
         errors are caught and the user is warned about them.
         """
-        lines = text.splitlines()
-        for action, full_insert in zip(*[iter(lines)] * 2):
-            if full_insert.strip() == '*':
-                full_insert = action  # noqa: PLW2901
+        lines = [x for x in text.splitlines() if x.strip() != '']
+        try:  # strip() check above is to remove empty lines (say trailing newline in the file
+            for action, full_insert in zip(*[iter(lines)] * 2, strict=True):
+                if full_insert.strip() == '*':
+                    full_insert = action  # noqa: PLW2901
 
-            if update_file_type == UpdateFileType.ASSETS:
-                remote_asset_data = None
-                try:
-                    remote_asset_data = self._parse_full_insert_assets(full_insert)
-                except DeserializationError as e:
-                    log.error(
-                        f'Failed to add asset with action {action} during update to v{version}',
-                    )
-                    self.msg_aggregator.add_warning(
-                        f'Skipping entry during assets update to v{version} due '
-                        f'to a deserialization error. {e!s}',
-                    )
+                if update_file_type == UpdateFileType.ASSETS:
+                    remote_asset_data = None
+                    try:
+                        remote_asset_data = self._parse_full_insert_assets(full_insert)
+                    except DeserializationError as e:
+                        log.error(
+                            f'Failed to add asset with action {action} during update to v{version}',  # noqa: E501
+                        )
+                        self.msg_aggregator.add_warning(
+                            f'Skipping entry during assets update to v{version} due '
+                            f'to a deserialization error. {e!s}',
+                        )
 
-                if remote_asset_data is not None:
-                    self._handle_asset_update(
-                        connection=connection,
-                        remote_asset_data=remote_asset_data,
-                        assets_conflicts=assets_conflicts,
-                        action=action,
-                        full_insert=full_insert,
-                        version=version,
-                    )
-            elif update_file_type == UpdateFileType.ASSET_COLLECTIONS:
-                try:
-                    self._process_asset_collection(
-                        connection=connection,
-                        action=action,
-                        full_insert=full_insert,
-                    )
-                except DeserializationError as e:
-                    self.msg_aggregator.add_warning(
-                        f'Skipping entry during assets collection update to v{version} due '
-                        f'to a deserialization error. {e!s}',
-                    )
-            else:
-                assert update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS
-                try:
-                    self._process_multiasset_mapping(
-                        connection=connection,
-                        action=action,
-                        full_insert=full_insert,
-                    )
-                except DeserializationError as e:
-                    self.msg_aggregator.add_warning(
-                        f'Skipping entry during assets collection multimapping update to '
-                        f'v{version} due to a deserialization error. {e!s}',
-                    )
-                except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Tried to add unknown asset {e.identifier} to collection of assets. Skipping',  # noqa: E501
-                    )
+                    if remote_asset_data is not None:
+                        self._handle_asset_update(
+                            connection=connection,
+                            remote_asset_data=remote_asset_data,
+                            assets_conflicts=assets_conflicts,
+                            action=action,
+                            full_insert=full_insert,
+                            version=version,
+                        )
+                elif update_file_type == UpdateFileType.ASSET_COLLECTIONS:
+                    try:
+                        self._process_asset_collection(
+                            connection=connection,
+                            action=action,
+                            full_insert=full_insert,
+                        )
+                    except DeserializationError as e:
+                        self.msg_aggregator.add_warning(
+                            f'Skipping entry during assets collection update to v{version} due '
+                            f'to a deserialization error. {e!s}',
+                        )
+                else:
+                    assert update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS
+                    try:
+                        self._process_multiasset_mapping(
+                            connection=connection,
+                            action=action,
+                            full_insert=full_insert,
+                        )
+                    except DeserializationError as e:
+                        self.msg_aggregator.add_warning(
+                            f'Skipping entry during assets collection multimapping update to '
+                            f'v{version} due to a deserialization error. {e!s}',
+                        )
+                    except UnknownAsset as e:
+                        self.msg_aggregator.add_warning(
+                            f'Tried to add unknown asset {e.identifier} to collection of assets. Skipping',  # noqa: E501
+                        )
+        except ValueError:
+            self.msg_aggregator.add_error(
+                f'Last entry of update {update_file_type} has an odd number of '
+                f'lines. Skipping. Report this to the developers',
+            )
 
         # at the very end update the current version in the DB
         connection.execute(

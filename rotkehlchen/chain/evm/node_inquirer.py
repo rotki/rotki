@@ -1285,7 +1285,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         - InsufficientDataBytes
         """
         decoded_contract_info = []
-        for method_name, method_value in zip(properties, output):
+        for method_name, method_value in zip(properties, output, strict=True):
             if method_value[0] is True and len(method_value[1]) != 0:
                 decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
                 continue

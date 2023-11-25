@@ -212,7 +212,7 @@ class Liquity(HasDSProxy):
             # make sure that variables always have a value set. It is guaranteed that the response
             # will have the desired format because we include and process failed queries.
             key, asset, gain_info = keys[0], assets[0], 0
-            for method_idx, (method, _asset, _key) in enumerate(zip(methods, assets, keys)):
+            for method_idx, (method, _asset, _key) in enumerate(zip(methods, assets, keys, strict=True)):  # noqa: E501
                 # get the asset, key used in the response and the amount based on the index
                 # for this address
                 if idx % 3 == method_idx:

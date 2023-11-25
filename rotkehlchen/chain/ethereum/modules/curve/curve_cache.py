@@ -153,7 +153,7 @@ def ensure_curve_tokens_existence(
         elif len(pool.coins) == len(pool.underlying_coins):
             # Coins and underlying coins lists represent a
             # mapping of coin -> underlying coin (each coin always has one underlying coin).
-            for token_address, underlying_token_address in zip(pool.coins, pool.underlying_coins):
+            for token_address, underlying_token_address in zip(pool.coins, pool.underlying_coins, strict=True):  # noqa: E501
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
                 # ensure underlying token exists
@@ -395,7 +395,7 @@ def query_curve_data_from_chain(
         raw_pool_properties = ethereum.multicall_2(calls=calls, require_success=True)
         decoded_pool_properties = [
             metaregistry.decode(result=result[1], method_name=method_name, arguments=[pool_address])  # noqa: E501
-            for result, method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS)
+            for result, method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS, strict=True)  # length should be same due to the call # noqa: E501
         ]
         try:
             pool_name: str = decoded_pool_properties[0][0]

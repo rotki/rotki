@@ -184,12 +184,16 @@ class ProtocolWithGauges(ProtocolWithBalance):
             call_order=call_order,
         )
         balances: dict[EvmToken, FVal] = defaultdict(FVal)
-        for token_balance, token in zip(result, tokens):
-            if token_balance == 0:
-                continue
+        try:
+            for token_balance, token in zip(result, tokens, strict=True):
+                if token_balance == 0:
+                    continue
 
-            normalized_balance = token_normalized_value(token_balance, token)
-            balances[token] += normalized_balance
+                normalized_balance = token_normalized_value(token_balance, token)
+                balances[token] += normalized_balance
+        except ValueError as e:
+            raise RemoteError('tokensBalance query returned less tokens than expected') from e
+
         return balances
 
     def query_balances(self) -> BalancesType:

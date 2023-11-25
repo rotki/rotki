@@ -207,7 +207,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         :param save_data_to_cache_method: The method that saves the data to the cache tables.
         :param read_data_from_cache_method: The method that reads the data from the
         cache tables. This function returns a tuple of values, because subclasses may return
-        more than a set of pools
+        more than a set of caches (example: different set of pools).
         """
         self.evm_inquirer = evm_inquirer
         self.cache_type_to_check_for_freshness = cache_type_to_check_for_freshness
@@ -237,15 +237,15 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         cache_diff = [  # get the new items for the different information stored in the cache
             (new_data.keys() if isinstance(new_data, dict) else new_data) -
             (data.keys() if isinstance(data, dict) else data)
-            for data, new_data in zip(self.cache_data, new_cache_data)
-        ]
+            for data, new_data in zip(self.cache_data, new_cache_data, strict=True)
+        ]  # strict=True guaranteed due to number of caches always the same
         if sum(len(x) for x in cache_diff) == 0:
             return None
 
         self.cache_data = new_cache_data
         new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         # pair each new address in each cache container to the method decoding its logic
-        for data_diff, method in zip(cache_diff, self._cache_mapping_methods()):
+        for data_diff, method in zip(cache_diff, self._cache_mapping_methods(), strict=True):  # size should be correct if inheriting decoder is implemented properly  # noqa: E501
             new_decoding_mapping |= {address: (method,) for address in data_diff}
 
         return new_decoding_mapping

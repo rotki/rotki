@@ -347,6 +347,10 @@ def mock_etherscan_query(
             else:
                 raise AssertionError('Unknown multicall in mocked tests')
 
+            if '86f25b64e1fe4c5162cdeed5245575d32ec549db' in url:
+                # can appear mixed with above so multibalance can trump the rest since actionable
+                multicall_purpose = 'multibalance_query'
+
             if 'data=0x252dba42' in url:  # aggregate
                 data = url.split('data=')[1]
                 if '&apikey' in data:

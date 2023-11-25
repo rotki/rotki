@@ -212,7 +212,7 @@ class PriceHistorian:
             'PriceHistorian should never be called before setting the oracles'
         )
         rate_limited = False
-        for oracle, oracle_instance in zip(oracles, oracle_instances):
+        for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             can_query_history = oracle_instance.can_query_history(
                 from_asset=from_asset,
                 to_asset=to_asset,
