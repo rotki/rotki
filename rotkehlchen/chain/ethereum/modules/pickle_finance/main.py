@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -38,7 +38,7 @@ class PickleFinance(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer

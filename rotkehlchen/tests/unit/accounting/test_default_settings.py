@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from more_itertools import peekable
@@ -100,7 +100,7 @@ def _gain_one_ether(
         entry_type: Literal['history_event', 'evm_event'] = 'evm_event',
 ) -> None:
     """Helper function to gain 1 ETH, so that spending events have something to spend"""
-    event_class: type[Union[HistoryEvent, EvmEvent]]
+    event_class: type[HistoryEvent | EvmEvent]
     kwargs: dict[str, Any]
     if entry_type == 'history_event':
         event_class = HistoryEvent
@@ -214,7 +214,7 @@ def test_accounting_spend_settings(
         event_type: 'HistoryEventType',
         event_subtype: 'HistoryEventSubType',
         is_taxable: bool,
-        counterparty: Optional[str],
+        counterparty: str | None,
         include_crypto2crypto,
 ):
     _gain_one_ether(events_accountant=accounting_pot.events_accountant)

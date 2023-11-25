@@ -2,7 +2,6 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Optional
 
 import pytest
 import requests
@@ -27,7 +26,7 @@ TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_query_compound_balances(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
 ) -> None:
     """Check querying the compound balances endpoint works. Uses real data.
 
@@ -85,7 +84,7 @@ def test_query_compound_balances(
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_compound_balances_module_not_activated(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        ethereum_accounts: list[ChecksumEvmAddress] | None,
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)

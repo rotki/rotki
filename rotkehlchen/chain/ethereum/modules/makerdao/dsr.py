@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from gevent.lock import Semaphore
 
@@ -97,7 +97,7 @@ class DSRAccountReport(NamedTuple):
         return serialized_report
 
 
-def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
+def _dsrdai_to_dai(value: int | FVal) -> FVal:
     """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
     return FVal(value / FVal(RAD))
 
@@ -108,7 +108,7 @@ class MakerdaoDsr(HasDSProxy):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
 
@@ -173,7 +173,7 @@ class MakerdaoDsr(HasDSProxy):
             proxy_address: ChecksumEvmAddress,
             block_number: int,
             transaction_index: int,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Returns values in DSR DAI that were deposited/withdrawn at a block number and tx index
 
         DSR DAI means they need they have a lot more digits than normal DAI and they

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, cast
 
 from eth_typing.evm import ChecksumAddress
 
@@ -166,12 +166,12 @@ BalancerEventDBTuple = (
         str,  # usd_value
         str,  # amount0
         str,  # amount1
-        Optional[str],  # amount2
-        Optional[str],  # amount3
-        Optional[str],  # amount4
-        Optional[str],  # amount5
-        Optional[str],  # amount6
-        Optional[str],  # amount7
+        str | None,  # amount2
+        str | None,  # amount3
+        str | None,  # amount4
+        str | None,  # amount5
+        str | None,  # amount6
+        str | None,  # amount7
     ]
 )
 
@@ -246,9 +246,9 @@ class BalancerEvent(NamedTuple):
 
     def serialize(
             self,
-            pool_tokens: Optional[list[UnderlyingToken]] = None,
+            pool_tokens: list[UnderlyingToken] | None = None,
     ) -> dict[str, Any]:
-        amounts: Union[list[str], dict[str, Any]]
+        amounts: list[str] | dict[str, Any]
         if isinstance(pool_tokens, list) and len(pool_tokens) > 0:
             amounts = {}
             for pool_token, amount in zip(pool_tokens, self.amounts):

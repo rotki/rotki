@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
@@ -15,7 +15,7 @@ def match_airdrop_claim(
         amount: 'FVal',
         asset: 'Asset',
         counterparty: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
 ) -> bool:
     """It matches a transfer event to an airdrop claim, changes the required fields
      then returns `True` if a match was found"""

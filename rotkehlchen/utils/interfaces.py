@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -27,7 +28,7 @@ class EthereumModule(metaclass=ABCMeta):
     # Optional callback to run on a module's startup
     # Is optional as opposed to a no-op  since at initialization we
     # start a greenlet to run it and there is no reason to bring up no-op greenlets
-    on_startup: Optional[Callable[['EthereumModule'], None]] = None
+    on_startup: Callable[['EthereumModule'], None] | None = None
 
     @abstractmethod
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
@@ -55,8 +56,8 @@ class ProgressUpdater(metaclass=ABCMeta):
     def __init__(self, messages_aggregator: 'MessagesAggregator', target_version: int) -> None:
         self.messages_aggregator = messages_aggregator
         self.target_version = target_version
-        self.start_version: Optional[int] = None
-        self.current_version: Optional[int] = None
+        self.start_version: int | None = None
+        self.current_version: int | None = None
         self.current_round_total_steps = 0
         self.current_round_current_step = 0
 
@@ -80,7 +81,7 @@ class ProgressUpdater(metaclass=ABCMeta):
         """
         self.current_round_total_steps = steps
 
-    def new_step(self, name: Optional[str] = None) -> None:
+    def new_step(self, name: str | None = None) -> None:
         """
         Should be called when currently running round reaches a new step.
         Informs users about the new step. Total number of calls to this method must be equal to
@@ -90,5 +91,5 @@ class ProgressUpdater(metaclass=ABCMeta):
         self._notify_frontend(name)
 
     @abstractmethod
-    def _notify_frontend(self, step_name: Optional[str] = None) -> None:
+    def _notify_frontend(self, step_name: str | None = None) -> None:
         """Sends to the user through websockets all information about progress."""

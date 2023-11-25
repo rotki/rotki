@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from types import FrameType
-from typing import IO, Any, NewType, Optional
+from typing import IO, Any, NewType
 
 import greenlet
 import objgraph
@@ -31,7 +31,7 @@ def frame_format(frame: FrameType) -> str:
 
 def collect_frames(frame: FrameType) -> list[str]:
     callstack = []
-    optional_frame: Optional[FrameType] = frame
+    optional_frame: FrameType | None = frame
     while optional_frame is not None:
         callstack.append(frame_format(optional_frame))
         optional_frame = optional_frame.f_back
@@ -77,7 +77,7 @@ def sample_objects(timestamp: float, stream: IO) -> None:
 
 
 class FlameGraphCollector:
-    last_timestamp: Optional[float]
+    last_timestamp: float | None
 
     def __init__(self, stack_stream: IO) -> None:
         self.stack_stream = stack_stream
@@ -139,7 +139,7 @@ class ObjectCollector:
 
 
 class TraceSampler:
-    old_frame: Optional[FrameType]
+    old_frame: FrameType | None
 
     def __init__(self, collector, sample_interval=0.1):
         self.collector = collector

@@ -1,6 +1,7 @@
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, Callable, Literal, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Literal
 
 from web3 import Web3
 
@@ -206,8 +207,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
     amount0_raw = hex_or_bytes_to_int(tx_log.data[:32])
     amount1_raw = hex_or_bytes_to_int(tx_log.data[32:64])
 
-    token0: Optional[EvmToken] = None
-    token1: Optional[EvmToken] = None
+    token0: EvmToken | None = None
+    token1: EvmToken | None = None
     event0_idx = event1_idx = None
 
     if event_action_type == 'addition':

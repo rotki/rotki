@@ -1,7 +1,7 @@
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
@@ -62,7 +62,7 @@ def test_get_name_of_lowest_prio_name_source(
     the name with the last priority
     """
     prioritizer = NamePrioritizer(Mock())
-    fetchers: Mapping[AddressNameSource, Optional[str]] = {
+    fetchers: Mapping[AddressNameSource, str | None] = {
         'blockchain_account': None,
         'ens_names': None,
         'global_addressbook': 'global addressbook label',
@@ -80,11 +80,11 @@ def test_get_name_of_lowest_prio_name_source(
 
 
 def get_fetchers_with_names(
-        fetchers_to_name: Mapping[AddressNameSource, Optional[str]],
+        fetchers_to_name: Mapping[AddressNameSource, str | None],
 ) -> dict[AddressNameSource, FetcherFunc]:
     fetchers: dict[AddressNameSource, FetcherFunc] = {}
     for source_id, returned_name in fetchers_to_name.items():
-        def make_fetcher(label: Optional[str]) -> FetcherFunc:
+        def make_fetcher(label: str | None) -> FetcherFunc:
             return lambda db, chain_address: label
 
         fetchers[source_id] = make_fetcher(returned_name)

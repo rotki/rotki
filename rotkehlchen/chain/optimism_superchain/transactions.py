@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.evm.transactions import EvmTransactions
@@ -29,10 +29,7 @@ class OptimismSuperchainTransactions(EvmTransactions, metaclass=ABCMeta):
 
     def __init__(
             self,
-            node_inquirer: Union[
-                OptimismInquirer,
-                BaseInquirer,
-            ],
+            node_inquirer: OptimismInquirer | BaseInquirer,
             database: 'DBHandler',
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)

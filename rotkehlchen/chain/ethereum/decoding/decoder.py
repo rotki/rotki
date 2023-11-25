@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -81,7 +81,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     def _maybe_enrich_transfers(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list['EvmEvent'],
@@ -126,7 +126,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     def _maybe_decode_governance(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
@@ -191,7 +191,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         )
 
     @staticmethod
-    def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
+    def _address_is_exchange(address: ChecksumEvmAddress) -> str | None:
         name = ETHADDRESS_TO_KNOWN_NAME.get(address)
         if name and 'Kraken' in name:
             return CPT_KRAKEN

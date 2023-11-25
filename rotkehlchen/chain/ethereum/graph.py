@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 
 import gevent
 import requests
@@ -50,8 +50,8 @@ class Graph:
     def query(
             self,
             querystr: str,
-            param_types: Optional[dict[str, Any]] = None,
-            param_values: Optional[dict[str, Any]] = None,
+            param_types: dict[str, Any] | None = None,
+            param_values: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Queries The Graph for a particular query
 

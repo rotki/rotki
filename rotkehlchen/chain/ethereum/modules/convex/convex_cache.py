@@ -122,7 +122,7 @@ def query_convex_data_from_chain(
     return queried_convex_pools_info
 
 
-def query_convex_data(inquirer: 'EthereumInquirer') -> Optional[list[ConvexPoolData]]:
+def query_convex_data(inquirer: 'EthereumInquirer') -> list[ConvexPoolData] | None:
     """
     Queries chain for all convex rewards pools and returns a list of the mappings not cached
 

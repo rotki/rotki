@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_event_type_identifier
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -43,7 +43,7 @@ class AccountingRulesManager:
     def get_event_settings(
             self,
             event: HistoryBaseEntry,
-    ) -> tuple[Optional[BaseEventSettings], Optional[EventsAccountantCallback]]:
+    ) -> tuple[BaseEventSettings | None, EventsAccountantCallback | None]:
         """
         Return a matching rule for the event if it exists and an optional callback defined for
         the rule that should be executed

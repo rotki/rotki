@@ -3,11 +3,12 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -113,7 +114,7 @@ def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]
+DeserializationMethod = Callable[..., Trade | AssetMovement]
 
 
 def deserialize_trade_pair(trade_pair_symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
@@ -179,7 +180,7 @@ class Kucoin(ExchangeInterface):
     def _api_query(
             self,
             case: KucoinCase,
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> Response:
         """Request a KuCoin API v1 endpoint
 
@@ -309,7 +310,7 @@ class Kucoin(ExchangeInterface):
             ],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Union[list[Trade], list[AssetMovement]]:
+    ) -> list[Trade] | list[AssetMovement]:
         """Request endpoints paginating via an options attribute
 
         May raise RemoteError
@@ -413,7 +414,7 @@ class Kucoin(ExchangeInterface):
                         error=error_msg,
                         raw_result=raw_result,
                     )
-                    if isinstance(e, (UnknownAsset, UnsupportedAsset)):
+                    if isinstance(e, UnknownAsset | UnsupportedAsset):
                         asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                         error_msg = f'Found {asset_tag} kucoin asset {e.identifier}'
 
@@ -658,11 +659,7 @@ class Kucoin(ExchangeInterface):
                 KucoinCase.DEPOSITS,
                 KucoinCase.WITHDRAWALS,
             ],
-    ) -> Union[
-        list,
-        tuple[bool, str],
-        ExchangeQueryBalances,
-    ]:
+    ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
         """Process unsuccessful responses
 
         May raise RemoteError

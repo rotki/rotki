@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
@@ -33,5 +33,5 @@ class CurveBalances(ProtocolWithGauges):
             gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
         )
 
-    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
+    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
         return event.address

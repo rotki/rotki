@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
     token: EvmToken
-    total_amount: Optional[FVal]
+    total_amount: FVal | None
     user_balance: Balance
     usd_price: Price = ZERO_PRICE
 
@@ -35,7 +35,7 @@ class LiquidityPoolAsset:
 class LiquidityPool:
     address: ChecksumEvmAddress
     assets: list[LiquidityPoolAsset]
-    total_supply: Optional[FVal]
+    total_supply: FVal | None
     user_balance: Balance
 
     def serialize(self) -> dict[str, Any]:

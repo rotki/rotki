@@ -11,7 +11,6 @@ from typing import (
     NewType,
     Optional,
     TypeVar,
-    Union,
     get_args,
 )
 
@@ -171,7 +170,7 @@ T_EVMTxHash = HexBytes
 EVMTxHash = NewType('EVMTxHash', T_EVMTxHash)
 
 
-def deserialize_evm_tx_hash(val: Union[Web3HexBytes, bytearray, bytes, str]) -> EVMTxHash:
+def deserialize_evm_tx_hash(val: Web3HexBytes | (bytearray | (bytes | str))) -> EVMTxHash:
     """Super lightweight wrapper to forward arguments to HexBytes and return an EVMTxHash
 
     HexBytes constructor handles the deserialization from whatever is given as input.
@@ -190,27 +189,15 @@ BTCAddress = NewType('BTCAddress', T_BTCAddress)
 T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 
-BlockchainAddress = Union[
-    BTCAddress,
-    ChecksumEvmAddress,
-    SubstrateAddress,
-]
+BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',
     BTCAddress,
     ChecksumEvmAddress,
     SubstrateAddress,
 )
-ListOfBlockchainAddresses = Union[
-    list[BTCAddress],
-    list[ChecksumEvmAddress],
-    list[SubstrateAddress],
-]
-TuplesOfBlockchainAddresses = Union[
-    tuple[BTCAddress, ...],
-    tuple[ChecksumEvmAddress, ...],
-    tuple[SubstrateAddress, ...],
-]
+ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress]
+TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...]  # noqa: E501
 
 
 T_Fee = FVal
@@ -338,7 +325,7 @@ class EvmTransaction:
     timestamp: Timestamp
     block_number: int
     from_address: ChecksumEvmAddress
-    to_address: Optional[ChecksumEvmAddress]
+    to_address: ChecksumEvmAddress | None
     value: int
     gas: int
     gas_price: int
@@ -392,7 +379,7 @@ class EvmInternalTransaction(NamedTuple):
     chain_id: ChainID
     trace_id: int
     from_address: ChecksumEvmAddress
-    to_address: Optional[ChecksumEvmAddress]
+    to_address: ChecksumEvmAddress | None
     value: int
 
     def serialize(self) -> dict[str, Any]:
@@ -422,7 +409,7 @@ class CovalentTransaction(NamedTuple):
     timestamp: Timestamp
     block_number: int
     from_address: ChecksumEvmAddress
-    to_address: Optional[ChecksumEvmAddress]
+    to_address: ChecksumEvmAddress | None
     value: int
     gas: int
     gas_price: int
@@ -794,9 +781,9 @@ EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_T
 
 class LocationDetails(NamedTuple):
     """Information about Location enum values to display them to the user"""
-    label: Optional[str] = None
-    icon: Optional[str] = None
-    image: Optional[str] = None
+    label: str | None = None
+    icon: str | None = None
+    image: str | None = None
 
     def serialize(self) -> dict[str, str]:
         data = {}
@@ -823,9 +810,9 @@ class ExchangeAuthCredentials(NamedTuple):
     If a certain field is not None, it is modified in the exchange, otherwise
     the current value is kept.
     """
-    api_key: Optional[ApiKey]
-    api_secret: Optional[ApiSecret]
-    passphrase: Optional[str]
+    api_key: ApiKey | None
+    api_secret: ApiSecret | None
+    passphrase: str | None
 
 
 class ExchangeApiCredentials(NamedTuple):
@@ -837,7 +824,7 @@ class ExchangeApiCredentials(NamedTuple):
     location: Location
     api_key: ApiKey
     api_secret: ApiSecret
-    passphrase: Optional[str] = None
+    passphrase: str | None = None
 
 
 EXTERNAL_EXCHANGES = (
@@ -889,16 +876,16 @@ class CostBasisMethod(SerializableEnumNameMixin):
 class AddressbookEntry(NamedTuple):
     address: ChecksumEvmAddress
     name: str
-    blockchain: Optional[SupportedBlockchain]
+    blockchain: SupportedBlockchain | None
 
-    def serialize(self) -> dict[str, Optional[str]]:
+    def serialize(self) -> dict[str, str | None]:
         return {
             'address': self.address,
             'name': self.name,
             'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
         }
 
-    def serialize_for_db(self) -> tuple[str, str, Optional[str]]:
+    def serialize_for_db(self) -> tuple[str, str, str | None]:
         blockchain = self.blockchain.value if self.blockchain is not None else None
         return (self.address, self.name, blockchain)
 
@@ -919,7 +906,7 @@ class AddressbookEntry(NamedTuple):
 
 class OptionalChainAddress(NamedTuple):
     address: ChecksumAddress
-    blockchain: Optional[SupportedBlockchain]
+    blockchain: SupportedBlockchain | None
 
 
 class ChainAddress(OptionalChainAddress):
@@ -939,7 +926,7 @@ class UserNote(NamedTuple):
     last_update_timestamp: Timestamp
     is_pinned: bool
 
-    def serialize(self) -> dict[str, Union[str, int]]:
+    def serialize(self) -> dict[str, str | int]:
         """Serialize a `UserNote` object into a dict."""
         return {
             'identifier': self.identifier,

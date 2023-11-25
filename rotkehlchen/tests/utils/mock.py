@@ -1,7 +1,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 from unittest.mock import patch
 
 import requests
@@ -23,7 +23,7 @@ class MockResponse:
             status_code: int,
             text: str,
             content: Any = None,
-            headers: Optional[dict['str', Any]] = None,
+            headers: dict['str', Any] | None = None,
     ) -> None:
         self.status_code = status_code
         self.text = text

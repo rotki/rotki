@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 from gevent.lock import Semaphore
 
@@ -64,7 +64,7 @@ class Aave(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
@@ -297,7 +297,7 @@ class Aave(EthereumModule):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             aave_balances: AaveBalances,
-    ) -> Optional[AaveStats]:
+    ) -> AaveStats | None:
         db = DBHistoryEvents(self.database)
         query_filter = EvmEventFilterQuery.make(
             counterparties=self.counterparties,

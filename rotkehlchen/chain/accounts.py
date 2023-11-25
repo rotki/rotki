@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Generic, NamedTuple, Optional, overload
+from typing import Any, Generic, NamedTuple, overload
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
@@ -56,15 +56,15 @@ class BlockchainAccounts:
 class BlockchainAccountData(NamedTuple):
     chain: SupportedBlockchain
     address: BlockchainAddress
-    label: Optional[str] = None
-    tags: Optional[list[str]] = None
+    label: str | None = None
+    tags: list[str] | None = None
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class SingleBlockchainAccountData(Generic[AnyBlockchainAddress]):
     address: AnyBlockchainAddress
-    label: Optional[str] = None
-    tags: Optional[list[str]] = None
+    label: str | None = None
+    tags: list[str] | None = None
 
     def serialize(self) -> dict[str, Any]:
         return {'address': self.address, 'label': self.label, 'tags': self.tags}

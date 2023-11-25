@@ -1,6 +1,7 @@
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -182,7 +183,7 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
             ):
                 related_transfer_events[(event.event_type, event.asset, event.balance.amount)] = event  # noqa: E501
 
-        trades_events: list[tuple[EvmEvent, EvmEvent, Optional[EvmEvent], SwapData]] = []
+        trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, SwapData]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((HistoryEventType.RECEIVE, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:

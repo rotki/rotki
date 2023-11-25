@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Literal, NamedTuple, TypeVar, cast
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -117,10 +117,10 @@ class DBNestedFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTimestampFilter(DBFilter):
-    from_ts: Optional[Timestamp] = None
-    to_ts: Optional[Timestamp] = None
-    scaling_factor: Optional[FVal] = None
-    timestamp_field: Optional[str] = None
+    from_ts: Timestamp | None = None
+    to_ts: Timestamp | None = None
+    scaling_factor: FVal | None = None
+    timestamp_field: str | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         filters = []
@@ -154,7 +154,7 @@ class DBEvmTransactionJoinsFilter(DBFilter):
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters: list[str] = []
-        bindings: list[Union[ChecksumEvmAddress, int]] = []
+        bindings: list[ChecksumEvmAddress | int] = []
         query_filter_str = (
             'INNER JOIN evmtx_address_mappings WHERE '
             'evm_transactions.identifier=evmtx_address_mappings.tx_id AND ('
@@ -180,7 +180,7 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
     This filter is used to find the ethereum transactions that have not been decoded yet
     using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by chain.
     """
-    chain_id: Optional[ChainID]
+    chain_id: ChainID | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters = ['B.tx_id is NULL']
@@ -195,7 +195,7 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmTransactionHashFilter(DBFilter):
-    tx_hash: Optional[EVMTxHash] = None
+    tx_hash: EVMTxHash | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.tx_hash is None:
@@ -206,8 +206,8 @@ class DBEvmTransactionHashFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmChainIDFilter(DBFilter):
-    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
-    table_name: Optional[str] = None
+    chain_id: SUPPORTED_CHAIN_IDS | None = None
+    table_name: str | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.chain_id is None:
@@ -219,7 +219,7 @@ class DBEvmChainIDFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBReportDataReportIDFilter(DBFilter):
-    report_id: Optional[Union[str, int]] = None
+    report_id: str | int | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.report_id is None:
@@ -239,7 +239,7 @@ class DBReportDataReportIDFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBReportDataEventTypeFilter(DBFilter):
-    event_type: Optional[Union[str, SchemaEventType]] = None
+    event_type: str | SchemaEventType | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.event_type is None:
@@ -278,10 +278,10 @@ class DBSubStringFilter(DBFilter):
 class DBFilterQuery(metaclass=ABCMeta):
     and_op: bool
     filters: list[DBFilter]
-    join_clause: Optional[DBFilter] = None
-    group_by: Optional[DBFilterGroupBy] = None
-    order_by: Optional[DBFilterOrder] = None
-    pagination: Optional[DBFilterPagination] = None
+    join_clause: DBFilter | None = None
+    group_by: DBFilterGroupBy | None = None
+    order_by: DBFilterOrder | None = None
+    pagination: DBFilterPagination | None = None
 
     def prepare(
             self,
@@ -346,11 +346,11 @@ class DBFilterQuery(metaclass=ABCMeta):
     def create(
             cls: type[T_FilterQ],
             and_op: bool,
-            limit: Optional[int],
-            offset: Optional[int],
+            limit: int | None,
+            offset: int | None,
             order_by_case_sensitive: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            group_by_field: Optional[str] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            group_by_field: str | None = None,
     ) -> T_FilterQ:
         if limit is None or offset is None:
             pagination = None
@@ -386,7 +386,7 @@ class FilterWithTimestamp:
         return self.timestamp_filter.from_ts
 
     @from_ts.setter
-    def from_ts(self, from_ts: Optional[Timestamp]) -> None:
+    def from_ts(self, from_ts: Timestamp | None) -> None:
         self.timestamp_filter.from_ts = from_ts
 
     @property
@@ -397,16 +397,16 @@ class FilterWithTimestamp:
         return self.timestamp_filter.to_ts
 
     @to_ts.setter
-    def to_ts(self, to_ts: Optional[Timestamp]) -> None:
+    def to_ts(self, to_ts: Timestamp | None) -> None:
         self.timestamp_filter.to_ts = to_ts
 
 
 class FilterWithLocation:
 
-    location_filter: Optional[DBLocationFilter] = None
+    location_filter: DBLocationFilter | None = None
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         if self.location_filter is None:
             return None
 
@@ -417,7 +417,7 @@ class FilterWithLocation:
 class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def accounts(self) -> Optional[list[EvmAccount]]:
+    def accounts(self) -> list[EvmAccount] | None:
         if self.join_clause is None:
             return None
 
@@ -425,7 +425,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         return ethaddress_filter.accounts
 
     @property
-    def chain_id(self) -> Optional[SUPPORTED_CHAIN_IDS]:
+    def chain_id(self) -> SUPPORTED_CHAIN_IDS | None:
         if isinstance(self.filters[-1], DBEvmChainIDFilter):
             return self.filters[-1].chain_id
         return None
@@ -434,14 +434,14 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['EvmTransactionsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            accounts: Optional[list[EvmAccount]] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            tx_hash: Optional[EVMTxHash] = None,
-            chain_id: Optional[SUPPORTED_CHAIN_IDS] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            accounts: list[EvmAccount] | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            tx_hash: EVMTxHash | None = None,
+            chain_id: SUPPORTED_CHAIN_IDS | None = None,
     ) -> 'EvmTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -506,7 +506,7 @@ class DBIgnoreValuesFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEth2ValidatorIndicesFilter(DBFilter):
     """A filter for Eth2 validator indices"""
-    validators: Optional[list[int]]
+    validators: list[int] | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.validators is None:
@@ -518,10 +518,7 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTypeFilter(DBFilter):
     """A filter for type/category/HistoryBaseEntry enums"""
-    filter_types: Union[
-        list[TradeType],
-        list[AssetMovementCategory],
-    ]
+    filter_types: list[TradeType] | list[AssetMovementCategory]
     type_key: Literal['type', 'subtype', 'category']
 
     def prepare(self) -> tuple[list[str], list[Any]]:
@@ -537,8 +534,8 @@ class DBTypeFilter(DBFilter):
 class DBEqualsFilter(DBFilter):
     """Filter a column by comparing its column to its value for equality."""
     column: str
-    value: Union[str, bytes, int, bool]
-    alias: Optional[str] = None
+    value: str | (bytes | (int | bool))
+    alias: str | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         key_name = self.column
@@ -579,11 +576,11 @@ class DBMultiIntegerFilter(DBMultiValueFilter[int]):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBOptionalChainAddressesFilter(DBFilter):
     """Filter the address column by a selection of optional chain addresses"""
-    optional_chain_addresses: Optional[list[OptionalChainAddress]]
+    optional_chain_addresses: list[OptionalChainAddress] | None
 
     def prepare(self) -> tuple[list[str], list[str]]:
         query_filters = []
-        bindings: list[Union[str, ChecksumEvmAddress]] = []
+        bindings: list[str | ChecksumEvmAddress] = []
         if self.optional_chain_addresses is not None:
             for optional_chain_address in self.optional_chain_addresses:
                 query_part = 'address = ?'
@@ -601,16 +598,16 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
     def make(
             cls: type['TradesFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            base_assets: Optional[tuple[Asset, ...]] = None,
-            quote_assets: Optional[tuple[Asset, ...]] = None,
-            trade_type: Optional[list[TradeType]] = None,
-            location: Optional[Location] = None,
-            trades_idx_to_ignore: Optional[set[str]] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            base_assets: tuple[Asset, ...] | None = None,
+            quote_assets: tuple[Asset, ...] | None = None,
+            trade_type: list[TradeType] | None = None,
+            location: Location | None = None,
+            trades_idx_to_ignore: set[str] | None = None,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -676,14 +673,14 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
     def make(
             cls: type['AssetMovementsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            action: Optional[list[AssetMovementCategory]] = None,
-            location: Optional[Location] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            action: list[AssetMovementCategory] | None = None,
+            location: Location | None = None,
     ) -> 'AssetMovementsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -728,12 +725,12 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['Eth2DailyStatsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            validators: Optional[list[int]] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            validators: list[int] | None = None,
     ) -> 'Eth2DailyStatsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -761,26 +758,26 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def report_id_filter(self) -> Optional[DBReportDataReportIDFilter]:
+    def report_id_filter(self) -> DBReportDataReportIDFilter | None:
         if len(self.filters) >= 1 and isinstance(self.filters[0], DBReportDataReportIDFilter):
             return self.filters[0]
         return None
 
     @property
-    def event_type_filter(self) -> Optional[DBReportDataEventTypeFilter]:
+    def event_type_filter(self) -> DBReportDataEventTypeFilter | None:
         if len(self.filters) >= 2 and isinstance(self.filters[1], DBReportDataEventTypeFilter):
             return self.filters[1]
         return None
 
     @property
-    def report_id(self) -> Optional[Union[str, int]]:
+    def report_id(self) -> str | int | None:
         report_id_filter = self.report_id_filter
         if report_id_filter is None:
             return None
         return report_id_filter.report_id
 
     @property
-    def event_type(self) -> Optional[Union[str, SchemaEventType]]:
+    def event_type(self) -> str | SchemaEventType | None:
         event_type_filter = self.event_type_filter
         if event_type_filter is None:
             return None
@@ -790,13 +787,13 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['ReportDataFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            report_id: Optional[int] = None,
-            event_type: Optional[str] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            report_id: int | None = None,
+            event_type: str | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
     ) -> 'ReportDataFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -841,7 +838,7 @@ class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
             'ON history_events_mappings.parent_identifier = history_events.identifier '
             'WHERE history_events_mappings.name = ? AND history_events_mappings.value = ?'
         )
-        bindings: list[Union[str, int]] = [HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED]  # noqa: E501
+        bindings: list[str | int] = [HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED]
         return [query], bindings
 
 
@@ -851,21 +848,21 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
     def make(
             cls: type[T_HistoryBaseEntryFilterQ],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
-            location: Optional[Location] = None,
-            location_labels: Optional[list[str]] = None,
-            ignored_ids: Optional[list[str]] = None,
-            null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[IncludeExcludeFilterData] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
     ) -> T_HistoryBaseEntryFilterQ:
@@ -1000,27 +997,27 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     def make(
             cls: type['EvmEventFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
-            location: Optional[Location] = None,
-            location_labels: Optional[list[str]] = None,
-            ignored_ids: Optional[list[str]] = None,
-            null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[IncludeExcludeFilterData] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
-            tx_hashes: Optional[list[EVMTxHash]] = None,
-            counterparties: Optional[list[str]] = None,
-            products: Optional[list[EvmProduct]] = None,
-            addresses: Optional[list[ChecksumEvmAddress]] = None,
+            tx_hashes: list[EVMTxHash] | None = None,
+            counterparties: list[str] | None = None,
+            products: list[EvmProduct] | None = None,
+            addresses: list[ChecksumEvmAddress] | None = None,
     ) -> 'EvmEventFilterQuery':
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.EVM_EVENT]
@@ -1095,24 +1092,24 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
     def make(
             cls: type[T_EthSTakingFilterQ],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
-            location: Optional[Location] = None,
-            location_labels: Optional[list[str]] = None,
-            ignored_ids: Optional[list[str]] = None,
-            null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[IncludeExcludeFilterData] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
-            validator_indices: Optional[list[int]] = None,
+            validator_indices: list[int] | None = None,
     ) -> T_EthSTakingFilterQ:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
@@ -1170,25 +1167,25 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
     def make(  # type: ignore  # it is expected to be incompatible with supertype
             cls: type['EthDepositEventFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
-            location: Optional[Location] = None,
-            location_labels: Optional[list[str]] = None,
-            ignored_ids: Optional[list[str]] = None,
-            null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[IncludeExcludeFilterData] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
-            tx_hashes: Optional[list[EVMTxHash]] = None,
-            validator_indices: Optional[list[int]] = None,
+            tx_hashes: list[EVMTxHash] | None = None,
+            validator_indices: list[int] | None = None,
     ) -> 'EthDepositEventFilterQuery':
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
@@ -1241,7 +1238,7 @@ class DBSubtableSelectFilter(DBFilter):
     operator: Literal['IN', 'NOT IN']
     select_value: str
     select_table: str
-    select_condition: Optional[str]
+    select_condition: str | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         null_check = ''  # for NOT IN comparison remember NULL is a special case
@@ -1271,13 +1268,13 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['UserNotesFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            location: Optional[str] = None,
-            substring_search: Optional[str] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            location: str | None = None,
+            substring_search: str | None = None,
     ) -> 'UserNotesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('last_update_timestamp', True)]
@@ -1316,11 +1313,11 @@ class AddressbookFilterQuery(DBFilterQuery):
     def make(
             cls: type['AddressbookFilterQuery'],
             and_op: bool = True,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            blockchain: Optional[SupportedBlockchain] = None,
-            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
-            substring_search: Optional[str] = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            blockchain: SupportedBlockchain | None = None,
+            optional_chain_addresses: list[OptionalChainAddress] | None = None,
+            substring_search: str | None = None,
     ) -> 'AddressbookFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -1354,19 +1351,19 @@ class AssetsFilterQuery(DBFilterQuery):
     def make(
             cls: type['AssetsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            name: Optional[str] = None,
-            symbol: Optional[str] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            substring_search: Optional[str] = None,
-            search_column: Optional[str] = None,
-            asset_type: Optional[AssetType] = None,
-            identifiers: Optional[list[str]] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            name: str | None = None,
+            symbol: str | None = None,
+            address: ChecksumEvmAddress | None = None,
+            substring_search: str | None = None,
+            search_column: str | None = None,
+            asset_type: AssetType | None = None,
+            identifiers: list[str] | None = None,
             show_user_owned_assets_only: bool = False,
             return_exact_matches: bool = False,
-            chain_id: Optional[ChainID] = None,
+            chain_id: ChainID | None = None,
             identifier_column_name: str = 'identifier',
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'AssetsFilterQuery':
@@ -1453,12 +1450,12 @@ class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls: type['CustomAssetsFilterQuery'],
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            identifier: Optional[str] = None,
-            name: Optional[str] = None,
-            custom_asset_type: Optional[str] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            identifier: str | None = None,
+            name: str | None = None,
+            custom_asset_type: str | None = None,
     ) -> 'CustomAssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1498,16 +1495,16 @@ class NFTFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls: type['NFTFilterQuery'],
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            owner_addresses: Optional[list[str]] = None,
-            name: Optional[str] = None,
-            collection_name: Optional[str] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            owner_addresses: list[str] | None = None,
+            name: str | None = None,
+            collection_name: str | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
-            nft_id: Optional[str] = None,
-            last_price_asset: Optional[Asset] = None,
+            nft_id: str | None = None,
+            last_price_asset: Asset | None = None,
             only_with_manual_prices: bool = False,
             with_price: bool = True,
     ) -> 'NFTFilterQuery':
@@ -1625,7 +1622,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             cls,
             and_op: bool = True,
             substring_search: str = '',  # substring is always required for levenstein
-            chain_id: Optional[ChainID] = None,
+            chain_id: ChainID | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
         filter_query = LevenshteinFilterQuery(
@@ -1693,8 +1690,8 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls: type['TransactionsNotDecodedFilterQuery'],
-            limit: Optional[int] = None,
-            chain_id: Optional[ChainID] = None,
+            limit: int | None = None,
+            chain_id: ChainID | None = None,
     ) -> 'TransactionsNotDecodedFilterQuery':
         filter_query = cls.create(
             and_op=True,
@@ -1720,12 +1717,12 @@ class AccountingRulesFilterQuery(DBFilterQuery):
     def make(
             cls: type['AccountingRulesFilterQuery'],
             and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            counterparties: Optional[list[str]] = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            counterparties: list[str] | None = None,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
@@ -1770,9 +1767,9 @@ class PaginatedFilterQuery(DBFilterQuery):
     def make(
             cls,
             and_op: bool = True,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
     ) -> 'PaginatedFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]

@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 from uuid import uuid4
 
 import gevent
@@ -24,8 +24,8 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
 
-UnderlyingCursor = Union[sqlite3.Cursor, sqlcipher.Cursor]  # pylint: disable=no-member
-UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint: disable=no-member
+UnderlyingCursor: TypeAlias = sqlite3.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
+UnderlyingConnection: TypeAlias = sqlite3.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
 CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
 import logging
@@ -71,9 +71,9 @@ class DBCursor:
 
     def __exit__(
             self,
-            exctype: Optional[type[BaseException]],
-            value: Optional[BaseException],
-            traceback: Optional[TracebackType],
+            exctype: type[BaseException] | None,
+            value: BaseException | None,
+            traceback: TracebackType | None,
     ) -> bool:
         self.close()
         return True
@@ -133,7 +133,7 @@ class DBCursor:
             logger.trace('FINISH CURSOR FETCHONE')
         return result
 
-    def fetchmany(self, size: Optional[int] = None) -> list[Any]:
+    def fetchmany(self, size: int | None = None) -> list[Any]:
         if __debug__:
             logger.trace(f'CURSOR FETCHMANY with {size=}')
         if size is None:
@@ -236,7 +236,7 @@ class DBConnection:
 
     def __init__(
             self,
-            path: Union[str, Path],
+            path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
     ) -> None:
@@ -251,8 +251,8 @@ class DBConnection:
         self.savepoints: dict[str, None] = {}
         # These will hold the id of the greenlet where write tx/savepoints are active
         # https://www.gevent.org/api/gevent.greenlet.html#gevent.Greenlet.minimal_ident
-        self.savepoint_greenlet_id: Optional[str] = None
-        self.write_greenlet_id: Optional[str] = None
+        self.savepoint_greenlet_id: str | None = None
+        self.write_greenlet_id: str | None = None
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(
                 database=path,
@@ -381,7 +381,7 @@ class DBConnection:
     @contextmanager
     def savepoint_ctx(
             self,
-            savepoint_name: Optional[str] = None,
+            savepoint_name: str | None = None,
     ) -> Generator['DBCursor', None, None]:
         """
         Creates a savepoint context with the provided name. If the code inside the savepoint fails,
@@ -398,7 +398,7 @@ class DBConnection:
             self.release_savepoint(savepoint_name)
             cursor.close()
 
-    def _enter_savepoint(self, savepoint_name: Optional[str] = None) -> tuple['DBCursor', str]:
+    def _enter_savepoint(self, savepoint_name: str | None = None) -> tuple['DBCursor', str]:
         """
         Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
         Returns cursor and savepoint's name.
@@ -436,7 +436,7 @@ class DBConnection:
     def _modify_savepoint(
             self,
             rollback_or_release: Literal['ROLLBACK TO', 'RELEASE'],
-            savepoint_name: Optional[str],
+            savepoint_name: str | None,
     ) -> None:
         if len(self.savepoints) == 0:
             raise ContextError(
@@ -460,7 +460,7 @@ class DBConnection:
             if len(self.savepoints) == 0:  # mark if we are out of all savepoints
                 self.savepoint_greenlet_id = None
 
-    def rollback_savepoint(self, savepoint_name: Optional[str] = None) -> None:
+    def rollback_savepoint(self, savepoint_name: str | None = None) -> None:
         """
         Rollbacks to `savepoint_name` if given and to the latest savepoint otherwise.
         May raise:
@@ -468,7 +468,7 @@ class DBConnection:
         """
         self._modify_savepoint(rollback_or_release='ROLLBACK TO', savepoint_name=savepoint_name)
 
-    def release_savepoint(self, savepoint_name: Optional[str] = None) -> None:
+    def release_savepoint(self, savepoint_name: str | None = None) -> None:
         """
         Releases (aka forgets) `savepoint_name` if given and the latest savepoint otherwise.
         May raise:

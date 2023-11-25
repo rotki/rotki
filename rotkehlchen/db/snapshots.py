@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
@@ -123,7 +123,7 @@ class DBSnapshot:
     def export(
             self,
             timestamp: Timestamp,
-            directory_path: Optional[Path],
+            directory_path: Path | None,
     ) -> tuple[bool, str]:
         """Export the database's snapshot for specified timestamp.
 

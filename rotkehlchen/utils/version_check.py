@@ -35,8 +35,8 @@ def get_system_spec() -> dict[str, str]:
 
 class VersionCheckResult(NamedTuple):
     our_version: str
-    latest_version: Optional[str] = None
-    download_url: Optional[str] = None
+    latest_version: str | None = None
+    download_url: str | None = None
 
 
 def get_current_version(github: Optional['Github'] = None) -> VersionCheckResult:

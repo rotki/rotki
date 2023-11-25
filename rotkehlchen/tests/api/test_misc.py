@@ -1,7 +1,7 @@
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -27,9 +27,9 @@ from rotkehlchen.utils.misc import get_system_spec
 def generate_expected_info(
         expected_version: str,
         data_dir: Path,
-        latest_version: Optional[str] = None,
+        latest_version: str | None = None,
         accept_docker_risk: bool = False,
-        download_url: Optional[str] = None,
+        download_url: str | None = None,
 ):
     result = {
         'version': {

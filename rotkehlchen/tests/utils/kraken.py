@@ -1,7 +1,7 @@
 import json
 import random
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
@@ -346,15 +346,15 @@ def generate_random_kraken_id() -> str:
 
 def create_kraken_trade(
         tradeable_pairs: list[str],
-        base_asset: Optional[str] = None,
-        quote_asset: Optional[str] = None,
-        time: Optional[Timestamp] = None,
-        start_ts: Optional[Timestamp] = None,
-        end_ts: Optional[Timestamp] = None,
-        trade_type: Optional[TradeType] = None,
-        rate: Optional[FVal] = None,
-        amount: Optional[FVal] = None,
-        fee: Optional[FVal] = None,
+        base_asset: str | None = None,
+        quote_asset: str | None = None,
+        time: Timestamp | None = None,
+        start_ts: Timestamp | None = None,
+        end_ts: Timestamp | None = None,
+        trade_type: TradeType | None = None,
+        rate: FVal | None = None,
+        amount: FVal | None = None,
+        fee: FVal | None = None,
 ) -> dict[str, str]:
     trade = {}
     trade['ordertxid'] = str(generate_random_kraken_id())
@@ -499,10 +499,10 @@ class MockKraken(Kraken):
         with open(filepath, encoding='utf8') as f:
             return jsonloads_dict(f.read())
 
-    def online_api_query(self, method: str, req: Optional[dict] = None) -> dict:
+    def online_api_query(self, method: str, req: dict | None = None) -> dict:
         return super().api_query(method, req)
 
-    def api_query(self, method: str, req: Optional[dict] = None) -> dict:
+    def api_query(self, method: str, req: dict | None = None) -> dict:
         # Pretty ugly ... mock a kraken remote eror
         if self.remote_errors:
             raise RemoteError('Kraken remote error')

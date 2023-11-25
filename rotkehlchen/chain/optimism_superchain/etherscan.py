@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -46,8 +46,8 @@ class OptimismSuperchainEtherscan(Etherscan, metaclass=ABCMeta):
 
     def _additional_transaction_processing(
             self,
-            tx: Union[OptimismTransaction, EvmInternalTransaction],  # type: ignore[override]
-    ) -> Union[OptimismTransaction, EvmInternalTransaction]:
+            tx: OptimismTransaction | EvmInternalTransaction,  # type: ignore[override]
+    ) -> OptimismTransaction | EvmInternalTransaction:
         if not isinstance(tx, EvmInternalTransaction):
             # TODO: write this tx_receipt to DB so it doesn't need to be queried again
             # https://github.com/rotki/rotki/pull/6359#discussion_r1252850465

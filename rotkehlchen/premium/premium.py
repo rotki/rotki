@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Literal, NamedTuple, Optional, cast
+from typing import Any, Literal, NamedTuple, cast
 from urllib.parse import urlencode
 
 import machineid
@@ -389,7 +389,7 @@ class Premium:
             user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
         )
 
-    def pull_data(self) -> Optional[bytes]:
+    def pull_data(self) -> bytes | None:
         """Pulls data from the server and returns the binary file with the database encrypted
 
         Returns None if there is no DB saved in the server.
@@ -487,7 +487,7 @@ class Premium:
     def watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
-            data: Optional[dict[str, Any]],
+            data: dict[str, Any] | None,
     ) -> Any:
         if data is None:
             data = {}

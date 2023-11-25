@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import Literal, Optional
+from typing import Literal
 
 import gevent
 import requests
@@ -87,7 +87,7 @@ def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Re
 def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
-        exit_ts: Optional[Timestamp],
+        exit_ts: Timestamp | None,
 ) -> list[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 

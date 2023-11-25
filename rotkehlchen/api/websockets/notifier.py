@@ -1,7 +1,8 @@
 import json
 import logging
+from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from gevent.lock import Semaphore
 from geventwebsocket import WebSocketApplication
@@ -21,10 +22,10 @@ def _ws_send_impl(
         websocket: WebSocket,
         lock: Semaphore,
         to_send_msg: str,
-        success_callback: Optional[Callable] = None,
-        success_callback_args: Optional[dict[str, Any]] = None,
-        failure_callback: Optional[Callable] = None,
-        failure_callback_args: Optional[dict[str, Any]] = None,
+        success_callback: Callable | None = None,
+        success_callback_args: dict[str, Any] | None = None,
+        failure_callback: Callable | None = None,
+        failure_callback_args: dict[str, Any] | None = None,
 ) -> None:
     try:
         with lock:
@@ -62,11 +63,11 @@ class RotkiNotifier:
     def broadcast(
             self,
             message_type: 'WSMessageType',
-            to_send_data: Union[dict[str, Any], list[Any]],
-            success_callback: Optional[Callable] = None,
-            success_callback_args: Optional[dict[str, Any]] = None,
-            failure_callback: Optional[Callable] = None,
-            failure_callback_args: Optional[dict[str, Any]] = None,
+            to_send_data: dict[str, Any] | list[Any],
+            success_callback: Callable | None = None,
+            success_callback_args: dict[str, Any] | None = None,
+            failure_callback: Callable | None = None,
+            failure_callback_args: dict[str, Any] | None = None,
     ) -> None:
         """Broadcasts a websocket message
 
@@ -122,7 +123,7 @@ class RotkiWSApp(WebSocketApplication):
         rotki_notifier: RotkiNotifier = self.ws.environ['rotki_notifier']
         rotki_notifier.subscribe(self.ws)
 
-    def on_message(self, message: Optional[str], *args: Any, **kwargs: Any) -> None:
+    def on_message(self, message: str | None, *args: Any, **kwargs: Any) -> None:
         if self.ws.closed:
             return
         try:

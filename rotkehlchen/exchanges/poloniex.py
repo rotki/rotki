@@ -4,7 +4,7 @@ import hmac
 import json
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -158,7 +158,7 @@ class Poloniex(ExchangeInterface):
             raise
         return True, ''
 
-    def api_query_dict(self, command: str, req: Optional[dict] = None) -> dict:
+    def api_query_dict(self, command: str, req: dict | None = None) -> dict:
         result = self._api_query(command, req)
         if not isinstance(result, dict):
             raise RemoteError(
@@ -166,7 +166,7 @@ class Poloniex(ExchangeInterface):
             )
         return result
 
-    def api_query_list(self, command: str, req: Optional[dict] = None) -> list:
+    def api_query_list(self, command: str, req: dict | None = None) -> list:
         result = self._api_query(command, req)
         if not isinstance(result, list):
             raise RemoteError(
@@ -199,7 +199,7 @@ class Poloniex(ExchangeInterface):
         signature = base64.b64encode(digest)
         return signature.decode()
 
-    def _single_query(self, path: str, req: dict[str, Any]) -> Optional[requests.Response]:
+    def _single_query(self, path: str, req: dict[str, Any]) -> requests.Response | None:
         """A single api query for poloniex
 
         Returns the response if all went well or None if a recoverable poloniex
@@ -238,7 +238,7 @@ class Poloniex(ExchangeInterface):
         # else all is good
         return response
 
-    def _api_query(self, command: str, req: Optional[dict] = None) -> Union[dict, list]:
+    def _api_query(self, command: str, req: dict | None = None) -> dict | list:
         """An api query to poloniex. May make multiple requests
 
         Can raise:
@@ -277,7 +277,7 @@ class Poloniex(ExchangeInterface):
                 f'incremental backoff retries',
             )
 
-        result: Union[dict, list]
+        result: dict | list
         try:
             result = response.json()
         except JSONDecodeError as e:
@@ -494,7 +494,7 @@ class Poloniex(ExchangeInterface):
             self,
             movement_type: AssetMovementCategory,
             movement_data: dict[str, Any],
-    ) -> Optional[AssetMovement]:
+    ) -> AssetMovement | None:
         """Processes a single deposit/withdrawal from polo and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization

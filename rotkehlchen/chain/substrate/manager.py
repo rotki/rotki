@@ -1,9 +1,9 @@
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, cast
 from urllib.parse import urlparse
 
 import gevent
@@ -497,7 +497,7 @@ class SubstrateManager:
         preference, then are ordered depending on how close they are to the
         chain height; the higher 'weight_block' the better.
         """
-        own_node: Union[KusamaNodeName, PolkadotNodeName]
+        own_node: KusamaNodeName | PolkadotNodeName
         if self.chain == SupportedBlockchain.KUSAMA:
             own_node = KusamaNodeName.OWN
         else:
@@ -546,7 +546,7 @@ class SubstrateManager:
     def get_account_balance(
             self,
             account: SubstrateAddress,
-            node_interface: Optional[SubstrateInterface] = None,
+            node_interface: SubstrateInterface | None = None,
     ) -> FVal:
         """Given an account get its amount of chain native token.
 
@@ -578,7 +578,7 @@ class SubstrateManager:
     @request_available_nodes
     def get_chain_id(
             self,
-            node_interface: Optional[SubstrateInterface] = None,
+            node_interface: SubstrateInterface | None = None,
     ) -> SubstrateChainId:
         """
         May raise:
@@ -590,7 +590,7 @@ class SubstrateManager:
     @request_available_nodes
     def get_chain_properties(
             self,
-            node_interface: Optional[SubstrateInterface] = None,
+            node_interface: SubstrateInterface | None = None,
     ) -> SubstrateChainProperties:
         """
         May raise:
@@ -602,7 +602,7 @@ class SubstrateManager:
     @request_available_nodes
     def get_last_block(
             self,
-            node_interface: Optional[SubstrateInterface] = None,
+            node_interface: SubstrateInterface | None = None,
     ) -> BlockNumber:
         """
         May raise:
@@ -615,7 +615,7 @@ class SubstrateManager:
         """Attempt to set the RPC endpoint for the user's own node.
         If connection at endpoint is successful it will set `own_rpc_endpoint`.
         """
-        own_node: Union[KusamaNodeName, PolkadotNodeName]
+        own_node: KusamaNodeName | PolkadotNodeName
         if self.chain == SupportedBlockchain.KUSAMA:
             own_node = KusamaNodeName.OWN
         else:

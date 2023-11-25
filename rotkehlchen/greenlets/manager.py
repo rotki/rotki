@@ -1,6 +1,7 @@
 import logging
 import traceback
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 import gevent
 
@@ -35,7 +36,7 @@ class GreenletManager:
 
     def spawn_and_track(
             self,
-            after_seconds: Optional[float],
+            after_seconds: float | None,
             task_name: str,
             exception_is_error: bool,
             method: Callable,

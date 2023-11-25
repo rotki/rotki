@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from more_itertools import peekable
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -46,7 +46,7 @@ class RuleInformation(NamedTuple):
     links contains the properties in rule that have been linked to an accounting setting.
     """
     identifier: int
-    event_key: tuple[HistoryEventType, HistoryEventSubType, Union[str, None]]
+    event_key: tuple[HistoryEventType, HistoryEventSubType, str | None]
     rule: BaseEventSettings
     links: dict[str, str]
 
@@ -61,7 +61,7 @@ class DBAccountingRules:
             cls,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
     ) -> str:
         return f'Rule for ({event_type.serialize()}, {event_subtype.serialize()}, {counterparty})'
 
@@ -69,7 +69,7 @@ class DBAccountingRules:
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> int:
@@ -135,7 +135,7 @@ class DBAccountingRules:
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,

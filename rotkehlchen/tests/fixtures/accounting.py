@@ -5,7 +5,6 @@ import sys
 from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -73,7 +72,7 @@ def fixture_should_mock_price_queries():
 
 
 @pytest.fixture()
-def default_mock_price_value() -> Optional[FVal]:
+def default_mock_price_value() -> FVal | None:
     """Determines test behavior If a mock price is not found
 
     If it's None, then test fails with an error. If it is any other
@@ -167,7 +166,7 @@ def fixture_accountant(
         latest_accounting_rules,
         accountant_without_rules,
         use_dummy_pot,
-) -> Optional[Accountant]:
+) -> Accountant | None:
     if not start_with_logged_in_user:
         return None
 
@@ -224,7 +223,7 @@ def fixture_should_mock_current_price_queries():
 
 
 @pytest.fixture(name='ignore_mocked_prices_for')
-def fixture_ignore_mocked_prices_for() -> Optional[list[str]]:
+def fixture_ignore_mocked_prices_for() -> list[str] | None:
     """An optional list of asset identifiers to ignore mocking for"""
     return None
 

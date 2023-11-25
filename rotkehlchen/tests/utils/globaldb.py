@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from contextlib import ExitStack
 from copy import deepcopy
-from typing import Literal, Optional, Union
+from typing import Literal
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -114,9 +114,9 @@ def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack
 
 def globaldb_get_general_cache_last_queried_ts(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, CacheType]],
+        key_parts: Iterable[str | CacheType],
         value: str,
-) -> Optional[Timestamp]:
+) -> Timestamp | None:
     """Function to get timestamp at which pair key - value was queried last time."""
     cache_key = compute_cache_key(key_parts)
     cursor.execute(

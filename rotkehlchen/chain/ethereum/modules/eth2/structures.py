@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 class ValidatorID(NamedTuple):
     # not using index due to : https://github.com/python/mypy/issues/9043
-    index: Optional[int]  # type: ignore  # may be null if the index is not yet determined
+    index: int | None  # type: ignore  # may be null if the index is not yet determined
     public_key: Eth2PubKey
     ownership_proportion: FVal
 
@@ -215,9 +215,9 @@ DEPOSITING_VALIDATOR_PERFORMANCE = ValidatorPerformance(
 
 
 class ValidatorDetails(NamedTuple):
-    validator_index: Optional[int]
+    validator_index: int | None
     public_key: str
-    eth1_depositor: Optional[ChecksumEvmAddress]
+    eth1_depositor: ChecksumEvmAddress | None
     has_exited: bool
     performance: ValidatorPerformance
 

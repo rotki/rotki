@@ -45,5 +45,5 @@ class NotBooleanChecker(BaseChecker):
         if operand_type is None:
             return
 
-        if operand_type.name != 'bool':
+        if hasattr(operand_type, 'name') and operand_type.name != 'bool':
             self.add_message(NONBOOLEANNOT_SYMBOL, node=node)

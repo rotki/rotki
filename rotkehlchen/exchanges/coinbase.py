@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from contextlib import suppress
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
 import requests
@@ -63,7 +63,7 @@ log = RotkehlchenLogsAdapter(logger)
 CB_EVENTS_PREFIX = 'CBE_'
 
 
-def trade_from_coinbase(raw_trade: dict[str, Any]) -> Optional[Trade]:
+def trade_from_coinbase(raw_trade: dict[str, Any]) -> Trade | None:
     """Turns a coinbase transaction into a rotkehlchen Trade.
 
     https://developers.coinbase.com/api/v2?python#buys
@@ -114,7 +114,7 @@ def trade_from_coinbase(raw_trade: dict[str, Any]) -> Optional[Trade]:
     )
 
 
-def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Optional[Trade]:
+def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
     """Turn information from a conversion into a trade
 
     Mary raise:
@@ -227,7 +227,7 @@ class Coinbase(ExchangeInterface):
             self,
             method_str: str,
             ignore_pagination: bool = False,
-    ) -> tuple[Optional[list[Any]], str]:
+    ) -> tuple[list[Any] | None, str]:
         try:
             result = self._api_query(method_str, ignore_pagination=ignore_pagination)
 
@@ -344,7 +344,7 @@ class Coinbase(ExchangeInterface):
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
             ignore_pagination: bool = False,
     ) -> list[Any]:
         """Performs a coinbase API Query for endpoint
@@ -607,7 +607,7 @@ class Coinbase(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> Optional[AssetMovement]:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> AssetMovement | None:
         """Processes a single deposit/withdrawal from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -757,7 +757,7 @@ class Coinbase(ExchangeInterface):
 
         return movements
 
-    def _deserialize_history_event(self, raw_data: dict[str, Any]) -> Optional[HistoryEvent]:
+    def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization

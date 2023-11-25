@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -22,7 +22,7 @@ class HasDSProxy(EthereumModule):
             self,
             ethereum_inquirer: 'EvmNodeInquirerWithDSProxy',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer

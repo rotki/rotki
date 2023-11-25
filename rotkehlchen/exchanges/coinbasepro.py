@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -118,7 +118,7 @@ class Coinbasepro(ExchangeInterface):
         )
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
-        self.account_to_currency: Optional[dict[str, AssetWithOracles]] = None
+        self.account_to_currency: dict[str, AssetWithOracles] | None = None
         self.available_products = {0}
 
         self.session.headers.update({
@@ -179,9 +179,9 @@ class Coinbasepro(ExchangeInterface):
             self,
             endpoint: str,
             request_method: Literal['GET', 'POST'] = 'GET',
-            options: Optional[dict[str, Any]] = None,
-            query_options: Optional[dict[str, Any]] = None,
-    ) -> tuple[list[Any], Optional[str]]:
+            options: dict[str, Any] | None = None,
+            query_options: dict[str, Any] | None = None,
+    ) -> tuple[list[Any], str | None]:
         """Performs a coinbase PRO API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -255,7 +255,7 @@ class Coinbasepro(ExchangeInterface):
                 # get out of the retry loop, we did not get 429 complaint
                 break
 
-        json_ret: Union[list[Any], dict[str, Any]]
+        json_ret: list[Any] | dict[str, Any]
         if response.status_code == HTTPStatus.BAD_REQUEST:
             json_ret = jsonloads_dict(response.text)
             if json_ret['message'] == 'invalid signature':
@@ -382,7 +382,7 @@ class Coinbasepro(ExchangeInterface):
     def _paginated_query(
             self,
             endpoint: str,
-            query_options: Optional[dict[str, Any]] = None,
+            query_options: dict[str, Any] | None = None,
             limit: int = COINBASEPRO_PAGINATION_LIMIT,
     ) -> Iterator[list[dict[str, Any]]]:
         if query_options is None:

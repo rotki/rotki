@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import content_hash
 from ens import ENS
@@ -296,7 +296,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         ))
         return DEFAULT_DECODING_OUTPUT
 
-    def _get_name_to_show(self, node: bytes) -> Optional[str]:
+    def _get_name_to_show(self, node: bytes) -> str | None:
         """Try to find the name associated with the ENS namehash/node that is being modified
 
         Returns the fullname

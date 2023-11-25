@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -40,7 +40,7 @@ class VelodromePoolData(NamedTuple):
     pool_name: str
     token0_address: ChecksumEvmAddress
     token1_address: ChecksumEvmAddress
-    gauge_address: Optional[ChecksumEvmAddress]
+    gauge_address: ChecksumEvmAddress | None
 
 
 def save_velodrome_data_to_cache(
@@ -114,7 +114,7 @@ def read_velodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
 def query_velodrome_data_from_chain_and_maybe_create_tokens(
         inquirer: 'OptimismInquirer',
         existing_pools: list[ChecksumEvmAddress],
-) -> Optional[list[VelodromePoolData]]:
+) -> list[VelodromePoolData] | None:
     """
     Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
     If new pools are found their tokens are created and the pools are returned.
@@ -204,7 +204,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     return returned_pools
 
 
-def query_velodrome_data(inquirer: 'OptimismInquirer') -> Optional[list[VelodromePoolData]]:
+def query_velodrome_data(inquirer: 'OptimismInquirer') -> list[VelodromePoolData] | None:
     """
     Queries velodrome pools and tokens.
     Returns a list of pool data if the query was successful.

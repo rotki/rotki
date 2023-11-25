@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
@@ -156,7 +156,7 @@ class Compoundv2Decoder(DecoderInterface):
         Decode borrow and repayments for compound tokens
         """
         underlying_token_symbol = compound_token.symbol[1:]
-        underlying_asset: Optional[CryptoAsset]
+        underlying_asset: CryptoAsset | None
 
         if underlying_token_symbol == self.eth.symbol:
             underlying_asset = self.eth

@@ -150,7 +150,7 @@ def _check_curve_contract_call(decoded: tuple[Any, ...]) -> bool:
     )
 
 
-def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:
+def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPriceOracle]:
     """Gets the underlying asset price for the given ethereum token
 
     TODO: This should be eventually pulled from the assets DB. All of these
@@ -209,7 +209,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], Curren
     return price, oracle
 
 
-def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[Price]:
+def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Price | None:
     log.debug(
         'Query free.currencyconverterapi.com fiat pair',
         base_currency=base.identifier,
@@ -251,10 +251,10 @@ class Inquirer:
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _evm_managers: dict[ChainID, 'EvmManager']
-    _oracles: Optional[Sequence[CurrentPriceOracle]] = None
-    _oracle_instances: Optional[list[CurrentPriceOracleInstance]] = None
-    _oracles_not_onchain: Optional[Sequence[CurrentPriceOracle]] = None
-    _oracle_instances_not_onchain: Optional[list[CurrentPriceOracleInstance]] = None
+    _oracles: Sequence[CurrentPriceOracle] | None = None
+    _oracle_instances: list[CurrentPriceOracleInstance] | None = None
+    _oracles_not_onchain: Sequence[CurrentPriceOracle] | None = None
+    _oracle_instances_not_onchain: list[CurrentPriceOracleInstance] | None = None
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: set[str]
@@ -263,7 +263,7 @@ class Inquirer:
 
     def __new__(
             cls,
-            data_dir: Optional[Path] = None,
+            data_dir: Path | None = None,
             cryptocompare: Optional['Cryptocompare'] = None,
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
@@ -356,7 +356,7 @@ class Inquirer:
     def get_cached_current_price_entry(
             cache_key: tuple[Asset, Asset],
             match_main_currency: bool,
-    ) -> Optional[CachedPriceEntry]:
+    ) -> CachedPriceEntry | None:
         cache = Inquirer()._cached_current_price.get(cache_key, None)
         if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS or cache.used_main_currency != match_main_currency:  # noqa: E501
             return None
@@ -721,7 +721,7 @@ class Inquirer:
     def find_lp_price_from_uniswaplike_pool(
             self,
             token: EvmToken,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         """Calculates the price for a uniswaplike LP token the contract of which is also
         the contract of the pool it represents. For example uniswap or velodrome LP tokens."""
         return lp_price_from_uniswaplike_pool_contract(
@@ -735,7 +735,7 @@ class Inquirer:
     def find_curve_pool_price(
             self,
             lp_token: EvmToken,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         """
         1. Obtain the pool for this token
         2. Obtain prices for assets in pool
@@ -852,7 +852,7 @@ class Inquirer:
     def find_yearn_price(
             self,
             token: EvmToken,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         """
         Query price for a yearn vault v2 token using the pricePerShare method
         and the price of the underlying token.
@@ -951,7 +951,7 @@ class Inquirer:
             from_fiat_currency: FiatAsset,
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
         assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
 

@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from gevent.lock import Semaphore
 
@@ -86,11 +86,11 @@ class MakerdaoVault(NamedTuple):
     # amount/usd value of DAI drawn
     debt: Balance
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
-    collateralization_ratio: Optional[str]
+    collateralization_ratio: str | None
     # The ratio at which the vault is open for liquidation. (e.g. 1.5 for 150%)
     liquidation_ratio: FVal
     # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
-    liquidation_price: Optional[FVal]
+    liquidation_price: FVal | None
     urn: ChecksumEvmAddress
     stability_fee: FVal
 
@@ -142,7 +142,7 @@ class MakerdaoVaults(HasDSProxy):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
 
@@ -190,7 +190,7 @@ class MakerdaoVaults(HasDSProxy):
             owner: ChecksumEvmAddress,
             urn: ChecksumEvmAddress,
             ilk: bytes,
-    ) -> Optional[MakerdaoVault]:
+    ) -> MakerdaoVault | None:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
         asset = collateral_type_to_underlying_asset(collateral_type)
         if asset is None:
@@ -246,7 +246,7 @@ class MakerdaoVaults(HasDSProxy):
             vault: MakerdaoVault,
             proxy: ChecksumEvmAddress,
             urn: ChecksumEvmAddress,
-    ) -> Optional[MakerdaoVaultDetails]:
+    ) -> MakerdaoVaultDetails | None:
         # They can raise:
         # DeserializationError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
@@ -659,8 +659,8 @@ class MakerdaoVaults(HasDSProxy):
                 if timestamp > to_timestamp:
                     break
 
-                got_asset: Optional[CryptoAsset]
-                spent_asset: Optional[CryptoAsset]
+                got_asset: CryptoAsset | None
+                spent_asset: CryptoAsset | None
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 count_spent_got_cost_basis = False
                 if event.event_type == VaultEventType.GENERATE_DEBT:

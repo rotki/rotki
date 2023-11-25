@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 import requests
 from ens.abis import RESOLVER as ENS_RESOLVER_ABI
@@ -90,7 +90,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
         self.blockscout = Blockscout(database=database, msg_aggregator=database.msg_aggregator)
 
-    def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
+    def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str | None]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
 
         Returns a mapping of addresses to either a string name or `None`
@@ -100,7 +100,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
         - BlockchainQueryError if web3 is used and there is a VM execution error"""
-        human_names: dict[ChecksumEvmAddress, Optional[str]] = {}
+        human_names: dict[ChecksumEvmAddress, str | None] = {}
         chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
         for chunk in chunks:
             result = self.ens_reverse_records.call(
@@ -120,8 +120,8 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             self,
             name: str,
             blockchain: Literal[SupportedBlockchain.ETHEREUM] = SupportedBlockchain.ETHEREUM,
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Optional[ChecksumEvmAddress]:
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> ChecksumEvmAddress | None:
         ...
 
     @overload
@@ -134,16 +134,16 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
                 SupportedBlockchain.KUSAMA,
                 SupportedBlockchain.POLKADOT,
             ],
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Optional[HexStr]:
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> HexStr | None:
         ...
 
     def ens_lookup(
             self,
             name: str,
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Optional[Union[ChecksumEvmAddress, HexStr]]:
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> ChecksumEvmAddress | HexStr | None:
         return self._query(
             method=self._ens_lookup,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -154,31 +154,31 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
     @overload
     def _ens_lookup(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             name: str,
             blockchain: Literal[SupportedBlockchain.ETHEREUM],
-    ) -> Optional[ChecksumEvmAddress]:
+    ) -> ChecksumEvmAddress | None:
         ...
 
     @overload
     def _ens_lookup(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             name: str,
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.KUSAMA,
                 SupportedBlockchain.POLKADOT,
             ],
-    ) -> Optional[HexStr]:
+    ) -> HexStr | None:
         ...
 
     def _ens_lookup(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             name: str,
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
-    ) -> Optional[Union[ChecksumEvmAddress, HexStr]]:
+    ) -> ChecksumEvmAddress | HexStr | None:
         """Performs an ENS lookup and returns address if found else None
 
         TODO: currently web3.py 5.15.0 does not support multichain ENS domains
@@ -227,7 +227,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
     def get_ens_resolver_addr(
             self,
             name: str,
-    ) -> tuple[Optional[ChecksumEvmAddress], Optional[str]]:
+    ) -> tuple[ChecksumEvmAddress | None, str | None]:
         """Get the ENS resolver for the given name. Also returns the normalized name.
 
         May raise:
@@ -263,13 +263,13 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
 
     def query_highest_block(self) -> BlockNumber:
         log.debug('Querying blockcypher for ETH highest block', url=BLOCKCYPHER_URL)
-        eth_resp: Optional[dict[str, str]]
+        eth_resp: dict[str, str] | None
         try:
             eth_resp = request_get_dict(BLOCKCYPHER_URL)
         except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
             eth_resp = None
 
-        block_number: Optional[int]
+        block_number: int | None
         if eth_resp and 'height' in eth_resp:
             block_number = int(eth_resp['height'])
             log.debug('ETH highest block result', block=block_number)

@@ -60,7 +60,7 @@ class YearnVaultsV2(EthereumModule):
             )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
-    def _calculate_vault_roi_and_pps(self, vault: EvmToken) -> tuple[Optional[FVal], int]:
+    def _calculate_vault_roi_and_pps(self, vault: EvmToken) -> tuple[FVal | None, int]:
         """
         getPricePerFullShare A @ block X
         getPricePerFullShare B @ block Y
@@ -174,7 +174,7 @@ class YearnVaultsV2(EthereumModule):
                 total -= event.from_value
             else:  # withdraws
                 profit_amount = total.amount + event.to_value.amount - profit_so_far.amount
-                profit: Optional[Balance]
+                profit: Balance | None
                 if profit_amount >= 0:
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,

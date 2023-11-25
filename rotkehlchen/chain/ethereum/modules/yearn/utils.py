@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import requests
 
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _maybe_reset_yearn_cache_timestamp(data: Optional[dict[str, Any]]) -> bool:
+def _maybe_reset_yearn_cache_timestamp(data: dict[str, Any] | None) -> bool:
     """Get the number of vaults processed in the last execution of this function.
     If it was the same number of vaults this response has then we don't need to take
     action since vaults are not removed from their API response.
@@ -49,7 +49,7 @@ def _maybe_reset_yearn_cache_timestamp(data: Optional[dict[str, Any]]) -> bool:
     It returns if we should stop updating (True) or not (False)
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        yearn_api_cache: Optional[str] = globaldb_get_unique_cache_value(
+        yearn_api_cache: str | None = globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
         )

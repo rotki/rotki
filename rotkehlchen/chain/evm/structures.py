@@ -1,5 +1,5 @@
 import dataclasses
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -20,7 +20,7 @@ class EvmTxReceiptLog:
 class EvmTxReceipt:
     tx_hash: EVMTxHash
     chain_id: ChainID
-    contract_address: Optional[ChecksumEvmAddress]
+    contract_address: ChecksumEvmAddress | None
     status: bool
     type: int
     logs: list[EvmTxReceiptLog] = dataclasses.field(default_factory=list)

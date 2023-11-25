@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Sequence
-from typing import Optional
 
 import gevent
 import requests
@@ -49,7 +48,7 @@ KUSAMA_TEST_RPC_ENDPOINT = 'https://ksm.getblock.io/ae78eb1d-2643-4e22-b691-0ecb
 def attempt_connect_test_nodes(
         chain: SupportedBlockchain,
         timeout: int = NODE_CONNECTION_TIMEOUT,
-        node_names: Optional[Sequence[NodeName]] = None,
+        node_names: Sequence[NodeName] | None = None,
 ) -> DictNodeNameNodeAttributes:
     """Attempt to connect to either a default sequence of reliable nodes for
     testing (e.g. Parity ones) or to a custom ones (via `node_names` param).
@@ -57,7 +56,7 @@ def attempt_connect_test_nodes(
 
     NB: prioritising nodes by block_number is disabled.
     """
-    def attempt_connect_node(node: NodeName) -> tuple[NodeName, Optional[NodeNameAttributes]]:
+    def attempt_connect_node(node: NodeName) -> tuple[NodeName, NodeNameAttributes | None]:
         try:
             node_interface = SubstrateInterface(
                 url=node.endpoint(),

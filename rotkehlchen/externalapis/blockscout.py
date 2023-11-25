@@ -1,7 +1,7 @@
 import logging
 import sys
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -48,7 +48,7 @@ class Blockscout(ExternalServiceWithApiKey):
             module: Literal['addresses'],
             endpoint: Literal['withdrawals'],
             encoded_args: str,
-            extra_args: Optional[dict[str, Any]] = None,
+            extra_args: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Query blockscout
 

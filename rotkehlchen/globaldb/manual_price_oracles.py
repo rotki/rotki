@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -26,7 +26,7 @@ class ManualPriceOracle:
             from_asset: Asset,  # pylint: disable=unused-argument
             to_asset: Asset,  # pylint: disable=unused-argument
             timestamp: Timestamp,  # pylint: disable=unused-argument
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+            seconds: int | None = None,  # pylint: disable=unused-argument
     ) -> bool:
         return True
 
@@ -59,12 +59,12 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
 
     def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
-        self.database: Optional[DBHandler] = None
+        self.database: DBHandler | None = None
 
     def set_database(self, database: 'DBHandler') -> None:
         self.database = database
 
-    def rate_limited_in_last(self, seconds: Optional[int] = None) -> bool:
+    def rate_limited_in_last(self, seconds: int | None = None) -> bool:
         return False
 
     def query_current_price(

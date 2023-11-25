@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlparse
 
 import requests
@@ -114,7 +114,7 @@ def _query_web3_get_logs(
         web3: Web3,
         filter_args: FilterParams,
         from_block: int,
-        to_block: Union[int, Literal['latest']],
+        to_block: int | Literal['latest'],
         contract_address: ChecksumEvmAddress,
         event_name: str,
         argument_filters: dict[str, Any],
@@ -252,13 +252,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def connected_to_any_web3(self) -> bool:
         return len(self.web3_mapping) != 0
 
-    def get_own_node_web3(self) -> Optional[Web3]:
+    def get_own_node_web3(self) -> Web3 | None:
         for node, web3node in self.web3_mapping.items():
             if node.owned:
                 return web3node.web3_instance
         return None
 
-    def get_own_node_info(self) -> Optional[NodeName]:
+    def get_own_node_info(self) -> NodeName | None:
         for node in self.web3_mapping:
             if node.owned:
                 return node
@@ -309,7 +309,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_multi_balance(
             self,
             accounts: Sequence[ChecksumEvmAddress],
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in the chain native token.
 
@@ -337,8 +337,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             address: ChecksumEvmAddress,
             block_number: int,
-            web3: Optional[Web3] = None,
-    ) -> Optional[FVal]:
+            web3: Web3 | None = None,
+    ) -> FVal | None:
         """Attempts to get the historical eth balance using the node provided.
 
         If `web3` is None, it uses the local own node.
@@ -555,14 +555,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             f'Please check your network and confirm sufficient nodes are connected for {self.blockchain!s}.',  # noqa: E501
         )
 
-    def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
+    def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:
             return web3.eth.block_number
 
         # else
         return self.etherscan.get_latest_block_number()
 
-    def get_latest_block_number(self, call_order: Optional[Sequence[WeightedNode]] = None) -> int:
+    def get_latest_block_number(self, call_order: Sequence[WeightedNode] | None = None) -> int:
         return self._query(
             method=self._get_latest_block_number,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -571,7 +571,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_block_by_number(
             self,
             num: int,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> dict[str, Any]:
         return self._query(
             method=self._get_block_by_number,
@@ -579,7 +579,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             num=num,
         )
 
-    def _get_block_by_number(self, web3: Optional[Web3], num: int) -> dict[str, Any]:
+    def _get_block_by_number(self, web3: Web3 | None, num: int) -> dict[str, Any]:
         """Returns the block object corresponding to the given block number
 
         May raise:
@@ -598,7 +598,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_code(
             self,
             account: ChecksumEvmAddress,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> str:
         return self._query(
             method=self._get_code,
@@ -606,7 +606,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             account=account,
         )
 
-    def _get_code(self, web3: Optional[Web3], account: ChecksumEvmAddress) -> str:
+    def _get_code(self, web3: Web3 | None, account: ChecksumEvmAddress) -> str:
         """Gets the deployment bytecode at the given address
 
         May raise:
@@ -623,7 +623,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             contract_address: ChecksumEvmAddress,
             abi: list,
             method_name: str,
-            arguments: Optional[list[Any]] = None,
+            arguments: list[Any] | None = None,
     ) -> Any:
         """Performs an eth_call to an evm contract via etherscan
 
@@ -662,8 +662,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             contract_address: ChecksumEvmAddress,
             abi: list,
             method_name: str,
-            arguments: Optional[list[Any]] = None,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            arguments: list[Any] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return self._query(
@@ -678,11 +678,11 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _call_contract(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             contract_address: ChecksumEvmAddress,
             abi: list,
             method_name: str,
-            arguments: Optional[list[Any]] = None,
+            arguments: list[Any] | None = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         """Performs an eth_call to an evm contract
@@ -712,10 +712,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _get_transaction_receipt(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             tx_hash: EVMTxHash,
             must_exist: bool = False,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
@@ -776,9 +776,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def maybe_get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
             must_exist: bool = False,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         return self._query(
             method=self._get_transaction_receipt,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -789,7 +789,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> dict[str, Any]:
         """Retrieves the transaction receipt for the tx_hash provided.
 
@@ -807,10 +807,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _get_transaction_by_hash(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             tx_hash: EVMTxHash,
             must_exist: bool = False,
-    ) -> Optional[tuple[EvmTransaction, dict[str, Any]]]:
+    ) -> tuple[EvmTransaction, dict[str, Any]] | None:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
@@ -840,9 +840,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def maybe_get_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
             must_exist: bool = False,
-    ) -> Optional[tuple[EvmTransaction, dict[str, Any]]]:
+    ) -> tuple[EvmTransaction, dict[str, Any]] | None:
         """Gets transaction by hash and raw receipt data"""
         return self._query(
             method=self._get_transaction_by_hash,
@@ -854,7 +854,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> tuple[EvmTransaction, dict[str, Any]]:
         """Retrieves information about a transaction from its hash.
 
@@ -878,8 +878,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
-            to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence[WeightedNode]] = None,
+            to_block: int | Literal['latest'] = 'latest',
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
             call_order = [self.etherscan_node]
@@ -904,13 +904,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _get_logs(
             self,
-            web3: Optional[Web3],
+            web3: Web3 | None,
             contract_address: ChecksumEvmAddress,
             abi: list,
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
-            to_block: Union[int, Literal['latest']] = 'latest',
+            to_block: int | Literal['latest'] = 'latest',
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
@@ -1065,7 +1065,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             calls: list[tuple[ChecksumEvmAddress, str]],
             # only here to comply with multicall_2
             require_success: bool = True,  # pylint: disable=unused-argument
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            call_order: Sequence['WeightedNode'] | None = None,
             block_identifier: BlockIdentifier = 'latest',
             calls_chunk_size: int = MULTICALL_CHUNKS,
     ) -> Any:
@@ -1092,7 +1092,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             calls: list[tuple[ChecksumEvmAddress, str]],
             require_success: bool,
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            call_order: Sequence['WeightedNode'] | None = None,
             block_identifier: BlockIdentifier = 'latest',
             # only here to comply with multicall
             calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
@@ -1114,7 +1114,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             contract: 'EvmContract',
             method_name: str,
             arguments: list[Any],
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            call_order: Sequence['WeightedNode'] | None = None,
             decode_result: bool = True,
     ) -> Any:
         calls = [(
@@ -1276,7 +1276,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             properties: tuple[str, ...],
             contract: EvmContract,
             token_kind: EvmTokenKind,
-    ) -> list[Optional[Union[int, str, bytes]]]:
+    ) -> list[int | (str | bytes) | None]:
         """Decodes information i.e. (decimals, symbol, name) about the token contract.
         - `decimals` property defaults to 18.
         - `name` and `symbol` default to None.
@@ -1313,7 +1313,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return is_pruned, is_archive
 
-    def get_contract_deployed_block(self, address: ChecksumEvmAddress) -> Optional[int]:
+    def get_contract_deployed_block(self, address: ChecksumEvmAddress) -> int | None:
         """Get the deployed block of a contract
 
         Returns None if the address is not a contract.

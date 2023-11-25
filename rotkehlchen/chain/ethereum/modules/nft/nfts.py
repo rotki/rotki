@@ -35,30 +35,30 @@ log = RotkehlchenLogsAdapter(logger)
 
 NFT_DB_WRITE_TUPLE = tuple[
     str,  # identifier
-    Optional[str],  # name
-    Optional[str],  # price_in_asset
-    Optional[str],  # price_asset
+    str | None,  # name
+    str | None,  # price_in_asset
+    str | None,  # price_asset
     bool,  # whether the price is manually input
     ChecksumEvmAddress,  # owner address
     bool,  # whether is an lp
-    Optional[str],  # image_url
-    Optional[str],  # collection_name
+    str | None,  # image_url
+    str | None,  # collection_name
 ]
 NFT_DB_READ_TUPLE = tuple[
     str,  # identifier
-    Optional[str],  # name
-    Optional[str],  # price_in_asset
-    Optional[str],  # price_asset
+    str | None,  # name
+    str | None,  # price_in_asset
+    str | None,  # price_asset
     bool,  # whether the price is manually input
     bool,  # whether is an lp
-    Optional[str],  # image_url
-    Optional[str],  # collection_name
+    str | None,  # image_url
+    str | None,  # collection_name
 ]
 
 
 def _deserialize_nft_price(
-        last_price: Optional[str],
-        last_price_asset: Optional[str],
+        last_price: str | None,
+        last_price_asset: str | None,
 ) -> tuple[FVal, Asset, FVal]:
     """Deserialize last price and last price asset from a DB entry
     TODO: Both last_price and last_price_asset are optional in the current DB schema
@@ -202,7 +202,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
     def query_balances(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-            uniswap_nfts: Optional[AddressToUniswapV3LPBalances],
+            uniswap_nfts: AddressToUniswapV3LPBalances | None,
     ) -> None:
         """Queries NFT balances for the specified addresses and saves them to the db.
         Doesn't return anything. The actual opensea querying part is protected by a lock.
@@ -269,10 +269,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def get_nfts_with_price(
             self,
-            identifier: Optional[str] = None,
+            identifier: str | None = None,
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
-            from_asset: Optional[Asset] = None,
-            to_asset: Optional[Asset] = None,
+            from_asset: Asset | None = None,
+            to_asset: Asset | None = None,
             only_with_manual_prices: bool = False,
     ) -> list[dict[str, Any]]:
         """

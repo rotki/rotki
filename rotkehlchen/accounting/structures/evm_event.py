@@ -1,7 +1,7 @@
 import json
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Final, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -92,14 +92,14 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
             event_subtype: HistoryEventSubType,
             asset: Asset,
             balance: Balance,
-            location_label: Optional[str] = None,
-            notes: Optional[str] = None,
-            identifier: Optional[int] = None,
-            counterparty: Optional[str] = None,
-            product: Optional[EvmProduct] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            extra_data: Optional[dict[str, Any]] = None,
-            event_identifier: Optional[str] = None,
+            location_label: str | None = None,
+            notes: str | None = None,
+            identifier: int | None = None,
+            counterparty: str | None = None,
+            product: EvmProduct | None = None,
+            address: ChecksumEvmAddress | None = None,
+            extra_data: dict[str, Any] | None = None,
+            event_identifier: str | None = None,
     ) -> None:
         if event_identifier is None:
             calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
@@ -172,7 +172,7 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
             ignored_ids_mapping: dict[ActionType, set[str]],
             hidden_event_ids: list[int],
             missing_accounting_rule: bool,
-            grouped_events_num: Optional[int] = None,
+            grouped_events_num: int | None = None,
     ) -> dict[str, Any]:
         result = super().serialize_for_api(
             customized_event_ids=customized_event_ids,
@@ -224,7 +224,7 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
             return False
         return len(self.extra_data.keys() & ALL_DETAILS_KEYS) > 0
 
-    def get_details(self) -> Optional[dict[str, Any]]:
+    def get_details(self) -> dict[str, Any] | None:
         if self.extra_data is None:
             return None
 

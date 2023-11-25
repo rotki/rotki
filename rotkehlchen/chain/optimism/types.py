@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTxHash, Timestamp
 
@@ -19,7 +19,7 @@ class OptimismTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented 
             timestamp: Timestamp,
             block_number: int,
             from_address: ChecksumEvmAddress,
-            to_address: Optional[ChecksumEvmAddress],
+            to_address: ChecksumEvmAddress | None,
             value: int,
             gas: int,
             gas_price: int,

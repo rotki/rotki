@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypedDict, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
 from gevent.lock import Semaphore
 
@@ -36,8 +36,8 @@ log = RotkehlchenLogsAdapter(logger)
 class Trove(NamedTuple):
     collateral: AssetBalance
     debt: AssetBalance
-    collateralization_ratio: Optional[FVal]
-    liquidation_price: Optional[FVal]
+    collateralization_ratio: FVal | None
+    liquidation_price: FVal | None
     active: bool
     trove_id: int
 
@@ -53,8 +53,8 @@ class Trove(NamedTuple):
 
 
 class LiquityBalanceWithProxy(TypedDict):
-    proxies: Optional[dict[ChecksumEvmAddress, dict[str, AssetBalance]]]
-    balances: Optional[dict[str, AssetBalance]]
+    proxies: dict[ChecksumEvmAddress, dict[str, AssetBalance]] | None
+    balances: dict[str, AssetBalance] | None
 
 
 def default_balance_with_proxy_factory() -> LiquityBalanceWithProxy:
@@ -67,7 +67,7 @@ class Liquity(HasDSProxy):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
@@ -132,8 +132,8 @@ class Liquity(HasDSProxy):
                         ),
                     )
                     # Avoid division errors
-                    collateralization_ratio: Optional[FVal]
-                    liquidation_price: Optional[FVal]
+                    collateralization_ratio: FVal | None
+                    liquidation_price: FVal | None
                     if debt > 0:
                         collateralization_ratio = eth_price * collateral / debt * 100
                     else:

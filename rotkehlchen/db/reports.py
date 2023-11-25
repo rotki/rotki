@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -45,9 +46,9 @@ def _get_reports_or_events_maybe_limit(
 def _get_reports_or_events_maybe_limit(
         entry_type: Literal['events', 'reports'],
         entries_found: int,
-        entries: Union[list[dict[str, Any]], list[ProcessedAccountingEvent]],
+        entries: list[dict[str, Any]] | list[ProcessedAccountingEvent],
         with_limit: bool,
-) -> tuple[Union[list[dict[str, Any]], list[ProcessedAccountingEvent]], int]:
+) -> tuple[list[dict[str, Any]] | list[ProcessedAccountingEvent], int]:
     if with_limit is False:
         return entries, entries_found
 
@@ -139,14 +140,14 @@ class DBAccountingReports:
 
     def get_reports(
             self,
-            report_id: Optional[int],
+            report_id: int | None,
             with_limit: bool,
     ) -> tuple[list[dict[str, Any]], int]:
         """Queries all historical saved PnL reports.
 
         If `with_limit` is true then the api limit is applied
         """
-        bindings: Union[tuple, tuple[int]] = ()
+        bindings: tuple | tuple[int] = ()
         query = 'SELECT * from pnl_reports'
         reports: list[dict[str, Any]] = []
         if report_id is not None:

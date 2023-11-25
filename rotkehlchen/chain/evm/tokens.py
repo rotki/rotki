@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -30,7 +30,7 @@ TokenBalancesType = tuple[
 
 DetectedTokensType = dict[
     ChecksumEvmAddress,
-    tuple[Optional[list[EvmToken]], Optional[Timestamp]],
+    tuple[list[EvmToken] | None, Timestamp | None],
 ]
 
 # 08/08/2020
@@ -128,7 +128,7 @@ class EvmTokens(metaclass=ABCMeta):
             self,
             address: ChecksumEvmAddress,
             tokens: list[EvmToken],
-            call_order: Optional[Sequence[WeightedNode]],
+            call_order: Sequence[WeightedNode] | None,
     ) -> dict[EvmToken, FVal]:
         """Queries the balances of multiple tokens for an address
 
@@ -165,7 +165,7 @@ class EvmTokens(metaclass=ABCMeta):
     def _get_multicall_token_balances(
             self,
             chunk: list[tuple[ChecksumEvmAddress, list[EvmToken]]],
-            call_order: Optional[Sequence['WeightedNode']] = None,
+            call_order: Sequence['WeightedNode'] | None = None,
     ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
         """Gets token balances from a chunk of address -> token address
 

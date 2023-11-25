@@ -9,7 +9,7 @@ This interface is used at the moment in:
 """
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType
@@ -63,7 +63,7 @@ class AMMSwapPlatform:
             counterparties: list[str],
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.counterparties = counterparties
@@ -123,7 +123,7 @@ class AMMSwapPlatform:
             pool_token = EvmToken(evm_address_to_identifier(address=pool_address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
             underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
             if underlying0 != A_WETH:
-                asset_list: Union[tuple[EvmToken], tuple[Asset, Asset]] = (underlying0,)
+                asset_list: tuple[EvmToken] | tuple[Asset, Asset] = (underlying0,)
             else:
                 asset_list = (A_ETH, A_WETH)
 

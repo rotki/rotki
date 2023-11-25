@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -33,7 +33,7 @@ ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
-    Optional[str],  # location label
+    str | None,  # location label
     str,            # amount
     str,            # usd value
     str,            # event_subtype
@@ -72,7 +72,7 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):  # noqa: PLW1641  # 
             location_label: ChecksumEvmAddress,
             is_exit_or_blocknumber: int,
             notes: str,
-            identifier: Optional[int] = None,
+            identifier: int | None = None,
     ) -> None:
         self.validator_index = validator_index
         self.is_exit_or_blocknumber = is_exit_or_blocknumber
@@ -121,8 +121,8 @@ class EthWithdrawalEvent(EthStakingEvent):
             balance: Balance,
             withdrawal_address: ChecksumEvmAddress,
             is_exit: bool,
-            identifier: Optional[int] = None,
-            event_identifier: Optional[str] = None,
+            identifier: int | None = None,
+            event_identifier: str | None = None,
     ) -> None:
         if event_identifier is None:
             # withdrawals happen at least every couple of days. For them to happen in the same
@@ -241,8 +241,8 @@ class EthBlockEvent(EthStakingEvent):
             fee_recipient: ChecksumEvmAddress,
             block_number: int,
             is_mev_reward: bool,
-            identifier: Optional[int] = None,
-            event_identifier: Optional[str] = None,
+            identifier: int | None = None,
+            event_identifier: str | None = None,
     ) -> None:
 
         if is_mev_reward:
@@ -375,9 +375,9 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             timestamp: TimestampMS,
             balance: Balance,
             depositor: ChecksumEvmAddress,
-            extra_data: Optional[dict[str, Any]] = None,
-            identifier: Optional[int] = None,
-            event_identifier: Optional[str] = None,
+            extra_data: dict[str, Any] | None = None,
+            identifier: int | None = None,
+            event_identifier: str | None = None,
     ) -> None:
         suffix = f'{validator_index}' if validator_index != UNKNOWN_VALIDATOR_INDEX else 'with a not yet known validator index'  # noqa: E501
         super().__init__(  # super should call evm event

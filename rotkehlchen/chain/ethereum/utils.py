@@ -68,14 +68,14 @@ ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
 MULTICALL_CHUNKS = 20
 
 
-def token_normalized_value_decimals(token_amount: int, token_decimals: Optional[int]) -> FVal:
+def token_normalized_value_decimals(token_amount: int, token_decimals: int | None) -> FVal:
     if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
         token_decimals = 18
 
     return token_amount / (FVal(10) ** FVal(token_decimals))
 
 
-def token_raw_value_decimals(token_amount: FVal, token_decimals: Optional[int]) -> int:
+def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> int:
     if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
         token_decimals = 18
 

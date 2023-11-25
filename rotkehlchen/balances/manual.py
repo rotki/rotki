@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
@@ -20,7 +20,7 @@ class ManuallyTrackedBalance:
     label: str
     amount: FVal
     location: Location
-    tags: Optional[list[str]]
+    tags: list[str] | None
     balance_type: BalanceType
 
 
@@ -30,7 +30,7 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
     label: str
     value: Balance
     location: Location
-    tags: Optional[list[str]]
+    tags: list[str] | None
     balance_type: BalanceType
 
     def serialize(self) -> dict[str, Any]:
@@ -42,7 +42,7 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
 
 def get_manually_tracked_balances(
         db: 'DBHandler',
-        balance_type: Optional[BalanceType] = None,
+        balance_type: BalanceType | None = None,
 ) -> list[ManuallyTrackedBalanceWithValue]:
     """Gets the manually tracked balances"""
     with db.conn.read_ctx() as cursor:

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.errors.misc import RemoteError
@@ -42,7 +42,7 @@ def should_run_periodic_task(
 def query_missing_prices_of_base_entries(
         database: 'DBHandler',
         entries_missing_prices: list[tuple[str, 'FVal', 'Asset', 'Timestamp']],
-        base_entries_ignore_set: Optional[set[str]] = None,
+        base_entries_ignore_set: set[str] | None = None,
 ) -> None:
     """
     Queries missing prices for HistoryBaseEntry in database updating

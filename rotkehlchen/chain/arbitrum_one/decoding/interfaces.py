@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Callable
+from collections.abc import Callable
 
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 
