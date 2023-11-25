@@ -322,7 +322,7 @@ def pairwise(iterable: Iterable[Any]) -> Iterator:
     For a function that does so check pairwise_longest.
     s -> (s0, s1), (s2, s3), (s4, s5), ..."""
     a = iter(iterable)
-    return zip(a, a)
+    return zip(a, a, strict=False)
 
 
 def pairwise_longest(iterable: Iterable[Any]) -> Iterator:

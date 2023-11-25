@@ -260,7 +260,7 @@ def test_read_write_customized_events_from_db(database: DBHandler) -> None:
     ]
 
     with db.db.conn.read_ctx() as cursor:
-        for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers):  # noqa: E501
+        for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers, strict=True):  # noqa: E501
             events = db.get_history_events(
                 cursor=cursor,
                 filter_query=filtering_class.make(**filter_args),

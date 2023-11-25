@@ -424,7 +424,7 @@ def query_missing_accounting_rules(
     ]
 
     callbacks = evm_accounting_aggregator.get_accounting_callbacks()
-    bindings_and_events_iterator = peekable(zip(bindings, related_events))
+    bindings_and_events_iterator = peekable(zip(bindings, related_events, strict=True))
     with db.conn.read_ctx() as cursor:
         # index to keep the current event in the list of related events. It is used in the
         # callbacks since we need to process events but we don't want to consume the current

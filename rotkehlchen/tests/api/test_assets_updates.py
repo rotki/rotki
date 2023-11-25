@@ -83,6 +83,8 @@ INSERT INTO assets(identifier, name, type) VALUES("121-ada-FADS-as", "A name", "
 UPDATE assets SET name="Ευρώ" WHERE identifier="EUR";
 INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("EUR", "Ευρώ", "EUR", NULL, NULL, NULL, NULL, NULL);
     """  # noqa: E501
+    # The update_4_assets has an extra newline which is put there on purpose to see
+    # that the consuming logic can handle trailing newlines
     update_4_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
     *"""  # noqa: E501
     update_4_mappings = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");

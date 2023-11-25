@@ -108,7 +108,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
                 method_name='getNames',
                 arguments=[chunk],
             )
-            for addr, name in zip(chunk, result):
+            for addr, name in zip(chunk, result, strict=True):
                 if name == '':
                     human_names[addr] = None
                 else:

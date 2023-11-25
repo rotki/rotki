@@ -192,15 +192,16 @@ def uniswap_v3_lp_token_balances(
                 require_success=False,
                 calls=[
                     (entry[0], entry[1].encode('slot0'))
-                    for entry in zip(pool_addresses, pool_contracts)
+                    for entry in zip(pool_addresses, pool_contracts, strict=True)
                 ],
             )
         except RemoteError as e:
             log.error(UNISWAP_V3_ERROR_MSG.format('pool contract slot0', str(e)))
             continue
+
         slots_0 = [
-            entry[0].decode(entry[1][1], 'slot0')
-            for entry in zip(pool_contracts, slots_0_multicall) if entry[1][0] is True
+            entry[0].decode(entry[1][1], 'slot0')  # length equal due to multical args
+            for entry in zip(pool_contracts, slots_0_multicall, strict=True) if entry[1][0] is True
         ]
         tokens_a, tokens_b = [], []
         for position in positions:
@@ -220,7 +221,7 @@ def uniswap_v3_lp_token_balances(
         price_ranges = []
         amounts_0 = []
         amounts_1 = []
-        for (position, slot_0, token_a, token_b) in zip(positions, slots_0, tokens_a, tokens_b):
+        for (position, slot_0, token_a, token_b) in zip(positions, slots_0, tokens_a, tokens_b, strict=True):  # noqa: E501
             price_ranges.append(
                 calculate_price_range(
                     tick_lower=position[5],
@@ -257,7 +258,7 @@ def uniswap_v3_lp_token_balances(
                 require_success=False,
                 calls=[
                     (entry[0], entry[1].encode('liquidity'))
-                    for entry in zip(pool_addresses, pool_contracts)
+                    for entry in zip(pool_addresses, pool_contracts, strict=True)
                 ],
             )
         except RemoteError as e:
@@ -265,12 +266,13 @@ def uniswap_v3_lp_token_balances(
             continue
 
         for _entry in zip(
-            pool_contracts,
-            liquidity_in_pools_multicall,
-            positions,
-            slots_0,
-            tokens_a,
-            tokens_b,
+                pool_contracts,
+                liquidity_in_pools_multicall,
+                positions,
+                slots_0,
+                tokens_a,
+                tokens_b,
+                strict=True,
         ):
             liquidity_in_pool = _entry[0].decode(_entry[1][1], 'liquidity')[0]
             try:
@@ -290,15 +292,16 @@ def uniswap_v3_lp_token_balances(
                 continue
 
         for item in zip(
-            tokens_ids,
-            pool_addresses,
-            positions,
-            price_ranges,
-            tokens_a,
-            tokens_b,
-            amounts_0,
-            amounts_1,
-            total_tokens_in_pools,
+                tokens_ids,
+                pool_addresses,
+                positions,
+                price_ranges,
+                tokens_a,
+                tokens_b,
+                amounts_0,
+                amounts_1,
+                total_tokens_in_pools,
+                strict=True,
         ):
             if FVal(item[6]) > ZERO or FVal(item[7]) > ZERO:
                 item[4].update({

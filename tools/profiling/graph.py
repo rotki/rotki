@@ -210,7 +210,7 @@ def memory_subplot(output, data_list):
     memory_max *= 1.1
 
     hour_fmt = dates.DateFormatter('%H:%M')
-    for count, (data, memory_axes) in enumerate(zip(data_list, all_memory_axes)):
+    for count, (data, memory_axes) in enumerate(zip(data_list, all_memory_axes, strict=True)):
         timestamp = [line[TIMESTAMP] for line in data]
         memory = [line[MEMORY] for line in data]
 

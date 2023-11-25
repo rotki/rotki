@@ -3499,7 +3499,7 @@ class RestAPI:
                 evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
                 events=[x for _, x in events_result],  # type: ignore
                 accountant=self.rotkehlchen.accountant,
-            )
+            )  # length of missing_accounting_rules and events guaranteeed by function
             entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
@@ -3507,7 +3507,7 @@ class RestAPI:
                     hidden_event_ids=hidden_event_ids,
                     missing_accounting_rule=missing_accounting_rule,
                     grouped_events_num=grouped_events_num,  # type: ignore
-                ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules)  # noqa: E501
+                ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules, strict=True)  # noqa: E501
             ]
         else:
             missing_accounting_rules = query_missing_accounting_rules(
@@ -3523,7 +3523,7 @@ class RestAPI:
                     ignored_ids_mapping=ignored_ids_mapping,
                     hidden_event_ids=hidden_event_ids,
                     missing_accounting_rule=missing_accounting_rule,
-                ) for x, missing_accounting_rule in zip(events_result, missing_accounting_rules)
+                ) for x, missing_accounting_rule in zip(events_result, missing_accounting_rules, strict=True)  # noqa: E501
             ]
         result = {
             'entries': entries,

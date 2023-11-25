@@ -150,16 +150,25 @@ class EvmTokens(metaclass=ABCMeta):
             call_order=call_order,
         )
         balances: dict[EvmToken, FVal] = defaultdict(FVal)
-        for token_balance, token in zip(result, tokens):
-            if token_balance == 0:
-                continue
 
-            normalized_balance = token_normalized_value(token_balance, token)
-            log.debug(
-                f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
-                f'token balance for {address} and balance {normalized_balance}',
+        try:
+            for token_balance, token in zip(result, tokens, strict=True):
+                if token_balance == 0:
+                    continue
+
+                normalized_balance = token_normalized_value(token_balance, token)
+                log.debug(
+                    f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
+                    f'token balance for {address} and balance {normalized_balance}',
+                )
+                balances[token] += normalized_balance
+        except ValueError:
+            log.error(
+                f'{self.evm_inquirer.chain_name} tokensBalance returned different length '
+                f'of results({len(result)}) to amount of tokens ({len(tokens)}).'
+                f'{result=}.{tokens=}',
             )
-            balances[token] += normalized_balance
+
         return balances
 
     def _get_multicall_token_balances(
@@ -189,13 +198,13 @@ class EvmTokens(metaclass=ABCMeta):
             call_order=call_order,
         )
         balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
-        for (address, tokens), result in zip(chunk, results):
+        for (address, tokens), result in zip(chunk, results, strict=True):
             decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],
             )[0]
-            for token, token_balance in zip(tokens, decoded_result):
+            for token, token_balance in zip(tokens, decoded_result, strict=True):
                 if token_balance == 0:
                     continue
 

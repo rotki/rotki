@@ -2071,7 +2071,7 @@ class DBHandler:
             'ORDER BY timestamp ASC',
             (from_ts, to_ts),
         )
-        all_timestamps, all_categories = zip(*cursor)
+        all_timestamps, all_categories = zip(*cursor, strict=True)
         # dicts maintain insertion order in python 3.7+
         timestamps_have_asset_balance = dict.fromkeys(all_timestamps, False)
         timestamps_with_asset_balance = dict.fromkeys(asset_timestamps, True)

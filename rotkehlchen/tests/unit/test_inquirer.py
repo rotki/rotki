@@ -42,7 +42,7 @@ from rotkehlchen.inquirer import (
     Inquirer,
     _query_currency_converterapi,
 )
-from rotkehlchen.interfaces import HistoricalPriceOracleInterface
+from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -272,19 +272,26 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
-    inquirer._oracle_instances = [
-        MagicMock() for oracle in inquirer._oracles if isinstance(oracle, HistoricalPriceOracleInterface)  # noqa: E501
-    ]
+    class OracleMock(CurrentPriceOracleInterface):
+        def __init__(self, name):
+            self.rate_limited_in_last_call_count = 0
+            self.query_current_price_call_count = 0
+            super().__init__(name)
 
-    for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.rate_limited_in_last.return_value = True
+        def rate_limited_in_last(self, seconds):
+            self.rate_limited_in_last_call_count += 1
+            return True
+
+        def query_current_price(self, from_asset, to_asset, match_main_currency):
+            self.query_current_price_call_count += 1
+
+    inquirer._oracle_instances = [OracleMock('x') for _ in inquirer._oracles]
 
     price = inquirer.find_usd_price(A_BTC)
-
     assert price == ZERO_PRICE
     for oracle_instance in inquirer._oracle_instances:
-        assert oracle_instance.rate_limited_in_last.call_count == 1
-        assert oracle_instance.query_current_price.call_count == 0
+        assert oracle_instance.rate_limited_in_last_call_count == 1
+        assert oracle_instance.query_current_price_call_count == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

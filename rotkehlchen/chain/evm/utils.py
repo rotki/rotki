@@ -91,7 +91,7 @@ def lp_price_from_uniswaplike_pool_contract(
 
     # decode output
     decoded = []
-    for (method_output, method_name) in zip(output, methods):
+    for (method_output, method_name) in zip(output, methods, strict=True):
         call_success = True
         if call_success and len(method_output) != 0:
             decoded_method = contract.decode(method_output, method_name)
