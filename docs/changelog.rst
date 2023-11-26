@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
+* :bug:`-` Creating, editing and deleting accounting rules will now update warnings when rendered events get affected in the history view.
 
 * :release:`1.31.0 <2023-11-24>`
 * :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.

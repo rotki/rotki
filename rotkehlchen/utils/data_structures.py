@@ -1,5 +1,6 @@
 import collections
 from collections import OrderedDict
+from collections.abc import Callable
 from typing import Generic, TypeVar
 
 KT = TypeVar('KT')  # key type
@@ -31,6 +32,22 @@ class LRUCacheWithRemove(Generic[KT, VT]):
     def clear(self) -> None:
         """Delete all entries in the cache"""
         self.cache.clear()
+
+
+class DefaultLRUCache(LRUCacheWithRemove[KT, VT]):
+    """LRU cache that behaves like defaultdict when accessing objects"""
+
+    def __init__(self, default_factory: Callable[[], VT], maxsize: int = 512):
+        super().__init__(maxsize)
+        self.default_factory = default_factory
+
+    def get(self, key: KT) -> VT:
+        value = super().get(key)
+        if value is None:
+            value = self.default_factory()
+            self.add(key, value)
+
+        return value
 
 
 class LRUCacheLowerKey(LRUCacheWithRemove[str, VT]):
