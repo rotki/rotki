@@ -109,13 +109,24 @@ class DBAccountingRules:
 
             return inserted_rule_id
 
-    def remove_accounting_rule(self, rule_id: int) -> None:
+    def remove_accounting_rule(self, rule_id: int) -> tuple[HistoryEventType, HistoryEventSubType, str | None]:  # noqa: E501
         """
-        Delete an accounting using its identifier
+        Delete an accounting using its identifier. Returns the type identifier for the rule.
         May raise:
         - InputError if the rule doesn't exist
         """
         with self.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'SELECT type, subtype, counterparty FROM accounting_rules WHERE identifier=?',
+                (rule_id,),
+            )
+            if (entry := write_cursor.fetchone()) is None:
+                raise InputError(f'Rule with id {rule_id} does not exist')
+
+            event_type = HistoryEventType.deserialize(entry[0])
+            event_subtype = HistoryEventSubType.deserialize(entry[1])
+            counterparty = None if entry[2] == NO_ACCOUNTING_COUNTERPARTY else entry[2]
+
             write_cursor.execute(
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
                 (rule_id,))
@@ -130,6 +141,8 @@ class DBAccountingRules:
             if write_cursor.rowcount != 1:
                 # we know that at max there is one due to the primary key in the table
                 raise InputError(f'Rule with id {rule_id} does not exist')
+
+            return event_type, event_subtype, counterparty
 
     def update_accounting_rule(
             self,
@@ -314,12 +327,12 @@ def _events_to_consume(
         next_events: Sequence[HistoryBaseEntry],
         event: HistoryBaseEntry,
         pot: 'AccountingPot',
-) -> list[int]:
+) -> list[tuple[int, int]]:
     """
     Returns a list of event identifiers processed after checking possible accounting
     treatments and callbacks.
     """
-    ids_processed: list[int] = []
+    ids_processed: list[tuple[int, int]] = []
     counterparty = getattr(event, 'counterparty', None)
     if counterparty == CPT_GAS:  # avoid checking the case of gas in evm events
         return ids_processed
@@ -329,6 +342,7 @@ def _events_to_consume(
     query = 'SELECT accounting_treatment FROM accounting_rules WHERE type=? AND subtype=? AND counterparty=?'  # noqa: E501
     event_type = event.event_type.serialize()
     event_subtype = event.event_subtype.serialize()
+    event_type_identifier = event.get_type_identifier()
 
     raw_treatment = cursor.execute(
         query,
@@ -349,13 +363,13 @@ def _events_to_consume(
                 log.error(f'Event with {event.event_identifier=} should have a SWAP IN event')
                 return ids_processed
             _, next_event = next(events_iterator)
-            ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
+            ids_processed.append((next_event.identifier, event_type_identifier))  # type: ignore[arg-type]
 
             _, peeked_event = events_iterator.peek((None, None))
             if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
                 # consume the related fee if it exists
                 _, next_event = next(events_iterator)
-                ids_processed.append(next_event.identifier)  # type: ignore[arg-type]
+                ids_processed.append((next_event.identifier, event_type_identifier))  # type: ignore[arg-type]
 
         return ids_processed
 
@@ -363,7 +377,7 @@ def _events_to_consume(
         return ids_processed  # only evm events have callbacks
 
     # if there is no accounting treatment check for callbacks
-    if (callback_data := callbacks.get(event.get_type_identifier())) is None:
+    if (callback_data := callbacks.get(event_type_identifier)) is None:
         return ids_processed
 
     processed_events_num, callback = callback_data
@@ -384,7 +398,7 @@ def _events_to_consume(
             log.error('Failed to get an expected event from iterator during missing accounting rules check')  # noqa: E501
             return ids_processed
 
-        ids_processed.append(next_event.identifier)  # type: ignore
+        ids_processed.append((next_event.identifier, event_type_identifier))  # type: ignore
 
     return ids_processed
 
@@ -450,6 +464,7 @@ def query_missing_accounting_rules(
             row = cursor.execute(query, event_binding).fetchone()
             is_missing_rule = row[0] == 0
             accountant.processable_events_cache.add(event.identifier, is_missing_rule)  # type: ignore
+            accountant.processable_events_cache_signatures.get(event.get_type_identifier()).append(event.identifier)  # type: ignore
 
             # the current event in addition to have an accounting rule could have a callback that
             # affects events that come after and is not enough to check the accounting rule
@@ -467,8 +482,9 @@ def query_missing_accounting_rules(
                     accountant.processable_events_cache.add(event.identifier, False)  # type: ignore
 
                 # update information about the new events
-                for processed_event_id in new_missing_accounting_rule:
+                for processed_event_id, event_type_identifier in new_missing_accounting_rule:
                     accountant.processable_events_cache.add(processed_event_id, False)
+                    accountant.processable_events_cache_signatures.get(event_type_identifier).append(processed_event_id)
 
     # we use bool because the cache can return None and in order to cover this case we use
     # `None`'s Falsy value meaning that the event doesn't have an accounting rule
