@@ -310,7 +310,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     transaction_endpoint_and_none_found = (
                         status == 0 and
                         json_ret['message'] == 'No transactions found' and
-                        action in {'txlist', 'txlistinternal', 'tokentx'}
+                        action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal'}
                     )
                     logs_endpoint_and_none_found = (
                         status == 0 and
