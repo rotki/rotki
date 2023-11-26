@@ -3333,7 +3333,7 @@
     },
     "missing_api_key": {
       "action": "Enter key",
-      "message": "You do not have an {location} {service} API key configured. rotki {service} queries will still work but will be very slow. If you are not using your own {location} node, it is recommended to go to {url}, create an API key and then input it in the external service credentials setting of rotki",
+      "message": "You do not have an {location} {service} API key configured. rotki {location} {service} queries will still work but will be very slow. If you are not using your own {location} node, it is recommended to go to {url}, create an API key and then input it in the external service credentials setting of rotki",
       "title": "{location} {service} API key"
     },
     "new_detected_token": {

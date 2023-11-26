@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, cast, overload
+from typing import Any, Literal, Optional, cast, get_args, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -3266,3 +3266,11 @@ class DBHandler:
             'INSERT OR IGNORE INTO skipped_external_events(data, location, extra_data) VALUES(?, ?, ?)',  # noqa: E501
             (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
         )
+
+    def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_CHAINS]:
+        """Reads the DB for the excluding chains and calculate which chains to
+        perform EVM accound detection on"""
+        all_chains = get_args(SUPPORTED_EVM_CHAINS)
+        with self.conn.read_ctx() as cursor:
+            excluded_chain_ids = self.get_settings(cursor).evmchains_to_skip_detection
+        return list(set(all_chains) - {x.to_blockchain() for x in excluded_chain_ids})

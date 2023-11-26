@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6885` Users can now specify EVM chains for which no activity will be auto-detected by rotki.
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
 * :bug:`-` Creating, editing and deleting accounting rules will now update warnings when rendered events get affected in the history view.
 

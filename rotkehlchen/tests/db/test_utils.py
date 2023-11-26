@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
@@ -12,6 +12,7 @@ from rotkehlchen.db.utils import (
     need_writable_cursor,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.types import SUPPORTED_EVM_CHAINS, ChainID, SupportedBlockchain
 
 
 @pytest.mark.parametrize(
@@ -216,3 +217,11 @@ def test_db_tuple_to_str(data, tuple_type, expected_str):
     else:
         with pytest.raises(AssertionError):
             db_tuple_to_str(data, tuple_type)
+
+
+@pytest.mark.parametrize(('db_settings', 'expected_chains'), [
+    ({'evmchains_to_skip_detection': []}, set(get_args(SUPPORTED_EVM_CHAINS))),
+    ({'evmchains_to_skip_detection': [ChainID.POLYGON_POS, ChainID.BASE, ChainID.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS}),  # noqa: E501
+])
+def test_get_chains_to_detect_evm_accounts(database, expected_chains):
+    assert set(database.get_chains_to_detect_evm_accounts()) == expected_chains
