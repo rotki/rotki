@@ -36,7 +36,7 @@ import datetime
 import pickle
 from contextlib import suppress
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -166,7 +166,7 @@ def memory_timeline(output, data_list):
 
     fig, memory_axes = plt.subplots()
 
-    last_ts: Optional[Any] = None
+    last_ts: Any | None = None
     memory_max = 0.0
 
     for data in data_list:
@@ -210,7 +210,7 @@ def memory_subplot(output, data_list):
     memory_max *= 1.1
 
     hour_fmt = dates.DateFormatter('%H:%M')
-    for count, (data, memory_axes) in enumerate(zip(data_list, all_memory_axes)):
+    for count, (data, memory_axes) in enumerate(zip(data_list, all_memory_axes, strict=True)):
         timestamp = [line[TIMESTAMP] for line in data]
         memory = [line[MEMORY] for line in data]
 
@@ -254,7 +254,7 @@ def latency_scatter(output, data_list):
         axes.set_xlim(min(timestamp), max(timestamp))
         axes.set_ylim(0, max(latency) * 1.1)
 
-    last_ts: Optional[Any] = None
+    last_ts: Any | None = None
     for timestamps in data_list:
         if not timestamps:
             continue

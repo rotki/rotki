@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -58,5 +58,5 @@ class BaseTransactionDecoder(OptimismSuperchainTransactionDecoder):
         return False
 
     @staticmethod
-    def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:  # pylint: disable=unused-argument
+    def _address_is_exchange(address: ChecksumEvmAddress) -> str | None:  # pylint: disable=unused-argument
         return None

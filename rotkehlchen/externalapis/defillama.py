@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import requests
@@ -40,14 +40,14 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.all_coins_cache: Optional[dict[str, dict[str, Any]]] = None
+        self.all_coins_cache: dict[str, dict[str, Any]] | None = None
         self.last_rate_limit = 0
 
     def _query(
             self,
             module: str,
-            subpath: Optional[str] = None,
-            options: Optional[dict[str, str]] = None,
+            subpath: str | None = None,
+            options: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Performs a defillama query
 
@@ -191,13 +191,13 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             from_asset: Asset,  # pylint: disable=unused-argument
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         return not self.is_penalized()
 
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,
+            seconds: int | None = None,
     ) -> bool:
         if seconds is None:
             return False

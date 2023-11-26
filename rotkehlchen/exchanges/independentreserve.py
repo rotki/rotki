@@ -5,7 +5,7 @@ import logging
 import time
 from collections import OrderedDict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 import gevent
 import requests
@@ -175,7 +175,7 @@ def _trade_from_independentreserve(raw_trade: dict) -> Trade:
     )
 
 
-def _asset_movement_from_independentreserve(raw_tx: dict) -> Optional[AssetMovement]:
+def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | None:
     """Convert IndependentReserve raw data to an AssetMovement
 
     https://www.independentreserve.com/products/api#GetTransactions
@@ -246,7 +246,7 @@ class Independentreserve(ExchangeInterface):
         self.uri = 'https://api.independentreserve.com'
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'Content-Type': 'application/json'})
-        self.account_guids: Optional[list] = None
+        self.account_guids: list | None = None
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
@@ -259,7 +259,7 @@ class Independentreserve(ExchangeInterface):
             verb: Literal['get', 'post'],
             method_type: Literal['Public', 'Private'],
             path: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> dict:
         """An IndependentrReserve query
 
@@ -394,7 +394,7 @@ class Independentreserve(ExchangeInterface):
         self.account_guids = account_guids
         return assets_balance, ''
 
-    def _gather_paginated_data(self, path: str, extra_options: Optional[dict] = None) -> list[dict[str, Any]]:  # noqa: E501
+    def _gather_paginated_data(self, path: str, extra_options: dict | None = None) -> list[dict[str, Any]]:  # noqa: E501
         """May raise KeyError"""
         page = 1
         page_size = 50

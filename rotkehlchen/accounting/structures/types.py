@@ -1,15 +1,15 @@
 from enum import Enum, auto
-from typing import Any, Literal, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
 
 EVM_EVENT_FIELDS = tuple[
     bytes,          # tx_hash
-    Optional[str],  # counterparty
-    Optional[str],  # product
-    Optional[str],  # address
-    Optional[str],  # extra_data
+    str | None,  # counterparty
+    str | None,  # product
+    str | None,  # address
+    str | None,  # extra_data
 ]
 
 
@@ -19,18 +19,18 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     int,            # sequence_index
     int,            # timestamp
     str,            # location
-    Optional[str],  # location label
+    str | None,  # location label
     str,            # asset
     str,            # amount
     str,            # usd value
-    Optional[str],  # notes
+    str | None,  # notes
     str,            # type
     str,            # subtype
     bytes,          # tx_hash
     str,            # address
-    Optional[str],  # counterparty
-    Optional[str],  # product
-    Optional[str],  # extra_data
+    str | None,  # counterparty
+    str | None,  # product
+    str | None,  # extra_data
 ]
 
 
@@ -103,7 +103,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     CREATE = auto()  # used when tx creates a new entity like Maker vault or Gnosis safe
     ATTEST = auto()
 
-    def serialize_or_none(self) -> Optional[str]:
+    def serialize_or_none(self) -> str | None:
         return self.serialize()
 
 
@@ -117,7 +117,7 @@ class EventDirection(SerializableEnumNameMixin):
 class EventCategoryDetails(NamedTuple):
     label: str
     icon: str
-    color: Optional[Literal['success', 'error']] = None
+    color: Literal['success', 'error'] | None = None
 
     def serialize(self) -> dict[str, Any]:
         result = {'label': self.label, 'icon': self.icon}

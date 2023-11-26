@@ -2,10 +2,11 @@ import importlib
 import logging
 import pkgutil
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from gevent.lock import Semaphore
 
@@ -69,7 +70,7 @@ class EventDecoderFunction(Protocol):
 
     def __call__(
             self,
-            token: Optional[EvmToken],
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
@@ -226,7 +227,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def _recursively_initialize_decoders(
             self,
-            package: Union[str, ModuleType],
+            package: str | ModuleType,
     ) -> DecodingRules:
         if isinstance(package, str):
             package = importlib.import_module(package)
@@ -288,13 +289,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def try_all_rules(
             self,
-            token: Optional[EvmToken],
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> Optional[DecodingOutput]:
+    ) -> DecodingOutput | None:
         """
         Execute event rules for the current tx log. Returns None when no
         new event or actions need to be propagated.
@@ -485,7 +486,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def get_and_decode_undecoded_transactions(
             self,
-            limit: Optional[int] = None,
+            limit: int | None = None,
             send_ws_notifications: bool = False,
     ) -> None:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
@@ -511,7 +512,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def decode_transaction_hashes(
             self,
             ignore_cache: bool,
-            tx_hashes: Optional[list[EVMTxHash]],
+            tx_hashes: list[EVMTxHash] | None,
             send_ws_notifications: bool = False,
     ) -> list['EvmEvent']:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
@@ -695,7 +696,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def _maybe_decode_erc20_approve(
             self,
-            token: Optional[EvmToken],
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
@@ -810,7 +811,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def _maybe_decode_erc20_721_transfer(
             self,
-            token: Optional[EvmToken],
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
@@ -970,7 +971,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
+    def _address_is_exchange(address: ChecksumEvmAddress) -> str | None:
         """Takes an address and returns if it's an exchange in the given chain
         and the counterparty to use if it is."""
 

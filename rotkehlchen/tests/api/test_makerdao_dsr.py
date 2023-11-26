@@ -119,7 +119,7 @@ def mock_etherscan_for_dsr(
     proxy2 = make_evm_address()
     targets = [address_to_32byteshexstr(proxy1), address_to_32byteshexstr(proxy2), '0x0000000000000000000000000000000000000000000000000000000000000000']  # noqa: E501
 
-    sorted_accounts = sorted(zip([account1, account2, account3], targets), key=lambda x: x[0])
+    sorted_accounts = sorted(zip([account1, account2, account3], targets, strict=True), key=lambda x: x[0])  # noqa: E501
     proxies = [y[1] for y in sorted_accounts]
 
     account1_join1_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501

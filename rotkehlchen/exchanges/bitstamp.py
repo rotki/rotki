@@ -4,7 +4,7 @@ import logging
 import uuid
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
 import requests
@@ -49,6 +49,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
@@ -309,7 +310,7 @@ class Bitstamp(ExchangeInterface):
             self,
             endpoint: Literal['balance', 'user_transactions'],
             method: Literal['post'] = 'post',
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> Response:
         """Request a Bistamp API v2 endpoint (from `endpoint`).
         """
@@ -389,7 +390,7 @@ class Bitstamp(ExchangeInterface):
             end_ts: Timestamp,
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> Union[list[Trade], list[AssetMovement], list]:
+    ) -> list[Trade] | (list[AssetMovement] | list):
         """Request a Bitstamp API v2 endpoint paginating via an options
         attribute.
 
@@ -403,7 +404,7 @@ class Bitstamp(ExchangeInterface):
             * limit: 1000 (API v2 default using `since_id`).
             * sort: 'asc'
         """
-        deserialization_method: Callable[[dict[str, Any]], Union[Trade, AssetMovement]]
+        deserialization_method: Callable[[dict[str, Any]], Trade | AssetMovement]
         endpoint: Literal['user_transactions']
         response_case: Literal['trades', 'asset_movements']
         if case == 'trades':
@@ -454,7 +455,7 @@ class Bitstamp(ExchangeInterface):
 
             has_results = False
             is_result_timestamp_gt_end_ts = False
-            result: Union[Trade, AssetMovement]
+            result: Trade | AssetMovement
             for raw_result in response_list:
                 try:
                     entry_type = deserialize_int_from_str(raw_result['type'], 'bitstamp event')
@@ -686,11 +687,7 @@ class Bitstamp(ExchangeInterface):
             self,
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
-    ) -> Union[
-        list,
-        tuple[bool, str],
-        ExchangeQueryBalances,
-    ]:
+    ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
         """This function processes not successful responses for the following
         cases listed in `case`.
         """

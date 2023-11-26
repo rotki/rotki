@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from eth_utils import to_checksum_address
 from web3 import HTTPProvider, Web3
@@ -157,7 +157,7 @@ class AvalancheManager:
             contract_address: ChecksumEvmAddress,
             abi: list,
             method_name: str,
-            arguments: Optional[list[Any]] = None,
+            arguments: list[Any] | None = None,
     ) -> Any:
         """Performs an eth_call to an ethereum contract
 

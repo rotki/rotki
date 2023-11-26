@@ -103,7 +103,7 @@ def decode_event_data_abi(
     decoded_topic_data = [
         WEB3.codec.decode_single(topic_type, topic_data)
         for topic_type, topic_data
-        in zip(log_topic_types, topics)
+        in zip(log_topic_types, topics, strict=True)  # checked above
     ]
     normalized_topic_data = map_abi_data(
         BASE_RETURN_NORMALIZERS,

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.constants import ZERO
@@ -226,7 +226,7 @@ class EventsHistorian:
             cursor: 'DBCursor',
             location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
             filter_query: HistoryEventFilterQuery,
-            task_manager: Optional[TaskManager],
+            task_manager: TaskManager | None,
             only_cache: bool,
     ) -> tuple[list[HistoryEvent], int]:
         """

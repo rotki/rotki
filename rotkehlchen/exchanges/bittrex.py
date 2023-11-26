@@ -4,7 +4,7 @@ import json
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -197,7 +197,7 @@ class Bittrex(ExchangeInterface):
             self,
             endpoint: str,
             method: Literal['get', 'put', 'delete'] = 'get',
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Queries Bittrex api v3 for given endpoint, method and options
@@ -366,7 +366,7 @@ class Bittrex(ExchangeInterface):
             self,
             endpoint: str,
             method: Literal['get', 'put', 'delete'] = 'get',
-            options: Optional[dict[str, Any]] = None,
+            options: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Handle pagination for bittrex v3 api queries
 
@@ -393,9 +393,9 @@ class Bittrex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            market: Optional[TradePair] = None,
+            market: TradePair | None = None,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        options: dict[str, Union[str, int]] = {
+        options: dict[str, str | int] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
             'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
@@ -447,7 +447,7 @@ class Bittrex(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> Optional[AssetMovement]:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> AssetMovement | None:
         """Processes a single deposit/withdrawal from bittrex and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -512,7 +512,7 @@ class Bittrex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
-        options: dict[str, Union[str, int]] = {
+        options: dict[str, str | int] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
             'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),

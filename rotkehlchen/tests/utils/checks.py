@@ -1,5 +1,4 @@
 from contextlib import suppress
-from typing import Optional
 
 from rotkehlchen.fval import FVal
 
@@ -7,9 +6,9 @@ from rotkehlchen.fval import FVal
 def assert_serialized_lists_equal(
         a: list,
         b: list,
-        max_length_to_check: Optional[int] = None,
-        ignore_keys: Optional[list] = None,
-        length_list_keymap: Optional[dict] = None,
+        max_length_to_check: int | None = None,
+        ignore_keys: list | None = None,
+        length_list_keymap: dict | None = None,
         max_diff: str = '1e-6',
 ) -> None:
     """Compares lists of serialized dicts"""
@@ -37,8 +36,8 @@ def assert_serialized_lists_equal(
 def assert_serialized_dicts_equal(
         a: dict,
         b: dict,
-        ignore_keys: Optional[list] = None,
-        length_list_keymap: Optional[dict] = None,
+        ignore_keys: list | None = None,
+        length_list_keymap: dict | None = None,
         max_diff: str = '1e-6',
         same_key_length=True,
 ) -> None:

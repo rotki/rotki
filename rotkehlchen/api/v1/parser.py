@@ -1,6 +1,6 @@
 import functools
-from collections.abc import Mapping
-from typing import Any, Callable, Optional
+from collections.abc import Callable, Mapping
+from typing import Any
 
 from flask import Request
 from flask.views import MethodView
@@ -15,16 +15,16 @@ class ResourceReadingParser(FlaskParser):
     def use_args(
             self,
             argmap: ArgMap,
-            req: Optional[Request] = None,
+            req: Request | None = None,
             *,
-            location: Optional[str] = None,
-            unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
+            location: str | None = None,
+            unknown: str | None = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
             as_kwargs: bool = False,
-            arg_name: Optional[str] = None,
-            validate: Optional[ValidateArg] = None,
-            error_status_code: Optional[int] = None,
-            error_headers: Optional[Mapping[str, str]] = None,
-            allow_async_validation: Optional[bool] = False,
+            arg_name: str | None = None,
+            validate: ValidateArg | None = None,
+            error_status_code: int | None = None,
+            error_headers: Mapping[str, str] | None = None,
+            allow_async_validation: bool | None = False,
     ) -> Callable:
         """Decorator that injects parsed arguments into a view function or method.
 
@@ -78,14 +78,14 @@ class ResourceReadingParser(FlaskParser):
             self,
             resource_object: MethodView,
             argmap: ArgMap,
-            req: Optional[Request] = None,
+            req: Request | None = None,
             *,
-            location: Optional[str] = None,
-            unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
-            validate: Optional[ValidateArg] = None,
-            error_status_code: Optional[int] = None,
-            error_headers: Optional[Mapping[str, str]] = None,
-            allow_async_validation: Optional[bool] = False,
+            location: str | None = None,
+            unknown: str | None = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
+            validate: ValidateArg | None = None,
+            error_status_code: int | None = None,
+            error_headers: Mapping[str, str] | None = None,
+            allow_async_validation: bool | None = False,
     ) -> dict[str, Any]:
         """Main request parsing method.
 

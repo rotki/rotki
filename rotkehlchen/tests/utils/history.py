@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -271,7 +271,7 @@ def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] 
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
         events: list[AccountingEventMixin],
-) -> Optional[int]:
+) -> int | None:
     assert len(events) == 0
 
 
@@ -590,7 +590,7 @@ def assert_asset_movements(
         expected: list[AssetMovement],
         to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[tuple[int, ...]] = None,
+        movements_to_check: tuple[int, ...] | None = None,
 ) -> None:
     if deserialized:
         expected = process_result_list([x.serialize() for x in expected])
@@ -606,7 +606,7 @@ def assert_asset_movements(
 def assert_poloniex_asset_movements(
         to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[tuple[int, ...]] = None,
+        movements_to_check: tuple[int, ...] | None = None,
 ) -> None:
     expected = [AssetMovement(
         location=Location.POLONIEX,
@@ -659,7 +659,7 @@ def assert_poloniex_asset_movements(
 def assert_kraken_asset_movements(
         to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[tuple[int, ...]] = None,
+        movements_to_check: tuple[int, ...] | None = None,
 ):
     expected = [
         AssetMovement(
@@ -738,8 +738,8 @@ def mock_history_processing(
         rotki: Rotkehlchen,
         should_mock_history_processing: bool = True,
         remote_errors: bool = False,
-        history_start_ts: Optional[Timestamp] = None,
-        history_end_ts: Optional[Timestamp] = None,
+        history_start_ts: Timestamp | None = None,
+        history_end_ts: Timestamp | None = None,
 ):
     """ Patch away the processing of history """
     if remote_errors is True and should_mock_history_processing is False:
@@ -752,7 +752,7 @@ def mock_history_processing(
             start_ts: Timestamp,
             end_ts: Timestamp,
             events: list[AccountingEventMixin],
-    ) -> Optional[int]:
+    ) -> int | None:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
         away by this checking function"""
@@ -868,7 +868,7 @@ def mock_history_processing(
             start_ts: Timestamp,
             end_ts: Timestamp,
             events: list[AccountingEventMixin],
-    ) -> Optional[int]:
+    ) -> int | None:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
             start_ts=start_ts,
@@ -963,8 +963,8 @@ class TradesTestSetup(NamedTuple):
 def mock_history_processing_and_exchanges(
         rotki: Rotkehlchen,
         should_mock_history_processing: bool = True,
-        history_start_ts: Optional[Timestamp] = None,
-        history_end_ts: Optional[Timestamp] = None,
+        history_start_ts: Timestamp | None = None,
+        history_end_ts: Timestamp | None = None,
         remote_errors: bool = False,
 ) -> TradesTestSetup:
     """Prepare patches to mock querying of trade history from various locations for testing
@@ -1003,8 +1003,8 @@ def mock_history_processing_and_exchanges(
 def prepare_rotki_for_history_processing_test(
         rotki: Rotkehlchen,
         should_mock_history_processing: bool = True,
-        history_start_ts: Optional[Timestamp] = None,
-        history_end_ts: Optional[Timestamp] = None,
+        history_start_ts: Timestamp | None = None,
+        history_end_ts: Timestamp | None = None,
         remote_errors: bool = False,
 ) -> TradesTestSetup:
     """Prepares rotki for the history processing tests
@@ -1028,7 +1028,7 @@ def prepare_rotki_for_history_processing_test(
 
 def assert_binance_trades_result(
         trades: list[dict[str, Any]],
-        trades_to_check: Optional[tuple[int, ...]] = None,
+        trades_to_check: tuple[int, ...] | None = None,
 ) -> None:
     """Convenience function to assert on the trades returned by binance's mock
 
@@ -1079,7 +1079,7 @@ def assert_binance_trades_result(
 
 def assert_poloniex_trades_result(
         trades: list[dict[str, Any]],
-        trades_to_check: Optional[tuple[int, ...]] = None,
+        trades_to_check: tuple[int, ...] | None = None,
 ) -> None:
     """Convenience function to assert on the trades returned by poloniex's mock
 
@@ -1145,9 +1145,9 @@ def maybe_mock_historical_price_queries(
         historian,
         should_mock_price_queries: bool,
         mocked_price_queries,
-        default_mock_value: Optional[FVal] = None,
-        dont_mock_price_for: Optional[list['Asset']] = None,
-        force_no_price_found_for: Optional[list[tuple['Asset', Timestamp]]] = None,
+        default_mock_value: FVal | None = None,
+        dont_mock_price_for: list['Asset'] | None = None,
+        force_no_price_found_for: list[tuple['Asset', Timestamp]] | None = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:

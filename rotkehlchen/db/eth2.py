@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -140,7 +140,7 @@ class DBEth2:
             self,
             cursor: 'DBCursor',
             field: Literal['validator_index', 'public_key'],
-            arg: Union[int, str],
+            arg: int | str,
     ) -> bool:
         cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
         return cursor.fetchone()[0] == 1  # count always returns

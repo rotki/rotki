@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 import gevent
 
@@ -130,7 +130,7 @@ class Rotkehlchen:
         """
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
-        self.premium: Optional[Premium] = None
+        self.premium: Premium | None = None
         self.user_is_logged_in: bool = False
 
         self.args = args
@@ -186,7 +186,7 @@ class Rotkehlchen:
         )
         # Initialize EVM Contracts common abis
         EvmContracts.initialize_common_abis()
-        self.task_manager: Optional[TaskManager] = None
+        self.task_manager: TaskManager | None = None
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
 
@@ -248,9 +248,9 @@ class Rotkehlchen:
             password: str,
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
-            premium_credentials: Optional[PremiumCredentials],
+            premium_credentials: PremiumCredentials | None,
             resume_from_backup: bool,
-            initial_settings: Optional[ModifiableDBSettings] = None,
+            initial_settings: ModifiableDBSettings | None = None,
             sync_database: bool = True,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
@@ -607,7 +607,7 @@ class Rotkehlchen:
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-    ) -> Union[list[SingleBlockchainAccountData], dict[str, Any]]:
+    ) -> list[SingleBlockchainAccountData] | dict[str, Any]:
         account_data = self.data.db.get_blockchain_account_data(cursor, blockchain)
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
@@ -855,7 +855,7 @@ class Rotkehlchen:
             self,
             requested_save_data: bool = False,
             save_despite_errors: bool = False,
-            timestamp: Optional[Timestamp] = None,
+            timestamp: Timestamp | None = None,
             ignore_cache: bool = False,
     ) -> dict[str, Any]:
         """Query all balances rotkehlchen can see.
@@ -1078,9 +1078,9 @@ class Rotkehlchen:
             location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
-            passphrase: Optional[str] = None,
+            passphrase: str | None = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
-            binance_selected_trade_pairs: Optional[list[str]] = None,
+            binance_selected_trade_pairs: list[str] | None = None,
     ) -> tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1108,9 +1108,9 @@ class Rotkehlchen:
             )
         return is_success, msg
 
-    def query_periodic_data(self) -> dict[str, Union[bool, dict[str, list[str]], Timestamp]]:
+    def query_periodic_data(self) -> dict[str, bool | (dict[str, list[str]] | Timestamp)]:
         """Query for frequently changing data"""
-        result: dict[str, Union[bool, dict[str, list[str]], Timestamp]] = {}
+        result: dict[str, bool | (dict[str, list[str]] | Timestamp)] = {}
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:

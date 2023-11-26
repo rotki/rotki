@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -57,9 +57,9 @@ def add_balancer_events(
 def get_balancer_events(
         cursor: 'DBCursor',
         msg_aggregator: MessagesAggregator,
-        from_timestamp: Optional[Timestamp] = None,
-        to_timestamp: Optional[Timestamp] = None,
-        address: Optional[ChecksumEvmAddress] = None,
+        from_timestamp: Timestamp | None = None,
+        to_timestamp: Timestamp | None = None,
+        address: ChecksumEvmAddress | None = None,
 ) -> list[BalancerEvent]:
     """Returns a list of Balancer events optionally filtered by time and address"""
     query = 'SELECT * FROM balancer_events '

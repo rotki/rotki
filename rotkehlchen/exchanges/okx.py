@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -102,7 +102,7 @@ class Okx(ExchangeInterface):
     def _api_query(
             self,
             endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> dict:
         """
         Makes an API query to OKX
@@ -176,7 +176,7 @@ class Okx(ExchangeInterface):
     def _api_query_list(
             self,
             endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> list:
         """
         Makes an API query and parses the response into a list
@@ -196,7 +196,7 @@ class Okx(ExchangeInterface):
             self,
             endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
             pagination_key: str,
-            options: Optional[dict] = None,
+            options: dict | None = None,
     ) -> list:
         """
         Makes subsequent API queries until response list length is less than MAX_RESULTS.
@@ -377,7 +377,7 @@ class Okx(ExchangeInterface):
     ) -> list['HistoryEvent']:
         return []  # noop for okx
 
-    def trade_from_okx(self, raw_trade: dict[str, Any]) -> Optional[Trade]:
+    def trade_from_okx(self, raw_trade: dict[str, Any]) -> Trade | None:
         """
         Converts a raw trade from OKX into a Trade object.
         If there is an error `None` is returned and error is logged.
@@ -443,7 +443,7 @@ class Okx(ExchangeInterface):
             self,
             raw_movement: dict[str, Any],
             category: AssetMovementCategory,
-    ) -> Optional[AssetMovement]:
+    ) -> AssetMovement | None:
         """
         Converts a raw asset movement from OKX into an AssetMovement object.
         If there is an error `None` is returned and error is logged.

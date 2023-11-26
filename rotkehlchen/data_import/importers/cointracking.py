@@ -233,14 +233,14 @@ class CointrackingImporter(BaseExchangeImporter):
             header = remap_header(next(data))
             for row in data:
                 try:
-                    self._consume_cointracking_entry(write_cursor, dict(zip(header, row)), **kwargs)  # noqa: E501
+                    self._consume_cointracking_entry(write_cursor, dict(zip(header, row, strict=True)), **kwargs)  # noqa: E501
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cointracking CSV import found action with unknown '
                         f'asset {e.identifier}. Ignoring entry',
                     )
                     continue
-                except IndexError:
+                except (IndexError, ValueError):
                     self.db.msg_aggregator.add_warning(
                         'During cointracking CSV import found entry with '
                         'unexpected number of columns',

@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -602,8 +602,8 @@ def create_test_binance(
 def create_test_bitfinex(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        api_key: Optional[ApiKey] = None,
-        secret: Optional[ApiSecret] = None,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
 ) -> Bitfinex:
     if api_key is None:
         api_key = make_api_key()
@@ -638,8 +638,8 @@ def create_test_bitmex(
 def create_test_bitstamp(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        api_key: Optional[ApiKey] = None,
-        secret: Optional[ApiSecret] = None,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
 ) -> Bitstamp:
     if api_key is None:
         api_key = make_api_key()
@@ -719,9 +719,9 @@ def create_test_kraken(
 def create_test_kucoin(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        api_key: Optional[ApiKey] = None,
-        secret: Optional[ApiSecret] = None,
-        passphrase: Optional[str] = None,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
+        passphrase: str | None = None,
 ) -> Kucoin:
     if api_key is None:
         api_key = make_api_key()
@@ -795,8 +795,8 @@ def create_test_independentreserve(
 def create_test_bitpanda(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        api_key: Optional[ApiKey] = None,
-        secret: Optional[ApiSecret] = None,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
 ) -> Bitpanda:
     if api_key is None:
         api_key = make_api_key()
@@ -831,8 +831,8 @@ def create_test_okx(
 def create_test_woo(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        api_key: Optional[ApiKey] = None,
-        secret: Optional[ApiSecret] = None,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
 ) -> Woo:
     return Woo(
         name='woo',
@@ -846,7 +846,7 @@ def create_test_woo(
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Location,
-) -> Optional[ExchangeInterface]:
+) -> ExchangeInterface | None:
     """Tries to get the first exchange of a given type from the exchange manager
 
     If no such exchange exists returns None.

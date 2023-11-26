@@ -2,7 +2,7 @@ import hashlib
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -82,7 +82,7 @@ class UnsupportedCSVEntry(Exception):
 def process_rotki_generic_import_csv_fields(
         csv_row: dict[str, Any],
         currency_colname: str,
-) -> tuple[AssetWithOracles, Optional[Fee], Optional[Asset], Location, TimestampMS]:
+) -> tuple[AssetWithOracles, Fee | None, Asset | None, Location, TimestampMS]:
     """
     Process the imported csv for generic rotki trades and events
     """

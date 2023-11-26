@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -332,7 +331,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
 def test_parse_full_insert_assets(
         assets_updater: AssetsUpdater,
         text: str,
-        expected_data: Optional[AssetData],
+        expected_data: AssetData | None,
         error_msg: str,
 ) -> None:
     text = text.replace('\n', '')

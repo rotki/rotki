@@ -5,7 +5,7 @@ export const useUpdateMessage = createSharedComposable(() => {
   const { appVersion } = storeToRefs(useMainStore());
 
   const link = computed(
-    () => `https://github.com/rotki/rotki/releases/tag/${get(appVersion)}`
+    () => `https://github.com/rotki/rotki/releases/tag/v${get(appVersion)}`
   );
 
   const setShowNotes = (appVersion: string, lastUsed: string): void => {

@@ -1,7 +1,7 @@
 import logging
 import random
 from json.decoder import JSONDecodeError
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -96,10 +96,10 @@ class Covalent(ExternalServiceWithApiKey):
             self,
             module: str,
             action: str,
-            address: Optional[str] = None,
-            options: Optional[dict[str, Any]] = None,
-            timeout: Optional[tuple[int, int]] = None,
-    ) -> Optional[dict[str, Any]]:
+            address: str | None = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> dict[str, Any] | None:
         """Queries Covalent
 
         May raise:
@@ -159,9 +159,9 @@ class Covalent(ExternalServiceWithApiKey):
     def get_transactions(
             self,
             account: ChecksumEvmAddress,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-    ) -> Optional[list[CovalentTransaction]]:
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+    ) -> list[CovalentTransaction] | None:
         """Gets a list of transactions for account.
         - account is address for wallet.
         - to_ts is latest date.
@@ -231,7 +231,7 @@ class Covalent(ExternalServiceWithApiKey):
 
         return transactions
 
-    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> dict[str, Any] | None:
         """Gets the receipt for the given transaction hash
 
         May raise:
@@ -258,7 +258,7 @@ class Covalent(ExternalServiceWithApiKey):
     def get_token_balances_address(
             self,
             address: ChecksumEvmAddress,
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         options = {'limit': COVALENT_QUERY_LIMIT, 'page-size': PAGESIZE}
         result = self._query(
             module='balances_v2',

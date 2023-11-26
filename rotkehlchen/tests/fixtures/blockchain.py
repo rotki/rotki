@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from contextlib import ExitStack
-from typing import Literal, Optional, Union
+from typing import Literal
 from unittest.mock import patch
 
 import pytest
@@ -206,7 +206,7 @@ def fixture_blockchain_accounts(
 
 
 @pytest.fixture(name='ethrpc_endpoint')
-def fixture_ethrpc_endpoint() -> Optional[str]:
+def fixture_ethrpc_endpoint() -> str | None:
     return None
 
 
@@ -216,7 +216,7 @@ def fixture_covalent_avalanche(messages_aggregator, database):
 
 
 @pytest.fixture(name='ethereum_manager_connect_at_start')
-def fixture_ethereum_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+def fixture_ethereum_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
 
     Can be either a sequence of nodes to connect to for this chain.
@@ -322,7 +322,7 @@ def fixture_eth_transactions(
 
 
 @pytest.fixture(name='optimism_manager_connect_at_start')
-def fixture_optimism_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+def fixture_optimism_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
 
     Can be either a sequence of nodes to connect to for this chain.
@@ -385,7 +385,7 @@ def fixture_optimism_transaction_decoder(
 
 
 @pytest.fixture(name='polygon_pos_manager_connect_at_start')
-def fixture_polygon_pos_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:  # noqa: E501
+def fixture_polygon_pos_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
 
     Can be either a sequence of nodes to connect to for this chain.
@@ -422,7 +422,7 @@ def fixture_polygon_pos_manager(polygon_pos_inquirer):
 
 
 @pytest.fixture(name='arbitrum_one_manager_connect_at_start')
-def fixture_arbitrum_one_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:  # noqa: E501
+def fixture_arbitrum_one_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
 
     Can be either a sequence of nodes to connect to for this chain.
@@ -459,7 +459,7 @@ def fixture_arbitrum_one_manager(arbitrum_one_inquirer):
 
 
 @pytest.fixture(name='base_manager_connect_at_start')
-def fixture_base_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+def fixture_base_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
     Can be either a sequence of nodes to connect to for this chain.
     Or an empty sequence to connect to no nodes for this chain.
@@ -495,7 +495,7 @@ def fixture_base_manager(base_inquirer):
 
 
 @pytest.fixture(name='gnosis_manager_connect_at_start')
-def fixture_gnosis_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+def fixture_gnosis_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
     Can be either a sequence of nodes to connect to for this chain.
     Or an empty sequence to connect to no nodes for this chain.
@@ -542,12 +542,12 @@ def fixture_gnosis_transactions(
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')
-def fixture_ksm_rpc_endpoint() -> Optional[str]:
+def fixture_ksm_rpc_endpoint() -> str | None:
     return None
 
 
 @pytest.fixture(name='dot_rpc_endpoint')
-def fixture_dot_rpc_endpoint() -> Optional[str]:
+def fixture_dot_rpc_endpoint() -> str | None:
     return None
 
 

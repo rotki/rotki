@@ -7,9 +7,9 @@ import re
 import sys
 import time
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
@@ -106,7 +106,7 @@ def timestamp_to_iso8601(ts: Timestamp, utc_as_z: bool = False) -> str:
     return res if utc_as_z is False else res.replace('+00:00', 'Z')
 
 
-def satoshis_to_btc(satoshis: Union[int, FVal]) -> FVal:
+def satoshis_to_btc(satoshis: int | FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
@@ -132,7 +132,7 @@ def from_wei(wei_value: FVal) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
-def from_gwei(gwei_value: Union[FVal, int]) -> FVal:
+def from_gwei(gwei_value: FVal | int) -> FVal:
     return gwei_value / FVal(10 ** 9)
 
 
@@ -155,10 +155,10 @@ def combine_dicts(
 
 
 def combine_dicts(
-        a: Union[dict[K, V], defaultdict[K, V]],
-        b: Union[dict[K, V], defaultdict[K, V]],
+        a: dict[K, V] | defaultdict[K, V],
+        b: dict[K, V] | defaultdict[K, V],
         op: Callable = operator.add,
-) -> Union[dict[K, V], defaultdict[K, V]]:
+) -> dict[K, V] | defaultdict[K, V]:
     new_dict = a.copy()
     # issue for pylint's false positive here: https://github.com/PyCQA/pylint/issues/3987
     if op == operator.sub:  # pylint: disable=comparison-with-callable
@@ -188,7 +188,7 @@ def combine_stat_dicts(list_of_dicts: list[dict]) -> dict:
 
 
 def convert_to_int(
-        val: Union[FVal, bytes, str, float],
+        val: FVal | (bytes | (str | float)),
         accept_only_exact: bool = True,
 ) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float
@@ -200,7 +200,7 @@ def convert_to_int(
     """
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
-    if isinstance(val, (bytes, str)):
+    if isinstance(val, bytes | str):
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
@@ -242,7 +242,7 @@ def hexstr_to_int(value: str) -> int:
 
 
 def hex_or_bytes_to_int(
-        value: Union[bytes, str],
+        value: bytes | str,
         signed: bool = False,
         byteorder: Literal['little', 'big'] = 'big',
 ) -> int:
@@ -262,7 +262,7 @@ def hex_or_bytes_to_int(
     return int_value
 
 
-def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
+def hex_or_bytes_to_str(value: bytes | str) -> str:
     """Turns a bytes/HexBytes or a hexstring into an hex string"""
     if isinstance(value, bytes):
         hexstr = value.hex()
@@ -272,7 +272,7 @@ def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
     return hexstr
 
 
-def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEvmAddress:
+def hex_or_bytes_to_address(value: bytes | str) -> ChecksumEvmAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
     May raise:
@@ -322,7 +322,7 @@ def pairwise(iterable: Iterable[Any]) -> Iterator:
     For a function that does so check pairwise_longest.
     s -> (s0, s1), (s2, s3), (s4, s5), ..."""
     a = iter(iterable)
-    return zip(a, a)
+    return zip(a, a, strict=False)
 
 
 def pairwise_longest(iterable: Iterable[Any]) -> Iterator:
@@ -362,10 +362,10 @@ def is_valid_ethereum_tx_hash(val: str) -> bool:
 
 def create_order_by_rules_list(
         data: dict[str, Any],
-        default_order_by_fields: Optional[list[str]] = None,
-        default_ascending: Optional[list[bool]] = None,
+        default_order_by_fields: list[str] | None = None,
+        default_ascending: list[bool] | None = None,
         is_ascending_by_default: bool = False,
-) -> Optional[list[tuple[str, bool]]]:
+) -> list[tuple[str, bool]] | None:
     """Create a list of attributes and sorting order taking values from DBOrderBySchema
     to be used by the filters that allow sorting. By default, the attribute used for sorting is
     timestamp and the ascending value for this field is False.

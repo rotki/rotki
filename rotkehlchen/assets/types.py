@@ -57,16 +57,16 @@ class AssetData(NamedTuple):
     # Every asset should have a started timestamp except for FIAT which are
     # most of the times older than epoch
     started: Optional['Timestamp']
-    forked: Optional[str]
-    swapped_for: Optional[str]
+    forked: str | None
+    swapped_for: str | None
     address: Optional['ChecksumEvmAddress']
-    chain_id: Optional[ChainID]
-    token_kind: Optional[EvmTokenKind]
-    decimals: Optional[int]
+    chain_id: ChainID | None
+    token_kind: EvmTokenKind | None
+    decimals: int | None
     # None means, no special mapping. '' means not supported
-    cryptocompare: Optional[str]
-    coingecko: Optional[str]
-    protocol: Optional[str]
+    cryptocompare: str | None
+    coingecko: str | None
+    protocol: str | None
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member

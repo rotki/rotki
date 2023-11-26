@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
@@ -42,7 +42,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(

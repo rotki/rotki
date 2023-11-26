@@ -1,6 +1,6 @@
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -54,7 +54,7 @@ def assert_editing_works(
         rotkehlchen_api_server: 'APIServer',
         events_db: 'DBHistoryEvents',
         sequence_index: int,
-        autoedited: Optional[dict[str, Any]] = None,
+        autoedited: dict[str, Any] | None = None,
 ):
     """A function to assert editing works per entry type. If autoedited is given
     then we check that some fields, given in autoedited, were automatically edited

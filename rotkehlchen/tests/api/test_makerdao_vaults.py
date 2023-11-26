@@ -2,7 +2,7 @@
 
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -192,7 +192,7 @@ def _check_vaults_values(vaults, owner):
     assert_serialized_lists_equal(expected_vaults, vaults[:1], ignore_keys=VAULT_IGNORE_KEYS)  # Check only the first vault so that if the user adds more vaults, the test still runs normally  # noqa: E501
 
 
-def _check_vault_details_values(details, total_interest_owed_list: list[Optional[FVal]]):
+def _check_vault_details_values(details, total_interest_owed_list: list[FVal | None]):
     expected_details = [VAULT_8015_DETAILS]
     assert_serialized_lists_equal(
         expected_details,

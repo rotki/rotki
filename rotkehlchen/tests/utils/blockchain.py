@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from web3 import Web3
@@ -87,7 +87,7 @@ def assert_eth_balances_result(
         eth_balances: list[str],
         token_balances: dict[EvmToken, list[str]],
         also_btc: bool,
-        expected_liabilities: Optional[dict[EvmToken, list[str]]] = None,
+        expected_liabilities: dict[EvmToken, list[str]] | None = None,
         totals_only: bool = False,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests
@@ -165,7 +165,7 @@ def assert_eth_balances_result(
             assert FVal(totals[symbol]['usd_value']) > ZERO
 
 
-def _get_token(value: Any) -> Optional[EvmToken]:
+def _get_token(value: Any) -> EvmToken | None:
     """Interprets the given value as token if possible"""
     if isinstance(value, str):
         try:
@@ -188,7 +188,7 @@ def _get_token(value: Any) -> Optional[EvmToken]:
 
 def mock_beaconchain(
         beaconchain: BeaconChain,
-        original_queries: Optional[list[str]],
+        original_queries: list[str] | None,
         original_requests_get,
 ):
 
@@ -207,11 +207,11 @@ def mock_beaconchain(
 
 
 def mock_etherscan_query(
-        eth_map: dict[ChecksumEvmAddress, dict[Union[str, EvmToken], Any]],
+        eth_map: dict[ChecksumEvmAddress, dict[str | EvmToken, Any]],
         etherscan: Etherscan,
         ethereum: 'EthereumInquirer',
-        original_queries: Optional[list[str]],
-        extra_flags: Optional[list[str]],
+        original_queries: list[str] | None,
+        extra_flags: list[str] | None,
         original_requests_get,
 ):
     eth_scan = ethereum.contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db'))  # noqa: E501
@@ -346,6 +346,10 @@ def mock_etherscan_query(
                 multicall_purpose = 'multibalance_query'
             else:
                 raise AssertionError('Unknown multicall in mocked tests')
+
+            if '86f25b64e1fe4c5162cdeed5245575d32ec549db' in url:
+                # can appear mixed with above so multibalance can trump the rest since actionable
+                multicall_purpose = 'multibalance_query'
 
             if 'data=0x252dba42' in url:  # aggregate
                 data = url.split('data=')[1]
@@ -612,12 +616,12 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator: 'ChainsAggregator',
         eth_contract_addresses: list[ChecksumEvmAddress],
         ethereum_addresses: list[ChecksumEvmAddress],  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-        avalanche_addresses: Optional[list[ChecksumEvmAddress]] = None,
-        optimism_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-        polygon_pos_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-        arbitrum_one_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-        base_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-        gnosis_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        avalanche_addresses: list[ChecksumEvmAddress] | None = None,
+        optimism_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        polygon_pos_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        arbitrum_one_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        base_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        gnosis_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
 ) -> 'ExitStack':
     saved_locals = locals()  # bit hacky, but save locals here so they can be accessed by mock_chain_has_activity  # noqa: E501
 
@@ -669,7 +673,7 @@ def setup_evm_addresses_activity_mock(
 def maybe_modify_rpc_nodes(
         database: 'DBHandler',
         blockchain: SupportedBlockchain,
-        manager_connect_at_start: Union[str, Sequence['WeightedNode']],
+        manager_connect_at_start: str | Sequence['WeightedNode'],
 ) -> Sequence['WeightedNode']:
     """Modify the rpc nodes in the DB for the given blockchain depending on
     the value of the managager_connect_at_start.

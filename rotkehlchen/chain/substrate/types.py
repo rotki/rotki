@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple, NewType, Union
+from typing import NamedTuple, NewType
 
 from substrateinterface import SubstrateInterface
 
@@ -86,7 +86,7 @@ class PolkadotNodeName(Enum):
         raise AssertionError(f'Unexpected PolkadotNodeName: {self}')
 
 
-NodeName = Union[KusamaNodeName, PolkadotNodeName]
+NodeName = KusamaNodeName | PolkadotNodeName
 
 
 class NodeNameAttributes(NamedTuple):

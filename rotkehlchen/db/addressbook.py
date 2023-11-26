@@ -1,7 +1,7 @@
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2
 
@@ -166,7 +166,7 @@ class DBAddressbook:
             self,
             book_type: AddressbookType,
             chain_address: OptionalChainAddress,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Returns the name for the specified address and blockchain.
         It will search for the pair of address and the exact blockchain (or null).

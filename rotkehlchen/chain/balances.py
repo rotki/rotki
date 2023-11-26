@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -23,12 +23,12 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-ALL_BALANCE_TYPES = Union[
-    defaultdict[ChecksumEvmAddress, BalanceSheet],
-    dict[BTCAddress, Balance],
-    defaultdict[Eth2PubKey, BalanceSheet],
-    dict[SubstrateAddress, BalanceSheet],
-]
+ALL_BALANCE_TYPES = (
+    defaultdict[ChecksumEvmAddress, BalanceSheet] |
+    dict[BTCAddress, Balance] |
+    defaultdict[Eth2PubKey, BalanceSheet] |
+    dict[SubstrateAddress, BalanceSheet]
+)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -129,7 +129,7 @@ class BlockchainBalances:
 
         return new_totals
 
-    def serialize(self, given_chain: Optional[SupportedBlockchain]) -> dict[str, dict]:
+    def serialize(self, given_chain: SupportedBlockchain | None) -> dict[str, dict]:
         """Serializes the blockchain balances to a dict for api consumption.
 
         If no chain is given then all balances are serialized, while if a chain
@@ -205,7 +205,7 @@ class BlockchainBalances:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainBalancesUpdate:
-    given_chain: Optional[SupportedBlockchain]
+    given_chain: SupportedBlockchain | None
     per_account: BlockchainBalances
     totals: BalanceSheet
 

@@ -4,7 +4,7 @@ from collections.abc import Collection
 from csv import DictWriter
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.pnl import PnlTotals
@@ -54,7 +54,7 @@ class CSVWriteError(Exception):
 def dict_to_csv_file(
         path: Path,
         dictionary_list: list,
-        headers: Optional[Collection] = None,
+        headers: Collection | None = None,
 ) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
     into the file as a CSV

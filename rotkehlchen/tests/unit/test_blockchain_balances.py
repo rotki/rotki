@@ -239,19 +239,19 @@ def test_native_token_balance(blockchain, polygon_pos_accounts):
         balances = blockchain.balances.polygon_pos[address].assets
         assert balances == {
             A_POLYGON_POS_MATIC: Balance(
-                amount=FVal('16.942897779121303751'),
-                usd_value=FVal('25.4143466686819556265'),
-            ),
-            Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'): Balance(  # USDC
-                amount=FVal('9.982'),
-                usd_value=FVal('14.9730'),
+                amount=FVal('14.625551850495690815'),
+                usd_value=FVal('21.9383277757435362225'),
             ),
             Asset('eip155:137/erc20:0x625E7708f30cA75bfd92586e17077590C60eb4cD'): Balance(  # aPolUSDC  # noqa: E501
-                amount=FVal('20.017082'),
-                usd_value=FVal('30.0256230'),
+                amount=FVal('20.299941'),
+                usd_value=FVal('30.4499115'),
             ),
             Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH
-                amount=FVal('0.009792189476215069'),
-                usd_value=FVal('0.0146882842143226035'),
+                amount=FVal('0.010320301779068381'),
+                usd_value=FVal('0.0154804526686025715'),
+            ),
+            Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'): Balance(  # USDT
+                amount=FVal('0.076457'),
+                usd_value=FVal('0.1146855'),
             ),
         }

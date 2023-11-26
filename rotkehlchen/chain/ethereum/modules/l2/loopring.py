@@ -2,7 +2,7 @@ import json
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 from urllib.parse import urlencode
 
 import requests
@@ -313,7 +313,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     def _api_query(
             self,
             endpoint: Literal['user/balances'],
-            options: Optional[dict[str, Any]],
+            options: dict[str, Any] | None,
     ) -> list[dict[str, Any]]:
         ...
 
@@ -321,15 +321,15 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     def _api_query(
             self,
             endpoint: Literal['account'],
-            options: Optional[dict[str, Any]],
+            options: dict[str, Any] | None,
     ) -> dict[str, Any]:
         ...
 
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[dict[str, Any]],
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+            options: dict[str, Any] | None,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         querystr = self.base_url + endpoint
         if options is not None:
             querystr += '?' + urlencode(options)

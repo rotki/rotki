@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import gevent
 
@@ -406,7 +406,7 @@ def get_decoded_events_of_transaction(
         evm_inquirer: 'EvmNodeInquirer',
         database: DBHandler,
         tx_hash: EVMTxHash,
-        transactions: Optional[EvmTransactions] = None,
+        transactions: EvmTransactions | None = None,
 ) -> tuple[list['EvmEvent'], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 

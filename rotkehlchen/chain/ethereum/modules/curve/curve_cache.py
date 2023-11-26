@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -71,9 +71,9 @@ class CurvePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
     lp_token_address: ChecksumEvmAddress
-    gauge_address: Optional[ChecksumEvmAddress]
+    gauge_address: ChecksumEvmAddress | None
     coins: list[ChecksumEvmAddress]
-    underlying_coins: Optional[list[ChecksumEvmAddress]]
+    underlying_coins: list[ChecksumEvmAddress] | None
 
 
 def read_curve_pools_and_gauges() -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501
@@ -153,7 +153,7 @@ def ensure_curve_tokens_existence(
         elif len(pool.coins) == len(pool.underlying_coins):
             # Coins and underlying coins lists represent a
             # mapping of coin -> underlying coin (each coin always has one underlying coin).
-            for token_address, underlying_token_address in zip(pool.coins, pool.underlying_coins):
+            for token_address, underlying_token_address in zip(pool.coins, pool.underlying_coins, strict=True):  # noqa: E501
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
                 # ensure underlying token exists
@@ -345,7 +345,7 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
 def query_curve_data_from_chain(
         ethereum: 'EthereumInquirer',
         existing_pools: list[ChecksumEvmAddress],
-) -> Optional[list[CurvePoolData]]:
+) -> list[CurvePoolData] | None:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from metaregistry.
 
@@ -395,7 +395,7 @@ def query_curve_data_from_chain(
         raw_pool_properties = ethereum.multicall_2(calls=calls, require_success=True)
         decoded_pool_properties = [
             metaregistry.decode(result=result[1], method_name=method_name, arguments=[pool_address])  # noqa: E501
-            for result, method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS)
+            for result, method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS, strict=True)  # length should be same due to the call # noqa: E501
         ]
         try:
             pool_name: str = decoded_pool_properties[0][0]
@@ -431,7 +431,7 @@ def query_curve_data_from_chain(
     return new_pools
 
 
-def query_curve_data(inquirer: 'EthereumInquirer') -> Optional[list[CurvePoolData]]:
+def query_curve_data(inquirer: 'EthereumInquirer') -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
 
@@ -450,7 +450,7 @@ def query_curve_data(inquirer: 'EthereumInquirer') -> Optional[list[CurvePoolDat
             for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
         ]
     try:
-        pools_data: Optional[list[CurvePoolData]] = query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501
+        pools_data: list[CurvePoolData] | None = query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501
     except (RemoteError, UnableToDecryptRemoteData) as e:
         log.error(f'Could not query curve api due to: {e}. Will query metaregistry on chain')
         try:

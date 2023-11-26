@@ -1,6 +1,6 @@
 import collections
 from collections import OrderedDict
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 KT = TypeVar('KT')  # key type
 VT = TypeVar('VT')  # value type
@@ -13,7 +13,7 @@ class LRUCacheWithRemove(Generic[KT, VT]):
         self.cache: OrderedDict[KT, VT] = collections.OrderedDict()
         self.maxsize: int = maxsize
 
-    def get(self, key: KT) -> Optional[VT]:
+    def get(self, key: KT) -> VT | None:
         if key in self.cache:
             self.cache.move_to_end(key)
             return self.cache[key]
@@ -35,7 +35,7 @@ class LRUCacheWithRemove(Generic[KT, VT]):
 
 class LRUCacheLowerKey(LRUCacheWithRemove[str, VT]):
     """Create an LRU cache with string key which is always considered as lowercase"""
-    def get(self, key: str) -> Optional[VT]:
+    def get(self, key: str) -> VT | None:
         return super().get(key.lower())
 
     def add(self, key: str, value: VT) -> None:

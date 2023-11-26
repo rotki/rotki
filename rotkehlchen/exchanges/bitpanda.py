@@ -2,7 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -149,7 +149,7 @@ class Bitpanda(ExchangeInterface):
             entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Optional[AssetMovement]:
+    ) -> AssetMovement | None:
         """Deserializes a bitpanda fiatwallets/transactions or wallets/transactions
         entry to a deposit/withdrawal
 
@@ -227,7 +227,7 @@ class Bitpanda(ExchangeInterface):
             entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Optional[Trade]:
+    ) -> Trade | None:
         """Deserializes a bitpanda trades result entry to a Trade
 
         Returns None and logs error is there is a problem or simpy None if
@@ -319,23 +319,23 @@ class Bitpanda(ExchangeInterface):
                 'fiatwallets/transactions',
                 'wallets/transactions',
             ],
-            options: Optional[dict[str, Any]] = None,
-    ) -> tuple[list[Any], Optional[dict[str, Any]], Optional[dict[str, Any]]]:
+            options: dict[str, Any] | None = None,
+    ) -> tuple[list[Any], dict[str, Any] | None, dict[str, Any] | None]:
         ...
 
     @overload
     def _api_query(
             self,
             endpoint: Literal['asset-wallets'],
-            options: Optional[dict[str, Any]] = None,
-    ) -> tuple[dict[str, Any], Optional[dict[str, Any]], Optional[dict[str, Any]]]:
+            options: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any] | None]:
         ...
 
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[dict[str, Any]] = None,
-    ) -> tuple[Union[list[Any], dict[str, Any]], Optional[dict[str, Any]], Optional[dict[str, Any]]]:  # noqa: E501
+            options: dict[str, Any] | None = None,
+    ) -> tuple[list[Any] | dict[str, Any], dict[str, Any] | None, dict[str, Any] | None]:
         """Performs a bitpanda API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -402,9 +402,9 @@ class Bitpanda(ExchangeInterface):
     def _query_endpoint_until_end(
             self,
             endpoint: Literal['trades'],
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            options: Optional[dict[str, Any]] = None,
+            from_ts: Timestamp | None,
+            to_ts: Timestamp | None,
+            options: dict[str, Any] | None = None,
     ) -> list[Trade]:
         ...
 
@@ -412,19 +412,19 @@ class Bitpanda(ExchangeInterface):
     def _query_endpoint_until_end(
             self,
             endpoint: Literal['fiatwallets/transactions', 'wallets/transactions'],
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            options: Optional[dict[str, Any]] = None,
+            from_ts: Timestamp | None,
+            to_ts: Timestamp | None,
+            options: dict[str, Any] | None = None,
     ) -> list[AssetMovement]:
         ...
 
     def _query_endpoint_until_end(
             self,
             endpoint: Literal['trades', 'fiatwallets/transactions', 'wallets/transactions'],
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            options: Optional[dict[str, Any]] = None,
-    ) -> Union[list[Trade], list[AssetMovement]]:
+            from_ts: Timestamp | None,
+            to_ts: Timestamp | None,
+            options: dict[str, Any] | None = None,
+    ) -> list[Trade] | list[AssetMovement]:
         """Query a paginated endpoint until all pages are read
 
         May raise RemoteError

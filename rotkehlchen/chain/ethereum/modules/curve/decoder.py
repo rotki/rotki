@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -118,9 +119,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def _read_curve_asset(
-        asset_address: Optional[ChecksumEvmAddress],
+        asset_address: ChecksumEvmAddress | None,
         chain_id: ChainID,
-) -> Optional[Asset]:
+) -> Asset | None:
     """
     A thin wrapper that turns asset address into an asset object.
 
@@ -177,7 +178,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
     ) -> DecodingOutput:
         """Decode information related to withdrawing assets from curve pools"""
         withdrawal_events: list[EvmEvent] = []
-        return_event: Optional[EvmEvent] = None
+        return_event: EvmEvent | None = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -293,7 +294,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
     ) -> DecodingOutput:
         """Decode information related to depositing assets in curve pools"""
         deposit_events: list[EvmEvent] = []
-        receive_event: Optional[EvmEvent] = None
+        receive_event: EvmEvent | None = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -398,8 +399,8 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
 
         # These are nullable because in case a curve pool is not stored in our cache or if it
         # is a swap in a metapool (TOKEN_EXCHANGE_UNDERLYING) we will skip token check.
-        sold_token_address: Optional[ChecksumEvmAddress] = None
-        bought_token_address: Optional[ChecksumEvmAddress] = None
+        sold_token_address: ChecksumEvmAddress | None = None
+        bought_token_address: ChecksumEvmAddress | None = None
 
         swapping_contract: ChecksumEvmAddress
         if context.tx_log.topics[0] in (TOKEN_EXCHANGE, TOKEN_EXCHANGE_UNDERLYING):
@@ -441,8 +442,8 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
 
         sold_asset = _read_curve_asset(sold_token_address, self.evm_inquirer.chain_id)
         bought_asset = _read_curve_asset(bought_token_address, self.evm_inquirer.chain_id)
-        spend_event: Optional[EvmEvent] = None
-        receive_event: Optional[EvmEvent] = None
+        spend_event: EvmEvent | None = None
+        receive_event: EvmEvent | None = None
         for event in context.decoded_events:
             if event.address != swapping_contract:
                 continue

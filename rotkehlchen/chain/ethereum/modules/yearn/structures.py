@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Literal, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -20,8 +20,8 @@ YEARN_EVENT_DB_TUPLE = tuple[
     str,  # to_asset idientifier
     str,  # to_value amount
     str,  # to value usd_value
-    Optional[str],  # pnl amount
-    Optional[str],  # pnl usd value
+    str | None,  # pnl amount
+    str | None,  # pnl usd value
     str,  # block number
     str,  # str of timestamp
     bytes,  # tx hash
@@ -39,7 +39,7 @@ class YearnVaultEvent:
     from_value: Balance
     to_asset: CryptoAsset
     to_value: Balance
-    realized_pnl: Optional[Balance]
+    realized_pnl: Balance | None
     tx_hash: EVMTxHash
     log_index: int
     version: int

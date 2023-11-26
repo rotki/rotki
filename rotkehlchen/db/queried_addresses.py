@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -52,7 +52,7 @@ class QueriedAddresses:
             self,
             cursor: 'DBCursor',
             module: ModuleName,
-    ) -> Optional[tuple[ChecksumAddress, ...]]:
+    ) -> tuple[ChecksumAddress, ...] | None:
         """Get a List of addresses to query for module or None if none is set"""
         cursor = self.db.conn.cursor()
         query = cursor.execute(

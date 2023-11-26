@@ -1,5 +1,5 @@
 import logging
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
@@ -27,7 +27,7 @@ class AaveLendingBalance(NamedTuple):
     apy: FVal
     version: int
 
-    def serialize(self) -> dict[str, Union[str, dict[str, str]]]:
+    def serialize(self) -> dict[str, str | dict[str, str]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2),
@@ -44,7 +44,7 @@ class AaveBorrowingBalance(NamedTuple):
     stable_apr: FVal
     version: int
 
-    def serialize(self) -> dict[str, Union[str, dict[str, str]]]:
+    def serialize(self) -> dict[str, str | dict[str, str]]:
         return {
             'balance': self.balance.serialize(),
             'variable_apr': self.variable_apr.to_percentage(precision=2),
@@ -58,7 +58,7 @@ class AaveBalances(NamedTuple):
     borrowing: dict[CryptoAsset, AaveBorrowingBalance]
 
 
-def asset_to_aave_reserve_address(asset: CryptoAsset) -> Optional[ChecksumEvmAddress]:
+def asset_to_aave_reserve_address(asset: CryptoAsset) -> ChecksumEvmAddress | None:
     if asset == A_ETH:  # for v2 this should be WETH
         return ETH_SPECIAL_ADDRESS
 
@@ -67,7 +67,7 @@ def asset_to_aave_reserve_address(asset: CryptoAsset) -> Optional[ChecksumEvmAdd
     return token.evm_address
 
 
-def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
+def atoken_to_asset(atoken: EvmToken) -> CryptoAsset | None:
     if atoken == A_AETH_V1:
         return A_ETH.resolve_to_crypto_asset()
     if atoken == A_AREP_V1:
@@ -89,7 +89,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
     return EvmToken(ethaddress_to_identifier(result[0][0]))
 
 
-def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:
+def asset_to_atoken(asset: CryptoAsset, version: int) -> EvmToken | None:
     if asset == A_ETH:
         return A_AETH_V1.resolve_to_evm_token()
 

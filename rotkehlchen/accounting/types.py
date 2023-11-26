@@ -1,5 +1,5 @@
 import json
-from typing import Any, NamedTuple, Union
+from typing import Any, NamedTuple
 
 import jsonschema
 
@@ -112,7 +112,7 @@ class MissingAcquisition(NamedTuple):
     found_amount: FVal
     missing_amount: FVal
 
-    def serialize(self) -> dict[str, Union[str, int]]:
+    def serialize(self) -> dict[str, str | int]:
         return {
             'asset': self.asset.identifier,
             'time': self.time,
@@ -127,7 +127,7 @@ class MissingPrice(NamedTuple):
     time: Timestamp
     rate_limited: bool
 
-    def serialize(self) -> dict[str, Union[str, int, bool]]:
+    def serialize(self) -> dict[str, str | (int | bool)]:
         return {
             'from_asset': self.from_asset.identifier,
             'to_asset': self.to_asset.identifier,

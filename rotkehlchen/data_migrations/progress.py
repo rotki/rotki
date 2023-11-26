@@ -1,4 +1,3 @@
-from typing import Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.utils.interfaces import ProgressUpdater
@@ -6,7 +5,7 @@ from rotkehlchen.utils.interfaces import ProgressUpdater
 
 class MigrationProgressHandler(ProgressUpdater):
 
-    def _notify_frontend(self, step_name: Optional[str] = None) -> None:
+    def _notify_frontend(self, step_name: str | None = None) -> None:
         self.messages_aggregator.add_message(
             message_type=WSMessageType.DATA_MIGRATION_STATUS,
             data={

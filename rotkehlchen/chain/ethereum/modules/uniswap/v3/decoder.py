@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -63,12 +64,12 @@ class CryptoAssetAmount(NamedTuple):
     amount: FVal
 
 
-def _find_from_asset_and_amount(events: list['EvmEvent']) -> Optional[tuple[Asset, FVal]]:
+def _find_from_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] | None:
     """
     Searches for uniswap v2/v3 swaps, detects `from_asset` and sums up `from_amount`.
     Works only with `from_asset` being the same for all swaps.
     """
-    from_asset: Optional[Asset] = None
+    from_asset: Asset | None = None
     from_amount = ZERO
     for event in events:
         if (
@@ -88,13 +89,13 @@ def _find_from_asset_and_amount(events: list['EvmEvent']) -> Optional[tuple[Asse
     return from_asset, from_amount
 
 
-def _find_to_asset_and_amount(events: list['EvmEvent']) -> Optional[tuple[Asset, FVal]]:
+def _find_to_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] | None:
     """
     Searches for uniswap v2/v3 swaps, detects `to_asset` and sums up `to_amount`.
     Works only with `to_asset` being the same for all swaps.
     Also works with a special case where there is only one receive event at the end.
     """
-    to_asset: Optional[Asset] = None
+    to_asset: Asset | None = None
     to_amount = ZERO
     for event in events:
         if (
@@ -159,7 +160,7 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _maybe_decode_v3_swap(
             self,
-            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list['EvmEvent'],
@@ -205,7 +206,7 @@ class Uniswapv3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             send_eth_event: 'EvmEvent',
             receive_eth_event: Optional['EvmEvent'],
-    ) -> Optional[SwapData]:
+    ) -> SwapData | None:
         """
         Decode a swap of ETH to a token. Such swap consists of 3 events:
         1. Sending ETH to the router.
@@ -231,7 +232,7 @@ class Uniswapv3Decoder(DecoderInterface):
             self,
             decoded_events: list['EvmEvent'],
             receive_eth_event: 'EvmEvent',
-    ) -> Optional[SwapData]:
+    ) -> SwapData | None:
         from_data = _find_from_asset_and_amount(decoded_events)
         if from_data is None:
             return None
@@ -246,7 +247,7 @@ class Uniswapv3Decoder(DecoderInterface):
     def _decode_token_to_token_swap(
             self,
             decoded_events: list['EvmEvent'],
-    ) -> Optional[SwapData]:
+    ) -> SwapData | None:
         from_data = _find_from_asset_and_amount(decoded_events)
         to_data = _find_to_asset_and_amount(decoded_events)
         if from_data is None or to_data is None:
@@ -405,7 +406,7 @@ class Uniswapv3Decoder(DecoderInterface):
 
         resolved_assets_and_amounts: list[CryptoAssetAmount] = []
         # index 2 -> first token in pair; index 3 -> second token in pair
-        for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw)):
+        for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw), strict=True):  # noqa: E501
             token_with_data: CryptoAsset = get_or_create_evm_token(
                 userdb=self.evm_inquirer.database,
                 evm_address=token,

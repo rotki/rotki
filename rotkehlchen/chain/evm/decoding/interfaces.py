@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -182,7 +182,7 @@ class ReloadableDecoderMixin(metaclass=ABCMeta):
     remote data source, to the decoder's memory."""
 
     @abstractmethod
-    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Subclasses may implement this to be able to reload some of the decoder's properties
         Returns only new mappings of addresses to decode functions"""
 
@@ -196,12 +196,9 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
             self,
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
-            query_data_method: Union[
-                Callable[['OptimismInquirer'], Optional[list['VelodromePoolData']]],
-                Callable[['EthereumInquirer'], Optional[list]],
-            ],
+            query_data_method: Callable[['OptimismInquirer'], list['VelodromePoolData'] | None] | Callable[['EthereumInquirer'], list | None],  # noqa: E501
             save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
-            read_data_from_cache_method: Callable[[], tuple[Union[dict[ChecksumEvmAddress, Any], set[ChecksumEvmAddress]], ...]],  # noqa: E501
+            read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
     ) -> None:
         """
         :param evm_inquirer: The evm inquirer used to query the remote data source.
@@ -210,7 +207,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         :param save_data_to_cache_method: The method that saves the data to the cache tables.
         :param read_data_from_cache_method: The method that reads the data from the
         cache tables. This function returns a tuple of values, because subclasses may return
-        more than a set of pools
+        more than a set of caches (example: different set of pools).
         """
         self.evm_inquirer = evm_inquirer
         self.cache_type_to_check_for_freshness = cache_type_to_check_for_freshness
@@ -223,7 +220,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
         """Methods used to decode cache data"""
 
-    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Make sure cache_data is recently queried from the remote source,
         saved in the DB and loaded to the decoder's memory.
 
@@ -240,15 +237,15 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         cache_diff = [  # get the new items for the different information stored in the cache
             (new_data.keys() if isinstance(new_data, dict) else new_data) -
             (data.keys() if isinstance(data, dict) else data)
-            for data, new_data in zip(self.cache_data, new_cache_data)
-        ]
+            for data, new_data in zip(self.cache_data, new_cache_data, strict=True)
+        ]  # strict=True guaranteed due to number of caches always the same
         if sum(len(x) for x in cache_diff) == 0:
             return None
 
         self.cache_data = new_cache_data
         new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         # pair each new address in each cache container to the method decoding its logic
-        for data_diff, method in zip(cache_diff, self._cache_mapping_methods()):
+        for data_diff, method in zip(cache_diff, self._cache_mapping_methods(), strict=True):  # size should be correct if inheriting decoder is implemented properly  # noqa: E501
             new_decoding_mapping |= {address: (method,) for address in data_diff}
 
         return new_decoding_mapping
@@ -260,7 +257,7 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, metaclas
     """
     @property
     @abstractmethod
-    def pools(self) -> Union[dict[ChecksumEvmAddress, Any], set[ChecksumEvmAddress]]:
+    def pools(self) -> dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress]:
         """abstractmethod to get pools from `cache_data`"""
 
     @property

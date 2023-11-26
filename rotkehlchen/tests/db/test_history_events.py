@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
@@ -95,7 +95,7 @@ def test_get_customized_event_identifiers(database):
         assert db.get_customized_event_identifiers(cursor, chain_id=ChainID.OPTIMISM) == [4]
 
 
-def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, TimestampMS, FVal, Optional[dict]]]) -> None:  # noqa: E501
+def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, TimestampMS, FVal, dict | None]]) -> None:  # noqa: E501
     """Helper function to create HistoryEvent fixtures"""
     with db.db.user_write() as write_cursor:
         for entry in data.values():
@@ -115,7 +115,7 @@ def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, Tim
             )
 
 
-def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, EvmProduct, str, Optional[dict]]]) -> None:  # noqa: E501
+def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, EvmProduct, str, dict | None]]) -> None:  # noqa: E501
     """Helper function to create EvmEvent fixtures"""
     with db.db.user_write() as write_cursor:
         for entry in data.values():
@@ -138,7 +138,7 @@ def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, T
             )
 
 
-def add_eth2_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, Optional[dict]]]) -> None:  # noqa: E501
+def add_eth2_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, dict | None]]) -> None:  # noqa: E501
     """Helper function to create fixtures for various Beacon chain staking events"""
     with db.db.user_write() as write_cursor:
         for entry in data.values():
@@ -243,7 +243,7 @@ def test_read_write_customized_events_from_db(database: DBHandler) -> None:
 
     filter_query_args: list[
         tuple[
-            type[Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery]],
+            type[HistoryEventFilterQuery | (EvmEventFilterQuery | EthDepositEventFilterQuery)],
             dict[str, Any],
         ]
     ] = [
@@ -260,7 +260,7 @@ def test_read_write_customized_events_from_db(database: DBHandler) -> None:
     ]
 
     with db.db.conn.read_ctx() as cursor:
-        for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers):  # noqa: E501
+        for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers, strict=True):  # noqa: E501
             events = db.get_history_events(
                 cursor=cursor,
                 filter_query=filtering_class.make(**filter_args),

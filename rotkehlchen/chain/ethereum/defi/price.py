@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -139,8 +139,8 @@ def handle_underlying_price_harvest_vault(
 def handle_defi_price_query(
         ethereum: 'EthereumInquirer',
         token: EvmToken,
-        underlying_asset_price: Optional[Price],
-) -> Optional[FVal]:
+        underlying_asset_price: Price | None,
+) -> FVal | None:
     """Handles price queries for token/protocols which are queriable on-chain
     (as opposed to cryptocompare/coingecko)
 

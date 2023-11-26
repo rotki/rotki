@@ -5,7 +5,6 @@ import shutil
 import tempfile
 import zlib
 from pathlib import Path
-from typing import Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import decrypt, encrypt
@@ -40,7 +39,7 @@ class DataHandler:
     def logout(self) -> None:
         if self.logged_in:
             self.username = 'no_user'
-            self.user_data_dir: Optional[Path] = None
+            self.user_data_dir: Path | None = None
             db = getattr(self, 'db', None)
             if db is not None:
                 with self.db.conn.read_ctx() as cursor:
@@ -54,7 +53,7 @@ class DataHandler:
             password: str,
             create_new: bool,
             resume_from_backup: bool,
-            initial_settings: Optional[ModifiableDBSettings] = None,
+            initial_settings: ModifiableDBSettings | None = None,
     ) -> Path:
         """Unlocks a user, either logging them in or creating a new user
 
@@ -121,7 +120,7 @@ class DataHandler:
         self.username = username
         return user_data_dir
 
-    def add_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[set[str]], str]:
+    def add_ignored_assets(self, assets: list[Asset]) -> tuple[set[str] | None, str]:
         """Adds ignored assets to the DB.
 
         If any of the given assets is already in the DB the function does nothing
@@ -142,7 +141,7 @@ class DataHandler:
 
             return self.db.get_ignored_asset_ids(cursor), ''
 
-    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[set[str]], str]:
+    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[set[str] | None, str]:
         """Removes ignored assets from the DB.
 
         If any of the given assets is not in the DB the call function does nothing

@@ -1,6 +1,5 @@
 """Functions dealing with the general_cache table of the Global DB"""
 from collections.abc import Iterable
-from typing import Optional, Union
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -15,7 +14,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 
-def compute_cache_key(key_parts: Iterable[Union[str, CacheType]]) -> str:
+def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
     """Function that computes the cache key for accessing the globaldb general or unique cache
     tables. It computes the cache key by iterating through `key_parts` and making one string
     from them. Only a tuple with the same values and the same order represents the same key."""
@@ -34,7 +33,7 @@ BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([CacheType.CURVE_POOL_TOKENS
 
 def globaldb_set_general_cache_values_at_ts(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
         timestamp: Timestamp,
 ) -> None:
@@ -51,7 +50,7 @@ def globaldb_set_general_cache_values_at_ts(
 
 def globaldb_set_general_cache_values(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
 ) -> None:
     """Function to update general cache in globaldb. Inserts the value paired with the cache key.
@@ -67,7 +66,7 @@ def globaldb_set_general_cache_values(
 
 def globaldb_get_general_cache_values(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
 ) -> list[str]:
     """Function that reads from the general cache table.
     It returns all the values that are paired with the given key."""
@@ -78,7 +77,7 @@ def globaldb_get_general_cache_values(
 
 def globaldb_set_unique_cache_value_at_ts(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, UniqueCacheType]],
+        key_parts: Iterable[str | UniqueCacheType],
         value: str,
         timestamp: Timestamp,
 ) -> None:
@@ -94,7 +93,7 @@ def globaldb_set_unique_cache_value_at_ts(
 
 def globaldb_set_unique_cache_value(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, UniqueCacheType]],
+        key_parts: Iterable[str | UniqueCacheType],
         value: str,
 ) -> None:
     """Function that updates the unique cache in globaldb. Inserts the value paired with the
@@ -110,8 +109,8 @@ def globaldb_set_unique_cache_value(
 
 def globaldb_get_unique_cache_value(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, UniqueCacheType]],
-) -> Optional[str]:
+        key_parts: Iterable[str | UniqueCacheType],
+) -> str | None:
     """Function that reads from the unique cache table.
     It returns the value that is paired with the given key."""
     cache_key = compute_cache_key(key_parts)
@@ -124,7 +123,7 @@ def globaldb_get_unique_cache_value(
 
 def globaldb_get_general_cache_like(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
 ) -> list[str]:
     """
     Function to read globaldb cache.
@@ -141,7 +140,7 @@ def globaldb_get_general_cache_like(
 
 def globaldb_get_general_cache_keys_and_values_like(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
 ) -> list[tuple[str, str]]:
     """
     Function that reads globaldb general cache.
@@ -158,7 +157,7 @@ def globaldb_get_general_cache_keys_and_values_like(
 
 def globaldb_get_general_cache_last_queried_ts_by_key(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[str | GeneralCacheType],
 ) -> Timestamp:
     """
     Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
@@ -178,7 +177,7 @@ def globaldb_get_general_cache_last_queried_ts_by_key(
 
 def globaldb_get_unique_cache_last_queried_ts_by_key(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, UniqueCacheType]],
+        key_parts: Iterable[str | UniqueCacheType],
 ) -> Timestamp:
     """
     Get the last_queried_ts of the oldest stored element by key_parts. If there is no such

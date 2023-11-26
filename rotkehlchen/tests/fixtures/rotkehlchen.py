@@ -1,7 +1,6 @@
 import base64
 import json
 from contextlib import ExitStack
-from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -282,7 +281,7 @@ def initialize_mock_rotkehlchen_instance(
             password: str,
             create_new: bool,
             resume_from_backup: bool,
-            initial_settings: Optional[ModifiableDBSettings] = None,
+            initial_settings: ModifiableDBSettings | None = None,
     ):
         """This is an augmented_unlock for the tests where after the original data.unlock
         happening in the start of rotkehlchen.unlock_user() we also add various fixture data

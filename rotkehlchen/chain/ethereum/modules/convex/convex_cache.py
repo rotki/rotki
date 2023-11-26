@@ -115,14 +115,14 @@ def query_convex_data_from_chain(
     lp_tokens_result = ethereum.multicall(calls=calls_to_lp_tokens)
 
     queried_convex_pools_info: dict[ChecksumEvmAddress, str] = {}
-    for convex_reward_addr, single_lp_token_result in zip(convex_rewards_addrs, lp_tokens_result):
+    for convex_reward_addr, single_lp_token_result in zip(convex_rewards_addrs, lp_tokens_result, strict=True):  # length should be equal # noqa: E501
         decoded_lp_token_symbol = lp_tokens_contract.decode(single_lp_token_result, 'symbol')[0]
         queried_convex_pools_info[convex_reward_addr] = decoded_lp_token_symbol
 
     return queried_convex_pools_info
 
 
-def query_convex_data(inquirer: 'EthereumInquirer') -> Optional[list[ConvexPoolData]]:
+def query_convex_data(inquirer: 'EthereumInquirer') -> list[ConvexPoolData] | None:
     """
     Queries chain for all convex rewards pools and returns a list of the mappings not cached
 

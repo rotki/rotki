@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterator, MutableMapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
@@ -31,7 +31,7 @@ class PNL:
     def __add__(self, x: Any) -> 'PNL':
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable + x.taxable, free=self.free + x.free)
-        if isinstance(x, (FVal, int)):
+        if isinstance(x, FVal | int):
             return PNL(taxable=self.taxable + x, free=self.free + x)
 
         raise TypeError(f'Cant add type {type(x)} to PNL')
@@ -41,7 +41,7 @@ class PNL:
     def __sub__(self, x: Any) -> 'PNL':
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable - x.taxable, free=self.free - x.free)
-        if isinstance(x, (FVal, int)):
+        if isinstance(x, FVal | int):
             return PNL(taxable=self.taxable - x, free=self.free - x)
 
         raise TypeError(f'Cant sub type {type(x)} from PNL')
@@ -51,7 +51,7 @@ class PNL:
     def __mul__(self, x: Any) -> 'PNL':
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable * x.taxable, free=self.free * x.free)
-        if isinstance(x, (FVal, int)):
+        if isinstance(x, FVal | int):
             return PNL(taxable=self.taxable * x, free=self.free * x)
 
         raise TypeError(f'Cant mul type {type(x)} with PNL')
@@ -61,7 +61,7 @@ class PNL:
 
 class PnlTotals(MutableMapping):
 
-    def __init__(self, totals: Optional[dict['AccountingEventType', PNL]] = None) -> None:
+    def __init__(self, totals: dict['AccountingEventType', PNL] | None = None) -> None:
         self.totals: dict[AccountingEventType, PNL] = defaultdict(PNL)
         if totals is not None:
             for event_type, entry in totals.items():

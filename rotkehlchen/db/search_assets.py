@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from polyleven import levenshtein
 
@@ -105,7 +105,7 @@ def _search_only_assets_levenstein(
 def search_assets_levenshtein(
         db: 'DBHandler',
         filter_query: 'LevenshteinFilterQuery',
-        limit: Optional[int],
+        limit: int | None,
         search_nfts: bool,
 ) -> list[dict[str, Any]]:
     """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501

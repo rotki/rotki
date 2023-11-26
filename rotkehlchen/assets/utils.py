@@ -45,11 +45,11 @@ def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
 def _query_or_get_given_token_info(
         evm_inquirer: 'EvmNodeInquirer',
         evm_address: ChecksumEvmAddress,
-        name: Optional[str],
-        symbol: Optional[str],
-        decimals: Optional[int],
+        name: str | None,
+        symbol: str | None,
+        decimals: int | None,
         token_kind: EvmTokenKind,
-) -> tuple[Optional[str], Optional[str], Optional[int]]:
+) -> tuple[str | None, str | None, int | None]:
     """
     Query ethereum to retrieve basic contract information for the given address.
     If the contract is missing any of the queried methods then the respective value
@@ -81,10 +81,10 @@ def _query_or_get_given_token_info(
 
 def _edit_token_and_clean_cache(
         evm_token: EvmToken,
-        name: Optional[str],
-        decimals: Optional[int],
-        started: Optional[Timestamp],
-        underlying_tokens: Optional[list[UnderlyingToken]],
+        name: str | None,
+        decimals: int | None,
+        started: Timestamp | None,
+        underlying_tokens: list[UnderlyingToken] | None,
         evm_inquirer: Optional['EvmNodeInquirer'],
 ) -> None:
     """
@@ -129,7 +129,7 @@ def _edit_token_and_clean_cache(
         GlobalDBHandler().edit_evm_token(evm_token)
 
 
-def check_if_spam_token(symbol: Optional[str]) -> bool:
+def check_if_spam_token(symbol: str | None) -> bool:
     """Makes basic checks to test if a token could be spam or not"""
     if symbol is None:
         return False
@@ -154,8 +154,8 @@ class TokenEncounterInfo(NamedTuple):
     If should_notify is True then we will send a ws message with information
     about the new asset
     """
-    tx_hash: Optional[EVMTxHash] = None
-    description: Optional[str] = None
+    tx_hash: EVMTxHash | None = None
+    description: str | None = None
     should_notify: bool = True
 
 
@@ -164,14 +164,14 @@ def get_or_create_evm_token(
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
         token_kind: EvmTokenKind = EvmTokenKind.ERC20,
-        symbol: Optional[str] = None,
-        name: Optional[str] = None,
-        decimals: Optional[int] = None,
-        protocol: Optional[str] = None,
-        started: Optional[Timestamp] = None,
-        underlying_tokens: Optional[list[UnderlyingToken]] = None,
+        symbol: str | None = None,
+        name: str | None = None,
+        decimals: int | None = None,
+        protocol: str | None = None,
+        started: Timestamp | None = None,
+        underlying_tokens: list[UnderlyingToken] | None = None,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
-        encounter: Optional[TokenEncounterInfo] = None,
+        encounter: TokenEncounterInfo | None = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -299,9 +299,9 @@ def set_token_protocol_if_missing(evm_token: EvmToken, protocol: str) -> None:
 
 def get_crypto_asset_by_symbol(
         symbol: str,
-        asset_type: Optional[AssetType] = None,
-        chain_id: Optional[ChainID] = None,
-) -> Optional[AssetWithOracles]:
+        asset_type: AssetType | None = None,
+        chain_id: ChainID | None = None,
+) -> AssetWithOracles | None:
     """Gets an asset by symbol from the DB.
 
     If no asset with that symbol or multiple assets (except for EVM tokens) with the same
@@ -324,7 +324,7 @@ def get_crypto_asset_by_symbol(
 
 def symbol_to_asset_or_token(
         symbol: str,
-        chain_id: Optional[ChainID] = None,
+        chain_id: ChainID | None = None,
 ) -> AssetWithOracles:
     """Tries to turn the given symbol to an asset or an ethereum Token
 

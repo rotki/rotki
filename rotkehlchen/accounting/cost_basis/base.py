@@ -2,9 +2,9 @@ import heapq
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, overload
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
@@ -171,7 +171,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
             used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
-            average_cost_basis: Optional[FVal] = None,
+            average_cost_basis: FVal | None = None,
     ) -> 'CostBasisInfo':
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
@@ -388,7 +388,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
-            average_cost_basis: Optional[FVal] = None,  # pylint: disable=unused-argument
+            average_cost_basis: FVal | None = None,  # pylint: disable=unused-argument
     ) -> 'CostBasisInfo':
         """Calculates the cost basis of the spend using the average cost basis method."""
         if self.current_amount == ZERO:
@@ -656,7 +656,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: bool,
-    ) -> Optional[CostBasisInfo]:
+    ) -> CostBasisInfo | None:
         ...
 
     def spend_asset(
@@ -667,7 +667,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: bool,
-    ) -> Optional[CostBasisInfo]:
+    ) -> CostBasisInfo | None:
         """
         Register an asset spending event. For example from a trade, a fee, a swap.
 
@@ -698,7 +698,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.reduce_asset_amount(asset=asset, amount=amount, timestamp=timestamp)
         return None
 
-    def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
+    def get_calculated_asset_amount(self, asset: Asset) -> FVal | None:
         """Get the amount of asset accounting has calculated we should have after
         the history has been processed
         """

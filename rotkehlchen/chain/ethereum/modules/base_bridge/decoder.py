@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import AssetWithSymbol, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -54,7 +54,7 @@ class BaseBridgeDecoder(DecoderInterface):
             asset: AssetWithSymbol,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
-            amount: Optional[FVal] = None,
+            amount: FVal | None = None,
     ) -> None:
         """Given the filters for the events update the information of the bridging events"""
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501

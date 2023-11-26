@@ -80,12 +80,12 @@ class PriceHistorian:
     _coingecko: 'Coingecko'
     _defillama: 'Defillama'
     _manual: ManualPriceOracle  # This is used when iterating through all oracles
-    _oracles: Optional[Sequence[HistoricalPriceOracle]] = None
-    _oracle_instances: Optional[list[HistoricalPriceOracleInstance]] = None
+    _oracles: Sequence[HistoricalPriceOracle] | None = None
+    _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
 
     def __new__(
             cls,
-            data_directory: Optional[Path] = None,
+            data_directory: Path | None = None,
             cryptocompare: Optional['Cryptocompare'] = None,
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
@@ -121,7 +121,7 @@ class PriceHistorian:
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-    ) -> Optional[Price]:
+    ) -> Price | None:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`
         for the case where `from_asset` needs a special handling.
@@ -212,7 +212,7 @@ class PriceHistorian:
             'PriceHistorian should never be called before setting the oracles'
         )
         rate_limited = False
-        for oracle, oracle_instance in zip(oracles, oracle_instances):
+        for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             can_query_history = oracle_instance.can_query_history(
                 from_asset=from_asset,
                 to_asset=to_asset,

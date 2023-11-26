@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from eth_utils.address import to_checksum_address
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_key_if_has_val(mapping: dict[str, Any], key: str) -> Optional[str]:
+def get_key_if_has_val(mapping: dict[str, Any], key: str) -> str | None:
     """Gets the key from mapping if it exists and has a value (non empty string)
 
     The assumption here is that the value of the key is str. If it's not str
@@ -38,7 +38,7 @@ def deserialize_asset_movement_address(
         mapping: dict[str, Any],
         key: str,
         asset: Asset,
-) -> Optional[str]:
+) -> str | None:
     """Gets the address from an asset movement mapping making sure that if it's
     an ethereum deposit/withdrawal the address is returned checksummed"""
     value = get_key_if_has_val(mapping, key)

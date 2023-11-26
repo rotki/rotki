@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import requests
 
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ExchangeQueryBalances = tuple[Optional[dict[AssetWithOracles, Balance]], str]
+ExchangeQueryBalances = tuple[dict[AssetWithOracles, Balance] | None, str]
 
 ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
@@ -150,7 +151,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Has to be implemented by exchanges if they have anything exchange specific
 
 
@@ -465,7 +466,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             fail_callback: ExchangeHistoryFailCallback,
-            new_step_data: Optional[tuple[ExchangeHistoryNewStepCallback, str]] = None,
+            new_step_data: tuple[ExchangeHistoryNewStepCallback, str] | None = None,
     ) -> None:
         """Queries the historical event endpoints for this exchange and performs actions.
         The results are saved in the DB.

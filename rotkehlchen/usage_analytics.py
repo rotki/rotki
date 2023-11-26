@@ -4,7 +4,7 @@ import shutil
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import maxminddb
 import miniupnpc
@@ -24,7 +24,7 @@ class GeolocationData(NamedTuple):
     country_code: str
 
 
-def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
+def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
     """This functions tries to get the country of the user based on the ip.
     To do that it makes use of an open ip to country database and tries to obtain
     the ip ussing UPnP protocol.

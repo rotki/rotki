@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, cast
 
 from eth_typing.evm import ChecksumAddress
 
@@ -166,12 +166,12 @@ BalancerEventDBTuple = (
         str,  # usd_value
         str,  # amount0
         str,  # amount1
-        Optional[str],  # amount2
-        Optional[str],  # amount3
-        Optional[str],  # amount4
-        Optional[str],  # amount5
-        Optional[str],  # amount6
-        Optional[str],  # amount7
+        str | None,  # amount2
+        str | None,  # amount3
+        str | None,  # amount4
+        str | None,  # amount5
+        str | None,  # amount6
+        str | None,  # amount7
     ]
 )
 
@@ -246,12 +246,12 @@ class BalancerEvent(NamedTuple):
 
     def serialize(
             self,
-            pool_tokens: Optional[list[UnderlyingToken]] = None,
+            pool_tokens: list[UnderlyingToken] | None = None,
     ) -> dict[str, Any]:
-        amounts: Union[list[str], dict[str, Any]]
+        amounts: list[str] | dict[str, Any]
         if isinstance(pool_tokens, list) and len(pool_tokens) > 0:
-            amounts = {}
-            for pool_token, amount in zip(pool_tokens, self.amounts):
+            amounts = {}  # pool_tokens and amounts guaranteed same size
+            for pool_token, amount in zip(pool_tokens, self.amounts, strict=True):
                 token_identifier = ethaddress_to_identifier(pool_token.address)
                 amounts[token_identifier] = str(amount)
         else:
@@ -294,8 +294,8 @@ class BalancerPoolEventsBalance(NamedTuple):
 
     def serialize(self) -> dict[str, Any]:
         profit_loss_amounts: dict[str, Any] = {}  # Includes all assets, even with zero amount
-        tokens_and_weights = []
-        for pool_token, profit_loss_amount in zip(self.pool_address_token.underlying_tokens, self.profit_loss_amounts):  # noqa: E501
+        tokens_and_weights = []  # pool and amount lengths should be equal
+        for pool_token, profit_loss_amount in zip(self.pool_address_token.underlying_tokens, self.profit_loss_amounts, strict=True):  # noqa: E501
             token_identifier = ethaddress_to_identifier(pool_token.address)
             profit_loss_amounts[token_identifier] = str(profit_loss_amount)
             tokens_and_weights.append({

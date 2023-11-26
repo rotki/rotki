@@ -6,11 +6,11 @@ import sys
 import tempfile
 import traceback
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
 from zipfile import BadZipFile, ZipFile
 
 import gevent
@@ -266,7 +266,7 @@ def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
     return {'result': result, 'message': message}
 
 
-def wrap_in_fail_result(message: str, status_code: Optional[HTTPStatus] = None) -> dict[str, Any]:
+def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> dict[str, Any]:
     result: dict[str, Any] = {'result': None, 'message': message}
     if status_code:
         result['status_code'] = status_code
@@ -453,7 +453,7 @@ class RestAPI:
             result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.get_settings(cursor)))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-    def query_tasks_outcome(self, task_id: Optional[int]) -> Response:
+    def query_tasks_outcome(self, task_id: int | None) -> Response:
         if task_id is None:
             # If no task id is given return list of all pending and completed tasks
             completed = []
@@ -542,7 +542,7 @@ class RestAPI:
 
     def _return_external_services_response(self) -> Response:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
-        response_dict: dict[str, Union[dict[str, ApiKey], dict[str, dict[str, ApiKey]]]] = {}
+        response_dict: dict[str, dict[str, ApiKey] | dict[str, dict[str, ApiKey]]] = {}
         for credential in credentials_list:
             name = credential.service.name.lower()
             key_info = {'api_key': credential.api_key}
@@ -578,9 +578,9 @@ class RestAPI:
             location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
-            passphrase: Optional[str],
+            passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[list[str]],
+            binance_markets: list[str] | None,
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -604,12 +604,12 @@ class RestAPI:
             self,
             name: str,
             location: Location,
-            new_name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
+            new_name: str | None,
+            api_key: ApiKey | None,
+            api_secret: ApiSecret | None,
+            passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[list[str]],
+            binance_markets: list[str] | None,
     ) -> Response:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
@@ -621,7 +621,7 @@ class RestAPI:
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
         )
-        result: Optional[bool] = True
+        result: bool | None = True
         status_code = HTTPStatus.OK
         if not edited:
             result = None
@@ -630,7 +630,7 @@ class RestAPI:
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     def remove_exchange(self, name: str, location: Location) -> Response:
-        result: Optional[bool]
+        result: bool | None
         result, message = self.rotkehlchen.exchange_manager.delete_exchange(
             name=name,
             location=location,
@@ -668,7 +668,7 @@ class RestAPI:
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     @async_api_call()
-    def query_exchange_balances(self, location: Optional[Location], ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
+    def query_exchange_balances(self, location: Location | None, ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
         if location is None:
             # Query all exchanges
             return self._query_all_exchange_balances(ignore_cache=ignore_cache)
@@ -718,7 +718,7 @@ class RestAPI:
     @async_api_call()
     def query_blockchain_balances(
             self,
-            blockchain: Optional[SupportedBlockchain],
+            blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
     ) -> dict[str, Any]:
         msg = ''
@@ -795,10 +795,10 @@ class RestAPI:
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Optional[Fee],
-            fee_currency: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            fee: Fee | None,
+            fee_currency: Asset | None,
+            link: str | None,
+            notes: str | None,
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
@@ -831,10 +831,10 @@ class RestAPI:
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Optional[Fee],
-            fee_currency: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            fee: Fee | None,
+            fee_currency: Asset | None,
+            link: str | None,
+            notes: str | None,
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
@@ -961,7 +961,7 @@ class RestAPI:
     def add_tag(
             self,
             name: str,
-            description: Optional[str],
+            description: str | None,
             background_color: HexColorCode,
             foreground_color: HexColorCode,
     ) -> Response:
@@ -983,9 +983,9 @@ class RestAPI:
     def edit_tag(
             self,
             name: str,
-            description: Optional[str],
-            background_color: Optional[HexColorCode],
-            foreground_color: Optional[HexColorCode],
+            description: str | None,
+            background_color: HexColorCode | None,
+            foreground_color: HexColorCode | None,
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
@@ -1028,7 +1028,7 @@ class RestAPI:
             premium_api_key: str,
             premium_api_secret: str,
             sync_database: bool,
-            initial_settings: Optional[ModifiableDBSettings],
+            initial_settings: ModifiableDBSettings | None,
     ) -> dict[str, Any]:
 
         if self.rotkehlchen.user_is_logged_in:
@@ -1304,7 +1304,7 @@ class RestAPI:
     def search_assets_levenshtein(
             self,
             filter_query: LevenshteinFilterQuery,
-            limit: Optional[int],
+            limit: int | None,
             search_nfts: bool,
     ) -> Response:
         result = search_assets_levenshtein(
@@ -1450,8 +1450,8 @@ class RestAPI:
 
     def query_timed_balances_data(
             self,
-            asset: Optional[Asset],
-            collection_id: Optional[int],
+            asset: Asset | None,
+            collection_id: int | None,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
@@ -1482,7 +1482,7 @@ class RestAPI:
         )
 
     def query_value_distribution_data(self, distribution_by: str) -> Response:
-        data: Union[list[DBAssetBalance], list[LocationData]]
+        data: list[DBAssetBalance] | list[LocationData]
         if distribution_by == 'location':
             data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
         else:
@@ -1536,7 +1536,7 @@ class RestAPI:
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            directory_path: Optional[Path],
+            directory_path: Path | None,
     ) -> dict[str, Any]:
         """This method exports all history events for a timestamp range.
         It also exports the user settings & ignored action identifiers for PnL debugging.
@@ -1589,7 +1589,7 @@ class RestAPI:
         def import_history_debug(
                 self,
                 async_query: bool,
-                filepath: Union[FileStorage, Path],
+                filepath: FileStorage | Path,
         ) -> Response:
             if isinstance(filepath, FileStorage):
                 _, tmpfilepath = tempfile.mkstemp()
@@ -1864,11 +1864,11 @@ class RestAPI:
 
     def _modify_manually_tracked_balances(
             self,
-            function: Union[
-                Callable[['DBHandler', list[ManuallyTrackedBalance]], None],
-                Callable[['DBHandler', list[int]], None],
-            ],
-            data_or_ids: Union[list[ManuallyTrackedBalance], list[int]],
+            function: (
+                Callable[['DBHandler', list[ManuallyTrackedBalance]], None] |
+                Callable[['DBHandler', list[int]], None]
+            ),
+            data_or_ids: list[ManuallyTrackedBalance] | list[int],
     ) -> dict[str, Any]:
         try:
             function(self.rotkehlchen.data.db, data_or_ids)  # type: ignore
@@ -2032,7 +2032,7 @@ class RestAPI:
             self,
             async_query: bool,
             source: DataImportSource,
-            filepath: Union[FileStorage, Path],
+            filepath: FileStorage | Path,
             **kwargs: Any,
     ) -> Response:
         if isinstance(filepath, FileStorage):
@@ -2139,8 +2139,8 @@ class RestAPI:
     @async_api_call()
     def add_eth2_validator(
             self,
-            validator_index: Optional[int],
-            public_key: Optional[Eth2PubKey],
+            validator_index: int | None,
+            public_key: Eth2PubKey | None,
             ownership_proportion: FVal,
     ) -> dict[str, Any]:
         try:
@@ -2266,7 +2266,7 @@ class RestAPI:
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
+    def purge_module_data(self, module_name: ModuleName | None) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2274,7 +2274,7 @@ class RestAPI:
             self,
             module_name: ModuleName,
             method: str,
-            query_specific_balances_before: Optional[list[str]],
+            query_specific_balances_before: list[str] | None,
             **kwargs: Any,
     ) -> dict[str, Any]:
         """A function abstracting away calls to ethereum modules
@@ -2591,7 +2591,7 @@ class RestAPI:
     def _watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
-            data: Optional[dict[str, Any]],
+            data: dict[str, Any] | None,
     ) -> Response:
         try:
             # we know that premium exists here due to require_premium_user
@@ -2618,7 +2618,7 @@ class RestAPI:
     def delete_watchers(self, watchers: list[str]) -> Response:
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
 
-    def purge_exchange_data(self, location: Optional[Location]) -> Response:
+    def purge_exchange_data(self, location: Location | None) -> Response:
         with self.rotkehlchen.data.db.user_write() as cursor:
             if location:
                 self.rotkehlchen.data.db.purge_exchange_data(cursor, location)
@@ -2628,7 +2628,7 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_evm_transaction_data(self, chain_id: Optional[SUPPORTED_CHAIN_IDS]) -> Response:
+    def purge_evm_transaction_data(self, chain_id: SUPPORTED_CHAIN_IDS | None) -> Response:
         chain = None if chain_id is None else chain_id.to_blockchain()
         DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
             chain=chain,  # type: ignore  # chain_id.to_blockchain() will only give supported chain
@@ -2678,7 +2678,7 @@ class RestAPI:
             )
 
             entries_result = [{'entry': entry.serialize()} for entry in transactions]
-            result: Optional[dict[str, Any]] = None
+            result: dict[str, Any] | None = None
             kwargs = {}
             if filter_query.chain_id is not None:
                 kwargs['chain_id'] = filter_query.chain_id.serialize_for_db()
@@ -2793,7 +2793,7 @@ class RestAPI:
     def get_asset_icon(
             self,
             asset: AssetWithNameAndType,
-            match_header: Optional[str],
+            match_header: str | None,
     ) -> Response:
         icon_path = self.rotkehlchen.icon_manager.asset_icon_path(asset)
         if icon_path is not None:
@@ -2857,8 +2857,8 @@ class RestAPI:
             f'{", ".join([asset.identifier for asset in assets])}',
         )
         # Type is list instead of tuple here because you can't serialize a tuple
-        assets_price: dict[Asset, list[Union[Price, Optional[int], bool]]] = {}
-        oracle: Optional[CurrentPriceOracle]
+        assets_price: dict[Asset, list[Price | (int | None | bool)]] = {}
+        oracle: CurrentPriceOracle | None
         for asset in assets:
             if asset != target_asset:
                 if asset.asset_type == AssetType.NFT:
@@ -3027,8 +3027,8 @@ class RestAPI:
     @async_api_call()
     def perform_assets_updates(
             self,
-            up_to_version: Optional[int],
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            up_to_version: int | None,
+            conflicts: dict[Asset, Literal['remote', 'local']] | None,
     ) -> dict[str, Any]:
         try:
             result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
@@ -3123,8 +3123,8 @@ class RestAPI:
 
     def get_manual_prices(
             self,
-            from_asset: Optional[Asset],
-            to_asset: Optional[Asset],
+            from_asset: Asset | None,
+            to_asset: Asset | None,
     ) -> Response:
         return api_response(
             _wrap_in_ok_result(GlobalDBHandler().get_manual_prices(from_asset, to_asset)),
@@ -3211,8 +3211,8 @@ class RestAPI:
 
     def get_manual_latest_prices(
             self,
-            from_asset: Optional[Asset],
-            to_asset: Optional[Asset],
+            from_asset: Asset | None,
+            to_asset: Asset | None,
     ) -> Response:
         prices = GlobalDBHandler().get_all_manual_latest_prices(
             from_asset=from_asset,
@@ -3356,7 +3356,7 @@ class RestAPI:
 
     def get_pnl_reports(
             self,
-            report_id: Optional[int],
+            report_id: int | None,
     ) -> Response:
         with_limit = False
         entries_limit = -1
@@ -3499,7 +3499,7 @@ class RestAPI:
                 evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
                 events=[x for _, x in events_result],  # type: ignore
                 accountant=self.rotkehlchen.accountant,
-            )
+            )  # length of missing_accounting_rules and events guaranteeed by function
             entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
@@ -3507,7 +3507,7 @@ class RestAPI:
                     hidden_event_ids=hidden_event_ids,
                     missing_accounting_rule=missing_accounting_rule,
                     grouped_events_num=grouped_events_num,  # type: ignore
-                ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules)  # noqa: E501
+                ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules, strict=True)  # noqa: E501
             ]
         else:
             missing_accounting_rules = query_missing_accounting_rules(
@@ -3523,7 +3523,7 @@ class RestAPI:
                     ignored_ids_mapping=ignored_ids_mapping,
                     hidden_event_ids=hidden_event_ids,
                     missing_accounting_rule=missing_accounting_rule,
-                ) for x, missing_accounting_rule in zip(events_result, missing_accounting_rules)
+                ) for x, missing_accounting_rule in zip(events_result, missing_accounting_rules, strict=True)  # noqa: E501
             ]
         result = {
             'entries': entries,
@@ -3556,7 +3556,7 @@ class RestAPI:
             event_subtypes=None,
         )
 
-    def get_user_added_assets(self, path: Optional[Path]) -> Response:
+    def get_user_added_assets(self, path: Path | None) -> Response:
         """
         Creates a zip file with the list of assets added by the user. If path is not None the zip
         file is saved in that folder and a json response including the path is returned.
@@ -3852,7 +3852,7 @@ class RestAPI:
     def detect_evm_tokens(
             self,
             only_cache: bool,
-            addresses: Optional[Sequence[ChecksumEvmAddress]],
+            addresses: Sequence[ChecksumEvmAddress] | None,
             blockchain: SUPPORTED_EVM_CHAINS,
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
@@ -4045,8 +4045,8 @@ class RestAPI:
             event_types: list[HistoryEventType],
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
     ) -> dict[str, Any]:
         """Query exchanges for either staking or savings history.
 
@@ -4158,7 +4158,7 @@ class RestAPI:
             result.append({'id': chain.value, 'name': name, 'label': label})
         return api_response(result=_wrap_in_ok_result(result=result))
 
-    def get_ens_avatar(self, ens_name: str, match_header: Optional[str]) -> Response:
+    def get_ens_avatar(self, ens_name: str, match_header: str | None) -> Response:
         """
         Searches for the ENS avatar of the given `ens_name`.
         If found returns a response with the avatar, otherwise a 404 empty response if
@@ -4207,7 +4207,7 @@ class RestAPI:
 
         return maybe_create_image_response(image_path=avatar_path)
 
-    def clear_icons_cache(self, icons: Optional[list[AssetWithNameAndType]]) -> Response:
+    def clear_icons_cache(self, icons: list[AssetWithNameAndType] | None) -> Response:
         """Clears cache entries for the specified icons.
 
         If no icons are provided, the icons cache is cleared entirely.
@@ -4225,7 +4225,7 @@ class RestAPI:
 
         return api_response(OK_RESULT)
 
-    def clear_avatars_cache(self, avatars: Optional[list[str]]) -> Response:
+    def clear_avatars_cache(self, avatars: list[str] | None) -> Response:
         """Clears cache entries for the specified avatars of ENS names.
 
         If no avatars are provided, the avatars cache is cleared entirely.
@@ -4373,7 +4373,7 @@ class RestAPI:
         summary = get_skipped_external_events_summary(self.rotkehlchen)
         return api_response(result=_wrap_in_ok_result(summary), status_code=HTTPStatus.OK)
 
-    def export_skipped_external_events(self, directory_path: Optional[Path]) -> Response:
+    def export_skipped_external_events(self, directory_path: Path | None) -> Response:
         try:
             exportpath = export_skipped_external_events(
                 rotki=self.rotkehlchen,
@@ -4408,7 +4408,7 @@ class RestAPI:
     def export_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
-            directory_path: Optional[Path],
+            directory_path: Path | None,
     ) -> Response:
         """ Export or Download history events data to a CSV file."""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
@@ -4478,7 +4478,7 @@ class RestAPI:
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
@@ -4500,7 +4500,7 @@ class RestAPI:
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
@@ -4555,7 +4555,7 @@ class RestAPI:
     def solve_multiple_accounting_rule_conflicts(
             self,
             conflicts: list[tuple[int, Literal['remote', 'local']]],
-            solve_all_using: Optional[Literal['remote', 'local']],
+            solve_all_using: Literal['remote', 'local'] | None,
     ) -> Response:
         conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
         try:

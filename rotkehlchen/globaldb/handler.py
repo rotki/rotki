@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 from gevent.lock import Semaphore
 
@@ -192,16 +192,16 @@ def _initialize_global_db_directory(
 class GlobalDBHandler:
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
-    _data_directory: Optional[Path] = None
-    _packaged_db_conn: Optional[DBConnection] = None
+    _data_directory: Path | None = None
+    _packaged_db_conn: DBConnection | None = None
     conn: DBConnection
     used_backup: bool  # specifies if the global DB was restored from a backup
     packaged_db_lock: Semaphore
 
     def __new__(
             cls,
-            data_dir: Optional[Path] = None,
-            sql_vm_instructions_cb: Optional[int] = None,
+            data_dir: Path | None = None,
+            sql_vm_instructions_cb: int | None = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -508,7 +508,7 @@ class GlobalDBHandler:
     def get_all_asset_data(
             mapping: Literal[True],
             serialized: bool = False,
-            specific_ids: Optional[list[str]] = None,
+            specific_ids: list[str] | None = None,
     ) -> dict[str, dict[str, Any]]:
         ...
 
@@ -517,7 +517,7 @@ class GlobalDBHandler:
     def get_all_asset_data(
             mapping: Literal[False],
             serialized: bool = False,
-            specific_ids: Optional[list[str]] = None,
+            specific_ids: list[str] | None = None,
     ) -> list[AssetData]:
         ...
 
@@ -525,14 +525,14 @@ class GlobalDBHandler:
     def get_all_asset_data(
             mapping: bool,
             serialized: bool = False,
-            specific_ids: Optional[list[str]] = None,
-    ) -> Union[list[AssetData], dict[str, dict[str, Any]]]:
+            specific_ids: list[str] | None = None,
+    ) -> list[AssetData] | dict[str, dict[str, Any]]:
         """Return all asset data from the DB or all data matching the given ids
 
         If mapping is True, return them as a Dict of identifier to data
         If mapping is False, return them as a List of AssetData
         """
-        result: Union[list[AssetData], dict[str, dict[str, Any]]]
+        result: list[AssetData] | dict[str, dict[str, Any]]
         if mapping:
             result = {}
         else:
@@ -556,7 +556,7 @@ class GlobalDBHandler:
             cursor.execute(querystr, bindings)
             for entry in cursor:
                 asset_type = AssetType.deserialize_from_db(entry[1])
-                evm_address: Optional[ChecksumEvmAddress]
+                evm_address: ChecksumEvmAddress | None
                 if asset_type == AssetType.EVM_TOKEN:
                     evm_address = string_to_evm_address(entry[2])
                     chain = ChainID.deserialize_from_db(entry[12])
@@ -590,7 +590,7 @@ class GlobalDBHandler:
     def get_asset_data(
             identifier: str,
             form_with_incomplete_data: bool,
-    ) -> Optional[AssetData]:
+    ) -> AssetData | None:
         """Get all details of a single asset by identifier
 
         Returns None if identifier can't be matched to an asset
@@ -678,7 +678,7 @@ class GlobalDBHandler:
     def fetch_underlying_tokens(
             cursor: DBCursor,
             parent_token_identifier: str,
-    ) -> Optional[list[UnderlyingToken]]:
+    ) -> list[UnderlyingToken] | None:
         """Fetch underlying tokens for a token address if they exist"""
         cursor.execute(
             'SELECT B.address, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
@@ -758,7 +758,7 @@ class GlobalDBHandler:
             cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain_id: ChainID,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Returns the asset identifier of an EVM token by address if it can be found"""
         query = cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?;',
@@ -771,7 +771,7 @@ class GlobalDBHandler:
         return result[0][0]
 
     @staticmethod
-    def check_asset_exists(asset: AssetWithOracles) -> Optional[list[str]]:
+    def check_asset_exists(asset: AssetWithOracles) -> list[str] | None:
         """
         Checks if an asset of a given type, symbol and name exists in the DB already
 
@@ -793,7 +793,7 @@ class GlobalDBHandler:
         return [x[0] for x in result]
 
     @staticmethod
-    def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> Optional[EvmToken]:
+    def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> EvmToken | None:
         """Gets all details for an evm token by its address
 
         If no token for the given address can be found None is returned.
@@ -829,8 +829,8 @@ class GlobalDBHandler:
     @staticmethod
     def get_evm_tokens(
             chain_id: ChainID,
-            exceptions: Optional[set[ChecksumEvmAddress]] = None,
-            protocol: Optional[str] = None,
+            exceptions: set[ChecksumEvmAddress] | None = None,
+            protocol: str | None = None,
             ignore_spam: bool = True,
     ) -> list[EvmToken]:
         """Gets all ethereum tokens from the DB
@@ -847,7 +847,7 @@ class GlobalDBHandler:
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
-        bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]
+        bindings_list: list[str | (int | ChecksumEvmAddress)] = [chain_id.serialize_for_db()]
         if exceptions is not None or protocol is not None or ignore_spam is True:
             querystr_additions = []
             if exceptions is not None:
@@ -885,7 +885,7 @@ class GlobalDBHandler:
         return tokens
 
     @staticmethod
-    def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> Optional[str]:
+    def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> str | None:
         """Gets address -> name for the token and given chain if existing"""
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
@@ -1132,19 +1132,19 @@ class GlobalDBHandler:
     @staticmethod
     def get_assets_with_symbol(
             symbol: str,
-            asset_type: Optional[AssetType] = None,
-            chain_id: Optional[ChainID] = None,
+            asset_type: AssetType | None = None,
+            chain_id: ChainID | None = None,
     ) -> list[AssetWithOracles]:
         """Find all asset entries that have the given symbol"""
         evm_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
-        evm_query_list: list[Union[int, str]] = [evm_token_type, symbol]
+        evm_query_list: list[int | str] = [evm_token_type, symbol]
         if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain_id.serialize_for_db())
 
         extra_check_common = ''
-        common_query_list: list[Union[int, str]] = [
+        common_query_list: list[int | str] = [
             evm_token_type,
             AssetType.CUSTOM_ASSET.serialize_for_db(),
             symbol,
@@ -1165,7 +1165,7 @@ class GlobalDBHandler:
             cursor.execute(querystr, evm_query_list + common_query_list)
             for entry in cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
-                underlying_tokens: Optional[list[UnderlyingToken]] = None
+                underlying_tokens: list[UnderlyingToken] | None = None
                 if asset_type == AssetType.EVM_TOKEN:
                     underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                         cursor=cursor,
@@ -1198,7 +1198,7 @@ class GlobalDBHandler:
             to_asset: 'Asset',
             timestamp: Timestamp,
             max_seconds_distance: int,
-            source: Optional[HistoricalPriceOracle] = None,
+            source: HistoricalPriceOracle | None = None,
     ) -> Optional['HistoricalPrice']:
         """Gets the price around a particular timestamp
 
@@ -1227,7 +1227,7 @@ class GlobalDBHandler:
     def get_historical_prices(
             query_data: list[tuple['Asset', 'Asset', Timestamp]],
             max_seconds_distance: int,
-            source: Optional[HistoricalPriceOracle] = None,
+            source: HistoricalPriceOracle | None = None,
     ) -> list[Optional['HistoricalPrice']]:
         """Given a list of from/to/timestamp data to query returns all values
         that could be found in the DB and None for those that could not be found.
@@ -1381,7 +1381,7 @@ class GlobalDBHandler:
         return pairs_to_invalidate
 
     @staticmethod
-    def get_manual_current_price(asset: Asset) -> Optional[tuple[Asset, Price]]:
+    def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:
         """Reads manual current price of an asset. If no price is found returns None."""
         with GlobalDBHandler().conn.read_ctx() as read_cursor:
             result = read_cursor.execute(
@@ -1396,8 +1396,8 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_all_manual_latest_prices(
-            from_asset: Optional[Asset] = None,
-            to_asset: Optional[Asset] = None,
+            from_asset: Asset | None = None,
+            to_asset: Asset | None = None,
     ) -> list[tuple[str, str, str]]:
         """Returns all the manual current prices in the price_history table"""
         query = 'SELECT from_asset, to_asset, price FROM price_history WHERE source_type=?'
@@ -1443,9 +1443,9 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_manual_prices(
-            from_asset: Optional[Asset],
-            to_asset: Optional[Asset],
-    ) -> list[dict[str, Union[int, str]]]:
+            from_asset: Asset | None,
+            to_asset: Asset | None,
+    ) -> list[dict[str, int | str]]:
         """Returns prices added to the database by the user for an asset"""
         querystr = (
             'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
@@ -1536,7 +1536,7 @@ class GlobalDBHandler:
     def delete_historical_prices(
             from_asset: 'Asset',
             to_asset: 'Asset',
-            source: Optional[HistoricalPriceOracle] = None,
+            source: HistoricalPriceOracle | None = None,
     ) -> None:
         querystr = 'DELETE FROM price_history WHERE from_asset=? AND to_asset=?'
         query_list = [from_asset.identifier, to_asset.identifier]
@@ -1557,8 +1557,8 @@ class GlobalDBHandler:
     def get_historical_price_range(
             from_asset: 'Asset',
             to_asset: 'Asset',
-            source: Optional[HistoricalPriceOracle] = None,
-    ) -> Optional[tuple[Timestamp, Timestamp]]:
+            source: HistoricalPriceOracle | None = None,
+    ) -> tuple[Timestamp, Timestamp] | None:
         querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
         query_list = [from_asset.identifier, to_asset.identifier]
         if source is not None:
@@ -1898,7 +1898,7 @@ class GlobalDBHandler:
         return normalized_id[0]
 
     @staticmethod
-    def get_collection_main_asset(identifier: str) -> Optional[str]:
+    def get_collection_main_asset(identifier: str) -> str | None:
         """
         Given an asset identifier return id of the asset in the collection with the lowest
         lexicographical order.
@@ -1910,7 +1910,7 @@ class GlobalDBHandler:
         return result[0] if result is not None else None
 
     @staticmethod
-    def get_or_write_abi(serialized_abi: str, abi_name: Optional[str] = None) -> int:
+    def get_or_write_abi(serialized_abi: str, abi_name: str | None = None) -> int:
         """
         Finds and returns the id of the given abi.
         If the abi doesn't exist in the db, inserts it there.

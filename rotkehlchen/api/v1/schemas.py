@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final, Literal, Optional, Union, get_args
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Final, Literal, get_args
 
 import marshmallow
 import webargs
@@ -412,8 +413,8 @@ class TradesQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        base_assets: Optional[tuple[Asset, ...]] = None
-        quote_assets: Optional[tuple[Asset, ...]] = None
+        base_assets: tuple[Asset, ...] | None = None
+        quote_assets: tuple[Asset, ...] | None = None
         trades_idx_to_ignore = None
         with self.db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = self.db.get_settings(cursor).treat_eth2_as_eth
@@ -468,7 +469,7 @@ class BaseStakingQuerySchema(
     def _get_assets_list(
             self,
             data: dict[str, Any],
-    ) -> Optional[tuple['AssetWithOracles', ...]]:
+    ) -> tuple['AssetWithOracles', ...] | None:
         return (data['asset'],) if data['asset'] is not None else None
 
     def _make_query(
@@ -477,8 +478,8 @@ class BaseStakingQuerySchema(
             data: dict[str, Any],
             event_types: list[HistoryEventType],
             value_event_subtypes: list[HistoryEventSubType],
-            query_event_subtypes: Optional[list[HistoryEventSubType]] = None,
-            exclude_event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            query_event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_event_subtypes: list[HistoryEventSubType] | None = None,
     ) -> dict[str, Any]:
         if data['order_by_attributes'] is not None:
             attributes = []
@@ -545,7 +546,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
     def _get_assets_list(
             self,
             data: dict[str, Any],
-    ) -> Optional[tuple['AssetWithOracles', ...]]:
+    ) -> tuple['AssetWithOracles', ...] | None:
         asset_list = super()._get_assets_list(data)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
             asset_list = (
@@ -692,7 +693,7 @@ class HistoryEventSchema(
             'customized_events_only': data['customized_events_only'],
         }
 
-        filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery]  # noqa: E501
+        filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
@@ -923,7 +924,7 @@ class AssetMovementsQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        asset_list: Optional[tuple[Asset, ...]] = None
+        asset_list: tuple[Asset, ...] | None = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:

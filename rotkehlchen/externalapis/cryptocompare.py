@@ -210,7 +210,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+            seconds: int | None = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
     ) -> bool:
         """Checks if it's okay to query cryptocompare historical price. This is determined by:
 
@@ -238,7 +238,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
 
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+            seconds: int | None = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
     ) -> bool:
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
         if seconds is None:

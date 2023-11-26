@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from operator import add, sub
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 from gevent.lock import Semaphore
 
@@ -93,7 +93,7 @@ class Balancer(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer

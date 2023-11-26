@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -108,7 +108,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
         self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
 
-    def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+    def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         if self.base.is_tracked(address):
             return address
 
@@ -143,7 +143,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             )],
         )
         mapping = {}
-        for result_encoded, method_name in zip(output, ('urns', 'owns')):
+        for result_encoded, method_name in zip(output, ('urns', 'owns'), strict=True):
             result = self.makerdao_cdp_manager.decode(
                 result_encoded,
                 method_name,
@@ -457,7 +457,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         if context.tx_log.topics[0] == SDAI_DEPOSIT:  # DAI -> SDAI: owner receives sdai
             owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
             to_address = owner_address
-            from_address: Optional[ChecksumEvmAddress] = self.sdai.evm_address
+            from_address: ChecksumEvmAddress | None = self.sdai.evm_address
         elif context.tx_log.topics[0] == SDAI_REDEEM:  # SDAI -> DAI: owner deposits sdai
             owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[3]))  # noqa: E501
             from_address = owner_address

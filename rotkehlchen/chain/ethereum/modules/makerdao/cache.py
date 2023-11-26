@@ -32,7 +32,7 @@ GENERAL_ILK_CACHE_KEY = f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}ETH-A'
 def _collateral_type_to_info(
         cursor: 'DBCursor',
         collateral_type: str,
-) -> Optional[tuple[int, ChecksumEvmAddress, ChecksumEvmAddress]]:
+) -> tuple[int, ChecksumEvmAddress, ChecksumEvmAddress] | None:
     cursor.execute(
         'SELECT value from unique_cache WHERE key=?',
         (f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}{collateral_type}',),
@@ -50,7 +50,7 @@ def _collateral_type_to_info(
     return int(info[0]), info[1], info[2]
 
 
-def collateral_type_to_underlying_asset(collateral_type: str) -> Optional[CryptoAsset]:
+def collateral_type_to_underlying_asset(collateral_type: str) -> CryptoAsset | None:
     """Get the underlying asset for a collateral type by asking the global DB cache"""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         info = _collateral_type_to_info(cursor, collateral_type)

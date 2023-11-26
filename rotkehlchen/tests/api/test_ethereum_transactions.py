@@ -2,7 +2,7 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
@@ -212,7 +212,7 @@ def query_events(server, json, expected_num_with_grouping, expected_totals_with_
     return remove_added_event_fields(augmented_entries)
 
 
-def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[list[EVMTxHash]]):
+def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: list[EVMTxHash] | None):
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.transactions,

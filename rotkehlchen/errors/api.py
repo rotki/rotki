@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 
 class RotkehlchenPermissionError(Exception):
@@ -7,7 +7,7 @@ class RotkehlchenPermissionError(Exception):
     The payload contains information to be shown to the user by the frontend so
     they can decide what to do
     """
-    def __init__(self, error_message: str, payload: Optional[dict[str, Any]]) -> None:
+    def __init__(self, error_message: str, payload: dict[str, Any] | None) -> None:
         super().__init__(error_message)
         self.error_message = error_message
         self.message_payload = payload if payload is not None else {}

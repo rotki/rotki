@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType

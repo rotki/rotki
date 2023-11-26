@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -172,7 +172,7 @@ def _is_token_non_standard(symbol: str, address: ChecksumEvmAddress) -> bool:
     return False
 
 
-def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[DefiBalance]:
+def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> DefiBalance | None:
     """Special handling for pooltogether
 
     https://github.com/rotki/rotki/issues/1429
@@ -224,7 +224,7 @@ class ZerionSDK:
             deployed_block=1586199170,
         )
         self.database = database
-        self.protocol_names: Optional[list[str]] = None
+        self.protocol_names: list[str] | None = None
 
     def _get_protocol_names(self) -> list[str]:
         if self.protocol_names is not None:
@@ -400,7 +400,7 @@ class ZerionSDK:
             normalized_balance: FVal,
             token_address: str,
             token_name: str,
-    ) -> Optional[DefiBalance]:
+    ) -> DefiBalance | None:
         """Special handling for price for token/protocols which are easier to do onchain
         or need some kind of special treatment.
         This method can raise DeserializationError

@@ -9,10 +9,10 @@ import stat
 import subprocess
 import sys
 import urllib.request
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal
 from zipfile import ZipFile
 
 from setuptools_scm import get_version
@@ -64,7 +64,7 @@ def log_group(name: str) -> Callable:
             logger.info('\n\n-----------------\n\n')
 
     def decorate(fn: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: Optional[Any]) -> None:
+        def wrapper(*args: Any, **kwargs: Any | None) -> None:
             start_group(name)
             fn(*args, **kwargs)
             end_group()
@@ -108,7 +108,7 @@ class Environment:
             env.setdefault(APPLE_ID_PASS, self.__appleidpass)
         return env
 
-    def macos_sign_vars(self) -> dict[str, Optional[str]]:
+    def macos_sign_vars(self) -> dict[str, str | None]:
         return {
             'certificate': self.__certificate_mac,
             'key': self.__csc_password,
@@ -122,7 +122,7 @@ class Environment:
             env.setdefault(CERTIFICATE_KEY, self.__csc_password)
         return env
 
-    def win_sign_vars(self) -> dict[str, Optional[str]]:
+    def win_sign_vars(self) -> dict[str, str | None]:
         return {
             'certificate': self.__certificate_win,
             'key': self.__csc_password,
@@ -299,7 +299,7 @@ class Storage:
             logger.error(f'{backend} was missing or empty')
             sys.exit(1)
 
-    def copy_to_dist(self, src: Path, sub_dir: Optional[str] = None) -> None:
+    def copy_to_dist(self, src: Path, sub_dir: str | None = None) -> None:
         self.dist_directory.mkdir(exist_ok=True)
 
         dst = self.dist_directory
@@ -413,7 +413,7 @@ class MacPackaging:
     def __init__(self, storage: Storage, environment: Environment) -> None:
         self.__storage = storage
         self.__environment = environment
-        self.__default_keychain: Optional[str] = None
+        self.__default_keychain: str | None = None
         self.__keychain = 'rotki-build.keychain'
         self.__p12 = '/tmp/certificate.p12'  # noqa: S108  # ask Kelsos if this canchange
 
@@ -836,8 +836,8 @@ class BackendBuilder:
             self,
             storage: Storage,
             env: Environment,
-            mac: Optional[MacPackaging],
-            win: Optional[WindowsPackaging],
+            mac: MacPackaging | None,
+            win: WindowsPackaging | None,
     ) -> None:
         self.__mac = mac
         self.__win = win
@@ -1028,7 +1028,7 @@ class BackendBuilder:
                 self.__rust_add_target(target=target)
                 self.__cargo_build(target=target)
 
-    def __cargo_build(self, target: Optional[str] = None) -> None:
+    def __cargo_build(self, target: str | None = None) -> None:
         colibri_directory = self.__storage.colibri_directory
         target_arg = ''
 
@@ -1132,8 +1132,8 @@ class FrontendBuilder:
             self,
             storage: Storage,
             env: Environment,
-            mac: Optional[MacPackaging],
-            win: Optional[WindowsPackaging],
+            mac: MacPackaging | None,
+            win: WindowsPackaging | None,
     ):
         self.__storage = storage
         self.__frontend_directory = storage.working_directory / 'frontend'

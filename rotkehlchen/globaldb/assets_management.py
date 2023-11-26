@@ -2,7 +2,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
@@ -75,7 +75,7 @@ def import_assets_from_file(
 
 
 def export_assets_from_file(
-        dirpath: Optional[Path],
+        dirpath: Path | None,
         db_handler: 'DBHandler',
 ) -> Path:
     """

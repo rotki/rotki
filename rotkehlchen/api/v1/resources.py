@@ -1,11 +1,11 @@
 import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask.views import MethodView
@@ -440,7 +440,7 @@ def create_blueprint(url_prefix: str) -> Blueprint:
     return Blueprint('v1_resources', __name__, url_prefix=url_prefix)
 
 
-def get_match_header() -> Optional[str]:
+def get_match_header() -> str | None:
     """
     Process the if-match and if-none-match headers to get final header so that comparison with
     etag can be done.
@@ -482,7 +482,7 @@ class AsyncTasksResource(BaseMethodView):
     get_schema = AsyncTasksQuerySchema()
 
     @use_kwargs(get_schema, location='view_args')
-    def get(self, task_id: Optional[int]) -> Response:
+    def get(self, task_id: int | None) -> Response:
         return self.rest_api.query_tasks_outcome(task_id=task_id)
 
 
@@ -491,7 +491,7 @@ class ExchangeRatesResource(BaseMethodView):
     get_schema = ExchangeRatesSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, currencies: list[Optional[AssetWithOracles]], async_query: bool) -> Response:
+    def get(self, currencies: list[AssetWithOracles | None], async_query: bool) -> Response:
         valid_currencies = [currency for currency in currencies if currency is not None]
         return self.rest_api.get_exchange_rates(given_currencies=valid_currencies, async_query=async_query)  # noqa: E501
 
@@ -514,9 +514,9 @@ class ExchangesResource(BaseMethodView):
             location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
-            passphrase: Optional[str],
+            passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[list[str]],
+            binance_markets: list[str] | None,
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -534,12 +534,12 @@ class ExchangesResource(BaseMethodView):
             self,
             name: str,
             location: Location,
-            new_name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
+            new_name: str | None,
+            api_key: ApiKey | None,
+            api_secret: ApiSecret | None,
+            passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[list[str]],
+            binance_markets: list[str] | None,
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -564,7 +564,7 @@ class ExchangesDataResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='view_args')
-    def delete(self, location: Optional[Location]) -> Response:
+    def delete(self, location: Location | None) -> Response:
         return self.rest_api.purge_exchange_data(location=location)
 
 
@@ -609,7 +609,7 @@ class EvmTransactionsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, evm_chain: Optional[SUPPORTED_CHAIN_IDS]) -> Response:
+    def delete(self, evm_chain: SUPPORTED_CHAIN_IDS | None) -> Response:
         return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
 
 
@@ -769,7 +769,7 @@ class ExchangeBalancesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, location: Optional[Location], async_query: bool, ignore_cache: bool) -> Response:
+    def get(self, location: Location | None, async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.query_exchange_balances(
             location=location,
             async_query=async_query,
@@ -884,7 +884,7 @@ class AssetsSearchLevenshteinResource(BaseMethodView):
     def post(
             self,
             filter_query: LevenshteinFilterQuery,
-            limit: Optional[int],
+            limit: int | None,
             search_nfts: bool,
     ) -> Response:
         return self.rest_api.search_assets_levenshtein(
@@ -929,8 +929,8 @@ class AssetUpdatesResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            up_to_version: Optional[int],
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            up_to_version: int | None,
+            conflicts: dict[Asset, Literal['remote', 'local']] | None,
     ) -> Response:
         return self.rest_api.perform_assets_updates(
             async_query=async_query,
@@ -967,7 +967,7 @@ class BlockchainBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            blockchain: Optional[SupportedBlockchain],
+            blockchain: SupportedBlockchain | None,
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
@@ -1047,10 +1047,10 @@ class TradesResource(BaseMethodView):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Optional[Fee],
-            fee_currency: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            fee: Fee | None,
+            fee_currency: Asset | None,
+            link: str | None,
+            notes: str | None,
     ) -> Response:
         return self.rest_api.add_trade(
             timestamp=timestamp,
@@ -1078,10 +1078,10 @@ class TradesResource(BaseMethodView):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Optional[Fee],
-            fee_currency: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            fee: Fee | None,
+            fee_currency: Asset | None,
+            link: str | None,
+            notes: str | None,
     ) -> Response:
         return self.rest_api.edit_trade(
             trade_id=trade_id,
@@ -1143,7 +1143,7 @@ class TagsResource(BaseMethodView):
     def put(
             self,
             name: str,
-            description: Optional[str],
+            description: str | None,
             background_color: HexColorCode,
             foreground_color: HexColorCode,
     ) -> Response:
@@ -1159,9 +1159,9 @@ class TagsResource(BaseMethodView):
     def patch(
             self,
             name: str,
-            description: Optional[str],
-            background_color: Optional[HexColorCode],
-            foreground_color: Optional[HexColorCode],
+            description: str | None,
+            background_color: HexColorCode | None,
+            foreground_color: HexColorCode | None,
     ) -> Response:
         return self.rest_api.edit_tag(
             name=name,
@@ -1258,7 +1258,7 @@ class UsersResource(BaseMethodView):
             premium_api_key: str,
             premium_api_secret: str,
             sync_database: bool,
-            initial_settings: Optional[ModifiableDBSettings],
+            initial_settings: ModifiableDBSettings | None,
     ) -> Response:
         return self.rest_api.create_new_user(
             async_query=async_query,
@@ -1280,7 +1280,7 @@ class UsersByNameResource(BaseMethodView):
     def patch(
             self,
             name: str,
-            action: Optional[str],
+            action: str | None,
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
@@ -1365,8 +1365,8 @@ class StatisticsAssetBalanceResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            asset: Optional[Asset],
-            collection_id: Optional[int],
+            asset: Asset | None,
+            collection_id: int | None,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
@@ -1439,7 +1439,7 @@ class HistoryProcessingDebugResource(BaseMethodView):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            directory_path: Optional[Path],
+            directory_path: Path | None,
             async_query: bool,
     ) -> Response:
         return self.rest_api.get_history_debug(
@@ -1480,7 +1480,7 @@ class AccountingReportsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
-    def get(self, report_id: Optional[int]) -> Response:
+    def get(self, report_id: int | None) -> Response:
         return self.rest_api.get_pnl_reports(report_id=report_id)
 
     @require_loggedin_user()
@@ -1645,9 +1645,9 @@ class BTCXpubResource(BaseMethodView):
     def put(
             self,
             xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[list[str]],
+            derivation_path: str | None,
+            label: str | None,
+            tags: list[str] | None,
             async_query: bool,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
@@ -1667,7 +1667,7 @@ class BTCXpubResource(BaseMethodView):
     def delete(
             self,
             xpub: 'HDKey',
-            derivation_path: Optional[str],
+            derivation_path: str | None,
             async_query: bool,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
@@ -1687,9 +1687,9 @@ class BTCXpubResource(BaseMethodView):
     def patch(
             self,
             xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[list[str]],
+            derivation_path: str | None,
+            label: str | None,
+            tags: list[str] | None,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.edit_xpub(
@@ -1843,8 +1843,8 @@ class Eth2ValidatorsResource(BaseMethodView):
     @use_kwargs(put_schema, location='json')
     def put(
             self,
-            validator_index: Optional[int],
-            public_key: Optional[Eth2PubKey],
+            validator_index: int | None,
+            public_key: Eth2PubKey | None,
             ownership_percentage: FVal,
             async_query: bool,
     ) -> Response:
@@ -1893,8 +1893,8 @@ class Eth2StakeDetailsResource(BaseMethodView):
     @use_kwargs(put_schema, location='json_and_query')
     def put(
             self,
-            addresses: Optional[list[ChecksumEvmAddress]],
-            validator_indices: Optional[list[int]],
+            addresses: list[ChecksumEvmAddress] | None,
+            validator_indices: list[int] | None,
             ignore_cache: bool,
             async_query: bool,
     ) -> Response:
@@ -2302,7 +2302,7 @@ class AllLatestAssetsPriceResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+    def post(self, from_asset: Asset | None, to_asset: Asset | None) -> Response:
         return self.rest_api.get_manual_latest_prices(from_asset=from_asset, to_asset=to_asset)
 
 
@@ -2401,7 +2401,7 @@ class HistoricalAssetsPriceResource(BaseMethodView):
         )
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+    def get(self, from_asset: Asset | None, to_asset: Asset | None) -> Response:
         return self.rest_api.get_manual_prices(from_asset=from_asset, to_asset=to_asset)
 
     @use_kwargs(delete_schema)
@@ -2609,8 +2609,8 @@ class UserAssetsResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            file: Optional[Path],
-            destination: Optional[Path],
+            file: Path | None,
+            destination: Path | None,
             action: str,
     ) -> Response:
         if action == 'upload':
@@ -2647,9 +2647,9 @@ class DBSnapshotsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            action: Optional[Literal['export', 'download']],
+            action: Literal['export', 'download'] | None,
             timestamp: Timestamp,
-            path: Optional[Path],
+            path: Path | None,
     ) -> Response:
         """The behaviour of this method is as a result of the exhaustion of HTTP verbs
         for this resource.
@@ -2806,7 +2806,7 @@ class DetectTokensResource(BaseMethodView):
             blockchain: SUPPORTED_EVM_CHAINS,
             async_query: bool,
             only_cache: bool,
-            addresses: Optional[Sequence[ChecksumEvmAddress]],
+            addresses: Sequence[ChecksumEvmAddress] | None,
     ) -> Response:
         return self.rest_api.detect_evm_tokens(
             async_query=async_query,
@@ -3030,7 +3030,7 @@ class AccountingRulesResource(BaseMethodView):
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
@@ -3048,7 +3048,7 @@ class AccountingRulesResource(BaseMethodView):
             self,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
+            counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
@@ -3096,7 +3096,7 @@ class AccountingRulesConflictsResource(BaseMethodView):
     def patch(
             self,
             conflicts: list[tuple[int, Literal['remote', 'local']]],
-            solve_all_using: Optional[Literal['remote', 'local']],
+            solve_all_using: Literal['remote', 'local'] | None,
     ) -> Response:
         return self.rest_api.solve_multiple_accounting_rule_conflicts(
             conflicts=conflicts,
