@@ -5348,6 +5348,7 @@ Export PnL report debug data
                 "ssf_graph_multiplier": 0,
                 "last_data_migration": 3,
                 "non_syncing_exchanges": []
+                "evmchains_to_skip_detection": []
             },
             "ignored_events_ids": {
                 "trade": ["X124-JYI", "2325"],

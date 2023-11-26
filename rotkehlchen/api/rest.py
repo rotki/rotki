@@ -1717,8 +1717,9 @@ class RestAPI:
 
     @async_api_call()
     def refresh_evm_accounts(self) -> dict[str, Any]:
+        chains = self.rotkehlchen.data.db.get_chains_to_detect_evm_accounts()
         try:
-            self.rotkehlchen.chains_aggregator.detect_evm_accounts()
+            self.rotkehlchen.chains_aggregator.detect_evm_accounts(chains=chains)
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:

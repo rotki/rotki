@@ -675,6 +675,8 @@ class TaskManager:
             task_name='Detect EVM accounts',
             exception_is_error=True,
             method=self.chains_aggregator.detect_evm_accounts,
+            progress_handler=None,
+            chains=self.database.get_chains_to_detect_evm_accounts(),
         )]
 
     def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:

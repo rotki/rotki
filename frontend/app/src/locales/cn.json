@@ -3128,7 +3128,7 @@
     },
     "missing_api_key": {
       "action": "回车键",
-      "message": "您没有配置 {location} {service} API 密钥。 rotki {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
+      "message": "您没有配置 {location} {service} API 密钥。 rotki {location} {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
       "title": "{location} {service} API 密钥"
     },
     "new_detected_token": {

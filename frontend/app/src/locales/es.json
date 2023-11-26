@@ -3057,7 +3057,7 @@
     },
     "missing_api_key": {
       "action": "Introducir clave",
-      "message": "No tiene configurada una clave API de {location} {service}. Las consultas de {service} de rotki seguirán funcionando, pero serán muy lentas. Si no está utilizando su propio nodo {location}, se recomienda ir a {url}, crear una clave API y luego ingresarla en la configuración de credenciales de servicio externo de rotki",
+      "message": "No tiene configurada una clave API de {location} {service}. Las consultas de {location} {service} de rotki seguirán funcionando, pero serán muy lentas. Si no está utilizando su propio nodo {location}, se recomienda ir a {url}, crear una clave API y luego ingresarla en la configuración de credenciales de servicio externo de rotki",
       "title": "{location} {service} clave API"
     },
     "new_detected_token": {
