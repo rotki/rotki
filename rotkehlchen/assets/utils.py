@@ -1,4 +1,5 @@
 import logging
+import re
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
@@ -29,6 +30,17 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SPAM_ASSET_REGEX = r"""
+    https:// |                          # Matches 'https://'
+    claim | visit |                     # Matches 'claim' or 'visit' anywhere in the string
+    ^\$.+\..+ |                         # Matches strings that start with '$' and contain '.'
+    \.com | \.io| \.site | \.xyz        # Matches common domain extensions
+"""
+# Compile the regex pattern:
+# - re.IGNORECASE makes it case-insensitive
+# - re.VERBOSE allows to write comments in the regex and split it
+SPAM_ASSET_PATTERN = re.compile(SPAM_ASSET_REGEX, re.IGNORECASE | re.VERBOSE)
 
 
 def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
@@ -129,22 +141,22 @@ def _edit_token_and_clean_cache(
         GlobalDBHandler().edit_evm_token(evm_token)
 
 
-def check_if_spam_token(symbol: str | None) -> bool:
+def check_if_spam_token(symbol: str | None, name: str | None) -> bool:
     """Makes basic checks to test if a token could be spam or not"""
-    if symbol is None:
+    if symbol is None and name is None:
         return False
+
     if (
-        symbol.startswith('Visit https://') or
-        'Please Visit' in symbol or
-        (('Visit' in symbol or 'http' in symbol) and 'claim' in symbol.lower()) or
-        (
-            symbol.startswith('$') and
-            ('.com' in symbol or '.org' in symbol or '.io' in symbol)
-        ) or
-        'https://' in symbol
+        symbol is not None and
+        SPAM_ASSET_PATTERN.search(symbol) is not None
     ):
         return True
-    return False
+
+    if name is None:
+        return False
+
+    # check also the name
+    return SPAM_ASSET_PATTERN.search(name) is not None
 
 
 class TokenEncounterInfo(NamedTuple):
@@ -237,7 +249,10 @@ def get_or_create_evm_token(
             name = identifier if name is None else name
             decimals = 18 if decimals is None else decimals
 
-            is_spam_token = protocol == SPAM_PROTOCOL or check_if_spam_token(symbol) is True
+            is_spam_token = (
+                protocol == SPAM_PROTOCOL or
+                protocol is None and check_if_spam_token(symbol=symbol, name=name)
+            )
 
             # Store the information in the database
             evm_token = EvmToken.initialize(
