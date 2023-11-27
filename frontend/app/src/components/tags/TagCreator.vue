@@ -1,55 +1,60 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type Ref } from 'vue';
 import { type Tag, type TagEvent } from '@/types/tags';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   tag: Tag;
   editMode: boolean;
 }>();
 
-const emit = defineEmits(['changed', 'save', 'cancel']);
+const emit = defineEmits<{
+  (e: 'changed', tag: Tag): void;
+  (e: 'save', tag: Tag): void;
+  (e: 'cancel'): void;
+}>();
 const { t } = useI18n();
 
 const { tag } = toRefs(props);
 
-const form: Ref = ref(null);
-
 const rules = {
   name: {
     required: helpers.withMessage(
-      t('tag_creator.validation.empty_name').toString(),
+      t('tag_creator.validation.empty_name'),
       required
     )
+  },
+  description: {
+    optional: () => true
   }
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    name: computed(() => get(tag).name)
+    name: useRefMap(tag, tag => tag.name),
+    description: useRefMap(tag, tag => tag.description)
   },
   { $autoDirty: true }
 );
 
 const changed = (event: TagEvent) => {
   emit('changed', {
-    ...get(tag),
+    ...props.tag,
     ...event
   });
 };
 
-const save = () => {
-  get(form)?.reset();
-  nextTick(() => {
-    get(v$).$reset();
-  });
-  emit('save', get(tag));
+const save = async () => {
+  const v = get(v$);
+  if (!(await v.$validate())) {
+    return;
+  }
+  emit('save', props.tag);
 };
 
-const cancel = () => {
-  get(form)?.reset();
+const cancel = async () => {
   emit('cancel');
 };
 
@@ -60,146 +65,99 @@ const randomize = () => {
     foregroundColor: invertColor(backgroundColor)
   });
 };
+
+watch(tag, () => {
+  get(v$).$reset();
+});
 </script>
 
 <template>
-  <VForm ref="form" :value="!v$.$invalid">
-    <VRow>
-      <TagIcon class="tag-creator__preview" :tag="tag" />
-      <VTooltip bottom>
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-4">
+      <TagIcon class="min-w-[7rem]" :tag="tag" />
+      <RuiTooltip :popper="{ placement: 'bottom' }">
         <template #activator="{ on }">
-          <VBtn
+          <RuiButton
             icon
-            text
-            class="tag-creator__random"
+            size="sm"
+            variant="text"
             color="primary"
             v-on="on"
             @click="randomize()"
           >
             <RuiIcon name="shuffle-line" />
-          </VBtn>
+          </RuiButton>
         </template>
-        <span>
-          {{ t('tag_creator.refresh_tooltip') }}
-        </span>
-      </VTooltip>
-    </VRow>
-    <VRow no-gutters align="center" class="mt-4">
-      <VCol cols="12">
-        <VRow no-gutters>
-          <VCol cols="12">
-            <VTextField
-              outlined
-              class="tag_creator__name"
-              :label="t('common.name')"
-              :error-messages="v$.name.$errors.map(e => e.$message)"
-              :value="tag.name"
-              :disabled="editMode"
-              @input="changed({ name: $event })"
-            />
-          </VCol>
-        </VRow>
-        <VRow no-gutters>
-          <VCol cols="12">
-            <VTextField
-              outlined
-              class="tag_creator__description"
-              :value="tag.description"
-              :label="t('common.description')"
-              @input="changed({ description: $event })"
-            />
-          </VCol>
-        </VRow>
-      </VCol>
-    </VRow>
-    <VRow align="center" justify="center" no-gutters>
-      <VCol md="6">
-        <div class="mb-3 text-h6 text-center">
+        {{ t('tag_creator.refresh_tooltip') }}
+      </RuiTooltip>
+    </div>
+    <div class="mt-4">
+      <RuiTextField
+        variant="outlined"
+        class="tag_creator__name"
+        :label="t('common.name')"
+        :error-messages="toMessages(v$.name)"
+        :value="tag.name"
+        :disabled="editMode"
+        @input="changed({ name: $event })"
+      />
+      <RuiTextField
+        variant="outlined"
+        class="tag_creator__description"
+        :value="tag.description"
+        :label="t('common.description')"
+        @input="changed({ description: $event })"
+      />
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="flex flex-col items-center gap-4">
+        <div class="text-h6 text-center">
           {{ t('tag_creator.labels.foreground') }}
         </div>
-        <VRow no-gutters>
-          <VCol cols="12" class="tag-creator__color-picker">
-            <VColorPicker
-              flat
-              class="tag-creator__color-picker__foreground"
-              mode="hexa"
-              hide-mode-switch
-              :value="`#${tag.foregroundColor}`"
-              @update:color="
-                changed({ foregroundColor: $event.hex.replace('#', '') })
-              "
-            />
-          </VCol>
-        </VRow>
-      </VCol>
-      <VCol md="6">
+        <div>
+          <VColorPicker
+            flat
+            data-cy="tag-creator__color-picker__foreground"
+            mode="hexa"
+            hide-mode-switch
+            :value="`#${tag.foregroundColor}`"
+            @update:color="
+              changed({ foregroundColor: $event.hex.replace('#', '') })
+            "
+          />
+        </div>
+      </div>
+      <div class="flex flex-col items-center gap-4">
         <div class="mb-3 text-h6 text-center">
           {{ t('tag_creator.labels.background') }}
         </div>
-        <VRow no-gutters>
-          <VCol cols="12" class="tag-creator__color-picker">
-            <VColorPicker
-              class="tag-creator__color-picker__background"
-              flat
-              hide-mode-switch
-              mode="hexa"
-              :value="`#${tag.backgroundColor}`"
-              @update:color="
-                changed({ backgroundColor: $event.hex.replace('#', '') })
-              "
-            />
-          </VCol>
-        </VRow>
-      </VCol>
-    </VRow>
-    <VRow class="mb-2">
-      <VCol cols="12" class="flex justify-end">
-        <VBtn
-          v-if="editMode"
-          class="mr-4"
-          width="100"
-          depressed
-          @click="cancel()"
-        >
-          {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn
-          class="tag-creator__buttons__save"
-          width="100"
-          depressed
-          color="primary"
-          :disabled="v$.$invalid"
-          @click="save()"
-        >
-          {{ t('common.actions.save') }}
-        </VBtn>
-      </VCol>
-    </VRow>
-  </VForm>
+        <div>
+          <VColorPicker
+            flat
+            data-cy="tag-creator__color-picker__background"
+            hide-mode-switch
+            mode="hexa"
+            :value="`#${tag.backgroundColor}`"
+            @update:color="
+              changed({ backgroundColor: $event.hex.replace('#', '') })
+            "
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-4 p-4">
+      <RuiButton v-if="editMode" width="100" @click="cancel()">
+        {{ t('common.actions.cancel') }}
+      </RuiButton>
+      <RuiButton
+        data-cy="tag-creator__buttons__save"
+        color="primary"
+        :disabled="v$.$invalid"
+        @click="save()"
+      >
+        {{ t('common.actions.save') }}
+      </RuiButton>
+    </div>
+  </div>
 </template>
-
-<style scoped lang="scss">
-.tag-creator {
-  &__preview {
-    min-width: 120px;
-    margin-left: 12px;
-    margin-bottom: 10px;
-  }
-
-  &__color-picker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__random {
-    margin-left: 16px;
-  }
-
-  &__buttons {
-    &__save {
-      margin-right: 8px;
-    }
-  }
-}
-</style>

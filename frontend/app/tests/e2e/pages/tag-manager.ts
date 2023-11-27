@@ -11,19 +11,19 @@ export class TagManager {
     cy.get('.tag_creator__description').type(description);
     if (background && foreground) {
       cy.get(
-        '.tag-creator__color-picker__background .v-color-picker__input input'
+        '[data-cy=tag-creator__color-picker__background] .v-color-picker__input input'
       ).clear();
       cy.get(
-        '.tag-creator__color-picker__background .v-color-picker__input input'
+        '[data-cy=tag-creator__color-picker__background] .v-color-picker__input input'
       ).type(background);
       cy.get(
-        '.tag-creator__color-picker__foreground .v-color-picker__input input'
+        '[data-cy=tag-creator__color-picker__foreground] .v-color-picker__input input'
       ).clear();
       cy.get(
-        '.tag-creator__color-picker__foreground .v-color-picker__input input'
+        '[data-cy=tag-creator__color-picker__foreground] .v-color-picker__input input'
       ).type(foreground);
     }
-    cy.get('.tag-creator__buttons__save').click();
-    cy.get('.tag-manager__close').click();
+    cy.get('[data-cy=tag-creator__buttons__save]').click();
+    cy.get('[data-cy=tag-manager__close]').click();
   }
 }
