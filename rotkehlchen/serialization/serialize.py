@@ -5,7 +5,7 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import (
     EventCategory,
@@ -128,7 +128,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             DefiProtocol |
             MakerdaoVault |
             XpubData |
-            StakingEvent |
             NodeName |
             NodeName |
             ChainID |

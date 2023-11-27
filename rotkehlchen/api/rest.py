@@ -38,7 +38,7 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import (
@@ -183,6 +183,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
+from rotkehlchen.history.events.utils import history_event_to_staking_for_api
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.skipped import (
     export_skipped_external_events,
@@ -4095,11 +4096,11 @@ class RestAPI:
             events = []
             for event in events_raw:
                 try:
-                    staking_event = StakingEvent.from_history_base_entry(event)
+                    event_data = history_event_to_staking_for_api(event)
                 except DeserializationError as e:
                     log.warning(f'Could not deserialize staking event: {event} due to {e!s}')
                     continue
-                events.append(staking_event)
+                events.append(event_data)
 
             entries_total, _ = history_events_db.get_history_events_count(
                 cursor=cursor,
