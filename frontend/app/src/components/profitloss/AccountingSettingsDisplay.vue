@@ -46,7 +46,7 @@ const items: ComputedRef<Item[]> = computed(() => {
     },
     {
       label: t('account_settings_display.cost_basis_fees'),
-      data: settings.includeFeesInCostBasis
+      data: settings.includeFeesInCostBasis || false
     },
     {
       label: t('account_settings_display.gas_costs'),
