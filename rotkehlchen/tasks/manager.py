@@ -25,6 +25,7 @@ from rotkehlchen.constants.timing import (
     DAY_IN_SECONDS,
     EVM_ACCOUNTS_DETECTION_REFRESH,
     HOUR_IN_SECONDS,
+    SPAM_ASSETS_DETECTION_REFRESH,
 )
 from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -37,6 +38,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
+from rotkehlchen.tasks.assets import LAST_SPAM_ASSETS_DETECT_KEY, autodetect_spam_assets_in_db
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -152,6 +154,7 @@ class TaskManager:
             self._maybe_query_withdrawals,
             self._maybe_run_events_processing,
             self._maybe_detect_withdrawal_exits,
+            self._maybe_detect_new_spam_tokens,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -690,6 +693,22 @@ class TaskManager:
             )]
 
         return None
+
+    def _maybe_detect_new_spam_tokens(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        This function queries the globaldb looking for assets that look like spam tokens
+        and ignores them in addition to marking them as spam tokens
+        """
+        if should_run_periodic_task(self.database, LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Detect spam assets in globaldb',
+            exception_is_error=True,
+            method=autodetect_spam_assets_in_db,
+            user_db=self.database,
+        )]
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
