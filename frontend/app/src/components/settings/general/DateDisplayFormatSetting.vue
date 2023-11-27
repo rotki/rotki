@@ -60,12 +60,13 @@ onMounted(() => {
         t('general_settings.validation.date_display_format.error')
       "
       :success-message="successMessage"
+      class="flex items-start gap-4"
       @finished="resetDateDisplayFormat()"
     >
       <VTextField
         v-model="dateDisplayFormat"
         outlined
-        class="general-settings__fields__date-display-format"
+        class="general-settings__fields__date-display-format flex-1"
         :label="t('general_settings.labels.date_display_format')"
         type="text"
         :success-messages="success"
@@ -81,27 +82,24 @@ onMounted(() => {
         @change="callIfValid($event, update)"
       >
         <template #append>
-          <VBtn small icon @click="formatHelp = true">
-            <VIcon small> mdi-information </VIcon>
-          </VBtn>
-        </template>
-        <template #append-outer>
-          <VTooltip top open-delay="400">
-            <template #activator="{ on, attrs }">
-              <VBtn
-                class="general-settings__date-restore mt-n2"
-                icon
-                v-bind="attrs"
-                @click="update(defaultDateDisplayFormat)"
-                v-on="on"
-              >
-                <VIcon> mdi-backup-restore </VIcon>
-              </VBtn>
-            </template>
-            <span>{{ t('general_settings.date_display_tooltip') }}</span>
-          </VTooltip>
+          <RuiButton size="sm" variant="text" icon @click="formatHelp = true">
+            <RuiIcon name="information-line" />
+          </RuiButton>
         </template>
       </VTextField>
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <RuiButton
+            class="general-settings__date-restore mt-1"
+            variant="text"
+            icon
+            @click="update(defaultDateDisplayFormat)"
+          >
+            <RuiIcon name="history-line" />
+          </RuiButton>
+        </template>
+        {{ t('general_settings.date_display_tooltip') }}
+      </RuiTooltip>
     </SettingsOption>
   </div>
 </template>

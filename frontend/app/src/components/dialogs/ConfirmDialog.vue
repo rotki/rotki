@@ -66,7 +66,7 @@ const secondaryText = computed(
           <div>
             <RuiIcon :color="color" size="36" :name="icon" />
           </div>
-          <div class="text-body-1">
+          <div class="text-body-1 pt-1">
             {{ message }}
             <slot />
           </div>

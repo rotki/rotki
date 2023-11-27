@@ -23,20 +23,26 @@ onMounted(() => {
 <template>
   <div>
     <div :class="css.liquidity__navigation">
-      <VBtnToggle v-model="path">
-        <VBtn
-          v-for="provider in providers"
-          :key="provider.route"
-          :to="provider.route"
-          text
-          :value="provider.route"
-        >
-          <AdaptiveWrapper class="me-2">
-            <VImg contain width="24" height="24" :src="provider.image" />
-          </AdaptiveWrapper>
-          {{ provider.text }}
-        </VBtn>
-      </VBtnToggle>
+      <RuiButtonGroup
+        v-model="path"
+        required
+        color="primary"
+        variant="outlined"
+      >
+        <template #default>
+          <RuiButton
+            v-for="provider in providers"
+            :key="provider.route"
+            :to="provider.route"
+            :value="provider.route"
+          >
+            <AdaptiveWrapper class="me-2">
+              <VImg contain width="24" height="24" :src="provider.image" />
+            </AdaptiveWrapper>
+            {{ provider.text }}
+          </RuiButton>
+        </template>
+      </RuiButtonGroup>
     </div>
     <div>
       <RouterView />

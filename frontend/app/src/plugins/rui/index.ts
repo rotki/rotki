@@ -22,6 +22,7 @@ import {
   RiBookReadLine,
   RiBox3Line,
   RiBriefcaseLine,
+  RiBugLine,
   RiCalculatorLine,
   RiCalendar2Line,
   RiCalendarEventLine,
@@ -66,6 +67,7 @@ import {
   RiFileEditLine,
   RiFileInfoLine,
   RiFileList3Line,
+  RiFileSearchLine,
   RiFileSettingsLine,
   RiFileTextLine,
   RiFileUploadLine,
@@ -104,6 +106,7 @@ import {
   RiLoginCircleLine,
   RiLogoutBoxRLine,
   RiLogoutCircleRLine,
+  RiLoopLeftLine,
   RiLoopRightLine,
   RiMedalLine,
   RiMoonLine,
@@ -154,8 +157,12 @@ import {
   RiUploadCloud2Line,
   RiUploadCloudLine,
   RiUploadLine,
+  RiUser2Line,
   RiVipCrownLine,
+  RiVirusLine,
   RiWallet3Line,
+  RiWifiLine,
+  RiWifiOffLine,
   RuiPlugin,
   ThemeMode
 } from '@rotki/ui-library-compat';
@@ -325,6 +332,14 @@ Vue.use(RuiPlugin, {
     RiUploadLine,
     RiQuillPenLine,
     RiFileInfoLine,
-    RiListCheck2
+    RiListCheck2,
+    RiEarthLine,
+    RiUser2Line,
+    RiWifiLine,
+    RiWifiOffLine,
+    RiLoopLeftLine,
+    RiBugLine,
+    RiVirusLine,
+    RiFileSearchLine
   ]
 });

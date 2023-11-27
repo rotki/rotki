@@ -59,14 +59,15 @@ const css = useCssModule();
           @change="update($event)"
         >
           <template #append>
-            <VBtn
+            <RuiButton
+              variant="text"
               icon
-              class="mt-n2"
+              class="-mt-3"
               :disabled="!scrambleData"
               @click="randomMultiplier()"
             >
               <RuiIcon name="shuffle-line" />
-            </VBtn>
+            </RuiButton>
           </template>
         </AmountInput>
       </div>

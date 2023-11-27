@@ -5,13 +5,17 @@ const { t } = useI18n();
 
 <template>
   <div class="mt-n2">
-    <VTooltip top max-width="200">
-      <template #activator="{ on, attrs }">
-        <VBtn icon v-bind="attrs" v-on="on" @click="emit('click')">
-          <VIcon>mdi-cog-counterclockwise</VIcon>
-        </VBtn>
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      open-delay="400"
+      tooltip-class="max-w-[12rem]"
+    >
+      <template #activator>
+        <RuiButton variant="text" icon @click="emit('click')">
+          <RuiIcon name="loop-left-line" />
+        </RuiButton>
       </template>
       <span>{{ t('backend_settings.actions.reset') }}</span>
-    </VTooltip>
+    </RuiTooltip>
   </div>
 </template>

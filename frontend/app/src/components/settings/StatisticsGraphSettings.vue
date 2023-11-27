@@ -24,7 +24,7 @@ const showMenu: Ref<boolean> = ref(false);
         class-name="graph-period"
         :on-menu="on"
       >
-        <VIcon>mdi-cog</VIcon>
+        <RuiIcon name="settings-4-line" />
       </MenuTooltipButton>
     </template>
 
@@ -34,10 +34,10 @@ const showMenu: Ref<boolean> = ref(false);
       <InferZeroTimedBalancesSetting @updated="updated()" />
 
       <template #buttons>
-        <VSpacer />
-        <VBtn depressed color="primary" @click="showMenu = false">
+        <div class="grow" />
+        <RuiButton color="primary" @click="showMenu = false">
           {{ t('common.actions.close') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </Card>
   </VMenu>

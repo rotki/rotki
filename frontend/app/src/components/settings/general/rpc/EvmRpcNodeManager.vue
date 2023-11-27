@@ -129,16 +129,14 @@ const showDeleteConfirmation = (item: EvmRpcNode) => {
 onUnmounted(() => {
   disposeEvmRpcNodeComposables();
 });
-
-const css = useCssModule();
 </script>
 
 <template>
   <div>
     <VCard outlined class="overflow-hidden">
-      <VList max-height="300px" :class="css.list" three-line class="py-0">
+      <VList max-height="300px" three-line class="py-0 overflow-auto">
         <template v-for="(item, index) in nodes">
-          <VDivider v-if="index !== 0" :key="index" />
+          <RuiDivider v-if="index !== 0" :key="index" />
           <VListItem
             :key="index + item.name"
             data-cy="ethereum-node"
@@ -146,43 +144,56 @@ const css = useCssModule();
           >
             <div class="mr-2 pa-4 text-center flex flex-col items-center">
               <div>
-                <VTooltip v-if="!item.owned" top open-delay="400">
-                  <template #activator="{ on, attrs }">
-                    <VIcon v-bind="attrs" v-on="on"> mdi-earth </VIcon>
+                <RuiTooltip
+                  v-if="!item.owned"
+                  :popper="{ placement: 'top' }"
+                  open-delay="400"
+                >
+                  <template #activator>
+                    <RuiIcon
+                      name="earth-line"
+                      class="text-rui-text-secondary"
+                    />
                   </template>
                   <span>{{ t('evm_rpc_node_manager.public_node') }}</span>
-                </VTooltip>
-                <VTooltip v-else>
-                  <template #activator="{ on, attrs }">
-                    <VIcon v-bind="attrs" v-on="on">
-                      mdi-account-network
-                    </VIcon>
+                </RuiTooltip>
+                <RuiTooltip
+                  v-else
+                  :popper="{ placement: 'top' }"
+                  open-delay="400"
+                >
+                  <template #activator>
+                    <RuiIcon name="user-2-line" />
                   </template>
                   <span>{{ t('evm_rpc_node_manager.private_node') }}</span>
-                </VTooltip>
+                </RuiTooltip>
               </div>
 
               <div class="mt-2">
-                <VTooltip v-if="isNodeConnected(item)" top open-delay="400">
-                  <template #activator="{ on, attrs }">
-                    <VIcon v-bind="attrs" small color="green" v-on="on">
-                      mdi-wifi
-                    </VIcon>
+                <RuiTooltip
+                  v-if="isNodeConnected(item)"
+                  :popper="{ placement: 'top' }"
+                  open-delay="400"
+                >
+                  <template #activator>
+                    <RuiIcon color="success" size="16" name="wifi-line" />
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.true') }}
                   </span>
-                </VTooltip>
-                <VTooltip v-else top open-delay="400">
-                  <template #activator="{ on, attrs }">
-                    <VIcon v-bind="attrs" small color="red" v-on="on">
-                      mdi-wifi-off
-                    </VIcon>
+                </RuiTooltip>
+                <RuiTooltip
+                  v-else
+                  :popper="{ placement: 'top' }"
+                  open-delay="400"
+                >
+                  <template #activator>
+                    <RuiIcon color="error" size="16" name="wifi-off-line" />
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.false') }}
                   </span>
-                </VTooltip>
+                </RuiTooltip>
               </div>
             </div>
 
@@ -197,7 +208,7 @@ const css = useCssModule();
                 <div v-else>
                   {{ t('evm_rpc_node_manager.etherscan') }}
                 </div>
-                <div class="mt-1" :class="css.weight">
+                <div class="mt-1 text-sm">
                   <span v-if="!item.owned">
                     {{
                       t('evm_rpc_node_manager.weight', {
@@ -217,18 +228,14 @@ const css = useCssModule();
               :disabled="isEtherscan(item)"
               @change="onActiveChange($event, item)"
             />
-            <VListItemAction :class="css.centered">
-              <VRow align="center" justify="center">
-                <VCol>
-                  <RowActions
-                    :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
-                    :delete-disabled="isEtherscan(item)"
-                    :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
-                    @edit-click="edit(item)"
-                    @delete-click="showDeleteConfirmation(item)"
-                  />
-                </VCol>
-              </VRow>
+            <VListItemAction class="self-center">
+              <RowActions
+                :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
+                :delete-disabled="isEtherscan(item)"
+                :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
+                @edit-click="edit(item)"
+                @delete-click="showDeleteConfirmation(item)"
+              />
             </VListItemAction>
           </VListItem>
         </template>
@@ -244,30 +251,13 @@ const css = useCssModule();
       />
     </VCard>
 
-    <div class="pt-8">
-      <VBtn
-        depressed
-        color="primary"
-        data-cy="add-node"
-        @click="setOpenDialog(true)"
-      >
-        {{ t('evm_rpc_node_manager.add_button') }}
-      </VBtn>
-    </div>
+    <RuiButton
+      class="mt-8"
+      color="primary"
+      data-cy="add-node"
+      @click="setOpenDialog(true)"
+    >
+      {{ t('evm_rpc_node_manager.add_button') }}
+    </RuiButton>
   </div>
 </template>
-
-<style module lang="scss">
-.list {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.weight {
-  font-size: 13px;
-}
-
-.centered {
-  align-self: center !important;
-}
-</style>
