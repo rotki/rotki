@@ -46,7 +46,7 @@ NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 3 + 3 * len(EVM_CHAINS_WITH_TRANSACTION
 STEPS_PER_CEX = 5
 
 
-class EventsHistorian:
+class HistoryQueryingManager:
 
     def __init__(
             self,

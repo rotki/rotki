@@ -72,7 +72,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets.manager import GreenletManager
-from rotkehlchen.history.events import EventsHistorian
+from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
@@ -454,7 +454,7 @@ class Rotkehlchen:
             chains_aggregator=self.chains_aggregator,
             premium=self.premium,
         )
-        self.events_historian = EventsHistorian(
+        self.history_querying_manager = HistoryQueryingManager(
             user_directory=self.user_directory,
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -518,7 +518,7 @@ class Rotkehlchen:
         self.exchange_manager.delete_all_exchanges()
 
         del self.accountant
-        del self.events_historian
+        del self.history_querying_manager
         del self.data_importer
 
         self.data.logout()
@@ -813,9 +813,9 @@ class Rotkehlchen:
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:
-        if self.events_historian.progress < FVal('100'):
-            processing_state = self.events_historian.processing_state_name
-            progress = self.events_historian.progress / 2
+        if self.history_querying_manager.progress < FVal('100'):
+            processing_state = self.history_querying_manager.processing_state_name
+            progress = self.history_querying_manager.progress / 2
         elif self.accountant.first_processed_timestamp == -1:
             processing_state = 'Processing all retrieved historical events'
             progress = FVal(50)
@@ -839,7 +839,7 @@ class Rotkehlchen:
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> tuple[int, str]:
-        error_or_empty, events = self.events_historian.get_history(
+        error_or_empty, events = self.history_querying_manager.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
             has_premium=self.premium is not None,
