@@ -72,7 +72,7 @@ watch(tag, () => {
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <div class="flex items-center gap-4">
       <TagIcon class="min-w-[7rem]" :tag="tag" />
       <RuiTooltip :popper="{ placement: 'bottom' }">
@@ -117,6 +117,7 @@ watch(tag, () => {
         <div>
           <VColorPicker
             flat
+            data-cy="tag-creator__color-picker__foreground"
             mode="hexa"
             hide-mode-switch
             :value="`#${tag.foregroundColor}`"
@@ -133,6 +134,7 @@ watch(tag, () => {
         <div>
           <VColorPicker
             flat
+            data-cy="tag-creator__color-picker__background"
             hide-mode-switch
             mode="hexa"
             :value="`#${tag.backgroundColor}`"
@@ -149,7 +151,7 @@ watch(tag, () => {
         {{ t('common.actions.cancel') }}
       </RuiButton>
       <RuiButton
-        class="tag-creator__buttons__save"
+        data-cy="tag-creator__buttons__save"
         color="primary"
         :disabled="v$.$invalid"
         @click="save()"
@@ -157,5 +159,5 @@ watch(tag, () => {
         {{ t('common.actions.save') }}
       </RuiButton>
     </div>
-  </form>
+  </div>
 </template>

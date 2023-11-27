@@ -94,7 +94,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
           <template v-if="dialog">
             <div class="grow" />
             <RuiButton
-              class="tag-manager__close"
+              data-cy="tag-manager__close"
               icon
               size="sm"
               variant="text"
