@@ -14,27 +14,12 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.accounting import MOCKED_PRICES, TIMESTAMP_1_MS, TIMESTAMP_1_SEC
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import Location, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-
-TIMESTAMP_1_MS = TimestampMS(1000)
-TIMESTAMP_1_SEC = Timestamp(1)
-
-MOCKED_PRICES = {
-    A_WBTC.identifier: {
-        'EUR': {
-            TIMESTAMP_1_SEC: Price(ONE),
-        },
-    },
-    A_USDC.identifier: {
-        'EUR': {
-            TIMESTAMP_1_SEC: Price(ONE),
-        },
-    },
-}
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])

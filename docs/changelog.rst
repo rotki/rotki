@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7009` PnL reports with an old type of event (such as DailyStats) following a swap will no longer fail with an exception.
 * :bug:`6998` If a username contains a '.' the user will now be able to log in properly again.
 * :feature:`6885` Users can now specify EVM chains for which no activity will be auto-detected by rotki.
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
