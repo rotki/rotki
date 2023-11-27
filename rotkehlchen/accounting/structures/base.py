@@ -1,6 +1,5 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
@@ -12,7 +11,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
@@ -470,46 +469,6 @@ class HistoryEvent(HistoryBaseEntry):
             return 1
 
         return accounting.events_accountant.process(event=self, events_iterator=events_iterator)
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class StakingEvent:
-    event_type: HistoryEventSubType
-    asset: AssetWithOracles
-    balance: Balance
-    timestamp: Timestamp
-    location: Location
-
-    @classmethod
-    def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
-        """
-        Read staking event from a history base entry.
-        May raise:
-        - DeserializationError
-        """
-        return StakingEvent(
-            event_type=event.event_subtype,
-            asset=event.asset.resolve_to_asset_with_oracles(),
-            balance=event.balance,
-            timestamp=ts_ms_to_sec(event.timestamp),
-            location=event.location,
-        )
-
-    def serialize(self) -> dict[str, Any]:
-        data = {
-            'asset': self.asset.identifier,
-            'timestamp': self.timestamp,
-            'location': str(self.location),
-        }
-        # binance has only one type of event, so serializing it is not needed.
-        if not (
-            self.location == Location.BINANCE and
-            self.event_type == HistoryEventSubType.REWARD
-        ):
-            data['event_type'] = self.event_type.serialize()
-
-        balance = abs(self.balance).serialize()
-        return {**data, **balance}
 
 
 def get_event_type_identifier(
