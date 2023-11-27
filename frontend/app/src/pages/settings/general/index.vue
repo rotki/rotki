@@ -19,6 +19,7 @@ const { t } = useI18n();
       <DisplayDateInLocaltimeSetting />
       <BtcDerivationGapLimitSetting />
       <TreatEthAsEth2Setting />
+      <EvmChainsToIgnoreSettings />
     </SettingCategory>
 
     <SettingCategory>
