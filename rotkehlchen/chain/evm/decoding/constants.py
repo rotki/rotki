@@ -1,6 +1,6 @@
-from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
+from rotkehlchen.history.events.structures.types import HistoryEventType
 
 CPT_GAS = 'gas'
 CPT_HOP = 'hop-protocol'

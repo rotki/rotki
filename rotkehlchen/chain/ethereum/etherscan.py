@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     WITHDRAWALS_IDX_PREFIX,
     WITHDRAWALS_TS_PREFIX,
@@ -13,6 +12,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, ExternalService, SupportedBlockchain, Timestamp

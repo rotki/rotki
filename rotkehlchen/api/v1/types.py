@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import Literal, TypedDict
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, EVMTxHash
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 

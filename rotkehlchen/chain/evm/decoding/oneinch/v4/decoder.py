@@ -2,7 +2,6 @@ from abc import ABCMeta
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import (
     V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
 )
@@ -25,13 +24,14 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.optimism.modules.velodrome.decoder import (
     SWAP_V2 as VELODROME_SWAP_SIGNATURE,
 )
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 from rotkehlchen.chain.ethereum.modules.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
 

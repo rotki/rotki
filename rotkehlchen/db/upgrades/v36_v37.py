@@ -3,8 +3,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.db.constants import (
@@ -14,6 +12,8 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 

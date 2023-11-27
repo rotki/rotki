@@ -1,13 +1,12 @@
 import logging
 
-from rotkehlchen.accounting.structures.base import get_event_type_identifier
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import DepositableAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
+from rotkehlchen.history.events.structures.base import get_event_type_identifier
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from .constants import CPT_CURVE
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

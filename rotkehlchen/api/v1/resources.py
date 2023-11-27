@@ -15,11 +15,7 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import (
     RestAPI,
     api_response,
@@ -200,6 +196,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.schemas import (
     AssetSchema,
@@ -238,11 +235,11 @@ from rotkehlchen.types import (
 from .types import EvmTransactionDecodingApiData, ModuleWithBalances, ModuleWithStats
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 def _combine_parser_data(

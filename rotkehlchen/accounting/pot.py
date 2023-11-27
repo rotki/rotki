@@ -10,7 +10,6 @@ from rotkehlchen.accounting.history_base_entries import EventsAccountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.accounting.structures.types import EventDirection
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
@@ -21,6 +20,7 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp

@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -15,6 +14,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries

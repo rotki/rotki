@@ -4,12 +4,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
@@ -20,6 +14,12 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQ
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryEventSubType,
+    HistoryEventType,
+)
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.types import (
     ChainID,

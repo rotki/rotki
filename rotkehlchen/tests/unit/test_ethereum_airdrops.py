@@ -3,14 +3,14 @@ from unittest.mock import Mock, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, POAP_AIRDROPS, check_airdrops
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_UNI
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import Location, TimestampMS
 

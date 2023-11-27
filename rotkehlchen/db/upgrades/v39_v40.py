@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor, DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

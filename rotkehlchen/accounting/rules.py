@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_event_type_identifier
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, EventsAccountantCallback
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, get_event_type_identifier
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot

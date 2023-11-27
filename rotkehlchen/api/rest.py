@@ -38,14 +38,8 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData, IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
@@ -183,6 +177,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import history_event_to_staking_for_api
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.skipped import (
@@ -242,7 +239,6 @@ from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
@@ -251,6 +247,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 logger = logging.getLogger(__name__)

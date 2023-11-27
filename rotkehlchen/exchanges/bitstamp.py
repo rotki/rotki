@@ -50,9 +50,10 @@ from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from rotkehlchen.accounting.structures.base import HistoryEvent
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

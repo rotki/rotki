@@ -5,15 +5,6 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
-from rotkehlchen.accounting.structures.types import (
-    EventCategory,
-    EventCategoryDetails,
-    EventDirection,
-    HistoryEventSubType,
-    HistoryEventType,
-)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
@@ -66,6 +57,15 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBala
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
+from rotkehlchen.history.events.structures.types import (
+    EventCategory,
+    EventCategoryDetails,
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
