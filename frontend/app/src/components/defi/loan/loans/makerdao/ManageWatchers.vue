@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
@@ -41,15 +40,18 @@ const openWatcherDialog = () => {
 </script>
 
 <template>
-  <Fragment>
+  <div class="flex items-center gap-2">
+    <span v-if="!premium">
+      <PremiumLock />
+    </span>
     <RuiButton
       color="primary"
-      size="sm"
-      class="w-full"
+      :disabled="!premium"
+      class="w-full py-2"
       @click="openWatcherDialog()"
     >
       <template #prepend>
-        <RuiIcon name="notification-line" />
+        <RuiIcon class="my-1" name="notification-line" />
       </template>
 
       <template v-if="watchers.length > 0">
@@ -66,10 +68,6 @@ const openWatcherDialog = () => {
       <template v-else>
         {{ t('loan_collateral.watchers.add') }}
       </template>
-
-      <template v-if="!premium" #append>
-        <PremiumLock x-small />
-      </template>
     </RuiButton>
 
     <WatcherDialog
@@ -82,5 +80,5 @@ const openWatcherDialog = () => {
       :watcher-value-label="t('loan_collateral.watchers.dialog.label')"
       @cancel="showWatcherDialog = false"
     />
-  </Fragment>
+  </div>
 </template>

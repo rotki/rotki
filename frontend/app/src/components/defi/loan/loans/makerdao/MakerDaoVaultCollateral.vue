@@ -24,9 +24,10 @@ const ratio = computed(() => {
 
     <RuiDivider class="my-4" />
 
-    <LoanRow :title="t('loan_collateral.current_ratio')" class="mb-2">
+    <LoanRow :title="t('loan_collateral.current_ratio')">
       <PercentageDisplay :value="ratio" />
     </LoanRow>
-    <ManageWatchers :vault="vault" />
+
+    <ManageWatchers :vault="vault" class="mt-4" />
   </StatCard>
 </template>
