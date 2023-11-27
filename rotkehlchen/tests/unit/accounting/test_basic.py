@@ -6,19 +6,25 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import (
+    MOCKED_PRICES,
+    TIMESTAMP_1_MS,
     accounting_history_process,
     check_pnls_and_csv,
     history1,
 )
 from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
@@ -479,3 +485,60 @@ def test_all_chains_have_explorers(accountant: 'Accountant'):
     """Test that all chain in the csv exporter have a valid explorer url"""
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:
         assert chain in accountant.csvexporter.transaction_explorers
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+def test_non_history_event_in_history_iterator(accountant):
+    """Test that the PnL report does not fail if a non-history event follows a swap
+
+    Regression test for: https://github.com/rotki/rotki/issues/7009
+    """
+    tx_hash = make_evm_tx_hash()
+    user_address = make_evm_address()
+    contract_address = make_evm_address()
+    swap_amount_str = '0.99'
+    receive_amount_str = '10000'
+    history = [HistoryEvent(
+        event_identifier='1',
+        sequence_index=0,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.EXTERNAL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WBTC,
+        balance=Balance(amount=ONE),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_WBTC,
+        balance=Balance(amount=FVal(swap_amount_str)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount_str} WBTC in cowswap',
+        counterparty=CPT_COWSWAP,
+        address=contract_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        balance=Balance(amount=FVal(receive_amount_str)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
+        counterparty=CPT_COWSWAP,
+        address=contract_address,
+    ), ValidatorDailyStats(
+        validator_index=1,
+        timestamp=Timestamp(2),
+        pnl=FVal('0.1'),
+    )]
+    accounting_history_process(accountant, Timestamp(0), Timestamp(1635314397), history)
+    no_message_errors(accountant.msg_aggregator)
+    missing_acquisitions = accountant.pots[0].cost_basis.missing_acquisitions
+    assert missing_acquisitions == []
