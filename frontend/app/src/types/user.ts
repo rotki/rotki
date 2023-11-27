@@ -74,7 +74,7 @@ export const BaseAccountingSettings = z.object({
   accountForAssetsMovements: z.boolean(),
   profitCurrency: z.string().nullish(),
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
-  includeFeesInCostBasis: z.boolean(),
+  includeFeesInCostBasis: z.boolean().nullish(),
   costBasisMethod: CostBasisMethodEnum.nullish()
 });
 
