@@ -24,6 +24,7 @@ export const defaultGeneralSettings = (
   ssfGraphMultiplier: 0,
   inferZeroTimedBalances: false,
   nonSyncingExchanges: [],
+  evmchainsToSkipDetection: [],
   treatEth2AsEth: false,
   addressNamePriority: [],
   queryRetryLimit: Defaults.DEFAULT_QUERY_RETRY_LIMIT,
