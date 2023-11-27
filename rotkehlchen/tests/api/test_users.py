@@ -94,31 +94,41 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
     """Test that PUT at user endpoint can create a new user"""
     # Create a user without any premium credentials
     async_query = random.choice([False, True])
-    username = 'hania'
-    data = {'name': username, 'password': '1234', 'async_query': async_query}
+    usernames = ('hania', 'john.doe')
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    with ExitStack() as stack:
-        patch_no_op_unlock(rotki, stack)
-        response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
+    for idx, username in enumerate(usernames):
+        data = {'name': username, 'password': '1234', 'async_query': async_query}
+        with ExitStack() as stack:
+            patch_no_op_unlock(rotki, stack)
+            response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)  # noqa: E501
 
-        if async_query is True:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
+            if async_query is True:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+                result = outcome['result']
+            else:
+                result = assert_proper_response_with_result(response)
 
-    check_proper_unlock_result(result, {'submit_usage_analytics': True})
+        check_proper_unlock_result(result, {'submit_usage_analytics': True})
 
-    # Query users and make sure the new user is logged in
-    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
-    assert result[username] == 'loggedin'
-    assert len(result) == 1
+        # Query users and make sure the new user is logged in
+        response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
+        result = assert_proper_response_with_result(response)
+        assert result[username] == 'loggedin'
+        assert len(result) == idx + 1
 
-    # Check that the directory was created
-    assert Path(data_dir / username / 'rotkehlchen.db').exists()
+        # Check that the directory was created
+        assert Path(data_dir / username / 'rotkehlchen.db').exists()
+
+        # Logout
+        data = {'action': 'logout'}
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json=data,
+        )
+        assert_simple_ok_response(response)
+        assert rotki.user_is_logged_in is False
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
