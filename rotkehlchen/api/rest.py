@@ -748,7 +748,7 @@ class RestAPI:
             include_ignored_trades: bool,
     ) -> dict[str, Any]:
         try:
-            trades, filter_total_found = self.rotkehlchen.events_historian.query_trades(
+            trades, filter_total_found = self.rotkehlchen.history_querying_manager.query_trades(
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -880,7 +880,7 @@ class RestAPI:
         status_code = HTTPStatus.OK
         result = None
         try:
-            movements, filter_total_found = self.rotkehlchen.events_historian.query_asset_movements(  # noqa: E501
+            movements, filter_total_found = self.rotkehlchen.history_querying_manager.query_asset_movements(  # noqa: E501
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -1541,7 +1541,7 @@ class RestAPI:
         """This method exports all history events for a timestamp range.
         It also exports the user settings & ignored action identifiers for PnL debugging.
         """
-        error_or_empty, events = self.rotkehlchen.events_historian.get_history(
+        error_or_empty, events = self.rotkehlchen.history_querying_manager.get_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             has_premium=self.rotkehlchen.premium is not None,
@@ -4079,7 +4079,7 @@ class RestAPI:
         # query events from db and remote data(if `only_cache` is false).
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             try:
-                events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(
+                events_raw, entries_found = self.rotkehlchen.history_querying_manager.query_history_events(  # noqa: E501
                     cursor=cursor,
                     location=location,
                     filter_query=query_filter,

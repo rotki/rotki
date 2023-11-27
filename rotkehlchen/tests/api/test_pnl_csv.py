@@ -176,7 +176,7 @@ def test_encoding(
         return_value=encoding_to_use,
     )
     history_patch = patch.object(
-        rotki.events_historian,
+        rotki.history_querying_manager,
         'get_history',
         lambda start_ts, end_ts, has_premium: ('', [EvmEvent(
             tx_hash=GENESIS_HASH,
