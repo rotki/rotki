@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import MAKERDAO_ICON, MAKERDAO_LABEL
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
@@ -24,13 +23,14 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_PETH, A_SAI, A_WETH
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 POOLED_ETHER_ADDRESS = string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09')

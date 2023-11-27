@@ -17,12 +17,6 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntryType,
-    HistoryEvent,
-    HistoryEventSubType,
-    HistoryEventType,
-)
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import (
     HistoryEventsQueryType,
@@ -46,6 +40,12 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+)
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntryType,
+    HistoryEvent,
+    HistoryEventSubType,
+    HistoryEventType,
 )
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter

@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING, Any, NamedTuple, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
@@ -16,6 +14,8 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (

@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import set_token_protocol_if_missing
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE as SWAP_V1
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -25,6 +23,8 @@ from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
     read_velodrome_pools_and_gauges_from_cache,
     save_velodrome_data_to_cache,
 )
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import VELODROME_POOL_PROTOCOL, CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int

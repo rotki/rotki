@@ -48,9 +48,9 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

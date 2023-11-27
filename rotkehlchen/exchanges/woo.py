@@ -40,8 +40,8 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Literal
 
 from web3 import Web3
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
@@ -35,6 +34,7 @@ from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUSHISWAP_PROTOCOL,
@@ -47,9 +47,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

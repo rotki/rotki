@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Callable
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -10,6 +9,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)

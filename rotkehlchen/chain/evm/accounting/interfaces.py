@@ -4,15 +4,15 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.types import EventDirection, HistoryEventType
 from rotkehlchen.constants import ZERO
+from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

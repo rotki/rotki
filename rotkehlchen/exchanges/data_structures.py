@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType, EventDirection
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ONE, ZERO
@@ -13,6 +13,7 @@ from rotkehlchen.crypto import sha3
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,

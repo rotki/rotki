@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -14,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 

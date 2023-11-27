@@ -15,11 +15,11 @@ import requests
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices

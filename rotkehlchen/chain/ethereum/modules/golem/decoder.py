@@ -2,7 +2,6 @@ import logging
 from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -14,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_GLM
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int

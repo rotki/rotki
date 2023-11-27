@@ -11,12 +11,7 @@ import requests
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -24,6 +19,8 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (

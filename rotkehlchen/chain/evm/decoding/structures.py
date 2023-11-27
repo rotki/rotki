@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
-    from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.types import EvmTransaction
 
 

@@ -1,8 +1,6 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -20,6 +18,8 @@ from rotkehlchen.constants.assets import (
     A_XDAI,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 

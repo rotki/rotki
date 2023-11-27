@@ -8,7 +8,6 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     WITHDRAWALS_IDX_PREFIX,
     WITHDRAWALS_TS_PREFIX,
@@ -18,6 +17,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress, ExternalService, Timestamp

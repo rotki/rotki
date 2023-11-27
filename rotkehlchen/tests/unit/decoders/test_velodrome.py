@@ -1,8 +1,6 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -14,6 +12,8 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_OP, A_WETH_OPT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     VELODROME_POOL_PROTOCOL,

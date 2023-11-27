@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
@@ -15,6 +13,8 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,

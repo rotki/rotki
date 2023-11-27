@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
@@ -45,6 +44,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, shift_num_right_by

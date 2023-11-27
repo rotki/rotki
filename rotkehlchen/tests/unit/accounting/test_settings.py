@@ -3,13 +3,13 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
     check_pnls_and_csv,

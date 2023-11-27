@@ -9,18 +9,7 @@ from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_
 from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
-from rotkehlchen.accounting.structures.eth2 import (
-    EthBlockEvent,
-    EthDepositEvent,
-    EthWithdrawalEvent,
-)
-from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles
 from rotkehlchen.assets.types import AssetType
@@ -78,6 +67,14 @@ from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.history.events.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle

@@ -11,8 +11,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressToLPBalances,
@@ -30,6 +28,8 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium

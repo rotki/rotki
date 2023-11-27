@@ -5,17 +5,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryBaseEntryType,
-    HistoryEvent,
-)
-from rotkehlchen.accounting.structures.eth2 import (
-    EthBlockEvent,
-    EthDepositEvent,
-    EthWithdrawalEvent,
-)
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
@@ -35,6 +24,17 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
+from rotkehlchen.history.events.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (

@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import ActionType, EventDirection
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp

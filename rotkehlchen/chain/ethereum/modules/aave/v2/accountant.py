@@ -3,20 +3,20 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.base import get_event_type_identifier
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import get_event_type_identifier
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 from ..constants import CPT_AAVE_V2
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
 

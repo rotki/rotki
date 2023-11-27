@@ -37,9 +37,9 @@ from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 
 logger = logging.getLogger(__name__)

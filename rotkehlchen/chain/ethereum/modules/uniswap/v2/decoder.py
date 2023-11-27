@@ -31,7 +31,7 @@ from rotkehlchen.types import UNISWAP_PROTOCOL, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
 # https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822  # noqa: E501

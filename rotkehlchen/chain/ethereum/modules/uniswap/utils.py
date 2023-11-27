@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import decode_result
@@ -15,14 +14,15 @@ from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
 logger = logging.getLogger(__name__)

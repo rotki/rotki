@@ -5,22 +5,22 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
+from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
     HistoryBaseEntry,
     HistoryBaseEntryType,
     get_event_type_identifier,
 )
-from rotkehlchen.accounting.structures.types import (
+from rotkehlchen.history.events.structures.types import (
     EVM_EVENT_DB_TUPLE_READ,
     EVM_EVENT_FIELDS,
-    ActionType,
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
 from rotkehlchen.types import (

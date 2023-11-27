@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes, timestamp_to_epoch
 from rotkehlchen.constants import ONE, ZERO
@@ -11,6 +10,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import ETH_STAKING_EVENT_JOIN, EthStakingEventFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_ms_to_sec

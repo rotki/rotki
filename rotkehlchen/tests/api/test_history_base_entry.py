@@ -6,19 +6,16 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -45,8 +42,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 def assert_editing_works(

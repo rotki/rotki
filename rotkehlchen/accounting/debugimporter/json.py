@@ -6,7 +6,6 @@ from typing import Any
 from marshmallow import EXCLUDE, ValidationError
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import ModifiableSettingsSchema
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
@@ -15,6 +14,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)

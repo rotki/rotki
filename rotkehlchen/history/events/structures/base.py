@@ -5,16 +5,17 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    EventDirection,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -24,8 +25,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
-
-from .balance import Balance
 
 if TYPE_CHECKING:
     from more_itertools import peekable
@@ -43,11 +42,11 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # sequence_index
     int,            # timestamp
     str,            # location
-    str | None,  # location label
+    str | None,     # location label
     str,            # asset
     str,            # amount
     str,            # usd value
-    str | None,  # notes
+    str | None,     # notes
     str,            # type
     str,            # subtype
 ]

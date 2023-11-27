@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
@@ -16,6 +14,8 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_REN, A_WETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (

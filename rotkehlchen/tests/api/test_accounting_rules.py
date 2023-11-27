@@ -6,10 +6,10 @@ from typing import Literal, get_args
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
 from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import (
     api_url_for,

@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -29,6 +28,7 @@ from rotkehlchen.constants.assets import (
     A_VCOW,
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 

@@ -2,12 +2,12 @@ import json
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
 from rotkehlchen.db.filtering import DBFilterQuery
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:

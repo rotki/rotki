@@ -9,12 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_BUSD, A_DAI, A_ETH, A_EUR, A_USDT
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -33,6 +28,8 @@ from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

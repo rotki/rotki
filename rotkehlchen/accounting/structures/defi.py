@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
 
     from .balance import AssetBalance, Balance
-    from .base import ActionType
+    from .types import ActionType
 
 
 class DefiEventType(Enum):

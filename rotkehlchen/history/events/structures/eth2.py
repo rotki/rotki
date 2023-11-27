@@ -3,11 +3,12 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -17,7 +18,6 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 
-from .balance import Balance
 from .evm_event import EvmProduct
 
 if TYPE_CHECKING:

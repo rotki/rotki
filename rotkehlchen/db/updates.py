@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 from packaging import version as pversion
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -19,6 +18,7 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (

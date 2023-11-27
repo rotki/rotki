@@ -5,12 +5,12 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices

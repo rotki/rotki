@@ -7,13 +7,13 @@ from rotkehlchen.accounting.cost_basis.base import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 

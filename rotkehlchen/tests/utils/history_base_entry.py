@@ -2,23 +2,23 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryBaseEntryType,
-    HistoryEvent,
-)
-from rotkehlchen.accounting.structures.eth2 import (
-    EthBlockEvent,
-    EthDepositEvent,
-    EthWithdrawalEvent,
-)
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_USDT
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
+from rotkehlchen.history.events.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:

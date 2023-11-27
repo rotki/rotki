@@ -1,8 +1,6 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -19,6 +17,8 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,

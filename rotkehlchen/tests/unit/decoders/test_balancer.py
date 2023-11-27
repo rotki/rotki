@@ -1,8 +1,6 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
@@ -13,6 +11,8 @@ from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_USDC, A_W
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,

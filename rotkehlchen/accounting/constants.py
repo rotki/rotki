@@ -1,13 +1,13 @@
 from typing import Final
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.types import (
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.history.events.structures.types import (
     EventCategory,
     EventCategoryDetails,
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 
 FREE_PNL_EVENTS_LIMIT = 1000
 FREE_REPORTS_LOOKUP_LIMIT = 20

@@ -2,8 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -16,6 +14,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.history.events.structures.evm_event import LIQUITY_STAKING_DETAILS
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -23,10 +23,10 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 from .constants import CPT_LIQUITY
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501

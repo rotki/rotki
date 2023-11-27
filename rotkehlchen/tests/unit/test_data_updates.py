@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
@@ -14,6 +13,7 @@ from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilt
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (

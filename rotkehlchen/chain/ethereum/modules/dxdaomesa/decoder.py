@@ -3,7 +3,6 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -13,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_DXDAO_MESA

@@ -1,7 +1,7 @@
 from typing import Any
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_ms_to_sec
 

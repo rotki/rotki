@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -16,6 +15,7 @@ from rotkehlchen.db.filtering import EthWithdrawalFilterQuery, HistoryEventFilte
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 

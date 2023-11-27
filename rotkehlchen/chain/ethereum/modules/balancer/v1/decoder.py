@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -14,14 +13,15 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 JOIN_V1 = b'c\x98-\xf1\x0e\xfd\x8d\xfa\xaa\xa0\xfc\xc7\xf5\x0b-\x93\xb7\xcb\xa2l\xccH\xad\xee(s"\rH]\xc3\x9a'  # noqa: E501

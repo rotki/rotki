@@ -1,8 +1,6 @@
 from typing import Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -40,6 +38,8 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_MCO, A_XMR
 from rotkehlchen.types import (
