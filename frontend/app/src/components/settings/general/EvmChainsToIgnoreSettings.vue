@@ -77,7 +77,7 @@ const filter = (chain: Blockchain, queryText: string) => {
         :value="skippedChains"
         :success-messages="success"
         :error-messages="error"
-        :class="css.chain__select"
+        :class="css['chain-select']"
         multiple
         clearable
         data-cy="account-chain-skip-detection-field"
@@ -97,7 +97,11 @@ const filter = (chain: Blockchain, queryText: string) => {
 </template>
 
 <style lang="scss" module>
-.chain__select :global(.v-select__selections) {
-  @apply gap-4;
+/* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+.chain-select {
+  :global(.v-select__selections) {
+    @apply gap-4;
+  }
 }
 </style>
