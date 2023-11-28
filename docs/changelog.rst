@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7015` Users will be able to sort the blockchain accounts by displayed name.
 * :bug:`7017` Fix the issue where clicking on the chain in the blockchain balance summary didn't show the correct section.
 * :bug:`6999` Chai token balances should not appear doubled under certain conditions.
 * :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
