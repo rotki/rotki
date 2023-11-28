@@ -42,13 +42,11 @@ const filter = (chain: Blockchain, queryText: string) => {
     return false;
   }
 
-  const nameIncludes = item.name
-    .toLocaleLowerCase()
-    .includes(queryText.toLocaleLowerCase());
+  const query = queryText.toLocaleLowerCase();
 
-  const idIncludes = item.id
-    .toLocaleLowerCase()
-    .includes(queryText.toLocaleLowerCase());
+  const nameIncludes = item.name.toLocaleLowerCase().includes(query);
+
+  const idIncludes = item.id.toLocaleLowerCase().includes(query);
 
   return nameIncludes || idIncludes;
 };
@@ -98,7 +96,7 @@ const removeChain = (chain: Blockchain) =>
             dismissible
             @remove="update(removeChain(item))"
           >
-            <span class="flex gap-1 -ml-2">
+            <span class="flex gap-1 -ml-1">
               <ChainIcon :chain="item" size="0.875rem" />
               {{ getChainName(item).value }}
             </span>
