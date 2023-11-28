@@ -8,7 +8,7 @@ const css = useCssModule();
 const { isModuleEnabled } = useModules();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 
-const { getEvmChainName, isEvm, evmChainsData, supportedChains } =
+const { getChainName, getEvmChainName, isEvm, evmChainsData, supportedChains } =
   useSupportedChains();
 
 const skippedChains = computed(() => {
@@ -16,7 +16,7 @@ const skippedChains = computed(() => {
   const chainsData = get(evmChainsData) ?? [];
   const chainsMap = keyBy(chainsData, 'evmChainName');
 
-  return savedNames.map(name => chainsMap[name]?.id);
+  return savedNames.map(name => chainsMap[name]?.id as Blockchain);
 });
 
 const items = computed(() => {
@@ -52,11 +52,14 @@ const filter = (chain: Blockchain, queryText: string) => {
 
   return nameIncludes || idIncludes;
 };
+
+const removeChain = (chain: Blockchain) =>
+  getChainNames(get(skippedChains).filter(c => c !== chain));
 </script>
 
 <template>
   <div>
-    <div class="text-[1rem] mb-3 mt-4">
+    <div class="text-base mb-3 mt-4">
       {{ t('general_settings.labels.chains_to_skip_detection') }}
     </div>
     <SettingsOption
@@ -78,6 +81,9 @@ const filter = (chain: Blockchain, queryText: string) => {
         :success-messages="success"
         :error-messages="error"
         :class="css['chain-select']"
+        chips
+        small-chips
+        deletable-chips
         multiple
         clearable
         data-cy="account-chain-skip-detection-field"
@@ -86,7 +92,17 @@ const filter = (chain: Blockchain, queryText: string) => {
         @input="update(getChainNames($event))"
       >
         <template #selection="{ item }">
-          <ChainDisplay :chain="item" :full-width="false" dense />
+          <RuiChip
+            size="sm"
+            variant="filled"
+            dismissible
+            @remove="update(removeChain(item))"
+          >
+            <span class="flex gap-1 -ml-2">
+              <ChainIcon :chain="item" size="0.875rem" />
+              {{ getChainName(item).value }}
+            </span>
+          </RuiChip>
         </template>
         <template #item="{ item }">
           <ChainDisplay :chain="item" dense />
@@ -101,7 +117,7 @@ const filter = (chain: Blockchain, queryText: string) => {
 
 .chain-select {
   :global(.v-select__selections) {
-    @apply gap-4;
+    @apply gap-3;
   }
 }
 </style>
