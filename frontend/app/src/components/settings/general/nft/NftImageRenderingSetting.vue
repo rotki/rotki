@@ -116,59 +116,64 @@ const warningUrl =
       setting="renderAllNftImages"
       frontend-setting
     >
-      <VRadioGroup
+      <RuiRadioGroup
         v-model="renderAllNftImages"
+        class="mt-3"
+        color="primary"
         :success-messages="success"
         :error-messages="error"
-        @change="updateRenderingSetting($event, update)"
+        @input="updateRenderingSetting($event, update)"
       >
-        <VRadio
-          :label="
-            t('general_settings.nft_setting.label.render_setting.allow_all')
-          "
-          :value="true"
-        />
-        <VRadio
-          :label="
-            t(
-              'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
-            )
-          "
-          :value="false"
-        />
-      </VRadioGroup>
+        <template #default>
+          <RuiRadio :internal-value="true">
+            {{
+              t('general_settings.nft_setting.label.render_setting.allow_all')
+            }}
+          </RuiRadio>
+          <RuiRadio :internal-value="false">
+            {{
+              t(
+                'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
+              )
+            }}
+          </RuiRadio>
+        </template>
+      </RuiRadioGroup>
     </SettingsOption>
 
-    <VRow class="mt-4">
-      <VCol>
-        <SettingsOption
-          setting="whitelistedDomainsForNftImages"
-          frontend-setting
-        >
-          <VCombobox
-            v-model="whitelistedDomainsForNftImages"
-            :class="css['whitelisted-input']"
-            :label="t('general_settings.nft_setting.label.whitelisted_domains')"
-            :hint="
-              t('general_settings.nft_setting.label.whitelisted_domains_hint')
-            "
-            persistent-hint
-            chips
-            outlined
-            deletable-chips
-            clearable
-            multiple
-            :disabled="renderAllNftImages"
-            @change="onChange($event)"
-          />
-        </SettingsOption>
-      </VCol>
-      <VCol cols="auto">
-        <VBtn class="mt-2" icon :disabled="!changed" @click="confirmUpdated()">
-          <VIcon>mdi-content-save</VIcon>
-        </VBtn>
-      </VCol>
-    </VRow>
+    <div class="mt-4 flex items-start gap-4">
+      <SettingsOption
+        setting="whitelistedDomainsForNftImages"
+        frontend-setting
+        class="flex-1"
+      >
+        <VCombobox
+          v-model="whitelistedDomainsForNftImages"
+          :class="css['whitelisted-input']"
+          :label="t('general_settings.nft_setting.label.whitelisted_domains')"
+          :hint="
+            t('general_settings.nft_setting.label.whitelisted_domains_hint')
+          "
+          persistent-hint
+          chips
+          outlined
+          deletable-chips
+          clearable
+          multiple
+          :disabled="renderAllNftImages"
+          @change="onChange($event)"
+        />
+      </SettingsOption>
+      <RuiButton
+        variant="text"
+        icon
+        class="mt-1"
+        :disabled="!changed"
+        @click="confirmUpdated()"
+      >
+        <RuiIcon name="save-line" />
+      </RuiButton>
+    </div>
 
     <ConfirmDialog
       :display="showUpdateWhitelistConfirmation"
@@ -185,17 +190,17 @@ const warningUrl =
       @cancel="reset()"
       @confirm="updateWhitelist()"
     >
-      <VSheet outlined class="pa-4 mt-4" rounded>
-        <ul>
+      <RuiCard outlined class="mt-4 h-auto">
+        <ul class="list-disc">
           <li
             v-for="domain in whitelistedDomainsForNftImages"
             :key="domain"
-            class="orange--text font-bold"
+            class="text-rui-warning font-bold"
           >
             {{ domain }}
           </li>
         </ul>
-      </VSheet>
+      </RuiCard>
     </ConfirmDialog>
   </div>
 </template>

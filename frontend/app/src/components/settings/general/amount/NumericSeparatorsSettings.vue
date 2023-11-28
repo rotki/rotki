@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
+import Fragment from '@/components/helper/Fragment';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
@@ -86,7 +87,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <Fragment>
     <SettingsOption
       #default="{ error, success, update }"
       setting="thousandSeparator"
@@ -130,5 +131,5 @@ onMounted(() => {
         @change="callIfDecimalsValid($event, update)"
       />
     </SettingsOption>
-  </div>
+  </Fragment>
 </template>

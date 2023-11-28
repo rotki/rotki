@@ -47,17 +47,21 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
     </template>
 
     <div>
-      <VTabs v-model="rpcSettingTab">
-        <VTab v-for="tab in rpcSettingTabs" :key="tab.chain">
+      <RuiTabs v-model="rpcSettingTab" color="primary">
+        <RuiTab v-for="tab in rpcSettingTabs" :key="tab.chain">
           <ChainDisplay :chain="tab.chain" dense />
-        </VTab>
-      </VTabs>
-      <VDivider />
-      <VTabsItems v-model="rpcSettingTab">
-        <VTabItem v-for="tab in rpcSettingTabs" :key="tab.chain" class="pt-8">
-          <Component :is="tab.component" :chain="tab.chain" />
-        </VTabItem>
-      </VTabsItems>
+        </RuiTab>
+      </RuiTabs>
+      <RuiDivider class="mb-4" />
+      <RuiTabItems v-model="rpcSettingTab">
+        <template #default>
+          <RuiTabItem v-for="tab in rpcSettingTabs" :key="tab.chain">
+            <template #default>
+              <Component :is="tab.component" :chain="tab.chain" />
+            </template>
+          </RuiTabItem>
+        </template>
+      </RuiTabItems>
     </div>
   </Card>
 </template>

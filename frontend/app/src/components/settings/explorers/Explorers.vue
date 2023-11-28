@@ -49,9 +49,6 @@ onMounted(() => {
   onChange();
 });
 
-const isValid = (entry: string | null): boolean =>
-  !entry ? false : entry.length > 0;
-
 const save = async (type: keyof ExplorerUrls, newValue?: string) => {
   const setting = get(userUrls);
 
@@ -115,84 +112,28 @@ const { t } = useI18n();
       </template>
     </VSelect>
 
-    <VTextField
+    <ExplorerInput
       v-model="address"
-      outlined
-      clearable
       :label="t('explorers.address')"
       :hint="t('explorers.address_url', { addressUrl })"
       :placeholder="addressUrl"
-      persistent-hint
-      @click:clear="saveAddress()"
-    >
-      <template #append-outer>
-        <VBtn
-          icon
-          :disabled="!isValid(address)"
-          class="mt-n2"
-          @click="saveAddress(address)"
-        >
-          <VIcon>mdi-content-save</VIcon>
-        </VBtn>
-      </template>
-    </VTextField>
-    <VTextField
+      @save-data="saveAddress($event)"
+    />
+    <ExplorerInput
       v-if="txUrl"
       v-model="tx"
-      outlined
-      clearable
       :label="t('explorers.tx')"
       :hint="t('explorers.tx_url', { txUrl })"
       :placeholder="txUrl"
-      persistent-hint
-      @click:clear="saveTransaction()"
-    >
-      <template #append-outer>
-        <VBtn
-          icon
-          :disabled="!isValid(tx)"
-          class="mt-n2"
-          @click="saveTransaction(tx)"
-        >
-          <VIcon>mdi-content-save</VIcon>
-        </VBtn>
-      </template>
-    </VTextField>
-    <VTextField
+      @save-data="saveTransaction($event)"
+    />
+    <ExplorerInput
       v-if="blockUrl"
       v-model="block"
-      outlined
-      clearable
       :label="t('explorers.block')"
       :hint="t('explorers.block_url', { blockUrl })"
       :placeholder="blockUrl"
-      persistent-hint
-      @click:clear="saveBlock()"
-    >
-      <template #append-outer>
-        <VBtn
-          icon
-          :disabled="!isValid(block)"
-          class="mt-n2"
-          @click="saveBlock(block)"
-        >
-          <VIcon>mdi-content-save</VIcon>
-        </VBtn>
-      </template>
-    </VTextField>
+      @save-data="saveBlock($event)"
+    />
   </div>
 </template>
-
-<style scoped lang="scss">
-.explorers {
-  :deep(.v-input) {
-    .v-input {
-      &__icon {
-        &--append {
-          padding-top: 1rem;
-        }
-      }
-    }
-  }
-}
-</style>

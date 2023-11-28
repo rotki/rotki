@@ -50,37 +50,36 @@ const description = (directive: string): string => {
 
 <template>
   <VDialog v-if="value" :value="value" max-width="500" @input="input($event)">
-    <Card>
-      <template #title>{{ t('date_format_help.title') }}</template>
-      <template #subtitle>{{ t('date_format_help.subtitle') }}</template>
-      <template #buttons>
-        <VSpacer />
-        <VBtn depressed color="primary" @click="input(false)">
-          {{ t('common.actions.close') }}
-        </VBtn>
-      </template>
-      <div class="date-format-help__content">
-        <div v-for="directive in directives" :key="directive" class="mt-2">
-          <div>
-            <span class="font-medium date-format-help__directive">
+    <RuiCard>
+      <template #header>{{ t('date_format_help.title') }}</template>
+      <template #subheader>{{ t('date_format_help.subtitle') }}</template>
+      <div class="date-format-help__content flex flex-col gap-2">
+        <div v-for="directive in directives" :key="directive">
+          <div class="flex gap-2">
+            <span class="w-8 font-medium">
               {{ directive }}
             </span>
-            <span class="text--secondary ml-2">
+            <span class="text-rui-text-secondary">
               {{ description(directive) }}
             </span>
           </div>
-          <div>
-            <span class="ms-8">
-              {{
-                t('date_format_help.example', {
-                  example: formatter.format(now, directive)
-                })
-              }}
-            </span>
+          <div class="ml-10">
+            {{
+              t('date_format_help.example', {
+                example: formatter.format(now, directive)
+              })
+            }}
           </div>
         </div>
       </div>
-    </Card>
+
+      <template #footer>
+        <div class="grow" />
+        <RuiButton color="primary" @click="input(false)">
+          {{ t('common.actions.close') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
   </VDialog>
 </template>
 
@@ -89,10 +88,6 @@ const description = (directive: string): string => {
   &__content {
     max-height: 300px;
     overflow-y: scroll;
-  }
-
-  &__directive {
-    width: 24px;
   }
 }
 </style>

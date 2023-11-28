@@ -215,9 +215,9 @@ const progress = computed(() => reportsStore.progress);
       :subtitle="t('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
-        <VBtn text class="mt-2" @click="clearError()">
+        <RuiButton variant="text" class="mt-2" @click="clearError()">
           {{ t('common.actions.close') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </ErrorScreen>
     <ReportsTable v-show="!isRunning && !reportError.message" class="mt-8" />
@@ -231,34 +231,35 @@ const progress = computed(() => reportsStore.progress);
       {{ t('profit_loss_report.loading_hint') }}
     </ProgressScreen>
     <VDialog v-model="importDataDialog" max-width="600">
-      <Card>
-        <template #title>
+      <RuiCard>
+        <template #header>
           {{ t('profit_loss_reports.debug.import_data_dialog.title') }}
         </template>
-        <div>
-          <div class="py-2">
-            <FileUpload
-              ref="reportDebugDataUploader"
-              v-model="reportDebugData"
-              source="json"
-              file-filter=".json"
-            />
-          </div>
-          <div class="mt-2 flex justify-end">
-            <VBtn class="mr-4" depressed @click="importDataDialog = false">
-              {{ t('common.actions.cancel') }}
-            </VBtn>
-            <VBtn
-              color="primary"
-              :disabled="!reportDebugData"
-              :loading="importDataLoading"
-              @click="importData()"
-            >
-              {{ t('common.actions.import') }}
-            </VBtn>
-          </div>
-        </div>
-      </Card>
+        <FileUpload
+          ref="reportDebugDataUploader"
+          v-model="reportDebugData"
+          source="json"
+          file-filter=".json"
+        />
+        <template #footer>
+          <div class="grow" />
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="importDataDialog = false"
+          >
+            {{ t('common.actions.cancel') }}
+          </RuiButton>
+          <RuiButton
+            color="primary"
+            :disabled="!reportDebugData"
+            :loading="importDataLoading"
+            @click="importData()"
+          >
+            {{ t('common.actions.import') }}
+          </RuiButton>
+        </template>
+      </RuiCard>
     </VDialog>
   </VContainer>
 </template>

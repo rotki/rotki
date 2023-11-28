@@ -197,17 +197,17 @@ watch(v$, ({ $invalid }) => {
 
 const icon = (level: LogLevel): string => {
   if (level === LogLevel.DEBUG) {
-    return 'mdi-bug';
+    return 'bug-line';
   } else if (level === LogLevel.INFO) {
-    return 'mdi-information';
+    return 'information-line';
   } else if (level === LogLevel.WARNING) {
-    return 'mdi-alert';
+    return 'alert-line';
   } else if (level === LogLevel.ERROR) {
-    return 'mdi-alert-circle';
+    return 'error-warning-line';
   } else if (level === LogLevel.CRITICAL) {
-    return 'mdi-alert-decagram';
+    return 'virus-line';
   } else if (level === LogLevel.TRACE) {
-    return 'mdi-magnify-scan';
+    return 'file-search-line';
   }
   throw new Error(`Invalid option: ${level}`);
 };
@@ -300,36 +300,37 @@ const showResetConfirmation = () => {
       </VCardSubtitle>
     </div>
 
-    <VTextField
-      v-model="userDataDirectory"
-      data-cy="user-data-directory-input"
-      :loading="!userDataDirectory"
-      class="pt-2"
-      outlined
-      :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
-      persistent-hint
-      :hint="
-        !!fileConfig.dataDirectory
-          ? t('backend_settings.config_file_disabled')
-          : t('backend_settings.settings.data_directory.hint')
-      "
-      :label="t('backend_settings.settings.data_directory.label')"
-      readonly
-      @click="selectDataDirectory()"
-    >
-      <template #append>
-        <VBtn
-          icon
-          :disabled="!userDataDirectory"
-          @click="selectDataDirectory()"
-        >
-          <VIcon>mdi-folder</VIcon>
-        </VBtn>
-      </template>
-    </VTextField>
-
-    <VForm :value="valid">
-      <VTextField
+    <div class="flex flex-col gap-4">
+      <RuiTextField
+        v-model="userDataDirectory"
+        data-cy="user-data-directory-input"
+        :loading="!userDataDirectory"
+        class="pt-2"
+        variant="outlined"
+        color="primary"
+        :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
+        persistent-hint
+        :hint="
+          !!fileConfig.dataDirectory
+            ? t('backend_settings.config_file_disabled')
+            : t('backend_settings.settings.data_directory.hint')
+        "
+        :label="t('backend_settings.settings.data_directory.label')"
+        readonly
+        @click="selectDataDirectory()"
+      >
+        <template #append>
+          <RuiButton
+            variant="text"
+            icon
+            :disabled="!userDataDirectory"
+            @click="selectDataDirectory()"
+          >
+            <RuiIcon name="folder-line" />
+          </RuiButton>
+        </template>
+      </RuiTextField>
+      <RuiTextField
         v-model="userLogDirectory"
         data-cy="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
@@ -339,17 +340,18 @@ const showResetConfirmation = () => {
             ? t('backend_settings.config_file_disabled')
             : null
         "
-        outlined
+        variant="outlined"
+        color="primary"
         :label="t('backend_settings.settings.log_directory.label')"
         readonly
         @click="selectLogsDirectory()"
       >
         <template #append>
-          <VBtn icon @click="selectLogsDirectory()">
-            <VIcon>mdi-folder</VIcon>
-          </VBtn>
+          <RuiButton variant="text" icon @click="selectLogsDirectory()">
+            <RuiIcon name="folder-line" />
+          </RuiButton>
         </template>
-      </VTextField>
+      </RuiTextField>
 
       <VSelect
         v-model="logLevel"
@@ -366,20 +368,16 @@ const showResetConfirmation = () => {
         outlined
       >
         <template #item="{ item }">
-          <VRow align="center">
-            <VCol cols="auto">
-              <VIcon>{{ icon(item) }}</VIcon>
-            </VCol>
-            <VCol>{{ item.toLocaleLowerCase() }}</VCol>
-          </VRow>
+          <div class="flex items-center gap-4">
+            <RuiIcon class="text-rui-text-secondary" :name="icon(item)" />
+            {{ item.toLocaleLowerCase() }}
+          </div>
         </template>
         <template #selection="{ item }">
-          <VRow align="center">
-            <VCol cols="auto">
-              <VIcon>{{ icon(item) }}</VIcon>
-            </VCol>
-            <VCol>{{ item.toLocaleLowerCase() }}</VCol>
-          </VRow>
+          <div class="flex items-center gap-4">
+            <RuiIcon class="text-rui-text-secondary" :name="icon(item)" />
+            {{ item.toLocaleLowerCase() }}
+          </div>
         </template>
       </VSelect>
 
@@ -389,10 +387,12 @@ const showResetConfirmation = () => {
             {{ t('backend_settings.advanced') }}
           </VExpansionPanelHeader>
           <VExpansionPanelContent>
-            <VTextField
+            <RuiTextField
               v-model.number="maxLogSize"
               data-cy="max-log-size-input"
-              outlined
+              class="mb-4"
+              variant="outlined"
+              color="primary"
               :hint="
                 !!fileConfig.maxSizeInMbAllLogs
                   ? t('backend_settings.config_file_disabled')
@@ -412,11 +412,13 @@ const showResetConfirmation = () => {
                   @click="resetDefaultArguments('size')"
                 />
               </template>
-            </VTextField>
-            <VTextField
+            </RuiTextField>
+            <RuiTextField
               v-model.number="maxLogFiles"
               data-cy="max-log-files-input"
-              outlined
+              variant="outlined"
+              color="primary"
+              class="mb-4"
               :hint="t('backend_settings.max_log_files.hint')"
               :label="
                 !!fileConfig.maxLogfilesNum
@@ -436,12 +438,14 @@ const showResetConfirmation = () => {
                   @click="resetDefaultArguments('files')"
                 />
               </template>
-            </VTextField>
+            </RuiTextField>
 
-            <VTextField
+            <RuiTextField
               v-model.number="sqliteInstructions"
               data-cy="sqlite-instructions-input"
-              outlined
+              variant="outlined"
+              color="primary"
+              class="mb-4"
               :hint="
                 !!fileConfig.sqliteInstructions
                   ? t('backend_settings.config_file_disabled')
@@ -463,10 +467,11 @@ const showResetConfirmation = () => {
                   @click="resetDefaultArguments('instructions')"
                 />
               </template>
-            </VTextField>
+            </RuiTextField>
 
-            <VCheckbox
+            <RuiCheckbox
               v-model="logFromOtherModules"
+              color="primary"
               data-cy="log-from-other-modules-checkbox"
               :label="t('backend_settings.log_from_other_modules.label')"
               :disabled="fileConfig.logFromOtherModules"
@@ -476,29 +481,35 @@ const showResetConfirmation = () => {
                   ? t('backend_settings.config_file_disabled')
                   : t('backend_settings.log_from_other_modules.hint')
               "
-            />
+            >
+              {{ t('backend_settings.log_from_other_modules.label') }}
+            </RuiCheckbox>
           </VExpansionPanelContent>
         </VExpansionPanel>
       </VExpansionPanels>
-    </VForm>
+    </div>
 
     <template #buttons>
-      <VSpacer />
-      <VBtn depressed @click="dismiss()">
-        {{ t('common.actions.cancel') }}
-      </VBtn>
-      <VBtn depressed @click="showResetConfirmation()">
-        {{ t('backend_settings.actions.reset') }}
-      </VBtn>
-      <VBtn
-        depressed
-        data-cy="onboarding-setting__submit-button"
-        color="primary"
-        :disabled="!anyValueChanged || !valid"
-        @click="save()"
-      >
-        {{ t('common.actions.save') }}
-      </VBtn>
+      <div class="flex justify-end w-full gap-2">
+        <RuiButton variant="text" color="primary" @click="dismiss()">
+          {{ t('common.actions.cancel') }}
+        </RuiButton>
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          @click="showResetConfirmation()"
+        >
+          {{ t('backend_settings.actions.reset') }}
+        </RuiButton>
+        <RuiButton
+          data-cy="onboarding-setting__submit-button"
+          color="primary"
+          :disabled="!anyValueChanged || !valid"
+          @click="save()"
+        >
+          {{ t('common.actions.save') }}
+        </RuiButton>
+      </div>
     </template>
   </Card>
 </template>

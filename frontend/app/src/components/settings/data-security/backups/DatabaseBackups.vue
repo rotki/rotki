@@ -119,35 +119,35 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
         {{ size(item.size) }}
       </template>
       <template #item.actions="{ item }">
-        <VTooltip top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              v-bind="attrs"
+        <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+          <template #activator>
+            <RuiButton
+              variant="text"
+              color="primary"
               icon
-              class="mx-1"
-              v-on="on"
               @click="showDeleteConfirmation(item)"
             >
-              <VIcon small> mdi-delete-outline </VIcon>
-            </VBtn>
+              <RuiIcon size="16" name="delete-bin-line" />
+            </RuiButton>
           </template>
           <span>{{ t('database_backups.action.delete') }}</span>
-        </VTooltip>
-        <VTooltip top>
-          <template #activator="{ on, attrs }">
-            <VBtn
+        </RuiTooltip>
+        <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+          <template #activator>
+            <RuiButton
+              variant="text"
+              color="primary"
               icon
               :href="getLink(item)"
-              v-bind="attrs"
-              class="mx-1"
               download
-              v-on="on"
+              tag="a"
+              class="mx-1"
             >
-              <VIcon small> mdi-download </VIcon>
-            </VBtn>
+              <RuiIcon size="16" name="file-download-line" />
+            </RuiButton>
           </template>
           <span>{{ t('database_backups.action.download') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </template>
       <template #body.append="{ isMobile }">
         <RowAppend

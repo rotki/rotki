@@ -51,7 +51,7 @@ const { languageContributeUrl } = useInterop();
 
 <template>
   <div>
-    <div class="flex items-center">
+    <div class="flex items-center gap-2">
       <SettingsOption
         #default="{ error, success, update }"
         class="w-full"
@@ -87,38 +87,35 @@ const { languageContributeUrl } = useInterop();
           </template>
         </VSelect>
       </SettingsOption>
-      <div class="ml-2">
-        <RuiTooltip
-          :popper="{ placement: 'bottom', offsetDistance: 0 }"
-          tooltip-class="max-w-[25rem]"
-        >
-          <template #activator>
-            <BaseExternalLink :href="languageContributeUrl">
-              <RuiButton variant="text" icon>
-                <RuiIcon name="file-edit-line" />
-              </RuiButton>
-            </BaseExternalLink>
-          </template>
-          <span>
-            {{ t('general_settings.language_contribution_tooltip') }}
-          </span>
-        </RuiTooltip>
-      </div>
+      <RuiTooltip
+        :popper="{ placement: 'bottom', offsetDistance: 0 }"
+        tooltip-class="max-w-[25rem]"
+      >
+        <template #activator>
+          <BaseExternalLink :href="languageContributeUrl">
+            <RuiButton variant="text" icon>
+              <RuiIcon name="file-edit-line" />
+            </RuiButton>
+          </BaseExternalLink>
+        </template>
+        <span>
+          {{ t('general_settings.language_contribution_tooltip') }}
+        </span>
+      </RuiTooltip>
     </div>
-    <div v-if="!useLocalSetting" class="mb-n10">
-      <VRow>
-        <VCol cols="auto">
-          <VCheckbox
-            :input-value="forceUpdateMachineLanguage === 'true'"
-            :label="
-              t(
-                'general_settings.labels.force_saved_language_setting_in_machine_hint'
-              )
-            "
-            @change="updateForceUpdateMachineLanguage($event)"
-          />
-        </VCol>
-      </VRow>
-    </div>
+    <RuiCheckbox
+      v-if="!useLocalSetting"
+      hide-details
+      class="mt-1"
+      color="primary"
+      :value="forceUpdateMachineLanguage === 'true'"
+      @input="updateForceUpdateMachineLanguage($event)"
+    >
+      {{
+        t(
+          'general_settings.labels.force_saved_language_setting_in_machine_hint'
+        )
+      }}
+    </RuiCheckbox>
   </div>
 </template>
