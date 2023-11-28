@@ -61,7 +61,7 @@
       "addresses": "Addresses",
       "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
       "addresses_hint": "Insert multiple comma separated addresses",
-      "blockchain": "Choose blockchain",
+      "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
         "derivation_path_hint": "Optional",
@@ -2490,7 +2490,8 @@
       "language": "Selected language",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
-      "version_update_check_enabled": "Enabled"
+      "version_update_check_enabled": "Enabled",
+      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection"
     },
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
@@ -2596,6 +2597,10 @@
         "error": "Error setting version update check frequency",
         "invalid_frequency": "Period must be between {start} and {end} hours",
         "non_empty": "Please enter the number of hours"
+      },
+      "chains_to_skip_detection": {
+        "error": "Error setting EVM chains for which to skip automatic token detection",
+        "success": "EVM Chains for which to skip automatic token detection saved successfully"
       }
     },
     "version_update_check_hint": "How often (in hours) your app version will be checked for update"
