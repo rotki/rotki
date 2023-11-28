@@ -41,6 +41,8 @@ const { error, success, clear, wait, stop, setSuccess, setError } =
   useClearableMessages();
 const { updateSetting } = useSettings();
 
+const loading = ref(false);
+
 const getMessage = (
   ref: MaybeRef<string | TransformMessageCallback<string>>,
   value: any
@@ -55,6 +57,7 @@ const getMessage = (
 const update = async (newValue: any) => {
   stop();
   clear();
+  set(loading, true);
   const func = get(transform);
   const settingKey = get(setting);
   const settingValue = func ? func(newValue) : newValue;
@@ -70,6 +73,7 @@ const update = async (newValue: any) => {
     error: getMessage(errorMessage, newValue)
   });
 
+  set(loading, false);
   await wait();
 
   if ('success' in result) {
@@ -84,6 +88,11 @@ const update = async (newValue: any) => {
 
 <template>
   <div>
-    <slot :error="error" :success="success" :update="update" />
+    <slot
+      :error="error"
+      :success="success"
+      :update="update"
+      :loading="loading"
+    />
   </div>
 </template>

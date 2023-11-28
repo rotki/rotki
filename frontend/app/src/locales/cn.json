@@ -61,7 +61,7 @@
       "addresses": "地址",
       "addresses_entries": "无条目 | {count} 个唯一条目 | {count} 个唯一条目",
       "addresses_hint": "插入多个逗号分隔的地址",
-      "blockchain": "选择区块链",
+      "blockchain": "选择区块链 | 选择区块链",
       "btc": {
         "derivation_path": "推导路径",
         "derivation_path_hint": "可选",
@@ -2341,7 +2341,8 @@
       "language": "选择的语言",
       "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH",
       "version_update_check": "在应用中设置版本更新检查周期",
-      "version_update_check_enabled": "启用"
+      "version_update_check_enabled": "启用",
+      "chains_to_skip_detection": "跳过自动检测的 EVM 链"
     },
     "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
     "nft_setting": {
@@ -2431,6 +2432,10 @@
         "error": "错误设置版本更新检查频率",
         "invalid_frequency": "周期必须在 {start} 和 {end} 小时之间",
         "non_empty": "请输入小时数"
+      },
+      "chains_to_skip_detection": {
+        "error": "错误设置跳过自动令牌检测的 EVM 链",
+        "success": "成功保存的跳过自动令牌检测的 EVM 链"
       }
     },
     "version_update_check_hint": "多久（以小时为单位）检查您的应用程序版本以进行更新"

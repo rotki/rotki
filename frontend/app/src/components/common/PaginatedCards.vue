@@ -30,7 +30,7 @@ watch(items, () => set(page, 1));
 
 <template>
   <div>
-    <VPagination v-if="pages > 1" v-model="page" :length="pages" />
+    <VPagination v-if="pages > 1" v-model="page" :length="pages" class="mb-4" />
     <div class="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">
       <div v-for="item in visible" :key="identifier(item)">
         <slot name="item" :item="item" />

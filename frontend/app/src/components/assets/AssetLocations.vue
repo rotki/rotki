@@ -146,12 +146,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         <LocationDisplay
           :identifier="item.location"
           :detail-path="item.detailPath"
+          class="py-2"
         />
       </template>
       <template #item.label="{ item }">
         <div class="py-4">
           <LabeledAddressDisplay v-if="item.account" :account="item.account" />
-          <TagDisplay :tags="item.tags" />
+          <TagDisplay v-if="item.tags?.length" :tags="item.tags" />
         </div>
       </template>
       <template #item.balance.amount="{ item }">

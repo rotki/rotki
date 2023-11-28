@@ -120,6 +120,7 @@ export const useSupportedChains = createSharedComposable(() => {
     allEvmChains,
     supportedChains,
     evmChains,
+    evmChainsData,
     evmChainNames,
     txEvmChains,
     getNativeAsset,
