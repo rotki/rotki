@@ -26,7 +26,7 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import CustomAssetsFilterQuery
@@ -157,9 +157,9 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
     source_db_path = root_dir / 'tests' / 'data' / f'v{version}_global.db'
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
-    new_global_dir = new_data_dir / 'global_data'
+    new_global_dir = new_data_dir / GLOBALDIR_NAME
     new_global_dir.mkdir(parents=True, exist_ok=True)
-    copyfile(source_db_path, new_global_dir / 'global.db')
+    copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with pytest.raises(ValueError) as excinfo:
         create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
@@ -663,7 +663,7 @@ def test_global_db_restore(globaldb, database):
 
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
-    builtin_database = root_dir / 'data' / 'global.db'
+    builtin_database = root_dir / 'data' / GLOBALDB_NAME
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
@@ -805,7 +805,7 @@ def test_global_db_reset(globaldb, database):
 
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
-    builtin_database = root_dir / 'data' / 'global.db'
+    builtin_database = root_dir / 'data' / GLOBALDB_NAME
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')

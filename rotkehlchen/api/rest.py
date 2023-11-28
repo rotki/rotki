@@ -97,10 +97,12 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
+    AVATARIMAGESDIR_NAME,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     HTTP_STATUS_INTERNAL_DB_ERROR,
+    IMAGESDIR_NAME,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
@@ -1028,7 +1030,6 @@ class RestAPI:
             sync_database: bool,
             initial_settings: ModifiableDBSettings | None,
     ) -> dict[str, Any]:
-
         if self.rotkehlchen.user_is_logged_in:
             message = (
                 f'Can not create a new user because user '
@@ -4164,7 +4165,7 @@ class RestAPI:
 
         Also supports etag mechanism that helps with caching on the client side.
         """
-        avatars_dir = self.rotkehlchen.data_dir / 'icons' / 'avatars'
+        avatars_dir = self.rotkehlchen.data_dir / IMAGESDIR_NAME / AVATARIMAGESDIR_NAME
         avatar_path = avatars_dir / f'{ens_name}.png'
         if avatar_path.is_file():
             response = check_if_image_is_cached(image_path=avatar_path, match_header=match_header)
@@ -4213,7 +4214,7 @@ class RestAPI:
         icons_dir = self.rotkehlchen.icon_manager.icons_dir
         if icons is None:
             for entry in icons_dir.iterdir():
-                if entry.is_file() and entry.parent != icons_dir / 'avatars':
+                if entry.is_file():
                     entry.unlink()
 
             return api_response(OK_RESULT)
@@ -4228,7 +4229,7 @@ class RestAPI:
 
         If no avatars are provided, the avatars cache is cleared entirely.
         """
-        avatars_dir = self.rotkehlchen.icon_manager.icons_dir / 'avatars'
+        avatars_dir = self.rotkehlchen.data_dir / IMAGESDIR_NAME / AVATARIMAGESDIR_NAME
         if avatars is None:
             for entry in avatars_dir.iterdir():
                 if entry.is_file():

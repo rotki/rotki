@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -25,14 +26,15 @@ def test_query_db_info(
         start_with_logged_in_user: bool,
 ):
     """Test that retrieving user and global database details works fine"""
+    users_dir = data_dir / USERSDIR_NAME
     if start_with_logged_in_user:
-        backup1 = Path(data_dir / username / '1624053928_rotkehlchen_db_v26.backup')
+        backup1 = users_dir / username / '1624053928_rotkehlchen_db_v26.backup'
         backup1_contents = 'bla bla'
         backup1.write_text(backup1_contents)
-        backup2 = Path(data_dir / username / '1626382287_rotkehlchen_db_v27.backup')
+        backup2 = users_dir / username / '1626382287_rotkehlchen_db_v27.backup'
         backup2_contents = 'i am a bigger amount of text'
         backup2.write_text(backup2_contents)
-        Path(data_dir / username / '1633042045_rotkehlchen_db_v28.backup').touch()
+        (users_dir / username / '1633042045_rotkehlchen_db_v28.backup').touch()
 
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_response_with_result(response)
@@ -41,7 +43,7 @@ def test_query_db_info(
 
     if start_with_logged_in_user:
         userdb = result['userdb']
-        assert userdb['info']['filepath'] == str(data_dir / username / 'rotkehlchen.db')
+        assert userdb['info']['filepath'] == str(users_dir / username / USERDB_NAME)
         assert userdb['info']['size'] >= 300000  # just from comparison at tests
         assert userdb['info']['version'] == ROTKEHLCHEN_DB_VERSION
         assert len(userdb['backups']) == 3
@@ -60,7 +62,7 @@ def test_create_download_delete_backup(
     response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
     filepath = Path(assert_proper_response_with_result(response))
     assert filepath.exists()
-    assert filepath.parent == Path(data_dir, username)
+    assert filepath.parent == data_dir / USERSDIR_NAME / username
 
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_response_with_result(response)

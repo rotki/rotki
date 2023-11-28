@@ -10,6 +10,7 @@ import maxminddb
 import miniupnpc
 import requests
 
+from rotkehlchen.constants.misc import APPDIR_NAME, MISCDIR_NAME
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -33,7 +34,7 @@ def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
 
     **IMPORTANT:** The ip never leaves the user's machine. It's all calculated locally.
     """
-    geoip_dir = data_dir / 'misc'
+    geoip_dir = data_dir / APPDIR_NAME / MISCDIR_NAME
     geoip_dir.mkdir(parents=True, exist_ok=True)
     # get latest database version
     metadata_query_failed = False

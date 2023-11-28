@@ -10,6 +10,7 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
@@ -98,13 +99,13 @@ def _initialize_fixture_globaldb(
     AssetResolver().clean_memory_cache()
     root_dir = Path(__file__).resolve().parent.parent.parent
     if custom_globaldb is None:  # no specific version -- normal test
-        source_db_path = root_dir / 'data' / 'global.db'
+        source_db_path = root_dir / 'data' / GLOBALDB_NAME
     else:
         source_db_path = root_dir / 'tests' / 'data' / custom_globaldb
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
-    new_global_dir = new_data_dir / 'global_data'
+    new_global_dir = new_data_dir / GLOBALDIR_NAME
     new_global_dir.mkdir(parents=True, exist_ok=True)
-    copyfile(source_db_path, new_global_dir / 'global.db')
+    copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with ExitStack() as stack:
         stack.enter_context(
             patch('rotkehlchen.globaldb.migrations.manager.MIGRATIONS_LIST', globaldb_migrations),

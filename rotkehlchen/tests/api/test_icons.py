@@ -8,6 +8,11 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
+from rotkehlchen.constants.misc import (
+    ASSETIMAGESDIR_NAME,
+    CUSTOMASSETIMAGESDIR_NAME,
+    IMAGESDIR_NAME,
+)
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -50,7 +55,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
 
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': A_GNO.identifier}
-    uploaded_icon = data_dir / 'icons' / 'custom' / f'{gno_id_quoted}.svg'
+    uploaded_icon = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME / CUSTOMASSETIMAGESDIR_NAME / f'{gno_id_quoted}.svg'  # noqa: E501
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
 

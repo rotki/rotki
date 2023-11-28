@@ -13,6 +13,7 @@ import requests
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -37,8 +38,9 @@ def fixture_use_clean_caching_directory():
 
 @pytest.fixture(name='data_dir')
 def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
-    """The tests data dir is peristent so that we can cache price queries between
-    tests. If use_clean_caching_directory is True then a completely fresh dir is returned"""
+    """The tests data dir is peristent so that we can cache global DB.
+    Adjusted from old code. Not sure if it makes sense to keep. Could also just
+    force clean caching directory everywhere"""
     if use_clean_caching_directory:
         return Path(tmpdir_factory.mktemp('test_data_dir'))
 
@@ -48,20 +50,8 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
         data_directory = default_data_directory().parent / 'test_data'
 
     data_directory.mkdir(parents=True, exist_ok=True)
-
-    # do not keep pull github assets between tests. Can really confuse test results
-    # as we may end up with different set of assets in tests
-    (data_directory / 'assets').unlink(missing_ok=True)
-
-    # Remove any old accounts. The only reason we keep this directory around is for
-    # cached price queries, not for user DBs
-    for x in data_directory.iterdir():
-        directory_with_db = (
-            x.is_dir() and
-            ((x / 'rotkehlchen.db').exists() or (x / 'rotkehlchen_transient.db').exists())
-        )
-        if directory_with_db:
-            shutil.rmtree(x, ignore_errors=True)
+    # But always reset users
+    shutil.rmtree(data_directory / USERSDIR_NAME, ignore_errors=True)
 
     return data_directory
 

@@ -13,6 +13,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -585,7 +586,7 @@ class AssetsUpdater:
         local_schema_version = GlobalDBHandler().get_schema_version()
         data_directory = GlobalDBHandler()._data_directory
         assert data_directory is not None, 'data directory should be initialized at this point'
-        global_db_path = data_directory / 'global_data' / 'global.db'
+        global_db_path = data_directory / GLOBALDIR_NAME / GLOBALDB_NAME
 
         # We retrieve first all the files required for the different updates that will be performed
         updates = self._retrieve_update_files(

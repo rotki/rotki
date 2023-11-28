@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
@@ -310,7 +311,7 @@ class PremiumSyncManager:
         self.data.logout()  # wipes self.data.user_data_dir, so store it
         shutil.move(
             user_data_dir,  # type: ignore
-            self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
+            self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
             f'Could not verify keys for the new account. {original_exception!s}',

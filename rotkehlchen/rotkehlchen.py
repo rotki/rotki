@@ -100,6 +100,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.datadir import maybe_restructure_rotki_data_directory
 from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
@@ -139,6 +140,8 @@ class Rotkehlchen:
         else:
             self.data_dir = Path(self.args.data_dir)
             self.data_dir.mkdir(parents=True, exist_ok=True)
+
+        maybe_restructure_rotki_data_directory(self.data_dir)
 
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
             raise SystemPermissionError(

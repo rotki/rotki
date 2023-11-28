@@ -9,6 +9,7 @@ from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
@@ -29,7 +30,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
     YEARN_ABI_GROUP_4,
 )
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
-from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION
+from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, CacheType, ChainID, EvmTokenKind, Timestamp
@@ -104,8 +105,8 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler):
         patch_for_globaldb_upgrade_to(stack, 3)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
-            db_filename=GLOBAL_DB_FILENAME,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
         )
 
     assert globaldb.get_setting_value('version', 0) == 3
@@ -209,8 +210,8 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler):
         patch_for_globaldb_upgrade_to(stack, 4)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
-            db_filename=GLOBAL_DB_FILENAME,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
         )
 
     assert globaldb.get_setting_value('version', 0) == 4
@@ -336,8 +337,8 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler):
         patch_for_globaldb_upgrade_to(stack, 5)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
-            db_filename=GLOBAL_DB_FILENAME,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
         )
 
     assert globaldb.get_setting_value('version', 0) == 5
@@ -448,8 +449,8 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler):
         patch_for_globaldb_upgrade_to(stack, 6)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
-            db_filename=GLOBAL_DB_FILENAME,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
         )
     assert globaldb.get_setting_value('version', 0) == 6
     with globaldb.conn.read_ctx() as cursor:
@@ -520,7 +521,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
         create_globaldb(globaldb._data_directory, 0)
 
     # Add a backup
-    backup_path = globaldb._data_directory / 'global_data' / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here
+    backup_path = globaldb._data_directory / GLOBALDIR_NAME / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here
     shutil.copy(Path(__file__).parent.parent.parent / 'data' / 'v2_global.db', backup_path)
     backup_connection = DBConnection(
         path=str(backup_path),
@@ -551,8 +552,8 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler):
 
     maybe_upgrade_globaldb(
         connection=globaldb.conn,
-        global_dir=globaldb._data_directory / 'global_data',  # type: ignore
-        db_filename=GLOBAL_DB_FILENAME,
+        global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+        db_filename=GLOBALDB_NAME,
     )
 
     assert globaldb.get_setting_value('version', 0) == GLOBAL_DB_VERSION

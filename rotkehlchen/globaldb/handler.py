@@ -21,7 +21,12 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, NFT_DIRECTIVE
+from rotkehlchen.constants.misc import (
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    GLOBALDB_NAME,
+    GLOBALDIR_NAME,
+    NFT_DIRECTIVE,
+)
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import DBUpgradeError, InputError
@@ -46,7 +51,7 @@ from rotkehlchen.utils.serialization import (
 from .migrations.manager import LAST_DATA_MIGRATION, maybe_apply_globaldb_migrations
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
-from .utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION, globaldb_get_setting_value
+from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -174,17 +179,17 @@ def _initialize_global_db_directory(
 
     Returns the DB connection and True if a DB backup was used and False otherwise
     """
-    global_dir = data_dir / 'global_data'
+    global_dir = data_dir / GLOBALDIR_NAME
     global_dir.mkdir(parents=True, exist_ok=True)
-    dbname = global_dir / GLOBAL_DB_FILENAME
+    dbname = global_dir / GLOBALDB_NAME
     if not dbname.is_file():
         # if no global db exists, copy the built-in file
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
-        shutil.copyfile(builtin_data_dir / GLOBAL_DB_FILENAME, global_dir / GLOBAL_DB_FILENAME)
+        shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
     return initialize_globaldb(
         global_dir=global_dir,
-        db_filename=GLOBAL_DB_FILENAME,
+        db_filename=GLOBALDB_NAME,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
 
@@ -223,7 +228,7 @@ class GlobalDBHandler:
 
     def filepath(self) -> Path:
         """This should only be called after initalization of the global DB"""
-        return self._data_directory / 'global_data' / 'global.db'  # type: ignore [operator]
+        return self._data_directory / GLOBALDIR_NAME / GLOBALDB_NAME  # type: ignore [operator]
 
     def cleanup(self) -> None:
         self.conn.close()
@@ -237,7 +242,7 @@ class GlobalDBHandler:
             # mypy does not recognize the initialization as that of a singleton
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
-        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / 'global.db'
+        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / GLOBALDB_NAME
         packaged_db_conn = DBConnection(
             path=packaged_db_path,
             connection_type=DBConnectionType.GLOBAL,
@@ -1600,7 +1605,7 @@ class GlobalDBHandler:
         builtin version
         """
         root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
+        builtin_database = root_dir / 'data' / GLOBALDB_NAME
         # Update owned assets
         with user_db.conn.read_ctx() as cursor:
             user_db.update_owned_assets_in_globaldb(cursor)
@@ -1676,7 +1681,7 @@ class GlobalDBHandler:
         won't be affected by this reset.
         """
         root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
+        builtin_database = root_dir / 'data' / GLOBALDB_NAME
 
         with self.packaged_db_lock:
             try:
