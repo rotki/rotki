@@ -1,3 +1,5 @@
+from typing import Final
+
 from rotkehlchen.fval import FVal
 
 CURRENCYCONVERTER_API_KEY = 'feaa5a7ddc2d76789e58'
@@ -19,3 +21,15 @@ KRAKEN_API_VERSION = '0'
 DEFAULT_MAX_LOG_SIZE_IN_MB = 300
 DEFAULT_MAX_LOG_BACKUP_FILES = 3
 DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
+
+GLOBALDIR_NAME: Final = 'global'
+GLOBALDB_NAME: Final = 'global.db'
+USERSDIR_NAME: Final = 'users'
+USERDB_NAME: Final = 'rotkehlchen.db'
+IMAGESDIR_NAME: Final = 'images'
+ASSETIMAGESDIR_NAME: Final = 'assets'
+AVATARIMAGESDIR_NAME: Final = 'avatars'
+ALLASSETIMAGESDIR_NAME: Final = 'all'
+CUSTOMASSETIMAGESDIR_NAME: Final = 'custom'
+MISCDIR_NAME: Final = 'misc'
+APPDIR_NAME: Final = 'app'

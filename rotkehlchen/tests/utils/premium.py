@@ -4,6 +4,7 @@ from typing import Literal
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
@@ -205,7 +206,7 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == A_GBP
     # Also check a copy of our old DB is kept around.
-    directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
+    directory = rotkehlchen_instance.data.data_directory / USERSDIR_NAME / username
     files = [
         os.path.join(directory, f) for f in os.listdir(directory)
         if (not f.endswith('backup') or f.startswith('rotkehlchen_db')) and not f.startswith('rotkehlchen_transient')  # noqa: E501
@@ -216,7 +217,7 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     main_db_exists = False
     backup_db_exists = False
     for file in files:
-        if 'rotkehlchen.db' in file:
+        if USERDB_NAME in file:
             main_db_exists = True
         elif 'backup' in file:
             backup_db_exists = True

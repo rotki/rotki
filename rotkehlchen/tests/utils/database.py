@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
+from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import InputError
@@ -172,7 +173,7 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
         os.path.join(os.path.dirname(dir_path), 'data', filename),
-        user_data_dir / 'rotkehlchen.db',
+        user_data_dir / USERDB_NAME,
     )
 
 

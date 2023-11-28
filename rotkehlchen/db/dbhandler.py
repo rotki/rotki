@@ -42,7 +42,7 @@ from rotkehlchen.constants.limits import (
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
@@ -140,7 +140,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
-MAIN_DB_NAME = 'rotkehlchen.db'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
 
@@ -252,7 +251,7 @@ class DBHandler:
         backup_to_use = sorted(found_backups)[-1]  # Use latest backup
         shutil.copyfile(
             self.user_data_dir / backup_to_use,
-            self.user_data_dir / 'rotkehlchen.db',
+            self.user_data_dir / USERDB_NAME,
         )
         self.msg_aggregator.add_warning(
             f'Your encrypted database was in a half-upgraded state. '
@@ -333,7 +332,7 @@ class DBHandler:
         assert self.conn is None, 'md5hash should be taken only with a closed DB'
         if transient:  # type: ignore
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
-        return file_md5(self.user_data_dir / MAIN_DB_NAME)
+        return file_md5(self.user_data_dir / USERDB_NAME)
 
     @overload
     def get_setting(self, cursor: 'DBCursor', name: Literal['version']) -> int:
@@ -405,7 +404,7 @@ class DBHandler:
         - AuthenticationError if the given password is not the right one for the DB
         """
         if conn_attribute == 'conn':
-            fullpath = self.user_data_dir / MAIN_DB_NAME
+            fullpath = self.user_data_dir / USERDB_NAME
             connection_type = DBConnectionType.USER
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
@@ -509,7 +508,7 @@ class DBHandler:
         - AuthenticationError if the wrong password is given
         """
         self.disconnect()
-        rdbpath = self.user_data_dir / MAIN_DB_NAME
+        rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it
         shutil.copy2(
             rdbpath,
@@ -2902,8 +2901,8 @@ class DBHandler:
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
 
     def get_db_info(self, cursor: 'DBCursor') -> dict[str, Any]:
-        filepath = self.user_data_dir / 'rotkehlchen.db'
-        size = Path(self.user_data_dir / 'rotkehlchen.db').stat().st_size
+        filepath = self.user_data_dir / USERDB_NAME
+        size = Path(self.user_data_dir / USERDB_NAME).stat().st_size
         version = self.get_setting(cursor, 'version')
         return {
             'filepath': str(filepath),
@@ -2941,7 +2940,7 @@ class DBHandler:
         new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
         new_db_path = self.user_data_dir / new_db_filename
         shutil.copyfile(
-            self.user_data_dir / 'rotkehlchen.db',
+            self.user_data_dir / USERDB_NAME,
             new_db_path,
         )
         return new_db_path

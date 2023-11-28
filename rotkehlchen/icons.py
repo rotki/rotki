@@ -13,6 +13,12 @@ from flask import Response, make_response
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants.misc import (
+    ALLASSETIMAGESDIR_NAME,
+    ASSETIMAGESDIR_NAME,
+    CUSTOMASSETIMAGESDIR_NAME,
+    IMAGESDIR_NAME,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -116,8 +122,9 @@ class IconManager:
             coingecko: Coingecko,
             greenlet_manager: 'GreenletManager',
     ) -> None:
-        self.icons_dir = data_dir / 'icons'
-        self.custom_icons_dir = self.icons_dir / 'custom'
+        asset_images_dir = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME
+        self.icons_dir = asset_images_dir / ALLASSETIMAGESDIR_NAME
+        self.custom_icons_dir = asset_images_dir / CUSTOMASSETIMAGESDIR_NAME
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)

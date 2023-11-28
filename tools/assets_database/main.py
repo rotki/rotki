@@ -1,5 +1,6 @@
 """Tool to pull an assets database from Github, and apply updates to it"""
 from gevent import monkey
+
 monkey.patch_all()  # isort:skip
 
 import argparse
@@ -10,6 +11,7 @@ from tempfile import TemporaryDirectory
 
 import requests
 
+from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
@@ -66,7 +68,7 @@ def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
         sys.exit(1)
 
     total_bytes = 0
-    dbpath = directory / 'global.db'
+    dbpath = directory / GLOBALDB_NAME
     chunk_size = 4096
     print(f'Downloading v{version} globaldb from the remote...')
     with open(dbpath, 'wb') as f:
@@ -87,8 +89,8 @@ def main() -> None:
     if not target_directory.is_dir():
         print(f'Given directory {target_directory} not a valid directory')
         sys.exit(1)
-    # The way global db works it needs to be under a directory called 'global_data'
-    target_global_dir = target_directory / 'global_data'
+    # The way global db works it needs to be under a directory called 'global'
+    target_global_dir = target_directory / GLOBALDIR_NAME
     target_global_dir.mkdir(parents=True, exist_ok=True)
     get_remote_global_db(
         directory=target_global_dir,
@@ -112,8 +114,8 @@ def main() -> None:
 
     # Due to the way globaldb initializes we have two of them. Clean up the extra one
     print('Cleaning up...')
-    (target_directory / 'global_data' / 'global.db').rename(target_directory / 'global.db')
-    shutil.rmtree(target_directory / 'global_data')
+    (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)
+    shutil.rmtree(target_directory / GLOBALDIR_NAME)
     print('Done!')
 
 

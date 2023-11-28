@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 GLOBAL_DB_VERSION = 6
 ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
-GLOBAL_DB_FILENAME = 'global.db'
 
 # Some functions that split the logic out of some GlobalDB query functions that are
 # complicated enough to be abstracted and are used in multiple places. The main reason

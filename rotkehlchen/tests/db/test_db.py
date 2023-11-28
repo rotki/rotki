@@ -1,6 +1,5 @@
 import dataclasses
 import logging
-import os
 import time
 from contextlib import suppress
 from copy import deepcopy
@@ -25,6 +24,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
 )
+from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -156,9 +156,10 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
     """DB Creation logic and tables at start testing"""
     msg_aggregator = MessagesAggregator()
     # Creating a new data dir should work
+    users_dir = data_dir / USERSDIR_NAME
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
-    assert os.path.exists(os.path.join(data_dir, username))
+    assert (users_dir / username).exists()
 
     # Trying to re-create it should throw
     with pytest.raises(AuthenticationError):

@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 
+from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.user_messages import MessagesAggregator
@@ -99,12 +100,13 @@ def test_users_query_permission_error(
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
 ):
-    not_allowed_dir = os.path.join(data_dir, 'notallowed')
-    allowed_user_dir = os.path.join(data_dir, 'allowed_user')
-    os.mkdir(not_allowed_dir)
+    users_dir = data_dir / USERSDIR_NAME
+    not_allowed_dir = users_dir / 'notallowed'
+    allowed_user_dir = users_dir / 'allowed_user'
+    not_allowed_dir.mkdir(parents=True)
     os.chmod(not_allowed_dir, 0o200)
-    os.mkdir(allowed_user_dir)
-    Path(Path(allowed_user_dir) / 'rotkehlchen.db').touch()
+    allowed_user_dir.mkdir(parents=True)
+    (allowed_user_dir / USERDB_NAME).touch()
     handler = DataHandler(
         data_directory=data_dir,
         msg_aggregator=function_scope_messages_aggregator,

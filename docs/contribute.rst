@@ -877,9 +877,9 @@ Database Location
 
 Databases are stored in directories under the `rotki data directory <https://rotki.readthedocs.io/en/latest/usage_guide.html#rotki-data-directory>`__.
 
-The global database is stored at ``global_data/global.db``.
+The global database is stored at ``global/global.db``.
 
-The accounts you create in rotki have their own database stored at ``<account_name>/rotkehlchen.db``.
+The accounts you create in rotki have their own database stored at ``users/<account_name>/rotkehlchen.db``.
 
 Exploring the database
 ======================

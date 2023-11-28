@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from rotkehlchen.constants.misc import AVATARIMAGESDIR_NAME, IMAGESDIR_NAME
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
 def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
     """Checks that clearing the cache for avatars and icons work as expected."""
     icons_dir = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager.icons_dir
-    avatars_dir = icons_dir / 'avatars'
+    data_dir = rotkehlchen_api_server.rest_api.rotkehlchen.data_dir
+    avatars_dir = data_dir / IMAGESDIR_NAME / AVATARIMAGESDIR_NAME
     avatars_dir.mkdir(exist_ok=True)
 
     dbens = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)

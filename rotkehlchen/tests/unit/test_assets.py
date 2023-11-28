@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_evm_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
+from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -754,12 +755,12 @@ def test_symbol_or_name(database):
 
 def test_load_from_packaged_db(globaldb: GlobalDBHandler):
     """Test that connecting to the packaged globaldb doesn't try to write into it."""
-    packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
+    packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / GLOBALDB_NAME
     with TemporaryDirectory(
             ignore_cleanup_errors=True,  # needed on windows, see https://tinyurl.com/tmp-win-err
     ) as tmpdirname:
         # Create a copy of the global db in a temp file
-        dest_file = Path(tmpdirname) / 'data' / 'global.db'
+        dest_file = Path(tmpdirname) / 'data' / GLOBALDB_NAME
         os.makedirs(dest_file.parent, exist_ok=True)
         backup = shutil.copy(packaged_db_path, dest_file)
 

@@ -321,8 +321,7 @@ def test_migration_5(database, data_dir, greenlet_manager):
     Path(icons_path, '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').touch()
     Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').touch()
     Path(icons_path, 'eip155%3A1%2Ferc20%3A0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').touch()  # noqa: E501
-    # the two files + the custom assets folder
-    assert len(list(icon_manager.icons_dir.iterdir())) == 5
+    assert len(list(icon_manager.icons_dir.iterdir())) == 4
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 

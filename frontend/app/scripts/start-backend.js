@@ -15,7 +15,7 @@ process.stdout.write(`Using ${dataDir} to start tests\n`);
 const cleanupData = () => {
   const contents = fs.readdirSync(dataDir);
   for (const name of contents) {
-    if (['icons', 'price_history', 'global_data'].includes(name)) {
+    if (['images', 'global'].includes(name)) {
       continue;
     }
 

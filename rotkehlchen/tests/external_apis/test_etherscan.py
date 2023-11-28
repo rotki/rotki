@@ -29,7 +29,7 @@ from rotkehlchen.types import (
 
 @pytest.fixture(name='temp_etherscan')
 def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, sql_vm_instructions_cb):  # noqa: E501
-    directory = tmpdir_factory.mktemp('data')
+    directory = tmpdir_factory.mktemp('someuserdata')
     db = DBHandler(
         user_data_dir=directory,
         password='123',

@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
+* :feature:`4841` The rotki data directory is now more organized.
 
 * :release:`1.31.0 <2023-11-24>`
 * :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.
