@@ -146,7 +146,9 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Curve': True,  # True means all
     # Curve gauges balances are now being detected separately by us
     'Curve • Liquidity Gauges': True,  # True means all
-    # Chitoken is is in our packaged DB
+    # Chai is a normal token we query
+    'Chai': True,  # True means all
+    # Chitoken is a normal token we query
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
     'yearn.finance • Vaults': True,  # True means all
