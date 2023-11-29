@@ -1,6 +1,8 @@
 =========
 Changelog
 =========
+* :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
+* :bug:`-` Fix issue where the reports page cannot be loaded if there is old report from older version.
 * :bug:`-` Fix the issue where the app freezes for a few seconds on logout.
 * :bug:`7009` PnL reports with an old type of event (such as DailyStats) following a swap will no longer fail with an exception.
 * :bug:`6998` If a username contains a '.' the user will now be able to log in properly again.
