@@ -27,6 +27,7 @@ import {
   RiCalendar2Line,
   RiCalendarEventLine,
   RiCashLine,
+  RiChatQuoteLine,
   RiCheckDoubleLine,
   RiCheckboxCircleLine,
   RiCheckboxMultipleLine,
@@ -340,6 +341,7 @@ Vue.use(RuiPlugin, {
     RiLoopLeftLine,
     RiBugLine,
     RiVirusLine,
-    RiFileSearchLine
+    RiFileSearchLine,
+    RiChatQuoteLine
   ]
 });

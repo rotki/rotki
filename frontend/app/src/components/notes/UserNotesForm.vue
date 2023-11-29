@@ -18,7 +18,7 @@ const input = (newInput: Partial<UserNote>) => {
   emit('input', { ...get(value), ...newInput });
 };
 
-const { valid, setValidation } = useUserNotesForm();
+const { setValidation } = useUserNotesForm();
 
 const rules = {
   content: {
@@ -37,23 +37,20 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <VForm :value="valid" class="pt-2">
-    <div>
-      <VTextField
-        :value="value.title"
-        outlined
-        :placeholder="t('notes_menu.labels.title')"
-        @input="input({ title: $event })"
-      />
-    </div>
-    <div>
-      <VTextarea
-        :value="value.content"
-        outlined
-        :placeholder="t('notes_menu.labels.content')"
-        :error-messages="toMessages(v$.content)"
-        @input="input({ content: $event })"
-      />
-    </div>
-  </VForm>
+  <div>
+    <RuiTextField
+      :value="value.title"
+      variant="outlined"
+      color="primary"
+      :label="t('notes_menu.labels.title')"
+      @input="input({ title: $event })"
+    />
+    <VTextarea
+      :value="value.content"
+      outlined
+      :label="t('notes_menu.labels.content')"
+      :error-messages="toMessages(v$.content)"
+      @input="input({ content: $event })"
+    />
+  </div>
 </template>

@@ -57,7 +57,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation } = useAddressBookForm();
+const { setValidation } = useAddressBookForm();
 
 const v$ = setValidation(
   rules,
@@ -76,79 +76,71 @@ const { getBlockie } = useBlockie();
 </script>
 
 <template>
-  <VForm :value="valid">
-    <div class="mt-2">
-      <div>
-        <VSelect
-          :value="value.location"
-          outlined
-          :label="t('common.location')"
-          :items="locations"
-          :disabled="edit"
-          @input="input({ location: $event })"
-        >
-          <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
-          <template #selection="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-        </VSelect>
-      </div>
-      <div>
-        <ChainSelect
-          evm-only
-          :model-value="value.blockchain"
-          :disabled="edit || enableForAllChains"
-          @update:model-value="input({ blockchain: $event })"
-        />
-        <VCheckbox
-          :disabled="edit"
-          class="mt-0"
-          :input-value="enableForAllChains"
-          :label="t('address_book.form.labels.for_all_chain')"
-          @change="updateAllChainsState($event)"
-        />
-      </div>
-      <div>
-        <ComboboxWithCustomInput
-          :value="value.address || ''"
-          outlined
-          :label="t('address_book.form.labels.address')"
-          :items="addressSuggestions"
-          :no-data-text="t('address_book.form.no_suggestions_available')"
-          :disabled="edit"
-          :error-messages="toMessages(v$.address)"
-          auto-select-first
-          @input="input({ address: $event })"
-        >
-          <template #prepend-inner>
-            <span>
-              <VAvatar size="24" class="mr-2" color="grey">
-                <VImg
-                  v-if="value.address && isValidEthAddress(value.address)"
-                  :src="getBlockie(value.address)"
-                />
-              </VAvatar>
-            </span>
-          </template>
-          <template #item="{ item }">
-            <span v-if="item">
-              <VAvatar size="24" class="mr-2">
-                <VImg :src="getBlockie(item)" />
-              </VAvatar>
-            </span>
-            {{ item }}
-          </template>
-        </ComboboxWithCustomInput>
-      </div>
-      <div>
-        <VTextField
-          :value="value.name"
-          outlined
-          :label="t('common.name')"
-          :error-messages="toMessages(v$.name)"
-          @input="input({ name: $event })"
-        />
-      </div>
-    </div>
-  </VForm>
+  <form>
+    <VSelect
+      :value="value.location"
+      outlined
+      :label="t('common.location')"
+      :items="locations"
+      :disabled="edit"
+      @input="input({ location: $event })"
+    >
+      <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
+      <template #selection="{ item }">
+        {{ toSentenceCase(item) }}
+      </template>
+    </VSelect>
+    <ChainSelect
+      evm-only
+      :model-value="value.blockchain"
+      :disabled="edit || enableForAllChains"
+      @update:model-value="input({ blockchain: $event })"
+    />
+    <RuiCheckbox
+      :disabled="edit"
+      color="primary"
+      class="-my-2"
+      :value="enableForAllChains"
+      :label="t('address_book.form.labels.for_all_chain')"
+      @input="updateAllChainsState($event)"
+    />
+    <ComboboxWithCustomInput
+      :value="value.address || ''"
+      outlined
+      :label="t('address_book.form.labels.address')"
+      :items="addressSuggestions"
+      :no-data-text="t('address_book.form.no_suggestions_available')"
+      :disabled="edit"
+      :error-messages="toMessages(v$.address)"
+      auto-select-first
+      @input="input({ address: $event })"
+    >
+      <template #prepend-inner>
+        <span>
+          <VAvatar size="24" class="mr-2" color="grey">
+            <VImg
+              v-if="value.address && isValidEthAddress(value.address)"
+              :src="getBlockie(value.address)"
+            />
+          </VAvatar>
+        </span>
+      </template>
+      <template #item="{ item }">
+        <span v-if="item">
+          <VAvatar size="24" class="mr-2">
+            <VImg :src="getBlockie(item)" />
+          </VAvatar>
+        </span>
+        {{ item }}
+      </template>
+    </ComboboxWithCustomInput>
+    <RuiTextField
+      :value="value.name"
+      variant="outlined"
+      color="primary"
+      :label="t('common.name')"
+      :error-messages="toMessages(v$.name)"
+      @input="input({ name: $event })"
+    />
+  </form>
 </template>

@@ -93,7 +93,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation, setSubmitFunc } = useTradesForm();
+const { setValidation, setSubmitFunc } = useTradesForm();
 
 const v$ = setValidation(
   rules,
@@ -291,7 +291,7 @@ onMounted(setEditMode);
 </script>
 
 <template>
-  <VForm :value="valid" data-cy="trade-form" class="external-trade-form pt-1">
+  <form data-cy="trade-form" class="external-trade-form">
     <DateTimePicker
       v-model="datetime"
       outlined
@@ -303,64 +303,58 @@ onMounted(setEditMode);
       :error-messages="errorMessages['timestamp']"
     />
 
-    <VRow class="pt-1">
-      <VCol cols="12" md="4">
-        <div data-cy="type">
-          <VRadioGroup
-            v-model="type"
-            class="mt-2 mt-md-3"
-            hide-details
-            :column="false"
-            required
-            :label="t('external_trade_form.trade_type.label')"
-          >
-            <VRadio
-              class="ml-4"
-              :label="t('external_trade_form.trade_type.buy')"
-              value="buy"
-            />
-            <VRadio
-              class="ml-4"
-              :label="t('external_trade_form.trade_type.sell')"
-              value="sell"
-            />
-          </VRadioGroup>
+    <div class="grid md:grid-cols-3 gap-x-4 gap-y-2">
+      <div data-cy="type">
+        <VRadioGroup
+          v-model="type"
+          class="md:mt-7"
+          hide-details
+          :column="false"
+          required
+          :label="t('external_trade_form.trade_type.label')"
+        >
+          <VRadio
+            class="ml-4"
+            :label="t('external_trade_form.trade_type.buy')"
+            value="buy"
+          />
+          <VRadio
+            class="ml-4"
+            :label="t('external_trade_form.trade_type.sell')"
+            value="sell"
+          />
+        </VRadioGroup>
+      </div>
+      <div
+        class="col-span-2 flex flex-col md:flex-row md:items-start gap-x-4 pt-4"
+      >
+        <AssetSelect
+          v-model="base"
+          class="flex-1"
+          outlined
+          required
+          data-cy="base-asset"
+          :error-messages="toMessages(v$.baseAsset)"
+          :hint="t('external_trade_form.base_asset.hint')"
+          :label="t('external_trade_form.base_asset.label')"
+          @blur="v$.baseAsset.$touch()"
+        />
+        <div class="text-rui-text-secondary md:mt-4 mb-4">
+          {{ quoteHint }}
         </div>
-      </VCol>
-      <VCol cols="12" md="8" class="flex flex-col">
-        <VRow>
-          <VCol cols="12" md="5" class="flex flex-row items-center">
-            <AssetSelect
-              v-model="base"
-              outlined
-              required
-              data-cy="base-asset"
-              :error-messages="toMessages(v$.baseAsset)"
-              :hint="t('external_trade_form.base_asset.hint')"
-              :label="t('external_trade_form.base_asset.label')"
-              @blur="v$.baseAsset.$touch()"
-            />
-          </VCol>
-          <VCol class="flex flex-row items-center">
-            <div class="text--secondary external-trade-form__action-hint">
-              {{ quoteHint }}
-            </div>
-          </VCol>
-          <VCol cols="12" md="5" class="flex flex-row items-center">
-            <AssetSelect
-              v-model="quote"
-              required
-              outlined
-              data-cy="quote-asset"
-              :error-messages="toMessages(v$.quoteAsset)"
-              :hint="t('external_trade_form.quote_asset.hint')"
-              :label="t('external_trade_form.quote_asset.label')"
-              @blur="v$.quoteAsset.$touch()"
-            />
-          </VCol>
-        </VRow>
-      </VCol>
-    </VRow>
+        <AssetSelect
+          v-model="quote"
+          class="flex-1"
+          required
+          outlined
+          data-cy="quote-asset"
+          :error-messages="toMessages(v$.quoteAsset)"
+          :hint="t('external_trade_form.quote_asset.hint')"
+          :label="t('external_trade_form.quote_asset.label')"
+          @blur="v$.quoteAsset.$touch()"
+        />
+      </div>
+    </div>
 
     <div class="mt-2">
       <AmountInput
@@ -393,14 +387,12 @@ onMounted(setEditMode);
       />
       <div
         v-if="shouldRenderSummary"
-        class="text-caption green--text mt-n4 mb-n1"
+        class="flex items-center gap-2 text-caption text-rui-success -mt-4 -mb-6 ml-3"
       >
-        <VIcon small class="mr-2 green--text"> mdi-comment-quote </VIcon>
+        <RuiIcon size="16" name="chat-quote-line" />
         <i18n v-if="type === 'buy'" path="external_trade_form.summary.buy">
           <template #label>
-            <strong>
-              {{ t('external_trade_form.summary.label') }}
-            </strong>
+            <strong>{{ t('external_trade_form.summary.label') }}</strong>
           </template>
           <template #amount>
             <strong>
@@ -425,9 +417,7 @@ onMounted(setEditMode);
           path="external_trade_form.summary.sell"
         >
           <template #label>
-            <strong>
-              {{ t('external_trade_form.summary.label') }}
-            </strong>
+            <strong>{{ t('external_trade_form.summary.label') }}</strong>
           </template>
           <template #amount>
             <strong>
@@ -451,43 +441,40 @@ onMounted(setEditMode);
 
     <VDivider class="mb-6 mt-8" />
 
-    <VRow class="mb-2">
-      <VCol cols="12" md="6">
-        <AmountInput
-          ref="feeInput"
-          v-model="fee"
-          class="external-trade-form__fee"
-          persistent-hint
-          outlined
-          data-cy="fee"
-          :required="!!feeCurrency"
-          :label="t('external_trade_form.fee.label')"
-          :hint="t('external_trade_form.fee.hint')"
-          :error-messages="toMessages(v$.fee)"
-          @input="triggerFeeValidator()"
-        />
-      </VCol>
-      <VCol cols="12" md="6">
-        <AssetSelect
-          ref="feeCurrencyInput"
-          v-model="feeCurrency"
-          data-cy="fee-currency"
-          outlined
-          persistent-hint
-          :label="t('external_trade_form.fee_currency.label')"
-          :hint="t('external_trade_form.fee_currency.hint')"
-          :required="!!fee"
-          :error-messages="toMessages(v$.feeCurrency)"
-          @input="triggerFeeValidator()"
-        />
-      </VCol>
-    </VRow>
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2 mb-2">
+      <AmountInput
+        ref="feeInput"
+        v-model="fee"
+        class="external-trade-form__fee"
+        persistent-hint
+        outlined
+        data-cy="fee"
+        :required="!!feeCurrency"
+        :label="t('external_trade_form.fee.label')"
+        :hint="t('external_trade_form.fee.hint')"
+        :error-messages="toMessages(v$.fee)"
+        @input="triggerFeeValidator()"
+      />
+      <AssetSelect
+        ref="feeCurrencyInput"
+        v-model="feeCurrency"
+        data-cy="fee-currency"
+        outlined
+        persistent-hint
+        :label="t('external_trade_form.fee_currency.label')"
+        :hint="t('external_trade_form.fee_currency.hint')"
+        :required="!!fee"
+        :error-messages="toMessages(v$.feeCurrency)"
+        @input="triggerFeeValidator()"
+      />
+    </div>
 
-    <VTextField
+    <RuiTextField
       v-model="link"
       data-cy="link"
-      outlined
-      prepend-inner-icon="mdi-link"
+      variant="outlined"
+      color="primary"
+      prepend-icon="link"
       :label="t('external_trade_form.link.label')"
       persistent-hint
       :hint="t('external_trade_form.link.hint')"
@@ -505,14 +492,5 @@ onMounted(setEditMode);
       :hint="t('external_trade_form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />
-  </VForm>
+  </form>
 </template>
-
-<style scoped lang="scss">
-.external-trade-form {
-  &__action-hint {
-    width: 60px;
-    margin-top: -2rem;
-  }
-}
-</style>

@@ -35,7 +35,7 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
 </script>
 
 <template>
-  <form class="history-event-form pt-4">
+  <form class="history-event-form">
     <VSelect
       v-model="entryType"
       data-cy="entry-type"

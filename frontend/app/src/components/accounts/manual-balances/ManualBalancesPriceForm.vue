@@ -140,54 +140,42 @@ defineExpose({
 
 <template>
   <div>
-    <VRow class="pb-8">
-      <VCol class="col" md="6">
-        <AmountInput
-          v-model="price"
-          :disabled="fetchingPrice || !isCustomPrice || pending"
-          :loading="fetchingPrice"
-          outlined
-          hide-details
-          :label="t('common.price')"
-        />
-      </VCol>
-
-      <VCol class="col" md="6">
-        <AssetSelect
-          v-model="priceAsset"
-          :disabled="fetchingPrice || !isCustomPrice || pending"
-          :loading="fetchingPrice"
-          outlined
-          hide-details
-          :label="t('manual_balances_form.fields.price_asset')"
-        />
-      </VCol>
-    </VRow>
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <AmountInput
+        v-model="price"
+        :disabled="fetchingPrice || !isCustomPrice || pending"
+        :loading="fetchingPrice"
+        outlined
+        :label="t('common.price')"
+      />
+      <AssetSelect
+        v-model="priceAsset"
+        :disabled="fetchingPrice || !isCustomPrice || pending"
+        :loading="fetchingPrice"
+        outlined
+        :label="t('manual_balances_form.fields.price_asset')"
+      />
+    </div>
 
     <div
       v-if="fiatPriceHint"
-      class="mt-n10 mb-8 text-body-2 font-bold green--text"
+      class="-mt-4 mb-4 text-body-2 font-bold text-rui-success"
     >
-      <span
-        >{{
-          t('common.price_in_symbol', {
-            symbol: currencySymbol
-          })
-        }}:
-      </span>
-      <span>
-        <AmountDisplay :value="fiatPriceHint" :fiat-currency="currencySymbol" />
-      </span>
+      {{
+        t('common.price_in_symbol', {
+          symbol: currencySymbol
+        })
+      }}:
+      <AmountDisplay :value="fiatPriceHint" :fiat-currency="currencySymbol" />
     </div>
 
-    <VRow v-if="fetchedPrice" class="mt-n10 mb-0">
-      <VCol cols="auto">
-        <VCheckbox
-          v-model="isCustomPrice"
-          :disabled="pending"
-          :label="t('manual_balances_form.fields.input_manual_price')"
-        />
-      </VCol>
-    </VRow>
+    <RuiCheckbox
+      v-if="fetchedPrice"
+      v-model="isCustomPrice"
+      color="primary"
+      class="-my-2"
+      :disabled="pending"
+      :label="t('manual_balances_form.fields.input_manual_price')"
+    />
   </div>
 </template>

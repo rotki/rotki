@@ -25,9 +25,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard class="[&>div:last-child]:p-0 mb-4">
+  <RuiCard no-padding class="mb-4">
     <template #custom-header>
-      <div class="flex items-center justify-between p-4">
+      <div class="flex items-center justify-between">
         <h6 class="text-h6">
           {{ t('kraken_staking_received.title') }}
         </h6>

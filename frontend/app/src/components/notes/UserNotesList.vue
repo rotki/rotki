@@ -189,44 +189,40 @@ onMounted(async () => {
 
 <template>
   <Fragment>
-    <div class="pa-4 pb-0">
-      <div class="mb-4 flex items-center">
-        <VBtn
-          rounded
-          color="primary"
-          fab
-          small
-          depressed
-          :disabled="showUpgradeRow"
-          @click="addNote()"
-        >
-          <VIcon>mdi-plus</VIcon>
-        </VBtn>
+    <div class="p-4 flex items-center gap-4">
+      <RuiTextField
+        v-model="search"
+        variant="outlined"
+        color="primary"
+        dense
+        class="flex-1"
+        prepend-icon="search-line"
+        :label="t('notes_menu.search')"
+        clearable
+        hide-details
+      />
 
-        <VTextField
-          v-model="search"
-          outlined
-          dense
-          class="ml-4"
-          prepend-inner-icon="mdi-magnify"
-          :label="t('notes_menu.search')"
-          clearable
-          hide-details
-        />
-      </div>
-    </div>
-
-    <div v-if="loading" class="flex justify-center pt-2">
-      <VProgressCircular color="primary" indeterminate width="2" size="50" />
-    </div>
-
-    <div v-else ref="wrapper" class="px-4 note__wrapper">
-      <VAlert
-        v-if="showUpgradeRow"
-        type="warning"
-        text
-        class="pa-2 text-subtitle-2"
+      <RuiButton
+        icon
+        color="primary"
+        class="!p-2"
+        :disabled="showUpgradeRow"
+        @click="addNote()"
       >
+        <RuiIcon name="add-line" />
+      </RuiButton>
+    </div>
+
+    <div v-if="loading" class="note__wrapper flex flex-col gap-3 px-4 pb-4">
+      <RuiCard v-for="n in 10" :key="n" class="[&>div]:flex [&>div]:flex-col">
+        <RuiSkeletonLoader class="w-20 mb-3" />
+        <RuiSkeletonLoader class="w-24 mb-6" />
+        <RuiSkeletonLoader class="w-16 self-end" />
+      </RuiCard>
+    </div>
+
+    <div v-else ref="wrapper" class="px-4 pb-4 note__wrapper">
+      <RuiAlert v-if="showUpgradeRow" type="warning" class="mb-4">
         <i18n path="notes_menu.limit_warning">
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
@@ -236,16 +232,15 @@ onMounted(async () => {
             />
           </template>
         </i18n>
-      </VAlert>
+      </RuiAlert>
 
       <div v-if="notes.data.length > 0">
-        <div>
+        <div class="flex flex-col gap-3">
           <template v-for="note in notes.data">
-            <VSheet
+            <RuiCard
               :key="note.identifier"
-              outlined
-              rounded
-              class="note__item pa-3 pt-2 mb-4"
+              dense
+              class="note__item"
               :class="{
                 'note__item--deleting':
                   animateDelete && idToDelete === note.identifier
@@ -255,10 +250,19 @@ onMounted(async () => {
                 <div class="font-bold note__title">
                   {{ note.title }}
                 </div>
-                <VBtn icon @click="togglePin(note)">
-                  <VIcon v-if="note.isPinned" color="primary">mdi-pin</VIcon>
-                  <VIcon v-else color="gray">mdi-pin-outline</VIcon>
-                </VBtn>
+                <RuiButton
+                  class="!p-2"
+                  variant="text"
+                  icon
+                  @click="togglePin(note)"
+                >
+                  <RuiIcon
+                    v-if="note.isPinned"
+                    color="primary"
+                    name="pushpin-line"
+                  />
+                  <RuiIcon v-else size="20" name="unpin-line" />
+                </RuiButton>
               </div>
 
               <div class="text--secondary note__content">
@@ -269,47 +273,65 @@ onMounted(async () => {
                 v-if="showDeleteConfirmation && idToDelete === note.identifier"
                 class="flex justify-between items-center pt-2"
               >
-                <div class="note__content font-italic">
+                <div class="note__content font-italic flex-1">
                   {{ t('notes_menu.delete_confirmation') }}
                 </div>
-                <div>
-                  <VBtn icon small @click="clearDeleteDialog()">
-                    <VIcon small color="red">mdi-close</VIcon>
-                  </VBtn>
+                <RuiButton
+                  variant="text"
+                  icon
+                  size="sm"
+                  color="error"
+                  @click="clearDeleteDialog()"
+                >
+                  <RuiIcon size="16" color="error" name="close-line" />
+                </RuiButton>
 
-                  <VBtn icon small @click="confirmDelete()">
-                    <VIcon small color="green">mdi-check</VIcon>
-                  </VBtn>
-                </div>
+                <RuiButton
+                  variant="text"
+                  icon
+                  size="sm"
+                  @click="confirmDelete()"
+                >
+                  <RuiIcon size="16" color="success" name="check-line" />
+                </RuiButton>
               </div>
               <div v-else class="flex justify-between items-center pt-2">
-                <div class="note__datetime text--secondary font-italic">
-                  <i18n path="notes_menu.last_updated">
-                    <template #datetime>
-                      <DateDisplay :timestamp="note.lastUpdateTimestamp" />
-                    </template>
-                  </i18n>
-                </div>
-                <div>
-                  <VBtn icon small @click="editNote(note)">
-                    <VIcon small>mdi-pencil-outline</VIcon>
-                  </VBtn>
+                <i18n
+                  path="notes_menu.last_updated"
+                  class="note__datetime text--secondary font-italic flex-1"
+                >
+                  <template #datetime>
+                    <DateDisplay :timestamp="note.lastUpdateTimestamp" />
+                  </template>
+                </i18n>
+                <RuiButton
+                  variant="text"
+                  icon
+                  size="sm"
+                  @click="editNote(note)"
+                >
+                  <RuiIcon size="16" name="pencil-line" />
+                </RuiButton>
 
-                  <VBtn icon small @click="deleteNote(note.identifier)">
-                    <VIcon small>mdi-delete-outline</VIcon>
-                  </VBtn>
-                </div>
+                <RuiButton
+                  variant="text"
+                  icon
+                  size="sm"
+                  @click="deleteNote(note.identifier)"
+                >
+                  <RuiIcon size="16" name="delete-bin-line" />
+                </RuiButton>
               </div>
-            </VSheet>
+            </RuiCard>
           </template>
+        </div>
 
-          <div v-if="totalPage > 1" class="mb-4">
-            <VPagination
-              :value="page"
-              :length="totalPage"
-              @input="changePage($event)"
-            />
-          </div>
+        <div v-if="totalPage > 1" class="mt-4">
+          <VPagination
+            :value="page"
+            :length="totalPage"
+            @input="changePage($event)"
+          />
         </div>
       </div>
 

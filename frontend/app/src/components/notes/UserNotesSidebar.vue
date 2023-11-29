@@ -91,44 +91,33 @@ const { smAndDown } = useDisplay();
     hide-overlay
     @input="visibleUpdate($event)"
   >
-    <VSheet elevation="2">
-      <VRow no-gutters justify="space-between" align="center">
-        <VCol>
-          <VTabs
-            v-model="tab"
-            class="tabs"
-            fixed-tabs
-            height="42"
-            mobile-breakpoint="0"
-          >
-            <VTab>
-              {{ t('notes_menu.tabs.general') }}
-            </VTab>
-            <VTooltip bottom>
-              <template #activator="{ on }">
-                <VTab v-if="locationName" class="ml-2" v-on="on">
-                  {{
-                    t('notes_menu.tabs.in_this_page', { page: locationName })
-                  }}
-                </VTab>
+    <div
+      class="flex items-center justify-between gap-2 w-full border-b border-default"
+    >
+      <RuiTabs v-model="tab" class="tabs" color="primary">
+        <template #default>
+          <RuiTab>
+            {{ t('notes_menu.tabs.general') }}
+          </RuiTab>
+          <RuiTab v-if="locationName">
+            <RuiTooltip :popper="{ placement: 'bottom' }" open-delay="400">
+              <template #activator>
+                {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
               </template>
-              <div>
-                {{
-                  t('notes_menu.tabs.in_this_page_tooltip', {
-                    page: locationName
-                  })
-                }}
-              </div>
-            </VTooltip>
-          </VTabs>
-        </VCol>
-        <VCol cols="auto" class="pr-2">
-          <VBtn icon @click="visibleUpdate(false)">
-            <VIcon>mdi-close</VIcon>
-          </VBtn>
-        </VCol>
-      </VRow>
-    </VSheet>
+              {{
+                t('notes_menu.tabs.in_this_page_tooltip', {
+                  page: locationName
+                })
+              }}
+            </RuiTooltip>
+          </RuiTab>
+        </template>
+      </RuiTabs>
+
+      <RuiButton class="!p-2" variant="text" icon @click="visibleUpdate(false)">
+        <RuiIcon name="close-line" />
+      </RuiButton>
+    </div>
 
     <UserNotesList
       :key="location + tab"

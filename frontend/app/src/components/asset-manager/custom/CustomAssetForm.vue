@@ -71,7 +71,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation, setSubmitFunc } = useCustomAssetForm();
+const { setValidation, setSubmitFunc } = useCustomAssetForm();
 
 const v$ = setValidation(
   rules,
@@ -122,49 +122,42 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <VForm :value="valid">
-    <VRow class="mt-2">
-      <VCol cols="12" md="6">
-        <VTextField
-          data-cy="name"
-          :value="formData.name"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('common.name')"
-          :error-messages="toMessages(v$.name)"
-          @input="input({ name: $event })"
-        />
-      </VCol>
-      <VCol cols="12" md="6">
-        <VCombobox
-          data-cy="type"
-          :items="types"
-          :value="formData.customAssetType"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('common.type')"
-          :error-messages="toMessages(v$.type)"
-          :search-input.sync="search"
-          @input="input({ customAssetType: $event })"
-        />
-      </VCol>
-      <VCol cols="12">
-        <VTextarea
-          data-cy="notes"
-          :value="formData.notes"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('asset_form.labels.notes')"
-          @input="input({ notes: $event })"
-        />
-      </VCol>
-    </VRow>
-
-    <div class="my-4">
-      <AssetIconForm ref="assetIconFormRef" :identifier="formData.identifier" />
+  <div class="flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <RuiTextField
+        data-cy="name"
+        :value="formData.name"
+        variant="outlined"
+        color="primary"
+        persistent-hint
+        clearable
+        :label="t('common.name')"
+        :error-messages="toMessages(v$.name)"
+        @input="input({ name: $event })"
+      />
+      <VCombobox
+        data-cy="type"
+        :items="types"
+        :value="formData.customAssetType"
+        outlined
+        persistent-hint
+        clearable
+        :label="t('common.type')"
+        :error-messages="toMessages(v$.type)"
+        :search-input.sync="search"
+        @input="input({ customAssetType: $event })"
+      />
     </div>
-  </VForm>
+    <VTextarea
+      data-cy="notes"
+      :value="formData.notes"
+      outlined
+      persistent-hint
+      clearable
+      :label="t('asset_form.labels.notes')"
+      @input="input({ notes: $event })"
+    />
+
+    <AssetIconForm ref="assetIconFormRef" :identifier="formData.identifier" />
+  </div>
 </template>

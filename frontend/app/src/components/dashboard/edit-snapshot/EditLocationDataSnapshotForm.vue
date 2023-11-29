@@ -57,7 +57,7 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <div class="pt-1 flex flex-col gap-4">
+  <form class="flex flex-col gap-2">
     <LocationSelector
       :value="form.location"
       :excludes="excludedLocations"
@@ -77,5 +77,5 @@ const v$ = setValidation(
       :error-messages="toMessages(v$.value)"
       @input="updateForm({ usdValue: $event })"
     />
-  </div>
+  </form>
 </template>

@@ -76,8 +76,7 @@ const { editManualBalance, addManualBalance, manualLabels } =
 const { refreshPrices } = useBalances();
 const { setMessage } = useMessageStore();
 
-const { valid, submitting, setValidation, setSubmitFunc } =
-  useManualBalancesForm();
+const { submitting, setValidation, setSubmitFunc } = useManualBalancesForm();
 
 const rules = {
   amount: {
@@ -212,21 +211,15 @@ onMounted(async () => {
     set(asset, editPayload.asset);
   }
 });
-
-const css = useCssModule();
 </script>
 
 <template>
-  <VForm
-    ref="form"
-    :value="valid"
-    :class="css.form"
-    data-cy="manual-balance-form"
-  >
-    <VTextField
+  <form ref="form" data-cy="manual-balance-form" class="flex flex-col gap-2">
+    <RuiTextField
       v-model="label"
       class="manual-balances-form__label"
-      outlined
+      variant="outlined"
+      color="primary"
       :label="t('manual_balances_form.fields.label')"
       :error-messages="toMessages(v$.label)"
       :disabled="submitting"
@@ -240,41 +233,38 @@ const css = useCssModule();
       outlined
     />
 
-    <VRow>
-      <VCol>
-        <AssetSelect
-          v-model="asset"
-          :label="t('common.asset')"
-          class="manual-balances-form__asset"
-          outlined
-          :error-messages="toMessages(v$.asset)"
-          :disabled="submitting"
-          @blur="v$.asset.$touch()"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <VTooltip top>
-          <template #activator="{ on }">
-            <VBtn
-              text
-              color="primary"
-              class="mt-1 py-6"
-              :disabled="submitting"
-              v-on="on"
-              @click="openCustomAssetForm()"
-            >
-              <div class="flex">
-                <VIcon large>mdi-pencil-circle-outline</VIcon>
-                <VIcon small class="mt-n4">mdi-plus</VIcon>
-              </div>
-            </VBtn>
-          </template>
-          <span>
-            {{ t('manual_balances_form.fields.create_a_custom_asset') }}
-          </span>
-        </VTooltip>
-      </VCol>
-    </VRow>
+    <div class="flex items-start gap-4">
+      <AssetSelect
+        v-model="asset"
+        :label="t('common.asset')"
+        class="manual-balances-form__asset"
+        outlined
+        :error-messages="toMessages(v$.asset)"
+        :disabled="submitting"
+        @blur="v$.asset.$touch()"
+      />
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            type="button"
+            color="primary"
+            class="pt-5 pb-2 mt-1 px-2"
+            :disabled="submitting"
+            @click="openCustomAssetForm()"
+          >
+            <div class="flex">
+              <RuiIcon name="server-line" />
+              <RuiIcon name="add-circle-line" class="-mt-4 -ml-2" />
+            </div>
+          </RuiButton>
+        </template>
+        <span>
+          {{ t('manual_balances_form.fields.create_a_custom_asset') }}
+        </span>
+      </RuiTooltip>
+    </div>
 
     <ManualBalancesPriceForm
       ref="priceForm"
@@ -312,15 +302,10 @@ const css = useCssModule();
       :label="t('common.location')"
       @blur="v$.location.$touch()"
     />
+
     <CustomAssetFormDialog
       :title="t('asset_management.add_title')"
       :types="customAssetTypes"
     />
-  </VForm>
+  </form>
 </template>
-
-<style module lang="scss">
-.form {
-  padding-top: 12px;
-}
-</style>

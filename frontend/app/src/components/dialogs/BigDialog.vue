@@ -63,7 +63,11 @@ const css = useCssModule();
     <RuiCard data-cy="bottom-dialog" class="!rounded-b-none">
       <template #header> {{ title }}</template>
       <template v-if="subtitle" #subheader> {{ subtitle }}</template>
-      <div v-if="display" class="overflow-y-auto -mx-4 px-4" :class="css.card">
+      <div
+        v-if="display"
+        class="overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4"
+        :class="css.card"
+      >
         <slot />
       </div>
 

@@ -60,7 +60,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation } = useLatestPriceForm();
+const { setValidation } = useLatestPriceForm();
 
 const v$ = setValidation(
   rules,
@@ -74,13 +74,12 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <VForm :value="valid">
-    <div class="flex flex-row flex-wrap items-center gap-2 mt-2">
+  <form class="flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-x-4">
       <AssetSelect
         :value="value.fromAsset"
         :label="t('price_form.from_asset')"
         outlined
-        class="flex-1"
         include-nfts
         :disabled="edit"
         :error-messages="toMessages(v$.fromAsset)"
@@ -90,40 +89,37 @@ const v$ = setValidation(
         :value="value.toAsset"
         :label="t('price_form.to_asset')"
         outlined
-        class="flex-1"
         :error-messages="toMessages(v$.toAsset)"
         @input="input({ toAsset: $event })"
       />
     </div>
-    <div>
-      <AmountInput
-        v-model="price"
-        outlined
-        :error-messages="toMessages(v$.price)"
-        :label="t('common.price')"
-      />
-      <div
-        v-if="price && fromAsset && toAsset"
-        class="text-caption green--text mt-n6 pb-1 pl-3"
-      >
-        <i18n tag="div" path="price_form.latest.hint">
-          <template #fromAsset>
-            <strong>
-              {{ fromAsset }}
-            </strong>
-          </template>
-          <template #toAsset>
-            <strong>
-              {{ toAsset }}
-            </strong>
-          </template>
-          <template #price>
-            <strong>
-              <AmountDisplay :value="numericPrice" :tooltip="false" />
-            </strong>
-          </template>
-        </i18n>
-      </div>
-    </div>
-  </VForm>
+    <AmountInput
+      v-model="price"
+      outlined
+      :error-messages="toMessages(v$.price)"
+      :label="t('common.price')"
+    />
+    <i18n
+      v-if="price && fromAsset && toAsset"
+      tag="div"
+      path="price_form.latest.hint"
+      class="text-caption text-rui-success -mt-8 pb-1 pl-3"
+    >
+      <template #fromAsset>
+        <strong>
+          {{ fromAsset }}
+        </strong>
+      </template>
+      <template #toAsset>
+        <strong>
+          {{ toAsset }}
+        </strong>
+      </template>
+      <template #price>
+        <strong>
+          <AmountDisplay :value="numericPrice" :tooltip="false" />
+        </strong>
+      </template>
+    </i18n>
+  </form>
 </template>

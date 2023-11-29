@@ -161,24 +161,18 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=token-select] [role=button]').as('tokenInput');
 
-    cy.get('[data-cy=address-input] .v-text-field__slot input[type=text]').as(
-      'addressInput'
-    );
+    cy.get('[data-cy=address-input] input').as('addressInput');
 
-    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
-      'symbolInput'
-    );
+    cy.get('[data-cy=symbol-input]').as('symbolInput');
 
-    cy.get('[data-cy=decimal-input] .v-text-field__slot input[type=number]').as(
-      'decimalInput'
-    );
+    cy.get('[data-cy=decimal-input] input[type=number]').as('decimalInput');
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 
     // Frontend validation for address
     cy.get('@submitButton').click();
 
-    cy.get('[data-cy=address-input] .v-messages__message').as('addressMessage');
+    cy.get('[data-cy=address-input] .details').as('addressMessage');
     cy.get('@addressMessage')
       .contains('The value is required')
       .should('be.visible');
@@ -189,7 +183,7 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=chain-select] .v-messages__message').as('chainMessage');
     cy.get('[data-cy=token-select] .v-messages__message').as('tokenMessage');
-    cy.get('[data-cy=decimal-input] .v-messages__message').as('decimalMessage');
+    cy.get('[data-cy=decimal-input] .details').as('decimalMessage');
 
     // expect to see backend validation messages
     cy.get('@chainMessage').scrollIntoView();
@@ -252,12 +246,8 @@ export class AssetsManagerPage {
   addOtherAsset() {
     // get the fields
     cy.get('[data-cy=type-select] [role=button]').as('typeInput');
-    cy.get('[data-cy=name-input] .v-text-field__slot input[type=text]').as(
-      'nameInput'
-    );
-    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
-      'symbolInput'
-    );
+    cy.get('[data-cy=name-input]').as('nameInput');
+    cy.get('[data-cy=symbol-input]').as('symbolInput');
 
     cy.get('@typeInput').click();
     cy.get('.v-menu__content.menuable__content__active .v-list-item')
@@ -301,9 +291,7 @@ export class AssetsManagerPage {
       .contains('Edit an asset')
       .should('be.visible');
 
-    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
-      'symbolInput'
-    );
+    cy.get('[data-cy=symbol-input]').as('symbolInput');
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 
