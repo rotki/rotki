@@ -20,7 +20,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.data_structures import LRUCacheWithRemove
+from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -66,6 +66,8 @@ class Accountant:
         self.first_processed_timestamp = Timestamp(-1)
         self.premium = premium
         self.processable_events_cache: LRUCacheWithRemove[int, bool] = LRUCacheWithRemove(maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
+        # map event rules signatures to a list of event identifiers affected by them
+        self.processable_events_cache_signatures: DefaultLRUCache[int, list[int]] = DefaultLRUCache(default_factory=list, maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium

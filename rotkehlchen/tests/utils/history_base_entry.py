@@ -1,11 +1,15 @@
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
+from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_USDT
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
@@ -20,10 +24,6 @@ from rotkehlchen.history.events.structures.eth2 import (
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.history_events import DBHistoryEvents
-
 
 KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'event_identifier'},  # noqa: E501
@@ -181,3 +181,22 @@ def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
             )
             entry.identifier = identifier
     return entries
+
+
+def store_and_retrieve_events(
+        events: Sequence[HistoryBaseEntry],
+        db: DBHandler,
+) -> Sequence[HistoryBaseEntry]:
+    """Store events in database and retrieve them again fully populated with identifiers"""
+    dbevents = DBHistoryEvents(db)
+    with db.user_write() as write_cursor:
+        for event in events:
+            dbevents.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+            )
+        return dbevents.get_history_events(
+            cursor=write_cursor,
+            filter_query=HistoryEventFilterQuery.make(event_identifiers=[events[0].event_identifier]),
+            has_premium=True,
+        )  # query them from db to retrieve them with their identifier

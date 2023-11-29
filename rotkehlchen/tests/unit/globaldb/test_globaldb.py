@@ -23,6 +23,7 @@ from rotkehlchen.assets.utils import (
     symbol_to_asset_or_token,
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
@@ -50,6 +51,7 @@ from rotkehlchen.tests.utils.globaldb import (
     globaldb_get_general_cache_last_queried_ts,
 )
 from rotkehlchen.types import (
+    CURVE_POOL_PROTOCOL,
     SPAM_PROTOCOL,
     CacheType,
     ChainID,
@@ -1203,14 +1205,17 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     assert assets[0].name == 'Test token'
 
 
-def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
+def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInquirer) -> None:
     """Test different cases of spam assets that we already know"""
     # $ aavereward.com
-    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288'))).symbol) is True  # noqa: E501
+    token = EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288')))  # noqa: E501
+    assert check_if_spam_token(symbol=token.symbol, name=token.name) is True
     # Visit https://op-reward.xyz and claim rewards
-    assert check_if_spam_token(EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20)).symbol) is True  # noqa: E501
+    token = EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20))  # noqa: E501
+    assert check_if_spam_token(symbol=token.symbol, name=token.name) is True
     # $ USDCGift.com <- Visit to claim bonus
-    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x68Ca006dB91312Cd60a2238Ce775bE5F9f738bBa'))).symbol) is True  # noqa: E501
+    token = EvmToken(ethaddress_to_identifier(string_to_evm_address('0x68Ca006dB91312Cd60a2238Ce775bE5F9f738bBa')))  # noqa: E501
+    assert check_if_spam_token(symbol=token.symbol, name=token.name) is True
     # test adding now $RPL Claim at RPoolBonus.com
     token = get_or_create_evm_token(
         userdb=database,
@@ -1223,10 +1228,46 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor)
 
-    assert check_if_spam_token('$ vanityeth.org ($ vanityeth.org)') is True
-    assert check_if_spam_token('$ hUSDC.cc (Claim USDC at https://hUSDC.cc)') is True
-    assert check_if_spam_token('$ cusdcs.eth.li (Claim USDC at https://cusdcs.eth.li)') is True
-    assert check_if_spam_token('$ wHEX (Unwrap: https://HEXPool.io)') is True
+    bad_strings = (
+        '$ vanityeth.org ($ vanityeth.org)',  # contains $ and .
+        'hUSDC.cc (USDC at https://hUSDC.cc)',  # contains a url
+        'wHEX (Unwrap: http://HEXPool.io)',  # contains a io domain
+        'https://arbonus.site to claim reward.',  # contains the word claim
+        'UrgentDT.com ASAP to secure your wallet. A hacker has access to your funds.',  # positive by the url check  # noqa: E501
+        'AaveV3LP.com - Visit to claim bonus rewards',
+        'LPBalancer.xyz',  # simple url with
+        '$ BonusUSDC.com - Visit to claim bonus',
+        'https://dydx2.pro to claim reward',
+        'Visit https://afcoc.xyz to claim rewards.'
+        'https://www.apitrade.pro/vipinvite.htm',
+        'DAIBonus.com <- Visit to claim bonus',
+        '$ https://agbonus.fun to receive reward.',
+        'Rewards Token From https://mcpool.xyz',
+    )
+
+    for bad_string in bad_strings:
+        assert check_if_spam_token(symbol=bad_string, name='PLACEHOLDER') is True
+        assert check_if_spam_token(symbol='PLACEHOLDER', name=bad_string) is True
+
+    assert check_if_spam_token(  # check that curve factories do not get detected as spam
+        symbol='crvUSDUSDC-f',
+        name='Curve.fi Factory Plain Pool: crvUSD/USDC',
+    ) is False
+
+    # check that if an asset is provided with protocol we don't label it as spam
+    token = get_or_create_evm_token(
+        userdb=database,
+        name='Curve.fi Factory Crypto Pool: EtherTulip.com',
+        symbol='PETAL-f',
+        decimals=18,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_address=make_evm_address(),
+        protocol=CURVE_POOL_PROTOCOL,
+    )
+    assert token.protocol == CURVE_POOL_PROTOCOL
+    with database.conn.read_ctx() as cursor:
+        assert token.identifier not in database.get_ignored_asset_ids(cursor)
 
 
 def test_get_evm_tokens(globaldb):

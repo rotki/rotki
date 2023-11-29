@@ -8,13 +8,13 @@ from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_WBTC
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -22,6 +22,23 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.fixtures.google import GoogleService
+
+
+TIMESTAMP_1_MS = TimestampMS(1000)
+TIMESTAMP_1_SEC = Timestamp(1)
+
+MOCKED_PRICES = {
+    A_WBTC.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SEC: Price(ONE),
+        },
+    },
+    A_USDC.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SEC: Price(ONE),
+        },
+    },
+}
 
 
 history1 = [

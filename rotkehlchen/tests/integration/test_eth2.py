@@ -377,10 +377,16 @@ def test_query_no_withdrawals(
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that if an address has no withdrawals we correctly handle it"""
-    eth2.query_single_address_withdrawals(
-        address=ethereum_accounts[0],
-        to_ts=ts_now(),
-    )
+    etherscan_patch = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=eth2.ethereum.etherscan.get_withdrawals)  # noqa: E501
+    blockscout_patch = patch.object(eth2.ethereum.blockscout, 'query_withdrawals', side_effect=eth2.ethereum.blockscout.query_withdrawals)  # noqa: E501
+
+    with etherscan_patch as etherscan_mock, blockscout_patch as blockscout_mock:
+        eth2.query_single_address_withdrawals(
+            address=ethereum_accounts[0],
+            to_ts=ts_now(),
+        )
+        assert etherscan_mock.call_count == 1, 'etherscan should be called once'
+        assert blockscout_mock.call_count == 0, 'blockscout should not be called'
 
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0

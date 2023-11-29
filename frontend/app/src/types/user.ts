@@ -48,6 +48,7 @@ const GeneralSettings = z.object({
   ssfGraphMultiplier: z.number().default(0),
   inferZeroTimedBalances: z.boolean(),
   nonSyncingExchanges: z.array(Exchange),
+  evmchainsToSkipDetection: z.array(z.string()),
   treatEth2AsEth: z.boolean(),
   addressNamePriority: z.array(AddressNamePriorityEnum),
   queryRetryLimit: z.number().min(1),
@@ -74,7 +75,7 @@ export const BaseAccountingSettings = z.object({
   accountForAssetsMovements: z.boolean(),
   profitCurrency: z.string().nullish(),
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
-  includeFeesInCostBasis: z.boolean(),
+  includeFeesInCostBasis: z.boolean().nullish(),
   costBasisMethod: CostBasisMethodEnum.nullish()
 });
 
@@ -144,6 +145,7 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   ssfGraphMultiplier: settings.ssfGraphMultiplier,
   inferZeroTimedBalances: settings.inferZeroTimedBalances,
   nonSyncingExchanges: settings.nonSyncingExchanges,
+  evmchainsToSkipDetection: settings.evmchainsToSkipDetection,
   treatEth2AsEth: settings.treatEth2AsEth,
   addressNamePriority: settings.addressNamePriority,
   queryRetryLimit: settings.queryRetryLimit,

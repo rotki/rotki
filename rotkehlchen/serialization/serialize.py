@@ -130,7 +130,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             XpubData |
             NodeName |
             NodeName |
-            ChainID |
             SingleBlockchainAccountData |
             SupportedBlockchain |
             HistoryEventType |
@@ -206,6 +205,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             AccountingEventType
     )):
         return str(entry)
+    if isinstance(entry, ChainID):
+        return entry.to_name()
 
     # else
     return entry

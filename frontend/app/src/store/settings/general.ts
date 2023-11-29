@@ -59,6 +59,9 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const nonSyncingExchanges: ComputedRef<Exchange[]> = computed(
     () => settings.nonSyncingExchanges
   );
+  const evmchainsToSkipDetection: ComputedRef<string[]> = computed(
+    () => settings.evmchainsToSkipDetection
+  );
   const treatEth2AsEth: ComputedRef<boolean> = computed(
     () => settings.treatEth2AsEth
   );
@@ -102,6 +105,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     ssfGraphMultiplier,
     inferZeroTimedBalances,
     nonSyncingExchanges,
+    evmchainsToSkipDetection,
     treatEth2AsEth,
     addressNamePriority,
     queryRetryLimit,

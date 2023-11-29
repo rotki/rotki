@@ -179,7 +179,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
-from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntryType,
+    get_event_type_identifier,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import history_event_to_staking_for_api
@@ -1716,8 +1719,9 @@ class RestAPI:
 
     @async_api_call()
     def refresh_evm_accounts(self) -> dict[str, Any]:
+        chains = self.rotkehlchen.data.db.get_chains_to_detect_evm_accounts()
         try:
-            self.rotkehlchen.chains_aggregator.detect_evm_accounts()
+            self.rotkehlchen.chains_aggregator.detect_evm_accounts(chains=chains)
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
@@ -4473,6 +4477,22 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    def _invalidate_cache_for_accounting_rule(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: str | None,
+    ) -> None:
+        accountant = self.rotkehlchen.accountant
+        type_identifier = get_event_type_identifier(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )
+        affected_events = accountant.processable_events_cache_signatures.get(type_identifier)
+        for event_id in affected_events:
+            accountant.processable_events_cache.remove(event_id)
+
     def add_accounting_rule(
             self,
             event_type: HistoryEventType,
@@ -4493,6 +4513,11 @@ class RestAPI:
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self._invalidate_cache_for_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
     def update_accounting_rule(
@@ -4517,15 +4542,25 @@ class RestAPI:
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self._invalidate_cache_for_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
     def delete_accounting_rule(self, rule_id: int) -> Response:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
-            db.remove_accounting_rule(rule_id=rule_id)
+            event_type, event_subtype, counterparty = db.remove_accounting_rule(rule_id=rule_id)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self._invalidate_cache_for_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
     def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> Response:

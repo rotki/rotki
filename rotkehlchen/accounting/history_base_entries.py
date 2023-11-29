@@ -95,18 +95,17 @@ class EventsAccountant:
                 )
                 return 1
 
-            next_event = cast(HistoryBaseEntry, next_event)
-            if next_event.event_identifier != event.event_identifier:
+            if not isinstance(next_event, HistoryBaseEntry) or next_event.event_identifier != event.event_identifier:  # noqa: E501
                 log.error(
                     f'Tried to process accounting swap but the in '
                     f'event for {event} is not there',
                 )
                 return 1
-            in_event = cast(HistoryBaseEntry, next(events_iterator))
+            in_event = cast(HistoryBaseEntry, next(events_iterator))  # guaranteed by the if check
 
-            next_event = cast(HistoryBaseEntry, events_iterator.peek(None))
-            if next_event and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                fee_event = cast(HistoryBaseEntry, next(events_iterator))
+            next_event = events_iterator.peek(None)
+            if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                fee_event = cast(HistoryBaseEntry, next(events_iterator))  # guaranteed by if check
 
             return self._process_swap(
                 timestamp=timestamp,

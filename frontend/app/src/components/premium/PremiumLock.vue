@@ -6,7 +6,7 @@ const { href, onLinkClick } = useLinks();
 <template>
   <MenuTooltipButton
     :tooltip="t('premium_lock.tooltip')"
-    class-name="secondary--text text--lighten-4"
+    class-name="text-rui-text-secondary"
     :href="href"
     @click="onLinkClick()"
   >

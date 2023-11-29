@@ -222,6 +222,7 @@
     "ssf_graph_multiplier": 0,
     "last_data_migration": 5,
     "non_syncing_exchanges": [],
+    "evmchains_to_skip_detection": [],
     "cost_basis_method": "lifo",
     "treat_eth2_as_eth": true,
     "eth_staking_taxable_after_withdrawal_enabled": false,

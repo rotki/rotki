@@ -177,7 +177,7 @@ class DataHandler:
         for x in users_dir.iterdir():
             try:
                 if x.is_dir() and (x / USERDB_NAME).exists():
-                    users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
+                    users[x.name] = 'loggedin' if x.name == self.username else 'loggedout'
             except PermissionError:
                 # ignore directories that can't be accessed
                 continue

@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 
 import pytest
 
@@ -14,34 +13,14 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.history_base_entry import store_and_retrieve_events
 from rotkehlchen.types import Location, TimestampMS
-
-
-def _store_and_retrieve_events(
-        events: Sequence[HistoryBaseEntry],
-        db: DBHandler,
-) -> Sequence[HistoryBaseEntry]:
-    """Store events in database and retrieve them again fully populated with identifiers"""
-    dbevents = DBHistoryEvents(db)
-    with db.user_write() as write_cursor:
-        for event in events:
-            dbevents.add_history_event(
-                write_cursor=write_cursor,
-                event=event,
-            )
-        return dbevents.get_history_events(
-            cursor=write_cursor,
-            filter_query=HistoryEventFilterQuery.make(event_identifiers=[events[0].event_identifier]),
-            has_premium=True,
-        )  # query them from db to retrieve them with their identifier
 
 
 def test_managing_accounting_rules(database: DBHandler) -> None:
@@ -240,7 +219,7 @@ def test_missing_accounting_rules_accounting_treatment(
         counterparty=CPT_COWSWAP,
         notes='my notes',
     )
-    events = _store_and_retrieve_events([swap_event_spend, swap_event_receive, swap_event_fee], database)  # noqa: E501
+    events = store_and_retrieve_events([swap_event_spend, swap_event_receive, swap_event_fee], database)  # noqa: E501
     assert not all(
         query_missing_accounting_rules(
             db=database,
@@ -301,7 +280,7 @@ def test_events_affected_by_others_accounting_treatment(
         notes='my notes',
     )
 
-    events = _store_and_retrieve_events([return_wrapped, remove_asset], database)
+    events = store_and_retrieve_events([return_wrapped, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
         accounting_pot=accountant.pots[0],
@@ -372,7 +351,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         notes='my notes',
     )
 
-    events = _store_and_retrieve_events([return_wrapped, fee_event, remove_asset], database)
+    events = store_and_retrieve_events([return_wrapped, fee_event, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
         accounting_pot=accountant.pots[0],
@@ -442,7 +421,7 @@ def test_events_affected_by_others_callbacks(
             extra_data=None,
         ),
     ]
-    db_events = _store_and_retrieve_events(events, database)
+    db_events = store_and_retrieve_events(events, database)
     assert query_missing_accounting_rules(
         db=database,
         accounting_pot=accountant.pots[0],
@@ -512,7 +491,7 @@ def test_events_affected_by_others_callbacks_with_fitlers(
             extra_data=None,
         ),
     ]
-    db_events = _store_and_retrieve_events(events, database)
+    db_events = store_and_retrieve_events(events, database)
     assert query_missing_accounting_rules(
         db=database,
         accounting_pot=accountant.pots[0],
@@ -584,7 +563,7 @@ def test_correct_accounting_treatment_is_selected(
         notes='my notes',
     )
 
-    events = _store_and_retrieve_events([return_wrapped, remove_asset], database)
+    events = store_and_retrieve_events([return_wrapped, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
         accounting_pot=accountant.pots[0],

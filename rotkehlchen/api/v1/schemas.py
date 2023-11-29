@@ -1207,6 +1207,12 @@ class ModifiableSettingsSchema(Schema):
         # Check that all values are unique
         validate=lambda data: len(data) == len(set(data)),
     )
+    evmchains_to_skip_detection = fields.List(
+        EvmChainNameField,
+        load_default=None,
+        # Check that all values are unique
+        validate=lambda data: len(data) == len(set(data)),
+    )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
     address_name_priority = fields.List(fields.String(
@@ -1280,6 +1286,7 @@ class ModifiableSettingsSchema(Schema):
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
             ssf_graph_multiplier=data['ssf_graph_multiplier'],
             non_syncing_exchanges=data['non_syncing_exchanges'],
+            evmchains_to_skip_detection=data['evmchains_to_skip_detection'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],

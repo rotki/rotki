@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
     ExchangeLocationID,
@@ -163,6 +164,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['coingecko', 'cryptocompare']
         elif setting == 'non_syncing_exchanges':
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
+        elif setting == 'evmchains_to_skip_detection':
+            value = [ChainID.POLYGON_POS.to_name(), ChainID.BASE.to_name()]
         elif setting == 'cost_basis_method':
             value = CostBasisMethod.LIFO.serialize()
         elif setting == 'address_name_priority':

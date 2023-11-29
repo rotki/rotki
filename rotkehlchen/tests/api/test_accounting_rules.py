@@ -6,9 +6,15 @@ from typing import Literal, get_args
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
+from rotkehlchen.constants.assets import A_CUSDC, A_USDC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
 from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import (
@@ -17,6 +23,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.history_base_entry import store_and_retrieve_events
+from rotkehlchen.types import Location, TimestampMS
 
 
 def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: Path) -> None:
@@ -365,3 +374,127 @@ def test_listing_conflicts(
         },
     ]
     assert result['entries_total'] == 2
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_cache_invalidation(rotkehlchen_api_server: APIServer):
+    """
+    Test that the cache for events affected by an accounting rule gets correctly invalidated
+    when operations happen modifying the rule that affects them.
+    """
+    rest = rotkehlchen_api_server.rest_api
+    rotki = rest.rotkehlchen
+    database = rotki.data.db
+
+    tx_hash = make_evm_tx_hash()
+    return_wrapped = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_CUSDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        counterparty=CPT_COMPOUND,
+        notes='my notes',
+    )
+    remove_asset = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_USDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_COMPOUND,
+        notes='my notes',
+    )
+    events = store_and_retrieve_events([return_wrapped, remove_asset], database)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ), json={'event_identifiers': [events[0].event_identifier]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 2
+    assert all(entry['missing_accounting_rule'] for entry in result['entries'])
+
+    # add a rule for the return event and check that the cache was updated
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'event_type': HistoryEventType.DEPOSIT.serialize(),
+            'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+            'counterparty': CPT_COMPOUND,
+            'taxable': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'count_cost_basis_pnl': {'value': True},
+            'accounting_treatment': None,
+        },
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ), json={'event_identifiers': [events[0].event_identifier]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 2
+    assert 'missing_accounting_rule' not in result['entries'][0]
+    assert result['entries'][1]['missing_accounting_rule'] is True
+
+    # update a rule to check that it removes the cache from the second event too
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'identifier': 1,
+            'event_type': HistoryEventType.DEPOSIT.serialize(),
+            'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+            'counterparty': CPT_COMPOUND,
+            'taxable': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'count_cost_basis_pnl': {'value': True},
+            'accounting_treatment': TxAccountingTreatment.SWAP.serialize(),
+        },
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ), json={'event_identifiers': [events[0].event_identifier]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 2
+    for entry in result['entries']:
+        assert 'missing_accounting_rule' not in entry
+
+    # delete accounting rule and check that both events will not be processed now
+    # update a rule to check that it removes the cache from the second event too
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={'identifier': 1},
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ), json={'event_identifiers': [events[0].event_identifier]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 2
+    all(entry['missing_accounting_rule'] for entry in result['entries'])
