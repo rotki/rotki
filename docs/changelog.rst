@@ -1,6 +1,8 @@
 =========
 Changelog
 =========
+
+* :bug:`6999` Chai token balances should not appear doubled under certain conditions.
 * :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
 * :bug:`-` Fix issue where the reports page cannot be loaded if there is old report from older version.
 * :bug:`-` Fix the issue where the app freezes for a few seconds on logout.
