@@ -130,13 +130,13 @@ const { href, onLinkClick } = useLinks(url);
     </template>
 
     <template v-if="!linkOnly && !buttons">
-      <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
+      <span v-if="fullAddress" :class="{ blur: !shouldShowAmount }">
         {{ displayText }}
       </span>
 
       <RuiTooltip v-else :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
-          <span :class="{ 'blur-content': !shouldShowAmount }">
+          <span :class="{ blur: !shouldShowAmount }">
             <template v-if="aliasName">{{ aliasName }}</template>
             <template v-else>
               {{ truncateAddress(displayText, truncateLength) }}
@@ -197,9 +197,3 @@ const { href, onLinkClick } = useLinks(url);
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.blur-content {
-  filter: blur(0.3em);
-}
-</style>

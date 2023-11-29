@@ -53,12 +53,12 @@ describe('AccountDisplay.vue', () => {
   });
 
   test('does not blur anything by default', async () => {
-    expect(wrapper.find('.blur-content').exists()).toBe(false);
+    expect(wrapper.find('.blur').exists()).toBe(false);
   });
 
   test('blurs address on privacy mode', async () => {
     useSessionSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.blur-content').exists()).toBe(true);
+    expect(wrapper.find('.blur').exists()).toBe(true);
   });
 });

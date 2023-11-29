@@ -15,8 +15,6 @@ const props = withDefaults(
   }
 );
 
-const css = useCssModule();
-
 const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
@@ -24,7 +22,7 @@ const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
     ? get(dateDisplayFormat)
-    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '');
+    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
 
   if (get(noTime)) {
     return display.split(' ')[0];
@@ -57,35 +55,21 @@ const showTooltip = computed(() => {
 const splittedByMillisecondsPart = computed(() =>
   get(formattedDate).split('.')
 );
+
+const { copy, copied } = useCopy(formattedDate);
 </script>
 
 <template>
-  <span>
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      open-delay="400"
-      :disabled="!showTooltip"
-    >
-      <template #activator="{ on, attrs }">
-        <span
-          class="date-display whitespace-none"
-          :class="{ [css.blur]: !shouldShowAmount }"
-          v-bind="attrs"
-          v-on="on"
-        >
-          <span>{{ splittedByMillisecondsPart[0] }}</span>
-          <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
-            .{{ splittedByMillisecondsPart[1] }}
-          </span>
-        </span>
-      </template>
-      <span> {{ formattedDateWithTimezone }} </span>
-    </RuiTooltip>
-  </span>
+  <CopyTooltip
+    class="items-baseline"
+    :copied="copied"
+    :tooltip="showTooltip ? formattedDateWithTimezone : null"
+    :class="{ blur: !shouldShowAmount }"
+    @click="copy()"
+  >
+    {{ splittedByMillisecondsPart[0] }}
+    <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
+      .{{ splittedByMillisecondsPart[1] }}
+    </span>
+  </CopyTooltip>
 </template>
-
-<style module lang="scss">
-.blur {
-  filter: blur(0.75em);
-}
-</style>

@@ -53,7 +53,7 @@ const { t } = useI18n();
       :cols="justify === 'end' ? null : 'auto'"
       class="percentage-display__amount"
       :class="{
-        'blur-content': !shouldShowPercentage,
+        blur: !shouldShowPercentage,
         'text-end': justify === 'end',
         'text-start': justify !== 'start'
       }"
@@ -64,24 +64,10 @@ const { t } = useI18n();
       v-if="!!value"
       :style="assetStyle"
       :class="assetPadding ? 'mr-1' : null"
-      class="ml-1 percentage-display__symbol"
+      class="ml-1 text-sm"
       :cols="justify === 'start' ? null : 'auto'"
     >
       {{ t('percentage_display.symbol') }}
     </VCol>
   </VRow>
 </template>
-
-<style scoped lang="scss">
-.percentage-display {
-  &__amount {
-    &.blur-content {
-      filter: blur(0.75em);
-    }
-  }
-
-  &__symbol {
-    font-size: 0.8em;
-  }
-}
-</style>

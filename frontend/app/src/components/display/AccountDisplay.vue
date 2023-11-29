@@ -46,47 +46,38 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip top open-delay="400" :disabled="!truncate">
-    <template #activator="{ on }">
-      <VRow align="center" no-gutters class="flex-nowrap" v-on="on">
-        <VCol v-if="!hideChainIcon" cols="auto" class="pr-2">
-          <VAvatar left size="28px" class="mr-0">
-            <ChainIcon
-              v-if="account.chain && account.chain !== 'ALL'"
-              size="24px"
-              :chain="account.chain"
-            />
-            <VTooltip v-else top>
-              <template #activator="{ childOn }">
-                <VIcon v-on="childOn"> mdi-link-variant </VIcon>
-              </template>
-              <span>{{ t('common.multi_chain') }}</span>
-            </VTooltip>
-          </VAvatar>
-        </VCol>
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    open-delay="400"
+    :disabled="!truncate"
+    class="flex items-center flex-nowrap"
+  >
+    <template #activator>
+      <div v-if="!hideChainIcon" class="pr-1">
+        <VAvatar left size="28px">
+          <ChainIcon
+            v-if="account.chain && account.chain !== 'ALL'"
+            size="24px"
+            :chain="account.chain"
+          />
+          <RuiTooltip v-else :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiIcon name="links-line" />
+            </template>
+            <span>{{ t('common.multi_chain') }}</span>
+          </RuiTooltip>
+        </VAvatar>
+      </div>
 
-        <EnsAvatar :address="address" avatar class="mr-2" />
+      <EnsAvatar :address="address" avatar class="mr-2" />
 
-        <VCol
-          cols="auto"
-          :class="{ 'blur-content': !shouldShowAmount }"
-          class="text-no-wrap"
-        >
-          <div v-if="aliasName">{{ aliasName }}</div>
-          <div v-else>
-            {{ truncate ? truncateAddress(address, 6) : address }}
-          </div>
-        </VCol>
-      </VRow>
+      <div :class="{ blur: !shouldShowAmount }" class="text-no-wrap">
+        <div v-if="aliasName">{{ aliasName }}</div>
+        <div v-else>
+          {{ truncate ? truncateAddress(address, 6) : address }}
+        </div>
+      </div>
     </template>
-    <div>
-      {{ account.address }}
-    </div>
-  </VTooltip>
+    {{ account.address }}
+  </RuiTooltip>
 </template>
-
-<style scoped lang="scss">
-.blur-content {
-  filter: blur(0.75em);
-}
-</style>

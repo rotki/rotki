@@ -112,7 +112,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           <span v-if="aliasName" class="text-truncate">
             {{ truncatedAliasName }}
           </span>
-          <span v-else :class="{ 'blur-content': !shouldShowAmount }">
+          <span v-else :class="{ blur: !shouldShowAmount }">
             {{ truncatedAddress }}
           </span>
         </span>
@@ -162,9 +162,5 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   }
 
   @apply w-full hover:cursor-default;
-}
-
-.blur-content {
-  filter: blur(0.75em);
 }
 </style>

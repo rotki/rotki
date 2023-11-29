@@ -89,13 +89,10 @@ export class DashboardPage {
   }
 
   percentageDisplayIsBlurred() {
-    cy.get('.percentage-display__amount').should('have.class', 'blur-content');
+    cy.get('.percentage-display__amount').should('have.class', 'blur');
   }
 
   percentageDisplayIsNotBlurred() {
-    cy.get('.percentage-display__amount').should(
-      'not.have.class',
-      'blur-content'
-    );
+    cy.get('.percentage-display__amount').should('not.have.class', 'blur');
   }
 }
