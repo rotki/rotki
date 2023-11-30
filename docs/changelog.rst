@@ -10,6 +10,7 @@ Changelog
 * :bug:`6998` If a username contains a '.' the user will now be able to log in properly again.
 * :feature:`6885` Users can now specify EVM chains for which no activity will be auto-detected by rotki.
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
+* :bug:`-` Swaps using 1inch where the Uniswap V3 decoder processed part of the transaction will be correctly decoded now.
 * :bug:`-` Creating, editing and deleting accounting rules will now update warnings when rendered events get affected in the history view.
 
 * :release:`1.31.0 <2023-11-24>`

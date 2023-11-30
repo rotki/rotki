@@ -45,7 +45,7 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
         for asset_id in detected_spam_assets:
             user_db.add_to_ignored_assets(write_cursor=write_cursor, asset=Asset(asset_id))
 
-        write_cursor.execute(  # remember last time evm addresses were detected
+        write_cursor.execute(  # remember last time spam detection ran
             'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
             (LAST_SPAM_ASSETS_DETECT_KEY, str(ts_now())),
         )
