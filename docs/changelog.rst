@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`7015` Users will be able to sort the blockchain accounts by displayed name.
+* :feature:`7024` When a Uniswap-V2 or Sushiswap deposit gets decoded it will update the default symbol of the LP token to include information about the underlying tokens.
 * :bug:`7017` Fix the issue where clicking on the chain in the blockchain balance summary didn't show the correct section.
 * :bug:`6999` Chai token balances should not appear doubled under certain conditions.
 * :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
