@@ -166,6 +166,8 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
     )
 );
 
+const { addressNameSelector } = useAddressesNamesStore();
+
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
     if (!get(hasTokenDetection) || get(loopring)) {
@@ -174,6 +176,10 @@ const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
     const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
     return {
       ...item,
+      label:
+        get(addressNameSelector(item.address, item.chain)) ||
+        item.label ||
+        item.address,
       numOfDetectedTokens: detected.total
     };
   });
@@ -322,7 +328,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   const headers: DataTableHeader[] = [
     { text: '', value: 'accountSelection', width: '34px', sortable: false },
-    { text: accountHeader, value: 'label', sortable: false },
+    { text: accountHeader, value: 'label' },
     {
       text: get(asset).toUpperCase(),
       value: 'balance.amount',
@@ -450,12 +456,10 @@ defineExpose({
       />
     </template>
     <template #item.label="{ item }">
-      <VRow class="pt-3 pb-2">
-        <VCol cols="12" class="account-balance-table__account">
-          <LabeledAddressDisplay :account="item" />
-          <TagDisplay :tags="item.tags" />
-        </VCol>
-      </VRow>
+      <div class="pt-3 pb-2 flex flex-col">
+        <LabeledAddressDisplay :account="item" />
+        <TagDisplay :tags="item.tags" />
+      </div>
     </template>
     <template #item.balance.amount="{ item }">
       <AmountDisplay :value="item.balance.amount" :loading="loading" />
@@ -549,21 +553,3 @@ defineExpose({
     </template>
   </DataTable>
 </template>
-
-<style scoped lang="scss">
-.account-balance-table {
-  &__account {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__total {
-    font-weight: 500;
-  }
-
-  &__tag {
-    margin-right: 8px;
-    margin-bottom: 2px;
-  }
-}
-</style>
