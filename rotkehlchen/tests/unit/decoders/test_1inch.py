@@ -21,6 +21,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
+    A_LUSD,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_USDT,
@@ -731,3 +732,75 @@ def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
         ),
     ]
     assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Test that if a swap using 1inch v5 has been  half decoded by other decoder (uniswap) first
+    then the two legs of the swap are properly handled by the 1inch decoder.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x0a86fef1df2e7f186cf7239083f67c424c735f91461388c5b23e01c4d6a4e7d8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1701001727000)
+    user_address = ethereum_accounts[0]
+    expetec_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00205570157007332')),
+            location_label=user_address,
+            notes='Burned 0.00205570157007332 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000')),
+            location_label=user_address,
+            notes='Set LUSD spending approval of 0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379 by 0x1111111254EEB25477B68fb85Ed929f73A960582 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=ONEINCH_V5_ROUTER,
+            counterparty=None,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('528.15659999321561823')),
+            location_label=user_address,
+            notes='Swap 528.15659999321561823 LUSD in 1inch-v5',
+            address=ONEINCH_V5_ROUTER,
+            counterparty=CPT_ONEINCH_V5,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_DAI,
+            balance=Balance(amount=FVal('521.366008657400952258')),
+            location_label=user_address,
+            notes='Receive 521.366008657400952258 DAI as a result of a 1inch-v5 swap',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
+        ),
+    ]
+    assert events == expetec_events
