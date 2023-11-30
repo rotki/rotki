@@ -734,6 +734,7 @@ class Location(DBCharEnumMixIn):
     BASE = 42  # on-chain Base events
     GNOSIS = 43  # on-chain Gnosis events
     WOO = 44
+    BYBIT = 45
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':

@@ -1,6 +1,9 @@
+import itertools
 import logging
 from json.decoder import JSONDecodeError
+import operator
 from typing import Any
+from pytz import ZERO
 
 import requests
 from eth_utils.address import to_checksum_address
@@ -11,13 +14,18 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import BinancePair
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.data_structures import AssetMovement, BinancePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.serialization.deserialize import deserialize_asset_movement_category
+from rotkehlchen.types import Fee, Location, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -118,3 +126,69 @@ def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
         database_pairs = gdb_binance.get_all_binance_pairs(location)
         pairs = {pair.symbol: pair for pair in database_pairs}
     return pairs
+
+
+def asset_movement_from_history_events(
+        events: list[HistoryEvent],
+        location: Location,
+        msg_aggregator: MessagesAggregator,
+) -> list[AssetMovement]:
+    movements = []
+    get_attr = operator.attrgetter('event_identifier')
+    # Create a list of lists where each sublist has the events for the same event identifier
+    grouped_events = [list(g) for k, g in itertools.groupby(sorted(events, key=get_attr), get_attr)]  # noqa: E501
+    for movement_events in grouped_events:
+        if len(movement_events) == 2:
+            if movement_events[0].event_subtype == HistoryEventSubType.FEE:
+                fee = Fee(movement_events[0].balance.amount)
+                movement = movement_events[1]
+            elif movement_events[1].event_subtype == HistoryEventSubType.FEE:
+                fee = Fee(movement_events[1].balance.amount)
+                movement = movement_events[0]
+            else:
+                msg_aggregator.add_error(
+                    f'Failed to process deposit/withdrawal. {grouped_events}. Ignoring ...',
+                )
+                continue
+        else:
+            movement = movement_events[0]
+            fee = Fee(ZERO)
+
+        amount = movement.balance.amount
+        try:
+            asset = movement.asset
+            movement_type = movement.event_type
+            movements.append(AssetMovement(
+                location=Location.KRAKEN,
+                category=deserialize_asset_movement_category(movement_type),
+                timestamp=ts_ms_to_sec(movement.timestamp),
+                address=None,  # no data from kraken/bybit ledger endpoint
+                transaction_id=None,  # no data from kraken/bybit ledger endpoint
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=movement.event_identifier,
+            ))
+        except UnknownAsset as e:
+            msg_aggregator.add_warning(
+                f'Found unknown {location} asset {e.identifier}. '
+                f'Ignoring its deposit/withdrawals query.',
+            )
+            continue
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            msg_aggregator.add_error(
+                f'Failed to deserialize a {location} deposit/withdrawal. '
+                'Check logs for details. Ignoring it.',
+            )
+            log.error(
+                f'Error processing a {location} deposit/withdrawal.',
+                raw_asset_movement=movement_events,
+                error=msg,
+            )
+            continue
+
+    return movements

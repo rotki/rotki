@@ -17,6 +17,7 @@ from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
+from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -787,6 +788,19 @@ def create_test_independentreserve(
         name='independentreserve',
         api_key=make_api_key(),
         secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_bybit(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Independentreserve:
+    return Bybit(
+        name='bybit',
+        api_key=ApiKey('HGSlCebTSjiQX3nqQd'),
+        secret=ApiSecret(str.encode('N7jQBV4qNuLMJG43uZRASt8Sp57d263KEg8t')),
         database=database,
         msg_aggregator=msg_aggregator,
     )

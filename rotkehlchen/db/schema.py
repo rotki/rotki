@@ -108,6 +108,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('j', 42);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('k', 43);
 /* WOO */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('l', 44);
+/* Bybit */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

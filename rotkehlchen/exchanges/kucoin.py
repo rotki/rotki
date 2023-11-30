@@ -34,6 +34,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
     deserialize_timestamp,
+    deserialize_timestamp_from_intms,
 )
 from rotkehlchen.types import (
     ApiKey,
@@ -534,8 +535,7 @@ class Kucoin(ExchangeInterface):
             raise AssertionError(f'Unexpected case: {case}')
 
         try:
-            timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
-            timestamp = Timestamp(int(timestamp_ms / 1000))
+            timestamp = deserialize_timestamp_from_intms(raw_result['createdAt'])
             address = raw_result['address']
             # The transaction id can have an @ which we should just get rid of
             transaction_id = raw_result['walletTxId'].split('@')[0]

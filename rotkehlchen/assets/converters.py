@@ -7,6 +7,7 @@ from rotkehlchen.assets.exchanges_mappings.bitpanda import WORLD_TO_BITPANDA
 from rotkehlchen.assets.exchanges_mappings.bitstamp import WORLD_TO_BITSTAMP
 from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
+from rotkehlchen.assets.exchanges_mappings.bybit import WORLD_TO_BYBIT
 from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
@@ -886,6 +887,7 @@ NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
 BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
+BYBIT_TO_WORLD = {v: k for k, v in WORLD_TO_BYBIT.items()}
 OKX_TO_WORLD = {v: k for k, v in WORLD_TO_OKX.items()}
 COMMON_IDENTIFIERS_TO_WORLD = {v: k for k, v in COMMON_ASSETS_MAPPINGS.items()}
 WOO_TO_WORLD = COMMON_IDENTIFIERS_TO_WORLD | WOO_NAME_TO_TOKEN_SYMBOL
@@ -1247,6 +1249,19 @@ def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(symbol)
 
 
+def asset_from_bybit(symbol: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for bybit asset')
+
+    symbol = symbol.upper()
+    name = BYBIT_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -1263,4 +1278,5 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.OKX: asset_from_okx,
     Location.WOO: asset_from_woo,
     Location.EXTERNAL: asset_from_common_identifier,
+    Location.BYBIT: asset_from_bybit,
 }
