@@ -14,6 +14,7 @@ Changelog
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
 * :bug:`-` Swaps using 1inch where the Uniswap V3 decoder processed part of the transaction will be correctly decoded now.
 * :bug:`-` Creating, editing and deleting accounting rules will now update warnings when rendered events get affected in the history view.
+* :bug:`-` Showing a page with a history event with a non-recognized type/subtype combination will no longer stop the page from loading due to an error.
 
 * :release:`1.31.0 <2023-11-24>`
 * :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.
