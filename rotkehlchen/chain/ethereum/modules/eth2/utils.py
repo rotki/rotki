@@ -27,11 +27,6 @@ EPOCH_DURATION_SECS = 384
 ETH2_GENESIS_TIMESTAMP = 1606824023
 
 
-def epoch_to_timestamp(epoch: int) -> Timestamp:
-    """Turn a beaconchain epoch to a unix timestamp"""
-    return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
-
-
 def timestamp_to_epoch(timestamp: Timestamp) -> int:
     """Turn a unix timestamp to a beaconchain epoch"""
     return int((timestamp - ETH2_GENESIS_TIMESTAMP) / EPOCH_DURATION_SECS)

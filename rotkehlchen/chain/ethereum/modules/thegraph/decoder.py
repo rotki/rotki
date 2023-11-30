@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CONTRACT_THEGRAPH_STAKING = string_to_evm_address(CONTRACT_STAKING)
-TOPIC_TRANSFER = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 # example delegate() call: https://etherscan.io/tx/0x6ed3377db652151fb8e4794dd994a921a2d029ad317bd3f2a2916af239490fec
 TOPIC_STAKE_DELEGATED = b'\xcd\x03f\xdc\xe5$}\x87O\xfc`\xa7b\xaaz\xbb\xb8,\x16\x95\xbb\xb1q`\x9c\x1b\x88a\xe2y\xebs'  # noqa: E501
 # example undelegate() call: https://etherscan.io/tx/0x5ca5244868d9c0d8c30a1cad0feaf137bd28acd9c3f669a09a3a199fd75ad25a

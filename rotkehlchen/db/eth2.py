@@ -23,11 +23,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# How much time more than the last time a withdrawal happened to have allowed to pass
-# in order to recheck withdrawals for a given validator. In average at time of writing
-# withdrawals occur every 4-7 days for a single validator
-WITHDRAWALS_RECHECK_PERIOD = 4 * DAY_IN_SECONDS * 1000  # 4 days in milliseconds
-
 
 class DBEth2:
 
