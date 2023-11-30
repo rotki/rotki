@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7017` Fix the issue where clicking on the chain in the blockchain balance summary didn't show the correct section.
 * :bug:`6999` Chai token balances should not appear doubled under certain conditions.
 * :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
 * :bug:`-` Fix issue where the reports page cannot be loaded if there is old report from older version.

@@ -160,53 +160,54 @@ const refreshClick = async () => {
       </div>
     </template>
 
-    <div class="flex flex-row items-center gap-2">
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
-        <template #activator>
-          <RuiButton
-            data-cy="account-balances__delete-button"
-            color="error"
-            variant="outlined"
-            :disabled="
-              isAnyBalancesFetching ||
-              operationRunning ||
-              selectedAddresses.length === 0
-            "
-            @click="showConfirmation(selectedAddresses)"
-          >
-            <template #prepend>
-              <RuiIcon name="delete-bin-line" />
-            </template>
-            {{ t('common.actions.delete') }}
-          </RuiButton>
-        </template>
-        {{ t('account_balances.delete_tooltip') }}
-      </RuiTooltip>
+    <div class="flex flex-col md:flex-row md:items-center gap-2">
+      <div class="grow flex items-center gap-2">
+        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <template #activator>
+            <RuiButton
+              data-cy="account-balances__delete-button"
+              color="error"
+              variant="outlined"
+              :disabled="
+                isAnyBalancesFetching ||
+                operationRunning ||
+                selectedAddresses.length === 0
+              "
+              @click="showConfirmation(selectedAddresses)"
+            >
+              <template #prepend>
+                <RuiIcon name="delete-bin-line" />
+              </template>
+              {{ t('common.actions.delete') }}
+            </RuiButton>
+          </template>
+          {{ t('account_balances.delete_tooltip') }}
+        </RuiTooltip>
 
-      <RuiTooltip
-        v-if="hasTokenDetection"
-        :popper="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            class="ml-2"
-            variant="outlined"
-            color="primary"
-            :loading="detectingTokens"
-            :disabled="detectingTokens || isSectionLoading"
-            @click="detectTokensOfAllAddresses()"
-          >
-            <template #prepend>
-              <RuiIcon name="refresh-line" />
-            </template>
+        <RuiTooltip
+          v-if="hasTokenDetection"
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              class="ml-2"
+              variant="outlined"
+              color="primary"
+              :loading="detectingTokens"
+              :disabled="detectingTokens || isSectionLoading"
+              @click="detectTokensOfAllAddresses()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
 
-            {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-          </RuiButton>
-        </template>
-        {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
-      </RuiTooltip>
-      <div class="grow" />
+              {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+            </RuiButton>
+          </template>
+          {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+        </RuiTooltip>
+      </div>
       <TagFilter
         v-if="!isEth2"
         v-model="visibleTags"
