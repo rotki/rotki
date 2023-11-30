@@ -1414,8 +1414,8 @@ For history event, and EVM history event, if any event was not decoded the way y
 
 Examples of customization. You can set:
 
-- ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
-- ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``None`` if you are depositing or withdrawing assets from an exchange or ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
+- ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable. The ``Event Subtype`` should be ``None`` in that case.
+- ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from a protocol or to an exchange. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
 - ``Event Type`` to ``Withdrawal`` and ``Event Subtype`` to ``Bridge`` if you are receiving something from another chain via some kind of bridge. And ``Event Type`` to ``Deposit`` and ``Event Subtype`` to ``Bridge`` if you are depositing to a bridge in order to move something to another chain.
 - For a swap: The first event should be ``Event Type``: ``Trade`` and ``Event Subtype``: ``Spend``, while the second event should be ``Event Type``: ``Trade`` and ``Event Subtype``:  ``Receive``. But in swaps what's also important is the ``sequence_index``. They need to be subsequent and the send should come before the receive.
 - ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
@@ -1423,10 +1423,10 @@ Examples of customization. You can set:
 - ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
 - ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Receive Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
 - ``Event Type`` to ``Spend`` and ``Event Subtype`` to ``Fee`` if you are paying a fee for some of your actions.
-- ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI.
-- ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking event. For example staking in eth2 or in liquity.
-- ``Event Type`` to ``Renew`` if it is a renewal of any subscription or service that you are paying for.
-- ``Event Type`` to ``Informational`` if the event contains some useful information but it shouldn't be considered in accounting at all.
+- ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI. There is two events in a migration. Both should have type ``Migration`` and the OUT event should have ``Event Subtype`` set to ``Spend``, while the IN event should have ``Event Subtype`` set to ``Receive``.
+- ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking deposit event. For example staking in eth2 or in liquity.
+- ``Event Type`` to ``Renew`` and ``Event Subtype`` to ``None`` if it is a renewal of any subscription or service that you are paying for.
+- ``Event Type`` to ``Informational`` and ``Event Subtype`` to ``None`` if the event contains some useful information but it shouldn't be considered in accounting at all.
 
 Events that have been modified will appear marked in the UI.
 
