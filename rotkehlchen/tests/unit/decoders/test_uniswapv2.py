@@ -554,13 +554,15 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
             asset=Asset(lp_token_identifier),
             balance=Balance(amount=FVal('0.000022187913295974')),
             location_label=ADDY_2,
-            notes='Receive 0.000022187913295974 UNI-V2 from uniswap-v2 pool',
+            notes='Receive 0.000022187913295974 UNI-V2 DAI-USDC from uniswap-v2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=ZERO_ADDRESS,
         ),
     ]
     assert events == expected_events
-    assert EvmToken(lp_token_identifier).protocol == UNISWAP_PROTOCOL
+    lp_token = EvmToken(lp_token_identifier)
+    assert lp_token.protocol == UNISWAP_PROTOCOL
+    assert lp_token.symbol == 'UNI-V2 DAI-USDC'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
@@ -752,7 +754,7 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             asset=Asset('eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             balance=Balance(amount=FVal('9.6176228659E-8')),
             location_label=ADDY_3,
-            notes='Send 0.000000096176228659 UNI-V2 to uniswap-v2 pool',
+            notes='Send 0.000000096176228659 UNI-V2 USDC-WETH to uniswap-v2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
         ), EvmEvent(
@@ -1012,7 +1014,7 @@ def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accoun
             asset=Asset('eip155:1/erc20:0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             balance=Balance(amount=FVal('17.988110986983157473')),
             location_label=user_address,
-            notes='Send 17.988110986983157473 UNI-V2 to uniswap-v2 pool',
+            notes='Send 17.988110986983157473 UNI-V2 POLS-WETH to uniswap-v2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
         ), EvmEvent(

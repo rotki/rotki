@@ -331,7 +331,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             asset=Asset('eip155:1/erc20:0x06da0fd433C1A5d7a4faa01111c044910A184553'),
             balance=Balance(amount=FVal('0.0000243611620791')),
             location_label=ADDY_2,
-            notes='Send 0.0000243611620791 SLP to sushiswap-v2 pool',
+            notes='Send 0.0000243611620791 SLP WETH-USDT to sushiswap-v2 pool',
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
         ), EvmEvent(
@@ -521,7 +521,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             asset=Asset(lp_token_identifier),
             balance=Balance(amount=FVal('1.7297304741E-8')),
             location_label=ADDY_3,
-            notes='Receive 0.000000017297304741 SLP from sushiswap-v2 pool',
+            notes='Receive 0.000000017297304741 SLP WETH-USDT from sushiswap-v2 pool',
             counterparty=CPT_SUSHISWAP_V2,
             address=ZERO_ADDRESS,
         ),
