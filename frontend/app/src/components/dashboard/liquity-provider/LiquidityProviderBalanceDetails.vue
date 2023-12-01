@@ -16,7 +16,6 @@ withDefaults(
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { premiumURL } = useInterop();
 const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -52,7 +51,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const { dark } = useTheme();
 const premium = usePremium();
 
 const { assetPrice } = useBalancePricesStore();
@@ -71,6 +69,7 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
     <DataTable
       v-if="premium || !premiumOnly"
       hide-default-footer
+      flat
       :headers="tableHeaders"
       :items="transformAssets(assets)"
       sort-by="usdValue"
@@ -104,15 +103,11 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
         />
       </template>
     </DataTable>
-    <div v-else class="flex items-center">
-      <VAvatar rounded :color="dark ? 'white' : 'grey lighten-3'">
-        <VIcon>mdi-lock</VIcon>
-      </VAvatar>
-      <div class="ml-4">
-        <i18n tag="div" path="uniswap.assets_non_premium">
-          <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
-        </i18n>
+    <RuiCard v-else dense variant="flat">
+      <div class="flex items-center gap-2 text-body-2">
+        <PremiumLock />
+        {{ t('uniswap.assets_non_premium') }}
       </div>
-    </div>
+    </RuiCard>
   </TableExpandContainer>
 </template>

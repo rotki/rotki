@@ -17,17 +17,15 @@ const { availableTags } = storeToRefs(useTagStore());
 
 <template>
   <div
-    v-if="tags"
+    v-if="tags && tags.length > 0"
     class="mt-2 flex-row flex items-center gap-2"
     :class="wrapperClass"
   >
-    <template v-if="tags.length > 0">
-      <TagIcon
-        v-for="tag in tags"
-        :key="tag"
-        :small="small"
-        :tag="availableTags[tag]"
-      />
-    </template>
+    <TagIcon
+      v-for="tag in tags"
+      :key="tag"
+      :small="small"
+      :tag="availableTags[tag]"
+    />
   </div>
 </template>

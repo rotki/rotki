@@ -23,9 +23,9 @@ const { t } = useI18n();
         <template #custom-header>
           <div class="flex justify-between gap-4 p-4 pb-0 items-start">
             <div>
-              <h6 class="text-h6">
+              <h5 class="text-h5">
                 <slot name="title" />
-              </h6>
+              </h5>
               <div class="text-caption">
                 <slot name="current" />
               </div>

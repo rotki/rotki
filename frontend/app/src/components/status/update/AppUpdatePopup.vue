@@ -64,7 +64,7 @@ onMounted(async () => {
   <VSnackbar
     v-if="isPackaged"
     :value="showUpdatePopup"
-    class="update-popup"
+    class="update-popup m-4"
     :timeout="-1"
     light
     top
@@ -75,18 +75,17 @@ onMounted(async () => {
     rounded
     width="380px"
   >
-    <VRow v-if="!restarting" align="center">
-      <VCol cols="auto">
-        <VIcon v-if="error" large color="error">
-          mdi-alert-circle-outline
-        </VIcon>
-        <VIcon v-else-if="!downloadReady && !downloading" large color="primary">
-          mdi-arrow-up-bold-circle
-        </VIcon>
-        <VIcon v-else large color="primary">mdi-arrow-down-bold-circle</VIcon>
-      </VCol>
-      <VCol class="text-body-1">
-        <span v-if="error" class="error--text">
+    <div v-if="!restarting" class="flex items-center gap-4">
+      <RuiIcon v-if="error" size="40" color="error" name="error-warning-line" />
+      <RuiIcon
+        v-else-if="!downloadReady && !downloading"
+        size="40"
+        color="primary"
+        name="arrow-up-circle-line"
+      />
+      <RuiIcon v-else size="40" color="primary" name="arrow-down-circle-line" />
+      <div class="text-body-1">
+        <span v-if="error" class="text-rui-error">
           {{ error }}
         </span>
         <span v-else-if="downloading">
@@ -104,65 +103,57 @@ onMounted(async () => {
           <div>{{ t('update_popup.download_nudge') }}</div>
         </div>
         <span v-else>{{ t('update_popup.downloaded') }}</span>
-      </VCol>
-    </VRow>
-    <VRow v-else align="center">
-      <VCol cols="auto">
-        <VIcon large color="primary"> mdi-spin mdi-loading </VIcon>
-      </VCol>
-      <VCol class="text-body-1">{{ t('update_popup.restart') }}</VCol>
-    </VRow>
+      </div>
+    </div>
+    <div v-else class="flex items-center gap-4">
+      <RuiProgress
+        color="primary"
+        thickness="2"
+        variant="indeterminate"
+        circular
+      />
+      <div class="text-body-1">{{ t('update_popup.restart') }}</div>
+    </div>
 
-    <VProgressLinear
+    <RuiProgress
       v-if="downloading"
-      :value="percentage"
-      class="mt-2"
+      class="mt-4"
       color="primary"
-      height="25"
-    >
-      <template #default="{ value }">
-        <strong class="white--text">
-          {{ t('update_popup.progress', { percentage: Math.ceil(value) }) }}
-        </strong>
-      </template>
-    </VProgressLinear>
+      :value="percentage"
+      show-label
+    />
 
     <template #action="{ attrs }">
-      <div v-if="error">
-        <VBtn text v-bind="attrs" @click="dismiss()">
-          {{ t('common.actions.dismiss') }}
-        </VBtn>
-      </div>
-      <div v-else-if="!downloading && !restarting">
-        <VBtn text v-bind="attrs" @click="dismiss()">
+      <RuiButton
+        v-if="error"
+        variant="text"
+        color="primary"
+        v-bind="attrs"
+        @click="dismiss()"
+      >
+        {{ t('common.actions.dismiss') }}
+      </RuiButton>
+      <div v-else-if="!downloading && !restarting" class="flex gap-2">
+        <RuiButton
+          variant="text"
+          color="primary"
+          v-bind="attrs"
+          @click="dismiss()"
+        >
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn
+        </RuiButton>
+        <RuiButton
           v-if="!downloadReady"
           color="primary"
-          text
           v-bind="attrs"
           @click="update()"
         >
           {{ t('common.actions.update') }}
-        </VBtn>
-        <VBtn v-else color="primary" text v-bind="attrs" @click="install()">
+        </RuiButton>
+        <RuiButton v-else color="primary" v-bind="attrs" @click="install()">
           {{ t('common.actions.install') }}
-        </VBtn>
+        </RuiButton>
       </div>
     </template>
   </VSnackbar>
 </template>
-
-<style scoped lang="scss">
-.update-popup {
-  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-  :deep(.v-snack__wrapper) {
-    margin: 16px;
-    width: 400px;
-    box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
-  }
-  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-}
-</style>

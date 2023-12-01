@@ -109,11 +109,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <TagDisplay
-        v-if="xpubTags && xpubTags.length > 0"
-        wrapper-class="mt-1 ms-8"
-        :tags="xpubTags"
-      />
+      <TagDisplay wrapper-class="mt-1 ms-8" :tags="xpubTags" />
     </td>
     <td class="text-end" :class="mobileClass">
       <AmountDisplay

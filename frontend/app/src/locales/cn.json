@@ -4013,7 +4013,7 @@
     }
   },
   "uniswap": {
-    "assets_non_premium": "升级到 {0} 以查看资产信息",
+    "assets_non_premium": "升级到 @:uniswap.premium 以查看资产信息",
     "loading": "请稍候，您的流动资金池正在加载...",
     "loading_non_premium": "加载流动资金池余额可能需要一段时间......考虑升级到 {0} 以加快加载时间。",
     "premium": "溢价",
@@ -4036,7 +4036,6 @@
       "message": "安装应用程序更新时出错：{message}"
     },
     "messages": "新版本的 rotki 可用。请参阅 {releaseNotes}。",
-    "progress": "{percentage} %",
     "release_notes": "发行说明",
     "restart": "rotki 将立即重启以应用更新。"
   },

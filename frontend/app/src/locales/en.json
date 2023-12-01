@@ -4360,7 +4360,7 @@
     }
   },
   "uniswap": {
-    "assets_non_premium": "Upgrade to {0} to see assets information",
+    "assets_non_premium": "Upgrade to @:uniswap.premium to see assets information",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
     "premium": "premium",
@@ -4383,7 +4383,6 @@
       "message": "An error occurred while installing the application update: {message}"
     },
     "messages": "A new version of rotki is available. See {releaseNotes}.",
-    "progress": "{percentage} %",
     "release_notes": "release notes",
     "restart": "rotki will restart in a moment to apply the update."
   },

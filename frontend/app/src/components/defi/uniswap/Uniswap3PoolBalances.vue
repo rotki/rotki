@@ -10,9 +10,7 @@ defineProps<{
 
 const { t } = useI18n();
 
-const { dark } = useTheme();
 const premium = usePremium();
-const { premiumURL } = useInterop();
 </script>
 
 <template>
@@ -61,16 +59,12 @@ const { premiumURL } = useInterop();
         />
       </div>
 
-      <div v-else class="pt-4 flex items-center">
-        <VAvatar rounded :color="dark ? 'white' : 'grey lighten-3'">
-          <VIcon>mdi-lock</VIcon>
-        </VAvatar>
-        <div class="ml-4">
-          <i18n tag="div" path="uniswap.assets_non_premium">
-            <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
-          </i18n>
+      <RuiCard v-else dense class="mt-4">
+        <div class="flex items-center gap-2 text-body-2">
+          <PremiumLock />
+          {{ t('uniswap.assets_non_premium') }}
         </div>
-      </div>
+      </RuiCard>
     </div>
   </RuiCard>
 </template>

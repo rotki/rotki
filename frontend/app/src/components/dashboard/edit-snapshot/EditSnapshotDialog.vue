@@ -159,13 +159,13 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
           <RuiIcon class="text-white" name="close-line" />
         </RuiButton>
 
-        <h6 class="pl-2 text-h6 flex items-center">
+        <h5 class="pl-2 text-h5 flex items-center">
           <i18n path="dashboard.snapshot.edit.dialog.title">
             <template #date>
               <DateDisplay :timestamp="timestamp" />
             </template>
           </i18n>
-        </h6>
+        </h5>
       </div>
 
       <div v-if="snapshotData">

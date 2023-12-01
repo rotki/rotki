@@ -44,12 +44,15 @@ const css = useCssModule();
     class="flex flex-row items-center"
     :class="mode === 'icon' ? 'justify-center' : null"
   >
-    <VTooltip top :disabled="mode !== 'icon'" open-delay="300ms">
-      <template #activator="{ on, attrs }">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :disabled="mode !== 'icon'"
+      open-delay="400"
+    >
+      <template #activator>
         <VImg
           v-if="mode === 'icon' || mode === 'both'"
           contain
-          v-bind="attrs"
           max-width="32px"
           max-height="32px"
           :class="{
@@ -57,7 +60,6 @@ const css = useCssModule();
             [css.icon]: true
           }"
           :src="`./assets/images/protocols/${icon}.svg`"
-          v-on="on"
         />
         <span
           v-if="mode === 'label' || mode === 'both'"
@@ -70,7 +72,7 @@ const css = useCssModule();
       <span>
         {{ toSentenceCase(name) }}
       </span>
-    </VTooltip>
+    </RuiTooltip>
   </div>
 </template>
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const { href, onLinkClick } = useLinks();
+
+const attrs = useAttrs();
 </script>
 
 <template>
@@ -8,6 +10,7 @@ const { href, onLinkClick } = useLinks();
     :tooltip="t('premium_lock.tooltip')"
     class-name="text-rui-text-secondary"
     :href="href"
+    v-bind="attrs"
     @click="onLinkClick()"
   >
     <RuiIcon name="lock-line" />
