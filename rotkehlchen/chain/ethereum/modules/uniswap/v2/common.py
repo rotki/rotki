@@ -1,4 +1,3 @@
-import dataclasses
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
@@ -7,9 +6,9 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
+    edit_token_and_clean_cache,
     get_or_create_evm_token,
     set_token_protocol_if_missing,
 )
@@ -33,7 +32,6 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUSHISWAP_PROTOCOL,
@@ -279,18 +277,22 @@ def decode_uniswap_like_deposit_and_withdrawals(
             protocol=UNISWAP_PROTOCOL if token_is_uniswap_v2_lp else None,
         )
 
-        if len(pool_token.underlying_tokens) == 0:
-            pool_token = dataclasses.replace(pool_token, underlying_tokens=underlying_tokens)
-            GlobalDBHandler().edit_evm_token(pool_token)
-            AssetResolver().clean_memory_cache(pool_token.identifier)
-
-        if pool_token.symbol in {UNISWAP_PROTOCOL, SUSHISWAP_PROTOCOL}:
+        symbol = pool_token.symbol
+        if symbol in {UNISWAP_PROTOCOL, SUSHISWAP_PROTOCOL}:
             # uniswap and sushiswap provide the same symbol for all the LP tokens. In order to
             # provide a a better UX if the default symbol is used then change the symbol to
             # include the symbols of the underlying tokens.
-            object.__setattr__(pool_token, 'symbol', f'{pool_token.symbol} {token0.symbol}-{token1.symbol}')  # noqa: E501
-            GlobalDBHandler().edit_evm_token(pool_token)
-            AssetResolver.clean_memory_cache(pool_token.identifier)
+            symbol = f'{symbol} {token0.symbol}-{token1.symbol}'
+
+        edit_token_and_clean_cache(
+            evm_inquirer=None,  # we don't need to query again information from chain
+            evm_token=pool_token,
+            name=pool_token.name,
+            symbol=symbol,
+            decimals=pool_token.decimals,
+            started=pool_token.started,
+            underlying_tokens=underlying_tokens,
+        )
     except NotERC20Conformant:
         log.error(
             f'Failed to create the pool token since it does not conform to ERC20. '
