@@ -3,6 +3,7 @@ import {
   RiAddCircleLine,
   RiAddLine,
   RiAlarmWarningLine,
+  RiArrowDownCircleLine,
   RiArrowDownLine,
   RiArrowDownSLine,
   RiArrowGoBackLine,
@@ -342,6 +343,7 @@ Vue.use(RuiPlugin, {
     RiBugLine,
     RiVirusLine,
     RiFileSearchLine,
-    RiChatQuoteLine
+    RiChatQuoteLine,
+    RiArrowDownCircleLine
   ]
 });

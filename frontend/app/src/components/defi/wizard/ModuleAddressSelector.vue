@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SUPPORTED_MODULES } from '@/types/modules';
 
-const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);
+const { inc: nextStep, dec: previousStep, count: step } = useCounter(1);
 const { fetchQueriedAddresses } = useQueriedAddressesStore();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
@@ -27,7 +27,7 @@ onMounted(async () => {
 <template>
   <div>
     <VStepper v-model="step" class="module-address-selector">
-      <VSheet rounded outlined>
+      <RuiCard no-padding>
         <VStepperHeader>
           <template v-for="n in steps">
             <VStepperStep
@@ -51,44 +51,45 @@ onMounted(async () => {
               </span>
             </VStepperStep>
 
-            <VDivider v-if="n !== steps" :key="n" />
+            <RuiDivider v-if="n !== steps" :key="n" />
           </template>
         </VStepperHeader>
-      </VSheet>
+      </RuiCard>
 
       <VStepperItems>
         <VStepperContent v-for="n in steps" :key="`${n}-content`" :step="n">
-          <VRow align="center" no-gutters>
-            <VCol cols="auto">
-              <AdaptiveWrapper>
-                <VImg
-                  width="30px"
-                  contain
-                  max-height="24px"
-                  :src="modules[n - 1].icon"
-                />
-              </AdaptiveWrapper>
-            </VCol>
-            <VCol>
-              <div class="text-h6 ml-3">{{ modules[n - 1].name }}</div>
-            </VCol>
-          </VRow>
+          <div class="flex items-center gap-3">
+            <AdaptiveWrapper>
+              <VImg
+                width="30px"
+                contain
+                max-height="24px"
+                :src="modules[n - 1].icon"
+              />
+            </AdaptiveWrapper>
+            <div class="text-h6">{{ modules[n - 1].name }}</div>
+          </div>
 
-          <VSheet class="mb-12 mt-4" flat height="110px">
+          <div class="mb-12 mt-4">
             <ModuleQueriedAddress :module="modules[n - 1].identifier" />
-          </VSheet>
+          </div>
 
-          <div>
-            <VBtn v-if="step > 1" class="mr-4" text @click="previousStep()">
+          <div class="flex gap-4">
+            <RuiButton
+              v-if="step > 1"
+              variant="text"
+              color="primary"
+              @click="previousStep()"
+            >
               {{ t('common.actions.back') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               v-if="step < modules.length"
               color="primary"
               @click="nextStep()"
             >
               {{ t('common.actions.next') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VStepperContent>
       </VStepperItems>

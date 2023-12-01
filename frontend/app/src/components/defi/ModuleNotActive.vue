@@ -32,47 +32,43 @@ const { t } = useI18n();
 
 <template>
   <div
-    :style="`height: calc(100vh - ${top + 64}px);`"
+    :style="`height: calc(100vh - ${top + 100}px);`"
     class="flex flex-col items-center justify-center"
   >
-    <div class="module-not-active__container">
-      <VRow align="center" justify="center">
-        <VCol v-for="module in modules" :key="module" cols="auto">
+    <div class="module-not-active__container flex flex-col items-center gap-8">
+      <div class="flex items-center justify-center gap-4">
+        <div v-for="module in modules" :key="module">
           <VImg width="82px" contain :src="icon(module)" />
-        </VCol>
-      </VRow>
-      <VRow align="center" justify="center" class="mt-16">
-        <VCol cols="auto" class="text--secondary">
-          <i18n
-            tag="span"
-            path="module_not_active.not_active"
-            class="text-center"
+        </div>
+      </div>
+      <i18n
+        tag="span"
+        path="module_not_active.not_active"
+        class="text-center text-rui-text-secondary"
+      >
+        <template #link>
+          <InternalLink
+            class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+            :to="Routes.SETTINGS_MODULES"
           >
-            <template #link>
-              <InternalLink
-                class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
-                :to="Routes.SETTINGS_MODULES"
-              >
-                {{ t('module_not_active.settings_link') }}
-              </InternalLink>
-            </template>
-            <template #text>
-              <div v-if="modules.length > 1">
-                {{ t('module_not_active.at_least_one') }}
-              </div>
-            </template>
-            <template #module>
-              <span
-                v-for="module in modules"
-                :key="`mod-${module}`"
-                class="module-not-active__module"
-              >
-                {{ name(module) }}
-              </span>
-            </template>
-          </i18n>
-        </VCol>
-      </VRow>
+            {{ t('module_not_active.settings_link') }}
+          </InternalLink>
+        </template>
+        <template #text>
+          <div v-if="modules.length > 1">
+            {{ t('module_not_active.at_least_one') }}
+          </div>
+        </template>
+        <template #module>
+          <span
+            v-for="module in modules"
+            :key="`mod-${module}`"
+            class="module-not-active__module"
+          >
+            {{ name(module) }}
+          </span>
+        </template>
+      </i18n>
     </div>
   </div>
 </template>

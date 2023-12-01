@@ -102,9 +102,9 @@ const matchedAcquisitions = computed(
             <RuiCard>
               <template #custom-header>
                 <div class="flex p-4 items-center gap-4">
-                  <h6 class="text-h6">
+                  <h5 class="text-h5">
                     {{ t('cost_basis_table.cost_basis') }}
-                  </h6>
+                  </h5>
                   <RuiChip
                     v-if="costBasis.isComplete"
                     size="sm"

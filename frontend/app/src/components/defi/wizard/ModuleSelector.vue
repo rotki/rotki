@@ -101,37 +101,35 @@ const disableAll = async () => {
 <template>
   <Card flat no-padding :outlined="false">
     <template #search>
-      <div class="flex flex-row">
-        <div>
-          <VBtn
+      <div class="flex flex-col md:flex-row md:justify-between gap-4 mb-4">
+        <div class="flex items-center gap-2">
+          <RuiButton
             color="primary"
             :loading="loading"
-            depressed
             data-cy="modules_enable_all"
             @click="enableAll()"
           >
             {{ t('module_selector.actions.enable_all') }}
-          </VBtn>
-          <VBtn
+          </RuiButton>
+          <RuiButton
             color="primary"
-            depressed
-            outlined
-            text
-            class="ml-2"
+            variant="outlined"
             data-cy="modules_disable_all"
             @click="disableAll()"
           >
             {{ t('module_selector.actions.disable_all') }}
-          </VBtn>
+          </RuiButton>
         </div>
-        <VSpacer />
-        <VTextField
+        <RuiTextField
           v-model="search"
+          variant="outlined"
+          color="primary"
+          class="md:min-w-[20rem]"
           :label="t('module_selector.filter')"
           clearable
-          outlined
+          hide-details
           dense
-          prepend-inner-icon="mdi-magnify"
+          prepend-icon="search-line"
         />
       </div>
     </template>

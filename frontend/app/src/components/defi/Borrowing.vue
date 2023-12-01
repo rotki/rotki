@@ -91,31 +91,27 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     </ProgressScreen>
 
     <div v-else class="flex flex-col gap-4">
-      <StatCardWide :cols="2">
-        <template #first-col>
-          <StatCardColumn>
-            <template #title>
-              {{ t('borrowing.total_collateral_locked') }}
-            </template>
-            <AmountDisplay
-              :value="summary.totalCollateralUsd"
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </StatCardColumn>
-        </template>
-        <template #second-col>
-          <StatCardColumn>
-            <template #title>
-              {{ t('borrowing.total_outstanding_debt') }}
-            </template>
-            <AmountDisplay
-              :value="summary.totalDebt"
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </StatCardColumn>
-        </template>
+      <StatCardWide>
+        <StatCardColumn>
+          <template #title>
+            {{ t('borrowing.total_collateral_locked') }}
+          </template>
+          <AmountDisplay
+            :value="summary.totalCollateralUsd"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </StatCardColumn>
+        <StatCardColumn>
+          <template #title>
+            {{ t('borrowing.total_outstanding_debt') }}
+          </template>
+          <AmountDisplay
+            :value="summary.totalDebt"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </StatCardColumn>
       </StatCardWide>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

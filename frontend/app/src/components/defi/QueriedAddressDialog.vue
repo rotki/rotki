@@ -88,123 +88,87 @@ const close = () => {
     @click:outside="close()"
     @close="close()"
   >
-    <Card>
-      <template #title>{{ t('queried_address_dialog.title') }}</template>
-      <template #subtitle>
-        {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
+    <RuiCard>
+      <template #custom-header>
+        <div class="flex items-start justify-between p-4">
+          <div>
+            <h5 class="text-h5">
+              {{ t('queried_address_dialog.title') }}
+            </h5>
+            <div class="text-rui-text-secondary text-body-2">
+              {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
+            </div>
+          </div>
+
+          <RuiButton class="shrink-0" variant="text" icon @click="close()">
+            <RuiIcon name="close-line" />
+          </RuiButton>
+        </div>
       </template>
-      <template #actions>
-        <VRow no-gutters align="center" class="flex-nowrap">
-          <VCol>
-            <BlockchainAccountSelector
-              v-model="selectedAccounts"
-              outlined
-              flat
-              dense
-              no-padding
-              hide-on-empty-usable
-              max-width="340px"
-              :usable-addresses="usableAddresses"
-              class="queried-address-dialog__selector"
-              :chains="[ETH]"
-              :label="t('queried_address_dialog.add')"
-            />
-          </VCol>
-          <VCol cols="auto">
-            <VBtn
-              icon
-              color="primary"
-              :disabled="selectedAccounts.length === 0"
-              @click="addAddress()"
-            >
-              <VIcon>mdi-plus</VIcon>
-            </VBtn>
-          </VCol>
-        </VRow>
-      </template>
-      <template #details>
-        <VBtn icon @click="close()">
-          <VIcon>mdi-close</VIcon>
-        </VBtn>
-      </template>
-      <div v-if="addresses.length > 0" class="queried-address-dialog__list">
-        <VRow
+      <div class="flex items-center gap-2">
+        <BlockchainAccountSelector
+          v-model="selectedAccounts"
+          outlined
+          flat
+          dense
+          no-padding
+          hide-on-empty-usable
+          max-width="340px"
+          :usable-addresses="usableAddresses"
+          class="queried-address-dialog__selector flex-1"
+          :chains="[ETH]"
+          :label="t('queried_address_dialog.add')"
+        />
+        <RuiButton
+          :disabled="selectedAccounts.length === 0"
+          variant="text"
+          icon
+          @click="addAddress()"
+        >
+          <RuiIcon name="add-line" />
+        </RuiButton>
+      </div>
+      <div v-if="addresses.length > 0" class="overflow-y-scroll mt-4 h-[16rem]">
+        <div
           v-for="address in addresses"
           :key="address"
-          no-gutters
-          class="py-1"
+          class="flex items-start gap-4 py-2 border-t border-default"
         >
-          <VCol>
-            <LabeledAddressDisplay
-              :account="getAccount(address)"
-              class="queried-address-dialog__account"
-            />
+          <div class="flex-1">
+            <LabeledAddressDisplay :account="getAccount(address)" />
             <TagDisplay :tags="getAccount(address).tags" :small="true" />
-          </VCol>
-          <VCol cols="auto">
-            <VTooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <VBtn
-                  small
-                  icon
-                  color="primary"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="
-                    deleteQueriedAddress({
-                      module,
-                      address
-                    })
-                  "
-                >
-                  <VIcon>mdi-delete</VIcon>
-                </VBtn>
-              </template>
-              <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
-            </VTooltip>
-          </VCol>
-        </VRow>
-      </div>
-      <div v-else class="queried-address-dialog__empty">
-        <div>
-          {{
-            t('queried_address_dialog.all_address_queried', {
-              module: moduleName
-            })
-          }}
+          </div>
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiButton
+                variant="text"
+                icon
+                color="primary"
+                class="!p-2 mt-0.5"
+                @click="
+                  deleteQueriedAddress({
+                    module,
+                    address
+                  })
+                "
+              >
+                <RuiIcon size="16" name="delete-bin-line" />
+              </RuiButton>
+            </template>
+            <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
+          </RuiTooltip>
         </div>
       </div>
-    </Card>
+      <div
+        v-else
+        class="border-t mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
+      >
+        {{
+          t('queried_address_dialog.all_address_queried', {
+            module: moduleName
+          })
+        }}
+      </div>
+    </RuiCard>
   </VDialog>
 </template>
-
-<style scoped lang="scss">
-.queried-address-dialog {
-  &__list {
-    overflow-y: scroll;
-    overflow-x: hidden;
-    width: 99%;
-    padding: 8px;
-    height: 250px;
-  }
-
-  &__empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 250px;
-  }
-
-  &__account {
-    width: 300px;
-  }
-}
-
-:deep(.labeled-address-display) {
-  .labeled-address-display {
-    &__chip {
-      max-width: 241px;
-    }
-  }
-}
-</style>
