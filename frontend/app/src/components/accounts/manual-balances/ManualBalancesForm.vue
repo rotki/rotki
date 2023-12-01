@@ -230,7 +230,6 @@ onMounted(async () => {
       v-model="balanceType"
       :disabled="submitting"
       :label="t('manual_balances_form.fields.balance_type')"
-      outlined
     />
 
     <div class="flex items-start gap-4">

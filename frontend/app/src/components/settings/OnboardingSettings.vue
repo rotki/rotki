@@ -476,7 +476,6 @@ const showResetConfirmation = () => {
               :label="t('backend_settings.log_from_other_modules.label')"
               :disabled="fileConfig.logFromOtherModules"
               persistent-hint
-              :error-messages="['asdf']"
               :hint="
                 fileConfig.logFromOtherModules
                   ? t('backend_settings.config_file_disabled')

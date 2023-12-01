@@ -103,7 +103,6 @@ const updateAsset = (asset: string) => {
   <form class="flex flex-col gap-2">
     <BalanceTypeInput
       :value="form.category"
-      outlined
       :label="t('common.category')"
       :error-messages="toMessages(v$.category)"
       @input="updateForm({ category: $event })"
