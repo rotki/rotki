@@ -99,16 +99,17 @@ const deleteToken = (address: string) => {
     <div class="text-h6">
       {{ t('underlying_token_manager.labels.tokens') }}
     </div>
-    <VRow class="mt-2">
-      <VCol cols="12" md="7">
-        <VTextField
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 my-2">
+      <div class="md:col-span-2">
+        <RuiTextField
           v-model="underlyingAddress"
           :error-messages="v$.address.$errors.map(e => e.$message)"
-          outlined
+          variant="outlined"
+          color="primary"
           :label="t('common.address')"
         />
-      </VCol>
-      <VCol cols="12" md="2">
+      </div>
+      <div class="col-span-1">
         <VSelect
           v-model="tokenKind"
           outlined
@@ -117,33 +118,36 @@ const deleteToken = (address: string) => {
           item-text="label"
           item-value="identifier"
         />
-      </VCol>
-      <VCol cols="12" md="3">
-        <VTextField
+      </div>
+      <div class="col-span-1">
+        <RuiTextField
           v-model="underlyingWeight"
+          variant="outlined"
+          color="primary"
           type="number"
           max="100"
           min="1"
           :error-messages="v$.weight.$errors.map(e => e.$message)"
           persistent-hint
           :hint="t('underlying_token_manager.hint')"
-          outlined
           :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <VBtn
+            <RuiButton
+              variant="text"
+              color="primary"
               icon
               :disabled="v$.$invalid"
               class="mt-n2"
               @click="addToken()"
             >
-              <VIcon>mdi-plus</VIcon>
-            </VBtn>
+              <RuiIcon name="add-line" />
+            </RuiButton>
           </template>
-        </VTextField>
-      </VCol>
-    </VRow>
-    <VSheet outlined rounded class="underlying-tokens">
+        </RuiTextField>
+      </div>
+    </div>
+    <RuiCard class="underlying-tokens">
       <VSimpleTable fixed-header height="200px">
         <thead>
           <tr>
@@ -175,6 +179,6 @@ const deleteToken = (address: string) => {
           </tr>
         </tbody>
       </VSimpleTable>
-    </VSheet>
+    </RuiCard>
   </VForm>
 </template>

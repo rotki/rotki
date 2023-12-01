@@ -78,7 +78,8 @@ const action = async (notification: NotificationData) => {
         ['!rounded-none']: popup
       }
     ]"
-    class="[&>div]:!p-2"
+    class="!p-2"
+    no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
     <VListItem :class="css.body" class="flex-col items-stretch p-0">

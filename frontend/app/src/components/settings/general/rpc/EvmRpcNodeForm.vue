@@ -119,19 +119,21 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <form class="pt-2">
-    <VTextField
+  <form class="flex flex-col gap-2">
+    <RuiTextField
       v-model="state.name"
-      outlined
+      variant="outlined"
+      color="primary"
       data-cy="node-name"
       :disabled="isEtherscan"
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
       @blur="v$.name.$touch()"
     />
-    <VTextField
+    <RuiTextField
       v-model="state.endpoint"
-      outlined
+      variant="outlined"
+      color="primary"
       data-cy="node-endpoint"
       :disabled="isEtherscan"
       :error-messages="toMessages(v$.endpoint)"
@@ -139,38 +141,33 @@ setSubmitFunc(save);
       @blur="v$.endpoint.$touch()"
     />
 
-    <VRow align="center">
-      <VCol>
-        <VSlider
-          :value="state.weight"
-          :disabled="state.owned"
-          :error-messages="toMessages(v$.weight)"
-          :label="t('rpc_node_form.weight')"
-          min="0"
-          max="100"
-          persistent-hint
-          :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
-          step="1"
-          thumb-label
-          @change="state.weight = $event"
-          @blur="v$.weight.$touch()"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <AmountInput
-          :disabled="state.owned"
-          :value="state.weight.toString()"
-          :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
-          outlined
-          hide-details
-          :class="$style.input"
-          @input="state.weight = $event"
-        />
-      </VCol>
-      <VCol cols="auto" class="pl-0">
-        {{ t('rpc_node_form.weight_per_hundred') }}
-      </VCol>
-    </VRow>
+    <div class="flex items-center gap-4">
+      <VSlider
+        :value="state.weight"
+        :disabled="state.owned"
+        :error-messages="toMessages(v$.weight)"
+        :label="t('rpc_node_form.weight')"
+        min="0"
+        max="100"
+        persistent-hint
+        :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
+        step="1"
+        class="grow"
+        thumb-label
+        @change="state.weight = $event"
+        @blur="v$.weight.$touch()"
+      />
+      <AmountInput
+        :disabled="state.owned"
+        :value="state.weight.toString()"
+        :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
+        outlined
+        hide-details
+        class="shrink ml-2 w-[8rem]"
+        @input="state.weight = $event"
+      />
+      {{ t('rpc_node_form.weight_per_hundred') }}
+    </div>
 
     <VSwitch
       v-model="state.owned"
@@ -188,9 +185,3 @@ setSubmitFunc(save);
     />
   </form>
 </template>
-
-<style lang="scss" module>
-.input {
-  width: 100px;
-}
-</style>

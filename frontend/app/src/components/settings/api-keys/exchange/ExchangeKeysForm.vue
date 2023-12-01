@@ -164,8 +164,8 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
 </script>
 
 <template>
-  <div data-cy="exchange-keys" class="pt-2 flex flex-col gap-2">
-    <div class="grid md:grid-cols-2 gap-4">
+  <div data-cy="exchange-keys" class="flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <VAutocomplete
         outlined
         :value="exchange.location"

@@ -121,7 +121,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
 </script>
 
 <template>
-  <form class="pt-2">
+  <form>
     <HistoryEventTypeForm
       :event-type.sync="state.eventType"
       :event-subtype.sync="state.eventSubtype"

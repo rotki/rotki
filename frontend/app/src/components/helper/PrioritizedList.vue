@@ -103,7 +103,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
 
 <template>
   <div>
-    <RuiCard rounded="md" class="[&>div]:!p-0">
+    <RuiCard rounded="md" no-padding>
       <template v-if="slots.title" #header>
         <div class="p-4">
           <slot name="title" />

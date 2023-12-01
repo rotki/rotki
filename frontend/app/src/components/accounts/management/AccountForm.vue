@@ -33,7 +33,7 @@ watch(context, ctx => {
 </script>
 
 <template>
-  <div class="pt-2">
+  <div>
     <AccountSelector
       :input-mode="inputMode"
       :blockchain="blockchain"

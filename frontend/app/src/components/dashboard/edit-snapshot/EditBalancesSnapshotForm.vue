@@ -100,10 +100,9 @@ const updateAsset = (asset: string) => {
 </script>
 
 <template>
-  <div class="pt-1 flex md:flex-col gap-4">
+  <form class="flex flex-col gap-2">
     <BalanceTypeInput
       :value="form.category"
-      outlined
       :label="t('common.category')"
       :error-messages="toMessages(v$.category)"
       @input="updateForm({ category: $event })"
@@ -113,16 +112,23 @@ const updateAsset = (asset: string) => {
         {{ t('common.asset') }}
       </div>
       <div>
-        <VRadioGroup v-model="assetType" row class="mt-2" :disabled="edit">
-          <VRadio
-            :label="t('dashboard.snapshot.edit.dialog.balances.token')"
-            value="token"
-          />
-          <VRadio
-            :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
-            value="nft"
-          />
-        </VRadioGroup>
+        <RuiRadioGroup
+          v-model="assetType"
+          color="primary"
+          inline
+          :disabled="edit"
+        >
+          <template #default>
+            <RuiRadio
+              :label="t('dashboard.snapshot.edit.dialog.balances.token')"
+              internal-value="token"
+            />
+            <RuiRadio
+              :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
+              internal-value="nft"
+            />
+          </template>
+        </RuiRadioGroup>
         <AssetSelect
           v-if="assetType === 'token'"
           :value="form.assetIdentifier"
@@ -135,12 +141,14 @@ const updateAsset = (asset: string) => {
           @input="updateForm({ assetIdentifier: $event })"
           @change="updateAsset($event)"
         />
-        <VTextField
-          v-if="assetType === 'nft'"
+        <RuiTextField
+          v-else-if="assetType === 'nft'"
           :value="form.assetIdentifier"
           :label="t('common.asset')"
-          outlined
+          variant="outlined"
+          color="primary"
           :disabled="edit"
+          class="mb-1.5"
           :error-messages="toMessages(v$.assetIdentifier)"
           :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
           @input="updateForm({ assetIdentifier: $event })"
@@ -148,25 +156,27 @@ const updateAsset = (asset: string) => {
         />
       </div>
     </div>
-    <AmountInput
-      :disabled="assetType === 'nft'"
-      :value="form.amount"
-      outlined
-      :label="t('common.amount')"
-      :error-messages="toMessages(v$.amount)"
-      @input="updateForm({ amount: $event })"
-    />
-    <AmountInput
-      :value="form.usdValue"
-      outlined
-      :label="
-        t('common.value_in_symbol', {
-          symbol: currencySymbol
-        })
-      "
-      :error-messages="toMessages(v$.usdValue)"
-      @input="updateForm({ usdValue: $event })"
-    />
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <AmountInput
+        :disabled="assetType === 'nft'"
+        :value="form.amount"
+        outlined
+        :label="t('common.amount')"
+        :error-messages="toMessages(v$.amount)"
+        @input="updateForm({ amount: $event })"
+      />
+      <AmountInput
+        :value="form.usdValue"
+        outlined
+        :label="
+          t('common.value_in_symbol', {
+            symbol: currencySymbol
+          })
+        "
+        :error-messages="toMessages(v$.usdValue)"
+        @input="updateForm({ usdValue: $event })"
+      />
+    </div>
 
     <EditBalancesSnapshotLocationSelector
       :value="form.location"
@@ -174,5 +184,5 @@ const updateAsset = (asset: string) => {
       :preview-location-balance="previewLocationBalance"
       @input="updateForm({ location: $event })"
     />
-  </div>
+  </form>
 </template>

@@ -89,7 +89,7 @@ const showConfirmation = () => {
 
 <template>
   <div>
-    <RuiCard class="[&>div]:!p-0 py-[2px] px-1 bg-white dark:bg-rui-grey-900">
+    <RuiCard no-padding class="p-1 bg-white dark:bg-rui-grey-900">
       <div class="flex items-center justify-center">
         <div
           v-for="module in moduleStatus"

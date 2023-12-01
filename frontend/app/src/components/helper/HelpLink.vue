@@ -17,20 +17,21 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <VTooltip open-delay="400" top>
-    <template #activator="{ attrs, on }">
-      <VBtn
+  <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <template #activator>
+      <RuiButton
+        type="button"
+        variant="text"
         icon
-        :small="small"
-        v-bind="attrs"
+        :size="small ? 'sm' : 'md'"
         :href="href"
         target="_blank"
-        v-on="on"
+        tag="a"
         @click="onLinkClick()"
       >
-        <VIcon :small="small">mdi-help-circle</VIcon>
-      </VBtn>
+        <RuiIcon :size="small ? 20 : 24" name="question-line" />
+      </RuiButton>
     </template>
     {{ tooltip }}
-  </VTooltip>
+  </RuiTooltip>
 </template>

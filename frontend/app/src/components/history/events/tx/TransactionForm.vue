@@ -38,7 +38,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation, setSubmitFunc } = useHistoryTransactionsForm();
+const { setValidation, setSubmitFunc } = useHistoryTransactionsForm();
 
 const v$ = setValidation(
   rules,
@@ -104,28 +104,22 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <VForm :value="valid">
-    <VRow class="pt-4">
-      <VCol cols="12">
-        <BlockchainAccountSelector
-          v-model="accounts"
-          :chains="txChains"
-          outlined
-          no-padding
-          flat
-          :label="t('transactions.form.account.label')"
-          :error-messages="toMessages(v$.associatedAddress)"
-        />
-      </VCol>
-
-      <VCol cols="12">
-        <VTextField
-          v-model="txHash"
-          :label="t('common.tx_hash')"
-          outlined
-          :error-messages="toMessages(v$.txHash)"
-        />
-      </VCol>
-    </VRow>
-  </VForm>
+  <form class="flex flex-col gap-8">
+    <BlockchainAccountSelector
+      v-model="accounts"
+      :chains="txChains"
+      outlined
+      no-padding
+      flat
+      :label="t('transactions.form.account.label')"
+      :error-messages="toMessages(v$.associatedAddress)"
+    />
+    <RuiTextField
+      v-model="txHash"
+      :label="t('common.tx_hash')"
+      variant="outlined"
+      color="primary"
+      :error-messages="toMessages(v$.txHash)"
+    />
+  </form>
 </template>

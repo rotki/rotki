@@ -27,6 +27,7 @@ const input = (value: BalanceType) => {
     :value="value"
     :items="balanceTypes"
     v-bind="$attrs"
+    outlined
     @input="input($event)"
   />
 </template>

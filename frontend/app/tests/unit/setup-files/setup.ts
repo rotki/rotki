@@ -60,7 +60,8 @@ beforeAll(() => {
       ...mod,
       useElementBounding: vi
         .fn()
-        .mockReturnValue({ left: 0, right: 0, top: 0, bottom: 0 })
+        .mockReturnValue({ left: 0, right: 0, top: 0, bottom: 0 }),
+      useFocus: vi.fn().mockReturnValue({ focused: false })
     };
   });
 
