@@ -91,13 +91,14 @@ def _query_or_get_given_token_info(
     return name, symbol, decimals
 
 
-def _edit_token_and_clean_cache(
+def edit_token_and_clean_cache(
         evm_token: EvmToken,
         name: str | None,
+        symbol: str | None,
         decimals: int | None,
         started: Timestamp | None,
         underlying_tokens: list[UnderlyingToken] | None,
-        evm_inquirer: Optional['EvmNodeInquirer'],
+        evm_inquirer: 'EvmNodeInquirer | None',
 ) -> None:
     """
     Update information regarding name and decimals for an ethereum token.
@@ -122,6 +123,10 @@ def _edit_token_and_clean_cache(
             object.__setattr__(evm_token, 'name', on_chain_name)
             object.__setattr__(evm_token, 'decimals', on_chain_decimals)
             updated_fields = True
+
+    if symbol is not None and evm_token.symbol != symbol:
+        object.__setattr__(evm_token, 'symbol', symbol)
+        updated_fields = True
 
     if decimals is not None and evm_token.decimals != decimals:
         object.__setattr__(evm_token, 'decimals', decimals)
@@ -217,9 +222,10 @@ def get_or_create_evm_token(
             # It can happen that the asset is missing basic information but can be queried on
             # is provided by the developer. In that case make sure that no information
             # is cached and trigger the edit process.
-            _edit_token_and_clean_cache(
+            edit_token_and_clean_cache(
                 evm_token=evm_token,
                 name=name,
+                symbol=symbol,
                 decimals=decimals,
                 started=started,
                 underlying_tokens=underlying_tokens,
