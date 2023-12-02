@@ -46,13 +46,12 @@ const justify = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-row flex-nowrap items-center" :class="justify">
+  <div class="flex flex-row flex-nowrap items-center gap-1" :class="justify">
     <RuiTooltip v-if="!noEdit" v-bind="tooltipProps">
       <template #activator>
         <RuiButton
           :disabled="disabled || editDisabled"
           variant="text"
-          class="mx-1"
           data-cy="row-edit"
           icon
           @click="editClick()"
@@ -67,7 +66,6 @@ const justify = computed(() => {
         <RuiButton
           :disabled="disabled || deleteDisabled"
           variant="text"
-          class="mx-1"
           data-cy="row-delete"
           icon
           @click="deleteClick()"
