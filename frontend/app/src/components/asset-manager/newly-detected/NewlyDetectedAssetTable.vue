@@ -206,7 +206,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
       </template>
 
       <template #item.address="{ row }">
-        <HashLink :chain="row.evmChain" :text="row.address" />
+        <HashLink :chain="row.evmChain" :text="row.address" hide-alias-name />
       </template>
 
       <template #item.description="{ row }">

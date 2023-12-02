@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Users will be able to see the address of the asset instead of the redundant asset name in the "Managed Assets" view and in the "Newly Detected Tokens" view.
 * :feature:`7015` Users will be able to sort the blockchain accounts by displayed name.
 * :feature:`7024` When a Uniswap-V2 or Sushiswap deposit gets decoded it will update the default symbol of the LP token to include information about the underlying tokens.
 * :bug:`7017` Fix the issue where clicking on the chain in the blockchain balance summary didn't show the correct section.

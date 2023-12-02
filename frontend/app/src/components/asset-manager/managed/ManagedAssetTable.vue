@@ -234,6 +234,7 @@ const massIgnore = async (ignored: boolean) => {
           v-if="item.address"
           :text="item.address"
           :chain="getChain(item.evmChain)"
+          hide-alias-name
         />
       </template>
       <template #item.started="{ item }">
@@ -260,7 +261,6 @@ const massIgnore = async (ignored: boolean) => {
           @delete-click="deleteAsset(item)"
         >
           <CopyButton
-            class="mx-1"
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
