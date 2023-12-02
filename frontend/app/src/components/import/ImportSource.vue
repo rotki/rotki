@@ -136,75 +136,72 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
 
 <template>
   <div>
-    <div>
-      <div class="mb-2">
-        <slot name="upload-title" />
-      </div>
-      <VForm :value="!v$.$invalid">
-        <FileUpload
-          v-model="file"
-          :loading="loading"
-          :uploaded="uploaded"
-          :source="source"
-          :error-message="errorMessage"
-          @update:uploaded="uploaded = $event"
-        />
-        <VSwitch
-          v-if="!isRotkiCustomImport"
-          :value="dateInputFormat !== null"
-          @change="changeShouldCustomDateFormat()"
-        >
-          <template #label>
-            {{ t('file_upload.date_input_format.switch_label') }}
-          </template>
-        </VSwitch>
-        <VTextField
-          v-if="dateInputFormat !== null"
-          v-model="dateInputFormat"
-          class="mt-2"
-          outlined
-          :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
-          :placeholder="t('file_upload.date_input_format.placeholder')"
-          :hint="
-            t('file_upload.date_input_format.hint', {
-              format: dateInputFormatExample
-            })
-          "
-          persistent-hint
-        >
-          <template #append>
-            <VBtn small icon @click="formatHelp = true">
-              <VIcon small> mdi-information </VIcon>
-            </VBtn>
-          </template>
-        </VTextField>
-
-        <div class="mt-4">
-          <VRow>
-            <VCol cols="12">
-              <slot />
-            </VCol>
-          </VRow>
-          <VRow v-if="$slots.hint">
-            <VCol cols="12">
-              <slot name="hint" />
-            </VCol>
-          </VRow>
-        </div>
-        <div class="mt-6">
-          <VBtn
-            color="primary"
-            depressed
-            block
-            data-cy="button-import"
-            :disabled="v$.$invalid || !file || loading"
-            @click="uploadFile()"
-          >
-            {{ t('common.actions.import') }}
-          </VBtn>
-        </div>
-      </VForm>
+    <div class="mb-2">
+      <slot name="upload-title" />
     </div>
+    <form>
+      <FileUpload
+        v-model="file"
+        :loading="loading"
+        :uploaded="uploaded"
+        :source="source"
+        :error-message="errorMessage"
+        @update:uploaded="uploaded = $event"
+      />
+      <VSwitch
+        v-if="!isRotkiCustomImport"
+        :value="dateInputFormat !== null"
+        @change="changeShouldCustomDateFormat()"
+      >
+        <template #label>
+          {{ t('file_upload.date_input_format.switch_label') }}
+        </template>
+      </VSwitch>
+      <RuiTextField
+        v-if="dateInputFormat !== null"
+        v-model="dateInputFormat"
+        class="mt-2"
+        variant="outlined"
+        color="primary"
+        :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
+        :label="t('file_upload.date_input_format.placeholder')"
+        :hint="
+          t('file_upload.date_input_format.hint', {
+            format: dateInputFormatExample
+          })
+        "
+        persistent-hint
+      >
+        <template #append>
+          <RuiButton
+            variant="text"
+            icon
+            class="!p-2"
+            @click="formatHelp = true"
+          >
+            <RuiIcon name="information-line" />
+          </RuiButton>
+        </template>
+      </RuiTextField>
+
+      <div class="mt-4">
+        <slot />
+        <div v-if="$slots.hint">
+          <slot name="hint" />
+        </div>
+      </div>
+      <div class="mt-6">
+        <RuiButton
+          color="primary"
+          class="w-full"
+          data-cy="button-import"
+          :disabled="v$.$invalid || !file || loading"
+          @click="uploadFile()"
+        >
+          {{ t('common.actions.import') }}
+        </RuiButton>
+      </div>
+    </form>
     <DateFormatHelp v-model="formatHelp" />
   </div>
 </template>

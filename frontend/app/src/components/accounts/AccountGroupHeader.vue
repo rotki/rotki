@@ -70,33 +70,33 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       :colspan="xs ? 1 : 2"
       :class="{
         'v-data-table__mobile-row': xs,
-        'pa-2': !xs
+        '!p-2': !xs
       }"
     >
-      <div class="ps-8">
+      <div class="pl-9">
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
-      <div>
-        <VBtn
-          v-if="items.length > 0"
-          small
+      <div class="flex items-center gap-1 -my-2">
+        <RuiButton
+          :disabled="items.length === 0"
+          variant="text"
+          size="sm"
           icon
           @click="expandClicked({ ...xpub, balance })"
         >
-          <VIcon v-if="expanded" small>mdi-chevron-up</VIcon>
-          <VIcon v-else small>mdi-chevron-down</VIcon>
-        </VBtn>
-        <VBtn v-else small icon disabled />
+          <RuiIcon v-if="expanded" name="arrow-up-s-line" />
+          <RuiIcon v-else name="arrow-down-s-line" />
+        </RuiButton>
         <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ blur: !shouldShowAmount }">
-          <VTooltip top open-delay="400">
-            <template #activator="{ on }">
-              <span v-on="on">{{ displayXpub }}</span>
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              {{ displayXpub }}
             </template>
-            <span> {{ xpub.xpub }} </span>
-          </VTooltip>
+            {{ xpub.xpub }}
+          </RuiTooltip>
         </span>
         <CopyButton
           :value="xpub.xpub"
@@ -104,12 +104,12 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
         />
         <span v-if="xpub.derivationPath" :class="{ blur: !shouldShowAmount }">
           <span class="font-medium">
-            {{ t('account_group_header.derivation_path') }}
+            {{ t('account_group_header.derivation_path') }}:
           </span>
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <TagDisplay wrapper-class="mt-1 ms-8" :tags="xpubTags" />
+      <TagDisplay wrapper-class="ml-9" :tags="xpubTags" />
     </td>
     <td class="text-end" :class="mobileClass">
       <AmountDisplay
@@ -127,31 +127,12 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       />
     </td>
     <td class="text-end" :class="mobileClass">
-      <div class="flex">
-        <VTooltip top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              v-bind="attrs"
-              icon
-              :disabled="false"
-              class="mx-1"
-              v-on="on"
-              @click="editClicked(xpub)"
-            >
-              <VIcon small> mdi-pencil-outline </VIcon>
-            </VBtn>
-          </template>
-          <span>{{ t('account_group_header.edit_tooltip') }}</span>
-        </VTooltip>
-        <VTooltip top open-delay="400">
-          <template #activator="{ on }">
-            <VBtn icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
-              <VIcon small>mdi-delete-outline</VIcon>
-            </VBtn>
-          </template>
-          <span> {{ t('account_group_header.delete_tooltip') }} </span>
-        </VTooltip>
-      </div>
+      <RowActions
+        :edit-tooltip="t('account_group_header.edit_tooltip')"
+        :delete-tooltip="t('account_group_header.delete_tooltip')"
+        @edit-click="editClicked(xpub)"
+        @delete-click="deleteClicked(xpub)"
+      />
     </td>
   </Fragment>
 </template>

@@ -9,7 +9,7 @@ const { t } = useI18n();
     <i18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.cryptocom.source_name') }}</strong>
     </i18n>
-    <ul>
+    <ul class="list-disc">
       <li>
         <i18n tag="span" path="import_data.cryptocom.line_one">
           <ExternalLink url="https://github.com/rotki/rotki/issues/new/choose">

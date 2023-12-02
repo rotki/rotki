@@ -52,12 +52,14 @@ const css = useCssModule();
       </div>
     </div>
     <div>
-      <VMenu offset-y :close-on-content-click="false">
+      <VMenu offset-y left :close-on-content-click="false">
         <template #activator="{ on }">
-          <VBtn outlined text height="40px" data-cy="asset-filter" v-on="on">
+          <RuiButton variant="outlined" v-on="on">
+            <template #append>
+              <RuiIcon name="arrow-down-s-line" />
+            </template>
             {{ t('common.actions.filter') }}
-            <VIcon class="ml-2">mdi-chevron-down</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <VList>
           <VListItem
@@ -67,23 +69,27 @@ const css = useCssModule();
             {{ t('asset_table.filter_by_ignored_status') }}
           </VListItem>
           <VListItem class="pb-2">
-            <VRadioGroup
+            <RuiRadioGroup
               :value="ignoredAssetsHandling"
               class="mt-0"
               data-cy="asset-filter-ignored"
               hide-details
-              @change="updateIgnoredAssetsHandling($event)"
+              color="primary"
+              @input="updateIgnoredAssetsHandling($event)"
             >
-              <VRadio value="none" :label="t('asset_table.show_all')" />
-              <VRadio
-                value="exclude"
+              <RuiRadio
+                internal-value="none"
+                :label="t('asset_table.show_all')"
+              />
+              <RuiRadio
+                internal-value="exclude"
                 :label="t('asset_table.only_show_unignored')"
               />
-              <VRadio
-                value="show_only"
+              <RuiRadio
+                internal-value="show_only"
                 :label="t('asset_table.only_show_ignored', 2)"
               />
-            </VRadioGroup>
+            </RuiRadioGroup>
           </VListItem>
         </VList>
       </VMenu>

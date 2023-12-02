@@ -66,22 +66,21 @@ const css = useCssModule();
             class="flex items-center"
           >
             <div class="mr-4">
-              <VProgressCircular
+              <RuiProgress
                 v-if="!isItemFinished(item)"
                 size="20"
+                thickness="2"
                 color="primary"
-                width="2"
-                indeterminate
+                variant="indeterminate"
+                circular
               />
-              <VIcon v-else color="green" :class="css['check-icon']">
-                mdi-check-circle
-              </VIcon>
+              <SuccessDisplay v-else size="20" success />
             </div>
 
             <slot name="item" :item="item" />
           </div>
         </div>
-        <VSpacer />
+        <div class="grow" />
         <slot name="dialog" />
       </div>
     </td>

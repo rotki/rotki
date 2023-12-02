@@ -1461,11 +1461,6 @@
     "header": "复合贷款 ({asset})",
     "history": "复合历史"
   },
-  "confirmable_reset": {
-    "confirm": {
-      "message": "您确定要继续重置吗？"
-    }
-  },
   "conflict_dialog": {
     "action": {
       "local": "本地",

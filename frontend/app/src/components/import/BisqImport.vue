@@ -12,7 +12,7 @@ const { t } = useI18n();
     <i18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.bisq.name') }}</strong>
     </i18n>
-    <ul>
+    <ul class="list-disc">
       <li>{{ t('import_data.bisq.line_one') }}</li>
     </ul>
   </ImportSource>

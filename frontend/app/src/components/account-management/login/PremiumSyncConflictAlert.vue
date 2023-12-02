@@ -21,26 +21,22 @@ const lastModified = useRefMap(syncConflict, conflict => {
   <Transition name="bounce">
     <LoginActionAlert
       v-if="syncConflict"
-      icon="mdi-cloud-download"
+      icon="download-cloud-line"
       @cancel="emit('proceed', 'no')"
       @confirm="emit('proceed', 'yes')"
     >
       <template #title>{{ t('login.sync_error.title') }}</template>
 
       <div>{{ syncConflict.message }}</div>
-      <ul v-if="lastModified" class="mt-2">
+      <ul v-if="lastModified" class="mt-2 list-disc">
         <li>
-          <i18n path="login.sync_error.local_modified">
-            <div class="font-medium">
-              <DateDisplay :timestamp="lastModified.local" />
-            </div>
+          <i18n path="login.sync_error.local_modified" class="font-medium">
+            <DateDisplay :timestamp="lastModified.local" />
           </i18n>
         </li>
         <li class="mt-2">
-          <i18n path="login.sync_error.remote_modified">
-            <div class="font-medium">
-              <DateDisplay :timestamp="lastModified.remote" />
-            </div>
+          <i18n path="login.sync_error.remote_modified" class="font-medium">
+            <DateDisplay :timestamp="lastModified.remote" />
           </i18n>
         </li>
       </ul>

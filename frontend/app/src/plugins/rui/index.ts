@@ -27,6 +27,7 @@ import {
   RiCalculatorLine,
   RiCalendar2Line,
   RiCalendarEventLine,
+  RiCalendarLine,
   RiCashLine,
   RiChatQuoteLine,
   RiCheckDoubleLine,
@@ -344,6 +345,8 @@ Vue.use(RuiPlugin, {
     RiVirusLine,
     RiFileSearchLine,
     RiChatQuoteLine,
-    RiArrowDownCircleLine
+    RiArrowDownCircleLine,
+    RiCalendarLine,
+    RiDownloadCloudLine
   ]
 });

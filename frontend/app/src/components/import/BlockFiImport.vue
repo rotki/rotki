@@ -31,7 +31,7 @@ const { t } = useI18n();
       <i18n tag="span" path="import_data.note">
         <strong>{{ t('import_data.blockfi.name') }}</strong>
       </i18n>
-      <ul>
+      <ul class="list-disc">
         <li>{{ t('import_data.blockfi.line_one') }}</li>
         <li>{{ t('import_data.blockfi.line_two') }}</li>
       </ul>

@@ -12,7 +12,7 @@ const { t } = useI18n();
     <i18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.cointracking.name') }}</strong>
     </i18n>
-    <ul>
+    <ul class="list-disc">
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
       <i18n path="import_data.cointracking.line_three">
