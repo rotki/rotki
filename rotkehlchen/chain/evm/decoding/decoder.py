@@ -32,7 +32,13 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    InputError,
+    ModuleLoadingError,
+    NotERC20Conformant,
+    NotERC721Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -201,6 +207,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self.msg_aggregator.add_error(
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to asset mismatch: {e!s}',
+            )
+            return
+        except (NotERC721Conformant, NotERC20Conformant):
+            self.msg_aggregator.add_error(
+                f'Failed at initialization of {self.evm_inquirer.chain_name} '
+                f'{class_name} decoder due to non conformant token',
             )
             return
 

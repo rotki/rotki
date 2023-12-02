@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +10,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -22,7 +22,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.optimismtx import DBOptimismTx
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import InputError, NotERC20Conformant
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
@@ -40,11 +40,8 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 # Have to use a constant instead of make_evm_address() because vcr doesn't work otherwise.
 ADDRESS_WITHOUT_GENESIS_TX = '0x4bBa290826C253BD854121346c370a9886d1bC26'
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 
-
-def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransactionDecoder'):
+def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransactionDecoder):
     """Make sure that all decoders we have created are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
@@ -870,3 +867,20 @@ def test_phising_zero_transfers(database, ethereum_inquirer):
         )
 
     assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+
+
+def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transactions):
+    """Regression test for https://github.com/rotki/rotki/issues/7039"""
+    faulty_get_or_create_evm_token = patch(
+        'rotkehlchen.chain.ethereum.modules.lockedgno.decoder.get_or_create_evm_token',
+        side_effect=NotERC20Conformant,
+    )
+    with faulty_get_or_create_evm_token:
+        decoder = EthereumTransactionDecoder(database=database, ethereum_inquirer=ethereum_inquirer, transactions=eth_transactions)  # noqa: E501
+        assert decoder is not None
+
+    errors = database.msg_aggregator.consume_errors()
+    warnings = database.msg_aggregator.consume_warnings()
+
+    assert len(warnings) == 0
+    assert errors == ['Failed at initialization of ethereum Lockedgno decoder due to non conformant token']  # noqa: E501
