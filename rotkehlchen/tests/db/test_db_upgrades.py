@@ -38,7 +38,7 @@ from rotkehlchen.utils.misc import ts_now
 
 
 def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
-    """Creates a serialized event identifeir using the logic at the moment of v32_v33 upgrade"""
+    """Creates a serialized event identifier using the logic at the moment of v32_v33 upgrade"""
     if location == Location.KRAKEN or raw_event_identifier.startswith(b'rotki_events'):
         return raw_event_identifier.decode()
 
