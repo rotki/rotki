@@ -39,7 +39,7 @@ def test_get_performance_more_than_100(session_beaconchain):
 
 
 def test_get_eth1_validator_indices_single(session_beaconchain):
-    address = '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'
+    address = '0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D'
     validators = session_beaconchain.get_eth1_address_validators(address=address)
     if len(validators) != 1:
         msg = (
@@ -48,8 +48,8 @@ def test_get_eth1_validator_indices_single(session_beaconchain):
         )
         test_warnings.warn(UserWarning(msg))
 
-    assert validators[0].index == 9
-    assert validators[0].public_key == '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'  # noqa: E501
+    assert validators[0].index == 178585
+    assert validators[0].public_key == '0xadefb3de3c892823aa8d389a4b9582f56f64463db2b72b4d77c515d268cf695f9047604371eb73d2a514c8f711ae7eba'  # noqa: E501
 
 
 def test_get_eth1_validator_indices_multiple(session_beaconchain):
