@@ -23,6 +23,7 @@ miniupnpc==2.2.3; sys_platform == 'win32'
 cryptography==41.0.4
 py-machineid==0.4.4
 more-itertools==10.1.0  # for peekable iterators
+regex==2023.10.3  # used for unicode information in detection of spam tokens
 
 # For the rest api
 flask-cors==4.0.0

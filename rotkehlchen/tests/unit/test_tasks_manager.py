@@ -3,11 +3,12 @@ from unittest.mock import MagicMock, patch
 
 import gevent
 import pytest
-from rotkehlchen.assets.asset import EvmToken
 
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
+from rotkehlchen.constants.misc import LAST_SPAM_ASSETS_DETECT_KEY
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -17,7 +18,6 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import LAST_SPAM_ASSETS_DETECT_KEY
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.utils.ethereum import (

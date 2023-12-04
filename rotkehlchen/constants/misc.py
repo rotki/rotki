@@ -1,3 +1,4 @@
+from typing import Final
 from rotkehlchen.fval import FVal
 
 CURRENCYCONVERTER_API_KEY = 'feaa5a7ddc2d76789e58'
@@ -19,3 +20,5 @@ KRAKEN_API_VERSION = '0'
 DEFAULT_MAX_LOG_SIZE_IN_MB = 300
 DEFAULT_MAX_LOG_BACKUP_FILES = 3
 DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
+
+LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'

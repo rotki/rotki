@@ -1,12 +1,11 @@
-from typing import Final
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import check_if_spam_token
+from rotkehlchen.constants.misc import LAST_SPAM_ASSETS_DETECT_KEY
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import SPAM_PROTOCOL
 from rotkehlchen.utils.misc import ts_now
 
-LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
 SYMBOL_AND_NAME_ASSETS_QUERY = (
     'SELECT C.symbol, A.name, A.identifier FROM evm_tokens as B LEFT JOIN '
     'common_asset_details AS C ON C.identifier = B.identifier JOIN assets as A on '

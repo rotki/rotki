@@ -20,6 +20,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.constants.misc import LAST_SPAM_ASSETS_DETECT_KEY
 from rotkehlchen.constants.timing import (
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
@@ -38,7 +39,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.tasks.assets import LAST_SPAM_ASSETS_DETECT_KEY, autodetect_spam_assets_in_db
+from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
