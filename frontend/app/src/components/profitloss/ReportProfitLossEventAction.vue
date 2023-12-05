@@ -81,17 +81,17 @@ const updatePrice = async () => {
 </script>
 
 <template>
-  <div>
+  <div class="flex justify-end">
     <VMenu transition="slide-y-transaction" max-width="250px" offset-y>
       <template #activator="{ on }">
-        <VBtn class="ml-1" icon v-on="on">
-          <VIcon>mdi-dots-vertical</VIcon>
-        </VBtn>
+        <RuiButton variant="text" class="!p-2" icon v-on="on">
+          <RuiIcon name="more-2-fill" />
+        </RuiButton>
       </template>
       <VList>
         <VListItem link @click="openEditHistoricPriceDialog()">
           <VListItemIcon class="mr-4">
-            <VIcon>mdi-pencil</VIcon>
+            <RuiIcon name="edit-line" />
           </VListItemIcon>
           <VListItemContent>
             {{ t('profit_loss_events.edit_historic_price') }}
@@ -101,68 +101,57 @@ const updatePrice = async () => {
     </VMenu>
 
     <VDialog v-model="showDialog" max-width="450px">
-      <Card>
-        <template #title>
+      <RuiCard>
+        <template #header>
           {{ t('profit_loss_events.edit_historic_price') }}
         </template>
 
-        <VForm class="mt-2">
-          <VRow>
-            <VCol cols="12">
-              <AssetSelect
-                :value="event.asset"
-                :label="t('price_form.from_asset')"
-                hide-details
-                disabled
-                outlined
-              />
-            </VCol>
+        <form class="flex flex-col gap-4">
+          <AssetSelect
+            :value="event.asset"
+            :label="t('price_form.from_asset')"
+            hide-details
+            disabled
+            outlined
+          />
+          <AssetSelect
+            :value="currency"
+            :label="t('price_form.to_asset')"
+            hide-details
+            disabled
+            outlined
+          />
+          <DateTimePicker
+            :value="datetime"
+            outlined
+            disabled
+            hide-details
+            :label="t('common.datetime')"
+          />
+          <AmountInput
+            v-model="price"
+            outlined
+            :loading="fetchingPrice"
+            :disabled="fetchingPrice"
+            :label="t('common.price')"
+            :error-messages="v$.price.$errors.map(e => e.$message)"
+          />
+        </form>
 
-            <VCol cols="12">
-              <AssetSelect
-                :value="currency"
-                :label="t('price_form.to_asset')"
-                hide-details
-                disabled
-                outlined
-              />
-            </VCol>
+        <div class="text-body-2 text-rui-text-secondary">
+          {{ t('profit_loss_events.edit_price_warning') }}
+        </div>
 
-            <VCol cols="12">
-              <DateTimePicker
-                :value="datetime"
-                outlined
-                disabled
-                hide-details
-                :label="t('common.datetime')"
-              />
-            </VCol>
-
-            <VCol cols="12">
-              <AmountInput
-                v-model="price"
-                outlined
-                :loading="fetchingPrice"
-                :disabled="fetchingPrice"
-                :label="t('common.price')"
-                :error-messages="v$.price.$errors.map(e => e.$message)"
-              />
-            </VCol>
-          </VRow>
-        </VForm>
-
-        {{ t('profit_loss_events.edit_price_warning') }}
-
-        <template #buttons>
-          <VSpacer />
-          <VBtn depressed @click="showDialog = false">
+        <template #footer>
+          <div class="grow" />
+          <RuiButton variant="text" color="primary" @click="showDialog = false">
             {{ t('common.actions.cancel') }}
-          </VBtn>
-          <VBtn color="primary" @click="updatePrice()">
+          </RuiButton>
+          <RuiButton color="primary" @click="updatePrice()">
             {{ t('price_form.update_price') }}
-          </VBtn>
+          </RuiButton>
         </template>
-      </Card>
+      </RuiCard>
     </VDialog>
   </div>
 </template>

@@ -27,12 +27,10 @@ const { t } = useI18n();
 
 <template>
   <div class="flex gap-4 items-center text-center">
-    <RuiTooltip v-if="!premium" class="mr-4" :popper="{ placement: 'top' }">
-      <template #activator>
-        <RuiIcon class="text-rui-text-secondary" name="lock-2-fill" />
-      </template>
-      <span v-text="t('overall_balances.premium_hint')" />
-    </RuiTooltip>
+    <PremiumLock
+      v-if="!premium"
+      :tooltip="t('overall_balances.premium_hint')"
+    />
     <RuiButtonGroup
       :disabled="disabled"
       :value="value"

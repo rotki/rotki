@@ -196,7 +196,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         />
       </template>
       <template #expanded-item="{ item }">
-        <TableExpandContainer :padded="false" visible :colspan="headers.length">
+        <TableExpandContainer no-padding visible :colspan="headers.length">
           <DataTable
             flat
             :headers="childHeaders"

@@ -1020,7 +1020,6 @@
     "headers": {
       "started": "Started"
     },
-    "notes": "Notes",
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
@@ -1316,7 +1315,6 @@
     "details": {
       "fee": "Fee",
       "link": "Link",
-      "link_data": "Trade has no link",
       "title": "Trade Details"
     },
     "dialog": {
@@ -1407,6 +1405,7 @@
     "name": "Name",
     "never": "Nunca",
     "no_premium": "No premium subscription detected. ",
+    "notes": "Notas",
     "of": "de",
     "price": "Precio",
     "price_in_symbol": "Precio en {symbol}",
@@ -3004,10 +3003,6 @@
     },
     "title": "Non Fungible Balances"
   },
-  "notes_display": {
-    "empty_notes": "No notes found for this entry",
-    "notes": "Notes"
-  },
   "notes_menu": {
     "delete_confirmation": "Are you sure you want to delete this note?",
     "dialog": {
@@ -3401,7 +3396,6 @@
       "show": "Show Cost Basis"
     },
     "headers": {
-      "notes": "Notes",
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
       "tax_free_amount": "Tax Free Amount",
@@ -3799,8 +3793,7 @@
           "label": "Location Label"
         },
         "notes": {
-          "hint": "[Optional] Additional notes to store for the action",
-          "label": "Notes"
+          "hint": "[Optional] Additional notes to store for the action"
         },
         "sequence_index": {
           "label": "Sequence Index",

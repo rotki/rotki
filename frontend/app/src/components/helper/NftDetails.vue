@@ -125,12 +125,12 @@ const fallbackData = computed(() => {
   <div>
     <div class="flex items-center overflow-hidden">
       <div class="cursor-pointer">
-        <VTooltip
-          top
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
           :disabled="renderImage"
-          max-width="200"
-          open-delay="200"
-          class="mdi-cursor-pointer"
+          open-delay="400"
+          class="w-full"
+          tooltip-class="max-w-[10rem]"
         >
           <template #activator="{ on }">
             <div
@@ -159,12 +159,12 @@ const fallbackData = computed(() => {
             </div>
           </template>
 
-          <span>
-            {{ t('nft_balance_table.hidden_hint') }}
-            {{ t('nft_gallery.allow_domain') }}
-            <span class="font-bold warning--text">{{ domain }}</span>
-          </span>
-        </VTooltip>
+          {{ t('nft_balance_table.hidden_hint') }}
+          {{ t('nft_gallery.allow_domain') }}
+          <strong class="text-rui-warning-lighter">
+            {{ domain }}
+          </strong>
+        </RuiTooltip>
       </div>
 
       <div class="ml-3 overflow-hidden flex-fill">

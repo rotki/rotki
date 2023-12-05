@@ -12,7 +12,6 @@ const props = withDefaults(
 );
 
 const { item } = toRefs(props);
-const { dark } = useTheme();
 const { t } = useI18n();
 
 const link = computed(() => get(item).link || '');
@@ -24,52 +23,59 @@ const { href, hasLink, onLinkClick } = useLinks(link);
     <template #title>
       {{ t('closed_trades.details.title') }}
     </template>
-    <VRow>
-      <VCol cols="auto" class="font-medium">
+    <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3">
+      <span class="font-medium">
         {{ t('closed_trades.details.fee') }}
-      </VCol>
-      <VCol>
-        <AmountDisplay
-          v-if="!!item.fee"
-          class="closed-trades__trade__fee"
-          :asset="item.feeCurrency"
-          :value="item.fee"
-        />
-        <span v-else>-</span>
-      </VCol>
-    </VRow>
-    <VRow align="center">
-      <VCol cols="auto" class="font-medium">
+      </span>
+
+      <AmountDisplay
+        v-if="!!item.fee"
+        class="closed-trades__trade__fee"
+        :asset="item.feeCurrency"
+        :value="item.fee"
+      />
+      <template v-else> - </template>
+
+      <span class="font-medium">
         {{ t('closed_trades.details.link') }}
-      </VCol>
-      <VCol>
-        <span v-if="!item.link">
-          {{ t('closed_trades.details.link_data') }}
-        </span>
-        <span v-else>
+      </span>
+
+      <div v-if="item.link" class="flex items-center gap-3">
+        {{ item.link }}
+        <RuiTooltip
+          v-if="hasLink"
+          :popper="{ placement: 'top' }"
+          open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              tag="a"
+              icon
+              variant="text"
+              class="!bg-rui-grey-200 dark:!bg-rui-grey-900 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
+              size="sm"
+              color="primary"
+              :href="href"
+              target="_blank"
+              @click="onLinkClick()"
+            >
+              <RuiIcon name="external-link-line" size="12" />
+            </RuiButton>
+          </template>
           {{ item.link }}
-          <VTooltip v-if="hasLink" top open-delay="600">
-            <template #activator="{ on, attrs }">
-              <VBtn
-                small
-                icon
-                v-bind="attrs"
-                color="primary"
-                class="ml-2"
-                :class="dark ? null : 'grey lighten-4'"
-                :href="href"
-                target="_blank"
-                v-on="on"
-                @click="onLinkClick()"
-              >
-                <VIcon :small="true"> mdi-launch </VIcon>
-              </VBtn>
-            </template>
-            {{ item.link }}
-          </VTooltip>
+        </RuiTooltip>
+      </div>
+
+      <template v-else> - </template>
+
+      <template v-if="item.notes">
+        <span class="font-medium">
+          {{ t('common.notes') }}
         </span>
-      </VCol>
-    </VRow>
-    <NotesDisplay :notes="item.notes" />
+        <div class="break-words max-w-[70vw]">
+          {{ item.notes }}
+        </div>
+      </template>
+    </div>
   </TableExpandContainer>
 </template>

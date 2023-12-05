@@ -75,26 +75,31 @@ defineExpose({
 
 <template>
   <div>
-    <VRow>
-      <VCol cols="auto">
-        <VSheet outlined rounded class="asset-form__icon">
-          <VTooltip v-if="preview && refreshable" right>
+    <div class="flex gap-6">
+      <div>
+        <RuiCard
+          class="h-full flex items-center justify-center relative [&>div]:!p-6"
+        >
+          <RuiTooltip
+            v-if="preview && refreshable"
+            :popper="{ placement: 'right' }"
+            open-delay="400"
+            class="absolute top-0 right-0"
+          >
             <template #activator="{ on }">
-              <VBtn
-                fab
-                x-small
-                depressed
-                class="asset-form__icon__refresh"
+              <RuiButton
+                size="sm"
+                icon
                 color="primary"
                 :loading="refreshIconLoading"
                 v-on="on"
                 @click="refreshIcon()"
               >
-                <RuiIcon name="refresh-line" />
-              </VBtn>
+                <RuiIcon size="20" name="refresh-line" />
+              </RuiButton>
             </template>
             {{ t('asset_form.fetch_latest_icon.title') }}
-          </VTooltip>
+          </RuiTooltip>
 
           <AssetIcon
             v-if="preview"
@@ -103,40 +108,17 @@ defineExpose({
             changeable
             :timestamp="timestamp"
           />
-        </VSheet>
-      </VCol>
-      <VCol>
-        <FileUpload
-          v-model="icon"
-          source="icon"
-          file-filter=".png, .svg, .jpeg, .jpg, .webp"
-        />
-      </VCol>
-    </VRow>
-    <VRow v-if="icon">
-      <VCol class="text-caption">
-        {{ t('asset_form.replaced', { name: icon.name }) }}
-      </VCol>
-    </VRow>
+        </RuiCard>
+      </div>
+      <FileUpload
+        v-model="icon"
+        class="grow"
+        source="icon"
+        file-filter=".png, .svg, .jpeg, .jpg, .webp"
+      />
+    </div>
+    <div v-if="icon" class="text-caption text-rui-success mt-2">
+      {{ t('asset_form.replaced', { name: icon.name }) }}
+    </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.asset-form {
-  &__icon {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 100%;
-    position: relative;
-
-    &__refresh {
-      position: absolute;
-      right: -1rem;
-      top: -1rem;
-    }
-  }
-}
-</style>

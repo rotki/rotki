@@ -12,22 +12,18 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
 
 <template>
   <Fragment>
-    <div class="flex overflow-hidden">
+    <div class="flex overflow-hidden grow">
       <SyncIndicator />
       <GlobalSearch v-if="smAndUp" />
       <BackButton />
     </div>
-    <VSpacer />
     <div class="flex overflow-hidden h-full items-center">
       <GetPremiumButton />
-      <VBtn
-        v-if="isDevelopment && smAndUp"
-        class="secondary--text text--lighten-4"
-        to="/playground"
-        icon
-      >
-        <RuiIcon name="code-box-line" />
-      </VBtn>
+      <RouterLink v-if="isDevelopment && smAndUp" to="/playground">
+        <RuiButton variant="text" icon>
+          <RuiIcon name="code-box-line" />
+        </RuiButton>
+      </RouterLink>
       <AppUpdateIndicator />
       <UserNotesIndicator
         :visible="showNotesSidebar"
