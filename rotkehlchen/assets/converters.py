@@ -7,6 +7,7 @@ from rotkehlchen.assets.exchanges_mappings.bitpanda import WORLD_TO_BITPANDA
 from rotkehlchen.assets.exchanges_mappings.bitstamp import WORLD_TO_BITSTAMP
 from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
+from rotkehlchen.assets.exchanges_mappings.bybit import WORLD_TO_BYBIT
 from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
@@ -887,6 +888,7 @@ BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
 BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
 OKX_TO_WORLD = {v: k for k, v in WORLD_TO_OKX.items()}
+BYBIT_TO_WORLD = {v: k for k, v in WORLD_TO_BYBIT.items()}
 COMMON_IDENTIFIERS_TO_WORLD = {v: k for k, v in COMMON_ASSETS_MAPPINGS.items()}
 WOO_TO_WORLD = COMMON_IDENTIFIERS_TO_WORLD | WOO_NAME_TO_TOKEN_SYMBOL
 
@@ -1219,6 +1221,19 @@ def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
     else:
         name = FTX_TO_WORLD.get(ftx_name, ftx_name)
     return symbol_to_asset_or_token(name)
+
+
+def asset_from_bybit(name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(name, str):
+        raise DeserializationError(f'Got non-string type {type(name)} for bybit asset')
+
+    identifier = BYBIT_TO_WORLD.get(name, name)
+    return symbol_to_asset_or_token(identifier)
 
 
 def asset_from_woo(woo_name: str) -> AssetWithOracles:
