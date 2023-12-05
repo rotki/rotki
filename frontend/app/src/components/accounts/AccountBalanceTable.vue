@@ -450,12 +450,10 @@ defineExpose({
       />
     </template>
     <template #item.label="{ item }">
-      <VRow class="pt-3 pb-2">
-        <VCol cols="12" class="account-balance-table__account">
-          <LabeledAddressDisplay :account="item" />
-          <TagDisplay :tags="item.tags" />
-        </VCol>
-      </VRow>
+      <div class="py-2 account-balance-table__account">
+        <LabeledAddressDisplay :account="item" />
+        <TagDisplay :tags="item.tags" />
+      </div>
     </template>
     <template #item.balance.amount="{ item }">
       <AmountDisplay :value="item.balance.amount" :loading="loading" />

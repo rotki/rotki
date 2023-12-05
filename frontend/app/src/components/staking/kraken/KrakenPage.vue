@@ -62,43 +62,26 @@ const refresh = () => load(true);
       </RuiTooltip>
     </template>
 
-    <FullSizeContent v-if="!isKrakenConnected">
-      <VRow align="center" justify="center">
-        <VCol>
-          <VRow align="center" justify="center">
-            <VCol cols="auto">
-              <span class="font-bold text-h5">
-                {{ t('kraken_page.page.title') }}
-              </span>
-            </VCol>
-          </VRow>
-          <VRow justify="center" class="mt-md-12 mt-4">
-            <VCol cols="auto" class="mx-4">
-              <InternalLink :to="Routes.API_KEYS_EXCHANGES">
-                <VImg
-                  width="64px"
-                  contain
-                  src="/assets/images/protocols/kraken.svg"
-                />
-              </InternalLink>
-            </VCol>
-          </VRow>
+    <FullSizeContent v-if="!isKrakenConnected" class="gap-4">
+      <span class="font-bold text-h5">
+        {{ t('kraken_page.page.title') }}
+      </span>
 
-          <VRow class="mt-md-10 mt-2" justify="center">
-            <VCol cols="auto">
-              <div class="font-light text-h6" :class="$style.description">
-                <i18n path="kraken_page.page.description">
-                  <template #link>
-                    <InternalLink :to="Routes.API_KEYS_EXCHANGES">
-                      {{ t('kraken_page.page.api_key') }}
-                    </InternalLink>
-                  </template>
-                </i18n>
-              </div>
-            </VCol>
-          </VRow>
-        </VCol>
-      </VRow>
+      <InternalLink :to="Routes.API_KEYS_EXCHANGES">
+        <VImg width="64px" contain src="/assets/images/protocols/kraken.svg" />
+      </InternalLink>
+
+      <i18n
+        tag="h6"
+        path="kraken_page.page.description"
+        class="font-light text-h6 text-rui-text-secondary"
+      >
+        <template #link>
+          <InternalLink :to="Routes.API_KEYS_EXCHANGES">
+            {{ t('kraken_page.page.api_key') }}
+          </InternalLink>
+        </template>
+      </i18n>
     </FullSizeContent>
     <ProgressScreen v-else-if="loading">
       <template #message>
@@ -108,10 +91,3 @@ const refresh = () => load(true);
     <KrakenStaking v-else />
   </TablePageLayout>
 </template>
-
-<style lang="scss" module>
-.description {
-  text-align: center;
-  max-width: 600px;
-}
-</style>
