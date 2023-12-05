@@ -2,13 +2,9 @@
 const props = withDefaults(
   defineProps<{
     asset: string;
-    icon?: boolean;
-    text?: boolean;
     link?: boolean;
   }>(),
   {
-    icon: false,
-    text: false,
     link: false
   }
 );
@@ -21,10 +17,10 @@ const { navigateToDetails } = useAssetPageNavigation(asset);
 </script>
 
 <template>
-  <div class="flex flex-row">
-    <VBtn :icon="icon" :text="text" @click="navigateToDetails()">
+  <div class="flex flex-row gap-1">
+    <RuiButton size="sm" icon variant="text" @click="navigateToDetails()">
       <slot />
-    </VBtn>
+    </RuiButton>
     <HashLink
       v-if="address && link"
       link-only

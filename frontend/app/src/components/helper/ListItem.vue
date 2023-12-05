@@ -68,14 +68,18 @@ const click = () => emit('click');
           {{ title }}
         </span>
         <span v-if="subtitle" class="grey--text" :class="css.subtitle">
-          <VTooltip open-delay="400" top :disabled="large">
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" class="text-truncate" v-on="on">
+          <RuiTooltip
+            :disabled="large"
+            :popper="{ placement: 'top' }"
+            open-delay="400"
+          >
+            <template #activator>
+              <span class="text-truncate">
                 {{ visibleSubtitle }}
               </span>
             </template>
-            <span> {{ subtitle }}</span>
-          </VTooltip>
+            {{ subtitle }}
+          </RuiTooltip>
         </span>
       </template>
     </span>

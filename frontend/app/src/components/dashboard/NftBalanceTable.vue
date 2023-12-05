@@ -138,9 +138,11 @@ watch(loading, async (isLoading, wasLoading) => {
         @refresh="refreshNonFungibleBalances(true)"
       />
       {{ t('nft_balance_table.title') }}
-      <VBtn :to="nonFungibleRoute" icon class="ml-2">
-        <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      <RouterLink :to="nonFungibleRoute">
+        <RuiButton variant="text" icon class="ml-2">
+          <RuiIcon name="arrow-right-s-line" />
+        </RuiButton>
+      </RouterLink>
     </template>
     <template #details>
       <VMenu
@@ -157,7 +159,7 @@ watch(loading, async (isLoading, wasLoading) => {
             class-name="nft_balance_table__column-filter__button"
             :on-menu="on"
           >
-            <VIcon>mdi-dots-vertical</VIcon>
+            <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
         </template>
         <VisibleColumnsSelector :group="group" />

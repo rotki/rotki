@@ -178,7 +178,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
             class-name="dashboard-asset-table__column-filter__button"
             :on-menu="on"
           >
-            <VIcon>mdi-dots-vertical</VIcon>
+            <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
         </template>
         <VisibleColumnsSelector :group="tableType" :group-label="title" />

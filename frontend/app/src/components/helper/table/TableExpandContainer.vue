@@ -5,16 +5,14 @@ withDefaults(
   defineProps<{
     visible: boolean;
     colspan: number;
-    padded?: boolean;
+    noPadding?: boolean;
     offset?: number;
     offsetClassName?: string;
-    flat?: boolean;
   }>(),
   {
-    padded: true,
+    noPadding: false,
     offset: 0,
-    offsetClassName: '',
-    flat: false
+    offsetClassName: ''
   }
 );
 </script>
@@ -35,10 +33,9 @@ withDefaults(
           <slot name="title" />
         </div>
         <template v-if="$scopedSlots.default">
-          <VSheet v-if="!flat" outlined rounded :class="padded ? 'pa-4' : null">
+          <RuiCard :no-padding="noPadding">
             <slot />
-          </VSheet>
-          <slot v-else />
+          </RuiCard>
         </template>
         <div>
           <slot name="append" />

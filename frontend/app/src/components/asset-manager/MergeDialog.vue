@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, requiredUnless } from '@vuelidate/validators';
+import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
 type Errors = Partial<
@@ -29,6 +29,7 @@ const reset = () => {
 };
 
 const clearErrors = () => {
+  set(done, false);
   set(errorMessages, {});
 };
 
@@ -40,6 +41,7 @@ async function merge() {
   });
 
   if (result.success) {
+    reset();
     set(done, true);
   } else {
     set(
@@ -64,13 +66,13 @@ const rules = {
   sourceIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.source.non_empty').toString(),
-      requiredUnless(done)
+      required
     )
   },
   targetIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.target.non_empty').toString(),
-      requiredUnless(done)
+      required
     )
   }
 };
@@ -89,52 +91,32 @@ const v$ = useVuelidate(
 </script>
 
 <template>
-  <VDialog :value="value" max-width="500" persistent @input="input($event)">
-    <Card>
-      <template #title>{{ t('merge_dialog.title') }}</template>
-      <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
-      <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
-      <template #buttons>
-        <VSpacer />
-        <VBtn depressed @click="input(false)">
-          <span v-if="done">{{ t('common.actions.close') }}</span>
-          <span v-else>
-            {{ t('common.actions.cancel') }}
-          </span>
-        </VBtn>
-        <VBtn
-          v-if="!done"
-          depressed
-          color="primary"
-          :disabled="v$.$invalid || pending"
-          :loading="pending"
-          @click="merge()"
-        >
-          {{ t('merge_dialog.merge') }}
-        </VBtn>
-      </template>
+  <VDialog :value="value" max-width="500" @input="input($event)">
+    <RuiCard>
+      <template #header>{{ t('merge_dialog.title') }}</template>
+      <template #subheader>{{ t('merge_dialog.subtitle') }}</template>
+      <div class="mb-4 text-body-2 text-rui-text-secondary">
+        {{ t('merge_dialog.hint') }}
+      </div>
 
-      <div v-if="done">{{ t('merge_dialog.done') }}</div>
-
-      <VForm v-else :value="!v$.$invalid">
+      <form>
         <!-- We use `v-text-field` here instead `asset-select` -->
         <!-- because the source can be filled with unknown identifier -->
-        <VTextField
+        <RuiTextField
           v-model="sourceIdentifier"
           :label="t('merge_dialog.source.label')"
           :error-messages="toMessages(v$.sourceIdentifier)"
-          outlined
+          variant="outlined"
+          color="primary"
           :disabled="pending"
           persistent-hint
           :hint="t('merge_dialog.source_hint')"
           @focus="clearErrors()"
           @blur="v$.sourceIdentifier.$touch()"
         />
-        <VRow align="center" justify="center" class="my-4">
-          <VCol cols="auto">
-            <VIcon>mdi-arrow-down</VIcon>
-          </VCol>
-        </VRow>
+        <div class="my-4 flex justify-center">
+          <RuiIcon name="arrow-down-line" />
+        </div>
         <AssetSelect
           v-model="targetIdentifier"
           outlined
@@ -144,7 +126,25 @@ const v$ = useVuelidate(
           @focus="clearErrors()"
           @blur="v$.targetIdentifier.$touch()"
         />
-      </VForm>
-    </Card>
+      </form>
+
+      <RuiAlert v-if="done" type="success">
+        {{ t('merge_dialog.done') }}
+      </RuiAlert>
+      <template #footer>
+        <div class="grow" />
+        <RuiButton variant="text" color="primary" @click="input(false)">
+          {{ t('common.actions.close') }}
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          :disabled="v$.$invalid || pending"
+          :loading="pending"
+          @click="merge()"
+        >
+          {{ t('merge_dialog.merge') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
   </VDialog>
 </template>

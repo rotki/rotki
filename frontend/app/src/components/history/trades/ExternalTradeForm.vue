@@ -481,10 +481,12 @@ onMounted(setEditMode);
       :error-messages="errorMessages['link']"
     />
 
-    <VTextarea
+    <RuiTextArea
       v-model="notes"
-      prepend-inner-icon="mdi-text-box-outline"
-      outlined
+      prepend-icon="sticky-note-line"
+      variant="outlined"
+      color="primary"
+      min-rows="5"
       data-cy="notes"
       class="mt-4"
       :label="t('external_trade_form.notes.label')"

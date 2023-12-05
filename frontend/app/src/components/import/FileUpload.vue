@@ -156,7 +156,7 @@ watch(errorMessage, message => onError(message));
             <RuiIcon name="close-line" />
           </RuiButton>
           <RuiIcon size="48" name="error-warning-line" color="error" />
-          <span class="error--text mt-2">{{ error }}</span>
+          <span class="text-rui-error mt-2">{{ error }}</span>
         </template>
 
         <template v-else-if="loading">

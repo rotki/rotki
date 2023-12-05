@@ -65,7 +65,7 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="span" :padded="false">
+  <TableExpandContainer visible :colspan="span" no-padding>
     <DataTable
       v-if="premium || !premiumOnly"
       hide-default-footer

@@ -372,7 +372,7 @@ const locationLabelSuggestions = computed(() =>
       persistent-hint
       outlined
       data-cy="notes"
-      :label="t('transactions.events.form.notes.label')"
+      :label="t('common.notes')"
       :hint="t('transactions.events.form.notes.hint')"
       :error-messages="toMessages(v$.notes)"
       @blur="v$.notes.$touch()"

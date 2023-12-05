@@ -52,7 +52,7 @@ const getImage = (event: EventType): string => {
 </script>
 
 <template>
-  <TableExpandContainer :visible="visible" :colspan="colspan" :padded="false">
+  <TableExpandContainer :visible="visible" :colspan="colspan" no-padding>
     <template #title>
       {{ t('poap_delivery_airdrops.title') }}
     </template>

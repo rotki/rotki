@@ -133,14 +133,10 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         v-if="!renderImage"
         :popper="{ placement: 'top' }"
         open-delay="400"
+        :class="css['unlock-button']"
       >
         <template #activator>
-          <RuiButton
-            class="!p-2"
-            icon
-            :class="css['unlock-button']"
-            @click="showAllowDomainConfirmation()"
-          >
+          <RuiButton class="!p-2" icon @click="showAllowDomainConfirmation()">
             <RuiIcon name="lock-unlock-line" size="16" />
           </RuiButton>
         </template>

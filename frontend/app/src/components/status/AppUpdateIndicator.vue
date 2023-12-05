@@ -50,12 +50,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip v-if="updateNeeded" bottom>
-    <template #activator="{ on }">
-      <VBtn text icon @click="update()">
-        <VIcon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </VIcon>
-      </VBtn>
+  <RuiTooltip v-if="updateNeeded" open-delay="400">
+    <template #activator>
+      <RuiButton color="info" icon @click="update()">
+        <RuiIcon name="arrow-up-circle-line" />
+      </RuiButton>
     </template>
-    <span v-text="t('update_indicator.version', { appVersion })" />
-  </VTooltip>
+    {{ t('update_indicator.version', { appVersion }) }}
+  </RuiTooltip>
 </template>

@@ -92,7 +92,7 @@ const sources = [
   {
     identifier: 'custom',
     name: t('import_data.custom.name'),
-    icon: 'mdi-book-open',
+    icon: 'file-text-line',
     form: defineAsyncComponent(
       () => import('@/components/import/CustomImport.vue')
     )
@@ -107,8 +107,8 @@ const form = computed(
 </script>
 
 <template>
-  <Card>
-    <div class="pa-1 pt-2">
+  <RuiCard>
+    <div class="p-1 pt-2">
       <VSelect
         v-model="selectedSource"
         :label="t('import_data.select_source.title')"
@@ -119,7 +119,7 @@ const form = computed(
         :hide-details="true"
       >
         <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
-          <div v-if="data.item" :key="slotName" class="flex items-center">
+          <div v-if="data.item" :key="slotName" class="flex items-center gap-3">
             <AdaptiveWrapper>
               <VImg
                 v-if="data.item.logo"
@@ -128,14 +128,16 @@ const form = computed(
                 :height="30"
                 max-height="30px"
                 max-width="30px"
-                position="center left"
                 contain
               />
-              <VIcon v-else-if="data.item.icon" color="grey darken-2" size="30">
-                {{ data.item.icon }}
-              </VIcon>
+              <RuiIcon
+                v-else-if="data.item.icon"
+                size="30"
+                class="text-rui-light-text-secondary"
+                :name="data.item.icon"
+              />
             </AdaptiveWrapper>
-            <div class="pl-3">{{ data.item.name }}</div>
+            {{ data.item.name }}
           </div>
         </template>
       </VSelect>
@@ -144,5 +146,5 @@ const form = computed(
         <Component :is="form" />
       </div>
     </div>
-  </Card>
+  </RuiCard>
 </template>

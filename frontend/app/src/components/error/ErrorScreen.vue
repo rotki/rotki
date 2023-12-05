@@ -32,39 +32,39 @@ const errorText = computed(() => {
 <template>
   <div class="error-screen">
     <div>
-      <VIcon size="120" color="error">mdi-alert-circle</VIcon>
+      <RuiIcon size="120" color="error" name="error-warning-line" />
     </div>
     <div v-if="header" class="error-screen__title">
-      <div class="text-h1">
+      <div class="text-h4">
         {{ header }}
       </div>
     </div>
 
     <slot />
 
-    <VCard v-if="!alternative" outlined class="error-screen__message mt-3">
-      <VCardTitle>
+    <RuiCard v-if="!alternative" class="error-screen__message mt-3">
+      <template #header>
         {{ title }}
-        <VSpacer />
+
         <CopyButton
           :tooltip="t('error_screen.copy_tooltip')"
           :value="errorText"
         />
-      </VCardTitle>
-      <VCardSubtitle>
+      </template>
+      <template #subheader>
         {{ subtitle }}
-      </VCardSubtitle>
-      <VCardText class="font-light error-screen__description">
-        <pre
-          class="font-weight-regular text-caption text-wrap error-screen__description__message"
-        >
+      </template>
+      <div
+        class="font-light text-rui-text-secondary` error-screen__description"
+      >
+        <pre class="text-caption text-wrap error-screen__description__message">
           {{ message }}
-          <VDivider v-if="error" class="mt-4 mb-2"/>
+          <RuiDivider v-if="error" class="mt-4 mb-2"/>
           {{ error }}
         </pre>
         <textarea v-model="errorText" class="error-screen__copy-area" />
-      </VCardText>
-    </VCard>
+      </div>
+    </RuiCard>
     <div v-else class="text-h5 mt-12">{{ alternative }}</div>
     <slot name="bottom" />
   </div>

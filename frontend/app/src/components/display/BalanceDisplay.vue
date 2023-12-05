@@ -65,17 +65,15 @@ const valueInCurrency = computed(() => {
   }
   return Zero;
 });
-
-const css = useCssModule();
 </script>
 
 <template>
   <div
-    class="flex flex-row shrink pt-1 pb-1 items-center"
+    class="flex flex-row shrink py-1 gap-4 items-center"
     :class="{
       'justify-end': !noJustify,
-      [css.gain]: mode === 'gain',
-      [css.loss]: mode === 'loss'
+      'text-rui-success': mode === 'gain',
+      'text-rui-error': mode === 'loss'
     }"
   >
     <div :class="`d-flex flex-column align-${align}`">
@@ -92,21 +90,11 @@ const css = useCssModule();
         :value="valueInCurrency"
         :show-currency="ticker ? 'ticker' : 'none'"
         :loading="loading"
-        class="block grey--text"
+        class="block text-rui-text-secondary"
       />
     </div>
-    <AssetLink v-if="!noIcon" class="ml-4" icon :asset="asset">
-      <AssetIcon :identifier="asset" :size="iconSize" />
+    <AssetLink v-if="!noIcon" :asset="asset">
+      <AssetIcon :identifier="asset" :size="iconSize" class="flex" />
     </AssetLink>
   </div>
 </template>
-
-<style module lang="scss">
-.gain {
-  color: #4caf50 !important;
-}
-
-.loss {
-  color: #d32f2f !important;
-}
-</style>

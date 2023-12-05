@@ -70,7 +70,7 @@ const matchedAcquisitions = computed(
   <TableExpandContainer
     visible
     :colspan="colspan"
-    :padded="false"
+    no-padding
     :offset="1"
     :offset-class-name="css.offset"
   >
