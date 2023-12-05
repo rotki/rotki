@@ -22,7 +22,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.exchanges.utils import (
+    deserialize_asset_movement_address,
+    get_key_if_has_val,
+    pair_symbol_to_base_quote,
+)
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -70,28 +74,11 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
     - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
     five_letter_assets = ('sushi', '1inch', 'storj', 'matic', 'audio', 'index', 'metis')
-    if len(symbol) == 5:
-        base_asset = asset_from_gemini(symbol[:2].upper())
-        quote_asset = asset_from_gemini(symbol[2:].upper())
-    elif len(symbol) == 6:
-        base_asset = asset_from_gemini(symbol[:3].upper())
-        quote_asset = asset_from_gemini(symbol[3:].upper())
-    elif len(symbol) == 7:
-        try:
-            base_asset = asset_from_gemini(symbol[:4].upper())
-            quote_asset = asset_from_gemini(symbol[4:].upper())
-        except UnknownAsset:
-            base_asset = asset_from_gemini(symbol[:3].upper())
-            quote_asset = asset_from_gemini(symbol[3:].upper())
-    elif len(symbol) == 8:
-        if any(asset in symbol for asset in five_letter_assets):
-            base_asset = asset_from_gemini(symbol[:5].upper())
-            quote_asset = asset_from_gemini(symbol[5:].upper())
-        else:
-            base_asset = asset_from_gemini(symbol[:4].upper())
-            quote_asset = asset_from_gemini(symbol[4:].upper())
-    else:
-        raise UnprocessableTradePair(symbol)
+    base_asset, quote_asset = pair_symbol_to_base_quote(
+        symbol=symbol,
+        asset_deserialize_fn=asset_from_gemini,
+        five_letter_assets=five_letter_assets,
+    )
 
     return base_asset, quote_asset
 

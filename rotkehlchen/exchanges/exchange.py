@@ -263,6 +263,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                     end_ts=end_ts,
                 )
 
+            log.debug(f'Found query ranges {ranges_to_query=} for {location_string}')
             for query_start_ts, query_end_ts in ranges_to_query:
                 # If we have a time frame we have not asked the exchange for trades then
                 # go ahead and do that now
@@ -277,7 +278,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
                 # make sure to add them to the DB
                 with self.db.user_write() as write_cursor:
-                    if new_trades != []:
+                    if len(new_trades) != 0:
                         self.db.add_trades(write_cursor=write_cursor, trades=new_trades)
 
                     # and also set the used queried timestamp range for the exchange

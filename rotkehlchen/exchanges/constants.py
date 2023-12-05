@@ -19,6 +19,7 @@ SUPPORTED_EXCHANGES = (
     Location.POLONIEX,
     Location.OKX,
     Location.WOO,
+    Location.BYBIT,
 )
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN, Location.OKX)
 DEAD_EXCHANGES = (Location.FTX, Location.FTXUS, Location.BITTREX)

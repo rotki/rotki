@@ -57,6 +57,7 @@ LOCATION_DETAILS: dict = {
     Location.BASE: {'image': 'base.svg'},
     Location.GNOSIS: {'image': 'gnosis.svg'},
     Location.WOO: {'image': 'woo.svg'},
+    Location.BYBIT: {'image': 'bybit.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in SUPPORTED_EXCHANGES:
