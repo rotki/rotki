@@ -210,7 +210,7 @@ const sortNfts = (
   <ProgressScreen v-if="loading && visibleNfts.length === 0">
     {{ t('nft_gallery.loading') }}
   </ProgressScreen>
-  <NoDataScreen v-else-if="noData">
+  <NoDataScreen v-else-if="noData" full>
     <template #title>
       {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>

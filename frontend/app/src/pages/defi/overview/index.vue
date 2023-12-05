@@ -54,7 +54,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     <ProgressScreen v-if="loading">
       <template #message>{{ t('decentralized_overview.loading') }}</template>
     </ProgressScreen>
-    <NoDataScreen v-else-if="currentOverview.length === 0" :full="false">
+    <NoDataScreen v-else-if="currentOverview.length === 0">
       <template #title>
         {{ t('decentralized_overview.empty_title') }}
       </template>

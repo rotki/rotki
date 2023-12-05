@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ full?: boolean }>(), { full: true });
+withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 
 const slots = useSlots();
 const remoteEmptyScreenLogo =

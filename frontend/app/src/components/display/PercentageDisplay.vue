@@ -45,14 +45,17 @@ const { t } = useI18n();
 <template>
   <div
     class="flex percentage-display flex-nowrap"
-    :class="`justify-${justify}`"
+    :class="{
+      'justify-start': justify === 'start',
+      'justify-end': justify === 'end'
+    }"
   >
     <div
       class="percentage-display__amount"
       :class="{
         blur: !shouldShowPercentage,
         'text-end': justify === 'end',
-        'text-start': justify !== 'start'
+        'text-start': justify === 'start'
       }"
     >
       {{ displayValue }}
