@@ -75,41 +75,39 @@ defineExpose({
 
 <template>
   <div>
-    <div class="flex gap-6">
-      <div>
-        <RuiCard
-          class="h-full flex items-center justify-center relative [&>div]:!p-6"
+    <div class="grid grid-cols-[auto_1fr] gap-6 h-full">
+      <RuiCard
+        rounded="sm"
+        class="w-32 items-center justify-center [&>div]:!p-6 relative"
+      >
+        <RuiTooltip
+          v-if="preview && refreshable"
+          :popper="{ placement: 'right' }"
+          open-delay="400"
+          class="absolute -top-3 -right-3"
         >
-          <RuiTooltip
-            v-if="preview && refreshable"
-            :popper="{ placement: 'right' }"
-            open-delay="400"
-            class="absolute top-0 right-0"
-          >
-            <template #activator="{ on }">
-              <RuiButton
-                size="sm"
-                icon
-                color="primary"
-                :loading="refreshIconLoading"
-                v-on="on"
-                @click="refreshIcon()"
-              >
-                <RuiIcon size="20" name="refresh-line" />
-              </RuiButton>
-            </template>
-            {{ t('asset_form.fetch_latest_icon.title') }}
-          </RuiTooltip>
+          <template #activator>
+            <RuiButton
+              size="sm"
+              icon
+              color="primary"
+              :loading="refreshIconLoading"
+              @click="refreshIcon()"
+            >
+              <RuiIcon size="20" name="refresh-line" />
+            </RuiButton>
+          </template>
+          {{ t('asset_form.fetch_latest_icon.title') }}
+        </RuiTooltip>
 
-          <AssetIcon
-            v-if="preview"
-            :identifier="preview"
-            size="72px"
-            changeable
-            :timestamp="timestamp"
-          />
-        </RuiCard>
-      </div>
+        <AssetIcon
+          v-if="preview"
+          :identifier="preview"
+          size="72px"
+          changeable
+          :timestamp="timestamp"
+        />
+      </RuiCard>
       <FileUpload
         v-model="icon"
         class="grow"

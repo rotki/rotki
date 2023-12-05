@@ -132,12 +132,11 @@ const fallbackData = computed(() => {
           class="w-full"
           tooltip-class="max-w-[10rem]"
         >
-          <template #activator="{ on }">
+          <template #activator>
             <div
               class="my-2"
               :class="css.preview"
               :style="styled"
-              v-on="on"
               @click="!renderImage ? showAllowDomainConfirmation() : null"
             >
               <template v-if="imageUrl">

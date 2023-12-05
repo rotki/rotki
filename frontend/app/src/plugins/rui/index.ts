@@ -79,6 +79,7 @@ import {
   RiFilterLine,
   RiFireLine,
   RiFolderAddLine,
+  RiFolderLine,
   RiFolderOpenLine,
   RiFolderReceivedLine,
   RiFolderReduceLine,
@@ -355,6 +356,7 @@ Vue.use(RuiPlugin, {
     RiSortAsc,
     RiSortDesc,
     RiAddBoxLine,
-    RiCheckboxIndeterminateLine
+    RiCheckboxIndeterminateLine,
+    RiFolderLine
   ]
 });

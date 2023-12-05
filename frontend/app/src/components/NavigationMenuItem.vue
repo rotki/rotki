@@ -56,8 +56,8 @@ const [DefineImage, ReuseImage] = createReusableTemplate();
       :popper="{ placement: 'right' }"
       open-delay="400"
     >
-      <template #activator="{ on }">
-        <ReuseImage v-on="on" />
+      <template #activator>
+        <ReuseImage />
       </template>
       {{ text }}
     </RuiTooltip>
