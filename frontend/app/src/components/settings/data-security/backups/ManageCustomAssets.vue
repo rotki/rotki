@@ -49,7 +49,7 @@ const { t } = useI18n();
     <template #title>{{ t('manage_user_assets.title') }}</template>
 
     <div class="flex flex-col gap-4">
-      <RuiAlert type="info" dense>
+      <RuiAlert type="info">
         {{ t('manage_user_assets.warning') }}
       </RuiAlert>
 
@@ -58,7 +58,7 @@ const { t } = useI18n();
         <template #subheader>
           {{ t('manage_user_assets.export.subtitle') }}
         </template>
-        <RuiAlert v-if="exportError" class="my-2" type="error" dense>
+        <RuiAlert v-if="exportError" class="my-2" type="error">
           {{ exportError }}
         </RuiAlert>
         <div class="flex flex-row items-center">

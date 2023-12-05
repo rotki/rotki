@@ -10,7 +10,11 @@ const { t } = useI18n();
       </HintMenuIcon>
     </template>
 
-    <RuiAlert outlined type="warning" :title="t('import_data.notice_warning')">
+    <RuiAlert
+      variant="outlined"
+      type="warning"
+      :title="t('import_data.notice_warning')"
+    >
       <i18n tag="span" path="import_data.notice">
         <template #link>
           <ExternalLink url="https://github.com/rotki/rotki/issues/new/choose">
