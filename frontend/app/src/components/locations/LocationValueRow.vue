@@ -17,23 +17,17 @@ const totalValue = computed<BigNumber>(() => {
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="4">
-      <VCard>
-        <VCardTitle>
-          <CardTitle>{{ t('locations.total_asset_price') }}</CardTitle>
-        </VCardTitle>
-        <VCardText class="text-end text-h5 font-medium">
-          <AmountDisplay
-            class="pt-4"
-            tooltip
-            show-currency="symbol"
-            :fiat-currency="currencySymbol"
-            :amount="totalValue"
-            :value="totalValue"
-          />
-        </VCardText>
-      </VCard>
-    </VCol>
-  </VRow>
+  <div class="grid sm:grid-cols-3 gap-4">
+    <RuiCard no-padding>
+      <template #header>{{ t('locations.total_asset_price') }}</template>
+      <AmountDisplay
+        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
+        tooltip
+        show-currency="symbol"
+        :fiat-currency="currencySymbol"
+        :amount="totalValue"
+        :value="totalValue"
+      />
+    </RuiCard>
+  </div>
 </template>

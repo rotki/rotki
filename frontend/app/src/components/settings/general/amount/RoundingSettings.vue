@@ -32,31 +32,27 @@ const { t } = useI18n();
     <div class="text-subtitle-1">
       {{ t('rounding_settings.subtitle') }}
     </div>
-    <VRow class="mt-4" align="center">
-      <VCol cols="12" md="6">
-        <RoundingSelector
-          :value="amountRoundingMode"
-          :label="t('rounding_settings.amount_rounding')"
-          :hint="t('rounding_settings.amount_rounding_hint')"
-          @change="setAmountRoundingMode($event)"
-        >
-          <AmountDisplay class="ms-2" :value="numberExample" />
-        </RoundingSelector>
-      </VCol>
-      <VCol cols="12" md="6">
-        <RoundingSelector
-          :value="valueRoundingMode"
-          :label="t('rounding_settings.value_rounding')"
-          :hint="t('rounding_settings.value_rounding_hint')"
-          @change="setValueRoundingMode($event)"
-        >
-          <AmountDisplay
-            class="ms-2"
-            :value="numberExample"
-            fiat-currency="USD"
-          />
-        </RoundingSelector>
-      </VCol>
-    </VRow>
+    <div class="grid md:grid-cols-2 gap-6 mt-4">
+      <RoundingSelector
+        :value="amountRoundingMode"
+        :label="t('rounding_settings.amount_rounding')"
+        :hint="t('rounding_settings.amount_rounding_hint')"
+        @change="setAmountRoundingMode($event)"
+      >
+        <AmountDisplay class="ml-2" :value="numberExample" />
+      </RoundingSelector>
+      <RoundingSelector
+        :value="valueRoundingMode"
+        :label="t('rounding_settings.value_rounding')"
+        :hint="t('rounding_settings.value_rounding_hint')"
+        @change="setValueRoundingMode($event)"
+      >
+        <AmountDisplay
+          class="ml-2"
+          :value="numberExample"
+          fiat-currency="USD"
+        />
+      </RoundingSelector>
+    </div>
   </div>
 </template>

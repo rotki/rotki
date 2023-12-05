@@ -20,53 +20,38 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VRow>
-    <VCol>
-      <VCard>
-        <VCardTitle>
-          <CardTitle>{{ t('common.price') }}</CardTitle>
-        </VCardTitle>
-        <VCardText class="text-end text-h5 font-medium pt-4">
-          <AmountDisplay
-            v-if="info.usdPrice && info.usdPrice.gte(0)"
-            show-currency="symbol"
-            :price-asset="identifier"
-            :price-of-asset="info.usdPrice"
-            fiat-currency="USD"
-            :value="info.usdPrice"
-          />
-          <div v-else class="pt-3 flex justify-end">
-            <VSkeletonLoader height="20" width="70" type="text" />
-          </div>
-        </VCardText>
-      </VCard>
-    </VCol>
-    <VCol>
-      <VCard>
-        <VCardTitle>
-          <CardTitle>{{ t('assets.amount') }}</CardTitle>
-        </VCardTitle>
-        <VCardText class="text-end text-h5 font-medium pt-4">
-          <AmountDisplay :value="info.amount" :asset="identifier" />
-        </VCardText>
-      </VCard>
-    </VCol>
-    <VCol>
-      <VCard>
-        <VCardTitle>
-          <CardTitle>{{ t('assets.value') }}</CardTitle>
-        </VCardTitle>
-        <VCardText class="text-end text-h5 font-medium pt-4">
-          <AmountDisplay
-            show-currency="symbol"
-            :amount="info.amount"
-            :price-asset="identifier"
-            :price-of-asset="info.usdPrice"
-            fiat-currency="USD"
-            :value="info.usdValue"
-          />
-        </VCardText>
-      </VCard>
-    </VCol>
-  </VRow>
+  <div class="grid sm:grid-cols-3 gap-4">
+    <RuiCard no-padding>
+      <template #header>{{ t('common.price') }}</template>
+      <AmountDisplay
+        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
+        :loading="!info.usdPrice || info.usdPrice.lt(0)"
+        show-currency="symbol"
+        :price-asset="identifier"
+        :price-of-asset="info.usdPrice"
+        fiat-currency="USD"
+        :value="info.usdPrice"
+      />
+    </RuiCard>
+    <RuiCard no-padding>
+      <template #header>{{ t('assets.amount') }}</template>
+      <AmountDisplay
+        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
+        :value="info.amount"
+        :asset="identifier"
+      />
+    </RuiCard>
+    <RuiCard no-padding>
+      <template #header>{{ t('assets.value') }}</template>
+      <AmountDisplay
+        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
+        show-currency="symbol"
+        :amount="info.amount"
+        :price-asset="identifier"
+        :price-of-asset="info.usdPrice"
+        fiat-currency="USD"
+        :value="info.usdValue"
+      />
+    </RuiCard>
+  </div>
 </template>

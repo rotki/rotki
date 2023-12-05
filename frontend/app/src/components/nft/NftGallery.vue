@@ -214,9 +214,7 @@ const sortNfts = (
     <template #title>
       {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>
-    <span class="text-subtitle-2 text--secondary">
-      {{ error ? error : t('nft_gallery.empty_subtitle') }}
-    </span>
+    {{ error ? error : t('nft_gallery.empty_subtitle') }}
   </NoDataScreen>
   <div v-else class="py-4 flex flex-col gap-6">
     <div class="flex justify-between gap-6 items-start">

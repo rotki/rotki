@@ -1,44 +1,27 @@
 <script setup lang="ts">
 withDefaults(defineProps<{ full?: boolean }>(), { full: true });
 
-const FullSizeContent = defineAsyncComponent(
-  () => import('@/components/common/FullSizeContent.vue')
-);
-
 const slots = useSlots();
-const css = useCssModule();
-const { mobile } = useDisplay();
 const remoteEmptyScreenLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
 
 <template>
-  <Component :is="full ? FullSizeContent : 'div'">
-    <VRow align="center" justify="center" :class="{ 'mb-10': !full }">
-      <VCol cols="auto" :class="css.logo">
+  <FullSizeContent class="gap-4" :class="{ '!h-auto !mt-20': !full }">
+    <div class="flex items-center justify-center">
+      <div
+        class="w-[8rem] h-[8rem] md:w-[16rem] md:h-[16rem] bg-rui-grey-200 p-8 md:p-16 rounded-full mb-8"
+      >
         <slot name="logo">
-          <RotkiLogo
-            :width="mobile ? '100px' : '200px'"
-            :url="remoteEmptyScreenLogo"
-          />
+          <RotkiLogo class="h-full w-full" :url="remoteEmptyScreenLogo" />
         </slot>
-      </VCol>
-    </VRow>
-    <VRow class="text-center">
-      <VCol>
-        <div v-if="slots.title" class="text-h5">
-          <slot name="title" />
-        </div>
-        <slot />
-      </VCol>
-    </VRow>
-  </Component>
+      </div>
+    </div>
+    <div v-if="slots.title" class="text-h5">
+      <slot name="title" />
+    </div>
+    <div v-if="slots.default" class="text-subtitle-2 text--secondary">
+      <slot />
+    </div>
+  </FullSizeContent>
 </template>
-
-<style module lang="scss">
-.logo {
-  padding: 80px;
-  border-radius: 50%;
-  background-color: var(--v-rotki-light-grey-darken1);
-}
-</style>

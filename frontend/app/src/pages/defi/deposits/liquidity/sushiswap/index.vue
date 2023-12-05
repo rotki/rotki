@@ -38,7 +38,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
 <template>
   <NoPremiumPlaceholder v-if="!premium" :text="t('sushiswap.premium')" />
   <ModuleNotActive v-else-if="!isEnabled" :modules="modules" />
-  <ProgressScreen v-else-if="loading">
+  <ProgressScreen v-else-if="loading || true">
     <template #message>
       {{ t('sushiswap.loading') }}
     </template>
