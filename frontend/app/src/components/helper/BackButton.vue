@@ -38,20 +38,23 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip v-if="canNavigateBack || page" open-delay="400" top>
-    <template #activator="{ on, attrs }">
-      <VBtn
+  <RuiTooltip
+    v-if="canNavigateBack || page"
+    :popper="{ placement: 'top' }"
+    open-delay="400"
+  >
+    <template #activator>
+      <RuiButton
+        variant="text"
         icon
         class="back-button__button"
-        v-bind="attrs"
-        v-on="on"
         @click="goBack()"
       >
         <RuiIcon name="arrow-left-line" />
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ t('back_button.tooltip') }}</span>
-  </VTooltip>
+  </RuiTooltip>
   <div v-else class="back-button__placeholder" />
 </template>
 

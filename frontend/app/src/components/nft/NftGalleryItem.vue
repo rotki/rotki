@@ -98,134 +98,108 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
 </script>
 
 <template>
-  <VCard class="mx-auto overflow-hidden">
-    <div :class="css.wrapper">
-      <VTooltip top :disabled="renderImage" max-width="200" open-delay="200">
-        <template #activator="{ on }">
-          <div v-on="on">
-            <BaseExternalLink :href="item.externalLink">
-              <video
-                v-if="isMediaVideo"
-                controls
-                width="auto"
-                :src="imageUrl"
-                :style="mediaStyle"
-              />
-              <VImg
-                v-else
-                :src="imageUrl"
-                contain
-                aspect-ratio="1"
-                :style="mediaStyle"
-              />
-            </BaseExternalLink>
-          </div>
+  <RuiCard no-padding class="mx-auto overflow-hidden">
+    <div class="relative">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :disabled="renderImage"
+        open-delay="400"
+        class="w-full"
+        tooltip-class="max-w-[10rem]"
+      >
+        <template #activator>
+          <BaseExternalLink :href="item.externalLink" class="w-full">
+            <video
+              v-if="isMediaVideo"
+              controls
+              width="auto"
+              :src="imageUrl"
+              :style="mediaStyle"
+            />
+            <VImg
+              v-else
+              :src="imageUrl"
+              contain
+              aspect-ratio="1"
+              :style="mediaStyle"
+            />
+          </BaseExternalLink>
         </template>
 
-        <span>
-          {{ t('nft_balance_table.hidden_hint') }}
-        </span>
-      </VTooltip>
+        {{ t('nft_balance_table.hidden_hint') }}
+      </RuiTooltip>
 
-      <VTooltip v-if="!renderImage" top max-width="200">
-        <template #activator="{ on }">
-          <VBtn
+      <RuiTooltip
+        v-if="!renderImage"
+        :popper="{ placement: 'top' }"
+        open-delay="400"
+      >
+        <template #activator>
+          <RuiButton
+            class="!p-2"
             icon
             :class="css['unlock-button']"
             @click="showAllowDomainConfirmation()"
-            v-on="on"
           >
-            <VIcon>mdi-camera-lock-open</VIcon>
-          </VBtn>
+            <RuiIcon name="lock-unlock-line" size="16" />
+          </RuiButton>
         </template>
-        <span>
-          {{ t('nft_gallery.allow_domain') }}
-          <span class="font-bold warning--text">{{ domain }}</span>
-        </span>
-      </VTooltip>
+        {{ t('nft_gallery.allow_domain') }}
+        <strong class="text-rui-warning-lighter">{{ domain }}</strong>
+      </RuiTooltip>
     </div>
-    <VCardTitle>
-      <div :class="css.title">
-        <VRow align="center" justify="space-between" class="flex-nowrap">
-          <VCol
-            class="text-truncate text-subtitle-1 font-medium shrink"
-            cols="auto"
-          >
-            <VTooltip top open-delay="400" max-width="450">
-              <template #activator="{ on, attrs }">
-                <span v-bind="attrs" v-on="on">
-                  {{ name }}
-                </span>
-              </template>
-              <span> {{ name }}</span>
-            </VTooltip>
-          </VCol>
-          <VCol cols="auto" class="text-subtitle-2">
-            <AmountDisplay
-              class="text--secondary"
-              :value="item.priceInAsset"
-              :asset="item.priceAsset"
-            />
-          </VCol>
-        </VRow>
-      </div>
-    </VCardTitle>
-    <VCardSubtitle>
-      <div :class="$style.title">
-        <VRow
-          align="center"
-          no-gutters
-          justify="space-between"
-          class="flex-nowrap"
-        >
-          <VCol cols="auto" class="text-truncate shrink pr-1">
-            <VTooltip top open-delay="400" max-width="450">
-              <template #activator="{ on, attrs }">
-                <span v-bind="attrs" v-on="on">
-                  {{ item.collection.name }}
-                </span>
-              </template>
-              <span> {{ item.collection.description }}</span>
-            </VTooltip>
-          </VCol>
-          <VCol cols="auto" class="text-subtitle-2">
-            <AmountDisplay
-              class="text--secondary"
-              :price-asset="item.priceAsset"
-              :amount="item.priceInAsset"
-              :value="item.priceUsd"
-              show-currency="ticker"
-              fiat-currency="USD"
-            />
-          </VCol>
-        </VRow>
-      </div>
-    </VCardSubtitle>
-    <VCardActions>
-      <VSpacer />
+    <div class="flex items-center justify-between gap-2 px-4 mt-2">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        open-delay="400"
+        tooltip-class="max-w-[20rem]"
+        class="text-truncate block text-subtitle-1 font-medium"
+      >
+        <template #activator>
+          {{ name }}
+        </template>
+        {{ name }}
+      </RuiTooltip>
+      <AmountDisplay
+        class="text-rui-text-secondary text-subtitle-2"
+        :value="item.priceInAsset"
+        :asset="item.priceAsset"
+      />
+    </div>
+    <div class="flex items-center justify-between gap-2 px-4">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        open-delay="400"
+        tooltip-class="max-w-[20rem]"
+        class="text-truncate block text-subtitle-1 font-medium"
+      >
+        <template #activator>
+          {{ item.collection.name }}
+        </template>
+        {{ item.collection.description }}
+      </RuiTooltip>
+      <AmountDisplay
+        class="text-rui-text-secondary text-subtitle-2"
+        :price-asset="item.priceAsset"
+        :amount="item.priceInAsset"
+        :value="item.priceUsd"
+        show-currency="ticker"
+        fiat-currency="USD"
+      />
+    </div>
+    <template #footer>
+      <div class="grow" />
       <IconLink v-if="item.permalink" :url="item.permalink" text="OpenSea" />
-    </VCardActions>
-  </VCard>
+    </template>
+  </RuiCard>
 </template>
 
 <style lang="scss" module>
 video {
-  max-width: 100%;
-  height: auto;
-}
-
-.title {
-  width: 100%;
-}
-
-.wrapper {
-  position: relative;
+  @apply max-w-full h-auto;
 }
 
 .unlock-button {
-  position: absolute;
-  right: 0.5rem;
-  bottom: 0.5rem;
-  background-color: var(--border-color) !important;
+  @apply absolute right-2 bottom-2;
 }
 </style>

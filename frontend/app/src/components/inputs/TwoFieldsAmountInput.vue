@@ -96,17 +96,15 @@ const updateSecondaryValue = (value: string) => {
       @input="updateSecondaryValue($event)"
     />
 
-    <VBtn
-      class="swap-button"
-      fab
-      small
-      dark
+    <RuiButton
+      icon
+      class="swap-button !p-2"
       color="primary"
       data-cy="grouped-amount-input__swap-button"
       @click="reverse()"
     >
-      <VIcon>mdi-swap-vertical</VIcon>
-    </VBtn>
+      <RuiIcon size="16" name="arrow-up-down-line" />
+    </RuiButton>
   </div>
 </template>
 

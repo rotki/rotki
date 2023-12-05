@@ -32,9 +32,9 @@ const { t } = useI18n();
     @close="close()"
     @click:outside="close()"
   >
-    <Card>
-      <template #title>{{ t('non_fungible_balances.edit.title') }}</template>
-      <template #subtitle> {{ value.name }}</template>
+    <RuiCard>
+      <template #header>{{ t('non_fungible_balances.edit.title') }}</template>
+      <template #subheader> {{ value.name }}</template>
       <AssetSelect v-model="asset" outlined />
       <AmountInput
         v-model="price"
@@ -43,15 +43,15 @@ const { t } = useI18n();
         single-line
         @keypress.enter="save()"
       />
-      <template #buttons>
-        <VSpacer />
-        <VBtn depressed @click="close()">
+      <template #footer>
+        <div class="grow" />
+        <RuiButton variant="text" color="primary" @click="close()">
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn depressed color="primary" :disabled="!valid" @click="save()">
+        </RuiButton>
+        <RuiButton color="primary" :disabled="!valid" @click="save()">
           {{ t('common.actions.save') }}
-        </VBtn>
+        </RuiButton>
       </template>
-    </Card>
+    </RuiCard>
   </VDialog>
 </template>

@@ -228,15 +228,13 @@ onUnmounted(() => {
               :disabled="isEtherscan(item)"
               @change="onActiveChange($event, item)"
             />
-            <VListItemAction class="self-center">
-              <RowActions
-                :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
-                :delete-disabled="isEtherscan(item)"
-                :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
-                @edit-click="edit(item)"
-                @delete-click="showDeleteConfirmation(item)"
-              />
-            </VListItemAction>
+            <RowActions
+              :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
+              :delete-disabled="isEtherscan(item)"
+              :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
+              @edit-click="edit(item)"
+              @delete-click="showDeleteConfirmation(item)"
+            />
           </VListItem>
         </template>
       </VList>

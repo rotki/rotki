@@ -10,7 +10,7 @@ const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
   <Transition>
     <LoginActionAlert
       v-if="incompleteUpgradeConflict"
-      icon="mdi-shield-alert-outline"
+      icon="alert-line"
       @confirm="emit('confirm')"
       @cancel="emit('cancel')"
     >

@@ -12,7 +12,7 @@ const { t } = useI18n();
     <i18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.bitcoin_tax.name') }}</strong>
     </i18n>
-    <ul>
+    <ul class="list-disc">
       <li>{{ t('import_data.bitcoin_tax.line_one') }}</li>
       <li>{{ t('import_data.bitcoin_tax.line_two') }}</li>
       <li>{{ t('import_data.bitcoin_tax.line_three') }}</li>
