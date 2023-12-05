@@ -18,7 +18,6 @@ withDefaults(
   >
     <RuiAlert
       class="mb-0"
-      dense
       :type="status.success ? 'success' : 'error'"
       variant="outlined"
     >

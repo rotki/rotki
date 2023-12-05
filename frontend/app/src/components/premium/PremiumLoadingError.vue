@@ -4,9 +4,7 @@ const { t } = useI18n();
 
 <template>
   <RuiAlert
-    dense
     type="error"
-    text
     variant="outlined"
     :title="t('premium_loading_failed.title')"
   >

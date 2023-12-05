@@ -53,7 +53,6 @@ const { t } = useI18n();
     <div>
       <RuiAlert
         v-if="syncDatabase"
-        text
         class="create-account__password-sync-requirement"
         type="warning"
       >
