@@ -176,10 +176,11 @@ watch(errorMessages, errors => {
       @paste="onPasteAddress($event)"
       @blur="v$.address.$touch()"
     />
-    <VTextarea
+    <RuiTextArea
       v-else
       v-model="userAddresses"
-      outlined
+      variant="outlined"
+      color="primary"
       :disabled="disabled"
       :error-messages="toMessages(v$.userAddresses)"
       :hint="t('account_form.labels.addresses_hint')"
@@ -187,19 +188,18 @@ watch(errorMessages, errors => {
       @blur="v$.userAddresses.$touch()"
       @paste="onPasteMulti($event)"
     />
-    <div v-if="multiple">
-      <div
-        class="text-caption mb-2"
-        v-text="
-          t(
-            'account_form.labels.addresses_entries',
-            {
-              count: entries.length
-            },
-            entries.length
-          )
-        "
-      />
-    </div>
+    <div
+      v-if="multiple"
+      class="text-caption mb-2 px-3"
+      v-text="
+        t(
+          'account_form.labels.addresses_entries',
+          {
+            count: entries.length
+          },
+          entries.length
+        )
+      "
+    />
   </div>
 </template>

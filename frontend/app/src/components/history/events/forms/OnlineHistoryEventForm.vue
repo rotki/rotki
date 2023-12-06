@@ -366,12 +366,15 @@ const locationLabelSuggestions = computed(() =>
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <VTextarea
+    <RuiTextArea
       v-model.trim="notes"
-      prepend-inner-icon="mdi-text-box-outline"
-      persistent-hint
-      outlined
+      prepend-icon="sticky-note-line"
       data-cy="notes"
+      variant="outlined"
+      color="primary"
+      max-rows="5"
+      min-rows="3"
+      auto-grow
       :label="t('common.notes')"
       :hint="t('transactions.events.form.notes.hint')"
       :error-messages="toMessages(v$.notes)"
