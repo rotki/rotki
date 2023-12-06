@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.31.1 <2023-12-06>`
 * :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.
 * :bug:`7012` Fix issue where the title for the statistics card are missing.
 * :bug:`7039` The edge case of a failed eth_call during initialization of decoders will no longer crash the user login task.
