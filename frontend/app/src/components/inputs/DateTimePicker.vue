@@ -344,72 +344,68 @@ const filteredListeners = (listeners: any) => ({
 </script>
 
 <template>
-  <RuiTextField
+  <VTextField
     ref="inputField"
     :value="currentValue"
     :label="label"
     :hint="hint"
     :disabled="disabled"
     :hide-details="hideDetails"
-    prepend-icon="calendar-line"
-    color="primary"
-    :variant="outlined ? 'outlined' : 'default'"
+    prepend-inner-icon="mdi-calendar"
+    :persistent-hint="persistentHint"
+    :outlined="outlined"
     :error-messages="toMessages(v$.date)"
     @focus="focus()"
     v-on="filteredListeners(listeners)"
   >
     <template #append>
-      <div class="flex gap-1 items-center">
-        <VMenu
-          :close-on-content-click="false"
-          transition="scale-transition"
-          nudge-bottom="9"
-          origin="top right"
-          offset-y
-          left
-          max-width="580px"
-          class="date-time-picker"
-        >
-          <template #activator="{ on }">
-            <RuiButton
-              variant="text"
-              type="button"
-              icon
-              size="sm"
-              class="!p-1.5"
-              v-on="on"
-            >
-              <RuiIcon name="earth-line" />
-            </RuiButton>
-          </template>
+      <VMenu
+        :close-on-content-click="false"
+        transition="scale-transition"
+        :nudge-bottom="56"
+        left
+        max-width="580px"
+        class="date-time-picker"
+      >
+        <template #activator="{ on }">
+          <RuiButton
+            variant="text"
+            type="button"
+            icon
+            size="sm"
+            class="-mt-2 !p-1.5"
+            v-on="on"
+          >
+            <RuiIcon name="earth-line" />
+          </RuiButton>
+        </template>
 
-          <div :class="css.menu">
-            <VAutocomplete
-              v-model="selectedTimezone"
-              label="Select timezone"
-              class="pa-4 pb-0"
-              outlined
-              persistent-hint
-              menu-pros="auto"
-              :error-messages="toMessages(v$.timezone)"
-              :items="timezones"
-            />
-          </div>
-        </VMenu>
-        <RuiButton
-          data-cy="date-time-picker__set-now-button"
-          variant="text"
-          type="button"
-          icon
-          size="sm"
-          class="!p-1.5"
-          @click="setNow()"
-        >
-          <RuiIcon name="time-line" />
-        </RuiButton>
-      </div>
+        <div :class="css.menu">
+          <VAutocomplete
+            v-model="selectedTimezone"
+            label="Select timezone"
+            class="pa-4 pb-0"
+            outlined
+            persistent-hint
+            menu-pros="auto"
+            :error-messages="toMessages(v$.timezone)"
+            :items="timezones"
+          />
+        </div>
+      </VMenu>
+      <RuiButton
+        data-cy="date-time-picker__set-now-button"
+        variant="text"
+        type="button"
+        icon
+        size="sm"
+        class="-mt-2 !p-1.5"
+        @click="setNow()"
+      >
+        <RuiIcon name="time-line" />
+      </RuiButton>
     </template>
-  </RuiTextField>
+  </VTextField>
 </template>
 
 <style module lang="scss">
