@@ -1,7 +1,8 @@
 from typing import Final
+
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY = 'feaa5a7ddc2d76789e58'
+CURRENCYCONVERTER_API_KEY = '08caf5396d98ee1bf9f0'
 
 ZERO = FVal(0)
 ONE = FVal(1)
