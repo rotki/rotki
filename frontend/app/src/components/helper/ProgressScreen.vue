@@ -22,87 +22,34 @@ const { t } = useI18n();
 
 <template>
   <FullSizeContent>
-    <div :class="$style.content">
-      <VCol cols="12">
-        <VRow
-          v-if="progress"
-          align="center"
-          justify="center"
-          class="font-light"
-          :class="$style.percentage"
-        >
+    <div
+      class="flex flex-col items-center justify-center mb-10 w-full md:w-5/6"
+    >
+      <template v-if="progress">
+        <div class="text-4xl mb-8">
           {{ t('progress_screen.progress', { progress: percentage }) }}
-        </VRow>
-        <VRow align="center" justify="center" :class="$style.loader">
-          <VCol cols="10">
-            <VProgressLinear
-              v-if="progress"
-              class="text-center"
-              rounded
-              height="16"
-              color="primary"
-              :value="progress"
-            />
-            <div v-else :class="$style.indeterminate">
-              <VProgressCircular
-                rounded
-                indeterminate
-                :size="70"
-                color="primary"
-              />
-            </div>
-          </VCol>
-        </VRow>
-        <VRow align="center" justify="center">
-          <p class="text-center font-light" :class="$style.description">
-            <slot name="message" />
-          </p>
-        </VRow>
-        <VRow align="center" justify="center">
-          <VCol cols="4">
-            <VDivider />
-          </VCol>
-        </VRow>
-        <VRow align="center" justify="center" :class="$style.warning">
-          <div class="font-light text-subtitle-2 text-center">
-            <slot />
-          </div>
-        </VRow>
-      </VCol>
+        </div>
+        <RuiProgress
+          thickness="16"
+          :value="percentage"
+          color="primary"
+          class="w-full rounded overflow-hidden"
+        />
+      </template>
+      <RuiProgress
+        v-else
+        circular
+        variant="indeterminate"
+        color="primary"
+        size="70"
+      />
+    </div>
+    <p class="text-center font-light mb-6">
+      <slot name="message" />
+    </p>
+    <RuiDivider class="w-full md:w-1/4" />
+    <div class="font-light text-subtitle-2 text-center mt-8">
+      <slot />
     </div>
   </FullSizeContent>
 </template>
-
-<style module lang="scss">
-.indeterminate {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 80px;
-}
-
-.content {
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  height: 100%;
-  width: 100%;
-}
-
-.loader {
-  min-height: 80px;
-}
-
-.percentage {
-  font-size: 46px;
-}
-
-.description {
-  font-size: 16px;
-}
-
-.warning {
-  margin-top: 30px;
-}
-</style>

@@ -16,9 +16,9 @@ const { closeApp } = useInterop();
     :subtitle="t('error_screen.message')"
     :message="message"
   >
-    <VBtn depressed color="primary" @click="closeApp()">
+    <RuiButton color="primary" @click="closeApp()">
       {{ t('common.actions.terminate') }}
-    </VBtn>
+    </RuiButton>
   </ErrorScreen>
 </template>
 

@@ -28,7 +28,7 @@ onMounted(() => {
         required
         color="primary"
         variant="outlined"
-        class="border border-default rounded bg-white dark:bg-rui-grey-900"
+        class="border border-default rounded bg-white dark:bg-rui-grey-900 max-w-full"
       >
         <template #default>
           <RuiTab

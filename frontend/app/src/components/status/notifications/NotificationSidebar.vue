@@ -59,43 +59,37 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
     hide-overlay
     @input="input($event)"
   >
-    <div v-if="visible" :class="css.container">
-      <VRow align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
-        <VCol cols="auto">
-          <VTooltip bottom>
-            <template #activator="{ on }">
-              <VBtn text icon v-on="on" @click="close()">
-                <VIcon>mdi-chevron-right</VIcon>
-              </VBtn>
-            </template>
-            <span>{{ t('notification_sidebar.close_tooltip') }}</span>
-          </VTooltip>
-        </VCol>
-        <VCol>
-          <span
-            class="text-uppercase text--secondary text-caption font-medium pl-1"
-          >
-            {{ t('notification_sidebar.title') }}
-          </span>
-        </VCol>
-        <VCol cols="auto">
-          <VBtn
-            text
-            class="text-caption text-lowercase"
-            color="accent"
-            :disabled="notifications.length === 0"
-            @click="showConfirmation()"
-          >
-            {{ t('notification_sidebar.clear_tooltip') }}
-          </VBtn>
-        </VCol>
-      </VRow>
+    <div v-if="visible" class="h-full">
+      <div class="flex items-center p-2 gap-1">
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton variant="text" icon class="!p-2" @click="close()">
+              <RuiIcon name="arrow-right-s-line" size="20" />
+            </RuiButton>
+          </template>
+          <span>{{ t('notification_sidebar.close_tooltip') }}</span>
+        </RuiTooltip>
+        <div
+          class="flex-1 text-uppercase text--secondary text-caption font-medium"
+        >
+          {{ t('notification_sidebar.title') }}
+        </div>
+        <RuiButton
+          variant="text"
+          class="text-caption text-lowercase"
+          color="secondary"
+          :disabled="notifications.length === 0"
+          @click="showConfirmation()"
+        >
+          {{ t('notification_sidebar.clear_tooltip') }}
+        </RuiButton>
+      </div>
       <div
         v-if="!hasRunningTasks && notifications.length === 0"
-        :class="$style['no-messages']"
+        :class="css['no-messages']"
       >
-        <VIcon size="64px" color="primary">mdi-information</VIcon>
-        <div :class="css.label" class="text-rui-text">
+        <RuiIcon size="64px" color="primary" name="information-line" />
+        <div class="text-rui-text text-lg mt-2">
           {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
@@ -152,16 +146,6 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
   align-items: center;
   justify-content: center;
   height: calc(100% - 64px);
-}
-
-.label {
-  font-size: 22px;
-  margin-top: 22px;
-  font-weight: 300;
-}
-
-.container {
-  height: 100%;
 }
 
 .messages {

@@ -117,7 +117,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-4">
     <XpubInput
       :disabled="loading"
       :error-messages="errorMessages"

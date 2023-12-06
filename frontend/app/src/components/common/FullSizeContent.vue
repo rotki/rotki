@@ -6,26 +6,13 @@ onMounted(() => {
   const { top: topBound } = proxy.$el.getBoundingClientRect();
   set(top, topBound);
 });
-
-const { xs } = useDisplay();
-const css = useCssModule();
 </script>
 
 <template>
   <div
-    class="flex flex-col items-center"
-    :class="{
-      [css.empty]: true,
-      'pa-2 mt-2': xs
-    }"
-    :style="`height: calc(100vh - ${top + 64}px);`"
+    class="flex flex-col items-center justify-center text-center p-2"
+    :style="`height: calc(100vh - ${top + 92}px);`"
   >
     <slot />
   </div>
 </template>
-
-<style module lang="scss">
-.empty {
-  height: 100%;
-}
-</style>

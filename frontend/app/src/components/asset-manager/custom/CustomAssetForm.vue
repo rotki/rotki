@@ -154,7 +154,7 @@ setSubmitFunc(save);
       outlined
       persistent-hint
       clearable
-      :label="t('asset_form.labels.notes')"
+      :label="t('common.notes')"
       @input="input({ notes: $event })"
     />
 

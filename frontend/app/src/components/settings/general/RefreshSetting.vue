@@ -53,8 +53,8 @@ onMounted(() => {
     <div class="text-h6">
       {{ t('frontend_settings.subtitle.refresh') }}
     </div>
-    <VRow class="mt-1">
-      <VCol class="grow">
+    <div class="flex gap-6 mt-1">
+      <div class="grow">
         <SettingsOption
           #default="{ error, success, update }"
           setting="refreshPeriod"
@@ -82,26 +82,22 @@ onMounted(() => {
             @change="callIfValid($event, update)"
           />
         </SettingsOption>
-      </VCol>
-      <VCol class="shrink">
-        <SettingsOption
-          #default="{ update }"
-          setting="refreshPeriod"
-          frontend-setting
-          :transform="transformSwitch"
-          :error-message="
-            t('frontend_settings.validation.refresh_period.error')
-          "
-          @finished="resetRefreshPeriod()"
-        >
-          <VSwitch
-            v-model="refreshEnabled"
-            class="mt-3"
-            :label="t('frontend_settings.label.refresh_enabled')"
-            @change="update($event)"
-          />
-        </SettingsOption>
-      </VCol>
-    </VRow>
+      </div>
+      <SettingsOption
+        #default="{ update }"
+        setting="refreshPeriod"
+        frontend-setting
+        :transform="transformSwitch"
+        :error-message="t('frontend_settings.validation.refresh_period.error')"
+        @finished="resetRefreshPeriod()"
+      >
+        <VSwitch
+          v-model="refreshEnabled"
+          class="mt-3"
+          :label="t('frontend_settings.label.refresh_enabled')"
+          @change="update($event)"
+        />
+      </SettingsOption>
+    </div>
   </div>
 </template>

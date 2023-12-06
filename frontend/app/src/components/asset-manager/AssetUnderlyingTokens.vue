@@ -10,7 +10,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="cols" :padded="false">
+  <TableExpandContainer visible :colspan="cols" no-padding>
     <template #title>
       {{ t('asset_table.underlying_tokens') }}
     </template>

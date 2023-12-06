@@ -18,10 +18,8 @@ withDefaults(
   >
     <RuiAlert
       class="mb-0"
-      dense
       :type="status.success ? 'success' : 'error'"
-      text
-      outlined
+      variant="outlined"
     >
       {{ status.success || status.error }}
     </RuiAlert>

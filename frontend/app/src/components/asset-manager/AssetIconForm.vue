@@ -75,68 +75,48 @@ defineExpose({
 
 <template>
   <div>
-    <VRow>
-      <VCol cols="auto">
-        <VSheet outlined rounded class="asset-form__icon">
-          <VTooltip v-if="preview && refreshable" right>
-            <template #activator="{ on }">
-              <VBtn
-                fab
-                x-small
-                depressed
-                class="asset-form__icon__refresh"
-                color="primary"
-                :loading="refreshIconLoading"
-                v-on="on"
-                @click="refreshIcon()"
-              >
-                <RuiIcon name="refresh-line" />
-              </VBtn>
-            </template>
-            {{ t('asset_form.fetch_latest_icon.title') }}
-          </VTooltip>
+    <div class="grid grid-cols-[auto_1fr] gap-6 h-full">
+      <RuiCard
+        rounded="sm"
+        class="w-32 items-center justify-center [&>div]:!p-6 relative"
+      >
+        <RuiTooltip
+          v-if="preview && refreshable"
+          :popper="{ placement: 'right' }"
+          open-delay="400"
+          class="absolute -top-3 -right-3"
+        >
+          <template #activator>
+            <RuiButton
+              size="sm"
+              icon
+              color="primary"
+              :loading="refreshIconLoading"
+              @click="refreshIcon()"
+            >
+              <RuiIcon size="20" name="refresh-line" />
+            </RuiButton>
+          </template>
+          {{ t('asset_form.fetch_latest_icon.title') }}
+        </RuiTooltip>
 
-          <AssetIcon
-            v-if="preview"
-            :identifier="preview"
-            size="72px"
-            changeable
-            :timestamp="timestamp"
-          />
-        </VSheet>
-      </VCol>
-      <VCol>
-        <FileUpload
-          v-model="icon"
-          source="icon"
-          file-filter=".png, .svg, .jpeg, .jpg, .webp"
+        <AssetIcon
+          v-if="preview"
+          :identifier="preview"
+          size="72px"
+          changeable
+          :timestamp="timestamp"
         />
-      </VCol>
-    </VRow>
-    <VRow v-if="icon">
-      <VCol class="text-caption">
-        {{ t('asset_form.replaced', { name: icon.name }) }}
-      </VCol>
-    </VRow>
+      </RuiCard>
+      <FileUpload
+        v-model="icon"
+        class="grow"
+        source="icon"
+        file-filter=".png, .svg, .jpeg, .jpg, .webp"
+      />
+    </div>
+    <div v-if="icon" class="text-caption text-rui-success mt-2">
+      {{ t('asset_form.replaced', { name: icon.name }) }}
+    </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.asset-form {
-  &__icon {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 100%;
-    position: relative;
-
-    &__refresh {
-      position: absolute;
-      right: -1rem;
-      top: -1rem;
-    }
-  }
-}
-</style>

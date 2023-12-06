@@ -308,7 +308,11 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
               />
             </template>
             <template #item.manuallyInput="{ item }">
-              <VIcon v-if="item.manuallyInput" color="green">mdi-check</VIcon>
+              <SuccessDisplay
+                v-if="item.manuallyInput"
+                class="mx-auto"
+                success
+              />
             </template>
             <template #body.append="{ isMobile }">
               <RowAppend

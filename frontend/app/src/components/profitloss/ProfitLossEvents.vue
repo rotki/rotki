@@ -97,7 +97,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: t('profit_loss_events.headers.notes'),
+    text: t('common.notes'),
     value: 'notes',
     sortable: false
   },
@@ -214,15 +214,9 @@ const css = useCssModule();
         <DateDisplay :timestamp="item.timestamp" />
       </template>
       <template #item.free_amount="{ item }">
-        <div class="flex items-center justify-between flex-nowrap gap-2">
-          <AssetLink
-            v-if="item.asset"
-            icon
-            :asset="item.asset"
-            class="mr-2"
-            link
-          >
-            <AssetIcon :identifier="item.asset" size="24px" />
+        <div class="flex items-center justify-between flex-nowrap gap-4">
+          <AssetLink v-if="item.asset" :asset="item.asset" link>
+            <AssetIcon class="flex" :identifier="item.asset" size="24px" />
           </AssetLink>
           <AmountDisplay
             force-currency

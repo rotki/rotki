@@ -43,31 +43,30 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VRow
-    no-gutters
-    class="percentage-display flex-nowrap"
-    :justify="justify"
-    align="center"
+  <div
+    class="flex percentage-display flex-nowrap"
+    :class="{
+      'justify-start': justify === 'start',
+      'justify-end': justify === 'end'
+    }"
   >
-    <VCol
-      :cols="justify === 'end' ? null : 'auto'"
+    <div
       class="percentage-display__amount"
       :class="{
         blur: !shouldShowPercentage,
         'text-end': justify === 'end',
-        'text-start': justify !== 'start'
+        'text-start': justify === 'start'
       }"
     >
       {{ displayValue }}
-    </VCol>
-    <VCol
+    </div>
+    <div
       v-if="!!value"
       :style="assetStyle"
       :class="assetPadding ? 'mr-1' : null"
       class="ml-1 text-sm"
-      :cols="justify === 'start' ? null : 'auto'"
     >
       {{ t('percentage_display.symbol') }}
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

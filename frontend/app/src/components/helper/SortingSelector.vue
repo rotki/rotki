@@ -17,40 +17,30 @@ const updateSortBy = (value: string) => {
 const updateSortDesc = () => {
   emit('update:sort-desc', !get(sortDescending));
 };
-const { dark } = useTheme();
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <div :class="$style.container">
-    <div>
-      <VTooltip open-delay="400" top>
-        <template #activator="{ on, attrs }">
-          <VBtn
-            icon
-            v-bind="attrs"
-            color="primary"
-            @click="updateSortDesc()"
-            v-on="on"
-          >
-            <VIcon v-if="sortDescending">mdi-sort-descending</VIcon>
-            <VIcon v-else>mdi-sort-ascending</VIcon>
-          </VBtn>
-        </template>
-        <span v-if="sortDescending">
-          {{ t('sorting_selector.desc.sort_asc_tooltip') }}
-        </span>
-        <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>
-      </VTooltip>
-    </div>
-    <div
-      :class="{
-        [$style.selector]: true,
-        [$style.light]: !dark,
-        [$style.dark]: dark
-      }"
-    >
+  <div class="flex">
+    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          class="!p-2"
+          color="primary"
+          @click="updateSortDesc()"
+        >
+          <RuiIcon :name="sortDescending ? 'sort-desc' : 'sort-asc'" />
+        </RuiButton>
+      </template>
+      <span v-if="sortDescending">
+        {{ t('sorting_selector.desc.sort_asc_tooltip') }}
+      </span>
+      <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>
+    </RuiTooltip>
+    <div class="flex-1 ml-2 bg-white dark:bg-rui-grey-900">
       <VSelect
         :value="sortBy"
         hide-details
@@ -63,23 +53,3 @@ const { t } = useI18n();
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.container {
-  display: flex;
-  flex-direction: row;
-}
-
-.selector {
-  flex: 1;
-  margin-left: 8px;
-}
-
-.dark {
-  background-color: var(--v-dark-base);
-}
-
-.light {
-  background-color: white;
-}
-</style>

@@ -143,11 +143,11 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       {{ t('asset_locations.title') }}
     </template>
     <template #actions>
-      <VRow no-gutters justify="end">
-        <VCol cols="12" md="6" lg="4">
+      <div class="flex justify-end">
+        <div class="w-full md:w-[30rem]">
           <TagFilter v-model="onlyTags" />
-        </VCol>
-      </VRow>
+        </div>
+      </div>
     </template>
     <DataTable
       :headers="tableHeaders"

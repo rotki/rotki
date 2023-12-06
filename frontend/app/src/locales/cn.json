@@ -968,7 +968,6 @@
       "cryptocompare_hint": "CryptoCompare 上资产的标识符。如果没有给出，符号将被假定为默认符号。如果这不起作用并且没有设置 rotki 将无法从 CryptoCompare 检索资产的价格",
       "decimals": "小数",
       "forked": "分叉",
-      "notes": "备注",
       "started": "开始",
       "swapped_for": "交换为",
       "symbol": "符号",
@@ -1034,7 +1033,6 @@
       "select_deselect_all_tokens": "选择/取消选择所有的代币",
       "subtitle": "检查新检测到的令牌列表并将任何垃圾邮件资产添加到忽略的代币列表"
     },
-    "notes": "备注",
     "only_show_ignored": "只显示忽略的资产 ({length}) | 只显示忽略的资产",
     "only_show_owned": "只显示自有资产",
     "only_show_unignored": "只显示未忽略的资产",
@@ -1346,7 +1344,6 @@
     "details": {
       "fee": "费用",
       "link": "链接",
-      "link_data": "交易没有链接",
       "title": "交易详情"
     },
     "dialog": {
@@ -1439,6 +1436,7 @@
     "name": "姓名",
     "never": "从不",
     "no_premium": "未检测到高级订阅。",
+    "notes": "备注",
     "of": "of",
     "price": "价格",
     "price_in_symbol": "{symbol} 价格",
@@ -1460,11 +1458,6 @@
   "compound_lending": {
     "header": "复合贷款 ({asset})",
     "history": "复合历史"
-  },
-  "confirmable_reset": {
-    "confirm": {
-      "message": "您确定要继续重置吗？"
-    }
   },
   "conflict_dialog": {
     "action": {
@@ -3080,10 +3073,6 @@
     },
     "title": "不可替代余额"
   },
-  "notes_display": {
-    "empty_notes": "找不到该条目的注释",
-    "notes": "备注"
-  },
   "notes_menu": {
     "delete_confirmation": "你确定要删除这条笔记吗？",
     "dialog": {
@@ -3517,7 +3506,6 @@
       "show": "显示成本基础"
     },
     "headers": {
-      "notes": "备注",
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
       "tax_free_amount": "Tax Free Amount",
@@ -3918,8 +3906,7 @@
           "label": "位置标签"
         },
         "notes": {
-          "hint": "[Optional] 为操作存储的附加注释",
-          "label": "备注"
+          "hint": "[Optional] 为操作存储的附加注释"
         },
         "sequence_index": {
           "label": "序列索引",

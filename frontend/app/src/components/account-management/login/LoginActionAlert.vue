@@ -6,49 +6,27 @@ const emit = defineEmits<{
   (e: 'confirm'): void;
   (e: 'cancel'): void;
 }>();
+
 const { t } = useI18n();
-const css = useCssModule();
 const slots = useSlots();
 </script>
 
 <template>
-  <VAlert
-    class="animate mt-8"
-    text
-    prominent
-    outlined
-    type="warning"
-    :icon="icon"
-  >
-    <div class="text-h6">
+  <RuiAlert class="mt-8" type="warning" :icon="icon">
+    <template #title>
       <slot name="title" />
-    </div>
-    <div class="mt-2" :class="css.body">
-      <div>
-        <slot />
-      </div>
-    </div>
+    </template>
+    <slot />
 
-    <VRow justify="end" class="mt-2">
-      <VCol cols="auto" class="shrink">
-        <VBtn color="error" depressed @click="emit('cancel')">
-          <slot v-if="slots.cancel" name="cancel" />
-          <span v-else> {{ t('common.actions.no') }} </span>
-        </VBtn>
-      </VCol>
-      <VCol cols="auto" class="shrink">
-        <VBtn color="success" depressed @click="emit('confirm')">
-          <slot v-if="slots.confirm" name="confirm" />
-          <span v-else> {{ t('common.actions.yes') }} </span>
-        </VBtn>
-      </VCol>
-    </VRow>
-  </VAlert>
+    <div class="mt-4 flex justify-end gap-3">
+      <RuiButton variant="text" color="primary" @click="emit('cancel')">
+        <slot v-if="slots.cancel" name="cancel" />
+        <span v-else> {{ t('common.actions.no') }} </span>
+      </RuiButton>
+      <RuiButton color="primary" @click="emit('confirm')">
+        <slot v-if="slots.confirm" name="confirm" />
+        <span v-else> {{ t('common.actions.yes') }} </span>
+      </RuiButton>
+    </div>
+  </RuiAlert>
 </template>
-
-<style module lang="scss">
-.body {
-  margin-top: 5px;
-  margin-bottom: 8px;
-}
-</style>

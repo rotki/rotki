@@ -43,44 +43,45 @@ const previousPage = () => {
   }
 };
 
-const { dark } = useTheme();
 const { t } = useI18n();
+
+const css = useCssModule();
 </script>
 
 <template>
-  <VRow align="center">
-    <VCol cols="auto">
-      <VBtn icon :disabled="value === 1" @click="previousPage()">
-        <VIcon>mdi-chevron-left</VIcon>
-      </VBtn>
-    </VCol>
-    <VCol cols="auto">
-      <div
-        :class="{
-          [$style.pages]: true,
-          [$style.light]: !dark,
-          [$style.dark]: dark
-        }"
-      >
-        <VAutocomplete
-          :items="items"
-          :value="value"
-          single-line
-          hide-details
-          dense
-          hide-no-data
-          outlined
-          @change="newPage($event)"
-        />
-      </div>
-    </VCol>
-    <VCol cols="auto">{{ t('pagination.of', { length }) }}</VCol>
-    <VCol cols="auto">
-      <VBtn icon :disabled="value === length" @click="nextPage()">
-        <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
-    </VCol>
-  </VRow>
+  <div class="flex items-center gap-4">
+    <RuiButton
+      variant="text"
+      class="!p-2"
+      icon
+      :disabled="value === 1"
+      @click="previousPage()"
+    >
+      <RuiIcon name="arrow-left-s-line" />
+    </RuiButton>
+    <div :class="[css.pages, 'bg-white dark:bg-rui-grey-900']">
+      <VAutocomplete
+        :items="items"
+        :value="value"
+        single-line
+        hide-details
+        dense
+        hide-no-data
+        outlined
+        @change="newPage($event)"
+      />
+    </div>
+    <div>{{ t('pagination.of', { length }) }}</div>
+    <RuiButton
+      variant="text"
+      icon
+      class="!p-2"
+      :disabled="value === length"
+      @click="nextPage()"
+    >
+      <RuiIcon name="arrow-right-s-line" />
+    </RuiButton>
+  </div>
 </template>
 
 <style module lang="scss">
@@ -100,13 +101,5 @@ const { t } = useI18n();
       }
     }
   }
-}
-
-.dark {
-  background-color: var(--v-dark-base);
-}
-
-.light {
-  background-color: white;
 }
 </style>

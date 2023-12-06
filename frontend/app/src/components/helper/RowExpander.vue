@@ -1,25 +1,19 @@
 <script setup lang="ts">
 defineProps<{ expanded: boolean }>();
 
-const emit = defineEmits(['click']);
+const emit = defineEmits<{
+  (e: 'click'): void;
+}>();
 const click = () => emit('click');
 </script>
 
 <template>
-  <span>
-    <VBtn icon @click="click()">
-      <VIcon :class="{ icon: true, 'icon--expanded': expanded }">
-        mdi-chevron-down
-      </VIcon>
-    </VBtn>
-  </span>
+  <RuiButton variant="text" class="!p-2" icon @click="click()">
+    <RuiIcon
+      name="arrow-down-s-line"
+      class="transition"
+      size="20"
+      :class="{ ['rotate-180']: expanded }"
+    />
+  </RuiButton>
 </template>
-
-<style scoped lang="scss">
-.icon {
-  &--expanded {
-    transition: 0.2s all 0s;
-    transform: rotate(-180deg);
-  }
-}
-</style>

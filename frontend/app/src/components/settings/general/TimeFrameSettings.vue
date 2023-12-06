@@ -58,7 +58,7 @@ const isTimeframeDisabled = (timeframe: TimeFrameSetting) =>
   !get(premium) && !worksWithoutPremium(timeframe);
 
 const chipClass = (timeframePeriod: TimeFrameSetting): string =>
-  timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
+  timeframePeriod === get(value) ? '!bg-rui-primary !text-white' : '';
 
 const timeframeChange = (timeframe: TimeFrameSetting) => {
   emit('timeframe-change', timeframe);
@@ -105,105 +105,72 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
 
 <template>
   <Fragment>
-    <VRow>
-      <VCol>
-        <div
-          class="text-h6"
-          v-text="t('timeframe_settings.default_timeframe')"
+    <h6 class="text-h6">
+      {{ t('timeframe_settings.default_timeframe') }}
+    </h6>
+    <div class="text-body-2 text-rui-text-secondary mb-4">
+      {{ t('timeframe_settings.default_timeframe_description') }}
+    </div>
+    <RuiCard>
+      <div class="text-subtitle-1">
+        {{ t('timeframe_settings.visible_timeframes') }}
+      </div>
+
+      <div class="flex items-center">
+        <PremiumLock
+          v-if="!premium"
+          :tooltip="t('overall_balances.premium_hint')"
         />
-        <div
-          class="text-subtitle-1"
-          v-text="t('timeframe_settings.default_timeframe_description')"
-        />
-      </VCol>
-    </VRow>
-    <VRow align="center" justify="center">
-      <VCol>
-        <VCard class="pa-4" outlined>
-          <div>
-            <div class="text-subtitle-1">
-              {{ t('timeframe_settings.visible_timeframes') }}
-            </div>
+        <VChip
+          v-for="(timeframe, i) in appendedVisibleTimeframes"
+          :key="i"
+          :class="chipClass(timeframe)"
+          class="m-2"
+          small
+          :close="
+            isTimeframesToggleable(timeframe) &&
+            !isTimeframeDisabled(timeframe) &&
+            selectableTimeframes.length > 1
+          "
+          :disabled="isTimeframeDisabled(timeframe)"
+          @click:close="removeVisibleTimeframe(timeframe)"
+          @click="timeframeChange(timeframe)"
+        >
+          {{ timeframe }}
+        </VChip>
+      </div>
 
-            <div class="timeframe-settings">
-              <VTooltip v-if="!premium" top>
-                <template #activator="{ on, attrs }">
-                  <VIcon small v-bind="attrs" v-on="on"> mdi-lock </VIcon>
-                </template>
-                <span v-text="t('overall_balances.premium_hint')" />
-              </VTooltip>
+      <template v-if="invisibleTimeframes.length > 0">
+        <RuiDivider class="my-4" />
 
-              <VChip
-                v-for="(timeframe, i) in appendedVisibleTimeframes"
-                :key="i"
-                :class="chipClass(timeframe)"
-                class="ma-2"
-                small
-                :close="
-                  isTimeframesToggleable(timeframe) &&
-                  !isTimeframeDisabled(timeframe) &&
-                  selectableTimeframes.length > 1
-                "
-                :disabled="isTimeframeDisabled(timeframe)"
-                @click:close="removeVisibleTimeframe(timeframe)"
-                @click="timeframeChange(timeframe)"
-              >
-                {{ timeframe }}
-              </VChip>
-            </div>
-          </div>
-
-          <template v-if="invisibleTimeframes.length > 0">
-            <VDivider class="my-4" />
-
-            <div>
-              <div class="text-subtitle-1">
-                {{ t('timeframe_settings.inactive_timeframes') }}
-              </div>
-              <div class="timeframe-settings">
-                <VChip
-                  v-for="(timeframe, i) in invisibleTimeframes"
-                  :key="i"
-                  class="ma-2"
-                  small
-                  close-icon="mdi-plus"
-                  :close="isTimeframesToggleable(timeframe)"
-                  :disabled="isTimeframeDisabled(timeframe)"
-                  @click:close="addVisibleTimeframe(timeframe)"
-                  @click="addVisibleTimeframe(timeframe)"
-                >
-                  {{ timeframe }}
-                </VChip>
-              </div>
-            </div>
-          </template>
-        </VCard>
-      </VCol>
-    </VRow>
-    <VRow no-gutters>
-      <VCol
-        :class="{
-          'success--text': !!message.success,
-          'error--text': !!message.error
-        }"
-        class="text-subtitle-2 message"
-      >
-        <div v-if="text" v-text="text" />
-      </VCol>
-    </VRow>
+        <div class="text-subtitle-1">
+          {{ t('timeframe_settings.inactive_timeframes') }}
+        </div>
+        <div>
+          <VChip
+            v-for="(timeframe, i) in invisibleTimeframes"
+            :key="i"
+            class="m-2"
+            small
+            close-icon="mdi-plus"
+            :close="isTimeframesToggleable(timeframe)"
+            :disabled="isTimeframeDisabled(timeframe)"
+            @click:close="addVisibleTimeframe(timeframe)"
+            @click="addVisibleTimeframe(timeframe)"
+          >
+            {{ timeframe }}
+          </VChip>
+        </div>
+      </template>
+    </RuiCard>
+    <div
+      :class="{
+        'text-rui-success': !!message.success,
+        'text-rui-error': !!message.error
+      }"
+      class="text-caption pt-1 pl-3 min-h-[1.5rem]"
+    >
+      <div v-if="text">{{ text }}</div>
+    </div>
   </Fragment>
 </template>
-
-<style scoped lang="scss">
-.timeframe-settings {
-  &--active {
-    color: white !important;
-    background-color: var(--v-primary-base) !important;
-  }
-}
-
-.message {
-  padding-top: 0.5rem !important;
-  height: 1rem;
-}
-</style>

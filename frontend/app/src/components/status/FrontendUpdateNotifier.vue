@@ -59,20 +59,16 @@ const { t } = useI18n();
 <template>
   <div v-if="needRefresh">
     <VDialog :value="true" persistent max-width="500">
-      <Card>
-        <div class="pt-5 text-center">
+      <RuiCard>
+        <div
+          class="flex flex-col md:flex-row gap-4 text-center items-center justify-between"
+        >
           {{ t('update_notifier.update_available') }}
-          <VBtn
-            depressed
-            class="ml-6"
-            color="primary"
-            :loading="updating"
-            @click="update()"
-          >
+          <RuiButton color="primary" :loading="updating" @click="update()">
             {{ t('common.actions.update') }}
-          </VBtn>
+          </RuiButton>
         </div>
-      </Card>
+      </RuiCard>
     </VDialog>
   </div>
 </template>

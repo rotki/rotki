@@ -68,7 +68,12 @@ const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
             </VListItemContent>
 
             <VListItemAction>
-              <VCheckbox :input-value="active" />
+              <RuiCheckbox
+                class="-my-2"
+                color="primary"
+                hide-details
+                :value="active"
+              />
             </VListItemAction>
           </template>
         </VListItem>

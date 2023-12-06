@@ -1,5 +1,6 @@
 import {
   RiAccountCircleLine,
+  RiAddBoxLine,
   RiAddCircleLine,
   RiAddLine,
   RiAlarmWarningLine,
@@ -27,10 +28,12 @@ import {
   RiCalculatorLine,
   RiCalendar2Line,
   RiCalendarEventLine,
+  RiCalendarLine,
   RiCashLine,
   RiChatQuoteLine,
   RiCheckDoubleLine,
   RiCheckboxCircleLine,
+  RiCheckboxIndeterminateLine,
   RiCheckboxMultipleLine,
   RiCloseLine,
   RiCloudLine,
@@ -76,6 +79,7 @@ import {
   RiFilterLine,
   RiFireLine,
   RiFolderAddLine,
+  RiFolderLine,
   RiFolderOpenLine,
   RiFolderReceivedLine,
   RiFolderReduceLine,
@@ -144,6 +148,8 @@ import {
   RiShakeHandsLine,
   RiShareCircleLine,
   RiShuffleLine,
+  RiSortAsc,
+  RiSortDesc,
   RiSparklingLine,
   RiStickyNoteLine,
   RiSubtractLine,
@@ -344,6 +350,13 @@ Vue.use(RuiPlugin, {
     RiVirusLine,
     RiFileSearchLine,
     RiChatQuoteLine,
-    RiArrowDownCircleLine
+    RiArrowDownCircleLine,
+    RiCalendarLine,
+    RiDownloadCloudLine,
+    RiSortAsc,
+    RiSortDesc,
+    RiAddBoxLine,
+    RiCheckboxIndeterminateLine,
+    RiFolderLine
   ]
 });

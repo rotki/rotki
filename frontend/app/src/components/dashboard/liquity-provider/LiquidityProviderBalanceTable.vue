@@ -166,9 +166,11 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         @refresh="fetch(true)"
       />
       {{ t('dashboard.liquidity_position.title') }}
-      <VBtn :to="route" icon class="ml-2">
-        <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      <RouterLink :to="route">
+        <RuiButton variant="text" icon class="ml-2">
+          <RuiIcon name="arrow-right-s-line" />
+        </RuiButton>
+      </RouterLink>
     </template>
     <template #details>
       <VMenu
@@ -185,7 +187,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
             class-name="nft_balance_table__column-filter__button"
             :on-menu="on"
           >
-            <VIcon>mdi-dots-vertical</VIcon>
+            <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
         </template>
         <VisibleColumnsSelector

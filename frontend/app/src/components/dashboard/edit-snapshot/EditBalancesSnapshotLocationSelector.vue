@@ -59,8 +59,8 @@ const { t } = useI18n();
             fiat-currency="USD"
           />
         </div>
-        <div class="px-8">
-          <VIcon>mdi-arrow-right</VIcon>
+        <div class="px-8 text-rui-text-secondary">
+          <RuiIcon name="arrow-right-line" />
         </div>
         <div>
           <div class="text-overline text--secondary mb-n2">
