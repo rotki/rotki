@@ -18,6 +18,5 @@ const { closeApp } = useInterop();
 <style scoped lang="scss">
 .macos-unsupported {
   padding: 2rem 0;
-  background-color: white;
 }
 </style>

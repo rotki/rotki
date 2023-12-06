@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.
 * :bug:`7012` Fix issue where the title for the statistics card are missing.
 * :bug:`7039` The edge case of a failed eth_call during initialization of decoders will no longer crash the user login task.
 * :bug:`-` Users will be able to see the address of the asset instead of the redundant asset name in the "Managed Assets" view and in the "Newly Detected Tokens" view.
