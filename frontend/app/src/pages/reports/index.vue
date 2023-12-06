@@ -208,7 +208,7 @@ const progress = computed(() => reportsStore.progress);
     />
     <ErrorScreen
       v-if="!isRunning && reportError.message"
-      class="mt-12"
+      class="py-12"
       :message="reportError.message"
       :error="reportError.error"
       :title="t('profit_loss_report.error.title')"

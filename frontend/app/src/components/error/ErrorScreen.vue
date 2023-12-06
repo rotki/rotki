@@ -104,5 +104,7 @@ const errorText = computed(() => {
       width: 100%;
     }
   }
+
+  @apply bg-white dark:bg-black;
 }
 </style>

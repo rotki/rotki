@@ -38,7 +38,6 @@ const { confirmation, visible } = storeToRefs(confirmStore);
     <StartupErrorScreen
       v-if="startupErrorMessage.length > 0"
       :message="startupErrorMessage"
-      fatal
     />
     <MacOsVersionUnsupported v-if="isMacOsVersionUnsupported" />
     <WinVersionUnsupported v-if="isWinVersionUnsupported" />
