@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
-from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import ANKR_NODE, get_decoded_events_of_transaction
 from rotkehlchen.types import AssetAmount, Price, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -56,11 +56,10 @@ def test_get_balances_module_not_activated(
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(ANKR_NODE,)])
 def test_get_balances(
         rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,
@@ -69,6 +68,8 @@ def test_get_balances(
     """
     Check querying the uniswap balances endpoint works. Uses real data. Needs the deposit
     event in uniswap to trigger the logic based on events to query pool balances.
+
+    TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=46377335
     """
     tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501

@@ -2,7 +2,7 @@ from typing import Final
 
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY = 'feaa5a7ddc2d76789e58'
+CURRENCYCONVERTER_API_KEY = '08caf5396d98ee1bf9f0'
 
 ZERO = FVal(0)
 ONE = FVal(1)
@@ -33,3 +33,5 @@ ALLASSETIMAGESDIR_NAME: Final = 'all'
 CUSTOMASSETIMAGESDIR_NAME: Final = 'custom'
 MISCDIR_NAME: Final = 'misc'
 APPDIR_NAME: Final = 'app'
+
+LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'

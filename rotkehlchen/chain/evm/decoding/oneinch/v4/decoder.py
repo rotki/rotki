@@ -119,16 +119,25 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
         decoded_events = context.decoded_events
         out_event = in_event = None
         for event in decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == sender:
+            if event.location_label != sender:
+                continue
+
+            if (
+                event.event_type == HistoryEventType.RECEIVE or
+                event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE  # It can happen that a leg of the swap was processed by a previous decoder like uniswap # noqa: E501
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
+                event.address = self.router_address
                 in_event = event
             elif (
-                    event.event_type in (HistoryEventType.SPEND, HistoryEventType.TRADE) and
-                    event.event_subtype != HistoryEventSubType.FEE and
-                    event.location_label == sender
+                (
+                    event.event_type == HistoryEventType.SPEND or
+                    event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND  # noqa: E501
+                ) and
+                event.event_subtype != HistoryEventSubType.FEE
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND

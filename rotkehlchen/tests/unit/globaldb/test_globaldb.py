@@ -1207,6 +1207,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
 
 def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInquirer) -> None:
     """Test different cases of spam assets that we already know"""
+    assert check_if_spam_token(symbol='USDC', name='USD-SWAP˳COM') is True  # test for unicode symbols that might resemble dots  # noqa: E501
     # $ aavereward.com
     token = EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288')))  # noqa: E501
     assert check_if_spam_token(symbol=token.symbol, name=token.name) is True

@@ -12,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
     UNISWAP_V2_ROUTER,
     decode_uniswap_like_deposit_and_withdrawals,
     decode_uniswap_v2_like_swap,
-    enrich_uniswap_v2_like_lp_tokens_transfers,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -20,14 +19,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.types import UNISWAP_PROTOCOL, EvmTransaction
+from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -139,25 +136,12 @@ class Uniswapv2Decoder(DecoderInterface):
             )
         return DEFAULT_DECODING_OUTPUT
 
-    @staticmethod
-    def _maybe_enrich_lp_tokens_transfers(context: EnricherContext) -> TransferEnrichmentOutput:
-        return enrich_uniswap_v2_like_lp_tokens_transfers(
-            context=context,
-            counterparty=CPT_UNISWAP_V2,
-            lp_token_symbol=UNISWAP_PROTOCOL,
-        )
-
     # -- DecoderInterface methods
 
     def decoding_rules(self) -> list[Callable]:
         return [
             self._maybe_decode_v2_swap,
             self._maybe_decode_v2_liquidity_addition_and_removal,
-        ]
-
-    def enricher_rules(self) -> list[Callable]:
-        return [
-            self._maybe_enrich_lp_tokens_transfers,
         ]
 
     @staticmethod

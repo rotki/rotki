@@ -51,9 +51,8 @@ class EventsAccountant:
             events_iterator: "peekable['AccountingEventMixin']",
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
-        try:
-            event_direction = event.get_direction()
-        except KeyError:
+        event_direction = event.maybe_get_direction()
+        if event_direction is None:
             log.error(
                 f'Failed to retrieve direction for {event.event_type=} {event.event_subtype}. '
                 f'Skipping...',

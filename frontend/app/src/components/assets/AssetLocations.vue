@@ -6,6 +6,7 @@ import { type ComputedRef } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 const props = defineProps<{ identifier: string }>();
 
@@ -54,12 +55,24 @@ const assetLocations = computed<AssetLocations>(() => {
   });
 });
 
+const { addressNameSelector } = useAddressesNamesStore();
+
 const visibleAssetLocations = computed<AssetLocations>(() => {
+  const locations = get(assetLocations).map(item => ({
+    ...item,
+    label:
+      (isBlockchain(item.location)
+        ? get(addressNameSelector(item.address, item.location))
+        : null) ||
+      item.label ||
+      item.address
+  }));
+
   if (get(onlyTags).length === 0) {
-    return get(assetLocations);
+    return locations;
   }
 
-  return get(assetLocations).filter(assetLocation => {
+  return locations.filter(assetLocation => {
     const tags = assetLocation.tags ?? [];
     return get(onlyTags).every(tag => tags.includes(tag));
   });

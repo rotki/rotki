@@ -124,7 +124,6 @@ const getAsset = (item: CustomAsset) => ({
           @delete-click="deleteAsset(item)"
         >
           <CopyButton
-            class="mx-1"
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />

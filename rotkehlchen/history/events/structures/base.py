@@ -269,18 +269,21 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
-        if missing_accounting_rule is True and self.get_direction() != EventDirection.NEUTRAL:
+        if missing_accounting_rule is True and self.maybe_get_direction() != EventDirection.NEUTRAL:  # noqa: E501
             result['missing_accounting_rule'] = True
 
         return result
 
-    def get_direction(self) -> 'EventDirection':
+    def maybe_get_direction(self) -> EventDirection | None:
         """
         Get direction based on type, subtype.
-        May raise:
-        - KeyError if the combination of types is not valid
+
+        If the combination of type/subtype is invalid return `None`.
         """
-        return EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype].direction
+        try:
+            return EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype].direction
+        except KeyError:
+            return None
 
     @classmethod
     def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:

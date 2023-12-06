@@ -2,12 +2,27 @@
 Changelog
 =========
 
+* :feature:`4841` The rotki data directory is now more organized.
+
+* :release:`1.31.1 <2023-12-06>`
+* :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.
+* :bug:`7012` Fix issue where the title for the statistics card are missing.
+* :bug:`7039` The edge case of a failed eth_call during initialization of decoders will no longer crash the user login task.
+* :bug:`-` Users will be able to see the address of the asset instead of the redundant asset name in the "Managed Assets" view and in the "Newly Detected Tokens" view.
+* :feature:`7015` Users will be able to sort the blockchain accounts by displayed name.
+* :feature:`7024` When a Uniswap-V2 or Sushiswap deposit gets decoded it will update the default symbol of the LP token to include information about the underlying tokens.
+* :bug:`7017` Fix the issue where clicking on the chain in the blockchain balance summary didn't show the correct section.
+* :bug:`6999` Chai token balances should not appear doubled under certain conditions.
+* :bug:`-` Fix styling issue with the lock icon for "Add collateralization ratio watcher" for non-premium user.
+* :bug:`-` Fix issue where the reports page cannot be loaded if there is old report from older version.
+* :bug:`-` Fix the issue where the app freezes for a few seconds on logout.
 * :bug:`7009` PnL reports with an old type of event (such as DailyStats) following a swap will no longer fail with an exception.
 * :bug:`6998` If a username contains a '.' the user will now be able to log in properly again.
 * :feature:`6885` Users can now specify EVM chains for which no activity will be auto-detected by rotki.
 * :bug:`-` The welcome message at first login after a version upgrade will now have the correct link to the release notes.
-* :feature:`4841` The rotki data directory is now more organized.
+* :bug:`-` Swaps using 1inch where the Uniswap V3 decoder processed part of the transaction will be correctly decoded now.
 * :bug:`-` Creating, editing and deleting accounting rules will now update warnings when rendered events get affected in the history view.
+* :bug:`-` Showing a page with a history event with a non-recognized type/subtype combination will no longer stop the page from loading due to an error.
 
 * :release:`1.31.0 <2023-11-24>`
 * :feature:`-` Oneinch v3 swaps should be supported in Ethereum mainnet.

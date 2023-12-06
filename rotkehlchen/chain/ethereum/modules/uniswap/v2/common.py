@@ -1,4 +1,3 @@
-import dataclasses
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
@@ -8,20 +7,19 @@ from web3 import Web3
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
+    edit_token_and_clean_cache,
     get_or_create_evm_token,
     set_token_protocol_if_missing,
 )
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -33,7 +31,6 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -249,10 +246,61 @@ def decode_uniswap_like_deposit_and_withdrawals(
     if token0 is None or token1 is None:
         return DEFAULT_DECODING_OUTPUT
 
+    # determine the pool address from the pair of token addresses, if it matches
+    # the one found earlier, mutate the decoded event or create an action item where necessary.
+    pool_address = _compute_uniswap_v2_like_pool_address(
+        token0=token0,
+        token1=token1,
+        factory_address=factory_address,
+        init_code_hash=init_code_hash,
+    )
+    if pool_address != target_pool_address:  # we didn't find the correct pool
+        return DEFAULT_DECODING_OUTPUT
+
     amount0 = asset_normalized_value(amount0_raw, token0)
     amount1 = asset_normalized_value(amount1_raw, token1)
+    underlying_tokens = [
+        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
+        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
+    ]
 
-    # Second, find already decoded events of the transfers and store the id to mutate after
+    try:
+        token_is_uniswap_v2_lp = counterparty == CPT_UNISWAP_V2
+        pool_token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=pool_address,
+            chain_id=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
+            evm_inquirer=ethereum_inquirer,
+            encounter=TokenEncounterInfo(tx_hash=tx_hash),
+            underlying_tokens=underlying_tokens,
+            protocol=UNISWAP_PROTOCOL if token_is_uniswap_v2_lp else None,
+        )
+
+        symbol = pool_token.symbol
+        if symbol in {UNISWAP_PROTOCOL, SUSHISWAP_PROTOCOL}:
+            # uniswap and sushiswap provide the same symbol for all the LP tokens. In order to
+            # provide a a better UX if the default symbol is used then change the symbol to
+            # include the symbols of the underlying tokens.
+            symbol = f'{symbol} {token0.symbol}-{token1.symbol}'
+
+        edit_token_and_clean_cache(
+            evm_inquirer=None,  # we don't need to query again information from chain
+            evm_token=pool_token,
+            name=pool_token.name,
+            symbol=symbol,
+            decimals=pool_token.decimals,
+            started=pool_token.started,
+            underlying_tokens=underlying_tokens,
+        )
+    except NotERC20Conformant:
+        log.error(
+            f'Failed to create the pool token since it does not conform to ERC20. '
+            f'expected: {pool_address} for {token0.evm_address}-{token1.evm_address}',
+        )
+        return DEFAULT_DECODING_OUTPUT
+
+    # find already decoded events of the transfers and store the id to mutate after
     # confirmation that it is indeed Uniswap V2 like Pool.
     for idx, event in enumerate(decoded_events):
         resolved_asset = event.asset.resolve_to_crypto_asset()
@@ -264,7 +312,6 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             asset_0 = resolved_asset  # here we know exactly if it is ETH or WETH (or any other asset) so assign the asset  # noqa: E501
             event0_idx = idx
-
         elif (
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
@@ -273,108 +320,62 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             asset_1 = resolved_asset
             event1_idx = idx
-
-    # Finally, determine the pool address from the pair of token addresses, if it matches
-    # the one found earlier, mutate the decoded event or create an action item where necessary.
-    pool_address = _compute_uniswap_v2_like_pool_address(
-        token0=token0,
-        token1=token1,
-        factory_address=factory_address,
-        init_code_hash=init_code_hash,
-    )
-    underlying_tokens = [
-        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
-        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
-    ]
-    try:
-        pool_token = get_or_create_evm_token(
-            userdb=database,
-            evm_address=pool_address,
-            chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
-            evm_inquirer=ethereum_inquirer,
-            encounter=TokenEncounterInfo(tx_hash=tx_hash),
-            underlying_tokens=underlying_tokens,
-        )
-        if len(pool_token.underlying_tokens) == 0:
-            pool_token = dataclasses.replace(pool_token, underlying_tokens=underlying_tokens)
-            GlobalDBHandler().edit_evm_token(pool_token)
-    except NotERC20Conformant:
-        log.error(
-            f'Failed to create the pool token since it does not conform to ERC20. '
-            f'expected: {pool_address} for {token0.evm_address}-{token1.evm_address}',
-        )
+        elif (
+            resolved_asset == pool_token and
+            event.event_type == HistoryEventType.RECEIVE and
+            event.event_subtype == HistoryEventSubType.NONE and
+            event.address == ZERO_ADDRESS
+        ):
+            event.counterparty = counterparty
+            event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+            event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+            set_token_protocol_if_missing(event.asset.resolve_to_evm_token(), UNISWAP_PROTOCOL if resolved_asset.symbol.startswith('UNI-V2') else SUSHISWAP_PROTOCOL)  # noqa: E501
+        elif (
+            resolved_asset == pool_token and
+            event.event_type == HistoryEventType.SPEND and
+            event.event_subtype == HistoryEventSubType.NONE and
+            event.address == tx_log.address  # the recipient of the transfer is the pool  # noqa: E501
+        ):
+            event.counterparty = counterparty
+            event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+            event.notes = f'Send {event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'  # noqa: E501
 
     new_action_items = []
-    if pool_address == target_pool_address:
-        for asset, decoded_event_idx, amount in [(asset_0, event0_idx, amount0), (asset_1, event1_idx, amount1)]:  # noqa: E501
-            extra_data = {'pool_address': pool_address}
-            if decoded_event_idx is None:
-                action_item = ActionItem(
-                    action='transform',
-                    from_event_type=from_event_type[0],
-                    from_event_subtype=from_event_type[1],
-                    asset=asset,
-                    amount=amount,
-                    to_event_type=to_event_type[0],
-                    to_event_subtype=to_event_type[1],
-                    to_notes=notes.format(
-                        amount=amount,
-                        asset=asset.symbol,
-                        counterparty=counterparty,
-                        pool_address=pool_address,
-                    ),
-                    to_counterparty=counterparty,
-                    extra_data=extra_data,
-                )
-                new_action_items.append(action_item)
-                continue
-
-            decoded_events[decoded_event_idx].counterparty = counterparty
-            decoded_events[decoded_event_idx].event_type = to_event_type[0]
-            decoded_events[decoded_event_idx].event_subtype = to_event_type[1]
-            decoded_events[decoded_event_idx].notes = notes.format(
+    extra_data = {'pool_address': pool_address}
+    for asset, decoded_event_idx, amount in ((asset_0, event0_idx, amount0), (asset_1, event1_idx, amount1)):  # noqa: E501
+        if decoded_event_idx is None:
+            action_item = ActionItem(
+                action='transform',
+                from_event_type=from_event_type[0],
+                from_event_subtype=from_event_type[1],
+                asset=asset,
                 amount=amount,
-                asset=asset.symbol,
-                counterparty=counterparty,
-                pool_address=pool_address,
+                to_event_type=to_event_type[0],
+                to_event_subtype=to_event_type[1],
+                to_notes=notes.format(
+                    amount=amount,
+                    asset=asset.symbol,
+                    counterparty=counterparty,
+                    pool_address=pool_address,
+                ),
+                to_counterparty=counterparty,
+                extra_data=extra_data,
             )
-            decoded_events[decoded_event_idx].extra_data = extra_data
+            new_action_items.append(action_item)
+            continue
+
+        decoded_events[decoded_event_idx].counterparty = counterparty
+        decoded_events[decoded_event_idx].event_type = to_event_type[0]
+        decoded_events[decoded_event_idx].event_subtype = to_event_type[1]
+        decoded_events[decoded_event_idx].notes = notes.format(
+            amount=amount,
+            asset=asset.symbol,
+            counterparty=counterparty,
+            pool_address=pool_address,
+        )
+        decoded_events[decoded_event_idx].extra_data = extra_data
 
     return DecodingOutput(action_items=new_action_items)
-
-
-def enrich_uniswap_v2_like_lp_tokens_transfers(
-        context: EnricherContext,
-        counterparty: str,
-        lp_token_symbol: Literal['UNI-V2', 'SLP'],
-) -> TransferEnrichmentOutput:
-    """This function enriches LP tokens transfers of Uniswap V2 like AMMs."""
-    resolved_asset = context.event.asset.resolve_to_crypto_asset()
-    if (
-        resolved_asset.symbol == lp_token_symbol and
-        context.event.event_type == HistoryEventType.RECEIVE and
-        context.event.event_subtype == HistoryEventSubType.NONE and
-        context.event.address == ZERO_ADDRESS
-    ):
-        context.event.counterparty = counterparty
-        context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-        context.event.notes = f'Receive {context.event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-        set_token_protocol_if_missing(context.event.asset.resolve_to_evm_token(), UNISWAP_PROTOCOL if lp_token_symbol == 'UNI-V2' else SUSHISWAP_PROTOCOL)  # noqa: E501
-        return TransferEnrichmentOutput(matched_counterparty=counterparty)
-
-    if (
-        resolved_asset.symbol == lp_token_symbol and
-        context.event.event_type == HistoryEventType.SPEND and
-        context.event.event_subtype == HistoryEventSubType.NONE and
-        context.event.address == context.tx_log.address  # the recipient of the transfer is the pool  # noqa: E501
-    ):
-        context.event.counterparty = counterparty
-        context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-        context.event.notes = f'Send {context.event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'  # noqa: E501
-        return TransferEnrichmentOutput(matched_counterparty=counterparty)
-
-    return FAILED_ENRICHMENT_OUTPUT
 
 
 def _compute_uniswap_v2_like_pool_address(

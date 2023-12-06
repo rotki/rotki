@@ -428,16 +428,12 @@ const router = new Router({
   base,
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
-      setTimeout(() => {
-        const element = document.getElementById(to.hash.replace(/#/, ''));
-        if (element?.scrollIntoView) {
-          element.scrollIntoView({
-            block: 'start',
-            inline: 'nearest',
-            behavior: 'smooth'
-          });
-        }
-      }, 500);
+      const element = document.getElementById(to.hash.replace(/#/, ''));
+      if (element) {
+        nextTick(() => {
+          document.body.scrollTo({ left: 0, top: element.offsetTop });
+        });
+      }
 
       return { selector: to.hash };
     } else if (savedPosition) {

@@ -1,7 +1,8 @@
 import logging
-import re
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+
+import regex
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
@@ -32,15 +33,15 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 SPAM_ASSET_REGEX = r"""
-    https:// |                          # Matches 'https://'
-    claim | visit |                     # Matches 'claim' or 'visit' anywhere in the string
-    ^\$.+\..+ |                         # Matches strings that start with '$' and contain '.'
-    \.com | \.io| \.site | \.xyz        # Matches common domain extensions
-"""
+    https:// |                      # Matches 'https://'
+    claim | visit | invited |       # Matches 'claim' or 'visit' anywhere in the string
+    ^\$.+\..+ |                     # Matches strings that start with '$' and contain '.'
+    (\p{Sk}|\p{P})+(com|io|site|xyz|li|org|cc|net|pm)+  # Matches common domain extensions. It also detects any letter modifier or punctuation in unicode before the domain extension
+"""  # noqa: E501
 # Compile the regex pattern:
 # - re.IGNORECASE makes it case-insensitive
 # - re.VERBOSE allows to write comments in the regex and split it
-SPAM_ASSET_PATTERN = re.compile(SPAM_ASSET_REGEX, re.IGNORECASE | re.VERBOSE)
+SPAM_ASSET_PATTERN = regex.compile(SPAM_ASSET_REGEX, regex.IGNORECASE | regex.VERBOSE)
 
 
 def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
@@ -91,13 +92,14 @@ def _query_or_get_given_token_info(
     return name, symbol, decimals
 
 
-def _edit_token_and_clean_cache(
+def edit_token_and_clean_cache(
         evm_token: EvmToken,
         name: str | None,
+        symbol: str | None,
         decimals: int | None,
         started: Timestamp | None,
         underlying_tokens: list[UnderlyingToken] | None,
-        evm_inquirer: Optional['EvmNodeInquirer'],
+        evm_inquirer: 'EvmNodeInquirer | None',
 ) -> None:
     """
     Update information regarding name and decimals for an ethereum token.
@@ -122,6 +124,10 @@ def _edit_token_and_clean_cache(
             object.__setattr__(evm_token, 'name', on_chain_name)
             object.__setattr__(evm_token, 'decimals', on_chain_decimals)
             updated_fields = True
+
+    if symbol is not None and evm_token.symbol != symbol:
+        object.__setattr__(evm_token, 'symbol', symbol)
+        updated_fields = True
 
     if decimals is not None and evm_token.decimals != decimals:
         object.__setattr__(evm_token, 'decimals', decimals)
@@ -217,9 +223,10 @@ def get_or_create_evm_token(
             # It can happen that the asset is missing basic information but can be queried on
             # is provided by the developer. In that case make sure that no information
             # is cached and trigger the edit process.
-            _edit_token_and_clean_cache(
+            edit_token_and_clean_cache(
                 evm_token=evm_token,
                 name=name,
+                symbol=symbol,
                 decimals=decimals,
                 started=started,
                 underlying_tokens=underlying_tokens,

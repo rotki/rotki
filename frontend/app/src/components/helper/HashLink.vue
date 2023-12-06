@@ -22,6 +22,7 @@ const props = withDefaults(
     truncateLength?: number;
     type?: keyof ExplorerUrls;
     disableScramble?: boolean;
+    hideAliasName?: boolean;
   }>(),
   {
     showIcon: true,
@@ -36,13 +37,15 @@ const props = withDefaults(
     size: 12,
     truncateLength: 4,
     type: 'address',
-    disableScramble: false
+    disableScramble: false,
+    hideAliasName: false
   }
 );
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type, disableScramble } = toRefs(props);
+const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName } =
+  toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
@@ -60,7 +63,7 @@ const blockchain = computed(() => {
 });
 
 const aliasName = computed<string | null>(() => {
-  if (get(scrambleData) || get(type) !== 'address') {
+  if (get(hideAliasName) || get(scrambleData) || get(type) !== 'address') {
     return null;
   }
 
