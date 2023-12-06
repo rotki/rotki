@@ -1096,6 +1096,19 @@
     "backup": {
       "missing_directory": "请选择目录"
     },
+    "custom_price": {
+      "delete": {
+        "error": {
+          "message": "无法删除 {asset} 的最新价格",
+          "title": "删除自定义最新价格"
+        },
+        "message": "您确定要删除 {asset} 的自定义价格吗？",
+        "tooltip": "删除自定义价格"
+      },
+      "edit": {
+        "tooltip": "编辑或设置自定义价格"
+      }
+    },
     "filter": {
       "name": "按资产名称过滤",
       "name_hint": "使用资产名称搜索",
@@ -3054,23 +3067,8 @@
       "custom_price": "自定义价格",
       "price_in_asset": "资产价格"
     },
-    "delete": {
-      "error": {
-        "message": "无法删除 {asset} 的最新价格",
-        "title": "删除自定义最新价格"
-      },
-      "message": "您确定要删除 {asset} 的自定义价格吗？",
-      "title": "删除自定义价格"
-    },
-    "edit": {
-      "title": "编辑或设置资产价格"
-    },
     "ignore": "忽略 NFT",
     "refresh": "刷新余额",
-    "row": {
-      "delete": "删除自定义价格",
-      "edit": "编辑或设置自定义价格"
-    },
     "title": "不可替代余额"
   },
   "notes_menu": {

@@ -20,9 +20,9 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
 const { notify } = useNotificationsStore();
-const { addLatestPrice, deleteLatestPrice } = useAssetPricesApi();
+const { deleteLatestPrice } = useAssetPricesApi();
 
-const edit: Ref<NonFungibleBalance | null> = ref(null);
+const customPrice: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
 
 const selected: Ref<NonFungibleBalance[]> = ref([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
@@ -75,35 +75,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
-const setPrice = async (price: string, toAsset: string) => {
-  const nft = get(edit);
-  set(edit, null);
-  assert(nft);
-  try {
-    const payload: ManualPriceFormPayload = {
-      fromAsset: nft.id,
-      toAsset,
-      price
-    };
-    await addLatestPrice(payload);
-    await fetchData();
-  } catch (e: any) {
-    notify({
-      title: '',
-      message: e.message,
-      display: true
-    });
-  }
-};
-
 const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
   try {
     await deleteLatestPrice(toDeletePrice.id);
     await fetchData();
   } catch {
     notify({
-      title: t('non_fungible_balances.delete.error.title'),
-      message: t('non_fungible_balances.delete.error.message', {
+      title: t('assets.custom_price.delete.error.title'),
+      message: t('assets.custom_price.delete.error.message', {
         asset: toDeletePrice.name ?? toDeletePrice.id
       }),
       display: true
@@ -192,9 +171,13 @@ const {
   }
 });
 
+const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
+
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
+
+  setPostSubmitFunc(fetchData);
 });
 
 watch(loading, async (isLoading, wasLoading) => {
@@ -205,11 +188,20 @@ watch(loading, async (isLoading, wasLoading) => {
 
 const { show } = useConfirmStore();
 
+const setPriceForm = (item: NonFungibleBalance) => {
+  setOpenDialog(true);
+  set(customPrice, {
+    fromAsset: item.id,
+    toAsset: item.priceAsset,
+    price: item.priceInAsset.toFixed()
+  });
+};
+
 const showDeleteConfirmation = (item: NonFungibleBalance) => {
   show(
     {
-      title: t('non_fungible_balances.delete.title'),
-      message: t('non_fungible_balances.delete.message', {
+      title: t('assets.custom_price.delete.tooltip'),
+      message: t('assets.custom_price.delete.message', {
         asset: !item ? '' : item.name ?? item.id
       })
     },
@@ -300,11 +292,11 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             </template>
             <template #item.actions="{ item }">
               <RowActions
-                :delete-tooltip="t('non_fungible_balances.row.delete')"
-                :edit-tooltip="t('non_fungible_balances.row.edit')"
+                :delete-tooltip="t('assets.custom_price.delete.tooltip')"
+                :edit-tooltip="t('assets.custom_price.edit.tooltip')"
                 :delete-disabled="!item.manuallyInput"
                 @delete-click="showDeleteConfirmation(item)"
-                @edit-click="edit = item"
+                @edit-click="setPriceForm(item)"
               />
             </template>
             <template #item.manuallyInput="{ item }">
@@ -318,7 +310,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
               <RowAppend
                 label-colspan="4"
                 :label="t('common.total')"
-                :right-patch-colspan="1"
+                :right-patch-colspan="2"
                 :is-mobile="isMobile"
               >
                 <AmountDisplay
@@ -332,12 +324,8 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
         </template>
       </CollectionHandler>
     </RuiCard>
-    <NonFungibleBalanceEdit
-      v-if="!!edit"
-      :value="edit"
-      @close="edit = null"
-      @save="setPrice($event.price, $event.asset)"
-    />
+
+    <LatestPriceFormDialog :value="customPrice" edit-mode />
   </TablePageLayout>
 </template>
 

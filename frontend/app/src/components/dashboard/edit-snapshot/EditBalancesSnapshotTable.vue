@@ -433,9 +433,11 @@ const tableContainer = computed(() => get(tableRef)?.$el);
           :opens-details="false"
           :enable-association="false"
         />
-        <div v-else>
-          <NftDetails :identifier="item.assetIdentifier" :class="css.asset" />
-        </div>
+        <NftDetails
+          v-else
+          :identifier="item.assetIdentifier"
+          :class="css.asset"
+        />
       </template>
 
       <template #item.amount="{ item }">

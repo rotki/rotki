@@ -183,7 +183,7 @@ const showDeleteConfirmation = (id: number) => {
       </template>
       <template #item.usdPrice="{ row }">
         <AmountDisplay
-          v-if="row.usdPrice && row.usdPrice.gte(0)"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
@@ -191,9 +191,6 @@ const showDeleteConfirmation = (id: number) => {
           fiat-currency="USD"
           :value="row.usdPrice"
         />
-        <div v-else class="flex justify-end">
-          <VSkeletonLoader width="70" type="text" />
-        </div>
       </template>
       <template #item.amount="{ row }">
         <AmountDisplay data-cy="manual-balances__amount" :value="row.amount" />

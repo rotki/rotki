@@ -11,8 +11,8 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 
 export const useLatestPrices = (
-  filter: Ref<Nullable<string>>,
-  t: ReturnType<typeof useI18n>['t']
+  t: ReturnType<typeof useI18n>['t'],
+  filter?: Ref<Nullable<string>>
 ) => {
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = ref(false);
@@ -34,11 +34,14 @@ export const useLatestPrices = (
   );
 
   const items = computed(() => {
-    const items = get(filter);
-    const data = get(latestPrices).filter(
-      ({ fromAsset }) => !items || fromAsset === items
-    );
-    return data.map(item => ({
+    const filterVal = get(filter);
+    const latestPricesVal = get(latestPrices);
+
+    const filteredItems = filterVal
+      ? latestPricesVal.filter(({ fromAsset }) => fromAsset === filterVal)
+      : latestPricesVal;
+
+    return filteredItems.map(item => ({
       ...item,
       usdPrice: !isNft(item.fromAsset)
         ? get(assetPrice(item.fromAsset))
@@ -90,11 +93,16 @@ export const useLatestPrices = (
     }
   };
 
-  const deletePrice = async (item: ManualPrice) => {
-    const { fromAsset } = item;
+  const deletePrice = async (
+    { fromAsset }: { fromAsset: string },
+    refetch: boolean = false
+  ) => {
     try {
       await deleteLatestPrice(fromAsset);
-      await refresh(true);
+      if (refetch) {
+        await getLatestPrices();
+      }
+      await refreshCurrentPrices(true);
     } catch (e: any) {
       const notification: NotificationPayload = {
         title: t('price_table.delete.failure.title'),
@@ -109,9 +117,8 @@ export const useLatestPrices = (
     }
   };
 
-  const refresh = async (refreshAll: boolean = false) => {
+  const refreshCurrentPrices = async (refreshAll: boolean = false) => {
     set(refreshing, true);
-    await getLatestPrices();
     const assetToRefresh = [...get(latestAssets)];
     if (refreshAll) {
       assetToRefresh.push(...get(assets()));
@@ -121,14 +128,13 @@ export const useLatestPrices = (
     set(refreshing, false);
   };
 
-  onMounted(refresh);
-
   return {
     items,
     loading,
     refreshing,
+    getLatestPrices,
     save,
-    refresh,
+    refreshCurrentPrices,
     deletePrice
   };
 };

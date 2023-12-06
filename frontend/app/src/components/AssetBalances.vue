@@ -97,7 +97,7 @@ const expand = (item: AssetBalanceWithPrice) => {
     </template>
     <template #item.usdPrice="{ item }">
       <AmountDisplay
-        v-if="item.usdPrice && item.usdPrice.gte(0)"
+        :loading="!item.usdPrice || item.usdPrice.lt(0)"
         no-scramble
         show-currency="symbol"
         :price-asset="item.asset"
@@ -105,9 +105,6 @@ const expand = (item: AssetBalanceWithPrice) => {
         fiat-currency="USD"
         :value="item.usdPrice"
       />
-      <div v-else class="flex justify-end">
-        <VSkeletonLoader width="70" type="text" />
-      </div>
     </template>
     <template #item.amount="{ item }">
       <AmountDisplay :value="item.amount" />

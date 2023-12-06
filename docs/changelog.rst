@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
 
 * :release:`1.31.1 <2023-12-06>`

@@ -1069,6 +1069,19 @@
     "backup": {
       "missing_directory": "Please select a directory"
     },
+    "custom_price": {
+      "delete": {
+        "error": {
+          "message": "Δεν ήταν δυνατή η διαγραφή της τελευταίας τιμής για το {asset}",
+          "title": "Διαγραφή προσαρμοσμένης τελευταίας τιμής"
+        },
+        "message": "Are you sure you want to delete the custom price for {asset}?",
+        "tooltip": "Διαγραφή της προσαρμοσμένης τιμής"
+      },
+      "edit": {
+        "tooltip": "Επεξεργαστείτε ή ορίστε την προσαρμοσμένη τιμή"
+      }
+    },
     "filter": {
       "name": "Filter by the name of the asset",
       "name_hint": "Search using the asset name",
@@ -3006,23 +3019,8 @@
       "custom_price": "Custom Price",
       "price_in_asset": "Price in Asset"
     },
-    "delete": {
-      "error": {
-        "message": "Could not delete the latest price for {asset}",
-        "title": "Deleting custom latest price"
-      },
-      "message": "Are you sure wou want to delete the custom price for {asset}?",
-      "title": "Delete custom price"
-    },
-    "edit": {
-      "title": "Edit or set the price for the asset"
-    },
     "ignore": "Ignore NFT",
     "refresh": "Refresh the balances",
-    "row": {
-      "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
-    },
     "title": "Non Fungible Balances"
   },
   "notes_menu": {
