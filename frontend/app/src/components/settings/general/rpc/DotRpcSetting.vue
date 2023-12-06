@@ -27,9 +27,10 @@ onBeforeMount(() => {
     :error-message="t('general_settings.validation.dot_rpc.error')"
     :success-message="dotSuccessMessage"
   >
-    <VTextField
+    <RuiTextField
       v-model="dotRpcEndpoint"
-      outlined
+      variant="outlined"
+      color="primary"
       class="general-settings__fields__dot-rpc-endpoint"
       :label="t('general_settings.labels.dot_rpc_endpoint')"
       type="text"

@@ -46,9 +46,10 @@ onMounted(() => {
     :success-message="successMessage"
     @finished="resetFloatingPrecision()"
   >
-    <VTextField
+    <RuiTextField
       v-model="floatingPrecision"
-      outlined
+      variant="outlined"
+      color="primary"
       min="1"
       :max="maxFloatingPrecision"
       class="general-settings__fields__floating-precision"

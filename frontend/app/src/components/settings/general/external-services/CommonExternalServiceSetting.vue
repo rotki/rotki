@@ -57,12 +57,12 @@ onMounted(() => {
       @updated="restart()"
       @finished="resetValue()"
     >
-      <VTextField
+      <RuiTextField
         v-model="inputValue"
-        outlined
+        variant="outlined"
+        color="primary"
         :label="label"
         :hint="hint"
-        persistent-hint
         type="number"
         :min="min"
         :success-messages="success"

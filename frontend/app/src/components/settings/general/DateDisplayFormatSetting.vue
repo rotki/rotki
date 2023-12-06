@@ -63,9 +63,10 @@ onMounted(() => {
       class="flex items-start gap-4"
       @finished="resetDateDisplayFormat()"
     >
-      <VTextField
+      <RuiTextField
         v-model="dateDisplayFormat"
-        outlined
+        variant="outlined"
+        color="primary"
         class="general-settings__fields__date-display-format flex-1"
         :label="t('general_settings.labels.date_display_format')"
         type="text"
@@ -78,7 +79,6 @@ onMounted(() => {
             format: dateDisplayFormatExample
           })
         "
-        persistent-hint
         @change="callIfValid($event, update)"
       >
         <template #append>
@@ -86,7 +86,10 @@ onMounted(() => {
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
-      </VTextField>
+        </VTextField>
+        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          =======
+      </RuiTextField>
       <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton

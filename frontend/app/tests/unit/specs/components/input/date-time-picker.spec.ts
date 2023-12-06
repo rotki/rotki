@@ -52,15 +52,15 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/202');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2021');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeTruthy();
   });
 
   test('should allow seconds value to be optional', async () => {
@@ -69,7 +69,7 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
   });
 
   test('should allow milliseconds value to be also inputted', async () => {
@@ -82,7 +82,7 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12.333');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
     expect(wrapper.emitted().input?.[0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
@@ -92,7 +92,7 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:123');
     await wrapper.vm.$nextTick();
@@ -102,7 +102,7 @@ describe('DateTimePicker.vue', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '12/12/2021 12:12:12'
     );
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
   });
 
   test('should not allow future datetime', async () => {
@@ -118,11 +118,12 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2023');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    console.log(wrapper.html());
+    expect(wrapper.find('[class*=with-error]').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2022');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
   });
 
   test('should set now', async () => {
@@ -219,19 +220,19 @@ describe('DateTimePicker.vue', () => {
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+      expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 00:59:59');
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+      expect(wrapper.find('[class*=with-error]').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 01:00:01');
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+      expect(wrapper.find('[class*=with-error]').exists()).toBeTruthy();
     });
 
     it('should not allow future datetime', async () => {

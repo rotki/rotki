@@ -102,8 +102,10 @@ const onFocus = () => {
 </script>
 
 <template>
-  <VTextField
+  <RuiTextField
     ref="textInput"
+    variant="outlined"
+    color="primary"
     :value="currentValue"
     v-bind="attrs"
     v-on="filteredListeners(listeners)"
@@ -116,5 +118,5 @@ const onFocus = () => {
     <template v-for="slot in Object.keys($scopedSlots)" #[slot]="scope">
       <slot v-bind="scope" :name="slot" />
     </template>
-  </VTextField>
+  </RuiTextField>
 </template>

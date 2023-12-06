@@ -95,9 +95,10 @@ onMounted(() => {
       :error-message="t('general_settings.validation.thousand_separator.error')"
       :success-message="thousandsSuccessMessage"
     >
-      <VTextField
+      <RuiTextField
         v-model="thousandSeparator"
-        outlined
+        variant="outlined"
+        color="primary"
         maxlength="1"
         class="general-settings__fields__thousand-separator"
         :label="t('general_settings.amount.label.thousand_separator')"
@@ -117,9 +118,10 @@ onMounted(() => {
       :error-message="t('general_settings.validation.decimal_separator.error')"
       :success-message="decimalsSuccessMessage"
     >
-      <VTextField
+      <RuiTextField
         v-model="decimalSeparator"
-        outlined
+        variant="outlined"
+        color="primary"
         maxlength="1"
         class="general-settings__fields__decimal-separator"
         :label="t('general_settings.amount.label.decimal_separator')"

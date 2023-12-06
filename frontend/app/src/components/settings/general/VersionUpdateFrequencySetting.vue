@@ -70,15 +70,15 @@ onMounted(() => {
         "
         @finished="resetVersionUpdateCheckFrequency()"
       >
-        <VTextField
+        <RuiTextField
           v-model="versionUpdateCheckFrequency"
-          outlined
+          variant="outlined"
+          color="primary"
           :disabled="!versionUpdateCheckEnabled"
           type="number"
           min="1"
           :max="maxVersionUpdateCheckFrequency"
           :label="t('general_settings.labels.version_update_check')"
-          persistent-hint
           :hint="t('general_settings.version_update_check_hint')"
           :success-messages="success"
           :error-messages="

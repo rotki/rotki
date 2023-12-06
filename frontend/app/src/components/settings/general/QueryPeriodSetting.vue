@@ -57,9 +57,10 @@ onMounted(() => {
       @updated="restart()"
       @finished="resetQueryPeriod()"
     >
-      <VTextField
+      <RuiTextField
         v-model="queryPeriod"
-        outlined
+        variant="outlined"
+        color="primary"
         class="general-settings__fields__periodic-client-query-period"
         :label="t('frontend_settings.label.query_period')"
         :hint="t('frontend_settings.label.query_period_hint')"

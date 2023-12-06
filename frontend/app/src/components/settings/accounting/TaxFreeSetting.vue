@@ -107,9 +107,10 @@ onMounted(() => {
       :success-message="numberSuccess"
       @finished="resetTaxFreePeriod()"
     >
-      <VTextField
+      <RuiTextField
         v-model="taxFreeAfterPeriod"
-        outlined
+        variant="outlined"
+        color="primary"
         class="accounting-settings__taxfree-period-days pt-4"
         :success-messages="success"
         :error-messages="
