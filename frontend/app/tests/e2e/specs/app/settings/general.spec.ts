@@ -60,7 +60,7 @@ describe('settings::general', () => {
 
   it('change date display format and validate UI message', () => {
     pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
-    pageGeneral.confirmFieldSuccess(
+    pageGeneral.confirmInlineSuccess(
       '.general-settings__fields__date-display-format',
       settings.dateDisplayFormat
     );
