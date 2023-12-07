@@ -140,7 +140,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
       <div class="mb-2">
         <slot name="upload-title" />
       </div>
-      <VForm :value="!v$.$invalid">
+      <div>
         <FileUpload
           v-model="file"
           :loading="loading"
@@ -203,7 +203,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
             {{ t('common.actions.import') }}
           </VBtn>
         </div>
-      </VForm>
+      </div>
     </div>
     <DateFormatHelp v-model="formatHelp" />
   </div>

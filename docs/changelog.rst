@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.
+
 * :release:`1.31.1 <2023-12-06>`
 * :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.
 * :bug:`7012` Fix issue where the title for the statistics card are missing.
