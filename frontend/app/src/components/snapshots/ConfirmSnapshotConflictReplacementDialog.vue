@@ -33,11 +33,8 @@ const asset: ComputedRef<string> = computed(
     @cancel="emit('cancel')"
     @confirm="emit('confirm')"
   >
-    <VSheet
-      v-if="snapshot"
-      outlined
-      class="pa-4 mt-4 flex justify-center"
-      rounded
+    <div
+      class="flex justify-center align-center gap-4 mt-4 border border-default rounded px-4"
     >
       <BalanceDisplay :asset="asset" :value="snapshot" class="mr-4" no-icon />
       <AssetDetails
@@ -50,7 +47,7 @@ const asset: ComputedRef<string> = computed(
       <div v-else>
         <NftDetails :identifier="asset" :class="css.asset" />
       </div>
-    </VSheet>
+    </div>
   </ConfirmDialog>
 </template>
 

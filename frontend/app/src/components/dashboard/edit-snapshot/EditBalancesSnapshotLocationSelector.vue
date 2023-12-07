@@ -25,7 +25,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VSheet outlined class="pa-4" rounded>
+  <RuiCard
+    variant="outlined"
+    class="[&>div]:!overflow-visible"
+    rounded="sm"
+    no-padding
+  >
     <div class="text-subtitle-2 mb-3">
       {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
     </div>
@@ -73,5 +78,5 @@ const { t } = useI18n();
         </div>
       </div>
     </div>
-  </VSheet>
+  </RuiCard>
 </template>
