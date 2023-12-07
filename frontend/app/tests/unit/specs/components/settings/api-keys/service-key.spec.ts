@@ -35,7 +35,9 @@ describe('ServiceKey.vue', () => {
     });
     await wrapper.vm.$nextTick();
     expect(
-      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled')
+      wrapper
+        .find('[data-cy=service-key__api-key] input')
+        .attributes('disabled')
     ).toBe('disabled');
   });
 });

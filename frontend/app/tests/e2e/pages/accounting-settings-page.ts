@@ -11,7 +11,7 @@ export class AccountingSettingsPage {
     cy.get('.accounting-settings__taxfree-period-days input').clear();
     cy.get('.accounting-settings__taxfree-period-days input').type(value);
     cy.get('.accounting-settings__taxfree-period-days input').blur();
-    this.confirmInlineSuccess(
+    this.confirmFieldSuccess(
       '.accounting-settings__taxfree-period-days',
       value
     );
@@ -55,5 +55,14 @@ export class AccountingSettingsPage {
       );
     }
     cy.get(`${target} .v-messages__message`).should('not.exist');
+  }
+
+  confirmFieldSuccess(target: string, messageContains?: string) {
+    cy.get(`${target} .details`).should('be.visible');
+    cy.get(`${target} .details`).should('include.text', 'Setting saved');
+    if (messageContains) {
+      cy.get(`${target} .details`).should('include.text', messageContains);
+    }
+    cy.get(`${target} .details`).should('be.empty');
   }
 }

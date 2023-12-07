@@ -29,13 +29,15 @@ export class GeneralSettingsPage {
 
   setBalanceSaveFrequency(value: string) {
     cy.get('.general-settings__fields__balance-save-frequency input').clear();
-    cy.get('.general-settings__fields__balance-save-frequency').type(value);
+    cy.get('.general-settings__fields__balance-save-frequency input').type(
+      value
+    );
     cy.get('.general-settings__fields__balance-save-frequency input').blur();
   }
 
   setDateDisplayFormat(value: string) {
     cy.get('.general-settings__fields__date-display-format input').clear();
-    cy.get('.general-settings__fields__date-display-format').type(value);
+    cy.get('.general-settings__fields__date-display-format input').type(value);
     cy.get('.general-settings__fields__date-display-format input').blur();
   }
 
@@ -80,6 +82,13 @@ export class GeneralSettingsPage {
         'include.text',
         messageContains
       );
+    }
+  }
+
+  confirmFieldSuccess(target: string, messageContains?: string) {
+    cy.get(`${target} .details`).should('include.text', 'Setting saved');
+    if (messageContains) {
+      cy.get(`${target} .details`).should('include.text', messageContains);
     }
   }
 

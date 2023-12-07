@@ -65,7 +65,8 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe('');
 
       expect(
@@ -100,7 +101,8 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe(groupHeader.txHash);
 
       expect(
@@ -130,7 +132,10 @@ describe('EvmEventForm.vue', () => {
       ).toBe('10');
 
       expect(
-        (wrapper.find('[data-cy=notes]').element as HTMLInputElement).value
+        (
+          wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])')
+            .element as HTMLTextAreaElement
+        ).value
       ).toBe('');
     });
 
@@ -145,7 +150,8 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe(groupHeader.txHash);
 
       expect(
@@ -175,7 +181,10 @@ describe('EvmEventForm.vue', () => {
       ).toBe(groupHeader.sequenceIndex.toString());
 
       expect(
-        (wrapper.find('[data-cy=notes]').element as HTMLInputElement).value
+        (
+          wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])')
+            .element as HTMLTextAreaElement
+        ).value
       ).toBe(groupHeader.notes);
     });
   });

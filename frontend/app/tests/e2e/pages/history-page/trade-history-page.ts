@@ -66,7 +66,9 @@ export class TradeHistoryPage {
     cy.get('[data-cy=fee] input').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
-    cy.get('[data-cy=notes]').type(trade.notes);
+    cy.get('[data-cy=notes] textarea:not([aria-hidden="true"])').type(
+      trade.notes
+    );
     const waitForTrades = this.createWaitForTrades();
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();

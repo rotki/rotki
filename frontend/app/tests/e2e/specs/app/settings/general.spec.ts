@@ -32,7 +32,7 @@ describe('settings::general', () => {
 
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
-    pageGeneral.confirmInlineSuccess(
+    pageGeneral.confirmFieldSuccess(
       '.general-settings__fields__floating-precision',
       settings.floatingPrecision
     );
@@ -52,7 +52,7 @@ describe('settings::general', () => {
 
   it('change balance save frequency and validate UI message', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
-    pageGeneral.confirmInlineSuccess(
+    pageGeneral.confirmFieldSuccess(
       '.general-settings__fields__balance-save-frequency',
       settings.balanceSaveFrequency
     );
@@ -60,7 +60,7 @@ describe('settings::general', () => {
 
   it('change date display format and validate UI message', () => {
     pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
-    pageGeneral.confirmInlineSuccess(
+    pageGeneral.confirmFieldSuccess(
       '.general-settings__fields__date-display-format',
       settings.dateDisplayFormat
     );

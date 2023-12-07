@@ -92,12 +92,12 @@ describe('OnboardingSetting.vue', () => {
   describe('standard settings', () => {
     test('use default value from info api or electron config, save button should be disabled', async () => {
       const dataDirectoryInput = wrapper.find(
-        '[data-cy=user-data-directory-input]'
+        '[data-cy=user-data-directory-input] input'
       ).element as HTMLInputElement;
       expect(dataDirectoryInput.value).toBe('/Users/home/rotki/develop_data');
 
       const userLogDirectoryInput = wrapper.find(
-        '[data-cy=user-log-directory-input]'
+        '[data-cy=user-log-directory-input] input'
       ).element as HTMLInputElement;
       expect(userLogDirectoryInput.value).toBe('/Users/home/rotki/logs');
 
@@ -122,7 +122,7 @@ describe('OnboardingSetting.vue', () => {
       const newDataDirectory = '/Users/home/rotki/develop_data1';
 
       await wrapper
-        .find('[data-cy=user-data-directory-input]')
+        .find('[data-cy=user-data-directory-input] input')
         .setValue(newDataDirectory);
 
       await wrapper.vm.$nextTick();
@@ -206,16 +206,17 @@ describe('OnboardingSetting.vue', () => {
     });
 
     test('use default value from info api or electron config, save button should be disabled', async () => {
-      const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input]')
+      const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
       expect(maxLogSizeInput.value).toBe('300');
 
-      const maxLogFilesInput = wrapper.find('[data-cy=max-log-files-input]')
-        .element as HTMLInputElement;
+      const maxLogFilesInput = wrapper.find(
+        '[data-cy=max-log-files-input] input'
+      ).element as HTMLInputElement;
       expect(maxLogFilesInput.value).toBe('3');
 
       const sqliteInstructions = wrapper.find(
-        '[data-cy=sqlite-instructions-input]'
+        '[data-cy=sqlite-instructions-input] input'
       ).element as HTMLInputElement;
       expect(sqliteInstructions.value).toBe('5000');
 
@@ -227,9 +228,11 @@ describe('OnboardingSetting.vue', () => {
     });
 
     test('should save the setting', async () => {
-      await wrapper.find('[data-cy=max-log-size-input]').setValue(301);
-      await wrapper.find('[data-cy=max-log-files-input]').setValue(4);
-      await wrapper.find('[data-cy=sqlite-instructions-input]').setValue(5001);
+      await wrapper.find('[data-cy=max-log-size-input] input').setValue(301);
+      await wrapper.find('[data-cy=max-log-files-input] input').setValue(4);
+      await wrapper
+        .find('[data-cy=sqlite-instructions-input] input')
+        .setValue(5001);
 
       await wrapper.vm.$nextTick();
 
@@ -251,7 +254,7 @@ describe('OnboardingSetting.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input]')
+      const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
       expect(maxLogSizeInput.value).toBe('300');
 
@@ -260,8 +263,9 @@ describe('OnboardingSetting.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      const maxLogFilesInput = wrapper.find('[data-cy=max-log-files-input]')
-        .element as HTMLInputElement;
+      const maxLogFilesInput = wrapper.find(
+        '[data-cy=max-log-files-input] input'
+      ).element as HTMLInputElement;
       expect(maxLogFilesInput.value).toBe('3');
 
       await wrapper
@@ -270,7 +274,7 @@ describe('OnboardingSetting.vue', () => {
       await wrapper.vm.$nextTick();
 
       const sqliteInstructions = wrapper.find(
-        '[data-cy=sqlite-instructions-input]'
+        '[data-cy=sqlite-instructions-input] input'
       ).element as HTMLInputElement;
       expect(sqliteInstructions.value).toBe('5000');
 
