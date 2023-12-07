@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
 * :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.
 
 * :release:`1.31.1 <2023-12-06>`
