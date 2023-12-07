@@ -54,7 +54,7 @@ const [DefineImage, ReuseImage] = createReusableTemplate();
     <RuiTooltip
       v-if="showTooltips"
       :popper="{ placement: 'right' }"
-      open-delay="400"
+      :open-delay="400"
     >
       <template #activator>
         <ReuseImage />

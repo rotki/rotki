@@ -99,7 +99,7 @@ const action = async (notification: NotificationData) => {
         </VListItemContent>
         <RuiTooltip
           :popper="{ placement: 'bottom', offsetDistance: 0 }"
-          open-delay="400"
+          :open-delay="400"
           class="z-[9999]"
         >
           <template #activator>
@@ -139,7 +139,7 @@ const action = async (notification: NotificationData) => {
         </div>
         <RuiTooltip
           :popper="{ placement: 'bottom', offsetDistance: 0 }"
-          open-delay="400"
+          :open-delay="400"
           class="z-[9999]"
         >
           <template #activator>

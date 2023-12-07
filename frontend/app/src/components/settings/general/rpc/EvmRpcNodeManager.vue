@@ -147,7 +147,7 @@ onUnmounted(() => {
                 <RuiTooltip
                   v-if="!item.owned"
                   :popper="{ placement: 'top' }"
-                  open-delay="400"
+                  :open-delay="400"
                 >
                   <template #activator>
                     <RuiIcon
@@ -160,7 +160,7 @@ onUnmounted(() => {
                 <RuiTooltip
                   v-else
                   :popper="{ placement: 'top' }"
-                  open-delay="400"
+                  :open-delay="400"
                 >
                   <template #activator>
                     <RuiIcon name="user-2-line" />
@@ -173,7 +173,7 @@ onUnmounted(() => {
                 <RuiTooltip
                   v-if="isNodeConnected(item)"
                   :popper="{ placement: 'top' }"
-                  open-delay="400"
+                  :open-delay="400"
                 >
                   <template #activator>
                     <RuiIcon color="success" size="16" name="wifi-line" />
@@ -185,7 +185,7 @@ onUnmounted(() => {
                 <RuiTooltip
                   v-else
                   :popper="{ placement: 'top' }"
-                  open-delay="400"
+                  :open-delay="400"
                 >
                   <template #activator>
                     <RuiIcon color="error" size="16" name="wifi-off-line" />

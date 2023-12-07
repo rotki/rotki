@@ -457,7 +457,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               />
             </template>
           </RuiTextField>
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiCheckbox
                 v-model="coingeckoEnabled"
@@ -489,7 +489,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               />
             </template>
           </RuiTextField>
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiCheckbox
                 v-model="cryptocompareEnabled"

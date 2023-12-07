@@ -138,7 +138,7 @@ const close = () => {
             <LabeledAddressDisplay :account="getAccount(address)" />
             <TagDisplay :tags="getAccount(address).tags" :small="true" />
           </div>
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiButton
                 variant="text"

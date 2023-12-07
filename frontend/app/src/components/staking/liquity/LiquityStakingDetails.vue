@@ -267,7 +267,7 @@ const slots = useSlots();
         <div v-if="slots.modules">
           <slot name="modules" />
         </div>
-        <RuiTooltip open-delay="400">
+        <RuiTooltip :open-delay="400">
           <template #activator>
             <RuiButton
               variant="outlined"

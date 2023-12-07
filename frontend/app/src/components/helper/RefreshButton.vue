@@ -17,7 +17,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+  <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
     <template #activator>
       <RuiButton
         icon

@@ -91,7 +91,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ blur: !shouldShowAmount }">
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               {{ displayXpub }}
             </template>

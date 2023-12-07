@@ -164,7 +164,7 @@ watch(errorMessages, errors => {
         @paste="onPasteXpub($event)"
       />
       <div>
-        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
           <template #activator>
             <div class="account-form__advanced">
               <RuiButton

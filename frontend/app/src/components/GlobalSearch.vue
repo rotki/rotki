@@ -429,7 +429,7 @@ onBeforeMount(async () => {
   <VDialog
     v-model="open"
     max-width="800"
-    open-delay="100"
+    :open-delay="100"
     height="400"
     :content-class="$style.dialog"
     transition="slide-y-transition"

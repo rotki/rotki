@@ -52,7 +52,7 @@ const value: ComputedRef<boolean> = computed(() => {
       <RuiTooltip
         v-if="selectedLinkableSetting"
         :popper="{ placement: 'top' }"
-        open-delay="400"
+        :open-delay="400"
       >
         <template #activator>
           <RuiIcon size="12" name="links-line" />

@@ -103,7 +103,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :disabled="renderImage"
-        open-delay="400"
+        :open-delay="400"
         class="w-full"
         tooltip-class="max-w-[10rem]"
       >
@@ -132,7 +132,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
       <RuiTooltip
         v-if="!renderImage"
         :popper="{ placement: 'top' }"
-        open-delay="400"
+        :open-delay="400"
         :class="css['unlock-button']"
       >
         <template #activator>
@@ -147,7 +147,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
     <div class="flex items-center justify-between gap-2 px-4 mt-2">
       <RuiTooltip
         :popper="{ placement: 'top' }"
-        open-delay="400"
+        :open-delay="400"
         tooltip-class="max-w-[20rem]"
         class="text-truncate block text-subtitle-1 font-medium"
       >
@@ -165,7 +165,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
     <div class="flex items-center justify-between gap-2 px-4">
       <RuiTooltip
         :popper="{ placement: 'top' }"
-        open-delay="400"
+        :open-delay="400"
         tooltip-class="max-w-[20rem]"
         class="text-truncate block text-subtitle-1 font-medium"
       >

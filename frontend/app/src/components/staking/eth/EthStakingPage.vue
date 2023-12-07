@@ -147,7 +147,7 @@ const refreshClick = async () => {
         <div class="flex items-center gap-3">
           <ActiveModules :modules="[module]" />
 
-          <RuiTooltip open-delay="400">
+          <RuiTooltip :open-delay="400">
             <template #activator>
               <RuiButton
                 variant="outlined"

@@ -71,7 +71,7 @@ const click = () => emit('click');
           <RuiTooltip
             :disabled="large"
             :popper="{ placement: 'top' }"
-            open-delay="400"
+            :open-delay="400"
           >
             <template #activator>
               <span class="text-truncate">

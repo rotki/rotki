@@ -71,7 +71,7 @@ const label = computed(() =>
       </RuiButton>
     </DefineButton>
     <span v-if="icon">
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <ReuseButton />
         </template>

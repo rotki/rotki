@@ -41,7 +41,7 @@ const { t } = useI18n();
   <RuiTooltip
     v-if="canNavigateBack || page"
     :popper="{ placement: 'top' }"
-    open-delay="400"
+    :open-delay="400"
   >
     <template #activator>
       <RuiButton

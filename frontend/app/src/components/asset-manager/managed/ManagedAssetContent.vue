@@ -209,7 +209,7 @@ watch(identifier, async assetId => {
         <VList>
           <RestoreAssetDbButton dropdown />
           <RuiTooltip
-            open-delay="400"
+            :open-delay="400"
             class="w-full"
             :popper="{ placement: 'left' }"
             tooltip-class="max-w-[200px]"

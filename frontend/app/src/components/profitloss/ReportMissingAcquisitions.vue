@@ -175,7 +175,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             </VList>
           </VMenu>
 
-          <RuiTooltip v-if="isIgnored(item.asset)" open-delay="400">
+          <RuiTooltip v-if="isIgnored(item.asset)" :open-delay="400">
             <template #activator>
               <BadgeDisplay color="grey" class="py-1">
                 <RuiIcon size="18" name="eye-off-line" />

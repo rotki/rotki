@@ -48,7 +48,7 @@ const { t } = useI18n();
 <template>
   <RuiTooltip
     :popper="{ placement: 'top' }"
-    open-delay="400"
+    :open-delay="400"
     :disabled="!truncate"
     class="flex items-center flex-nowrap"
   >
@@ -60,7 +60,7 @@ const { t } = useI18n();
             size="24px"
             :chain="account.chain"
           />
-          <RuiTooltip v-else :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip v-else :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiIcon name="links-line" />
             </template>

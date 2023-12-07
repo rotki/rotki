@@ -131,7 +131,7 @@ const showDoneConfirmation = () => {
     </VList>
   </VMenu>
   <div v-else class="flex flex-row gap-2">
-    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
       <template #activator>
         <RuiButton
           variant="outlined"
@@ -143,7 +143,7 @@ const showDoneConfirmation = () => {
       </template>
       {{ t('asset_update.restore.soft_reset_hint') }}
     </RuiTooltip>
-    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
       <template #activator>
         <RuiButton color="primary" @click="showRestoreConfirmation('hard')">
           {{ t('asset_update.restore.hard_reset') }}

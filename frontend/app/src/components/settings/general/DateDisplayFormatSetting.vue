@@ -87,7 +87,7 @@ onMounted(() => {
           </RuiButton>
         </template>
       </VTextField>
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton
             class="general-settings__date-restore mt-1"

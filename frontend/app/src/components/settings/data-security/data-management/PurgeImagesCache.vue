@@ -117,7 +117,11 @@ const css = useCssModule();
         />
       </div>
 
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400" class="-mt-8">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="-mt-8"
+      >
         <template #activator="{ on, attrs }">
           <RuiButton
             variant="text"

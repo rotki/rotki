@@ -137,7 +137,7 @@ const importSnapshot = async () => {
           {{ t('snapshot_action_button.force_save') }}
         </RuiButton>
 
-        <RuiTooltip open-delay="400" tooltip-class="max-w-[16rem]">
+        <RuiTooltip :open-delay="400" tooltip-class="max-w-[16rem]">
           <template #activator>
             <RuiIcon name="information-line" color="primary" />
           </template>
@@ -145,7 +145,7 @@ const importSnapshot = async () => {
         </RuiTooltip>
       </div>
 
-      <RuiTooltip class="mt-2" open-delay="400" tooltip-class="max-w-[16rem]">
+      <RuiTooltip class="mt-2" :open-delay="400" tooltip-class="max-w-[16rem]">
         <template #activator>
           <RuiCheckbox v-model="ignoreErrors" color="primary" hide-details>
             {{ t('snapshot_action_button.ignore_errors_label') }}

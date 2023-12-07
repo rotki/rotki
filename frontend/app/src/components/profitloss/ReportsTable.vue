@@ -127,7 +127,7 @@ const expand = (item: Report) => {
       <template #item.actions="{ item }">
         <div class="flex justify-end gap-1">
           <ExportReportCsv v-if="latestReport(item.identifier)" icon />
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RouterLink :to="getReportUrl(item.identifier)">
                 <RuiButton size="sm" icon variant="text" color="primary">
@@ -137,7 +137,7 @@ const expand = (item: Report) => {
             </template>
             <span>{{ t('reports_table.load.tooltip') }}</span>
           </RuiTooltip>
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiButton
                 icon

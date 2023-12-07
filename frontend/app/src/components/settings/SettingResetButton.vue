@@ -7,7 +7,7 @@ const { t } = useI18n();
   <div class="mt-n2">
     <RuiTooltip
       :popper="{ placement: 'top' }"
-      open-delay="400"
+      :open-delay="400"
       tooltip-class="max-w-[12rem]"
     >
       <template #activator>

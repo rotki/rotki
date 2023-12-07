@@ -33,7 +33,7 @@ const style = computed(() => ({
 </script>
 
 <template>
-  <RuiTooltip v-if="tooltip" :popper="{ placement: 'top' }" open-delay="400">
+  <RuiTooltip v-if="tooltip" :popper="{ placement: 'top' }" :open-delay="400">
     <template #activator>
       <img
         :class="{

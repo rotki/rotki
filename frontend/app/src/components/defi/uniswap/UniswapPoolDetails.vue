@@ -21,7 +21,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
 <template>
   <VDialog v-model="details" scrollable max-width="450px">
     <template #activator="{ on, attrs }">
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton
             variant="text"

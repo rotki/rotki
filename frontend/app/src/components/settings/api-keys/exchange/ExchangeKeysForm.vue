@@ -229,7 +229,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
 
     <div v-if="editMode" class="flex items-center gap-2 text-subtitle-2 pb-4">
       {{ t('exchange_settings.keys') }}
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton variant="text" class="!p-2" icon @click="toggleEdit()">
             <RuiIcon

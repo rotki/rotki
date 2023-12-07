@@ -49,7 +49,7 @@ const [DefineText, ReuseText] = createReusableTemplate();
     <template v-if="counterparty || event.address">
       <VBadge v-if="!text" avatar overlap color="white">
         <template #badge>
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <ReuseImage />
             </template>

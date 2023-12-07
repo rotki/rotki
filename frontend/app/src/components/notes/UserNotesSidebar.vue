@@ -100,7 +100,7 @@ const { smAndDown } = useDisplay();
             {{ t('notes_menu.tabs.general') }}
           </RuiTab>
           <RuiTab v-if="locationName">
-            <RuiTooltip :popper="{ placement: 'bottom' }" open-delay="400">
+            <RuiTooltip :popper="{ placement: 'bottom' }" :open-delay="400">
               <template #activator>
                 {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
               </template>

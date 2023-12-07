@@ -96,7 +96,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   >
     <RuiTooltip
       :popper="{ placement: 'top' }"
-      open-delay="400"
+      :open-delay="400"
       :disabled="!truncated && !aliasName"
       class="truncate mr-auto"
     >

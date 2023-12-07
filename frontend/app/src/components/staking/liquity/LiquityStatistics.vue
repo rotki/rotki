@@ -315,7 +315,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                     >
                       <RuiTooltip
                         :popper="{ placement: 'top' }"
-                        open-delay="400"
+                        :open-delay="400"
                         tooltip-class="max-w-[10rem]"
                       >
                         <template #activator>

@@ -48,7 +48,7 @@ const { t } = useI18n();
               <RuiTooltip
                 v-if="showTooltip ? showTooltip(item) : true"
                 class="cursor-pointer"
-                open-delay="400"
+                :open-delay="400"
                 tooltip-class="max-w-[12rem]"
               >
                 <template #activator>

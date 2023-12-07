@@ -222,7 +222,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                 <RuiTooltip
                   v-if="item.rateLimited"
                   :popper="{ placement: 'top' }"
-                  open-delay="400"
+                  :open-delay="400"
                   tooltip-class="max-w-[16rem]"
                   :disabled="refreshing"
                 >

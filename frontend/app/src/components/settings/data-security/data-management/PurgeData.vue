@@ -143,7 +143,11 @@ const { txEvmChainsToLocation } = useSupportedChains();
           :hint="t('purge_selector.evm_chain_to_clear.hint')"
         />
       </div>
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400" class="-mt-8">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="-mt-8"
+      >
         <template #activator>
           <RuiButton
             variant="text"

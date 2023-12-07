@@ -141,7 +141,7 @@ watch(loading, async (isLoading, wasLoading) => {
     :title="[t('navigation_menu.history'), t('deposits_withdrawals.title')]"
   >
     <template #buttons>
-      <RuiTooltip open-delay="400">
+      <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
             variant="outlined"

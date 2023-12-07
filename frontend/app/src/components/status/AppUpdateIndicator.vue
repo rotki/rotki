@@ -50,7 +50,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiTooltip v-if="updateNeeded" open-delay="400">
+  <RuiTooltip v-if="updateNeeded" :open-delay="400">
     <template #activator>
       <RuiButton color="info" icon @click="update()">
         <RuiIcon name="arrow-up-circle-line" />

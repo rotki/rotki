@@ -242,7 +242,7 @@ onMounted(async () => {
         :disabled="submitting"
         @blur="v$.asset.$touch()"
       />
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton
             variant="text"

@@ -217,7 +217,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
             <RuiIcon name="close-line" />
           </RuiButton>
         </div>
-        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
           <template #activator>
             <RuiButton
               :loading="pending"
@@ -249,7 +249,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
           <DateDisplay :timestamp="item.fromTimestamp" />
         </template>
         <template #item.actions="{ item }">
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiButton
                 color="primary"

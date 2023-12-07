@@ -99,7 +99,7 @@ const loading = isAccountOperationRunning();
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
-      <VMenu open-on-hover right offset-x close-delay="400" max-width="300">
+      <VMenu open-on-hover right offset-x :close-delay="400" max-width="300">
         <template #activator="{ on }">
           <div v-on="on">
             <RuiIcon class="px-1" name="question-line" />
