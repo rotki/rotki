@@ -23,7 +23,7 @@ const { t } = useI18n();
       {{ detectedTokens.total }}
     </div>
     <div>
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton
             variant="text"

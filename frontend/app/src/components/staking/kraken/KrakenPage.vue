@@ -44,7 +44,7 @@ const refresh = () => load(true);
     child
   >
     <template #buttons>
-      <RuiTooltip open-delay="400">
+      <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
             variant="outlined"

@@ -24,7 +24,7 @@ const action = (action: SyncAction) => {
 
 <template>
   <div class="flex flex-row justify-between gap-1">
-    <RuiTooltip open-delay="400" class="w-full">
+    <RuiTooltip :open-delay="400" class="w-full">
       <template #activator>
         <RuiButton
           variant="outlined"
@@ -42,7 +42,7 @@ const action = (action: SyncAction) => {
       <span>{{ t('sync_buttons.upload_tooltip') }}</span>
     </RuiTooltip>
 
-    <RuiTooltip open-delay="400" class="w-full">
+    <RuiTooltip :open-delay="400" class="w-full">
       <template #activator>
         <RuiButton
           variant="outlined"

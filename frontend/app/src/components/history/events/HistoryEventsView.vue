@@ -636,7 +636,7 @@ watchImmediate(route, async route => {
     :title="[t('navigation_menu.history'), usedTitle]"
   >
     <template #buttons>
-      <RuiTooltip open-delay="400">
+      <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
             :disabled="refreshing"

@@ -122,7 +122,7 @@ const isBinance = (
     ]"
   >
     <template #buttons>
-      <RuiTooltip open-delay="400">
+      <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
             color="primary"

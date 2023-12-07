@@ -124,7 +124,7 @@ const { copy } = useClipboard({ source: versionText });
             </td>
             <td>
               <div class="flex flex-row justify-between">
-                <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
                   <template #activator>
                     <div
                       class="text-truncate text-rui-text-secondary"
@@ -138,7 +138,7 @@ const { copy } = useClipboard({ source: versionText });
                   </span>
                 </RuiTooltip>
                 <div v-if="isPackaged" class="ml-2">
-                  <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                  <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
                     <template #activator>
                       <RuiButton
                         icon

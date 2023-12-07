@@ -61,7 +61,7 @@ const { dark } = useTheme();
       <div
         class="flex justify-between p-2 items-center border-t border-default"
       >
-        <RuiTooltip open-delay="400" :popper="{ placement: 'right' }">
+        <RuiTooltip :open-delay="400" :popper="{ placement: 'right' }">
           <template #activator>
             <RuiChip class="!p-1.5" color="primary" size="sm">
               {{ queue.length }}
@@ -70,7 +70,7 @@ const { dark } = useTheme();
           <span v-text="t('notification_popup.tooltip')" />
         </RuiTooltip>
 
-        <RuiTooltip open-delay="400" :popper="{ placement: 'left' }">
+        <RuiTooltip :open-delay="400" :popper="{ placement: 'left' }">
           <template #activator>
             <RuiButton variant="text" class="!p-1.5" icon @click="dismissAll()">
               <RuiIcon name="list-unordered" />

@@ -47,7 +47,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
       {{ t('common.actions.generate') }}
     </template>
     <template #details>
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RouterLink :to="accountSettingsRoute">
             <RuiButton variant="text" icon color="primary">

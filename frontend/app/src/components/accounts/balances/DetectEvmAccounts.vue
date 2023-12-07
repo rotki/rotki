@@ -11,7 +11,7 @@ const { t } = useI18n();
 <template>
   <RuiTooltip
     :popper="{ placement: 'right' }"
-    open-delay="400"
+    :open-delay="400"
     tooltip-class="max-w-[16rem]"
   >
     <template #activator>

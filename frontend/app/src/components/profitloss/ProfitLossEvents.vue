@@ -185,7 +185,7 @@ const css = useCssModule();
         <RuiTooltip
           v-if="item.groupId && (item.groupLine.top || item.groupLine.bottom)"
           :popper="{ placement: 'right' }"
-          open-delay="400"
+          :open-delay="400"
           class="h-full"
         >
           <template #activator>

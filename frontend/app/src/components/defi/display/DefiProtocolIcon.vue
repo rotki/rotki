@@ -47,7 +47,7 @@ const css = useCssModule();
     <RuiTooltip
       :popper="{ placement: 'top' }"
       :disabled="mode !== 'icon'"
-      open-delay="400"
+      :open-delay="400"
     >
       <template #activator>
         <VImg

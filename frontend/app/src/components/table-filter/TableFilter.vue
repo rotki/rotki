@@ -348,8 +348,8 @@ const { t } = useI18n();
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :disabled="!disabled || !slots.tooltip"
-    open-delay="400"
-    close-delay="1000"
+    :open-delay="400"
+    :close-delay="1000"
     class="block"
     tooltip-class="max-w-[12rem]"
   >

@@ -36,7 +36,7 @@ const { t } = useI18n();
       <div class="font-bold text-uppercase text-sm">
         {{ type.label }}
       </div>
-      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <div
             class="cursor-pointer rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 p-1"

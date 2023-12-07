@@ -305,7 +305,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
             <template #header.taxable>
               <RuiTooltip
                 :popper="{ placement: 'top' }"
-                open-delay="400"
+                :open-delay="400"
                 class="flex items-center"
                 tooltip-class="max-w-[10rem]"
               >
@@ -325,7 +325,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
             <template #header.countEntireAmountSpend>
               <RuiTooltip
                 :popper="{ placement: 'top' }"
-                open-delay="400"
+                :open-delay="400"
                 class="flex items-center"
                 tooltip-class="max-w-[10rem]"
               >
@@ -353,7 +353,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
             <template #header.countCostBasisPnl>
               <RuiTooltip
                 :popper="{ placement: 'top' }"
-                open-delay="400"
+                :open-delay="400"
                 class="flex items-center"
                 tooltip-class="max-w-[10rem]"
               >

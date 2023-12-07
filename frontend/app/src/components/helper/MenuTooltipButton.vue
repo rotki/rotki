@@ -31,8 +31,8 @@ const click = () => emit('click');
 <template>
   <RuiTooltip
     :popper="{ placement: 'bottom' }"
-    open-delay="250"
-    close-delay="0"
+    :open-delay="250"
+    :close-delay="0"
   >
     <template #activator>
       <RuiButton

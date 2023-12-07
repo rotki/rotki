@@ -45,7 +45,7 @@ const { t } = useI18n();
       <div class="flex justify-between items-center">
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.historical') }}
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiIcon size="20" name="information-line" />
             </template>
@@ -65,7 +65,7 @@ const { t } = useI18n();
       <div class="flex justify-between items-center">
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.current') }}
-          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <RuiIcon size="20" name="information-line" />
             </template>

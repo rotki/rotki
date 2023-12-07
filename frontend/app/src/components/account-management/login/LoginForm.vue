@@ -446,8 +446,8 @@ const abortLogin = () => {
                     </RuiCheckbox>
                   </div>
                   <RuiTooltip
-                    open-delay="400"
-                    close-delay="0"
+                    :open-delay="400"
+                    :close-delay="0"
                     class="ml-2"
                     tooltip-class="max-w-[16rem]"
                     :text="t('login.remember_password_tooltip')"
@@ -459,8 +459,8 @@ const abortLogin = () => {
                 </div>
               </div>
               <RuiTooltip
-                open-delay="400"
-                close-delay="0"
+                :open-delay="400"
+                :close-delay="0"
                 :text="t('login.custom_backend.tooltip')"
               >
                 <template #activator>

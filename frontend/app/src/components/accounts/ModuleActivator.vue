@@ -67,7 +67,7 @@ const loading = isAccountOperationRunning();
           <RuiTooltip
             class="flex"
             :popper="{ placement: 'top' }"
-            open-delay="400"
+            :open-delay="400"
           >
             <template #activator>
               <VImg height="24px" width="24px" contain :src="module.icon" />

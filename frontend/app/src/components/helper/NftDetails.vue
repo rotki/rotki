@@ -128,7 +128,7 @@ const fallbackData = computed(() => {
         <RuiTooltip
           :popper="{ placement: 'top' }"
           :disabled="renderImage"
-          open-delay="400"
+          :open-delay="400"
           class="w-full"
           tooltip-class="max-w-[10rem]"
         >

@@ -200,7 +200,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               <RuiTooltip
                 v-if="!disableDelete"
                 :popper="{ placement: 'top' }"
-                open-delay="400"
+                :open-delay="400"
               >
                 <template #activator>
                   <RuiButton

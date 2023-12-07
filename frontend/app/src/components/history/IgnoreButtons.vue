@@ -8,7 +8,7 @@ const { t } = useI18n();
 
 <template>
   <div class="flex flex-row gap-2">
-    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
       <template #activator>
         <RuiButton
           class="min-w-[90px]"
@@ -21,7 +21,7 @@ const { t } = useI18n();
       </template>
       <span>{{ t('ignore_buttons.ignore_tooltip') }}</span>
     </RuiTooltip>
-    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
       <template #activator>
         <RuiButton
           class="min-w-[90px]"

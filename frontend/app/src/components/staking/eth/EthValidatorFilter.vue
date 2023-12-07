@@ -27,7 +27,7 @@ const { t } = useI18n();
   <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-12">
     <RuiTooltip
       :popper="{ placement: 'top' }"
-      open-delay="400"
+      :open-delay="400"
       tooltip-class="max-w-[12rem]"
     >
       <template #activator>

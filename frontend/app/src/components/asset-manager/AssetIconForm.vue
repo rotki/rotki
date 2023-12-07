@@ -83,7 +83,7 @@ defineExpose({
         <RuiTooltip
           v-if="preview && refreshable"
           :popper="{ placement: 'right' }"
-          open-delay="400"
+          :open-delay="400"
           class="absolute -top-3 -right-3"
         >
           <template #activator>

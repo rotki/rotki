@@ -234,7 +234,7 @@ const { mdAndUp } = useDisplay();
 
       <VSpacer />
 
-      <RuiTooltip :popper="{ placement: 'bottom' }" open-delay="400">
+      <RuiTooltip :popper="{ placement: 'bottom' }" :open-delay="400">
         <template #activator>
           <RuiButton
             variant="text"

@@ -80,7 +80,7 @@ const css = useCssModule();
   <div class="flex items-center">
     <RuiTooltip
       :popper="{ placement: 'top' }"
-      open-delay="400"
+      :open-delay="400"
       :disabled="disabled"
     >
       <template #activator>
@@ -117,7 +117,7 @@ const css = useCssModule();
       <template #activator="{ on }">
         <RuiTooltip
           :popper="{ placement: 'top' }"
-          open-delay="400"
+          :open-delay="400"
           :disabled="disabled"
         >
           <template #activator>
@@ -149,7 +149,7 @@ const css = useCssModule();
               </VChip>
             </div>
             <div class="flex items-center gap-1">
-              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+              <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
                 <template #activator>
                   <RuiButton
                     color="primary"
@@ -167,7 +167,7 @@ const css = useCssModule();
                 </span>
               </RuiTooltip>
 
-              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+              <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
                 <template #activator>
                   <RuiButton
                     color="primary"
