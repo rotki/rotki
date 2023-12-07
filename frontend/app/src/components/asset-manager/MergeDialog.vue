@@ -109,7 +109,6 @@ const v$ = useVuelidate(
           variant="outlined"
           color="primary"
           :disabled="pending"
-          persistent-hint
           :hint="t('merge_dialog.source_hint')"
           @focus="clearErrors()"
           @blur="v$.sourceIdentifier.$touch()"

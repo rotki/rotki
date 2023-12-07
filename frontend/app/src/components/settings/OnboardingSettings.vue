@@ -309,7 +309,6 @@ const showResetConfirmation = () => {
         variant="outlined"
         color="primary"
         :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
-        persistent-hint
         :hint="
           !!fileConfig.dataDirectory
             ? t('backend_settings.config_file_disabled')
@@ -334,7 +333,6 @@ const showResetConfirmation = () => {
         v-model="userLogDirectory"
         data-cy="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
-        :persistent-hint="!!fileConfig.logDirectory"
         :hint="
           !!fileConfig.logDirectory
             ? t('backend_settings.config_file_disabled')
@@ -400,7 +398,6 @@ const showResetConfirmation = () => {
               "
               :label="t('backend_settings.max_log_size.label')"
               :disabled="fileConfig.maxSizeInMbAllLogs"
-              :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
               :loading="!configuration || !defaultBackendArguments"
               :error-messages="v$.maxLogSize.$errors.map(e => e.$message)"
               type="number"
@@ -426,7 +423,6 @@ const showResetConfirmation = () => {
                   : t('backend_settings.max_log_files.label')
               "
               :disabled="fileConfig.maxLogfilesNum"
-              :persistent-hint="!!fileConfig.maxLogfilesNum"
               :loading="!configuration || !defaultBackendArguments"
               :error-messages="v$.maxLogFiles.$errors.map(e => e.$message)"
               type="number"
@@ -453,7 +449,6 @@ const showResetConfirmation = () => {
               "
               :label="t('backend_settings.sqlite_instructions.label')"
               :disabled="fileConfig.sqliteInstructions"
-              :persistent-hint="!!fileConfig.sqliteInstructions"
               :loading="!configuration || !defaultBackendArguments"
               :error-messages="
                 v$.sqliteInstructions.$errors.map(e => e.$message)
@@ -475,7 +470,6 @@ const showResetConfirmation = () => {
               data-cy="log-from-other-modules-checkbox"
               :label="t('backend_settings.log_from_other_modules.label')"
               :disabled="fileConfig.logFromOtherModules"
-              persistent-hint
               :hint="
                 fileConfig.logFromOtherModules
                   ? t('backend_settings.config_file_disabled')

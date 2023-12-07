@@ -70,7 +70,6 @@ const updateSecondaryValue = (value: string) => {
       :disabled="reversed || rootAttrs.disabled"
       :hide-details="reversed"
       filled
-      persistent-hint
       data-cy="primary"
       :class="`${!reversed ? 'v-input--is-enabled' : ''}`"
       v-bind="rootAttrs"
@@ -86,7 +85,6 @@ const updateSecondaryValue = (value: string) => {
       :disabled="!reversed || rootAttrs.disabled"
       :hide-details="!reversed"
       filled
-      persistent-hint
       data-cy="secondary"
       :class="`${reversed ? 'v-input--is-enabled' : ''}`"
       v-bind="rootAttrs"

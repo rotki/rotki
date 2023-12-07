@@ -194,7 +194,6 @@ watch(errorMessages, errors => {
       :error-messages="toMessages(v$.derivationPath)"
       autocomplete="off"
       :disabled="disabled"
-      persistent-hint
       :hint="t('account_form.labels.btc.derivation_path_hint')"
       @blur="v$.derivationPath.$touch()"
     />

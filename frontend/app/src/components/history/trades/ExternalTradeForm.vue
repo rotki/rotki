@@ -364,7 +364,6 @@ onMounted(setEditMode);
         :error-messages="toMessages(v$.amount)"
         data-cy="amount"
         :label="t('common.amount')"
-        persistent-hint
         :hint="t('external_trade_form.amount.hint')"
         @blur="v$.amount.$touch()"
       />

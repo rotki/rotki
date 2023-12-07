@@ -129,7 +129,6 @@ setSubmitFunc(save);
         :value="formData.name"
         variant="outlined"
         color="primary"
-        persistent-hint
         clearable
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
