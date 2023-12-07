@@ -107,7 +107,7 @@ onMounted(() => {
         :error-messages="
           error || v$.thousandSeparator.$errors.map(e => e.$message)
         "
-        @change="callIfThousandsValid($event, update)"
+        @input="callIfThousandsValid($event, update)"
       />
     </SettingsOption>
 
@@ -130,7 +130,7 @@ onMounted(() => {
         :error-messages="
           error || v$.decimalSeparator.$errors.map(e => e.$message)
         "
-        @change="callIfDecimalsValid($event, update)"
+        @input="callIfDecimalsValid($event, update)"
       />
     </SettingsOption>
   </Fragment>

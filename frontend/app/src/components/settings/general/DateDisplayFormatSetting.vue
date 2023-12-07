@@ -79,7 +79,7 @@ onMounted(() => {
             format: dateDisplayFormatExample
           })
         "
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       >
         <template #append>
           <RuiButton size="sm" variant="text" icon @click="formatHelp = true">

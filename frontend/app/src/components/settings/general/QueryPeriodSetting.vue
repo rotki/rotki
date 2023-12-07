@@ -69,7 +69,7 @@ onMounted(() => {
         :max="maxQueryPeriod"
         :success-messages="success"
         :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

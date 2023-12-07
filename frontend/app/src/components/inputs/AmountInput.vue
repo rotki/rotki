@@ -2,6 +2,10 @@
 import { useListeners } from 'vue';
 import IMask, { type InputMask } from 'imask';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     integer?: boolean;

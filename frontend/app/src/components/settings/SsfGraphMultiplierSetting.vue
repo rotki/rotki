@@ -79,7 +79,7 @@ onMounted(() => {
         type="number"
         :success-messages="success"
         :error-messages="error || toMessages(v$.multiplier)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
 

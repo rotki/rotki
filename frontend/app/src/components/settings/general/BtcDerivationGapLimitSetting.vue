@@ -30,7 +30,7 @@ onMounted(() => {
       type="number"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event ? parseInt($event) : $event)"
+      @input="update($event ? parseInt($event) : $event)"
     />
   </SettingsOption>
 </template>

@@ -67,7 +67,7 @@ onMounted(() => {
         :min="min"
         :success-messages="success"
         :error-messages="error || v$.inputValue.$errors.map(e => e.$message)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

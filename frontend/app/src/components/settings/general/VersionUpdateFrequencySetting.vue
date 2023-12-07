@@ -84,7 +84,7 @@ onMounted(() => {
           :error-messages="
             error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
           "
-          @change="update($event)"
+          @input="update($event)"
         />
       </SettingsOption>
     </div>

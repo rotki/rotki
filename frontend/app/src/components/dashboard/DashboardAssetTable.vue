@@ -155,6 +155,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       <RuiTextField
         v-model="search"
         variant="outlined"
+        color="primary"
         dense
         prepend-icon="search-line"
         :label="t('common.actions.search')"

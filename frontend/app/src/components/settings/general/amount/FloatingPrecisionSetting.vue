@@ -59,7 +59,7 @@ onMounted(() => {
       :error-messages="
         error || v$.floatingPrecision.$errors.map(e => e.$message)
       "
-      @change="callIfValid($event, update)"
+      @input="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>
