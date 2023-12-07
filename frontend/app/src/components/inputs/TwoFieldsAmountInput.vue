@@ -58,7 +58,7 @@ const updateSecondaryValue = (value: string) => {
 
 <template>
   <div
-    class="wrapper flex gap-2"
+    class="wrapper flex"
     :class="{
       'flex-column': !reversed,
       'flex-column-reverse': reversed
@@ -70,6 +70,7 @@ const updateSecondaryValue = (value: string) => {
       :disabled="reversed || rootAttrs.disabled"
       :hide-details="reversed"
       filled
+      persistent-hint
       data-cy="primary"
       :class="`${!reversed ? 'v-input--is-enabled' : ''}`"
       v-bind="rootAttrs"
@@ -85,6 +86,7 @@ const updateSecondaryValue = (value: string) => {
       :disabled="!reversed || rootAttrs.disabled"
       :hide-details="!reversed"
       filled
+      persistent-hint
       data-cy="secondary"
       :class="`${reversed ? 'v-input--is-enabled' : ''}`"
       v-bind="rootAttrs"

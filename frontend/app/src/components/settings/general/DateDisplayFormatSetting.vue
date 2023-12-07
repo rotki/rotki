@@ -86,9 +86,6 @@ onMounted(() => {
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
-        </VTextField>
-        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
-          =======
       </RuiTextField>
       <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>

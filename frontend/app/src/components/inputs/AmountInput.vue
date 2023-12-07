@@ -2,10 +2,6 @@
 import { useListeners } from 'vue';
 import IMask, { type InputMask } from 'imask';
 
-defineOptions({
-  inheritAttrs: false
-});
-
 const props = withDefaults(
   defineProps<{
     integer?: boolean;
@@ -106,10 +102,8 @@ const onFocus = () => {
 </script>
 
 <template>
-  <RuiTextField
+  <VTextField
     ref="textInput"
-    variant="outlined"
-    color="primary"
     :value="currentValue"
     v-bind="attrs"
     v-on="filteredListeners(listeners)"
@@ -122,5 +116,5 @@ const onFocus = () => {
     <template v-for="slot in Object.keys($scopedSlots)" #[slot]="scope">
       <slot v-bind="scope" :name="slot" />
     </template>
-  </RuiTextField>
+  </VTextField>
 </template>
