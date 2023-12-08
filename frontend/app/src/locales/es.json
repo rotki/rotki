@@ -1072,6 +1072,19 @@
     "backup": {
       "missing_directory": "Please select a directory"
     },
+    "custom_price": {
+      "delete": {
+        "error": {
+          "message": "No se ha podido borrar el último precio de {activo}",
+          "title": "Eliminando el último precio personalizado"
+        },
+        "message": "¿Está seguro de que desea eliminar el precio personalizado para {asset}?",
+        "tooltip": "Eliminar el precio personalizado"
+      },
+      "edit": {
+        "tooltip": "Editar o establecer el precio personalizado"
+      }
+    },
     "ignore": "Ignorar activo",
     "multi_chain_assets": "Multi Chain Assets",
     "value": "Valor"
@@ -2984,23 +2997,8 @@
       "custom_price": "Custom Price",
       "price_in_asset": "Price in Asset"
     },
-    "delete": {
-      "error": {
-        "message": "Could not delete the current price for {asset}",
-        "title": "Deleting custom current price"
-      },
-      "message": "Are you sure wou want to delete the custom price for {asset}?",
-      "title": "Delete custom price"
-    },
-    "edit": {
-      "title": "Edit or set the price for the asset"
-    },
     "ignore": "Ignore NFT",
     "refresh": "Refresh the balances",
-    "row": {
-      "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
-    },
     "title": "Non Fungible Balances"
   },
   "notes_menu": {

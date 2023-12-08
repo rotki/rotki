@@ -3,10 +3,16 @@ import { helpers, required } from '@vuelidate/validators';
 import { type ManualPriceFormPayload } from '@/types/prices';
 import { toMessages } from '@/utils/validation';
 
-const props = defineProps<{
-  value: ManualPriceFormPayload;
-  edit: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    value: ManualPriceFormPayload;
+    edit: boolean;
+    disableFromAsset?: boolean;
+  }>(),
+  {
+    disableFromAsset: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'input', price: Partial<ManualPriceFormPayload>): void;
@@ -81,7 +87,7 @@ const v$ = setValidation(
         :label="t('price_form.from_asset')"
         outlined
         include-nfts
-        :disabled="edit"
+        :disabled="edit || disableFromAsset"
         :error-messages="toMessages(v$.fromAsset)"
         @input="input({ fromAsset: $event })"
       />

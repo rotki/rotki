@@ -1197,6 +1197,19 @@
     "backup": {
       "missing_directory": "Please select a directory"
     },
+    "custom_price": {
+      "delete": {
+        "error": {
+          "message": "Could not delete the latest price for {asset}",
+          "title": "Deleting custom latest price"
+        },
+        "message": "Are you sure you want to delete the custom price for {asset}?",
+        "tooltip": "Delete the custom price"
+      },
+      "edit": {
+        "tooltip": "Edit or set the custom price"
+      }
+    },
     "filter": {
       "address": "Filter by the address",
       "chain": "Filter by evm chain",
@@ -3254,23 +3267,8 @@
       "custom_price": "Custom Price",
       "price_in_asset": "Price in Asset"
     },
-    "delete": {
-      "error": {
-        "message": "Could not delete the latest price for {asset}",
-        "title": "Deleting custom latest price"
-      },
-      "message": "Are you sure you want to delete the custom price for {asset}?",
-      "title": "Delete custom price"
-    },
-    "edit": {
-      "title": "Edit or set the price for the asset"
-    },
     "ignore": "Ignore NFT",
     "refresh": "Refresh the balances",
-    "row": {
-      "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
-    },
     "title": "Non Fungible Balances"
   },
   "notes_menu": {

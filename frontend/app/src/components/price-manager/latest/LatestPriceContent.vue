@@ -6,15 +6,9 @@ import { type Nullable } from '@/types';
 
 const { t } = useI18n();
 
-const emptyPrice: () => ManualPriceFormPayload = () => ({
-  fromAsset: '',
-  toAsset: '',
-  price: '0'
-});
-
-const price = ref<ManualPriceFormPayload>(emptyPrice());
-const filter = ref<Nullable<string>>(null);
-const update = ref(false);
+const price: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
+const filter: Ref<Nullable<string>> = ref(null);
+const editMode: Ref<boolean> = ref(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -51,18 +45,16 @@ const headers = computed<DataTableHeader[]>(() => [
 
 const router = useRouter();
 const route = useRoute();
-const { items, loading, refreshing, save, deletePrice, refresh } =
-  useLatestPrices(filter, t);
-
 const {
-  setPostSubmitFunc,
-  openDialog,
-  setOpenDialog,
-  submitting,
-  closeDialog,
-  setSubmitFunc,
-  trySubmit
-} = useLatestPriceForm();
+  items,
+  loading,
+  refreshing,
+  deletePrice,
+  refreshCurrentPrices,
+  getLatestPrices
+} = useLatestPrices(t, filter);
+
+const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 const showDeleteConfirmation = (item: ManualPrice) => {
@@ -71,34 +63,33 @@ const showDeleteConfirmation = (item: ManualPrice) => {
       title: t('price_table.delete.dialog.title'),
       message: t('price_table.delete.dialog.message')
     },
-    () => deletePrice(item)
+    () => deletePrice(item, true)
   );
 };
 
-const openForm = (cPrice: ManualPrice | null = null) => {
-  set(update, !!cPrice);
-  if (cPrice) {
+const openForm = (selectedEntry: ManualPrice | null = null) => {
+  set(editMode, !!selectedEntry);
+  if (selectedEntry) {
     set(price, {
-      ...cPrice,
-      price: cPrice.price.toFixed() ?? ''
+      ...selectedEntry,
+      price: selectedEntry.price.toFixed() ?? ''
     });
   } else {
     set(price, {
-      ...emptyPrice(),
       fromAsset: get(filter) ?? ''
     });
   }
   setOpenDialog(true);
 };
 
-const hideForm = () => {
-  closeDialog();
-  set(price, emptyPrice());
+const refreshDataAndPrices = async (refresh = false) => {
+  await getLatestPrices();
+  await refreshCurrentPrices(refresh);
 };
 
 onMounted(async () => {
-  setSubmitFunc(() => save(get(price), get(update)));
-  setPostSubmitFunc(() => refresh(true));
+  await refreshDataAndPrices();
+  setPostSubmitFunc(() => refreshDataAndPrices(true));
 
   const query = get(route).query;
 
@@ -123,7 +114,7 @@ onMounted(async () => {
             color="primary"
             variant="outlined"
             :loading="loading || refreshing"
-            @click="refresh(true)"
+            @click="refreshDataAndPrices(true)"
           >
             <template #prepend>
               <RuiIcon name="refresh-line" />
@@ -164,7 +155,11 @@ onMounted(async () => {
             v-if="isNft(item.fromAsset)"
             :identifier="item.fromAsset"
           />
-          <AssetDetails v-else :asset="item.fromAsset" />
+          <AssetDetails
+            v-else
+            class="max-w-[20rem] [&>span>div]:pl-2.5 [&>span>div]:pr-1.5"
+            :asset="item.fromAsset"
+          />
         </template>
         <template #item.toAsset="{ item }">
           <AssetDetails :asset="item.toAsset" />
@@ -177,16 +172,13 @@ onMounted(async () => {
         </template>
         <template #item.usdPrice="{ item }">
           <AmountDisplay
-            v-if="item.usdPrice && item.usdPrice.gte(0)"
+            :loading="!item.usdPrice || item.usdPrice.lt(0)"
             show-currency="symbol"
             :price-asset="item.fromAsset"
             :price-of-asset="item.usdPrice"
             fiat-currency="USD"
             :value="item.usdPrice"
           />
-          <div v-else class="flex justify-end">
-            <VSkeletonLoader width="70" type="text" />
-          </div>
         </template>
         <template #item.actions="{ item }">
           <RowActions
@@ -200,18 +192,6 @@ onMounted(async () => {
       </DataTable>
     </RuiCard>
 
-    <BigDialog
-      :display="openDialog"
-      :title="
-        update
-          ? t('price_management.dialog.edit_title')
-          : t('price_management.dialog.add_title')
-      "
-      :loading="submitting"
-      @confirm="trySubmit()"
-      @cancel="hideForm()"
-    >
-      <LatestPriceForm v-model="price" :edit="update" />
-    </BigDialog>
+    <LatestPriceFormDialog :value="price" :edit-mode="editMode" />
   </TablePageLayout>
 </template>
