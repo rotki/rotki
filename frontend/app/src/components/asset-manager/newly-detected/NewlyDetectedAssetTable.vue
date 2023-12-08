@@ -62,7 +62,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 ]);
 
 const selected: Ref<string[]> = ref([]);
-const sort: Ref<DataTableSortColumn> = ref({
+const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
   direction: 'desc' as const
 });
 

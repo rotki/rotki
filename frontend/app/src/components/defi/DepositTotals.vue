@@ -35,7 +35,10 @@ const { t } = useI18n();
         </RuiTooltip>
       </template>
 
-      <PercentageDisplay justify="start" :value="effectiveInterestRate" />
+      <PercentageDisplay
+        justify="start"
+        :value="effectiveInterestRate.toString()"
+      />
     </StatCardColumn>
     <StatCardColumn premium-only>
       <template #title>

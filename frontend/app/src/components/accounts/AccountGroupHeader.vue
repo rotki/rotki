@@ -115,7 +115,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       <AmountDisplay
         :value="sum"
         :loading="loading"
-        :asset="xs ? 'BTC' : null"
+        :asset="xs ? 'BTC' : undefined"
       />
     </td>
     <td class="text-end" :class="mobileClass">

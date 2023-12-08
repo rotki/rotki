@@ -68,10 +68,12 @@ const totalEarnedInAave = computed(() =>
   get(aaveStore.aaveTotalEarned(get(selectedAddresses)))
 );
 
-const effectiveInterestRate = computed<string>(() => {
+const effectiveInterestRate = computed<BigNumber>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return get(defiLending.effectiveInterestRate(protocols, addresses));
+  return bigNumberify(
+    get(defiLending.effectiveInterestRate(protocols, addresses))
+  );
 });
 
 const totalLendingDeposit = computed<BigNumber>(() => {

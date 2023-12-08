@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { contextColors } from '@rotki/ui-library-compat';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
 const HistoryEventCategoryDetail = z.object({
   label: z.string(),
   icon: z.string(),
-  color: z.string().optional()
+  color: z.enum(contextColors).optional()
 });
 
 const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);

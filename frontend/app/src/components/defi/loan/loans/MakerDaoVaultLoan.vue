@@ -9,22 +9,23 @@ const props = defineProps<{
   vault: MakerDAOVaultModel;
 }>();
 
-const { vault } = toRefs(props);
 const { premium } = storeToRefs(usePremiumStore());
 const { t } = useI18n();
 
 const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
-  const makerVault = get(vault);
+  const makerVault = props.vault;
   if ('totalInterestOwed' in makerVault) {
     return makerVault.totalInterestOwed;
   }
   return Zero;
 });
 
+const owner = computed(() => props.vault.owner || '');
+
 const { scrambleIdentifier } = useScramble();
 
 const header = computed(() => {
-  const makerVault = get(vault);
+  const makerVault = props.vault;
   return {
     identifier: scrambleIdentifier(makerVault.identifier),
     collateralType: makerVault.collateralType
@@ -62,7 +63,7 @@ const chain = Blockchain.ETH;
       :section-title="t('common.events')"
       :protocols="['makerdao', 'makerdao vault']"
       :use-external-account-filter="true"
-      :external-account-filter="[{ chain, address: vault.owner }]"
+      :external-account-filter="[{ chain, address: owner }]"
       :only-chains="[chain]"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />

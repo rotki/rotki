@@ -14,12 +14,12 @@ import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: EthWithdrawalEvent | null;
-    groupHeader?: EthWithdrawalEvent | null;
+    editableItem?: EthWithdrawalEvent;
+    groupHeader?: EthWithdrawalEvent;
   }>(),
   {
-    editableItem: null,
-    groupHeader: null
+    editableItem: undefined,
+    groupHeader: undefined
   }
 );
 

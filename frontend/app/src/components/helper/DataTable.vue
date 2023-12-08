@@ -39,11 +39,13 @@ const props = withDefaults(
     options?: TablePagination<any> | null;
     disableFloatingHeader?: boolean;
     disableHeaderPagination?: boolean;
-    customGroup?: (
-      items: any[],
-      groupBy: string[],
-      groupDesc: boolean[]
-    ) => Record<string, any[]>;
+    customGroup?:
+      | ((
+          items: any[],
+          groupBy: string[],
+          groupDesc: boolean[]
+        ) => Record<string, any[]> | any[] | undefined)
+      | undefined;
     flat?: boolean;
   }>(),
   {

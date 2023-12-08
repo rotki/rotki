@@ -1,4 +1,4 @@
-export const useLinks = (url?: Ref<string>) => {
+export const useLinks = (url?: Ref<string | undefined>) => {
   const { isPackaged, premiumURL, openUrl } = useInterop();
   const targetUrl = computed(() => get(url) ?? premiumURL);
   const href = computed(() => (isPackaged ? undefined : get(targetUrl)));

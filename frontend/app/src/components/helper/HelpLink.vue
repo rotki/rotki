@@ -23,7 +23,7 @@ const { href, onLinkClick } = useLinks(url);
         type="button"
         variant="text"
         icon
-        :size="small ? 'sm' : 'md'"
+        :size="small ? 'sm' : undefined"
         :href="href"
         target="_blank"
         tag="a"

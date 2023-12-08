@@ -14,7 +14,15 @@ const emit = defineEmits<{
 }>();
 const { blockchain, inputMode } = toRefs(props);
 
-const update = (value: InputMode) => emit('update:input-mode', value);
+const internalValue = computed({
+  get() {
+    return props.inputMode;
+  },
+  set(value: string) {
+    assert(isOfEnum(InputMode)(value));
+    emit('update:input-mode', value);
+  }
+});
 
 const { isEvm } = useSupportedChains();
 
@@ -43,25 +51,24 @@ const invalidCombination = logicOr(
 
 watch(invalidCombination, invalid => {
   if (invalid) {
-    update(InputMode.MANUAL_ADD);
+    emit('update:input-mode', InputMode.MANUAL_ADD);
   }
 });
 
 onUnmounted(() => {
-  update(InputMode.MANUAL_ADD);
+  emit('update:input-mode', InputMode.MANUAL_ADD);
 });
 </script>
 
 <template>
   <div class="mb-5">
     <RuiButtonGroup
-      :value="inputMode"
+      v-model="internalValue"
       class="input-mode-select"
       variant="outlined"
       size="lg"
       required
       color="primary"
-      @input="update($event)"
     >
       <template #default>
         <RuiButton

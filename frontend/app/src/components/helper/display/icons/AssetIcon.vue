@@ -68,7 +68,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 const { getAssetImageUrl } = useAssetIcon();
 
 const asset = assetInfo(mappedIdentifier, enableAssociation);
-const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
+const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 const chain = computed(() => get(asset)?.evmChain);
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { type IgnoredAssetsHandlingType } from '@/types/asset';
+import {
+  IgnoredAssetHandlingType,
+  type IgnoredAssetsHandlingType
+} from '@/types/asset';
 
 type Model = {
   onlyShowOwned: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 };
 
-defineProps<{
+const props = defineProps<{
   value: Model;
   count: number;
 }>();
@@ -19,6 +22,23 @@ const { t } = useI18n();
 const css = useCssModule();
 
 const showMenu = ref(false);
+
+const isHandlingType = (t: any): t is IgnoredAssetsHandlingType =>
+  Object.values(IgnoredAssetHandlingType).includes(t);
+
+const handlingSelection = computed({
+  get() {
+    return props.value.ignoredAssetsHandling;
+  },
+  set(value: string) {
+    if (isHandlingType(value)) {
+      emit('input', {
+        ...props.value,
+        ignoredAssetsHandling: value
+      });
+    }
+  }
+});
 </script>
 
 <template>
@@ -63,16 +83,10 @@ const showMenu = ref(false);
       <VListItem>
         <RuiRadioGroup
           v-if="showMenu"
-          :value="value.ignoredAssetsHandling"
+          v-model="handlingSelection"
           color="primary"
           class="mt-0"
           data-cy="asset-filter-ignored"
-          @input="
-            emit('input', {
-              ...value,
-              ignoredAssetsHandling: $event
-            })
-          "
         >
           <RuiRadio
             internal-value="none"

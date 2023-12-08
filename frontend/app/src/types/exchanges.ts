@@ -42,8 +42,7 @@ export type SupportedExternalExchanges = (typeof EXTERNAL_EXCHANGES)[number];
 export const Exchange = z.object({
   location: SupportedExchangeType,
   name: z.string(),
-  krakenAccountType: KrakenAccountType.optional(),
-  ftxSubaccount: z.string().optional()
+  krakenAccountType: KrakenAccountType.optional()
 });
 
 export type Exchange = z.infer<typeof Exchange>;
@@ -79,7 +78,6 @@ export interface ExchangePayload {
   readonly passphrase: Nullable<string>;
   readonly krakenAccountType: Nullable<KrakenAccountType>;
   readonly binanceMarkets: Nullable<string[]>;
-  readonly ftxSubaccount: Nullable<string>;
 }
 
 const ExchangeSavingsEvent = AssetBalance.extend({

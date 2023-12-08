@@ -178,10 +178,10 @@ const save = async (): Promise<boolean> => {
 
   const tradePayload: Writeable<NewTrade> = {
     amount: amount.isNaN() ? Zero : amount,
-    fee: fee.isNaN() || fee.isZero() ? undefined : fee,
-    feeCurrency: get(feeCurrency) || undefined,
-    link: get(link) || undefined,
-    notes: get(notes) || undefined,
+    fee: fee.isNaN() || fee.isZero() ? null : fee,
+    feeCurrency: get(feeCurrency) || null,
+    link: get(link) || null,
+    notes: get(notes) || null,
     baseAsset: get(base),
     quoteAsset: get(quote),
     rate: rate.isNaN() ? Zero : rate,

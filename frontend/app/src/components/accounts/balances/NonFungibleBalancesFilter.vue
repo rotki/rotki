@@ -2,7 +2,7 @@
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type NonFungibleBalance } from '@/types/nfbalances';
 
-defineProps<{
+const props = defineProps<{
   selected: NonFungibleBalance[];
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }>();
@@ -20,11 +20,14 @@ const updateSelected = (selected: NonFungibleBalance[]) => {
   emit('update:selected', selected);
 };
 
-const updateIgnoredAssetsHandling = (
-  ignoredAssetsHandling: IgnoredAssetsHandlingType
-) => {
-  emit('update:ignored-assets-handling', ignoredAssetsHandling);
-};
+const internalValue = computed({
+  get() {
+    return props.ignoredAssetsHandling;
+  },
+  set(value: IgnoredAssetsHandlingType) {
+    emit('update:ignored-assets-handling', value);
+  }
+});
 
 const massIgnore = (ignored: boolean) => {
   emit('mass-ignore', ignored);
@@ -70,12 +73,11 @@ const css = useCssModule();
           </VListItem>
           <VListItem class="pb-2">
             <RuiRadioGroup
-              :value="ignoredAssetsHandling"
+              v-model="internalValue"
               class="mt-0"
               data-cy="asset-filter-ignored"
               hide-details
               color="primary"
-              @input="updateIgnoredAssetsHandling($event)"
             >
               <RuiRadio
                 internal-value="none"

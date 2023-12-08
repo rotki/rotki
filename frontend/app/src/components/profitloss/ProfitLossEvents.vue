@@ -285,6 +285,7 @@ const css = useCssModule();
       </template>
       <template #item.actions="{ item }">
         <ReportProfitLossEventAction
+          v-if="report.settings.profitCurrency"
           :event="item"
           :currency="report.settings.profitCurrency"
         />

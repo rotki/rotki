@@ -24,7 +24,7 @@ const { t } = useI18n();
 const { balances } = toRefs(props);
 
 const onlyTags = ref<string[]>([]);
-const sort = ref<DataTableSortColumn>({
+const sort = ref<DataTableSortColumn | DataTableSortColumn[] | undefined>({
   column: 'usdValue',
   direction: 'desc'
 });
@@ -156,6 +156,7 @@ const showDeleteConfirmation = (id: number) => {
       outlined
       :loading="loading"
       :cols="cols"
+      row-attr="id"
       :rows="visibleBalances"
       :sort="sort"
       :item-class="getRowClass"

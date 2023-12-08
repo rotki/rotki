@@ -49,7 +49,7 @@ const premium = usePremium();
 
 const lpType = LpType.UNISWAP_V3;
 
-const getIdentifier = (item: XswapBalance) => item.nftId;
+const getIdentifier = (item: XswapBalance) => item.nftId || '';
 
 const refresh = async (ignoreCache: boolean = false) => {
   await fetchBalances(ignoreCache);

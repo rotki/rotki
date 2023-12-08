@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  TimeFramePeriod,
   TimeFramePersist,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
@@ -12,12 +13,19 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: 'input', value: TimeFrameSetting): void }>();
 
-const { value } = toRefs(props);
-const input = (_value: TimeFrameSetting) => {
-  emit('input', _value);
-};
-
 const premium = usePremium();
+
+const internalValue = computed({
+  get() {
+    return props.value;
+  },
+  set(value: string) {
+    assert(
+      isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value)
+    );
+    emit('input', value);
+  }
+});
 
 const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
   isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
@@ -32,13 +40,12 @@ const { t } = useI18n();
       :tooltip="t('overall_balances.premium_hint')"
     />
     <RuiButtonGroup
+      v-model="internalValue"
       :disabled="disabled"
-      :value="value"
       gap="md"
       class="flex-wrap justify-center"
       active-color="primary"
       required
-      @input="input($event)"
     >
       <template #default>
         <RuiButton

@@ -204,6 +204,7 @@ const suggestionsLabel = computed(() => ({
                 {{ suggestionsLabel[key] }}
               </span>
               <AmountDisplay
+                v-if="number"
                 class="text-2xl"
                 :value="number"
                 fiat-currency="USD"

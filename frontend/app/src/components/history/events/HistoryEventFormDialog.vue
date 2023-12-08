@@ -3,16 +3,16 @@ import { type HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: HistoryEvent | null;
-    nextSequence?: string | null;
+    editableItem?: HistoryEvent;
+    nextSequence?: string;
     loading?: boolean;
-    groupHeader?: HistoryEvent | null;
+    groupHeader?: HistoryEvent;
   }>(),
   {
-    editableItem: null,
-    nextSequence: null,
+    editableItem: undefined,
+    nextSequence: undefined,
     loading: false,
-    groupHeader: null
+    groupHeader: undefined
   }
 );
 

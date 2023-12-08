@@ -3,6 +3,7 @@ import { EvmTokenKind, type UnderlyingToken } from '@rotki/common/lib/data';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{ value: UnderlyingToken[] }>();
 
@@ -103,7 +104,7 @@ const deleteToken = (address: string) => {
       <div class="md:col-span-2">
         <RuiTextField
           v-model="underlyingAddress"
-          :error-messages="v$.address.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.address)"
           variant="outlined"
           color="primary"
           :label="t('common.address')"
@@ -127,7 +128,7 @@ const deleteToken = (address: string) => {
           type="number"
           max="100"
           min="1"
-          :error-messages="v$.weight.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.weight)"
           :hint="t('underlying_token_manager.hint')"
           :label="t('underlying_token_manager.labels.weight')"
         >

@@ -10,10 +10,20 @@ const props = withDefaults(
   }
 );
 
-const { field } = toRefs(props);
-
-const isStarted = computed(() => get(field) === 'started');
-const isAddress = computed(() => get(field) === 'address');
+const isStarted = computed(() => props.field === 'started');
+const isAddress = computed(() => props.field === 'address');
+const started = computed(() => {
+  if (typeof props.value === 'number') {
+    return props.value;
+  }
+  return undefined;
+});
+const address = computed(() => {
+  if (typeof props.value === 'string') {
+    return props.value;
+  }
+  return undefined;
+});
 </script>
 
 <template>
@@ -21,11 +31,11 @@ const isAddress = computed(() => get(field) === 'address');
     <div class="font-medium">{{ field }}:</div>
     <div class="ml-4" :class="diff ? 'font-bold text-rui-error' : null">
       <span v-if="isStarted">
-        <DateDisplay v-if="value" :timestamp="value" />
+        <DateDisplay v-if="started" :timestamp="started" />
         <span v-else>-</span>
       </span>
       <span v-else-if="isAddress">
-        <HashLink v-if="value" :text="value" no-link />
+        <HashLink v-if="address" :text="address" no-link />
         <span v-else>-</span>
       </span>
       <span v-else>

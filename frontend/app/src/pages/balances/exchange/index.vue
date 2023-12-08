@@ -15,6 +15,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
@@ -70,7 +71,7 @@ const openExchangeDetails = async () => {
 const balances = computed(() => {
   const currentExchange = get(exchange);
   if (!currentExchange) {
-    return null;
+    return [];
   }
   return get(getBalances(currentExchange));
 });
@@ -174,7 +175,7 @@ const isBinance = (
           </VSelect>
         </div>
         <div class="hidden md:block w-1/6 border-r border-default">
-          <RuiTabs vertical color="primary" :value="usedExchanges">
+          <RuiTabs v-model="selectedTab" vertical color="primary">
             <template #default>
               <RuiTab
                 v-for="(usedExchange, i) in usedExchanges"
@@ -221,7 +222,10 @@ const isBinance = (
                     :balances="balances"
                   />
                 </RuiTabItem>
-                <RuiTabItem v-if="exchangeSavingsExist" class="md:pl-4">
+                <RuiTabItem
+                  v-if="exchangeSavingsExist && isBinance(exchange)"
+                  class="md:pl-4"
+                >
                   <BinanceSavingDetail :exchange="exchange" />
                 </RuiTabItem>
               </template>

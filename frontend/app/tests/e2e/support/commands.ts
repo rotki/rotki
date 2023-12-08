@@ -36,22 +36,31 @@ const logout = () => {
     .its('body')
     .then(body => {
       const result = body.result;
-      if (result) {
-        const loggedUsers = Object.keys(result).filter(
-          user => result[user] === 'loggedin'
-        );
-        if (loggedUsers.length === 1) {
-          const user = loggedUsers[0];
-          cy.request({
-            url: `${backendUrl}/api/1/users/${user}`,
-            method: 'PATCH',
-            failOnStatusCode: false,
-            body: {
-              action: 'logout'
-            }
-          });
-        }
+      if (!result) {
+        return;
       }
+
+      const loggedUsers = Object.keys(result).filter(
+        user => result[user] === 'loggedin'
+      );
+
+      if (loggedUsers.length !== 1) {
+        return;
+      }
+
+      const user = loggedUsers[0];
+
+      return cy
+        .request({
+          url: `${backendUrl}/api/1/users/${user}`,
+          method: 'PATCH',
+          failOnStatusCode: false,
+          body: {
+            action: 'logout'
+          }
+        })
+        .its('body')
+        .then(body => body.result);
     });
 };
 
@@ -93,9 +102,8 @@ const disableModules = () => {
     });
 };
 
-const createAccount = (username: string, password = '1234') => {
-  cy.logout();
-  return cy
+const createAccount = (username: string, password = '1234') =>
+  cy
     .request({
       url: `${backendUrl}/api/1/users`,
       method: 'PUT',
@@ -109,7 +117,6 @@ const createAccount = (username: string, password = '1234') => {
       failOnStatusCode: false
     })
     .its('body');
-};
 
 const addExternalTrade = (trade: ExternalTrade) =>
   cy

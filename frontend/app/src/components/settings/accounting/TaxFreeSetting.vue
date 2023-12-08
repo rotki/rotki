@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
-const taxFreeAfterPeriod = ref<number | null>(null);
+const taxFreeAfterPeriod = ref<string>();
 const taxFreePeriod = ref(false);
 
 const { t } = useI18n();
@@ -48,10 +49,10 @@ const resetTaxFreePeriod = () => {
   const currentPeriod = get(period);
   if (currentPeriod && currentPeriod > -1) {
     set(taxFreePeriod, true);
-    set(taxFreeAfterPeriod, convertPeriod(currentPeriod, 'seconds'));
+    set(taxFreeAfterPeriod, convertPeriod(currentPeriod, 'seconds').toString());
   } else {
     set(taxFreePeriod, false);
-    set(taxFreeAfterPeriod, null);
+    set(taxFreeAfterPeriod, undefined);
   }
 };
 
@@ -113,9 +114,7 @@ onMounted(() => {
         color="primary"
         class="accounting-settings__taxfree-period-days pt-4"
         :success-messages="success"
-        :error-messages="
-          error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
-        "
+        :error-messages="error || toMessages(v$.taxFreeAfterPeriod)"
         :disabled="!taxFreePeriod"
         :label="t('accounting_settings.trade.labels.taxfree_after_period')"
         type="number"

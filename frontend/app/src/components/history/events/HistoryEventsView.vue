@@ -75,12 +75,12 @@ const {
   onlyChains
 } = toRefs(props);
 
-const nextSequence: Ref<string | null> = ref(null);
-const selectedGroupEventHeader: Ref<HistoryEvent | null> = ref(null);
-const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
-const eventWithMissingRules: Ref<HistoryEventEntry | null> = ref(null);
+const nextSequence = ref<string>();
+const selectedGroupEventHeader = ref<HistoryEvent>();
+const eventToDelete = ref<HistoryEventEntry>();
+const eventWithMissingRules = ref<HistoryEventEntry>();
 const missingRulesDialog: Ref<boolean> = ref(false);
-const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
+const transactionToIgnore = ref<HistoryEventEntry>();
 const accounts: Ref<GeneralAccount[]> = ref([]);
 const locationOverview = ref(get(location));
 
@@ -215,7 +215,7 @@ const {
 
       const accounts = get(usedAccounts);
 
-      if (isDefined(get(locationOverview))) {
+      if (isDefined(locationOverview)) {
         params.location = toSnakeCase(get(locationOverview));
       }
 
@@ -265,6 +265,20 @@ const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
     evaluating: isEventsLoading
   }
 );
+
+const locations = computed<string[]>(() => {
+  const filteredData = get(filters);
+
+  if ('location' in filteredData) {
+    if (typeof filteredData.location === 'string') {
+      return [filteredData.location];
+    } else if (Array.isArray(filteredData.location)) {
+      return filteredData.location;
+    }
+    return [];
+  }
+  return [];
+});
 
 const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
   set(userAction, true);
@@ -384,19 +398,16 @@ const suggestNextSequence = (): string => {
 };
 
 const addEvent = (groupHeader?: HistoryEvent) => {
-  set(selectedGroupEventHeader, groupHeader || null);
-  set(editableItem, null);
+  set(selectedGroupEventHeader, groupHeader);
+  set(editableItem, undefined);
   set(nextSequence, suggestNextSequence());
   setOpenDialog(true);
 };
 
-const editEventHandler = (
-  event: HistoryEvent,
-  groupHeader: HistoryEvent | null
-) => {
+const editEventHandler = (event: HistoryEvent, groupHeader?: HistoryEvent) => {
   set(selectedGroupEventHeader, groupHeader);
   set(editableItem, event);
-  set(nextSequence, null);
+  set(nextSequence, undefined);
   setOpenDialog(true);
 };
 
@@ -532,7 +543,7 @@ const setMissingRulesDialog = (
   set(missingRulesDialog, true);
 };
 
-const editMissingRulesEntry = (event: HistoryEventEntry | null) => {
+const editMissingRulesEntry = (event?: HistoryEventEntry) => {
   if (!event) {
     return;
   }
@@ -857,7 +868,7 @@ watchImmediate(route, async route => {
               />
               <HistoryEventsQueryStatus
                 v-if="includeOnlineEvents"
-                :locations="filters.location ? [filters.location] : []"
+                :locations="locations"
                 :colspan="headers.length"
               />
               <UpgradeRow

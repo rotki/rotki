@@ -9,6 +9,11 @@ import {
   type OnlineHistoryEvent
 } from '@/types/history/events';
 
+export const isOfEventType = <T extends HistoryEvent>(
+  e: HistoryEvent,
+  type: HistoryEventEntryType
+): e is T => type === e?.entryType;
+
 export const isEvmEventType = (type: HistoryEventEntryType): boolean =>
   type === HistoryEventEntryType.EVM_EVENT;
 

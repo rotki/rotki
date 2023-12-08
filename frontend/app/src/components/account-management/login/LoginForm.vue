@@ -170,14 +170,14 @@ const logout = async () => {
   }
 };
 
-const serverColor = computed<string | null>(() => {
+const serverColor = computed(() => {
   if (get(customBackendSessionOnly)) {
     return 'primary';
   } else if (get(customBackendSaved)) {
     return 'success';
   }
 
-  return null;
+  return undefined;
 });
 
 const focusElement = (element: any) => {
@@ -391,7 +391,6 @@ const abortLogin = () => {
                         class="text-[1em] py-0 inline px-1"
                         :disabled="loading"
                         type="button"
-                        data-cy="new-account"
                         @click="newAccount()"
                       >
                         {{ t('login.button_create_account') }}
@@ -504,9 +503,7 @@ const abortLogin = () => {
                   v-model="customBackendUrl"
                   color="primary"
                   variant="outlined"
-                  :error-messages="
-                    v$.customBackendUrl.$errors.map(e => e.$message)
-                  "
+                  :error-messages="toMessages(v$.customBackendUrl)"
                   :disabled="customBackendSaved"
                   :label="t('login.custom_backend.label')"
                   :placeholder="t('login.custom_backend.placeholder')"

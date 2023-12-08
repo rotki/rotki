@@ -156,6 +156,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         :cols="headers"
         :rows="locationsData"
         dense
+        row-attr="evmChain"
         striped
         outlined
       >

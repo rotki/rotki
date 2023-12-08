@@ -3,7 +3,7 @@ import {
   type LiquityPoolDetailEntry,
   type LiquityStatisticDetails
 } from '@rotki/common/lib/liquity';
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type AssetBalance, type Balance, type BigNumber } from '@rotki/common';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -29,7 +29,7 @@ const { t } = useI18n();
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
 
-const current: Ref<boolean> = ref(false);
+const selection = ref<'historical' | 'current'>('historical');
 
 const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
   computed(() => {
@@ -39,7 +39,7 @@ const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
       return null;
     }
 
-    if (!get(current)) {
+    if (get(selection) === 'historical') {
       return statisticVal;
     }
 
@@ -202,16 +202,16 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
           {{ t('liquity_statistic.title') }}
         </h5>
         <RuiButtonGroup
-          v-model="current"
+          v-model="selection"
           required
           variant="outlined"
           color="primary"
         >
           <template #default>
-            <RuiButton :value="true">
+            <RuiButton value="current">
               {{ t('liquity_statistic.switch.current') }}
             </RuiButton>
-            <RuiButton :value="false">
+            <RuiButton value="historical">
               {{ t('liquity_statistic.switch.historical') }}
             </RuiButton>
           </template>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
+import { type StyleValue } from 'vue/types/jsx';
 import { type AssetInfoWithId } from '@/types/asset';
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
 
 const props = withDefaults(
   defineProps<{
     asset: string;
-    assetStyled?: Record<string, unknown>;
+    assetStyled?: StyleValue;
     opensDetails?: boolean;
     hideName?: boolean;
     dense?: boolean;

@@ -2,14 +2,16 @@ import { type MaybeRef } from '@vueuse/core';
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 
-export enum NoteType {
-  ADDRESS = 'address',
-  TX = 'transaction',
-  BLOCK = 'block',
-  AMOUNT = 'amount',
-  WORD = 'word',
-  URL = 'url'
-}
+export const NoteType = {
+  ADDRESS: 'address',
+  TX: 'transaction',
+  BLOCK: 'block',
+  AMOUNT: 'amount',
+  WORD: 'word',
+  URL: 'url'
+} as const;
+
+export type NoteType = (typeof NoteType)[keyof typeof NoteType];
 
 export interface NoteFormat {
   type: NoteType;
@@ -35,11 +37,11 @@ export const useHistoryEventNote = () => {
     blockNumber
   }: {
     notes: MaybeRef<string>;
-    amount?: MaybeRef<BigNumber | null>;
+    amount?: MaybeRef<BigNumber | undefined>;
     assetId?: MaybeRef<string>;
     noTxHash?: MaybeRef<boolean>;
-    validatorIndex?: MaybeRef<number | null>;
-    blockNumber?: MaybeRef<number | null>;
+    validatorIndex?: MaybeRef<number | undefined>;
+    blockNumber?: MaybeRef<number | undefined>;
   }): ComputedRef<NoteFormat[]> =>
     computed(() => {
       const asset = get(assetSymbol(assetId));

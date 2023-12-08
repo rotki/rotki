@@ -239,7 +239,7 @@ const { mdAndUp } = useDisplay();
           <RuiButton
             variant="text"
             icon
-            :size="isPinned ? 'sm' : 'md'"
+            :size="isPinned ? 'sm' : undefined"
             @click="isPinned ? setPinned(null) : pinSection()"
           >
             <RuiIcon
@@ -302,7 +302,7 @@ const { mdAndUp } = useDisplay();
                   <div class="flex gap-2">
                     <RuiButton
                       v-if="step > 1"
-                      :size="isPinned ? 'sm' : 'md'"
+                      :size="isPinned ? 'sm' : undefined"
                       variant="text"
                       @click="step = step - 1"
                     >
@@ -311,7 +311,7 @@ const { mdAndUp } = useDisplay();
                     <RuiButton
                       v-if="step < stepperContents.length"
                       color="primary"
-                      :size="isPinned ? 'sm' : 'md'"
+                      :size="isPinned ? 'sm' : undefined"
                       @click="step = step + 1"
                     >
                       {{ t('common.actions.next') }}
@@ -322,7 +322,7 @@ const { mdAndUp } = useDisplay();
                           !isPinned && content.key === 'missingAcquisitions'
                         "
                         color="primary"
-                        :size="isPinned ? 'sm' : 'md'"
+                        :size="isPinned ? 'sm' : undefined"
                         @click="setDialog(false)"
                       >
                         {{ t('common.actions.close') }}
@@ -330,7 +330,7 @@ const { mdAndUp } = useDisplay();
                       <RuiButton
                         v-else-if="content.key !== 'missingAcquisitions'"
                         color="primary"
-                        :size="isPinned ? 'sm' : 'md'"
+                        :size="isPinned ? 'sm' : undefined"
                         @click="submitActionableItems(items)"
                       >
                         {{ t('common.actions.finish') }}

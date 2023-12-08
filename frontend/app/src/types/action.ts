@@ -1,3 +1,4 @@
+import { type ContextColorsType } from '@rotki/ui-library-compat';
 import { type Section, type Status } from '@/types/status';
 
 interface ActionFailure<T = string> {
@@ -27,7 +28,7 @@ export interface ActionDataEntry<T = string> {
   readonly label: string;
   readonly icon?: string | null;
   readonly image?: string | null;
-  readonly color?: string | null;
+  readonly color?: ContextColorsType;
   readonly matcher?: (identifier: string) => boolean | null;
   readonly detailPath?: string | null;
 }

@@ -16,7 +16,7 @@ const emit = defineEmits<{
 const { versions } = toRefs(props);
 
 const partial: Ref<boolean> = ref(false);
-const upToVersion: Ref<number> = ref(0);
+const upToVersion: Ref<string> = ref('0');
 const skipUpdate: Ref<boolean> = ref(false);
 
 const multiple = computed(() => {
@@ -40,7 +40,7 @@ const onChange = (value: string) => {
 };
 
 const setUpdateVersion = (version: number) => {
-  set(upToVersion, version);
+  set(upToVersion, version.toString());
   const update = get(versions);
 
   emit('update:versions', {
@@ -57,7 +57,7 @@ watch(partial, partial => {
 });
 
 onMounted(() => {
-  set(upToVersion, get(versions).upToVersion);
+  set(upToVersion, get(versions).upToVersion.toString());
 });
 
 const { t } = useI18n();

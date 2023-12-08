@@ -3,6 +3,7 @@ import { type AssetInfo } from '@rotki/common/lib/data';
 import { type ComputedRef } from 'vue';
 import {
   type MatchedKeyword,
+  type MatchedKeywordWithBehaviour,
   type SavedFilterLocation,
   type SearchMatcher,
   type Suggestion
@@ -10,7 +11,7 @@ import {
 
 const props = withDefaults(
   defineProps<{
-    matches: MatchedKeyword<any>;
+    matches: MatchedKeywordWithBehaviour<any>;
     matchers: SearchMatcher<any, any>[];
     location?: SavedFilterLocation | null;
     disabled?: boolean;
@@ -22,7 +23,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:matches', matches: MatchedKeyword<any>): void;
+  (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
 }>();
 
 const { matchers, matches } = toRefs(props);
@@ -278,7 +279,7 @@ const selectItem = (suggestion: Suggestion) => {
   });
 };
 
-const restoreSelection = (matches: MatchedKeyword<any>): void => {
+const restoreSelection = (matches: MatchedKeywordWithBehaviour<any>): void => {
   const oldSelection = get(selection);
   const newSelection: Suggestion[] = [];
   Object.entries(matches).forEach(([key, value]) => {
@@ -305,7 +306,9 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
 
       let exclude = false;
       if (!deserializedValue) {
-        if (!boolean && typeof value !== 'boolean') {
+        if (boolean || typeof value === 'boolean') {
+          deserializedValue = true;
+        } else if (typeof value === 'string') {
           let normalizedValue = value;
           if (!asset && value.startsWith('!')) {
             normalizedValue = value.substring(1);
@@ -313,8 +316,6 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
           }
           deserializedValue =
             foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
-        } else {
-          deserializedValue = true;
         }
       }
 

@@ -3,11 +3,7 @@ import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
-import {
-  type AssetRequestPayload,
-  CUSTOM_ASSET,
-  type IgnoredAssetsHandlingType
-} from '@/types/asset';
+import { CUSTOM_ASSET, type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type ActionStatus } from '@/types/action';
 
 const props = withDefaults(
@@ -34,7 +30,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:pagination', pagination: AssetRequestPayload): void;
+  (e: 'update:pagination', pagination: TablePagination<SupportedAsset>): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:selected', selectedAssets: SupportedAsset[]): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
@@ -87,7 +83,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-const updatePagination = (pagination: AssetRequestPayload) =>
+const updatePagination = (pagination: TablePagination<SupportedAsset>) =>
   emit('update:pagination', pagination);
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 const updateSelected = (selectedAssets: SupportedAsset[]) =>

@@ -4,7 +4,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEqual, some, sortBy } from 'lodash-es';
 import { type ComputedRef, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
-import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -278,10 +277,7 @@ const expandXpub = (
   }
 };
 
-const groupBy = (
-  items: BlockchainAccountWithBalance[],
-  groupBy: Properties<BlockchainAccountWithBalance, any>[]
-) => {
+const groupBy = (items: any[], groupBy: string[]): any[] => {
   const record: Record<string, BlockchainAccountWithBalance[]> = {};
 
   for (const item of items) {

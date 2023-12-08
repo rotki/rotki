@@ -13,6 +13,7 @@ import { type BackendOptions } from '@/electron-main/ipc';
 import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 import { type BackendConfiguration } from '@/types/backend';
+import { toMessages } from '@/utils/validation';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;
@@ -25,10 +26,11 @@ const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 const userDataDirectory: Ref<string> = ref('');
 const userLogDirectory: Ref<string> = ref('');
 const logFromOtherModules: Ref<boolean> = ref(false);
-const maxLogSize: Ref<number> = ref(0);
-const sqliteInstructions: Ref<number> = ref(0);
-const maxLogFiles: Ref<number> = ref(0);
 const valid: Ref<boolean> = ref(false);
+
+const maxLogSize: Ref<string> = ref('0');
+const sqliteInstructions: Ref<string> = ref('0');
+const maxLogFiles: Ref<string> = ref('0');
 
 const { backendSettings } = useSettingsApi();
 
@@ -62,6 +64,21 @@ const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
   };
 });
 
+const parseValue = (value?: string) => {
+  if (!value) {
+    return 0;
+  }
+  const parsedValue = Number.parseInt(value);
+  return Number.isNaN(parsedValue) ? 0 : parsedValue;
+};
+
+const stringifyValue = (value?: number) => {
+  if (!value) {
+    return '0';
+  }
+  return value.toString();
+};
+
 const loaded = async () => {
   const initial = get(initialOptions);
 
@@ -69,9 +86,9 @@ const loaded = async () => {
   set(userDataDirectory, initial.dataDirectory);
   set(userLogDirectory, initial.logDirectory);
   set(logFromOtherModules, initial.logFromOtherModules);
-  set(maxLogFiles, initial.maxLogfilesNum);
-  set(maxLogSize, initial.maxSizeInMbAllLogs);
-  set(sqliteInstructions, initial.sqliteInstructions);
+  set(maxLogFiles, stringifyValue(initial.maxLogfilesNum));
+  set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
+  set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
 };
 
 const {
@@ -86,27 +103,27 @@ const {
 
 const isMaxLogFilesDefault = computed(() => {
   const defaults = get(defaultBackendArguments);
-  return defaults.maxLogfilesNum === get(maxLogFiles);
+  return defaults.maxLogfilesNum === parseValue(get(maxLogFiles));
 });
 
 const isMaxSizeDefault = computed(() => {
   const defaults = get(defaultBackendArguments);
-  return defaults.maxSizeInMbAllLogs === get(maxLogSize);
+  return defaults.maxSizeInMbAllLogs === parseValue(get(maxLogSize));
 });
 
 const isSqliteInstructionsDefaults = computed(() => {
   const defaults = get(defaultBackendArguments);
-  return defaults.sqliteInstructions === get(sqliteInstructions);
+  return defaults.sqliteInstructions === parseValue(get(sqliteInstructions));
 });
 
 const resetDefaultArguments = (field: 'files' | 'size' | 'instructions') => {
   const defaults = get(defaultBackendArguments);
   if (field === 'files') {
-    set(maxLogFiles, defaults.maxLogfilesNum);
+    set(maxLogFiles, stringifyValue(defaults.maxLogfilesNum));
   } else if (field === 'size') {
-    set(maxLogSize, defaults.maxSizeInMbAllLogs);
+    set(maxLogSize, stringifyValue(defaults.maxSizeInMbAllLogs));
   } else if (field === 'instructions') {
-    set(sqliteInstructions, defaults.sqliteInstructions);
+    set(sqliteInstructions, stringifyValue(defaults.sqliteInstructions));
   }
 };
 
@@ -134,15 +151,15 @@ const newUserOptions = computed(() => {
     newOptions.logFromOtherModules = logFromOther;
   }
   if (!get(isMaxLogFilesDefault)) {
-    newOptions.maxLogfilesNum = get(maxLogFiles);
+    newOptions.maxLogfilesNum = parseValue(get(maxLogFiles));
   }
 
   if (!get(isMaxSizeDefault)) {
-    newOptions.maxSizeInMbAllLogs = get(maxLogSize);
+    newOptions.maxSizeInMbAllLogs = parseValue(get(maxLogSize));
   }
 
   if (!get(isSqliteInstructionsDefaults)) {
-    newOptions.sqliteInstructions = get(sqliteInstructions);
+    newOptions.sqliteInstructions = parseValue(get(sqliteInstructions));
   }
 
   return newOptions;
@@ -154,9 +171,9 @@ const anyValueChanged = computed(() => {
     dataDirectory: get(userDataDirectory),
     logDirectory: get(userLogDirectory),
     logFromOtherModules: get(logFromOtherModules),
-    maxSizeInMbAllLogs: get(maxLogSize),
-    sqliteInstructions: get(sqliteInstructions),
-    maxLogfilesNum: get(maxLogFiles)
+    maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
+    sqliteInstructions: parseValue(get(sqliteInstructions)),
+    maxLogfilesNum: parseValue(get(maxLogFiles))
   };
 
   return !isEqual(form, get(initialOptions));
@@ -336,7 +353,7 @@ const showResetConfirmation = () => {
         :hint="
           !!fileConfig.logDirectory
             ? t('backend_settings.config_file_disabled')
-            : null
+            : undefined
         "
         variant="outlined"
         color="primary"
@@ -386,7 +403,7 @@ const showResetConfirmation = () => {
           </VExpansionPanelHeader>
           <VExpansionPanelContent>
             <RuiTextField
-              v-model.number="maxLogSize"
+              v-model="maxLogSize"
               data-cy="max-log-size-input"
               class="mb-4"
               variant="outlined"
@@ -397,9 +414,9 @@ const showResetConfirmation = () => {
                   : t('backend_settings.max_log_size.hint')
               "
               :label="t('backend_settings.max_log_size.label')"
-              :disabled="fileConfig.maxSizeInMbAllLogs"
+              :disabled="!!fileConfig.maxSizeInMbAllLogs"
               :loading="!configuration || !defaultBackendArguments"
-              :error-messages="v$.maxLogSize.$errors.map(e => e.$message)"
+              :error-messages="toMessages(v$.maxLogSize)"
               type="number"
             >
               <template #append>
@@ -411,7 +428,7 @@ const showResetConfirmation = () => {
               </template>
             </RuiTextField>
             <RuiTextField
-              v-model.number="maxLogFiles"
+              v-model="maxLogFiles"
               data-cy="max-log-files-input"
               variant="outlined"
               color="primary"
@@ -422,9 +439,9 @@ const showResetConfirmation = () => {
                   ? t('backend_settings.config_file_disabled')
                   : t('backend_settings.max_log_files.label')
               "
-              :disabled="fileConfig.maxLogfilesNum"
+              :disabled="!!fileConfig.maxLogfilesNum"
               :loading="!configuration || !defaultBackendArguments"
-              :error-messages="v$.maxLogFiles.$errors.map(e => e.$message)"
+              :error-messages="toMessages(v$.maxLogFiles)"
               type="number"
             >
               <template #append>
@@ -437,7 +454,7 @@ const showResetConfirmation = () => {
             </RuiTextField>
 
             <RuiTextField
-              v-model.number="sqliteInstructions"
+              v-model="sqliteInstructions"
               data-cy="sqlite-instructions-input"
               variant="outlined"
               color="primary"
@@ -448,11 +465,9 @@ const showResetConfirmation = () => {
                   : t('backend_settings.sqlite_instructions.hint')
               "
               :label="t('backend_settings.sqlite_instructions.label')"
-              :disabled="fileConfig.sqliteInstructions"
+              :disabled="!!fileConfig.sqliteInstructions"
               :loading="!configuration || !defaultBackendArguments"
-              :error-messages="
-                v$.sqliteInstructions.$errors.map(e => e.$message)
-              "
+              :error-messages="toMessages(v$.sqliteInstructions)"
               type="number"
             >
               <template #append>

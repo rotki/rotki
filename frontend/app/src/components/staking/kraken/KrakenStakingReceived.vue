@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 const { prices } = storeToRefs(useBalancePricesStore());
-const current: Ref<boolean> = ref(true);
+const selection: Ref<'current' | 'historical'> = ref('current');
 const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
 const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
   const assetPrices = get(prices);
@@ -17,7 +17,7 @@ const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
     : Zero;
   return {
     amount,
-    usdValue: get(current) ? currentPrice : usdValue
+    usdValue: get(selection) === 'current' ? currentPrice : usdValue
   };
 };
 
@@ -32,16 +32,16 @@ const { t } = useI18n();
           {{ t('kraken_staking_received.title') }}
         </h6>
         <RuiButtonGroup
-          v-model="current"
+          v-model="selection"
           required
           variant="outlined"
           color="primary"
         >
           <template #default>
-            <RuiButton :value="true">
+            <RuiButton value="current">
               {{ t('kraken_staking_received.switch.current') }}
             </RuiButton>
-            <RuiButton :value="false">
+            <RuiButton value="historical">
               {{ t('kraken_staking_received.switch.historical') }}
             </RuiButton>
           </template>
@@ -56,12 +56,12 @@ const { t } = useI18n();
       >
         <AssetDetails :asset="item.asset" dense />
         <div class="flex items-center gap-3">
-          <ValueAccuracyHint v-if="!current" />
+          <ValueAccuracyHint v-if="selection === 'historical'" />
           <BalanceDisplay
             no-icon
             :asset="item.asset"
             :value="getBalance(item)"
-            :loading="pricesAreLoading && current"
+            :loading="pricesAreLoading && selection === 'current'"
           />
         </div>
       </div>

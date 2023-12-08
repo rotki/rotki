@@ -18,8 +18,7 @@ const placeholder: () => ExchangePayload = () => ({
   apiSecret: null,
   passphrase: null,
   krakenAccountType: 'starter',
-  binanceMarkets: null,
-  ftxSubaccount: null
+  binanceMarkets: null
 });
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
@@ -125,13 +124,6 @@ const setup = async (): Promise<boolean> => {
     writeableExchange.newName = null;
   }
 
-  if (
-    !!writeableExchange.ftxSubaccount &&
-    writeableExchange.ftxSubaccount.trim().length === 0
-  ) {
-    writeableExchange.ftxSubaccount = null;
-  }
-
   return await setupExchange({
     exchange: writeableExchange,
     edit: get(editMode)
@@ -233,6 +225,7 @@ const showRemoveConfirmation = (item: Exchange) => {
 
       <RuiDataTable
         outlined
+        row-attr="name"
         data-cy="exchange-table"
         :rows="connectedExchanges"
         :cols="headers"

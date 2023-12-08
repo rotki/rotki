@@ -20,6 +20,42 @@ const emit = defineEmits<{
 const { editMode, exchange } = toRefs(props);
 const editKeys = ref(false);
 
+const name = computed({
+  get() {
+    return props.exchange.name ?? undefined;
+  },
+  set(value?: string) {
+    input({ ...props.exchange, newName: value ?? null });
+  }
+});
+
+const apiKey = computed({
+  get() {
+    return props.exchange.apiKey ?? undefined;
+  },
+  set(value?: string) {
+    input({ ...props.exchange, apiKey: value ?? null });
+  }
+});
+
+const apiSecret = computed({
+  get() {
+    return props.exchange.apiSecret ?? undefined;
+  },
+  set(value?: string) {
+    input({ ...props.exchange, apiSecret: value ?? null });
+  }
+});
+
+const passphrase = computed({
+  get() {
+    return props.exchange.passphrase ?? undefined;
+  },
+  set(value?: string) {
+    input({ ...props.exchange, passphrase: value ?? null });
+  }
+});
+
 const { getExchangeNonce } = useExchangesStore();
 const { t, te } = useI18n();
 
@@ -74,27 +110,12 @@ const onExchangeChange = (exchange: SupportedExchange) => {
     apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
     passphrase: null,
     krakenAccountType: exchange === SupportedExchange.KRAKEN ? 'starter' : null,
-    binanceMarkets: null,
-    ftxSubaccount: null
+    binanceMarkets: null
   });
 
   nextTick(() => {
     get(v$).$reset();
   });
-};
-
-const onApiKeyPaste = function (event: ClipboardEvent) {
-  const paste = trimOnPaste(event);
-  if (paste) {
-    input({ ...get(exchange), apiKey: paste });
-  }
-};
-
-const onApiSecretPaste = function (event: ClipboardEvent) {
-  const paste = trimOnPaste(event);
-  if (paste) {
-    input({ ...get(exchange), apiSecret: paste });
-  }
 };
 
 const input = (payload: ExchangePayload) => {
@@ -193,16 +214,17 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
           />
         </template>
       </VAutocomplete>
+
       <RuiTextField
         v-if="editMode"
+        v-model="name"
         variant="outlined"
         color="primary"
-        :value="exchange.newName"
         :error-messages="toMessages(v$.newName)"
         data-cy="name"
         :label="t('common.name')"
-        @input="input({ ...exchange, newName: $event })"
       />
+
       <RuiTextField
         v-else
         variant="outlined"
@@ -247,64 +269,38 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
     </div>
 
     <RuiRevealableTextField
+      v-model.trim="apiKey"
       variant="outlined"
       color="primary"
       :disabled="editMode && !editKeys"
-      :value="exchange.apiKey"
       :error-messages="toMessages(v$.apiKey)"
       data-cy="api-key"
       :label="t('exchange_settings.inputs.api_key')"
-      @input="input({ ...exchange, apiKey: $event })"
-      @paste="onApiKeyPaste($event)"
     />
 
     <RuiRevealableTextField
       v-if="requiresApiSecret"
+      v-model.trim="apiSecret"
       variant="outlined"
       color="primary"
       :disabled="editMode && !editKeys"
-      :value="exchange.apiSecret"
       :error-messages="toMessages(v$.apiSecret)"
       data-cy="api-secret"
       prepend-icon="lock-line"
       :label="t('exchange_settings.inputs.api_secret')"
-      @input="input({ ...exchange, apiSecret: $event })"
-      @paste="onApiSecretPaste($event)"
     />
 
     <RuiRevealableTextField
       v-if="requiresPassphrase"
+      v-model.trim="passphrase"
       :disabled="editMode && !editKeys"
       variant="outlined"
       color="primary"
-      :value="exchange.passphrase"
       :error-messages="toMessages(v$.passphrase)"
       prepend-icon="key-line"
       data-cy="passphrase"
       :label="t('exchange_settings.inputs.passphrase')"
-      @input="input({ ...exchange, passphrase: $event })"
     />
-
-    <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
-      <RuiTextField
-        v-if="editMode"
-        variant="outlined"
-        color="primary"
-        :value="exchange.ftxSubaccount"
-        data-cy="ftxSubaccount"
-        :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="input({ ...exchange, ftxSubaccount: $event })"
-      />
-      <RuiTextField
-        v-else
-        variant="outlined"
-        color="primary"
-        :value="exchange.ftxSubaccount"
-        data-cy="ftxSubaccount"
-        :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="input({ ...exchange, ftxSubaccount: $event })"
-      />
-    </div>
 
     <BinancePairsSelector
       v-if="isBinance"

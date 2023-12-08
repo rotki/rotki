@@ -4,6 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type ProfitLossEvent } from '@/types/reports';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   event: ProfitLossEvent;
@@ -134,7 +135,7 @@ const updatePrice = async () => {
             :loading="fetchingPrice"
             :disabled="fetchingPrice"
             :label="t('common.price')"
-            :error-messages="v$.price.$errors.map(e => e.$message)"
+            :error-messages="toMessages(v$.price)"
           />
         </form>
 

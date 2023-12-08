@@ -220,11 +220,9 @@ onMounted(async () => {
           <span v-else>{{ item.details.length }}</span>
         </template>
         <template #item.claimed="{ item: { claimed } }">
-          <RuiChip
-            :color="claimed ? 'success' : 'grey'"
-            :label="claimed ? t('common.claimed') : t('common.unclaimed')"
-            size="sm"
-          />
+          <RuiChip :color="claimed ? 'success' : 'grey'" size="sm">
+            {{ claimed ? t('common.claimed') : t('common.unclaimed') }}
+          </RuiChip>
         </template>
         <template #item.source="{ item }">
           <AirdropDisplay :source="item.source" />

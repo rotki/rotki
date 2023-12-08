@@ -169,6 +169,7 @@ const reProcessSkippedEvents = async () => {
       <RuiDataTable
         :cols="headers"
         :rows="locationsData"
+        row-attr="location"
         dense
         striped
         outlined

@@ -14,14 +14,14 @@ import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: OnlineHistoryEvent | null;
-    nextSequence?: string | null;
-    groupHeader?: OnlineHistoryEvent | null;
+    editableItem?: OnlineHistoryEvent;
+    nextSequence?: string;
+    groupHeader?: OnlineHistoryEvent;
   }>(),
   {
-    editableItem: null,
+    editableItem: undefined,
     nextSequence: '',
-    groupHeader: null
+    groupHeader: undefined
   }
 );
 
