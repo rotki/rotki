@@ -23,25 +23,28 @@ const css = useCssModule();
         setting="blockchainRefreshButtonBehaviour"
         frontend-setting
       >
-        <VRadioGroup
+        <RuiRadioGroup
           :value="blockchainRefreshButtonBehaviour"
+          color="primary"
           class="mt-0"
           hide-details
-          @change="update($event)"
+          @input="update($event)"
         >
-          <VRadio
-            :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"
+          <RuiRadio
+            :internal-value="
+              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+            "
             :label="
               t('dashboard.blockchain_balances.behaviour.only_refresh_balances')
             "
           />
-          <VRadio
-            :value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
+          <RuiRadio
+            :internal-value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
             :label="
               t('dashboard.blockchain_balances.behaviour.redetect_tokens')
             "
           />
-        </VRadioGroup>
+        </RuiRadioGroup>
       </SettingsOption>
     </VListItem>
   </VList>

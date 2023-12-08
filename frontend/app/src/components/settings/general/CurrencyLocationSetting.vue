@@ -24,23 +24,24 @@ onMounted(() => {
     :error-message="t('general_settings.validation.currency_location.error')"
     :success-message="successMessage"
   >
-    <VRadioGroup
+    <RuiRadioGroup
       v-model="currencyLocation"
-      class="general-settings__fields__currency-location"
+      color="primary"
+      class="general-settings__fields__currency-location mt-4"
       :label="t('general_settings.amount.label.currency_location')"
-      row
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      inline
+      @input="update($event)"
     >
-      <VRadio
+      <RuiRadio
         :label="t('general_settings.amount.label.location_before')"
-        value="before"
+        internal-value="before"
       />
-      <VRadio
+      <RuiRadio
         :label="t('general_settings.amount.label.location_after')"
-        value="after"
+        internal-value="after"
       />
-    </VRadioGroup>
+    </RuiRadioGroup>
   </SettingsOption>
 </template>
