@@ -48,7 +48,6 @@ describe('AccountDisplay.vue', () => {
   beforeEach(async () => {
     pinia = createPinia();
     setActivePinia(pinia);
-    await useSessionStore().logout();
     wrapper = createWrapper();
   });
 

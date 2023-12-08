@@ -53,15 +53,10 @@ const showConfirmation = (action: SyncAction) => {
   showSyncConfirmation(action);
 };
 
-const actionLogout = async () => {
-  await logout();
-  await navigateToUserLogin();
-};
-
 const performSync = async () => {
   resume();
   set(pending, true);
-  await forceSync(actionLogout);
+  await forceSync(logout);
   set(pending, false);
   pause();
 };
@@ -74,8 +69,6 @@ watch(isSyncing, (current, prev) => {
     cancelSync();
   }
 });
-
-const { navigateToUserLogin } = useAppNavigation();
 </script>
 
 <template>
