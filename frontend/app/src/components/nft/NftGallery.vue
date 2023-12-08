@@ -229,22 +229,19 @@ const sortNfts = (
           flat
           :usable-addresses="availableAddresses"
         />
-        <VSheet flat>
-          <div>
-            <VAutocomplete
-              v-model="selectedCollection"
-              :label="t('nft_gallery.select_collection')"
-              single-line
-              clearable
-              hide-details
-              hide-selected
-              :items="collections"
-              outlined
-              background-color=""
-              dense
-            />
-          </div>
-        </VSheet>
+        <div class="bg-white dark:bg-[#1E1E1E]">
+          <VAutocomplete
+            v-model="selectedCollection"
+            :label="t('nft_gallery.select_collection')"
+            single-line
+            clearable
+            hide-details
+            hide-selected
+            :items="collections"
+            outlined
+            dense
+          />
+        </div>
         <SortingSelector
           :sort-by="sortBy"
           :sort-properties="sortProperties"
