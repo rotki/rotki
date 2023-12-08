@@ -32,8 +32,8 @@ describe('settings::general', () => {
 
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
-    pageGeneral.confirmFieldSuccess(
-      '.general-settings__fields__floating-precision',
+    pageGeneral.confirmInlineSuccess(
+      '.general-settings__fields__floating-precision .details',
       settings.floatingPrecision
     );
   });
@@ -45,15 +45,15 @@ describe('settings::general', () => {
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__currency-selector',
+      '.general-settings__fields__currency-selector .v-messages__message',
       settings.currency
     );
   });
 
   it('change balance save frequency and validate UI message', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
-    pageGeneral.confirmFieldSuccess(
-      '.general-settings__fields__balance-save-frequency',
+    pageGeneral.confirmInlineSuccess(
+      '.general-settings__fields__balance-save-frequency .details',
       settings.balanceSaveFrequency
     );
   });
@@ -61,7 +61,7 @@ describe('settings::general', () => {
   it('change date display format and validate UI message', () => {
     pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__date-display-format',
+      '.general-settings__fields__date-display-format .details',
       settings.dateDisplayFormat
     );
   });
