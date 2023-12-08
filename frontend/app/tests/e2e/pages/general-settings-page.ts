@@ -142,9 +142,10 @@ export class GeneralSettingsPage {
       'have.length',
       2
     );
-    cy.get(
-      `.general-settings__fields__currency-location input[aria-checked=true]`
-    ).should('have.value', settings.currencyLocation);
+    cy.get(`.general-settings__fields__currency-location input:checked`).should(
+      'have.value',
+      settings.currencyLocation
+    );
   }
 
   navigateAway() {
