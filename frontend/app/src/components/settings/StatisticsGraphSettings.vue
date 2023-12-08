@@ -30,7 +30,7 @@ const showMenu: Ref<boolean> = ref(false);
 
     <Card>
       <SsfGraphMultiplierSetting @updated="updated()" />
-      <VDivider class="my-4" />
+      <RuiDivider class="my-4" />
       <InferZeroTimedBalancesSetting @updated="updated()" />
 
       <template #buttons>

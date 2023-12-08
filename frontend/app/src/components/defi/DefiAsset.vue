@@ -17,7 +17,7 @@ const evmIdentifier: ComputedRef<string> = computed(() =>
   <div class="flex items-center py-4">
     <AssetIcon size="32px" :identifier="evmIdentifier" />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
-    <VSpacer />
+    <div class="grow" />
     <div class="flex flex-col items-end">
       <BalanceDisplay no-icon :asset="evmIdentifier" :value="asset.balance" />
     </div>

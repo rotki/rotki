@@ -53,7 +53,7 @@ const otherHeights = computed(() => {
       <CardTitle>
         <slot name="title" />
       </CardTitle>
-      <VSpacer v-if="slots.details" />
+      <div v-if="slots.details" class="grow" />
       <slot name="details" />
     </VCardTitle>
     <VCardSubtitle v-if="slots.subtitle">

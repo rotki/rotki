@@ -278,7 +278,7 @@ const navItems: MenuItem[] = [
               </VListItem>
             </div>
           </VListGroup>
-          <VDivider
+          <RuiDivider
             v-else-if="navItem.type === 'divider'"
             :key="i"
             class="my-2"

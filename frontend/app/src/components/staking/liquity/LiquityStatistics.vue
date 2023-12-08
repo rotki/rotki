@@ -250,7 +250,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
             <div class="grid md:grid-cols-2 md:gap-12">
               <div>
                 <div>
-                  <VDivider />
+                  <RuiDivider />
                   <div class="text-right py-4">
                     <div class="font-medium pb-2">
                       {{
@@ -265,7 +265,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                   </div>
                 </div>
                 <div>
-                  <VDivider />
+                  <RuiDivider />
                   <div class="text-right py-4">
                     <div class="font-medium pb-2">
                       {{
@@ -280,7 +280,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                   </div>
                 </div>
                 <div>
-                  <VDivider />
+                  <RuiDivider />
                   <div class="text-right py-4">
                     <div class="font-medium pb-2">
                       {{ t('liquity_statistic.stability_pool_gains') }}
@@ -308,7 +308,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                   </div>
                 </div>
                 <div v-if="totalPnl">
-                  <VDivider />
+                  <RuiDivider />
                   <div class="text-right py-4">
                     <div
                       class="flex items-center justify-end gap-2 font-medium pb-2"
@@ -338,7 +338,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
               </div>
               <div>
                 <div>
-                  <VDivider />
+                  <RuiDivider />
                   <div class="text-right py-4">
                     <div class="font-medium pb-2">
                       {{ t('liquity_statistic.staking_gains') }}
@@ -366,7 +366,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
               </div>
             </div>
           </VExpansionPanelContent>
-          <VDivider />
+          <RuiDivider />
           <VExpansionPanelHeader class="flex justify-center w-full">
             <template #default="{ open }">
               <div class="text-rui-text-secondary mr-4 grow-0">

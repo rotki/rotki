@@ -439,7 +439,7 @@ onMounted(setEditMode);
       </div>
     </div>
 
-    <VDivider class="mb-6 mt-8" />
+    <RuiDivider class="mb-6 mt-8" />
 
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2 mb-2">
       <AmountInput

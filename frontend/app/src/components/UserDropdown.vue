@@ -58,7 +58,7 @@ const { darkModeEnabled } = useDarkMode();
             {{ username }}
           </VListItemTitle>
         </VListItem>
-        <VDivider />
+        <RuiDivider />
         <VListItem
           key="settings"
           class="user-dropdown__settings px-6 py-1"

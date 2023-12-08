@@ -31,7 +31,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
           :loading="loading"
         />
       </div>
-      <VDivider class="my-4" />
+      <RuiDivider class="my-4" />
       <div class="flex flex-col gap-1">
         <div class="flex items-center justify-between">
           <div class="text-rui-text-secondary">
