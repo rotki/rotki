@@ -57,7 +57,7 @@ if (browser) {
   test += ` --browser ${browser}`;
 }
 
-if (ci) {
+if (ci && !process.env.SKIP_REBUILD) {
   info('Building frontend');
   const start = Date.now();
   execSync('pnpm run build --mode e2e');

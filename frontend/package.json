@@ -36,10 +36,10 @@
     "@rotki/eslint-config": "1.1.2",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
-    "eslint": "8.51.0",
+    "eslint": "8.55.0",
     "husky": "8.0.3",
-    "jsdom": "22.1.0",
-    "lint-staged": "15.0.2",
+    "jsdom": "23.0.1",
+    "lint-staged": "15.2.0",
     "rimraf": "5.0.5",
     "semver": "7.5.4",
     "typescript": "5.2.2"

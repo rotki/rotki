@@ -122,14 +122,12 @@ const css = useCssModule();
         :open-delay="400"
         class="-mt-8"
       >
-        <template #activator="{ on, attrs }">
+        <template #activator>
           <RuiButton
             variant="text"
-            v-bind="attrs"
             icon
             :disabled="!source || pending"
             :loading="pending"
-            v-on="on"
             @click="showConfirmation(source)"
           >
             <RuiIcon name="delete-bin-line" />

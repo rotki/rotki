@@ -3,6 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
+import { type ExplorerUrls } from '@/types/asset/asset-urls';
 
 defineOptions({
   inheritAttrs: false
@@ -11,21 +12,21 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     notes?: string;
-    amount?: BigNumber | null;
+    amount?: BigNumber;
     asset?: string;
     chain?: Blockchain;
     noTxHash?: boolean;
-    validatorIndex?: number | null;
-    blockNumber?: number | null;
+    validatorIndex?: number;
+    blockNumber?: number;
   }>(),
   {
     notes: '',
-    amount: null,
+    amount: undefined,
     asset: '',
     chain: Blockchain.ETH,
     noTxHash: false,
-    validatorIndex: null,
-    blockNumber: null
+    validatorIndex: undefined,
+    blockNumber: undefined
   }
 );
 
@@ -44,13 +45,16 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
 });
 
 const css = useCssModule();
+
+const isLinkType = (t: any): t is keyof ExplorerUrls =>
+  [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
 </script>
 
 <template>
   <div>
     <template v-for="(note, index) in formattedNotes">
       <HashLink
-        v-if="note.showHashLink"
+        v-if="note.showHashLink && isLinkType(note.type)"
         :key="index"
         class="inline-flex"
         :class="{
@@ -65,7 +69,7 @@ const css = useCssModule();
       />
 
       <AmountDisplay
-        v-else-if="note.type === NoteType.AMOUNT"
+        v-else-if="note.type === NoteType.AMOUNT && note.amount"
         :key="`${index}-amount`"
         :asset="note.asset"
         :value="note.amount"

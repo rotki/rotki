@@ -4,7 +4,6 @@ import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload
 } from '@/types/prices';
-import { type Nullable } from '@/types';
 
 const { t } = useI18n();
 
@@ -51,13 +50,13 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
 });
 
 const price = ref<HistoricalPriceFormPayload>(emptyPrice());
-const filter = reactive<{
-  fromAsset: Nullable<string>;
-  toAsset: Nullable<string>;
-}>({
-  fromAsset: null,
-  toAsset: null
-});
+const fromAsset = ref<string>();
+const toAsset = ref<string>();
+const filter = computed(() => ({
+  fromAsset: get(fromAsset),
+  toAsset: get(toAsset)
+}));
+
 const update = ref(false);
 
 const router = useRouter();
@@ -88,8 +87,8 @@ const openForm = (hPrice: HistoricalPrice | null = null) => {
   } else {
     set(price, {
       ...emptyPrice(),
-      fromAsset: filter.fromAsset ?? '',
-      toAsset: filter.toAsset ?? ''
+      fromAsset: get(fromAsset) ?? '',
+      toAsset: get(toAsset) ?? ''
     });
   }
   setOpenDialog(true);

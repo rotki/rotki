@@ -5,23 +5,22 @@ import { type AsyncComponent, type Ref } from 'vue';
 const { t } = useI18n();
 
 interface RpcSettingTab {
-  chain: string;
+  chain: Blockchain;
   component: AsyncComponent;
 }
 
 const rpcSettingTab: Ref<number> = ref(0);
 
 const { txEvmChains } = useSupportedChains();
-const evmChainTabs = useArrayMap(
-  txEvmChains,
-  chain =>
-    ({
-      chain: chain.id,
-      component: defineAsyncComponent(
-        () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
-      )
-    }) satisfies RpcSettingTab
-);
+const evmChainTabs = useArrayMap(txEvmChains, chain => {
+  assert(isOfEnum(Blockchain)(chain.id));
+  return {
+    chain: chain.id,
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
+    )
+  } satisfies RpcSettingTab;
+});
 
 const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   ...get(evmChainTabs),

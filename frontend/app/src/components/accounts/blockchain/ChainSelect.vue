@@ -2,6 +2,10 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Module } from '@/types/modules';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     modelValue?: Blockchain | null;
@@ -85,7 +89,6 @@ const filter = (chain: Blockchain, queryText: string) => {
     :label="t('account_form.labels.blockchain')"
     :search-input.sync="search"
     :value="modelValue"
-    clearable
     data-cy="account-blockchain-field"
     outlined
     auto-select-first

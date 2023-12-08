@@ -49,6 +49,15 @@ const { t } = useI18n();
 
 const search = ref<string | null>('');
 
+const note = computed({
+  get() {
+    return get(formData).notes ?? undefined;
+  },
+  set(value?: string) {
+    input({ notes: value ?? null });
+  }
+});
+
 watch(search, customAssetType => {
   if (customAssetType === null) {
     customAssetType = get(formData).customAssetType;
@@ -148,8 +157,8 @@ setSubmitFunc(save);
       />
     </div>
     <RuiTextArea
+      v-model="note"
       data-cy="notes"
-      :value="formData.notes"
       variant="outlined"
       color="primary"
       max-rows="5"
@@ -157,7 +166,6 @@ setSubmitFunc(save);
       auto-grow
       clearable
       :label="t('common.notes')"
-      @input="input({ notes: $event })"
     />
 
     <AssetIconForm ref="assetIconFormRef" :identifier="formData.identifier" />

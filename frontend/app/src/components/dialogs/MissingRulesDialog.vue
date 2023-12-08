@@ -9,17 +9,17 @@ import { toEvmChainAndTxHash } from '@/utils/history';
 const props = withDefaults(
   defineProps<{
     value: boolean;
-    event: HistoryEventEntry | null;
+    event: HistoryEventEntry;
   }>(),
   {
-    event: null,
+    event: undefined,
     value: false
   }
 );
 
 const emit = defineEmits<{
-  (e: 're-decode', data: EvmChainAndTxHash | null): void;
-  (e: 'edit', event: HistoryEventEntry | null): void;
+  (e: 're-decode', data: EvmChainAndTxHash): void;
+  (e: 'edit', event?: HistoryEventEntry): void;
   (
     e: 'add-rule',
     data: Pick<

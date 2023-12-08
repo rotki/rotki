@@ -87,9 +87,7 @@ describe('settings::general', () => {
   });
 
   it('verify settings persist after re-login', () => {
-    app.fasterLogout();
-    app.login(username);
-
+    app.relogin(username);
     pageGeneral.visit();
     pageGeneral.verify(settings);
   });

@@ -17,7 +17,7 @@ const props = withDefaults(
     usableAddresses?: string[];
     multiple?: boolean;
     value: AccountWithChain[];
-    chains: Blockchain[];
+    chains: string[];
     outlined?: boolean;
     dense?: boolean;
     noPadding?: boolean;

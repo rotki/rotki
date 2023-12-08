@@ -2,12 +2,11 @@
 import { type DataTableHeader } from '@/types/vuetify';
 import { isNft } from '@/utils/nft';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
-import { type Nullable } from '@/types';
 
 const { t } = useI18n();
 
 const price: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
-const filter: Ref<Nullable<string>> = ref(null);
+const filter = ref<string>();
 const editMode: Ref<boolean> = ref(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

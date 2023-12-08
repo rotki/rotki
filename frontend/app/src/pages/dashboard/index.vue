@@ -2,6 +2,7 @@
 import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const { t } = useI18n();
 const { isTaskRunning } = useTaskStore();
@@ -48,6 +49,7 @@ const dismissedMessage = useSessionStorage(
   'rotki.messages.dash.dismissed',
   false
 );
+const Type = DashboardTableType;
 </script>
 
 <template>
@@ -146,7 +148,7 @@ const dismissedMessage = useSessionStorage(
       </div>
       <DashboardAssetTable
         :title="t('common.assets')"
-        table-type="ASSETS"
+        :table-type="Type.ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
@@ -154,7 +156,7 @@ const dismissedMessage = useSessionStorage(
       <DashboardAssetTable
         v-if="aggregatedLiabilities.length > 0"
         class="mt-8"
-        table-type="LIABILITIES"
+        :table-type="Type.LIABILITIES"
         :title="t('dashboard.liabilities.title')"
         :loading="isAnyLoading"
         :balances="aggregatedLiabilities"

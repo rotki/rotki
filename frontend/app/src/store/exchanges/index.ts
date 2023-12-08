@@ -30,7 +30,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
   };
 
   const editExchange = ({
-    exchange: { location, name: oldName, krakenAccountType, ftxSubaccount },
+    exchange: { location, name: oldName, krakenAccountType },
     newName
   }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
@@ -42,8 +42,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
       ...exchanges[index],
       name,
       location,
-      krakenAccountType,
-      ftxSubaccount
+      krakenAccountType
     };
     setConnectedExchanges(exchanges);
   };
@@ -106,8 +105,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
       const exchangeEntry: Exchange = {
         name: exchange.name,
         location: exchange.location,
-        krakenAccountType: exchange.krakenAccountType ?? undefined,
-        ftxSubaccount: exchange.ftxSubaccount ?? undefined
+        krakenAccountType: exchange.krakenAccountType ?? undefined
       };
 
       if (!edit) {

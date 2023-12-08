@@ -177,10 +177,12 @@ const showDeleteConfirmation = (item: AccountingRuleEntry) => {
 };
 
 const getType = (eventType: string, eventSubtype: string) =>
-  getEventTypeData({
-    eventType,
-    eventSubtype
-  });
+  get(
+    getEventTypeData({
+      eventType,
+      eventSubtype
+    })
+  );
 
 onMounted(async () => {
   const {

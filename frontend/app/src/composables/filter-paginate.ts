@@ -67,7 +67,7 @@ export const usePaginationFilters = <
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
-  const editableItem: Ref<V | null> = ref(null);
+  const editableItem: Ref<V | undefined> = ref();
   const itemsToDelete: Ref<V[]> = ref([]);
   const confirmationMessage: Ref<string> = ref('');
   const expanded: Ref<V[]> = ref([]);

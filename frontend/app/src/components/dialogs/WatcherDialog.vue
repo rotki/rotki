@@ -31,7 +31,7 @@ const { display, preselectWatcherType, existingWatchers, watcherContentId } =
   toRefs(props);
 const watcherType: Ref<typeof WatcherType | null> = ref(null);
 const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
-const watcherValue: Ref<string | null> = ref(null);
+const watcherValue: Ref<string | undefined> = ref();
 const validationMessage: Ref<string> = ref('');
 const validationStatus: Ref<'success' | 'error' | ''> = ref('');
 const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});

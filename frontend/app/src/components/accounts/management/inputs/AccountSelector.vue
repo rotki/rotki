@@ -26,6 +26,13 @@ const showInputModeSelector = logicOr(
   computed(() => isBtcChain(get(blockchain))),
   isEvmChain
 );
+
+const updateModelValue = (value: Blockchain | null) => {
+  if (!value) {
+    return;
+  }
+  emit('update:blockchain', value);
+};
 </script>
 
 <template>
@@ -33,7 +40,8 @@ const showInputModeSelector = logicOr(
     <ChainSelect
       :disabled="loading || !!accountToEdit"
       :model-value="blockchain"
-      @update:model-value="emit('update:blockchain', $event)"
+      :clearable="false"
+      @update:model-value="updateModelValue($event)"
     />
 
     <InputModeSelect

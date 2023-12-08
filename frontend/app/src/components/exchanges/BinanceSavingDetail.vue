@@ -144,6 +144,7 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
             :is-mobile="isMobile"
           >
             <AmountDisplay
+              v-if="collection.totalUsdValue"
               :fiat-currency="CURRENCY_USD"
               :value="collection.totalUsdValue"
               show-currency="symbol"

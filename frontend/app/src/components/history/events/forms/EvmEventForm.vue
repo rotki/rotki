@@ -15,14 +15,14 @@ import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: EvmHistoryEvent | null;
-    nextSequence?: string | null;
-    groupHeader?: EvmHistoryEvent | null;
+    editableItem?: EvmHistoryEvent;
+    nextSequence?: string;
+    groupHeader?: EvmHistoryEvent;
   }>(),
   {
-    editableItem: null,
+    editableItem: undefined,
     nextSequence: '',
-    groupHeader: null
+    groupHeader: undefined
   }
 );
 
@@ -44,7 +44,7 @@ const assetPriceForm: Ref<InstanceType<
 > | null> = ref(null);
 
 const txHash: Ref<string> = ref('');
-const eventIdentifier: Ref<string | null> = ref(null);
+const eventIdentifier = ref<string>();
 const sequenceIndex: Ref<string> = ref('');
 const datetime: Ref<string> = ref('');
 const location: Ref<string> = ref('');
@@ -275,7 +275,7 @@ const save = async (): Promise<boolean> => {
   const payload: NewEvmHistoryEventPayload = {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
-    eventIdentifier: get(eventIdentifier),
+    eventIdentifier: get(eventIdentifier) ?? null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
     eventType: get(eventType),

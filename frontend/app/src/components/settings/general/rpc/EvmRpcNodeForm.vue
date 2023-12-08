@@ -23,6 +23,24 @@ const { t } = useI18n();
 const { chain, chainName, value, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
+const getWeight = (value?: string): number => {
+  if (!value) {
+    return 0;
+  }
+
+  const parsedValue = parseInt(value);
+  return Number.isNaN(parsedValue) ? 0 : parsedValue;
+};
+
+const weight = computed({
+  get() {
+    return get(state).weight.toString();
+  },
+  set(value?: string) {
+    state.weight = getWeight(value);
+  }
+});
+
 const rules = {
   name: { required },
   endpoint: { required: requiredIf(logicNot(isEtherscan)) },
@@ -158,13 +176,12 @@ setSubmitFunc(save);
         @blur="v$.weight.$touch()"
       />
       <AmountInput
+        v-model="weight"
         :disabled="state.owned"
-        :value="state.weight.toString()"
         :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
         outlined
         hide-details
         class="shrink ml-2 w-[8rem]"
-        @input="state.weight = $event"
       />
       {{ t('rpc_node_form.weight_per_hundred') }}
     </div>

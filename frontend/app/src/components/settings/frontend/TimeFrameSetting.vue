@@ -5,7 +5,7 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
-const visibleTimeframes = ref<TimeFrameSetting[]>([]);
+const visibleTimeframes = ref<TimeFramePeriod[]>([]);
 const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
 const { t } = useI18n();

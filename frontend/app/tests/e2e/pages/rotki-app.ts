@@ -13,7 +13,7 @@ export class RotkiApp {
 
   visit() {
     cy.visit({
-      url: '/',
+      url: '/#/user/login',
       qs: {
         skip_update: '1'
       }
@@ -22,18 +22,16 @@ export class RotkiApp {
 
   createAccount(username: string, password = '1234') {
     cy.logout();
-    // simulate high scaling / low res by making a very small viewport
+    cy.visit({
+      url: '/#/user/create',
+      qs: {
+        skip_update: '1'
+      },
+      timeout: 10000
+    });
     cy.get('[data-cy=connection-loading__content]').should('not.exist');
     cy.get('[data-cy=account-management-forms]').scrollIntoView();
     cy.get('[data-cy=account-management-forms]').should('be.visible');
-
-    cy.get('[data-cy=account-management]').then($body => {
-      const button = $body.find('[data-cy=new-account]');
-      if (button.length > 0) {
-        cy.get('[data-cy=new-account]').scrollIntoView();
-        cy.get('[data-cy=new-account]').click();
-      }
-    });
 
     cy.get('[data-cy="create-account__introduction__continue"]').click();
     cy.get('[data-cy="create-account__premium__button__continue"]').click();
@@ -52,23 +50,35 @@ export class RotkiApp {
     this.loadEnv();
   }
 
+  clear() {
+    cy.logout();
+    cy.visit('/');
+  }
+
   fasterLogin(username: string, password = '1234', disableModules = false) {
+    cy.logout();
     cy.createAccount(username, password);
     if (disableModules) {
       cy.disableModules();
     }
     this.loadEnv();
-    this.visit();
+    cy.visit({
+      url: '/',
+      qs: {
+        skip_update: '1'
+      }
+    });
     this.login(username, password);
-  }
-
-  fasterLogout() {
-    cy.logout();
-    this.visit();
   }
 
   checkGetPremiumButton() {
     cy.get('[data-cy=get-premium-button]').should('be.visible');
+  }
+
+  relogin(username: string, password = '1234'): void {
+    cy.logout();
+    cy.visit('/#/user/login');
+    this.login(username, password);
   }
 
   login(username: string, password = '1234') {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { objectPick } from '@vueuse/shared';
 import Fragment from '@/components/helper/Fragment';
 import { type HistoryEventEntry } from '@/types/history/events';
 import { isEvmEvent } from '@/utils/history/events';
@@ -41,6 +42,30 @@ const deleteEvent = (item: HistoryEventEntry) =>
     item,
     canDelete: isEvmEvent(item) ? props.events.length > 1 : true
   });
+
+const getEventNoteAttrs = (event: HistoryEventEntry) => {
+  const data: {
+    validatorIndex?: number;
+    blockNumber?: number;
+  } = {};
+
+  if ('validatorIndex' in event) {
+    data.validatorIndex = event.validatorIndex;
+  }
+
+  if ('blockNumber' in event) {
+    data.blockNumber = event.blockNumber;
+  }
+
+  // todo: validate optional or nullable state of schema
+  const { notes, asset } = objectPick(event, ['notes', 'asset']);
+
+  return {
+    notes: notes ? notes : undefined,
+    asset,
+    ...data
+  };
+};
 </script>
 
 <template>
@@ -61,7 +86,7 @@ const deleteEvent = (item: HistoryEventEntry) =>
         />
         <HistoryEventAsset :event="item" class="md:col-span-2 lg:col-span-4" />
         <HistoryEventNote
-          v-bind="item"
+          v-bind="getEventNoteAttrs(item)"
           :amount="item.balance.amount"
           :chain="getChain(item.location)"
           :no-tx-hash="isNoTxHash(item)"

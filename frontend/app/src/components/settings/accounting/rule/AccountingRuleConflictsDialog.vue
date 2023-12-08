@@ -112,10 +112,12 @@ const getHistoryEventSubTypeName = (eventSubtype: string): string =>
     ?.label ?? toSentenceCase(eventSubtype);
 
 const getType = (eventType: string, eventSubtype: string) =>
-  getEventTypeData({
-    eventType,
-    eventSubtype
-  });
+  get(
+    getEventTypeData({
+      eventType,
+      eventSubtype
+    })
+  );
 
 const diffClass = (
   localSetting: boolean | string,
@@ -139,7 +141,7 @@ const remaining = computed(() => {
 
 const valid = computed(() => !!get(solveAllUsing) || get(resolutionLength) > 0);
 
-const solveAllUsing: Ref<ConflictResolutionStrategy | null> = ref(null);
+const solveAllUsing = ref<ConflictResolutionStrategy>();
 
 const { setMessage } = useMessageStore();
 
@@ -200,7 +202,7 @@ const save = async () => {
         color="primary"
         :value="!!solveAllUsing"
         hide-details
-        @input="solveAllUsing = $event ? 'local' : null"
+        @input="solveAllUsing = $event ? 'local' : undefined"
       >
         {{ t('conflict_dialog.all_buttons_description') }}
       </RuiCheckbox>

@@ -9,57 +9,61 @@ describe('trade history', () => {
   let tradeHistoryPage: TradeHistoryPage;
   let externalTrades: ExternalTrade[];
 
-  beforeEach(() => {
-    username = createUser();
+  before(() => {
     app = new RotkiApp();
     tradeHistoryPage = new TradeHistoryPage();
-
-    app.fasterLogin(username);
-    cy.fixture('history/trades').then(trade => {
+    cy.fixture('history/trades.json').then(trade => {
       externalTrades = trade;
     });
   });
 
-  afterEach(() => {
-    app.fasterLogout();
+  after(() => {
+    app.clear();
   });
 
-  it('add two external trades', () => {
-    tradeHistoryPage.visit();
-    // add trade by input rate
-    tradeHistoryPage.addTrade(externalTrades[0]);
-    // add trade by input quote amount
-    tradeHistoryPage.addTrade(externalTrades[1]);
-    tradeHistoryPage.visibleEntries(2);
-    tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
-    tradeHistoryPage.tradeIsVisible(1, externalTrades[1]);
-  });
+  describe('manage data', () => {
+    before(() => {
+      username = createUser();
+      app.fasterLogin(username);
+      tradeHistoryPage.visit();
+    });
 
-  it('edit external trade', () => {
-    cy.addExternalTrade(externalTrades[0]);
-    tradeHistoryPage.visit();
-    tradeHistoryPage.visibleEntries(1);
-    tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
-    tradeHistoryPage.editTrade(0, '123.2');
-    tradeHistoryPage.tradeIsVisible(0, {
-      ...externalTrades[0],
-      amount: '123.2'
+    it('add two external trades', () => {
+      // add trade by input rate
+      tradeHistoryPage.addTrade(externalTrades[0]);
+      // add trade by input quote amount
+      tradeHistoryPage.addTrade(externalTrades[1]);
+      tradeHistoryPage.visibleEntries(2);
+      tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
+      tradeHistoryPage.tradeIsVisible(1, externalTrades[1]);
+    });
+
+    it('edit external trade', () => {
+      tradeHistoryPage.visibleEntries(2);
+      tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
+      tradeHistoryPage.editTrade(0, '123.2');
+      tradeHistoryPage.tradeIsVisible(0, {
+        ...externalTrades[0],
+        amount: '123.2'
+      });
+    });
+
+    it('delete external trade', () => {
+      tradeHistoryPage.visibleEntries(2);
+      tradeHistoryPage.tradeIsVisible(0, {
+        ...externalTrades[0],
+        amount: '123.2'
+      });
+      tradeHistoryPage.deleteTrade(0);
+      tradeHistoryPage.confirmDelete();
+      tradeHistoryPage.visibleEntries(1);
+      tradeHistoryPage.tradeIsVisible(0, externalTrades[1]);
     });
   });
 
-  it('delete external trade', () => {
-    cy.addExternalTrade(externalTrades[0]);
-    cy.addExternalTrade(externalTrades[1]);
-    tradeHistoryPage.visit();
-    tradeHistoryPage.visibleEntries(2);
-    tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
-    tradeHistoryPage.deleteTrade(0);
-    tradeHistoryPage.confirmDelete();
-    tradeHistoryPage.visibleEntries(1);
-    tradeHistoryPage.tradeIsVisible(0, externalTrades[1]);
-  });
-
   it('filter and pagination', () => {
+    username = createUser();
+    app.fasterLogin(username);
     for (let i = 0; i < 6; i++) {
       const time = `08/10/2015 10:50:5${i}`;
       cy.addExternalTrade({

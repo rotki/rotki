@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { isDefined } from '@vueuse/shared';
-
 withDefaults(
   defineProps<{
     colspan: number;
@@ -10,13 +8,14 @@ withDefaults(
     events?: boolean;
     timeStart?: number;
     timeEnd?: number;
-    found: number;
+    found?: number;
     entriesFoundTotal?: number;
   }>(),
   {
     events: false,
     timeStart: 0,
     timeEnd: 0,
+    found: undefined,
     entriesFoundTotal: undefined
   }
 );
@@ -65,10 +64,10 @@ const { xs } = useDisplay();
         class="flex flex-row justify-center items-end"
       >
         <template #total>
-          {{ isDefined(entriesFoundTotal) ? entriesFoundTotal : total }}
+          {{ entriesFoundTotal ? entriesFoundTotal : total }}
         </template>
         <template #limit>
-          {{ isDefined(entriesFoundTotal) ? found : limit }}
+          {{ found ? found : limit }}
         </template>
         <template #label>
           {{ label }}

@@ -167,6 +167,7 @@ watch(loading, async (isLoading, wasLoading) => {
     </template>
     <template #shortDetails>
       <AmountDisplay
+        v-if="totalUsdValue"
         :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
@@ -222,6 +223,7 @@ watch(loading, async (isLoading, wasLoading) => {
               :is-mobile="isMobile"
             >
               <AmountDisplay
+                v-if="totalUsdValue"
                 :value="totalUsdValue"
                 show-currency="symbol"
                 fiat-currency="USD"

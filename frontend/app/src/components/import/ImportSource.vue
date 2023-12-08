@@ -6,6 +6,7 @@ import { DateFormat } from '@/types/date-format';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ImportSourceType } from '@/types/upload-types';
+import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{ source: ImportSourceType; icon?: string }>(),
@@ -163,7 +164,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
         class="mt-2"
         variant="outlined"
         color="primary"
-        :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.dateInputFormat)"
         :label="t('file_upload.date_input_format.placeholder')"
         :hint="
           t('file_upload.date_input_format.hint', {

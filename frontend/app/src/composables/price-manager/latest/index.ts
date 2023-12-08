@@ -4,7 +4,6 @@ import {
   Severity
 } from '@rotki/common/lib/messages';
 import { omit } from 'lodash-es';
-import { type Nullable } from '@rotki/common';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -12,7 +11,7 @@ import { isNft } from '@/utils/nft';
 
 export const useLatestPrices = (
   t: ReturnType<typeof useI18n>['t'],
-  filter?: Ref<Nullable<string>>
+  filter?: Ref<string | undefined>
 ) => {
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = ref(false);

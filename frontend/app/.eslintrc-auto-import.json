@@ -725,6 +725,9 @@
     "useDynamicMessages": true,
     "useUpdateMessage": true,
     "useHistoryTransactionDecoding": true,
-    "guessTimezone": true
+    "guessTimezone": true,
+    "useClipboardItems": true,
+    "isOfEnum": true,
+    "isOfEventType": true
   }
 }

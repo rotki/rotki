@@ -173,6 +173,11 @@ const fetchPrices = async () => {
   }
 };
 
+const updateSortBy = (value: string) => {
+  assert(['name', 'priceUsd', 'collection'].includes(value));
+  set(sortBy, value);
+};
+
 onMounted(fetchPrices);
 onMounted(fetchNfts);
 
@@ -246,7 +251,7 @@ const sortNfts = (
           :sort-by="sortBy"
           :sort-properties="sortProperties"
           :sort-desc="sortDescending"
-          @update:sort-by="sortBy = $event"
+          @update:sort-by="updateSortBy($event)"
           @update:sort-desc="sortDescending = $event"
         />
         <Pagination v-if="pages > 0" v-model="page" :length="pages" />

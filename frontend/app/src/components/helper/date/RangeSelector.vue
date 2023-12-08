@@ -6,6 +6,7 @@ import {
   type PeriodChangedEvent,
   type SelectionChangedEvent
 } from '@/types/reports';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{ value: { start: string; end: string } }>();
 
@@ -109,7 +110,7 @@ watch(v$, ({ $invalid }) => {
           :label="t('generate.labels.start_date')"
           limit-now
           allow-empty
-          :error-messages="v$.start.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.start)"
           @input="$emit('input', { start: $event, end: value.end })"
         />
       </div>
@@ -119,7 +120,7 @@ watch(v$, ({ $invalid }) => {
           outlined
           :label="t('generate.labels.end_date')"
           limit-now
-          :error-messages="v$.end.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.end)"
           @input="$emit('input', { start: value.start, end: $event })"
         />
       </div>

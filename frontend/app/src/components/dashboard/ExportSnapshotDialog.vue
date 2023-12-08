@@ -172,6 +172,7 @@ const showDeleteConfirmation = () => {
           <div>{{ t('common.balance') }}:</div>
           <div>
             <AmountDisplay
+              v-if="formattedSelectedBalance"
               :value="formattedSelectedBalance"
               :fiat-currency="currencySymbol"
               class="font-bold"

@@ -77,7 +77,7 @@ export const CustomAsset = z.object({
   identifier: z.string(),
   name: z.string(),
   customAssetType: z.string(),
-  notes: z.string().nullish()
+  notes: z.string().nullable()
 });
 
 export type CustomAsset = z.infer<typeof CustomAsset>;
@@ -95,7 +95,14 @@ export interface CustomAssetRequestPayload
   customAssetType?: string;
 }
 
-export type IgnoredAssetsHandlingType = 'none' | 'exclude' | 'show_only';
+export const IgnoredAssetHandlingType = {
+  NONE: 'none',
+  EXCLUDE: 'exclude',
+  SHOW_ONLY: 'show_only'
+} as const;
+
+export type IgnoredAssetsHandlingType =
+  (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
 
 export const EvmNativeToken = ['ETH'];
 

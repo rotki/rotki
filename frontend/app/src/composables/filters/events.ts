@@ -60,7 +60,7 @@ export const useHistoryEventFilter = (
     eventTypes?: boolean;
     eventSubtypes?: boolean;
   },
-  entryTypes?: MaybeRef<HistoryEventEntryType[]>
+  entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>
 ) => {
   const filters: Ref<Filters> = ref({});
 

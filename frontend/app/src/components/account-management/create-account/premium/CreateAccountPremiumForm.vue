@@ -23,7 +23,7 @@ const apiKey = computed({
   get() {
     return get(form).apiKey;
   },
-  set(value: string | null) {
+  set(value?: string) {
     input({ apiKey: value || '' });
   }
 });
@@ -32,7 +32,7 @@ const apiSecret = computed({
   get() {
     return get(form).apiSecret;
   },
-  set(value: string | null) {
+  set(value?: string) {
     input({ apiSecret: value || '' });
   }
 });

@@ -43,8 +43,7 @@ describe('settings::accounting', () => {
   });
 
   it('verify changes persist', () => {
-    app.fasterLogout();
-    app.login(username);
+    app.relogin(username);
 
     pageAccounting.visit();
     pageAccounting.verifySwitchState(

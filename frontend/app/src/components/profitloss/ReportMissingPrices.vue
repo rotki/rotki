@@ -226,14 +226,13 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                   tooltip-class="max-w-[16rem]"
                   :disabled="refreshing"
                 >
-                  <template #activator="{ on }">
+                  <template #activator>
                     <RuiButton
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
                       class="-mr-3 !py-[0.625rem]"
                       size="sm"
                       color="primary"
-                      v-on="on"
                       @click="refreshHistoricalPrice(item)"
                     >
                       <RuiIcon size="20" name="refresh-line" />

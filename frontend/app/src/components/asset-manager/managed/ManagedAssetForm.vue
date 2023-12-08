@@ -36,7 +36,7 @@ const { fetchTokenDetails } = useAssetInfoRetrieval();
 const address = ref<string>('');
 const name = ref<string>('');
 const symbol = ref<string>('');
-const decimals = ref<number | null>(null);
+const decimals = ref<string>();
 const started = ref<string>('');
 const coingecko = ref<string>('');
 const cryptocompare = ref<string>('');
@@ -147,14 +147,24 @@ watch(assetType, () => {
   set(errors, {});
 });
 
+const parseDecimals = (value?: string): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedValue = Number.parseInt(value);
+  return Number.isNaN(parsedValue) ? null : parsedValue;
+};
+
 const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'assetType'>> =
   computed(() => {
     const ut = get(underlyingTokens);
+
     return {
       address: get(address),
       name: get(name),
       symbol: get(symbol),
-      decimals: get(decimals),
+      decimals: parseDecimals(get(decimals)),
       coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
       cryptocompare: get(cryptocompareEnabled)
         ? onlyIfTruthy(get(cryptocompare))
@@ -205,7 +215,7 @@ onMounted(() => {
   set(forked, token.forked ?? '');
   set(assetType, token.assetType ?? EVM_TOKEN);
   set(address, token.address);
-  set(decimals, token.decimals ?? null);
+  set(decimals, token.decimals?.toString() ?? undefined);
   set(protocol, token.protocol ?? '');
   set(underlyingTokens, token.underlyingTokens ?? []);
   set(evmChain, token.evmChain);
@@ -425,7 +435,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         />
         <div v-if="isEvmToken" data-cy="decimal-input">
           <RuiTextField
-            v-model.number="decimals"
+            v-model="decimals"
             variant="outlined"
             color="primary"
             min="0"

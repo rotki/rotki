@@ -8,8 +8,8 @@ withDefaults(
     secondaryValue: string;
     label: { primary?: string; secondary?: string };
     errorMessages?: {
-      primary?: Record<string, string | string[]>;
-      secondary?: Record<string, string | string[]>;
+      primary?: string | string[];
+      secondary?: string | string[];
     };
     loading?: boolean;
   }>(),

@@ -148,6 +148,8 @@ declare global {
   const isEvmIdentifier: typeof import('./utils/assets')['isEvmIdentifier']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
   const isNft: typeof import('./utils/nft')['isNft']
+  const isOfEnum: typeof import('./utils/index')['isOfEnum']
+  const isOfEventType: typeof import('./utils/history/events')['isOfEventType']
   const isOnlineHistoryEvent: typeof import('./utils/history/events')['isOnlineHistoryEvent']
   const isOnlineHistoryEventRef: typeof import('./utils/history/events')['isOnlineHistoryEventRef']
   const isOnlineHistoryEventType: typeof import('./utils/history/events')['isOnlineHistoryEventType']
@@ -390,6 +392,7 @@ declare global {
   const useClamp: typeof import('@vueuse/math')['useClamp']
   const useClearableMessages: typeof import('./composables/settings/index')['useClearableMessages']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
+  const useClipboardItems: typeof import('@vueuse/core')['useClipboardItems']
   const useCloned: typeof import('@vueuse/core')['useCloned']
   const useColorMode: typeof import('@vueuse/core')['useColorMode']
   const useCompoundApi: typeof import('./composables/api/defi/compound')['useCompoundApi']
@@ -466,7 +469,7 @@ declare global {
   const useFloor: typeof import('@vueuse/math')['useFloor']
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
-  const useFooterProps: typeof import('./composables/datatable.common')['useFooterProps']
+  const useFooterProps: typeof import('./composables/datatable')['useFooterProps']
   const useForm: typeof import('./composables/form')['useForm']
   const useFps: typeof import('@vueuse/core')['useFps']
   const useFrontendSettingsStore: typeof import('./store/settings/frontend')['useFrontendSettingsStore']
@@ -723,6 +726,7 @@ declare global {
 declare global {
   // @ts-ignore
   export type { Component, ComponentPublicInstance, ComputedRef, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, VNode, WritableComputedRef } from 'vue'
+  import('vue')
 }
 // for vue template auto import
 import { UnwrapRef } from 'vue'
@@ -870,6 +874,8 @@ declare module 'vue' {
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
+    readonly isOfEnum: UnwrapRef<typeof import('./utils/index')['isOfEnum']>
+    readonly isOfEventType: UnwrapRef<typeof import('./utils/history/events')['isOfEventType']>
     readonly isOnlineHistoryEvent: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEvent']>
     readonly isOnlineHistoryEventRef: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventRef']>
     readonly isOnlineHistoryEventType: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventType']>
@@ -1112,6 +1118,7 @@ declare module 'vue' {
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
     readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings/index')['useClearableMessages']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
+    readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
     readonly useCompoundApi: UnwrapRef<typeof import('./composables/api/defi/compound')['useCompoundApi']>
@@ -1586,6 +1593,8 @@ declare module '@vue/runtime-core' {
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
+    readonly isOfEnum: UnwrapRef<typeof import('./utils/index')['isOfEnum']>
+    readonly isOfEventType: UnwrapRef<typeof import('./utils/history/events')['isOfEventType']>
     readonly isOnlineHistoryEvent: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEvent']>
     readonly isOnlineHistoryEventRef: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventRef']>
     readonly isOnlineHistoryEventType: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventType']>
@@ -1828,6 +1837,7 @@ declare module '@vue/runtime-core' {
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
     readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings/index')['useClearableMessages']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
+    readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
     readonly useCompoundApi: UnwrapRef<typeof import('./composables/api/defi/compound')['useCompoundApi']>

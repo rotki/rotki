@@ -69,7 +69,7 @@ describe('/settings/api-keys/external-services', () => {
       components: {
         EvmChainIcon
       },
-      stubs: ['v-dialog', 'card-title', 'card', 'i18n'],
+      stubs: ['RuiTabs'],
       propsData: {
         value: ''
       }

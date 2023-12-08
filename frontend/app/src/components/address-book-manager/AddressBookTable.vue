@@ -9,8 +9,7 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type DataTableHeader } from '@/types/vuetify';
 import {
   type AddressBookEntry,
-  type AddressBookLocation,
-  type AddressBookRequestPayload
+  type AddressBookLocation
 } from '@/types/eth-names';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
@@ -25,7 +24,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
   (e: 'update:page', page: number): void;
-  (e: 'update:options', pagination: AddressBookRequestPayload): void;
+  (e: 'update:options', pagination: TablePagination<AddressBookEntry>): void;
   (e: 'refresh'): void;
 }>();
 
@@ -35,7 +34,7 @@ const setPage = (page: number) => {
   emit('update:page', page);
 };
 
-const updatePagination = (pagination: AddressBookRequestPayload) =>
+const updatePagination = (pagination: TablePagination<AddressBookEntry>) =>
   emit('update:options', pagination);
 
 const refresh = () => {

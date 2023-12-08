@@ -46,7 +46,7 @@ const premiumSelectionButtons = computed(() => [
         v-for="(button, i) in premiumSelectionButtons"
         :key="i"
         rounded
-        :variant="button.value === premiumEnabled ? 'filled' : 'outlined'"
+        :variant="button.value === premiumEnabled ? 'default' : 'outlined'"
         color="primary"
         @click="emit('update:premium-enabled', button.value)"
       >

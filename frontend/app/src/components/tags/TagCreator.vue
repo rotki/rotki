@@ -76,13 +76,12 @@ watch(tag, () => {
     <div class="flex items-center gap-4">
       <TagIcon class="min-w-[7rem]" :tag="tag" />
       <RuiTooltip :popper="{ placement: 'bottom' }">
-        <template #activator="{ on }">
+        <template #activator>
           <RuiButton
             icon
             size="sm"
             variant="text"
             color="primary"
-            v-on="on"
             @click="randomize()"
           >
             <RuiIcon name="shuffle-line" />

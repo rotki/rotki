@@ -8,9 +8,10 @@ const props = defineProps<{ task: Task<TaskMeta> }>();
 const { task } = toRefs(props);
 const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
 
-const { progress } = storeToRefs(useReportsStore());
+const { progress: taskProgress } = storeToRefs(useReportsStore());
 
 const time = computed(() => dayjs(task.value.time).format('LLL'));
+const progress = useToNumber(taskProgress);
 </script>
 
 <template>

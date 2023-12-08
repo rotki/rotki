@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
 interface Form {
   reset: () => boolean;
@@ -86,7 +87,7 @@ const change = async () => {
         color="primary"
         class="user-security-settings__fields__current-password"
         :label="t('change_password.labels.password')"
-        :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.currentPassword)"
         variant="outlined"
       />
       <RuiRevealableTextField
@@ -94,7 +95,7 @@ const change = async () => {
         color="primary"
         class="user-security-settings__fields__new-password"
         :label="t('change_password.labels.new_password')"
-        :error-messages="v$.newPassword.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.newPassword)"
         variant="outlined"
       />
       <RuiRevealableTextField
@@ -103,7 +104,7 @@ const change = async () => {
         class="user-security-settings__fields__new-password-confirm"
         :label="t('change_password.labels.confirm_password')"
         prepend-icon="repeat-2-line"
-        :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.newPasswordConfirm)"
         variant="outlined"
       />
     </VForm>

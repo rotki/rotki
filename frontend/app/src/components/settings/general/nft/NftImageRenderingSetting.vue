@@ -2,7 +2,7 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { isEqual } from 'lodash-es';
 
-const renderAllNftImages: Ref<boolean> = ref(true);
+const renderAllNftImages: Ref<'all' | 'whitelisted'> = ref('all');
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
 
 const frontendStore = useFrontendSettingsStore();
@@ -14,7 +14,7 @@ const {
 const { updateSetting } = frontendStore;
 
 onMounted(() => {
-  set(renderAllNftImages, get(renderAll));
+  set(renderAllNftImages, get(renderAll) ? 'all' : 'whitelisted');
   set(whitelistedDomainsForNftImages, get(whitelist));
 });
 
@@ -60,11 +60,11 @@ const confirmUpdated = () => {
 
 const { show } = useConfirmStore();
 const updateRenderingSetting = (
-  value: boolean,
+  value: string,
   update: (value: any) => void
 ) => {
-  if (!value) {
-    update(value);
+  if (value === 'whitelisted') {
+    update(false);
     return;
   }
 
@@ -75,10 +75,10 @@ const updateRenderingSetting = (
       type: 'info'
     },
     () => {
-      update(value);
+      update(value === 'all');
     },
     () => {
-      set(renderAllNftImages, false);
+      set(renderAllNftImages, 'whitelisted');
     }
   );
 };
@@ -125,12 +125,12 @@ const warningUrl =
         @input="updateRenderingSetting($event, update)"
       >
         <template #default>
-          <RuiRadio :internal-value="true">
+          <RuiRadio internal-value="all">
             {{
               t('general_settings.nft_setting.label.render_setting.allow_all')
             }}
           </RuiRadio>
-          <RuiRadio :internal-value="false">
+          <RuiRadio internal-value="whitelisted">
             {{
               t(
                 'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
@@ -160,7 +160,7 @@ const warningUrl =
           deletable-chips
           clearable
           multiple
-          :disabled="renderAllNftImages"
+          :disabled="renderAllNftImages == 'all'"
           @change="onChange($event)"
         />
       </SettingsOption>

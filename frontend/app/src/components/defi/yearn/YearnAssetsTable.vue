@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
 import { ProtocolVersion } from '@/types/defi';
 
@@ -15,7 +18,7 @@ const props = withDefaults(
 );
 const { selectedAddresses, version } = toRefs(props);
 
-const sortBy = ref({
+const sortBy = ref<DataTableSortColumn | DataTableSortColumn[] | undefined>({
   column: 'roi',
   direction: 'desc' as const
 });
@@ -80,6 +83,7 @@ const vaults = computed(() => {
     <RuiDataTable
       :cols="columns"
       :rows="vaults"
+      row-attr="vaultToken"
       outlined
       :sort="sortBy"
       :loading="loading"

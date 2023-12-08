@@ -14,14 +14,14 @@ import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: EthDepositEvent | null;
-    nextSequence?: string | null;
-    groupHeader?: EthDepositEvent | null;
+    editableItem?: EthDepositEvent;
+    nextSequence?: string;
+    groupHeader?: EthDepositEvent;
   }>(),
   {
-    editableItem: null,
+    editableItem: undefined,
     nextSequence: '',
-    groupHeader: null
+    groupHeader: undefined
   }
 );
 
@@ -36,7 +36,7 @@ const assetPriceForm: Ref<InstanceType<
 > | null> = ref(null);
 
 const txHash: Ref<string> = ref('');
-const eventIdentifier: Ref<string | null> = ref(null);
+const eventIdentifier: Ref<string | undefined> = ref();
 const datetime: Ref<string> = ref('');
 const amount: Ref<string> = ref('');
 const usdValue: Ref<string> = ref('');
@@ -205,7 +205,7 @@ const save = async (): Promise<boolean> => {
   const payload: NewEthDepositEventPayload = {
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     txHash: get(txHash),
-    eventIdentifier: get(eventIdentifier),
+    eventIdentifier: get(eventIdentifier) ?? null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
     balance: {

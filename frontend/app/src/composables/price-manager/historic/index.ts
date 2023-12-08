@@ -3,7 +3,6 @@ import {
   type NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
-import { type Nullable } from '@rotki/common';
 import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload,
@@ -11,7 +10,7 @@ import {
 } from '@/types/prices';
 
 export const useHistoricPrices = (
-  filter: { fromAsset: Nullable<string>; toAsset: Nullable<string> },
+  filter: Ref<{ fromAsset?: string; toAsset?: string }>,
   t: ReturnType<typeof useI18n>['t']
 ) => {
   const loading = ref(false);

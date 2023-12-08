@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
-import {
-  type CustomAsset,
-  type CustomAssetRequestPayload
-} from '@/types/asset';
+import { type CustomAsset } from '@/types/asset';
 import {
   type Filters,
   type Matcher
@@ -26,7 +23,7 @@ withDefaults(
 const emit = defineEmits<{
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:pagination', pagination: CustomAssetRequestPayload): void;
+  (e: 'update:pagination', pagination: TablePagination<CustomAsset>): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
@@ -59,7 +56,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
-const updatePagination = (pagination: CustomAssetRequestPayload) =>
+const updatePagination = (pagination: TablePagination<CustomAsset>) =>
   emit('update:pagination', pagination);
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 const updateExpanded = (expandedAssets: CustomAsset[]) =>

@@ -23,10 +23,10 @@ export const Trade = z.object({
   tradeType: TradeType,
   amount: NumericString,
   rate: NumericString,
-  fee: NumericString.nullish(),
-  feeCurrency: z.string().nullish(),
-  link: z.string().nullish(),
-  notes: z.string().nullish()
+  fee: NumericString.nullable(),
+  feeCurrency: z.string().nullable(),
+  link: z.string().nullable(),
+  notes: z.string().nullable()
 });
 
 export type Trade = z.infer<typeof Trade>;

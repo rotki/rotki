@@ -6,16 +6,16 @@ const props = withDefaults(
   { progress: '' }
 );
 
-const { progress } = toRefs(props);
-const percentage = computed(() => {
-  const currentProgress = get(progress);
-  try {
-    const number = Number.parseFloat(currentProgress);
-    return number.toFixed(2);
-  } catch {
-    return currentProgress;
+const progress = computed(() => {
+  const currentProgress = props.progress;
+  if (!currentProgress) {
+    return 0;
   }
+  const number = Number.parseFloat(currentProgress);
+  return Number.isNaN(number) ? 0 : number.toFixed(2);
 });
+
+const percentage = useToNumber(progress);
 
 const { t } = useI18n();
 </script>
@@ -27,7 +27,7 @@ const { t } = useI18n();
     >
       <template v-if="progress">
         <div class="text-4xl mb-8">
-          {{ t('progress_screen.progress', { progress: percentage }) }}
+          {{ t('progress_screen.progress', { progress }) }}
         </div>
         <RuiProgress
           thickness="16"

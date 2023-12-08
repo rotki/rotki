@@ -58,8 +58,8 @@ const label = computed(() =>
   <span>
     <DefineButton>
       <RuiButton
-        :size="icon ? 'sm' : 'md'"
-        :variant="icon ? 'text' : 'filled'"
+        :size="icon ? 'sm' : undefined"
+        :variant="icon ? 'text' : 'default'"
         :icon="icon"
         color="primary"
         @click="exportCSV()"

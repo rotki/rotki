@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { apiKey, status } = toRefs(props);
 
-const currentValue = ref<string | null>(null);
+const currentValue = ref<string>();
 const editMode = ref<boolean>(false);
 const cancellable = ref<boolean>(false);
 

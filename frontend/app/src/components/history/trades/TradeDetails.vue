@@ -29,7 +29,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
       </span>
 
       <AmountDisplay
-        v-if="!!item.fee"
+        v-if="!!item.fee && item.feeCurrency"
         class="closed-trades__trade__fee"
         :asset="item.feeCurrency"
         :value="item.fee"
