@@ -44,6 +44,18 @@ const showConfirmation = () => {
 
 const { mobile } = useDisplay();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
+
+const itemHeight = 172;
+const margin = 8;
+
+const { list, containerProps, wrapperProps } = useVirtualList(notifications, {
+  itemHeight
+});
+
+const notificationStyle = {
+  height: `${itemHeight - margin}px`,
+  marginTop: `${margin}px`
+};
 </script>
 
 <template>
@@ -59,7 +71,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
     hide-overlay
     @input="input($event)"
   >
-    <div v-if="visible" class="h-full">
+    <div v-if="visible" class="h-full overflow-hidden">
       <div class="flex items-center p-2 gap-1">
         <RuiTooltip :open-delay="400">
           <template #activator>
@@ -95,12 +107,22 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
       </div>
       <div v-else :class="css.messages">
         <PendingTasks />
-        <div v-if="notifications.length > 0" class="pl-2" :class="css.content">
-          <VVirtualScroll :items="notifications" item-height="172px">
-            <template #default="{ item }">
-              <Notification :notification="item" @dismiss="remove($event)" />
-            </template>
-          </VVirtualScroll>
+        <div
+          v-if="notifications.length > 0"
+          :class="css.content"
+          class="ps-3.5 !overflow-y-scroll"
+          v-bind="containerProps"
+          @scroll="containerProps.onScroll"
+        >
+          <div v-bind="wrapperProps">
+            <Notification
+              v-for="item in list"
+              :key="item.index"
+              :notification="item.data"
+              :style="notificationStyle"
+              @dismiss="remove($event)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -150,10 +172,9 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
 
 .messages {
   height: calc(100% - 50px);
-  padding-right: 0.5rem;
 }
 
 .content {
-  height: calc(100% - 64px);
+  height: calc(100% - 74px);
 }
 </style>
