@@ -19,7 +19,7 @@ const { notify } = useNotificationsStore();
 const { t } = useI18n();
 const { isPackaged, metamaskImport } = useInterop();
 const { addAccounts, addEvmAccounts } = useBlockchains();
-const { setSubmitFunc } = useAccountDialog();
+const { setSubmitFunc, setValidation } = useAccountDialog();
 const { loading } = useAccountLoading();
 
 const save = async (): Promise<boolean> => {
@@ -74,6 +74,7 @@ const save = async (): Promise<boolean> => {
 
 onMounted(() => {
   setSubmitFunc(save);
+  setValidation({}, {});
 });
 </script>
 
