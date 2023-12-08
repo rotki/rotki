@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -86,7 +87,7 @@ class Accountant:
     def _process_skipping_exception(
             self,
             exception: Exception,
-            events: list['AccountingEventMixin'],
+            events: Sequence['AccountingEventMixin'],
             count: int,
             reason: str,
     ) -> int:
@@ -109,7 +110,7 @@ class Accountant:
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            events: list['AccountingEventMixin'],
+            events: Sequence['AccountingEventMixin'],
     ) -> int:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also

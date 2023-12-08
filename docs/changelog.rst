@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fix the issue where user profiles on the login screen are empty after logging out.
+* :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.
 * :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
 * :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.
 
