@@ -950,7 +950,7 @@ def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethere
 
     query_tokens_patch = patch('rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses', side_effect=mock_query_tokens)  # noqa: E501
     price_inquirer_patch = patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=lambda _: Price(ZERO))  # noqa: E501
-    proxies_inquirer_patch = patch('rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy', side_effect=lambda: {})  # noqa: E501
+    proxies_inquirer_patch = patch('rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy', side_effect=dict)  # noqa: E501
     defi_query_patch = patch('rotkehlchen.chain.ethereum.defi.zerionsdk.ZerionSDK._query_chain_for_all_balances', side_effect=lambda account: [])  # noqa: E501
     multieth_balance_patch = patch.object(chains_aggregator.ethereum.node_inquirer, 'get_multi_balance', lambda accounts: {ethereum_accounts[0]: ZERO})  # noqa: E501
     protocols_patch = patch('rotkehlchen.chain.aggregator.CHAIN_TO_BALANCE_PROTOCOLS', side_effect={ChainID.ETHEREUM: ()})  # noqa: E501

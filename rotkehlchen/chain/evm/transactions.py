@@ -224,12 +224,17 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 )
 
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                     f'transactions from Etherscan. Some transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Failed to query some transactions for {address} '
+                    f'on {self.evm_inquirer.chain_name}. '
+                    f'Please check the logs.',
                 )
                 return
 
@@ -330,12 +335,17 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     location_string=location_string,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Got error "{e!s}" while querying internal {self.evm_inquirer.chain_name} '
                     f'transactions from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Failed to query some internal transactions for {address} '
+                    f'on {self.evm_inquirer.chain_name}. '
+                    f'Please check the logs.',
                 )
                 return
 
@@ -401,12 +411,17 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             },
                         )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                     f'token transactions from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Failed to query some token transactions for {address} '
+                    f'on {self.evm_inquirer.chain_name}. '
+                    f'Please check the logs.',
                 )
 
         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
@@ -480,9 +495,14 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
                     log.debug(f'Address detection: queried {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> range {start_ts} - {end_ts}')  # noqa: E501
         except RemoteError as e:
-            self.msg_aggregator.add_error(
+            log.error(
                 f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                 f'token transactions from Etherscan. address: {address} spam detection failed',
+            )
+            self.msg_aggregator.add_warning(
+                f'Failed to check if {address} has been spammed '
+                f'with any tokens on {self.evm_inquirer.chain_name}. '
+                f'Please check the logs.',
             )
             return False
 
