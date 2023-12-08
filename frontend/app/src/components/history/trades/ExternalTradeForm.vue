@@ -317,10 +317,12 @@ onMounted(setEditMode);
           <RuiRadio
             :label="t('external_trade_form.trade_type.buy')"
             internal-value="buy"
+            data-cy="trade-input-buy"
           />
           <RuiRadio
             :label="t('external_trade_form.trade_type.sell')"
             internal-value="sell"
+            data-cy="trade-input-sell"
           />
         </RuiRadioGroup>
       </div>
