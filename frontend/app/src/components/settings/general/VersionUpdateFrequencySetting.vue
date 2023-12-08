@@ -52,6 +52,11 @@ const frequencyTransform = (value: string) =>
   value ? Number.parseInt(value) : value;
 const switchTransform = (value: boolean) => (value ? 24 : -1);
 
+const debounceUpdate = useDebounceFn(
+  (callback: VoidFunction) => callback(),
+  1500
+);
+
 onMounted(() => {
   resetVersionUpdateCheckFrequency();
 });
@@ -84,7 +89,7 @@ onMounted(() => {
           :error-messages="
             error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
           "
-          @input="update($event)"
+          @input="debounceUpdate(() => update($event))"
         />
       </SettingsOption>
     </div>

@@ -9,6 +9,11 @@ const successMessage = (limit: string) =>
     limit
   });
 
+const debounceUpdate = useDebounceFn(
+  (callback: VoidFunction) => callback(),
+  1500
+);
+
 onMounted(() => {
   set(btcDerivationGapLimit, get(limit).toString());
 });
@@ -30,7 +35,7 @@ onMounted(() => {
       type="number"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event ? parseInt($event) : $event)"
+      @input="debounceUpdate(() => update($event ? parseInt($event) : $event))"
     />
   </SettingsOption>
 </template>
