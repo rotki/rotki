@@ -278,7 +278,7 @@ const { dark } = useTheme();
             </div>
           </template>
         </VDataFooter>
-        <VDivider />
+        <RuiDivider />
       </template>
     </VDataTable>
     <div

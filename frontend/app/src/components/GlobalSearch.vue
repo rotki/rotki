@@ -501,7 +501,7 @@ onBeforeMount(async () => {
                 {{ item.text }}
               </template>
             </span>
-            <VSpacer />
+            <div class="grow" />
             <div v-if="item.price" class="text-right">
               <div class="text-caption">{{ t('common.price') }}:</div>
               <AmountDisplay

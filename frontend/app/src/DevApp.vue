@@ -6,27 +6,29 @@ const reset = () => {
   window.location.reload();
 };
 
-const resetState = 'Reset State ->';
+const resetState = 'Reset State';
 </script>
 
 <template>
-  <VApp id="rotki">
-    <VAppBar app fixed>
+  <div id="rotki" class="w-full h-full">
+    <nav
+      class="border-default bg-white dark:bg-black border-b flex gap-4 align-center fixed w-full p-2 top-0"
+    >
       <RouterLink :to="Routes.DASHBOARD">
         <RuiButton variant="text" icon>
           <RuiIcon name="home-3-line" />
         </RuiButton>
       </RouterLink>
-      <VSpacer />
-      <span> {{ resetState }}</span>
-      <RuiButton variant="text" icon class="ml-2" @click="reset()">
-        <RuiIcon name="restart-line" />
+      <div class="grow" />
+      <RuiButton variant="outlined" color="warning" @click="reset()">
+        <template #prepend>
+          <RuiIcon name="restart-line" />
+        </template>
+        {{ resetState }}
       </RuiButton>
-    </VAppBar>
-    <VMain>
-      <VContainer>
-        <RouterView />
-      </VContainer>
-    </VMain>
-  </VApp>
+    </nav>
+    <div class="w-full h-full">
+      <RouterView />
+    </div>
+  </div>
 </template>

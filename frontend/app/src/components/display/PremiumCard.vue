@@ -6,7 +6,7 @@ defineProps<{ title: string }>();
   <VCard>
     <VCardTitle>
       {{ title }}
-      <VSpacer />
+      <div class="grow" />
       <PremiumLock />
     </VCardTitle>
   </VCard>

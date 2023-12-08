@@ -22,13 +22,13 @@ const remoteDrawerImage =
       <RuiLogo :text="!isMini" :custom-src="remoteDrawerImage" />
     </div>
     <NavigationMenu :is-mini="isMini" />
-    <VSpacer />
+    <div class="grow" />
     <div
       v-if="!isMini"
       class="my-2 text-center px-2 app__navigation-drawer__version"
     >
       <span class="text-overline">
-        <VDivider class="mx-3 my-1" />
+        <RuiDivider class="mx-3 my-1" />
         {{ appVersion }}
       </span>
     </div>

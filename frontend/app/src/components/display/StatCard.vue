@@ -45,7 +45,7 @@ const { dark } = useTheme();
         <span v-if="title">
           <CardTitle>{{ title }}</CardTitle>
         </span>
-        <VSpacer v-if="locked" />
+        <div v-if="locked" class="grow" />
         <PremiumLock v-if="locked" />
       </VCardTitle>
       <VCardText>

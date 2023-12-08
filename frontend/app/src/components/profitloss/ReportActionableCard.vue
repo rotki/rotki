@@ -232,7 +232,7 @@ const { mdAndUp } = useDisplay();
         }}
       </h6>
 
-      <VSpacer />
+      <div class="grow" />
 
       <RuiTooltip :popper="{ placement: 'bottom' }" :open-delay="400">
         <template #activator>
@@ -275,7 +275,7 @@ const { mdAndUp } = useDisplay();
               {{ content.title }}
             </span>
           </VStepperStep>
-          <VDivider
+          <RuiDivider
             v-if="index < stepperContents.length - 1"
             :key="'divider-' + content.key"
           />

@@ -29,7 +29,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
           :loading="loading"
         />
       </div>
-      <VDivider class="my-4" />
+      <RuiDivider class="my-4" />
       <div class="flex items-center justify-between">
         <div class="text-rui-text-secondary">
           {{ t('loan_stake.unclaimed_rewards') }}
