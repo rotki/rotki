@@ -152,14 +152,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   <DashboardExpandableTable>
     <template #title>{{ title }}</template>
     <template #details>
-      <VTextField
+      <RuiTextField
         v-model="search"
-        outlined
+        variant="outlined"
+        color="primary"
         dense
-        prepend-inner-icon="mdi-magnify"
+        prepend-icon="search-line"
         :label="t('common.actions.search')"
         class="p-0 m-0 mr-4 dashboard-asset-table__search"
-        single-line
         hide-details
         clearable
         @click:clear="search = ''"

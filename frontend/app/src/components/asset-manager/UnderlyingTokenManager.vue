@@ -128,7 +128,6 @@ const deleteToken = (address: string) => {
           max="100"
           min="1"
           :error-messages="v$.weight.$errors.map(e => e.$message)"
-          persistent-hint
           :hint="t('underlying_token_manager.hint')"
           :label="t('underlying_token_manager.labels.weight')"
         >

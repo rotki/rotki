@@ -70,15 +70,16 @@ onMounted(() => {
       :transform="transform"
       @finished="finished()"
     >
-      <VTextField
+      <RuiTextField
         v-model="multiplier"
-        outlined
+        variant="outlined"
+        color="primary"
         min="0"
         :label="t('statistics_graph_settings.multiplier.label')"
         type="number"
         :success-messages="success"
         :error-messages="error || toMessages(v$.multiplier)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
 

@@ -170,7 +170,6 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
             format: dateInputFormatExample
           })
         "
-        persistent-hint
       >
         <template #append>
           <RuiButton

@@ -57,17 +57,17 @@ onMounted(() => {
       @updated="restart()"
       @finished="resetValue()"
     >
-      <VTextField
+      <RuiTextField
         v-model="inputValue"
-        outlined
+        variant="outlined"
+        color="primary"
         :label="label"
         :hint="hint"
-        persistent-hint
         type="number"
         :min="min"
         :success-messages="success"
         :error-messages="error || v$.inputValue.$errors.map(e => e.$message)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

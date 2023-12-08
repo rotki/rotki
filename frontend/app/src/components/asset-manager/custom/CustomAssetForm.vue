@@ -129,7 +129,6 @@ setSubmitFunc(save);
         :value="formData.name"
         variant="outlined"
         color="primary"
-        persistent-hint
         clearable
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
@@ -148,11 +147,14 @@ setSubmitFunc(save);
         @input="input({ customAssetType: $event })"
       />
     </div>
-    <VTextarea
+    <RuiTextArea
       data-cy="notes"
       :value="formData.notes"
-      outlined
-      persistent-hint
+      variant="outlined"
+      color="primary"
+      max-rows="5"
+      min-rows="3"
+      auto-grow
       clearable
       :label="t('common.notes')"
       @input="input({ notes: $event })"

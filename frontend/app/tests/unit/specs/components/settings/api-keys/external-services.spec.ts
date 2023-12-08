@@ -103,7 +103,7 @@ describe('/settings/api-keys/external-services', () => {
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
         .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key]'
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input'
         )
         .setValue('123');
       await wrapper.vm.$nextTick();
@@ -122,7 +122,7 @@ describe('/settings/api-keys/external-services', () => {
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
         .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key]'
+          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key] input'
         )
         .setValue('123');
       await wrapper.vm.$nextTick();
@@ -149,7 +149,7 @@ describe('/settings/api-keys/external-services', () => {
       mock.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
         .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key]'
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input'
         )
         .setValue('123');
       await wrapper.vm.$nextTick();

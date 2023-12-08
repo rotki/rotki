@@ -57,9 +57,10 @@ onMounted(() => {
       @updated="restart()"
       @finished="resetQueryPeriod()"
     >
-      <VTextField
+      <RuiTextField
         v-model="queryPeriod"
-        outlined
+        variant="outlined"
+        color="primary"
         class="general-settings__fields__periodic-client-query-period"
         :label="t('frontend_settings.label.query_period')"
         :hint="t('frontend_settings.label.query_period_hint')"
@@ -68,7 +69,7 @@ onMounted(() => {
         :max="maxQueryPeriod"
         :success-messages="success"
         :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
-        @change="callIfValid($event, update)"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

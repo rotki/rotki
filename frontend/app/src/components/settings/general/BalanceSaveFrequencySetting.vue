@@ -40,6 +40,8 @@ const successMessage = (frequency: string) =>
     frequency
   });
 
+const debounceUpdate = useDebounceFn(callIfValid, 1500);
+
 onMounted(() => {
   resetBalanceSaveFrequency();
 });
@@ -54,9 +56,10 @@ onMounted(() => {
     :success-message="successMessage"
     @finished="resetBalanceSaveFrequency()"
   >
-    <VTextField
+    <RuiTextField
       v-model="balanceSaveFrequency"
-      outlined
+      variant="outlined"
+      color="primary"
       min="1"
       :max="maxBalanceSaveFrequency"
       class="mt-2 general-settings__fields__balance-save-frequency"
@@ -66,7 +69,7 @@ onMounted(() => {
       :error-messages="
         error || v$.balanceSaveFrequency.$errors.map(e => e.$message)
       "
-      @change="callIfValid($event, update)"
+      @input="debounceUpdate($event, update)"
     />
   </SettingsOption>
 </template>

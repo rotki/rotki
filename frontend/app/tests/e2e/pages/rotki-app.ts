@@ -72,9 +72,9 @@ export class RotkiApp {
   }
 
   login(username: string, password = '1234') {
-    cy.get('[data-cy=username-input]').should('be.visible');
-    cy.get('[data-cy=username-input]').as('username');
-    cy.get('[data-cy=password-input]').as('password');
+    cy.get('[data-cy=username-input] input').should('be.visible');
+    cy.get('[data-cy=username-input] input').as('username');
+    cy.get('[data-cy=password-input] input').as('password');
     cy.get('@username').clear();
     cy.get('@username').should('be.empty');
     cy.get('@username').type(username);
@@ -91,7 +91,7 @@ export class RotkiApp {
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__logout').click();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    cy.get('[data-cy=username-input]').should('be.visible');
+    cy.get('[data-cy=username-input] input').should('be.visible');
   }
 
   changeCurrency(currency: string) {

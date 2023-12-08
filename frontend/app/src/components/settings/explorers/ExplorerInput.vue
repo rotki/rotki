@@ -34,18 +34,16 @@ const saveData = (value?: string) => {
 
 <template>
   <div class="flex items-start gap-4">
-    <VTextField
+    <RuiTextField
       v-model="model"
       class="flex-1"
-      outlined
+      variant="outlined"
+      color="primary"
       clearable
-      persistent-hint
       v-bind="attrs"
       v-on="listeners"
       @click:clear="saveData()"
-    >
-      <template #append-outer />
-    </VTextField>
+    />
     <RuiButton
       variant="text"
       class="mt-1"

@@ -361,10 +361,10 @@ onMounted(setEditMode);
         v-model="amount"
         required
         outlined
+        class="mb-2"
         :error-messages="toMessages(v$.amount)"
         data-cy="amount"
         :label="t('common.amount')"
-        persistent-hint
         :hint="t('external_trade_form.amount.hint')"
         @blur="v$.amount.$touch()"
       />
@@ -446,7 +446,6 @@ onMounted(setEditMode);
         ref="feeInput"
         v-model="fee"
         class="external-trade-form__fee"
-        persistent-hint
         outlined
         data-cy="fee"
         :required="!!feeCurrency"
@@ -476,7 +475,6 @@ onMounted(setEditMode);
       color="primary"
       prepend-icon="link"
       :label="t('external_trade_form.link.label')"
-      persistent-hint
       :hint="t('external_trade_form.link.hint')"
       :error-messages="errorMessages['link']"
     />
@@ -490,7 +488,6 @@ onMounted(setEditMode);
       data-cy="notes"
       class="mt-4"
       :label="t('external_trade_form.notes.label')"
-      persistent-hint
       :hint="t('external_trade_form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />

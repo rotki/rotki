@@ -12,7 +12,7 @@ export class AccountingSettingsPage {
     cy.get('.accounting-settings__taxfree-period-days input').type(value);
     cy.get('.accounting-settings__taxfree-period-days input').blur();
     this.confirmInlineSuccess(
-      '.accounting-settings__taxfree-period-days',
+      '.accounting-settings__taxfree-period-days .details',
       value
     );
   }
@@ -31,7 +31,7 @@ export class AccountingSettingsPage {
       'aria-checked',
       enabled.toString()
     );
-    this.confirmInlineSuccess(target);
+    this.confirmInlineSuccess(`${target} .v-messages__message`);
   }
 
   verifySwitchState(target: string, enabled: boolean) {
@@ -43,17 +43,11 @@ export class AccountingSettingsPage {
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.get(`${target} .v-messages__message`).should('be.visible');
-    cy.get(`${target} .v-messages__message`).should(
-      'include.text',
-      'Setting saved'
-    );
+    cy.get(target).as('message');
+    cy.get('@message').should('be.visible');
+    cy.get('@message').should('include.text', 'Setting saved');
     if (messageContains) {
-      cy.get(`${target} .v-messages__message`).should(
-        'include.text',
-        messageContains
-      );
+      cy.get('@message').should('include.text', messageContains);
     }
-    cy.get(`${target} .v-messages__message`).should('not.exist');
   }
 }

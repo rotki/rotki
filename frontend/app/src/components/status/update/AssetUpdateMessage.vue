@@ -102,7 +102,7 @@ const { t } = useI18n();
           :min="versions.local"
           :max="versions.remote"
           :label="t('asset_update.up_to_version')"
-          @change="onChange($event)"
+          @input="onChange($event)"
         />
       </div>
     </div>

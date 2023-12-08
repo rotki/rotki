@@ -40,6 +40,8 @@ const resetDateDisplayFormat = () => {
   set(dateDisplayFormat, get(format));
 };
 
+const debounceUpdate = useDebounceFn(callIfValid, 1500);
+
 const successMessage = (dateFormat: string) =>
   t('general_settings.validation.date_display_format.success', {
     dateFormat
@@ -60,12 +62,13 @@ onMounted(() => {
         t('general_settings.validation.date_display_format.error')
       "
       :success-message="successMessage"
-      class="flex items-start gap-4"
+      class="flex items-start gap-4 mt-2"
       @finished="resetDateDisplayFormat()"
     >
-      <VTextField
+      <RuiTextField
         v-model="dateDisplayFormat"
-        outlined
+        variant="outlined"
+        color="primary"
         class="general-settings__fields__date-display-format flex-1"
         :label="t('general_settings.labels.date_display_format')"
         type="text"
@@ -78,15 +81,14 @@ onMounted(() => {
             format: dateDisplayFormatExample
           })
         "
-        persistent-hint
-        @change="callIfValid($event, update)"
+        @input="debounceUpdate($event, update)"
       >
         <template #append>
           <RuiButton size="sm" variant="text" icon @click="formatHelp = true">
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
-      </VTextField>
+      </RuiTextField>
       <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
         <template #activator>
           <RuiButton

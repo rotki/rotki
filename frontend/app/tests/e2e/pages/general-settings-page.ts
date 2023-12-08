@@ -9,16 +9,24 @@ export class GeneralSettingsPage {
     cy.get('a.settings__general').click();
   }
 
+  setInputFieldValue(selector: string, value: string) {
+    cy.get(selector).as('input');
+    cy.get('@input').clear();
+    cy.get('@input').type(value);
+    cy.get('@input').blur();
+  }
+
   setFloatingPrecision(value: string) {
-    cy.get('.general-settings__fields__floating-precision input').clear();
-    cy.get('.general-settings__fields__floating-precision input').type(value);
-    cy.get('.general-settings__fields__floating-precision input').blur();
+    this.setInputFieldValue(
+      '.general-settings__fields__floating-precision input',
+      value
+    );
   }
 
   changeAnonymousUsageStatistics() {
     cy.get('.general-settings__fields__anonymous-usage-statistics').click();
     this.confirmInlineSuccess(
-      '.general-settings__fields__anonymous-usage-statistics'
+      '.general-settings__fields__anonymous-usage-statistics .v-messages__message'
     );
   }
 
@@ -28,15 +36,17 @@ export class GeneralSettingsPage {
   }
 
   setBalanceSaveFrequency(value: string) {
-    cy.get('.general-settings__fields__balance-save-frequency input').clear();
-    cy.get('.general-settings__fields__balance-save-frequency').type(value);
-    cy.get('.general-settings__fields__balance-save-frequency input').blur();
+    this.setInputFieldValue(
+      '.general-settings__fields__balance-save-frequency input',
+      value
+    );
   }
 
   setDateDisplayFormat(value: string) {
-    cy.get('.general-settings__fields__date-display-format input').clear();
-    cy.get('.general-settings__fields__date-display-format').type(value);
-    cy.get('.general-settings__fields__date-display-format input').blur();
+    this.setInputFieldValue(
+      '.general-settings__fields__date-display-format input',
+      value
+    );
   }
 
   toggleScrambleData() {
@@ -71,15 +81,10 @@ export class GeneralSettingsPage {
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.get(`${target} .v-messages__message`).should(
-      'include.text',
-      'Setting saved'
-    );
+    cy.get(target).as('message');
+    cy.get('@message').should('include.text', 'Setting saved');
     if (messageContains) {
-      cy.get(`${target} .v-messages__message`).should(
-        'include.text',
-        messageContains
-      );
+      cy.get('@message').should('include.text', messageContains);
     }
   }
 

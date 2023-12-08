@@ -443,7 +443,6 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             color="primary"
             clearable
             class="flex-1"
-            persistent-hint
             :hint="t('asset_form.labels.coingecko_hint')"
             :label="t('asset_form.labels.coingecko')"
             :error-messages="toMessages(v$.coingecko)"
@@ -473,7 +472,6 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             v-model="cryptocompare"
             variant="outlined"
             color="primary"
-            persistent-hint
             clearable
             class="flex-1"
             :label="t('asset_form.labels.cryptocompare')"
@@ -522,7 +520,6 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   v-model="protocol"
                   variant="outlined"
                   color="primary"
-                  persistent-hint
                   clearable
                   class="asset-form__protocol"
                   :label="t('common.protocol')"

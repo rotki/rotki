@@ -122,7 +122,6 @@ watch(
         outlined
         placeholder="100"
         :label="t('eth2_input.ownership_percentage')"
-        persistent-hint
         :hint="t('eth2_input.ownership.hint')"
         suffix="%"
         :error-messages="toMessages(v$.ownershipPercentage)"

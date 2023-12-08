@@ -55,8 +55,10 @@ describe('OnlineHistoryEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe('');
 
       expect(
@@ -84,8 +86,10 @@ describe('OnlineHistoryEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe(groupHeader.eventIdentifier);
 
       expect(
@@ -108,7 +112,10 @@ describe('OnlineHistoryEventForm.vue', () => {
       ).toBe('10');
 
       expect(
-        (wrapper.find('[data-cy=notes]').element as HTMLInputElement).value
+        (
+          wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])')
+            .element as HTMLTextAreaElement
+        ).value
       ).toBe('');
     });
 
@@ -123,8 +130,10 @@ describe('OnlineHistoryEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe(groupHeader.eventIdentifier);
 
       expect(
@@ -147,7 +156,10 @@ describe('OnlineHistoryEventForm.vue', () => {
       ).toBe(groupHeader.sequenceIndex.toString());
 
       expect(
-        (wrapper.find('[data-cy=notes]').element as HTMLInputElement).value
+        (
+          wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])')
+            .element as HTMLTextAreaElement
+        ).value
       ).toBe(groupHeader.notes);
     });
   });

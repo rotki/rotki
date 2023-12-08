@@ -45,9 +45,13 @@ const v$ = setValidation(
       :label="t('notes_menu.labels.title')"
       @input="input({ title: $event })"
     />
-    <VTextarea
+    <RuiTextArea
       :value="value.content"
-      outlined
+      variant="outlined"
+      color="primary"
+      max-rows="5"
+      min-rows="3"
+      auto-grow
       :label="t('notes_menu.labels.content')"
       :error-messages="toMessages(v$.content)"
       @input="input({ content: $event })"

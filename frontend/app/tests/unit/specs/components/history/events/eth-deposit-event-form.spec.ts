@@ -77,12 +77,15 @@ describe('EthDepositEventForm.vue', () => {
       ).toBe('');
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe('');
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe('');
 
       expect(
@@ -122,12 +125,15 @@ describe('EthDepositEventForm.vue', () => {
       ).toBe(groupHeader.validatorIndex.toString());
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe(groupHeader.txHash);
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe(groupHeader.eventIdentifier);
 
       expect(
@@ -172,12 +178,15 @@ describe('EthDepositEventForm.vue', () => {
       ).toBe(groupHeader.validatorIndex.toString());
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
+          .value
       ).toBe(groupHeader.txHash);
 
       expect(
-        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
-          .value
+        (
+          wrapper.find('[data-cy=eventIdentifier] input')
+            .element as HTMLInputElement
+        ).value
       ).toBe(groupHeader.eventIdentifier);
 
       expect(

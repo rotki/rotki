@@ -65,21 +65,21 @@ onMounted(() => {
           "
           @finished="resetRefreshPeriod()"
         >
-          <VTextField
+          <RuiTextField
             v-model="refreshPeriod"
-            outlined
+            variant="outlined"
+            color="primary"
             :disabled="!refreshEnabled"
             type="number"
             :min="minRefreshPeriod"
             :max="maxRefreshPeriod"
             :label="t('frontend_settings.label.refresh')"
-            persistent-hint
             :hint="t('frontend_settings.hint.refresh')"
             :success-messages="success"
             :error-messages="
               error || v$.refreshPeriod.$errors.map(e => e.$message)
             "
-            @change="callIfValid($event, update)"
+            @input="callIfValid($event, update)"
           />
         </SettingsOption>
       </div>

@@ -27,9 +27,10 @@ onBeforeMount(() => {
     :error-message="t('general_settings.validation.ksm_rpc.error')"
     :success-message="ksmSuccessMessage"
   >
-    <VTextField
+    <RuiTextField
       v-model="ksmRpcEndpoint"
-      outlined
+      variant="outlined"
+      color="primary"
       class="general-settings__fields__ksm-rpc-endpoint"
       :label="t('general_settings.labels.ksm_rpc_endpoint')"
       type="text"
@@ -38,7 +39,7 @@ onBeforeMount(() => {
       clearable
       @paste="update($event.clipboardData.getData('text'))"
       @click:clear="update('')"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>
