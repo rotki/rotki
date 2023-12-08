@@ -160,7 +160,9 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const { navigateToUserLogin } = useAppNavigation();
+
+  const logout = async (navigate: boolean = true): Promise<void> => {
     set(logged, false);
     resetTray();
     try {
@@ -171,6 +173,10 @@ export const useSessionStore = defineStore('session', () => {
         title: 'Logout failed',
         description: e.message
       });
+    }
+
+    if (navigate) {
+      await navigateToUserLogin();
     }
   };
 
