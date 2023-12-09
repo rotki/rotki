@@ -305,25 +305,26 @@ onMounted(setEditMode);
 
     <div class="grid md:grid-cols-3 gap-x-4 gap-y-2">
       <div data-cy="type">
-        <VRadioGroup
+        <RuiRadioGroup
           v-model="type"
-          class="md:mt-7"
+          class="pt-2"
+          color="primary"
           hide-details
-          :column="false"
+          inline
           required
           :label="t('external_trade_form.trade_type.label')"
         >
-          <VRadio
-            class="ml-4"
+          <RuiRadio
             :label="t('external_trade_form.trade_type.buy')"
-            value="buy"
+            internal-value="buy"
+            data-cy="trade-input-buy"
           />
-          <VRadio
-            class="ml-4"
+          <RuiRadio
             :label="t('external_trade_form.trade_type.sell')"
-            value="sell"
+            internal-value="sell"
+            data-cy="trade-input-sell"
           />
-        </VRadioGroup>
+        </RuiRadioGroup>
       </div>
       <div
         class="col-span-2 flex flex-col md:flex-row md:items-start gap-x-4 pt-4"

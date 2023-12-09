@@ -34,12 +34,9 @@ export class TradeHistoryPage {
       url: '/api/1/tasks/*'
     }).as('priceTask');
 
+    cy.get(`[data-cy=trade-input-${trade.trade_type}] input`).click();
     selectAsset('[data-cy=base-asset]', trade.base, trade.base_id);
     selectAsset('[data-cy=quote-asset]', trade.quote, trade.quote_id);
-    cy.get(`[data-cy=type] input[value=${trade.trade_type}]`)
-      .parentsUntil('.v-radio')
-      .first()
-      .click();
     cy.get('[data-cy=amount] input').type(trade.amount);
     cy.wait('@priceTask')
       .its('response.statusCode', { timeout: 10000 })
