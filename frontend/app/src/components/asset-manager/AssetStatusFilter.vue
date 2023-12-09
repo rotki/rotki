@@ -17,12 +17,19 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const css = useCssModule();
+
+const showMenu = ref(false);
 </script>
 
 <template>
-  <VMenu offset-y :close-on-content-click="false">
+  <VMenu v-model="showMenu" offset-y :close-on-content-click="false">
     <template #activator="{ on }">
-      <RuiButton variant="outlined" data-cy="asset-filter" v-on="on">
+      <RuiButton
+        variant="outlined"
+        data-cy="asset-filter"
+        color="secondary"
+        v-on="on"
+      >
         <template #append>
           <RuiIcon name="arrow-down-s-line" />
         </template>
@@ -55,6 +62,7 @@ const css = useCssModule();
       </VListItem>
       <VListItem>
         <RuiRadioGroup
+          v-if="showMenu"
           :value="value.ignoredAssetsHandling"
           color="primary"
           class="mt-0"

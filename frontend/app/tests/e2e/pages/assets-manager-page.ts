@@ -8,7 +8,7 @@ export class AssetsManagerPage {
   ignoredAssets() {
     cy.get('[data-cy=asset-filter]').click();
     return cy
-      .get('[data-cy=asset-filter-ignored] [data-cy=asset-filter-show_only]')
+      .get('[data-cy=asset-filter-show_only]')
       .invoke('text')
       .then(text => {
         cy.get('[data-cy=asset-filter]').click();
