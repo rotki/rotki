@@ -171,7 +171,7 @@ class BlockchainBalances:
         """This is a helper function to serialize the balances for BTC & BCH accounts."""
         accounts_balances: dict[BTCAddress, Balance] = getattr(self, blockchain.get_key())
         for account, balances in accounts_balances.items():
-            xpub_result = xpub_mappings.get(account, None)
+            xpub_result = xpub_mappings.get(account)
             if xpub_result is None:
                 if 'standalone' not in bitcoin_balances:
                     bitcoin_balances['standalone'] = {}

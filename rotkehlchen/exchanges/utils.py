@@ -29,7 +29,7 @@ def get_key_if_has_val(mapping: dict[str, Any], key: str) -> str | None:
     The assumption here is that the value of the key is str. If it's not str
     then this function will attempt to turn it into one.
     """
-    val = mapping.get(key, None)
+    val = mapping.get(key)
     # empty string has falsy value
     return str(val) if val else None
 
