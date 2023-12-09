@@ -122,7 +122,7 @@ VERSION_BYTES = {
 
 
 def _parse_prefix(prefix: bytes) -> PrefixParsingResult:
-    result = VERSION_BYTES.get(prefix, None)
+    result = VERSION_BYTES.get(prefix)
     if not result:
         raise XPUBError(f'Unknown XPUB prefix {prefix.hex()} found')
 

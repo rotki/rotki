@@ -124,7 +124,7 @@ class Aave(EthereumModule):
                     continue
                 reserve_address, _ = _get_reserve_address_decimals(token)
 
-                reserve_data = reserve_cache.get(reserve_address, None)
+                reserve_data = reserve_cache.get(reserve_address)
                 if reserve_data is None:
 
                     if balance_entry.protocol.name == 'Aave':

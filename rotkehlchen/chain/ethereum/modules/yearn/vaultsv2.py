@@ -119,8 +119,8 @@ class YearnVaultsV2(EthereumModule):
                     underlying_token = EvmToken(ethaddress_to_identifier(underlying[0].address))
                     vault_address = token.evm_address
 
-                    roi = roi_cache.get(vault_address, None)
-                    pps = pps_cache.get(vault_address, None)
+                    roi = roi_cache.get(vault_address)
+                    pps = pps_cache.get(vault_address)
                     if roi is None:
                         roi, pps = self._calculate_vault_roi_and_pps(token)
                         if roi is not None:

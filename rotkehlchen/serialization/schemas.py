@@ -213,7 +213,7 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
             **_kwargs: Any,
     ) -> None:
         super().validate_schema(data, **_kwargs)
-        given_underlying_tokens = data.get('underlying_tokens', None)
+        given_underlying_tokens = data.get('underlying_tokens')
         if given_underlying_tokens is not None:
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
             if weight_sum > ONE:

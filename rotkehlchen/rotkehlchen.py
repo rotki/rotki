@@ -636,7 +636,7 @@ class Rotkehlchen:
         # Add xpub data
         for xpub_entry in xpub_data:
             data_entry = xpub_entry.serialize()
-            addresses = xpub_mappings.get(xpub_entry, None)
+            addresses = xpub_mappings.get(xpub_entry)
             data_entry['addresses'] = addresses if addresses and len(addresses) != 0 else None
             data['xpubs'].append(data_entry)
         # Add standalone addresses

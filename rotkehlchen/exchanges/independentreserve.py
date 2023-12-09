@@ -133,7 +133,7 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
 
     May raise UnknownAsset
     """
-    asset = IR_TO_WORLD.get(symbol, None)
+    asset = IR_TO_WORLD.get(symbol)
     if asset is None:
         raise UnknownAsset(symbol)
     return asset.resolve_to_asset_with_oracles()

@@ -1565,7 +1565,7 @@ class BlockchainAccountDataSchema(TagsSettingSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        label = data.get('label', None)
+        label = data.get('label')
         if label == '':
             raise ValidationError("Blockchain account's label cannot be empty string. Use null instead.")  # noqa: E501
 

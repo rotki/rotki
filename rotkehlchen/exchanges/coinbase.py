@@ -616,7 +616,7 @@ class Coinbase(ExchangeInterface):
             if raw_data.get('status', '') != 'completed':
                 return None
 
-            payout_date = raw_data.get('payout_at', None)
+            payout_date = raw_data.get('payout_at')
             if payout_date:
                 timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
             else:
@@ -765,7 +765,7 @@ class Coinbase(ExchangeInterface):
         try:
             if raw_data.get('status', '') != 'completed':
                 return None
-            payout_date = raw_data.get('payout_at', None)
+            payout_date = raw_data.get('payout_at')
             if payout_date:
                 timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
             else:
