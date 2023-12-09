@@ -66,13 +66,19 @@ const css = useCssModule();
             })
           "
         >
-          <RuiRadio internal-value="none" :label="t('asset_table.show_all')" />
+          <RuiRadio
+            internal-value="none"
+            data-cy="asset-filter-none"
+            :label="t('asset_table.show_all')"
+          />
           <RuiRadio
             internal-value="exclude"
+            data-cy="asset-filter-exclude"
             :label="t('asset_table.only_show_unignored')"
           />
           <RuiRadio
             internal-value="show_only"
+            data-cy="asset-filter-show_only"
             :label="
               t(
                 'asset_table.only_show_ignored',

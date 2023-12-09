@@ -8,7 +8,7 @@ export class AssetsManagerPage {
   ignoredAssets() {
     cy.get('[data-cy=asset-filter]').click();
     return cy
-      .get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)')
+      .get('[data-cy=asset-filter-ignored] [data-cy=asset-filter-show_only]')
       .invoke('text')
       .then(text => {
         cy.get('[data-cy=asset-filter]').click();
@@ -19,7 +19,7 @@ export class AssetsManagerPage {
   ignoredAssetCount(number: number) {
     cy.get('[data-cy=asset-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('be.visible');
-    cy.get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)').should(
+    cy.get('[data-cy=asset-filter-show_only]').should(
       'include.text',
       number.toString()
     );
@@ -74,10 +74,8 @@ export class AssetsManagerPage {
     cy.get('[data-cy=asset-filter]').scrollIntoView();
     cy.get('[data-cy=asset-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('be.visible');
-    cy.get(
-      '[data-cy=asset-filter-ignored] .v-radio:first-child'
-    ).scrollIntoView();
-    cy.get('[data-cy=asset-filter-ignored] .v-radio:first-child').click();
+    cy.get('[data-cy=asset-filter-none]').scrollIntoView();
+    cy.get('[data-cy=asset-filter-none]').click();
     cy.get('[data-cy=asset-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
   }
