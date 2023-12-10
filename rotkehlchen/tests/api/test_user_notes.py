@@ -1,11 +1,10 @@
 from http import HTTPStatus
 
 import pytest
-
 import requests
+
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.db.filtering import UserNotesFilterQuery
-
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -41,7 +40,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
         json={
             'title': '#2',
             'content': 'ETH/MOON TP@GOBLIN',
-            'location': 'ledger actions',
+            'location': 'history events',
             'is_pinned': False,
         },
     )
@@ -135,7 +134,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
             'identifier': 1,
             'title': 'My TODO List',
             'content': 'Dont sleep, wake up!!!!!',
-            'location': 'ledger actions',
+            'location': 'history events',
             'last_update_timestamp': 12345678,
             'is_pinned': True,
         },

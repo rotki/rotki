@@ -364,12 +364,12 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
 
     # first normal deposit should have no problem
     assert len(movements) == 2
-    assert movements[0].asset == A_EUR
-    assert movements[0].amount == FVal('4000000')
-    assert movements[0].category == AssetMovementCategory.DEPOSIT
-    assert movements[1].asset == A_ETH
-    assert movements[1].amount == FVal('1')
-    assert movements[1].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[0].asset == A_ETH
+    assert movements[0].amount == FVal('1')
+    assert movements[0].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[1].asset == A_EUR
+    assert movements[1].amount == FVal('4000000')
+    assert movements[1].category == AssetMovementCategory.DEPOSIT
     errors = kraken.msg_aggregator.consume_errors()
     assert len(errors) == 1
 

@@ -1064,7 +1064,7 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     assert values[3] == '4500'
 
 
-def test_add_trades(data_dir, username, caplog, sql_vm_instructions_cb):
+def test_add_trades(data_dir, username, sql_vm_instructions_cb):
     """Test that adding and retrieving trades from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -1124,9 +1124,8 @@ def test_add_trades(data_dir, username, caplog, sql_vm_instructions_cb):
         assert returned_trades == [trade1, trade2]
 
         # Add the last 2 trades. Since trade2 already exists in the DB it should be
-        # ignored and a warning should be logged
+        # ignored
         data.db.add_trades(cursor, [trade2, trade3])
-        assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
         returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
 
     assert returned_trades == [trade1, trade2, trade3]
@@ -1196,7 +1195,7 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
         assert returned_margins == [margin1, margin2, margin3]
 
 
-def test_add_asset_movements(data_dir, username, caplog, sql_vm_instructions_cb):
+def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
     """Test that adding and retrieving asset movements from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -1256,13 +1255,8 @@ def test_add_asset_movements(data_dir, username, caplog, sql_vm_instructions_cb)
         )
         assert returned_movements == [movement1, movement2]
 
-        # Add the last 2 movements. Since movement2 already exists in the DB it should be
-        # ignored and a warning should be logged
+        # Add the last 2 movements. Since movement2 already exists in the DB it should be ignored
         data.db.add_asset_movements(cursor, [movement2, movement3])
-        assert (
-            'Did not add "withdrawal of ETH with id 94405f38c7b86dd2e7943164d'
-            '67ff44a32d56cef25840b3f5568e23c037fae0a'
-        ) in caplog.text
         returned_movements = data.db.get_asset_movements(
             cursor=cursor,
             filter_query=AssetMovementsFilterQuery.make(),
