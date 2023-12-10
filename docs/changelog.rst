@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7075` Coinbase api should now be usable again. Additionally history retrieval speed has improved by orders of magnitude.
 * :bug:`-` Fix the issue where user profiles on the login screen are empty after logging out.
 * :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.
 * :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
