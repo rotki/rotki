@@ -237,18 +237,6 @@ class Coinbase(ExchangeInterface):
             if result is None:
                 return False, msg
 
-            # and now try to get all deposits of an account to see if that's possible
-            method = f'accounts/{account_info[0][0]}/deposits'
-            result, msg = self._validate_single_api_key_action(method)
-            if result is None:
-                return False, msg
-
-            # and now try to get all withdrawals of an account to see if that's possible
-            method = f'accounts/{account_info[0][0]}/withdrawals'
-            result, msg = self._validate_single_api_key_action(method)
-            if result is None:
-                return False, msg
-
         return True, ''
 
     def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
@@ -281,7 +269,6 @@ class Coinbase(ExchangeInterface):
                 continue
 
             log.debug(f'Found coinbase account: {account_data}')
-
             if account_data.get('created_at') == updated_at:
                 continue  # assume no activity
 
@@ -685,7 +672,7 @@ class Coinbase(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as aother exchanges"""  # noqa: E501
+        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as other exchanges"""  # noqa: E501
         self._query_transactions()
         return [], (start_ts, end_ts)
 
@@ -838,8 +825,9 @@ class Coinbase(ExchangeInterface):
             amount = deserialize_asset_amount(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             notes = raw_data.get('details', {}).get('header', '')
-            if notes != '' and (title := raw_data['details'].get('title')) is not None:
-                notes += f' due to {title}'
+            tx_type = raw_data['type']
+            if notes != '':
+                notes += f' {"from coinbase earn" if tx_type == "send" else "as " + tx_type}'
             return HistoryEvent(
                 event_identifier=f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}',
                 sequence_index=0,

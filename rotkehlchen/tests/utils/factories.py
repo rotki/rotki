@@ -194,7 +194,7 @@ def make_user_notes_entries() -> list[dict[str, Any]]:
         {
             'title': 'Coins Watchlist #1',
             'content': '$NEAR $SCRT $ETH $BTC $AVAX',
-            'location': 'ledger actions',
+            'location': 'history events',
             'is_pinned': False,
         },
         {
