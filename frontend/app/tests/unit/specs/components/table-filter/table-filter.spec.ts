@@ -116,9 +116,11 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections > span:nth-child(1) .v-chip').text()).toBe(
-      'type = type 1'
-    );
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(1) div[role=button] span')
+        .text()
+    ).toBe('type = type 1');
 
     expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
       { type: ['type 1'] }
@@ -135,9 +137,11 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections > span:nth-child(2) .v-chip').text()).toBe(
-      'type = type 2'
-    );
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(2) div[role=button] span')
+        .text()
+    ).toBe('type = type 2');
 
     expect(wrapper.emitted()['update:matches']?.[1]).toEqual([
       { type: ['type 1', 'type 2'] }
@@ -145,7 +149,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     // Remove first selected item (type 1)
     await wrapper
-      .find('.selections > span:nth-child(1) .v-chip .v-chip__close')
+      .find('.selections > span:nth-child(1) div[role=button] button')
       .trigger('click');
 
     await wrapper.vm.$nextTick();
@@ -156,7 +160,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     // Click selected item remains (type 2), set it to text field
     await wrapper
-      .find('.selections > span:nth-child(1) .v-chip')
+      .find('.selections > span:nth-child(1) div[role=button] span')
       .trigger('click');
 
     await wrapper.vm.$nextTick();
@@ -197,9 +201,11 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections > span:nth-child(1) .v-chip').text()).toBe(
-      'type != type 1'
-    );
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(1) div[role=button] span')
+        .text()
+    ).toBe('type != type 1');
 
     expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
       { type: ['!type 1'] }
@@ -218,12 +224,16 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections > span:nth-child(1) .v-chip').text()).toBe(
-      'type = type 1'
-    );
-    expect(wrapper.find('.selections > span:nth-child(2) .v-chip').text()).toBe(
-      'type = type 2'
-    );
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(1) div[role=button] span')
+        .text()
+    ).toBe('type = type 1');
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(2) div[role=button] span')
+        .text()
+    ).toBe('type = type 2');
   });
 
   it('Restore selection with exclusion', async () => {
@@ -238,8 +248,10 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections > span:nth-child(1) .v-chip').text()).toBe(
-      'type != type 1'
-    );
+    expect(
+      wrapper
+        .find('.selections > span:nth-child(1) div[role=button] span')
+        .text()
+    ).toBe('type != type 1');
   });
 });

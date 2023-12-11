@@ -237,6 +237,8 @@ const showRemoveConfirmation = (item: Exchange) => {
         <template #item.syncEnabled="{ row }">
           <VSwitch
             :input-value="!isNonSyncExchange(row)"
+            hide-details
+            class="mt-0"
             @change="toggleSync(row)"
           />
         </template>

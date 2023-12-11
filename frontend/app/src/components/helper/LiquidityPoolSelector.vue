@@ -66,19 +66,17 @@ const { t } = useI18n();
         @input="input($event)"
       >
         <template #selection="data">
-          <VChip
-            outlined
-            class="pa-2"
+          <RuiChip
+            class="font-medium"
             v-bind="data.attrs"
-            close
+            closeable
+            size="sm"
             :input-value="data.selected"
             @click="data.select"
             @click:close="remove(data.item)"
           >
-            <span class="font-medium">
-              {{ getPoolName(type, data.item.assets) }}
-            </span>
-          </VChip>
+            {{ getPoolName(type, data.item.assets) }}
+          </RuiChip>
         </template>
         <template #item="{ item }">
           <VListItemContent

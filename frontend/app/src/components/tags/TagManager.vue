@@ -118,7 +118,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       @save="save($event)"
     />
 
-    <RuiDivider class="p-4" />
+    <RuiDivider class="my-6" />
 
     <div class="flex flex-col gap-4">
       <div class="text-h6">
@@ -128,6 +128,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
         <RuiTextField
           v-model="search"
           variant="outlined"
+          color="primary"
           dense
           class="w-[22rem]"
           prepend-icon="search-line"
@@ -136,6 +137,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
         />
       </div>
       <RuiDataTable
+        dense
         :rows="tags"
         row-attr="name"
         :cols="headers"
@@ -143,22 +145,14 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
         outlined
       >
         <template #item.name="{ row }">
-          <TagIcon :tag="row" />
+          <TagIcon :tag="row" small />
         </template>
         <template #item.action="{ row }">
-          <div v-if="!row.readOnly" class="flex items-center gap-4">
-            <RuiButton variant="text" icon size="sm" @click="editItem(row)">
-              <RuiIcon name="pencil-line" />
-            </RuiButton>
-            <RuiButton
-              variant="text"
-              icon
-              size="sm"
-              @click="showDeleteConfirmation(row)"
-            >
-              <RuiIcon name="delete-bin-5-line" />
-            </RuiButton>
-          </div>
+          <RowActions
+            v-if="!row.readOnly"
+            @edit-click="editItem(row)"
+            @delete-click="showDeleteConfirmation(row)"
+          />
         </template>
       </RuiDataTable>
     </div>

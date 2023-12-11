@@ -93,8 +93,8 @@ const removeChain = (chain: Blockchain) =>
           <RuiChip
             size="sm"
             variant="filled"
-            dismissible
-            @remove="update(removeChain(item))"
+            closeable
+            @click:close="update(removeChain(item))"
           >
             <span class="flex gap-1 -ml-1">
               <ChainIcon :chain="item" size="0.875rem" />

@@ -454,7 +454,7 @@ defineExpose({
     <template #item.label="{ item }">
       <div class="py-2 account-balance-table__account">
         <LabeledAddressDisplay :account="item" />
-        <TagDisplay :tags="item.tags" />
+        <TagDisplay :tags="item.tags" small />
       </div>
     </template>
     <template #item.balance.amount="{ item }">

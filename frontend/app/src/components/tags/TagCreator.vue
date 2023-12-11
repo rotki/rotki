@@ -93,6 +93,7 @@ watch(tag, () => {
     <div class="mt-4">
       <RuiTextField
         variant="outlined"
+        color="primary"
         class="tag_creator__name"
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
@@ -102,6 +103,7 @@ watch(tag, () => {
       />
       <RuiTextField
         variant="outlined"
+        color="primary"
         class="tag_creator__description"
         :value="tag.description"
         :label="t('common.description')"
@@ -109,43 +111,40 @@ watch(tag, () => {
       />
     </div>
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="flex flex-col items-center gap-4">
-        <div class="text-h6 text-center">
+      <RuiCard class="flex flex-col items-center">
+        <template #header>
           {{ t('tag_creator.labels.foreground') }}
-        </div>
-        <div>
-          <VColorPicker
-            flat
-            data-cy="tag-creator__color-picker__foreground"
-            mode="hexa"
-            hide-mode-switch
-            :value="`#${tag.foregroundColor}`"
-            @update:color="
-              changed({ foregroundColor: $event.hex.replace('#', '') })
-            "
-          />
-        </div>
-      </div>
-      <div class="flex flex-col items-center gap-4">
-        <div class="mb-3 text-h6 text-center">
+        </template>
+        <VColorPicker
+          flat
+          class="w-full"
+          data-cy="tag-creator__color-picker__foreground"
+          mode="hexa"
+          hide-mode-switch
+          :value="`#${tag.foregroundColor}`"
+          @update:color="
+            changed({ foregroundColor: $event.hex.replace('#', '') })
+          "
+        />
+      </RuiCard>
+      <RuiCard class="flex flex-col items-center">
+        <template #header>
           {{ t('tag_creator.labels.background') }}
-        </div>
-        <div>
-          <VColorPicker
-            flat
-            data-cy="tag-creator__color-picker__background"
-            hide-mode-switch
-            mode="hexa"
-            :value="`#${tag.backgroundColor}`"
-            @update:color="
-              changed({ backgroundColor: $event.hex.replace('#', '') })
-            "
-          />
-        </div>
-      </div>
+        </template>
+        <VColorPicker
+          flat
+          data-cy="tag-creator__color-picker__background"
+          hide-mode-switch
+          mode="hexa"
+          :value="`#${tag.backgroundColor}`"
+          @update:color="
+            changed({ backgroundColor: $event.hex.replace('#', '') })
+          "
+        />
+      </RuiCard>
     </div>
 
-    <div class="flex justify-end gap-4 p-4">
+    <div class="flex justify-end gap-4">
       <RuiButton v-if="editMode" width="100" @click="cancel()">
         {{ t('common.actions.cancel') }}
       </RuiButton>

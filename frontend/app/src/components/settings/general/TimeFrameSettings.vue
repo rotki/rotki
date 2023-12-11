@@ -57,9 +57,6 @@ const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
 const isTimeframeDisabled = (timeframe: TimeFrameSetting) =>
   !get(premium) && !worksWithoutPremium(timeframe);
 
-const chipClass = (timeframePeriod: TimeFrameSetting): string =>
-  timeframePeriod === get(value) ? '!bg-rui-primary !text-white' : '';
-
 const timeframeChange = (timeframe: TimeFrameSetting) => {
   emit('timeframe-change', timeframe);
 };
@@ -116,18 +113,18 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
         {{ t('timeframe_settings.visible_timeframes') }}
       </div>
 
-      <div class="flex items-center">
+      <div class="flex items-center gap-3" :class="{ 'mt-2': premium }">
         <PremiumLock
           v-if="!premium"
           :tooltip="t('overall_balances.premium_hint')"
         />
-        <VChip
+        <RuiChip
           v-for="(timeframe, i) in appendedVisibleTimeframes"
           :key="i"
-          :class="chipClass(timeframe)"
-          class="m-2"
-          small
-          :close="
+          :color="timeframe === value ? 'primary' : 'grey'"
+          size="sm"
+          clickable
+          :closeable="
             isTimeframesToggleable(timeframe) &&
             !isTimeframeDisabled(timeframe) &&
             selectableTimeframes.length > 1
@@ -137,7 +134,7 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
           @click="timeframeChange(timeframe)"
         >
           {{ timeframe }}
-        </VChip>
+        </RuiChip>
       </div>
 
       <template v-if="invisibleTimeframes.length > 0">
@@ -146,20 +143,21 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
         <div class="text-subtitle-1">
           {{ t('timeframe_settings.inactive_timeframes') }}
         </div>
-        <div>
-          <VChip
+        <div class="flex items-center gap-3 mt-2">
+          <RuiChip
             v-for="(timeframe, i) in invisibleTimeframes"
             :key="i"
-            class="m-2"
-            small
-            close-icon="mdi-plus"
+            size="sm"
+            close-icon="add-circle-line"
+            closeable
+            clickable
             :close="isTimeframesToggleable(timeframe)"
             :disabled="isTimeframeDisabled(timeframe)"
             @click:close="addVisibleTimeframe(timeframe)"
             @click="addVisibleTimeframe(timeframe)"
           >
             {{ timeframe }}
-          </VChip>
+          </RuiChip>
         </div>
       </template>
     </RuiCard>
