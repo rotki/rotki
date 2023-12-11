@@ -217,6 +217,11 @@ class EthWithdrawalEvent(EthStakingEvent):
         # withdrawal processing by querying deposits for that validator index.
         # saving pubkey and validator index for deposits.
 
+        is_taxable = True
+        event_settings, _ = accounting.events_accountant.rules_manager.get_event_settings(self)
+        if event_settings is not None:
+            is_taxable = event_settings.taxable
+
         name = 'Exit' if bool(self.is_exit_or_blocknumber) else 'Withdrawal'
         accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
@@ -225,7 +230,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             timestamp=self.get_timestamp_in_sec(),
             asset=self.asset,
             amount=profit_amount,
-            taxable=True,
+            taxable=is_taxable,
         )
         return 1
 

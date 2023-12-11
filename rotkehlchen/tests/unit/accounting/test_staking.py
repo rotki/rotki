@@ -164,7 +164,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
     accountant.process_history(
         start_ts=Timestamp(0),
         end_ts=ts_now(),
-        events=events,  # type: ignore[arg-type]
+        events=events,
     )
     processed_events = accountant.pots[0].processed_events
     assert processed_events[0].notes == 'Block reward of 0.126419309459217215 for block 17508810'
@@ -215,7 +215,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
     accountant.process_history(
         start_ts=Timestamp(0),
         end_ts=ts_now(),
-        events=events,  # type: ignore[arg-type]
+        events=events,
     )
     processed_events = accountant.pots[0].processed_events
     assert processed_events[0].notes == 'Mev reward of 0.126458404824519798 for block 17508810'

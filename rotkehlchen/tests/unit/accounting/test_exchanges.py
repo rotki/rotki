@@ -41,18 +41,16 @@ def test_account_for_coinbase_income_expense(rotkehlchen_api_server_with_exchang
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         report, events = accounting_create_and_process_history(rotki=rotki, start_ts=0, end_ts=1611426233)  # noqa: E501
 
-    expected_total_actions = 10
+    expected_total_actions = 7
     assert report['total_actions'] == expected_total_actions
     events_map = defaultdict(int)
     for event in events:
         events_map[event.type] += 1
 
-    events_map.pop(AccountingEventType.PREFORK_ACQUISITION)
     assert events_map[AccountingEventType.TRADE] == 4
-    assert events_map[AccountingEventType.FEE] == 2
-    assert events_map[AccountingEventType.ASSET_MOVEMENT] == 3
+    assert events_map[AccountingEventType.ASSET_MOVEMENT] == 1
     assert events_map[AccountingEventType.TRANSACTION_EVENT] == 2
-    assert sum(events_map.values()) == 11  # processed events
+    assert sum(events_map.values()) == 7  # processed events
 
 
 @pytest.mark.parametrize('have_decoders', [True])

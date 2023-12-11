@@ -152,7 +152,13 @@ watch(errorMessage, message => onError(message));
     >
       <div class="flex flex-col items-center justify-center">
         <template v-if="error">
-          <RuiButton variant="text" class="self-end" icon @click="clearError()">
+          <RuiButton
+            type="button"
+            variant="text"
+            class="self-end"
+            icon
+            @click="clearError()"
+          >
             <RuiIcon name="close-line" />
           </RuiButton>
           <RuiIcon size="48" name="error-warning-line" color="error" />
@@ -193,6 +199,7 @@ watch(errorMessage, message => onError(message));
                 </template>
               </i18n>
               <RuiButton
+                type="button"
                 class="mt-2"
                 color="primary"
                 variant="outlined"
@@ -205,6 +212,7 @@ watch(errorMessage, message => onError(message));
               {{ t('file_upload.drop_area') }}
               <div class="h-5" />
               <RuiButton
+                type="button"
                 class="mt-2"
                 color="primary"
                 variant="outlined"

@@ -1,21 +1,27 @@
 import pytest
 
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
+    assert_pnl_totals_close,
     check_pnls_and_csv,
     history1,
 )
 from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
@@ -25,6 +31,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
     deserialize_evm_tx_hash,
 )
@@ -367,3 +374,52 @@ def test_not_calculate_past_cost_basis(accountant, expected, google_service):
         history_list=history,
     )
     check_pnls_and_csv(accountant, expected, google_service)
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('accountant_without_rules', [True])
+@pytest.mark.parametrize('staking_taxable', [True, False])
+def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: bool) -> None:
+    """Test that eth withdrawal events respect the accounting rules"""
+    db = DBAccountingRules(accountant.db)
+    db.add_accounting_rule(
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        counterparty=None,
+        rule=TxEventSettings(
+            taxable=staking_taxable,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            accounting_treatment=None,
+        ),
+        links={},
+    )
+
+    staking_reward = FVal('0.017197')
+    history = [
+        EthWithdrawalEvent(
+            identifier=3,
+            validator_index=1,
+            timestamp=TimestampMS(1699319051000),
+            balance=Balance(staking_reward),
+            withdrawal_address=make_evm_address(),
+            is_exit=False,
+        ),
+    ]
+
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(1699319041),
+        end_ts=Timestamp(1699319061),
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    expected_pnls = PnlTotals({
+        AccountingEventType.HISTORY_EVENT: PNL(
+            taxable=staking_reward if staking_taxable else ZERO,
+            free=ZERO,
+        ),
+    })
+
+    pnls = accountant.pots[0].pnls
+    assert_pnl_totals_close(expected=expected_pnls, got=pnls)

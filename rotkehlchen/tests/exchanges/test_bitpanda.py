@@ -264,6 +264,17 @@ def test_asset_movements(mock_bitpanda):
 
     expected_movements = [AssetMovement(
         location=Location.BITPANDA,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address='0x54dca71a34f498e3053cba240895e51da5f89d24',
+        transaction_id='0xe45c1befc0968d2dab0374bc8d1aa3e193136dc769596d42e4d3274475bc7c60',
+        timestamp=1597072246,
+        asset=A_ETH,
+        amount=FVal('1.55165264'),
+        fee_asset=A_ETH,
+        fee=FVal('0.00762000'),
+        link='XXX',
+    ), AssetMovement(
+        location=Location.BITPANDA,
         category=AssetMovementCategory.DEPOSIT,
         address=None,
         transaction_id=None,
@@ -294,17 +305,6 @@ def test_asset_movements(mock_bitpanda):
         amount=FVal('6608.34105600'),
         fee_asset=A_USDT,
         fee=ZERO,
-        link='XXX',
-    ), AssetMovement(
-        location=Location.BITPANDA,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0x54dca71a34f498e3053cba240895e51da5f89d24',
-        transaction_id='0xe45c1befc0968d2dab0374bc8d1aa3e193136dc769596d42e4d3274475bc7c60',
-        timestamp=1597072246,
-        asset=A_ETH,
-        amount=FVal('1.55165264'),
-        fee_asset=A_ETH,
-        fee=FVal('0.00762000'),
         link='XXX',
     )]
     assert expected_movements == movements

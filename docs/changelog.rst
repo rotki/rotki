@@ -4,6 +4,11 @@ Changelog
 
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
+* :bug:`7075` Coinbase api should now be usable again. Additionally history retrieval speed has improved by orders of magnitude.
+* :bug:`-` Fix the issue where user profiles on the login screen are empty after logging out.
+* :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.
+* :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
+* :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.
 
 * :release:`1.31.1 <2023-12-06>`
 * :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.

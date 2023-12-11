@@ -1097,7 +1097,6 @@ class Rotkehlchen:
             passphrase=passphrase,
             binance_selected_trade_pairs=binance_selected_trade_pairs,
         )
-
         if is_success:
             # Success, save the result in the DB
             self.data.db.add_exchange(

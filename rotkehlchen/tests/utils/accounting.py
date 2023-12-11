@@ -1,6 +1,7 @@
 import csv
 import dataclasses
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -117,7 +118,7 @@ def accounting_history_process(
         accountant: 'Accountant',
         start_ts: Timestamp,
         end_ts: Timestamp,
-        history_list: list[AccountingEventMixin],
+        history_list: Sequence[AccountingEventMixin],
 ) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     report_id = accountant.process_history(
         start_ts=start_ts,

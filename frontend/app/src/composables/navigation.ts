@@ -1,7 +1,7 @@
 import { Routes } from '@/router/routes';
+import router from '@/router';
 
 export const useAppNavigation = () => {
-  const router = useRouter();
   const navigateToUserLogin = async (
     disableNoUserRedirection: boolean = false
   ) => {

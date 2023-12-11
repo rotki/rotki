@@ -108,8 +108,6 @@ const updateAssets = async (resolution?: ConflictResolution) => {
   }
 };
 
-const { navigateToUserLogin } = useAppNavigation();
-
 const restarting: Ref<boolean> = ref(false);
 const updateComplete = async () => {
   if (get(restarting)) {
@@ -117,10 +115,10 @@ const updateComplete = async () => {
   }
 
   set(restarting, true);
-  await logout();
-  if (!get(headless)) {
-    await navigateToUserLogin();
-  } else {
+  const headlessVal = get(headless);
+  await logout(!headlessVal);
+
+  if (headlessVal) {
     emit('complete');
   }
 

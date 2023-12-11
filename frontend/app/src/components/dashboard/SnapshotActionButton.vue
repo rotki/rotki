@@ -19,7 +19,6 @@ const { appSession } = useInterop();
 const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
-const { navigateToUserLogin } = useAppNavigation();
 const { dark } = useTheme();
 
 const refreshAllAndSave = async () => {
@@ -33,11 +32,6 @@ const refreshAllAndSave = async () => {
   }
   await fetchBalances(payload);
   await fetchNetValue();
-};
-
-const actionLogout = async () => {
-  await logout();
-  await navigateToUserLogin();
 };
 
 const importSnapshot = async () => {
@@ -79,7 +73,7 @@ const importSnapshot = async () => {
     });
 
     setTimeout(() => {
-      startPromise(actionLogout());
+      startPromise(logout());
     }, 3000);
   }
 

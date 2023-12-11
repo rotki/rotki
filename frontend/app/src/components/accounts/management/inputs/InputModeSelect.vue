@@ -21,6 +21,7 @@ const { isEvm } = useSupportedChains();
 const isSupportedEvmChain = isEvm(blockchain);
 const isBitcoin = computed(() => isBtcChain(get(blockchain)));
 const isMetaMask = computed(() => get(inputMode) === InputMode.METAMASK_IMPORT);
+const isXpub = computed(() => get(inputMode) === InputMode.XPUB_ADD);
 
 const metamaskDownloadLink = 'https://metamask.io/download/';
 
@@ -34,6 +35,21 @@ const { t } = useI18n();
 const { isPackaged } = useInterop();
 const { isAccountOperationRunning } = useAccountLoading();
 const loading = isAccountOperationRunning();
+
+const invalidCombination = logicOr(
+  logicAnd(logicNot(isSupportedEvmChain), isMetaMask),
+  logicAnd(logicNot(isBitcoin), isXpub)
+);
+
+watch(invalidCombination, invalid => {
+  if (invalid) {
+    update(InputMode.MANUAL_ADD);
+  }
+});
+
+onUnmounted(() => {
+  update(InputMode.MANUAL_ADD);
+});
 </script>
 
 <template>

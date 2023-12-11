@@ -8,7 +8,6 @@ const { username } = storeToRefs(useSessionAuthStore());
 const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { xs } = useDisplay();
-const { navigateToUserLogin } = useAppNavigation();
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
@@ -26,7 +25,7 @@ const showConfirmation = () =>
         await clearPassword();
       }
 
-      await Promise.all([logout(), navigateToUserLogin()]);
+      await logout();
     }
   );
 

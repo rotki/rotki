@@ -1673,7 +1673,7 @@ class DBHandler:
             movement.transaction_id,
         ) for movement in asset_movements]
         query = """
-            INSERT INTO asset_movements(
+            INSERT OR IGNORE INTO asset_movements(
               id,
               location,
               category,
@@ -1825,7 +1825,7 @@ class DBHandler:
             trade.notes,
         ) for trade in trades]
         query = """
-            INSERT INTO trades(
+            INSERT OR IGNORE INTO trades(
               id,
               timestamp,
               location,
