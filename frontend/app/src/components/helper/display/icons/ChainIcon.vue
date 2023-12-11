@@ -13,12 +13,14 @@ const props = withDefaults(defineProps<Props>(), {
 const { chain } = toRefs(props);
 
 const { getChainImageUrl } = useSupportedChains();
+
+const src = getChainImageUrl(chain);
 </script>
 
 <template>
   <AdaptiveWrapper>
-    <VImg
-      :src="getChainImageUrl(chain)"
+    <AppImage
+      :src="src"
       :width="size"
       :max-width="size"
       :height="size"

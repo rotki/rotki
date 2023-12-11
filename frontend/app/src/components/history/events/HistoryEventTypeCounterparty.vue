@@ -31,7 +31,7 @@ const [DefineText, ReuseText] = createReusableTemplate();
             :color="counterparty.color"
           />
 
-          <VImg
+          <AppImage
             v-else-if="counterparty.image"
             :src="`${imagePath}${counterparty.image}`"
             contain

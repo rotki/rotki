@@ -29,7 +29,7 @@ const css = useCssModule();
       class="grayscale group-hover:grayscale-0 m-0 mr-1 ml-10"
     >
       <AdaptiveWrapper>
-        <VImg :src="details.icon" width="24px" height="24px" />
+        <AppImage :src="details.icon" width="24px" height="24px" />
       </AdaptiveWrapper>
     </VListItemAvatar>
     <VListItemContent>

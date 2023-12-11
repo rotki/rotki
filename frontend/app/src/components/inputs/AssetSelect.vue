@@ -220,12 +220,11 @@ const listeners = useListeners();
       />
       <template v-else>
         <div class="pr-4">
-          <VImg
+          <AppImage
             v-if="item.imageUrl"
-            width="40px"
-            height="40px"
-            contain
             :src="item.imageUrl"
+            size="2.5rem"
+            contain
           />
           <AssetIcon v-else size="40px" :identifier="item.identifier" />
         </div>

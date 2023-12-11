@@ -50,7 +50,7 @@ const css = useCssModule();
       :open-delay="400"
     >
       <template #activator>
-        <VImg
+        <AppImage
           v-if="mode === 'icon' || mode === 'both'"
           contain
           max-width="32px"

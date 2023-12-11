@@ -40,7 +40,12 @@ onMounted(() => {
           >
             <template #prepend>
               <AdaptiveWrapper>
-                <VImg contain width="24" height="24" :src="provider.image" />
+                <AppImage
+                  contain
+                  width="1.5rem"
+                  height="1.5rem"
+                  :src="provider.image"
+                />
               </AdaptiveWrapper>
             </template>
             {{ provider.text }}

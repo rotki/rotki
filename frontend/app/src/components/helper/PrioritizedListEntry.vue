@@ -54,10 +54,9 @@ const labels: { [keys in PrioritizedListId]: string } = {
 <template>
   <div class="flex items-center gap-3">
     <AdaptiveWrapper v-if="data.icon">
-      <VImg
+      <AppImage
         :width="size"
         contain
-        position="left"
         :max-height="size"
         :min-height="size"
         :src="data.icon"

@@ -60,7 +60,7 @@ const getImage = (event: EventType): string => {
       <template #item.name="{ item }">
         <div class="flex items-center gap-4">
           <AdaptiveWrapper>
-            <VImg
+            <AppImage
               class="poap-delivery-airdrops__image"
               width="36px"
               height="36px"

@@ -71,7 +71,7 @@ const css = useCssModule();
         color="grey lighten-4"
         :class="css['lp-type-icon-avatar']"
       >
-        <VImg :width="16" :height="16" :src="icon" />
+        <AppImage :width="16" :height="16" :src="icon" />
       </VAvatar>
     </div>
   </div>

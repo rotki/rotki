@@ -106,8 +106,7 @@ const imageUrl = computed(() => {
         <RuiCard>
           <template #custom-header>
             <div class="flex items-center p-4 gap-4">
-              <VImg
-                aspect-ratio="1"
+              <AppImage
                 :src="imageUrl"
                 max-width="32px"
                 max-height="32px"

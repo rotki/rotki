@@ -9,13 +9,7 @@ defineProps<{ item: Item }>();
 
 <template>
   <span v-bind="$attrs" class="flex flex-row items-center">
-    <VImg
-      width="26px"
-      contain
-      position="left"
-      max-height="24px"
-      :src="item.icon"
-    />
+    <AppImage :src="item.icon" width="26px" contain max-height="24px" />
     <span class="ml-1">{{ item.name }}</span>
   </span>
 </template>

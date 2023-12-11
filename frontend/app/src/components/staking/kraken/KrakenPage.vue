@@ -68,7 +68,11 @@ const refresh = () => load(true);
       </span>
 
       <InternalLink :to="Routes.API_KEYS_EXCHANGES">
-        <VImg width="64px" contain src="/assets/images/protocols/kraken.svg" />
+        <AppImage
+          width="64px"
+          contain
+          src="/assets/images/protocols/kraken.svg"
+        />
       </InternalLink>
 
       <i18n

@@ -91,7 +91,7 @@ onBeforeMount(async () => {
         <template v-for="slot in ['item', 'selection']" #[slot]="data">
           <div v-if="data.item" :key="slot" class="flex items-center gap-2">
             <AdaptiveWrapper width="24" height="24">
-              <VImg
+              <AppImage
                 width="24px"
                 contain
                 max-height="24px"
@@ -123,7 +123,7 @@ onBeforeMount(async () => {
           </span>
           <div class="flex gap-4">
             <InternalLink to="/staking/eth2">
-              <VImg
+              <AppImage
                 :width="iconSize"
                 :height="iconSize"
                 contain
@@ -131,14 +131,14 @@ onBeforeMount(async () => {
               />
             </InternalLink>
             <InternalLink to="/staking/liquity">
-              <VImg
+              <AppImage
                 :width="iconSize"
                 contain
                 src="/assets/images/protocols/liquity.png"
               />
             </InternalLink>
             <InternalLink to="/staking/kraken">
-              <VImg
+              <AppImage
                 :width="iconSize"
                 contain
                 src="/assets/images/protocols/kraken.svg"

@@ -20,11 +20,11 @@ withDefaults(
     :color="`#${tag.backgroundColor}`"
     :text-color="`#${tag.foregroundColor}`"
   >
-    <VImg
+    <AppImage
       v-if="tag.icon"
       class="mr-2"
-      :width="20"
-      :height="20"
+      :width="1.25"
+      :height="1.25"
       :src="tag.icon"
     />
     {{ tag.name }}

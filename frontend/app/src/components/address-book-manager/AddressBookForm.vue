@@ -118,9 +118,10 @@ const { getBlockie } = useBlockie();
       <template #prepend-inner>
         <span>
           <VAvatar size="24" class="mr-2" color="grey">
-            <VImg
+            <AppImage
               v-if="value.address && isValidEthAddress(value.address)"
               :src="getBlockie(value.address)"
+              size="1.5rem"
             />
           </VAvatar>
         </span>
@@ -128,7 +129,7 @@ const { getBlockie } = useBlockie();
       <template #item="{ item }">
         <span v-if="item">
           <VAvatar size="24" class="mr-2">
-            <VImg :src="getBlockie(item)" />
+            <AppImage :src="getBlockie(item)" size="1.5rem" />
           </VAvatar>
         </span>
         {{ item }}
