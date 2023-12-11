@@ -726,6 +726,7 @@
     "useUpdateMessage": true,
     "useHistoryTransactionDecoding": true,
     "guessTimezone": true,
+    "toRem": true,
     "useClipboardItems": true,
     "isOfEnum": true,
     "isOfEventType": true
