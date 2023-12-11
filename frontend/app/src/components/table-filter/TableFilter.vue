@@ -381,18 +381,18 @@ const { t } = useI18n();
           @keydown.down.prevent
           @keydown.down="moveSuggestion(false)"
         >
-          <template #selection="{ item, selected }">
-            <VChip
+          <template #selection="{ item }">
+            <RuiChip
               label
-              small
-              class="font-medium px-2"
-              :input-value="selected"
-              close
+              size="sm"
+              class="font-medium !py-0 m-0.5"
+              clickable
+              closeable
               @click:close="removeSelection(item)"
               @click="clickItem(item)"
             >
               <SuggestedItem chip :suggestion="item" />
-            </VChip>
+            </RuiChip>
           </template>
           <template #no-data>
             <FilterDropdown

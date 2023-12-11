@@ -165,7 +165,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       <template #item.label="{ item }">
         <div class="py-4">
           <LabeledAddressDisplay v-if="item.account" :account="item.account" />
-          <TagDisplay :tags="item.tags" />
+          <TagDisplay :tags="item.tags" small />
         </div>
       </template>
       <template #item.balance.amount="{ item }">

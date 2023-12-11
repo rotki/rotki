@@ -22,7 +22,6 @@ const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
 
 <template>
   <div
-    class="p-2"
     :class="{
       flex: horizontal,
       blur: !shouldShowAmount

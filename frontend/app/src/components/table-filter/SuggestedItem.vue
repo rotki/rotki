@@ -78,7 +78,7 @@ const css = useCssModule();
 
 <style lang="scss" module>
 .comparator {
-  @apply py-1.5 border-l border-r border-white mx-1.5 flex items-center;
+  @apply py-0.5 border-l border-r border-white mx-1.5 flex items-center;
 }
 
 :global(.dark) {

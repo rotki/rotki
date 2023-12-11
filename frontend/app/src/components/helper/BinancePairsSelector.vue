@@ -16,7 +16,6 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'input', pairs: string[]): void }>();
 const { name, location } = toRefs(props);
-const { dark } = useTheme();
 
 const input = (value: string[]) => emit('input', value);
 
@@ -126,25 +125,25 @@ watch(search, search => {
     @change="search = ''"
   >
     <template #selection="data">
-      <VChip
+      <RuiChip
+        class="m-0.5"
+        size="sm"
         v-bind="data.attrs"
-        :input-value="data.selected"
         :click="data.select"
-        filter
-        close
+        closeable
         @click:close="data.parent.selectItem(data.item)"
       >
         {{ data.item }}
-      </VChip>
+      </RuiChip>
     </template>
     <template #item="data">
       <div
         class="binance-market-selector__list__item flex justify-between grow"
       >
         <div class="binance-market-selector__list__item__address-label">
-          <VChip :color="dark ? null : 'grey lighten-3'" filter>
+          <RuiChip size="sm">
             {{ data.item }}
-          </VChip>
+          </RuiChip>
         </div>
       </div>
     </template>

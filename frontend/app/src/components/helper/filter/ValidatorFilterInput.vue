@@ -40,8 +40,6 @@ const removeValidator = (validator: Eth2ValidatorEntry) => {
   input(selection);
 };
 
-const { dark } = useTheme();
-
 const { t } = useI18n();
 </script>
 
@@ -71,19 +69,17 @@ const { t } = useI18n();
     @input="input($event)"
   >
     <template #item="{ item }">
-      <ValidatorDisplay :validator="item" />
+      <ValidatorDisplay class="py-2" :validator="item" />
     </template>
     <template #selection="{ item }">
-      <VChip
-        small
-        :color="dark ? null : 'grey lighten-3'"
-        filter
+      <RuiChip
+        size="sm"
         class="text-truncate m-0.5"
-        close
+        closeable
         @click:close="removeValidator(item)"
       >
         <ValidatorDisplay :validator="item" horizontal />
-      </VChip>
+      </RuiChip>
     </template>
   </VAutocomplete>
 </template>

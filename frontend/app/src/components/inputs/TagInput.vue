@@ -134,30 +134,30 @@ watch(tags, () => {
       <template #no-data>
         <VListItem>
           <span class="subheading">{{ t('common.actions.create') }}</span>
-          <VChip
+          <RuiChip
             class="ml-2"
-            :color="newTagBackground"
+            :bg-color="newTagBackground"
             :text-color="newTagForeground"
             label
-            small
+            size="sm"
           >
             {{ search }}
-          </VChip>
+          </RuiChip>
         </VListItem>
       </template>
-      <template #selection="{ item, selected, select }">
-        <VChip
+      <template #selection="{ item, select }">
+        <RuiChip
           label
-          class="font-medium"
-          :input-value="selected"
-          :color="`#${item.backgroundColor}`"
+          class="font-medium m-0.5"
+          :bg-color="`#${item.backgroundColor}`"
           :text-color="`#${item.foregroundColor}`"
-          close
+          closeable
+          size="sm"
           @click:close="remove(item.name)"
           @click="select($event)"
         >
           {{ item.name }}
-        </VChip>
+        </RuiChip>
       </template>
       <template #item="{ item }">
         <template v-if="typeof item !== 'object'">

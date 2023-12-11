@@ -54,16 +54,12 @@ const evmOrEthDepositEvent = computed(
           :disable-scramble="!!onlineEvent"
         />
       </div>
-      <div v-if="event.customized" class="pt-1">
-        <RuiChip size="sm" color="primary">
-          <div class="flex items-center">
-            <RuiIcon name="file-edit-line" size="14" />
-            <div class="pl-2 text-caption font-bold">
-              {{ t('transactions.events.customized_event') }}
-            </div>
-          </div>
-        </RuiChip>
-      </div>
+      <RuiChip v-if="event.customized" class="mt-1" size="sm" color="primary">
+        <div class="flex items-center gap-2 text-caption font-bold">
+          <RuiIcon name="file-edit-line" size="14" />
+          {{ t('transactions.events.customized_event') }}
+        </div>
+      </RuiChip>
     </div>
   </div>
 </template>

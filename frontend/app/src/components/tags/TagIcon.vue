@@ -13,11 +13,11 @@ withDefaults(
 </script>
 
 <template>
-  <VChip
-    class="tag font-medium"
+  <RuiChip
+    class="tag font-medium [&>span]:flex"
     label
-    :small="small"
-    :color="`#${tag.backgroundColor}`"
+    :size="small ? 'sm' : 'md'"
+    :bg-color="`#${tag.backgroundColor}`"
     :text-color="`#${tag.foregroundColor}`"
   >
     <AppImage
@@ -28,5 +28,5 @@ withDefaults(
       :src="tag.icon"
     />
     {{ tag.name }}
-  </VChip>
+  </RuiChip>
 </template>

@@ -51,7 +51,7 @@ const updateSelection = (change: SelectionChangedEvent) => {
 
 const startDateTime = (selection: Quarter): string => {
   const startDate = QUARTER_STARTS[selection];
-  return `${startDate}/${year.value} 00:00`;
+  return `${startDate}/${get(year)} 00:00`;
 };
 
 const isStartAfterNow = (selection: Quarter) => {
@@ -60,31 +60,33 @@ const isStartAfterNow = (selection: Quarter) => {
 };
 
 const onChange = (change: { year?: string; quarter?: Quarter }) => {
+  const yearVal = get(year);
+  const quarterVal = get(quarter);
   updateSelection({
-    year: change?.year ?? year.value,
-    quarter: change?.quarter ?? quarter.value
+    year: change?.year ?? yearVal,
+    quarter: change?.quarter ?? quarterVal
   });
-  updatePeriod(year.value !== 'custom' ? periodEventPayload.value : null);
+  updatePeriod(yearVal !== 'custom' ? get(periodEventPayload) : null);
 };
 
-const start = computed(() => startDateTime(quarter.value));
-const isCustom = computed(() => year.value === 'custom');
+const start = computed(() => startDateTime(get(quarter)));
+const isCustom = computed(() => get(year) === 'custom');
 const end = computed(() => {
-  const endDate = QUARTER_ENDS[quarter.value];
-  return `${endDate}/${year.value} 23:59:59`;
+  const endDate = QUARTER_ENDS[get(quarter)];
+  return `${endDate}/${get(year)} 23:59:59`;
 });
 
 const periodEventPayload = computed<PeriodChangedEvent>(() => ({
-  start: start.value,
-  end: end.value
+  start: get(start),
+  end: get(end)
 }));
 
 onMounted(() => {
-  updatePeriod(year.value !== 'custom' ? periodEventPayload.value : null);
+  updatePeriod(get(year) !== 'custom' ? get(periodEventPayload) : null);
 });
 
 watch([year, quarter], () => {
-  updatePeriod(isCustom.value ? null : periodEventPayload.value);
+  updatePeriod(get(isCustom) ? null : get(periodEventPayload));
 });
 
 const periods = computed(() => {
@@ -118,59 +120,82 @@ const subPeriods = [
     name: 'Q4'
   }
 ];
+
+const yearModel = computed({
+  get() {
+    return get(year);
+  },
+  set(year) {
+    onChange({ year });
+  }
+});
+
+const quarterModel = computed({
+  get() {
+    return get(quarter);
+  },
+  set(quarter) {
+    onChange({ quarter });
+  }
+});
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <span class="text-subtitle-1 font-bold">{{ t('generate.period') }}</span>
-      <VChipGroup
-        :value="year"
-        mandatory
-        column
-        @change="onChange({ year: $event })"
+      <div class="text-subtitle-1 font-bold mb-2">
+        {{ t('generate.period') }}
+      </div>
+      <RuiButtonGroup
+        v-model="yearModel"
+        required
+        gap="md"
+        class="flex-wrap justify-center"
+        active-color="primary"
       >
-        <VChip
-          v-for="period in periods"
-          :key="period"
-          :color="year === period ? 'primary' : null"
-          class="px-4"
-          :value="period"
-          label
-        >
-          {{ period }}
-        </VChip>
-        <VChip
-          value="custom"
-          class="px-4"
-          label
-          :color="isCustom ? 'primary' : null"
-        >
-          {{ t('generate.custom_selection') }}
-        </VChip>
-      </VChipGroup>
+        <template #default>
+          <RuiButton
+            v-for="period in periods"
+            :key="period"
+            :color="year === period ? 'primary' : undefined"
+            class="px-4"
+            :value="period"
+          >
+            {{ period }}
+          </RuiButton>
+          <RuiButton
+            value="custom"
+            class="px-4"
+            :color="isCustom ? 'primary' : undefined"
+          >
+            {{ t('generate.custom_selection') }}
+          </RuiButton>
+        </template>
+      </RuiButtonGroup>
     </div>
-    <div v-if="year !== 'custom'">
-      <span class="text-subtitle-1 font-bold">
+    <div v-if="year !== 'custom'" class="pt-3.5">
+      <div class="text-subtitle-1 font-bold mb-2">
         {{ t('generate.sub_period_label') }}
-      </span>
-      <VChipGroup
-        :value="quarter"
-        mandatory
-        @change="onChange({ quarter: $event })"
+      </div>
+      <RuiButtonGroup
+        v-model="quarterModel"
+        required
+        gap="md"
+        class="flex-wrap justify-center"
+        active-color="primary"
       >
-        <VChip
-          v-for="subPeriod in subPeriods"
-          :key="subPeriod.id"
-          :color="quarter === subPeriod.id ? 'primary' : null"
-          :value="subPeriod.id"
-          :disabled="isStartAfterNow(subPeriod.id)"
-          label
-          class="px-4"
-        >
-          {{ subPeriod.name }}
-        </VChip>
-      </VChipGroup>
+        <template #default>
+          <RuiButton
+            v-for="subPeriod in subPeriods"
+            :key="subPeriod.id"
+            :color="quarter === subPeriod.id ? 'primary' : undefined"
+            :value="subPeriod.id"
+            :disabled="isStartAfterNow(subPeriod.id)"
+          >
+            {{ subPeriod.name }}
+          </RuiButton>
+        </template>
+      </RuiButtonGroup>
     </div>
   </div>
 </template>

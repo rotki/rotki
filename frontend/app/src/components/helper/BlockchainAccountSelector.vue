@@ -185,8 +185,6 @@ const input = (nextValue: null | AccountWithChain | AccountWithChain[]) => {
   emit('input', result);
 };
 
-const { dark } = useTheme();
-
 const getItemKey = (item: AccountWithChain) => item.address + item.chain;
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
@@ -226,22 +224,20 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
           </span>
         </template>
         <template #selection="data">
-          <VChip
+          <RuiChip
             v-if="multiple"
             :key="data.item.chain + data.item.address"
             v-bind="data.attrs"
-            :input-value="data.selected"
-            :click="data.select"
-            filter
-            close
-            close-label="overflow-x-hidden"
+            :clickable="data.select"
+            closeable
+            class="m-0.5"
             @click:close="data.parent.selectItem(data.item)"
           >
             <AccountDisplay
               :account="data.item"
               :hide-chain-icon="hideChainIcon"
             />
-          </VChip>
+          </RuiChip>
           <div v-else class="overflow-x-hidden">
             <AccountDisplay
               :account="data.item"
@@ -255,16 +251,12 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             class="blockchain-account-selector__list__item flex items-center justify-between grow"
           >
             <div class="blockchain-account-selector__list__item__address-label">
-              <VChip
-                :color="dark ? null : 'grey lighten-3'"
-                filter
-                class="text-truncate"
-              >
+              <RuiChip class="text-truncate">
                 <AccountDisplay
                   :account="data.item"
                   :hide-chain-icon="hideChainIcon"
                 />
-              </VChip>
+              </RuiChip>
             </div>
             <TagDisplay class="mb-1" :tags="data.item.tags" :small="true" />
           </div>
@@ -297,10 +289,6 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 
   :deep(.v-select__selections) {
     padding: 2px;
-
-    .v-chip {
-      margin: 2px;
-    }
 
     input {
       min-width: 0;

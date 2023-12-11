@@ -88,7 +88,9 @@ describe('TagInput.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections .v-chip').text()).toBe('tag1');
+    expect(wrapper.find('.selections div[role=button] span').text()).toBe(
+      'tag1'
+    );
   });
 
   test('should remove a tag', async () => {
@@ -110,7 +112,9 @@ describe('TagInput.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections .v-chip').text()).toBe('tag2');
+    expect(wrapper.find('.selections div[role=button] span').text()).toBe(
+      'tag2'
+    );
 
     await store.deleteTag('tag2');
 
@@ -123,6 +127,8 @@ describe('TagInput.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.selections .v-chip').exists()).toBeFalsy();
+    expect(
+      wrapper.find('.selections div[role=button] span').exists()
+    ).toBeFalsy();
   });
 });

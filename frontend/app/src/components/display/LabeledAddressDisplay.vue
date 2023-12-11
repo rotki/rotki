@@ -139,8 +139,6 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
 
 <style module lang="scss">
 .labeled-address-display {
-  background-color: var(--v-rotki-light-grey-base) !important;
-
   > span {
     @apply w-full flex items-center px-0;
   }
@@ -162,5 +160,12 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   }
 
   @apply w-full hover:cursor-default;
+  @apply bg-rui-grey-100 #{!important};
+}
+
+:global(.dark) {
+  .labeled-address-display {
+    @apply bg-rui-grey-900 #{!important};
+  }
 }
 </style>

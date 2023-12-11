@@ -56,23 +56,22 @@ const remove = (tag: string) => {
     @input="input($event)"
     @click:clear="input([])"
   >
-    <template #selection="{ item, selected, select }">
-      <VChip
+    <template #selection="{ item, select }">
+      <RuiChip
         label
-        small
-        class="font-medium"
-        :input-value="selected"
-        :color="`#${item.backgroundColor}`"
+        size="sm"
+        class="font-medium m-0.5"
+        :bg-color="`#${item.backgroundColor}`"
         :text-color="`#${item.foregroundColor}`"
-        close
+        closeable
         @click:close="remove(item.name)"
         @click="select($event)"
       >
         {{ item.name }}
-      </VChip>
+      </RuiChip>
     </template>
     <template #item="{ item }">
-      <TagIcon :tag="item" />
+      <TagIcon :tag="item" small />
       <span class="tag-input__tag__description ml-4">
         {{ item.description }}
       </span>

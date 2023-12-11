@@ -49,7 +49,7 @@ const { t } = useI18n();
             {{ t('profit_loss_report.actionable.show_issues') }}
           </span>
           <template #append>
-            <RuiChip size="sm" class="!text-white !p-0 !bg-rui-error-darker">
+            <RuiChip size="sm" color="error" class="!p-0 !bg-rui-error-darker">
               {{ actionableItemsLength.toString() }}
             </RuiChip>
           </template>

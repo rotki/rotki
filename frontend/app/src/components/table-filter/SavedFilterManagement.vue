@@ -139,14 +139,15 @@ const css = useCssModule();
           <RuiDivider v-if="index > 0" class="my-3" />
           <div class="flex px-4">
             <div class="flex flex-wrap pr-4 gap-1">
-              <VChip
+              <RuiChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
                 label
-                small
+                size="sm"
+                class="font-medium !py-0"
               >
                 <SuggestedItem chip :suggestion="filter" />
-              </VChip>
+              </RuiChip>
             </div>
             <div class="flex items-center gap-1">
               <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
