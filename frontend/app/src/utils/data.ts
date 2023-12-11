@@ -1,4 +1,5 @@
 import { BigNumber } from '@rotki/common';
+import { isString, isUndefined } from 'lodash-es';
 
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];
@@ -76,4 +77,25 @@ export const size = (bytes: number): string => {
 
   const symbol = 'KMGTPEZY'[i - 1] || '';
   return `${bytes.toFixed(2)}  ${symbol}B`;
+};
+
+/**
+ * Converts a string or number to rems
+ * @param {number | string} value
+ * @returns {string} - the converted value in rems
+ */
+export const toRem = (value?: number | string): string | undefined => {
+  if (isUndefined(value) || value === 'auto') {
+    return value;
+  }
+
+  if (isString(value)) {
+    if (value.endsWith('rem') || value.endsWith('%')) {
+      return value;
+    }
+
+    return `${Number(value.replace('px', '')) / 16}rem`;
+  }
+
+  return `${value}rem`;
 };

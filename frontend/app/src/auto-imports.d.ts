@@ -271,6 +271,7 @@ declare global {
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
+  const toRem: typeof import('./utils/data')['toRem']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
   const toSnakeCase: typeof import('./utils/text')['toSnakeCase']
   const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
@@ -997,6 +998,7 @@ declare module 'vue' {
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
+    readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
@@ -1716,6 +1718,7 @@ declare module '@vue/runtime-core' {
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
+    readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
