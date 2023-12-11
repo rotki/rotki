@@ -38,7 +38,7 @@ const { t } = useI18n();
     <div class="module-not-active__container flex flex-col items-center gap-8">
       <div class="flex items-center justify-center gap-4">
         <div v-for="module in modules" :key="module">
-          <VImg width="82px" contain :src="icon(module)" />
+          <AppImage width="82px" contain :src="icon(module)" />
         </div>
       </div>
       <i18n

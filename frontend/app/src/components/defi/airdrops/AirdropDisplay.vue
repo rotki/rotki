@@ -14,14 +14,13 @@ const image = getAirdropImageUrl(source);
 <template>
   <div class="flex items-center gap-4">
     <AdaptiveWrapper>
-      <VImg
-        width="24px"
-        height="24px"
-        contain
-        position="left"
-        max-height="32px"
-        max-width="32px"
+      <AppImage
         :src="image"
+        width="1.5rem"
+        height="1.5rem"
+        contain
+        max-height="2rem"
+        max-width="2rem"
       />
     </AdaptiveWrapper>
     <div>{{ name }}</div>

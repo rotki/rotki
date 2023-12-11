@@ -146,13 +146,12 @@ const fallbackData = computed(() => {
                   height="100%"
                   :src="imageUrl"
                 />
-                <VImg
+                <AppImage
                   v-else
                   :src="imageUrl"
                   width="100%"
                   height="100%"
                   contain
-                  aspect-ratio="1"
                 />
               </template>
             </div>

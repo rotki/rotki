@@ -91,7 +91,7 @@ onUnmounted(() => {
           :disabled="!isMetaMaskSupported() || loading"
         >
           <template #prepend>
-            <VImg
+            <AppImage
               contain
               max-width="24px"
               :src="`./assets/images/metamask-fox.svg`"

@@ -116,13 +116,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
               :src="imageUrl"
               :style="mediaStyle"
             />
-            <VImg
-              v-else
-              :src="imageUrl"
-              contain
-              aspect-ratio="1"
-              :style="mediaStyle"
-            />
+            <AppImage v-else :src="imageUrl" contain :style="mediaStyle" />
           </BaseExternalLink>
         </template>
 

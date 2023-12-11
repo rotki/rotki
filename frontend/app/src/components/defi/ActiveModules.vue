@@ -105,7 +105,7 @@ const showConfirmation = () => {
                 :class="module.enabled ? null : 'grayscale'"
                 @click="onModulePress(module)"
               >
-                <VImg
+                <AppImage
                   width="24px"
                   height="24px"
                   contain

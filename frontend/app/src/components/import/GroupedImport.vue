@@ -121,13 +121,10 @@ const form = computed(
         <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
           <div v-if="data.item" :key="slotName" class="flex items-center gap-3">
             <AdaptiveWrapper>
-              <VImg
+              <AppImage
                 v-if="data.item.logo"
                 :src="data.item.logo"
-                :width="30"
-                :height="30"
-                max-height="30px"
-                max-width="30px"
+                size="1.875rem"
                 contain
               />
               <RuiIcon

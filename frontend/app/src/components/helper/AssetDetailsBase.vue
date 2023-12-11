@@ -69,7 +69,7 @@ const loading: ComputedRef<boolean> = computed(() =>
     @click="navigate()"
   >
     <template #icon>
-      <VImg
+      <AppImage
         v-if="asset.imageUrl"
         contain
         height="26px"

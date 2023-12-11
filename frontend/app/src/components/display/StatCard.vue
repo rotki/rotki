@@ -22,7 +22,7 @@ const { dark } = useTheme();
   <VCard class="stat-card flex flex-columns pa-0 h-full overflow-hidden">
     <div v-if="bordered" class="stat-card__border">
       <div class="stat-card__image ma-2">
-        <VImg
+        <AppImage
           v-if="protocolIcon"
           contain
           alt="Protocol Logo"

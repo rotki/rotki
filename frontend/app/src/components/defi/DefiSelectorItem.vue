@@ -18,10 +18,8 @@ const getIcon = ({ protocol }: DefiProtocolInfo): string =>
 
 <template>
   <div class="flex flex-row items-center">
-    <VImg
-      aspect-ratio="1"
+    <AppImage
       contain
-      position="left"
       width="26px"
       max-height="24px"
       :src="`./assets/images/protocols/${getIcon(item)}.svg`"

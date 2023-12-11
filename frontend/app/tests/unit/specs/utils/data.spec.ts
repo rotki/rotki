@@ -59,4 +59,13 @@ describe('utils/data', () => {
       })
     ).toStrictEqual({ a: { number } });
   });
+
+  test('convert values to rems', () => {
+    expect(toRem('10px')).toStrictEqual('0.625rem');
+    expect(toRem('10')).toStrictEqual('10rem');
+    expect(toRem(10)).toStrictEqual('10rem');
+    expect(toRem('10rem')).toStrictEqual('10rem');
+    expect(toRem('10%')).toStrictEqual('10%');
+    expect(toRem('auto')).toStrictEqual('auto');
+  });
 });

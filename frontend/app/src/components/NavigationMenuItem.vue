@@ -32,7 +32,7 @@ const [DefineImage, ReuseImage] = createReusableTemplate();
   <div class="flex grow">
     <DefineImage>
       <VListItemIcon :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'">
-        <VImg
+        <AppImage
           v-if="image"
           contain
           width="24px"

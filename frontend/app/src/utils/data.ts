@@ -94,7 +94,9 @@ export const toRem = (value?: number | string): string | undefined => {
       return value;
     }
 
-    return `${Number(value.replace('px', '')) / 16}rem`;
+    if (value.endsWith('px')) {
+      return `${Number(value.replace('px', '')) / 16}rem`;
+    }
   }
 
   return `${value}rem`;

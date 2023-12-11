@@ -30,6 +30,12 @@ const props = withDefaults(
   }
 );
 
+const emit = defineEmits<{
+  (e: 'error'): void;
+  (e: 'load'): void;
+  (e: 'loadstart'): void;
+}>();
+
 const css = useCssModule();
 
 const { width, height, maxWidth, maxHeight, size } = toRefs(props);
@@ -38,14 +44,30 @@ const error: Ref<boolean> = ref(false);
 const success: Ref<boolean> = ref(false);
 
 const style = computed(() => ({
-  width: getSizeOrValue(get(width)),
-  height: getSizeOrValue(get(height)),
-  maxWidth: getSizeOrValue(get(maxWidth)),
-  maxHeight: getSizeOrValue(get(maxHeight))
+  width: getSizeOrValue(width),
+  height: getSizeOrValue(height),
+  maxWidth: getSizeOrValue(maxWidth),
+  maxHeight: getSizeOrValue(maxHeight)
 }));
 
-const getSizeOrValue = (value: MaybeRef<string | number>) =>
+const getSizeOrValue = (value: MaybeRef<string | number | undefined>) =>
   isDefined(get(size)) ? toRem(get(size)) : toRem(get(value));
+
+const onError = () => {
+  set(error, true);
+  emit('error');
+};
+
+const onLoad = () => {
+  set(error, false);
+  set(success, true);
+  emit('load');
+};
+
+const onLoadStart = () => {
+  set(error, false);
+  emit('loadstart');
+};
 </script>
 
 <template>
@@ -57,12 +79,9 @@ const getSizeOrValue = (value: MaybeRef<string | number>) =>
       :src="src"
       :sizes="sizes"
       :srcset="srcset"
-      @error="error = true"
-      @load="
-        error = false;
-        success = true;
-      "
-      @loadstart="error = false"
+      @error="onError()"
+      @loadstart="onLoadStart()"
+      @load="onLoad()"
     />
   </div>
 </template>

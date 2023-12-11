@@ -141,7 +141,7 @@ const disableAll = async () => {
             width="26px"
             height="26px"
           >
-            <VImg width="26px" contain max-height="24px" :src="item.icon" />
+            <AppImage width="26px" contain max-height="24px" :src="item.icon" />
           </AdaptiveWrapper>
           <span> {{ item.name }}</span>
         </div>

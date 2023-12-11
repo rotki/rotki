@@ -70,7 +70,7 @@ const loading = isAccountOperationRunning();
             :open-delay="400"
           >
             <template #activator>
-              <VImg height="24px" width="24px" contain :src="module.icon" />
+              <AppImage height="24px" width="24px" contain :src="module.icon" />
             </template>
             <span>{{ module.name }}</span>
           </RuiTooltip>

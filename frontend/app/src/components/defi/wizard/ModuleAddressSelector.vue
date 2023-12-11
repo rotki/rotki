@@ -38,7 +38,7 @@ onMounted(async () => {
             >
               <span class="flex flex-col items-center justify-start">
                 <AdaptiveWrapper>
-                  <VImg
+                  <AppImage
                     width="24px"
                     contain
                     max-height="24px"
@@ -60,7 +60,7 @@ onMounted(async () => {
         <VStepperContent v-for="n in steps" :key="`${n}-content`" :step="n">
           <div class="flex items-center gap-3">
             <AdaptiveWrapper>
-              <VImg
+              <AppImage
                 width="30px"
                 contain
                 max-height="24px"
