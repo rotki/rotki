@@ -49,7 +49,6 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
   </ProgressScreen>
   <TablePageLayout
     v-else
-    class="mt-8"
     :title="[
       t('navigation_menu.defi'),
       t('navigation_menu.defi_sub.deposits_sub.liquidity'),

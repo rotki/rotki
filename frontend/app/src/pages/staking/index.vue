@@ -3,9 +3,8 @@ import { Routes } from '@/router/routes';
 
 interface StakingInfo {
   id: string;
-  icon: string;
+  image: string;
   name: string;
-  img?: boolean;
 }
 
 const props = withDefaults(
@@ -17,7 +16,7 @@ const props = withDefaults(
   }
 );
 
-const iconSize = '64px';
+const imageSize = '64px';
 
 const pages = {
   eth2: defineAsyncComponent(
@@ -35,20 +34,20 @@ const { location } = toRefs(props);
 
 const { t } = useI18n();
 
-const staking = computed<StakingInfo[]>(() => [
+const staking: ComputedRef<StakingInfo[]> = computed(() => [
   {
     id: 'eth2',
-    icon: './assets/images/protocols/ethereum.svg',
+    image: './assets/images/protocols/ethereum.svg',
     name: t('staking.eth2')
   },
   {
     id: 'liquity',
-    icon: './assets/images/protocols/liquity.png',
+    image: './assets/images/protocols/liquity.png',
     name: t('staking.liquity')
   },
   {
     id: 'kraken',
-    icon: './assets/images/protocols/kraken.svg',
+    image: './assets/images/protocols/kraken.svg',
     name: t('staking.kraken')
   }
 ]);
@@ -95,7 +94,7 @@ onBeforeMount(async () => {
                 width="24px"
                 contain
                 max-height="24px"
-                :src="data.item.icon"
+                :src="data.item.image"
               />
             </AdaptiveWrapper>
             {{ data.item.name }}
@@ -122,28 +121,20 @@ onBeforeMount(async () => {
             {{ t('staking_page.page.title') }}
           </span>
           <div class="flex gap-4">
-            <InternalLink to="/staking/eth2">
-              <AppImage
-                :width="iconSize"
-                :height="iconSize"
-                contain
-                src="/assets/images/protocols/ethereum.svg"
-              />
-            </InternalLink>
-            <InternalLink to="/staking/liquity">
-              <AppImage
-                :width="iconSize"
-                contain
-                src="/assets/images/protocols/liquity.png"
-              />
-            </InternalLink>
-            <InternalLink to="/staking/kraken">
-              <AppImage
-                :width="iconSize"
-                contain
-                src="/assets/images/protocols/kraken.svg"
-              />
-            </InternalLink>
+            <RuiTooltip v-for="item in staking" :key="item.id" open-delay="400">
+              <template #activator>
+                <InternalLink
+                  :to="Routes.STAKING.replace(':location*', item.id)"
+                >
+                  <AppImage
+                    :size="imageSize"
+                    contain
+                    :src="item.image"
+                  />
+                </InternalLink>
+              </template>
+              {{ item.name }}
+            </RuiTooltip>
           </div>
 
           <div

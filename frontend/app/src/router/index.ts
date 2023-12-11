@@ -170,36 +170,9 @@ const routes = setupLayouts([
             path: Routes.DEFI_DEPOSITS_LIQUIDITY,
             component: async () =>
               import('../pages/defi/deposits/liquidity/index.vue'),
-            children: [
-              {
-                path: '',
-                redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2
-              },
-              {
-                path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
-                component: () =>
-                  import(
-                    '../pages/defi/deposits/liquidity/uniswap_v2/index.vue'
-                  )
-              },
-              {
-                path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
-                component: () =>
-                  import(
-                    '../pages/defi/deposits/liquidity/uniswap_v3/index.vue'
-                  )
-              },
-              {
-                path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-                component: () =>
-                  import('../pages/defi/deposits/liquidity/balancer/index.vue')
-              },
-              {
-                path: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
-                component: () =>
-                  import('../pages/defi/deposits/liquidity/sushiswap/index.vue')
-              }
-            ]
+            props: (route: Route) => ({
+              location: route.params.location ?? null
+            })
           }
         ]
       },

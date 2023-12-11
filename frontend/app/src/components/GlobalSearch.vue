@@ -135,39 +135,11 @@ const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
       ]
     },
     {
-      ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY,
       texts: [
         Routes.DEFI.text,
         Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.text
-      ]
-    },
-    {
-      ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
-      texts: [
-        Routes.DEFI.text,
-        Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3.text
-      ]
-    },
-    {
-      ...Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-      texts: [
-        Routes.DEFI.text,
-        Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER.text
-      ]
-    },
-    {
-      ...Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
-      texts: [
-        Routes.DEFI.text,
-        Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP.text
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text
       ]
     },
     {

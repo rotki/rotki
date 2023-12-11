@@ -1,8 +1,7 @@
 export interface TabContent {
   readonly text: string;
+  readonly icon: string;
   readonly route: string;
-  readonly hidden?: boolean;
-  readonly hideHeader?: boolean;
 }
 
 export const getClass = (route: string): string =>
