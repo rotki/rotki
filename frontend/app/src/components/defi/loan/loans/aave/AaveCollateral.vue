@@ -39,11 +39,11 @@ const totalCollateralUsd = totalCollateral(loan);
     <RuiDivider v-if="loan.collateral.length > 0" class="my-4" />
 
     <LoanRow :title="t('loan_collateral.stable_apr')" class="mb-2">
-      <PercentageDisplay :value="loan.stableApr ? loan.stableApr : null" />
+      <PercentageDisplay :value="loan.stableApr" />
     </LoanRow>
 
     <LoanRow :title="t('loan_collateral.variable_apr')">
-      <PercentageDisplay :value="loan.variableApr ? loan.variableApr : null" />
+      <PercentageDisplay :value="loan.variableApr" />
     </LoanRow>
   </StatCard>
 </template>
