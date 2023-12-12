@@ -64,6 +64,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Lockedgno',
         'Makerdao',
         'Makerdaosai',
+        'Metamask',
         'Monerium',
         'Polygon',
         'Octant',
@@ -151,6 +152,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'thegraph',
         'octant',
         'monerium',
+        'metamask_swaps',
     }
 
 
