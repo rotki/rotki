@@ -40,8 +40,6 @@ const successMessage = (frequency: string) =>
     frequency
   });
 
-const debounceUpdate = useDebounceFn(callIfValid, 1500);
-
 onMounted(() => {
   resetBalanceSaveFrequency();
 });
@@ -69,7 +67,7 @@ onMounted(() => {
       :error-messages="
         error || v$.balanceSaveFrequency.$errors.map(e => e.$message)
       "
-      @input="debounceUpdate($event, update)"
+      @input="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>
