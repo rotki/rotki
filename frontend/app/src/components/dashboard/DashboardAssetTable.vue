@@ -23,6 +23,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const css = useCssModule();
 
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
@@ -159,7 +160,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         dense
         prepend-icon="search-line"
         :label="t('common.actions.search')"
-        class="p-0 m-0 mr-4 dashboard-asset-table__search"
+        :class="css['dashboard-asset-table__search']"
         hide-details
         clearable
         @click:clear="search = ''"
@@ -294,10 +295,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   </DashboardExpandableTable>
 </template>
 
-<style scoped lang="scss">
+<style module lang="scss">
 .dashboard-asset-table {
   &__search {
-    max-width: 450px;
+    @apply p-0 m-0 max-w-[28rem] w-full mr-4 grow text-sm;
   }
 }
 </style>
