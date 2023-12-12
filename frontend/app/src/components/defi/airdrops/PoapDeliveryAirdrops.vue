@@ -72,14 +72,11 @@ const getImage = (event: EventType): string => {
         </div>
       </template>
       <template #item.link="{ item }">
-        <ExternalLinkButton
-          icon
-          color="primary"
-          :url="item.link"
-          variant="text"
-        >
-          <RuiIcon size="16" name="external-link-line" />
-        </ExternalLinkButton>
+        <ExternalLink :url="item.link" custom>
+          <RuiButton variant="text" color="primary" icon>
+            <RuiIcon size="16" name="external-link-line" />
+          </RuiButton>
+        </ExternalLink>
       </template>
     </DataTable>
   </TableExpandContainer>

@@ -212,12 +212,12 @@ const showRemoveConfirmation = (item: Exchange) => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row-reverse">
+      <div class="flex flex-row-reverse mb-2">
         <HintMenuIcon>
           <i18n path="exchange_settings.subtitle" tag="div">
-            <BaseExternalLink
+            <ExternalLink
               :text="t('exchange_settings.usage_guide')"
-              :href="usageGuideUrl + '#adding-an-exchange'"
+              :url="usageGuideUrl + '#adding-an-exchange'"
             />
           </i18n>
         </HintMenuIcon>

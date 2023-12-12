@@ -21,18 +21,17 @@ withDefaults(
 );
 
 const { t } = useI18n();
-const { premiumURL } = useInterop();
 const { xs } = useDisplay();
 </script>
 
 <template>
-  <tr class="tr">
-    <td :colspan="xs ? 2 : colspan" class="upgrade-row font-medium">
+  <tr class="bg-transparent">
+    <td :colspan="xs ? 2 : colspan" class="font-medium py-2">
       <i18n
         v-if="events"
-        tag="span"
         path="upgrade_row.events"
-        class="flex flex-row justify-center items-end"
+        tag="div"
+        class="md:text-center"
       >
         <template #total>
           {{ total }}
@@ -44,25 +43,20 @@ const { xs } = useDisplay();
           {{ label }}
         </template>
         <template #link>
-          <BaseExternalLink
-            class="ml-1"
+          <ExternalLink
             :text="t('upgrade_row.rotki_premium')"
-            :href="premiumURL"
+            premium
+            color="primary"
           />
         </template>
         <template #from>
           <DateDisplay class="mx-1" :timestamp="timeStart" />
         </template>
         <template #to>
-          <DateDisplay class="ms-1" :timestamp="timeEnd" />
+          <DateDisplay class="ml-1" :timestamp="timeEnd" />
         </template>
       </i18n>
-      <i18n
-        v-else
-        tag="span"
-        path="upgrade_row.upgrade"
-        class="flex flex-row justify-center items-end"
-      >
+      <i18n v-else tag="div" path="upgrade_row.upgrade" class="md:text-center">
         <template #total>
           {{ entriesFoundTotal ? entriesFoundTotal : total }}
         </template>
@@ -73,23 +67,13 @@ const { xs } = useDisplay();
           {{ label }}
         </template>
         <template #link>
-          <BaseExternalLink
-            class="ml-1"
+          <ExternalLink
             :text="t('upgrade_row.rotki_premium')"
-            :href="premiumURL"
+            premium
+            color="primary"
           />
         </template>
       </i18n>
     </td>
   </tr>
 </template>
-
-<style>
-.tr {
-  background: transparent !important;
-}
-
-.upgrade-row {
-  height: 60px;
-}
-</style>

@@ -105,7 +105,7 @@ const warningUrl =
         path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
       >
         <template #link>
-          <ExternalLink :url="warningUrl">
+          <ExternalLink color="primary" :url="warningUrl">
             {{ t('common.here') }}
           </ExternalLink>
         </template>

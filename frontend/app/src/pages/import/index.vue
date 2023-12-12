@@ -17,7 +17,10 @@ const { t } = useI18n();
     >
       <i18n tag="span" path="import_data.notice">
         <template #link>
-          <ExternalLink url="https://github.com/rotki/rotki/issues/new/choose">
+          <ExternalLink
+            color="primary"
+            url="https://github.com/rotki/rotki/issues/new/choose"
+          >
             {{ t('import_data.notice_link') }}
           </ExternalLink>
         </template>

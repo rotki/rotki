@@ -11,7 +11,6 @@ const { message } = toRefs(props);
 const svg = ref();
 
 const link = useRefMap(message, message => message.action?.url || '');
-const { onLinkClick, linkTarget, href } = useLinks(link);
 
 const fetchSvg = async () => {
   const url = props.message.icon;
@@ -66,16 +65,11 @@ const css = useCssModule();
       {{ message.text }}
     </div>
 
-    <RuiButton
-      v-if="message.action"
-      tag="a"
-      color="primary"
-      :target="linkTarget"
-      :href="href"
-      @click="onLinkClick()"
-    >
-      {{ message.action.text }}
-    </RuiButton>
+    <ExternalLink v-if="message.action" :url="link" custom>
+      <RuiButton color="primary">
+        {{ message.action.text }}
+      </RuiButton>
+    </ExternalLink>
   </div>
 </template>
 

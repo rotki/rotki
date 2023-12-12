@@ -94,9 +94,9 @@ onMounted(async () => {
         <div v-else-if="!downloadReady">
           <i18n tag="div" path="update_popup.messages">
             <template #releaseNotes>
-              <BaseExternalLink
+              <ExternalLink
                 :text="t('update_popup.release_notes')"
-                :href="releaseNotesLink"
+                :url="releaseNotesLink"
               />
             </template>
           </i18n>

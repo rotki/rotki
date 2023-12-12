@@ -1593,7 +1593,7 @@
     "unclaimed": "Unclaimed",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}",
+    "visit_website": "To get a premium subscription please visit our {0}.",
     "website": "website"
   },
   "compound_lending": {
@@ -1669,7 +1669,6 @@
     },
     "premium": {
       "button_premium_approve": "Yes, enable premium",
-      "premium_link_text": "here.",
       "premium_question": "Are you already a rotki premium user and want to enable premium features?\nThis is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}"
     },
     "steps": {
@@ -4275,7 +4274,7 @@
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
     },
-    "filtering_premium_hint": "@:common.available_to_premium @:common.visit_website {link}",
+    "filtering_premium_hint": "@:common.available_to_premium @:common.visit_website",
     "form": {
       "account": {
         "label": "Account to be associated with the transaction",

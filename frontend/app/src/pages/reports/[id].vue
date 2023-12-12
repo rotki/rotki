@@ -13,7 +13,6 @@ const reportsStore = useReportsStore();
 const { report, reports } = storeToRefs(reportsStore);
 
 const { fetchReports, fetchReport, clearReport, isLatestReport } = reportsStore;
-const { premiumURL } = useInterop();
 const router = useRouter();
 const route = useRoute();
 let firstPage = true;
@@ -109,10 +108,7 @@ const regenerateReport = async () => {
         </i18n>
         <i18n tag="div" path="profit_loss_report.upgrade2">
           <template #link>
-            <BaseExternalLink
-              :text="t('upgrade_row.rotki_premium')"
-              :href="premiumURL"
-            />
+            <ExternalLink :text="t('upgrade_row.rotki_premium')" premium />
           </template>
         </i18n>
       </RuiAlert>

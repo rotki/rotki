@@ -92,11 +92,11 @@ const { languageContributeUrl } = useInterop();
         tooltip-class="max-w-[25rem]"
       >
         <template #activator>
-          <BaseExternalLink :href="languageContributeUrl">
+          <ExternalLink :url="languageContributeUrl" custom>
             <RuiButton variant="text" icon>
               <RuiIcon name="file-edit-line" />
             </RuiButton>
-          </BaseExternalLink>
+          </ExternalLink>
         </template>
         <span>
           {{ t('general_settings.language_contribution_tooltip') }}

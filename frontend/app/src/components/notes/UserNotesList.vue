@@ -39,7 +39,6 @@ const filter = ref<UserNotesFilter>({
 });
 
 const { t } = useI18n();
-const { premiumURL } = useInterop();
 
 const api = useUserNotesApi();
 
@@ -226,9 +225,10 @@ onMounted(async () => {
         <i18n path="notes_menu.limit_warning">
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
-            <BaseExternalLink
+            <ExternalLink
               :text="t('upgrade_row.rotki_premium')"
-              :href="premiumURL"
+              color="warning"
+              premium
             />
           </template>
         </i18n>

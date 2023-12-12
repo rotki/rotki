@@ -1466,7 +1466,7 @@
     "unclaimed": "无人认领",
     "validator_index": "验证器索引",
     "value_in_symbol": "{symbol} 值",
-    "visit_website": "要获得高级订阅，请访问我们的 {0}"
+    "visit_website": "要获得高级订阅，请访问我们的 {0}."
   },
   "compound_lending": {
     "header": "复合贷款 ({asset})",
@@ -1540,7 +1540,6 @@
     },
     "premium": {
       "button_premium_approve": "是的，启用高级版",
-      "premium_link_text": "这里。",
       "premium_question": "您已经是 rotki 高级用户并想要启用高级功能吗？\n如果您想在创建帐户时从另一台设备同步您的 rotki 数据库，则需要进行此操作。您可以在 {premiumLink} 购买高级版"
     },
     "steps": {

@@ -2,7 +2,6 @@
 const { t } = useI18n();
 
 const { version, link } = useUpdateMessage();
-const { href, onLinkClick, linkTarget } = useLinks(link);
 const css = useCssModule();
 </script>
 
@@ -18,15 +17,11 @@ const css = useCssModule();
       {{ t('welcome.update.text', { version }) }}
     </div>
 
-    <RuiButton
-      tag="a"
-      color="primary"
-      :target="linkTarget"
-      :href="href"
-      @click="onLinkClick()"
-    >
-      {{ t('welcome.update.learn_more') }}
-    </RuiButton>
+    <ExternalLink :url="link" custom>
+      <RuiButton color="primary">
+        {{ t('welcome.update.learn_more') }}
+      </RuiButton>
+    </ExternalLink>
   </div>
 </template>
 

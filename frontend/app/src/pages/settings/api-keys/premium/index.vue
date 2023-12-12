@@ -12,7 +12,7 @@ const { setup, deletePremium } = store;
 
 const { t } = useI18n();
 
-const { premiumURL, premiumUserLoggedIn } = useInterop();
+const { premiumUserLoggedIn } = useInterop();
 
 const apiKey: Ref<string> = ref('');
 const apiSecret: Ref<string> = ref('');
@@ -144,10 +144,7 @@ const css = useCssModule();
         <div class="flex flex-row-reverse">
           <HintMenuIcon>
             <i18n tag="div" path="premium_settings.subtitle">
-              <BaseExternalLink
-                :text="t('premium_settings.title')"
-                :href="premiumURL"
-              />
+              <ExternalLink :text="t('premium_settings.title')" premium />
             </i18n>
           </HintMenuIcon>
         </div>

@@ -111,14 +111,14 @@ onUnmounted(() => {
         </RuiButton>
       </template>
     </RuiButtonGroup>
-    <p
+    <div
       v-if="isSupportedEvmChain && isMetaMask"
-      class="mt-3 info--text text-caption"
+      class="mt-3 text-rui-info text-caption"
       v-text="t('input_mode_select.metamask_import.metamask')"
     />
     <div
       v-if="isSupportedEvmChain && !isPackaged && !isMetaMaskSupported()"
-      class="mt-3 text-rui-warning text-caption flex items-center"
+      class="text-rui-warning text-caption flex items-center"
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
@@ -138,7 +138,7 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownloadLink">
+                  <ExternalLink :url="metamaskDownloadLink" color="primary">
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
@@ -156,19 +156,24 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownloadLink">
+                  <ExternalLink :url="metamaskDownloadLink" color="primary">
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
 
                 <template #copy>
-                  <a href="#" @click="copyPageUrl()">
+                  <RuiButton
+                    variant="text"
+                    color="primary"
+                    class="inline-flex text-[1em] !p-0 px-1 -mx-1"
+                    @click="copyPageUrl()"
+                  >
                     {{
                       t(
                         'input_mode_select.metamask_import.missing_tooltip.copy_url'
                       )
                     }}
-                  </a>
+                  </RuiButton>
                 </template>
               </i18n>
             </li>
