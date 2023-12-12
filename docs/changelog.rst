@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1863` Bitstamp deposit/withdrawals should now also show the address and transaction id.
 * :bug:`7075` Coinbase api should now be usable again. Additionally history retrieval speed has improved by orders of magnitude.
 * :bug:`-` Fix the issue where user profiles on the login screen are empty after logging out.
 * :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.

@@ -106,7 +106,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         movements = mock_bitstamp.query_online_deposits_withdrawals(0, 1)
         assert movements == []
         errors = mock_bitstamp.msg_aggregator.consume_errors()
-        assert len(errors) == 1
+        assert len(errors) == 2  # since we do 2 queries underneath
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
         trades, _ = mock_bitstamp.query_online_trade_history(0, 1)
@@ -831,7 +831,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         fee=Fee(FVal('0.0005')),
         link='2',
     )
-    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
     raw_movement = {
@@ -858,7 +858,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         fee=Fee(FVal('0.1')),
         link='3',
     )
-    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
     raw_movement = {
@@ -885,7 +885,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         fee=Fee(FVal('0.1')),
         link='3',
     )
-    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
 
@@ -914,7 +914,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         fee=Fee(FVal('50')),
         link='5',
     )
-    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
     raw_movement = {
@@ -941,7 +941,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         fee=Fee(FVal('0.1')),
         link='5',
     )
-    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
 
