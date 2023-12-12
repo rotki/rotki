@@ -60,7 +60,7 @@ if (browser) {
 if (ci && !process.env.SKIP_REBUILD) {
   info('Building frontend');
   const start = Date.now();
-  execSync('pnpm run build --mode e2e');
+  execSync('pnpm run build:app --mode e2e');
   info(`Build complete (${Date.now() - start} ms)`);
 }
 
