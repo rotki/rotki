@@ -40,8 +40,6 @@ const resetDateDisplayFormat = () => {
   set(dateDisplayFormat, get(format));
 };
 
-const debounceUpdate = useDebounceFn(callIfValid, 1500);
-
 const successMessage = (dateFormat: string) =>
   t('general_settings.validation.date_display_format.success', {
     dateFormat
@@ -81,7 +79,7 @@ onMounted(() => {
             format: dateDisplayFormatExample
           })
         "
-        @input="debounceUpdate($event, update)"
+        @input="callIfValid($event, update)"
       >
         <template #append>
           <RuiButton size="sm" variant="text" icon @click="formatHelp = true">
