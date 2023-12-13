@@ -257,11 +257,12 @@ const listeners = useListeners();
     </template>
     <template #append>
       <div v-if="loading" class="h-full flex items-center">
-        <VProgressCircular
+        <RuiProgress
           class="asset-select__loading"
           color="primary"
-          indeterminate
-          width="3"
+          variant="indeterminate"
+          circular
+          thickness="3"
           size="30"
         />
       </div>

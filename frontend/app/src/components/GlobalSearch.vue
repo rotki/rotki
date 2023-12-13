@@ -494,11 +494,12 @@ onBeforeMount(async () => {
         </template>
         <template #append>
           <div v-if="loading" class="mt-n1 h-full flex items-center">
-            <VProgressCircular
+            <RuiProgress
               class="asset-select__loading"
+              circular
               color="primary"
-              indeterminate
-              width="3"
+              variant="indeterminate"
+              thickness="3"
               size="30"
             />
           </div>

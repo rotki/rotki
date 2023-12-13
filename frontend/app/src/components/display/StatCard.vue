@@ -50,7 +50,7 @@ const { dark } = useTheme();
       </VCardTitle>
       <VCardText>
         <span v-if="!locked && loading">
-          <VProgressLinear indeterminate color="primary" />
+          <RuiProgress variant="indeterminate" color="primary" />
         </span>
         <slot v-else-if="!locked" />
       </VCardText>
