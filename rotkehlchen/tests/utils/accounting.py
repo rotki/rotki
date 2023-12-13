@@ -5,16 +5,21 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+import requests
+
 from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.api.server import APIServer
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_WBTC
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.api import api_url_for
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -345,3 +350,47 @@ def assert_csv_export(
                 expected_csv_data=expected_csv_data,
                 expected_pnls=expected_pnls,
             )
+
+
+def toggle_ignore_an_asset(
+        rotkehlchen_api_server: APIServer,
+        asset_to_ignore: Asset,
+) -> None:
+    """Utility function to add/remove an ignored asset"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # check if the asset is already ignored
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_asset_ids(cursor)
+    already_ignored = asset_to_ignore.identifier in result
+
+    if already_ignored:
+        # remove the asset from the ignored list
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ignoredassetsresource',
+            ), json={'assets': [asset_to_ignore.identifier]},
+        )
+        assert response.status_code == 200
+        response_result = response.json().get('result', [])
+        assert asset_to_ignore.identifier not in response_result
+
+        with rotki.data.db.conn.read_ctx() as cursor:
+            result = rotki.data.db.get_ignored_asset_ids(cursor)
+        assert asset_to_ignore.identifier not in result
+        return
+
+    # else add the asset to the ignored list
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredassetsresource',
+        ), json={'assets': [asset_to_ignore.identifier]},
+    )
+    assert response.status_code == 200
+    response_result = response.json().get('result', [])
+    assert asset_to_ignore.identifier in response_result
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_asset_ids(cursor)
+    assert asset_to_ignore.identifier in result

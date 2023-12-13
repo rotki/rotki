@@ -374,6 +374,7 @@ class TradesQuerySchema(
     trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
     include_ignored_trades = fields.Boolean(load_default=True)
+    exclude_ignored_assets = fields.Boolean(load_default=True)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -447,6 +448,7 @@ class TradesQuerySchema(
             trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
             location=data['location'],
             trades_idx_to_ignore=trades_idx_to_ignore,
+            exclude_ignored_assets=data['exclude_ignored_assets'],
         )
 
         return {
@@ -883,6 +885,7 @@ class AssetMovementsQuerySchema(
     asset = AssetField(expected_type=Asset, load_default=None)
     action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
     location = LocationField(load_default=None)
+    exclude_ignored_assets = fields.Boolean(load_default=True)
 
     def __init__(
             self,
@@ -943,6 +946,7 @@ class AssetMovementsQuerySchema(
             assets=asset_list,
             action=[data['action']] if data['action'] is not None else None,
             location=data['location'],
+            exclude_ignored_assets=data['exclude_ignored_assets'],
         )
         return {
             'async_query': data['async_query'],
