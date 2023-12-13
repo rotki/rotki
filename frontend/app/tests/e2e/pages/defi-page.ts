@@ -27,15 +27,7 @@ export class DefiPage {
       'aria-checked',
       'true'
     );
-    cy.get('.defi-wizard__select-accounts').click();
-  }
-
-  selectAccounts() {
-    cy.get('.module-address-selector')
-      .find('.v-stepper__header')
-      .children()
-      .should('have.length', 1);
-    cy.get('.defi-wizard__done').click();
+    cy.get('[data-cy=defi-wizard-done]').click();
   }
 
   defiOverviewIsVisible() {

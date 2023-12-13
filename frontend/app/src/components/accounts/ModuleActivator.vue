@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { type CamelCase } from '@/types/common';
 
 const emit = defineEmits(['update:selection']);
 
@@ -14,7 +15,8 @@ const updateSelection = (modules: string[]) => {
 };
 
 const hasAddresses = (module: Module) => {
-  const addresses = get(queriedAddresses)[module];
+  const index = transformCase(module, true) as CamelCase<Module>;
+  const addresses = get(queriedAddresses)[index];
   if (addresses) {
     return addresses.length > 0;
   }

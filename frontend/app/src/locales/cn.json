@@ -1872,11 +1872,6 @@
   },
   "defi_wizard": {
     "steps": {
-      "select_accounts": {
-        "hint": "选择将为每个子模块检索数据的帐户。如果没有选择地址，将为所有可用地址检索数据",
-        "subtitle": "选择账户",
-        "title": "选择账户"
-      },
       "select_modules": {
         "hint": "如果没有指定模块，查询支持的模块将被禁用。",
         "subtitle": "选择您要激活的模块。",
@@ -2953,16 +2948,15 @@
       "enable_all": "启用全部"
     },
     "filter": "搜索模块",
+    "select_accounts_hint": "选择将为每个子模块检索数据的帐户。如果没有选择地址，将为所有可用地址检索数据",
     "table": {
-      "enabled": "已启用"
+      "enabled": "已启用",
+      "select_accounts": "选择账户"
     }
   },
   "module_settings": {
-    "active_modules": "活动模块",
     "active_modules_description": "仅查询所选模块的数据。如果未选择任何模块，将禁用查询所有支持的模块。",
     "hint": "请记住，激活模块后，您需要注销并重新登录才能使激活生效",
-    "select_accounts": "选择的账户",
-    "select_accounts_description": "如果没有为协议选择账户，将查询该协议的所有账户数据。",
     "title": "模块设置"
   },
   "navigation_menu": {
