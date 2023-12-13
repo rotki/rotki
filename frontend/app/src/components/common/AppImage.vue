@@ -10,7 +10,7 @@ const props = withDefaults(
     maxWidth?: string | number;
     maxHeight?: string | number;
     size?: string | number;
-    src?: string;
+    src?: string | null;
     srcset?: string;
     sizes?: string;
     alt?: string;
@@ -76,7 +76,7 @@ const onLoadStart = () => {
       :alt="alt"
       :class="{ 'object-contain': contain }"
       :style="style"
-      :src="src"
+      :src="src || ''"
       :sizes="sizes"
       :srcset="srcset"
       @error="onError()"
