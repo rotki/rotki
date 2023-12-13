@@ -282,7 +282,7 @@ class Bitmex(ExchangeInterface):
     ) -> list[MarginPosition]:
 
         # We know user/walletHistory returns a list
-        resp = self._api_query_list('get', 'user/walletHistory')
+        resp = self._api_query_list('get', 'user/walletHistory', {'currency': 'all'})
         log.debug('Bitmex trade history query', results_num=len(resp))
 
         margin_trades = []
@@ -306,10 +306,9 @@ class Bitmex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list:
-        resp = self._api_query_list('get', 'user/walletHistory')
+        resp = self._api_query_list('get', 'user/walletHistory', {'currency': 'all'})
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
-
         movements = []
         for movement in resp:
             try:
@@ -329,7 +328,7 @@ class Bitmex(ExchangeInterface):
 
                 asset = bitmex_to_world(movement['currency'])
                 amount = deserialize_asset_amount_force_positive(movement['amount'])
-                fee = deserialize_fee(movement['fee'])
+                fee = deserialize_fee(movement.get('fee', 0))  # deposit has no fees
 
                 if asset == A_BTC:
                     # bitmex stores amounts in satoshis
