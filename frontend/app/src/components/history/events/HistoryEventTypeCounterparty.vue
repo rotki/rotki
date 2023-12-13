@@ -35,7 +35,7 @@ const [DefineText, ReuseText] = createReusableTemplate();
             v-else-if="counterparty.image"
             :src="`${imagePath}${counterparty.image}`"
             contain
-            max-width="24px"
+            size="16px"
           />
 
           <EnsAvatar v-else :address="counterparty.label" />
