@@ -137,7 +137,7 @@ onBeforeMount(async () => {
             <RuiTooltip
               v-for="item in liquidities"
               :key="item.id"
-              open-delay="400"
+              :open-delay="400"
             >
               <template #activator>
                 <InternalLink
@@ -148,11 +148,7 @@ onBeforeMount(async () => {
                     )
                   "
                 >
-                  <AppImage
-                    :size="imageSize"
-                    contain
-                    :src="item.image"
-                  />
+                  <AppImage :size="imageSize" contain :src="item.image" />
                 </InternalLink>
               </template>
               {{ item.name }}

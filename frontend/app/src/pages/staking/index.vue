@@ -121,16 +121,16 @@ onBeforeMount(async () => {
             {{ t('staking_page.page.title') }}
           </span>
           <div class="flex gap-4">
-            <RuiTooltip v-for="item in staking" :key="item.id" open-delay="400">
+            <RuiTooltip
+              v-for="item in staking"
+              :key="item.id"
+              :open-delay="400"
+            >
               <template #activator>
                 <InternalLink
                   :to="Routes.STAKING.replace(':location*', item.id)"
                 >
-                  <AppImage
-                    :size="imageSize"
-                    contain
-                    :src="item.image"
-                  />
+                  <AppImage :size="imageSize" contain :src="item.image" />
                 </InternalLink>
               </template>
               {{ item.name }}

@@ -22,6 +22,7 @@ const model = ref('');
           :value="tab.route"
           link
           :to="tab.route"
+          :exact-path="false"
           :class="getClass(tab.route)"
         >
           <template #prepend>
