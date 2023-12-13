@@ -10,7 +10,7 @@ const { locationData } = useLocations();
 
 const location = locationData(exchange);
 const name = useRefMap(location, location => location?.name);
-const image = useRefMap(location, location => location?.image);
+const image = useRefMap(location, location => location?.image ?? undefined);
 </script>
 
 <template>

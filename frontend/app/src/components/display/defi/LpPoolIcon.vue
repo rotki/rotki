@@ -6,8 +6,6 @@ const props = defineProps<{
   type: LpType;
 }>();
 
-const { assets, type } = toRefs(props);
-
 const data = [
   {
     identifier: LpType.UNISWAP_V2,
@@ -28,16 +26,16 @@ const data = [
 ];
 
 const icon = computed(() => {
-  const selected = data.find(({ identifier }) => identifier === get(type));
+  const selected = data.find(({ identifier }) => identifier === props.type);
 
   if (!selected) {
-    return null;
+    return undefined;
   }
 
   return selected.icon;
 });
 
-const multiple = computed<boolean>(() => get(assets).length > 2);
+const multiple = computed<boolean>(() => props.assets.length > 2);
 
 const css = useCssModule();
 </script>

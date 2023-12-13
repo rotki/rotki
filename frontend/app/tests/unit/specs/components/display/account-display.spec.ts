@@ -30,13 +30,6 @@ describe('AccountDisplay.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VTooltip: {
-          template:
-            '<span><slot name="activator"/><slot v-if="!disabled"/></span>',
-          props: {
-            disabled: { type: Boolean }
-          }
-        },
         AssetIcon: true
       },
       propsData: {

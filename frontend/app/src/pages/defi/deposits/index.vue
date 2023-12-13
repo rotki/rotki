@@ -7,10 +7,16 @@ const { appRoutes } = useAppRoutes();
 
 const tabs: ComputedRef<TabContent[]> = computed(() => {
   const Routes = get(appRoutes);
-  return [Routes.DEFI_DEPOSITS_PROTOCOLS, Routes.DEFI_DEPOSITS_LIQUIDITY];
+  return [
+    Routes.DEFI_DEPOSITS_PROTOCOLS,
+    {
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY,
+      route: Routes.DEFI_DEPOSITS_LIQUIDITY.route.replace(':location*', '')
+    }
+  ];
 });
 </script>
 
 <template>
-  <TabNavigation :tab-contents="tabs" class="decentralized-deposits" />
+  <TabNavigation :tabs="tabs" class="decentralized-deposits" />
 </template>

@@ -20,10 +20,6 @@ enum RouteNames {
   DEFI_LIABILITIES = 'DEFI_LIABILITIES',
   DEFI_DEPOSITS_PROTOCOLS = 'DEFI_DEPOSITS_PROTOCOLS',
   DEFI_DEPOSITS_LIQUIDITY = 'DEFI_DEPOSITS_LIQUIDITY',
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2 = 'DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2',
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3 = 'DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3',
-  DEFI_DEPOSITS_LIQUIDITY_BALANCER = 'DEFI_DEPOSITS_LIQUIDITY_BALANCER',
-  DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP = 'DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP',
   DEFI_AIRDROPS = 'DEFI_AIRDROPS',
   STATISTICS = 'STATISTICS',
   STAKING = 'STAKING',
@@ -76,11 +72,7 @@ export const Routes: AppRouteMap<string> = {
   DEFI_DEPOSITS: '/defi/deposits',
   DEFI_LIABILITIES: '/defi/liabilities',
   DEFI_DEPOSITS_PROTOCOLS: '/defi/deposits/protocols',
-  DEFI_DEPOSITS_LIQUIDITY: '/defi/deposits/liquidity',
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: '/defi/deposits/liquidity/uniswap_v2',
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: '/defi/deposits/liquidity/uniswap_v3',
-  DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer',
-  DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: '/defi/deposits/liquidity/sushiswap',
+  DEFI_DEPOSITS_LIQUIDITY: '/defi/deposits/liquidity/:location*',
   DEFI_AIRDROPS: '/defi/airdrops',
   STATISTICS: '/statistics',
   STAKING: '/staking/:location*',
@@ -188,33 +180,13 @@ export const useAppRoutes = createSharedComposable(() => {
     },
     DEFI_DEPOSITS_PROTOCOLS: {
       route: '/defi/deposits/protocols',
-      icon: 'login-circle-line',
+      icon: 'settings-2-line',
       text: t('navigation_menu.defi_sub.deposits_sub.protocols')
     },
     DEFI_DEPOSITS_LIQUIDITY: {
-      route: '/defi/deposits/liquidity',
-      icon: 'login-circle-line',
+      route: '/defi/deposits/liquidity/:location',
+      icon: 'water-percent-line',
       text: t('navigation_menu.defi_sub.deposits_sub.liquidity')
-    },
-    DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: {
-      route: '/defi/deposits/liquidity/uniswap_v2',
-      image: './assets/images/protocols/uniswap.svg',
-      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
-    },
-    DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: {
-      route: '/defi/deposits/liquidity/uniswap_v3',
-      image: './assets/images/protocols/uniswap.svg',
-      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
-    },
-    DEFI_DEPOSITS_LIQUIDITY_BALANCER: {
-      route: '/defi/deposits/liquidity/balancer',
-      image: './assets/images/protocols/balancer.svg',
-      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
-    },
-    DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: {
-      route: '/defi/deposits/liquidity/sushiswap',
-      image: './assets/images/protocols/sushiswap.svg',
-      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
     },
     DEFI_AIRDROPS: {
       route: Routes.DEFI_AIRDROPS,
@@ -313,22 +285,22 @@ export const useAppRoutes = createSharedComposable(() => {
     },
     SETTINGS_GENERAL: {
       route: Routes.SETTINGS_GENERAL,
-      icon: 'settings-4-fill',
+      icon: 'user-settings-line',
       text: t('navigation_menu.settings_sub.general')
     },
     SETTINGS_ACCOUNTING: {
       route: Routes.SETTINGS_ACCOUNTING,
-      icon: 'settings-4-fill',
+      icon: 'contacts-line',
       text: t('navigation_menu.settings_sub.accounting')
     },
     SETTINGS_DATA_SECURITY: {
       route: Routes.SETTINGS_DATA_SECURITY,
-      icon: 'settings-4-fill',
+      icon: 'admin-line',
       text: t('navigation_menu.settings_sub.data_security')
     },
     SETTINGS_MODULES: {
       route: Routes.SETTINGS_MODULES,
-      icon: 'settings-4-fill',
+      icon: 'layout-grid-line',
       text: t('navigation_menu.settings_sub.modules')
     },
     ASSETS: {

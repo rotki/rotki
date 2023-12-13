@@ -32,7 +32,7 @@ describe('PremiumSettings.vue', () => {
       components: {
         Card
       },
-      stubs: ['v-tooltip', 'v-dialog', 'i18n', 'card-title']
+      stubs: ['v-dialog', 'i18n', 'card-title']
     });
   }
 

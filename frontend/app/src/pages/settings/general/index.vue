@@ -4,7 +4,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="general-settings mt-n8">
+  <div class="general-settings">
     <SettingCategory>
       <template #title>
         {{ t('general_settings.title') }}

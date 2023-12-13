@@ -23,7 +23,7 @@ describe('ModuleSelector.vue', () => {
     return mount(ModuleSelector, {
       pinia,
       vuetify,
-      stubs: ['v-tooltip', 'card']
+      stubs: ['card']
     });
   };
 
