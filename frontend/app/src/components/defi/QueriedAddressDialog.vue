@@ -3,6 +3,7 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { type CamelCase } from '@/types/common';
 
 const props = defineProps<{ module: Module }>();
 
@@ -20,16 +21,18 @@ const { accounts } = useAccountBalances();
 
 const { t } = useI18n();
 
-const moduleName = computed(() => {
+const currentModule = computed(() => {
   const currentModule = get(module);
   if (!currentModule) {
-    return '';
+    return undefined;
   }
-  const defiModule = SUPPORTED_MODULES.find(
+  return SUPPORTED_MODULES.find(
     ({ identifier }) => identifier === currentModule
   );
-  return defiModule?.name ?? currentModule;
 });
+
+const moduleName = useRefMap(currentModule, m => m?.name);
+const moduleIcon = useRefMap(currentModule, m => m?.icon);
 
 const addresses = computed(() => {
   const currentModule = get(module);
@@ -37,7 +40,8 @@ const addresses = computed(() => {
     return [];
   }
   const addresses = get(queriedAddresses);
-  return addresses[currentModule] ?? [];
+  const index = transformCase(currentModule, true) as CamelCase<Module>;
+  return addresses[index] ?? [];
 });
 
 const usableAddresses = computed(() => {
@@ -90,9 +94,21 @@ const close = () => {
   >
     <RuiCard>
       <template #custom-header>
-        <div class="flex items-start justify-between p-4">
+        <div class="flex items-center justify-between p-4">
+          <AdaptiveWrapper
+            class="flex items-center mr-4"
+            width="26px"
+            height="26px"
+          >
+            <AppImage
+              width="26px"
+              contain
+              max-height="24px"
+              :src="moduleIcon"
+            />
+          </AdaptiveWrapper>
           <div>
-            <h5 class="text-h5">
+            <h5 class="text-h6">
               {{ t('queried_address_dialog.title') }}
             </h5>
             <div class="text-rui-text-secondary text-body-2">
@@ -100,7 +116,12 @@ const close = () => {
             </div>
           </div>
 
-          <RuiButton class="shrink-0" variant="text" icon @click="close()">
+          <RuiButton
+            class="shrink-0 -me-3"
+            variant="text"
+            icon
+            @click="close()"
+          >
             <RuiIcon name="close-line" />
           </RuiButton>
         </div>
@@ -155,7 +176,8 @@ const close = () => {
                 <RuiIcon size="16" name="delete-bin-line" />
               </RuiButton>
             </template>
-            <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
+
+            {{ t('queried_address_dialog.remove_tooltip') }}
           </RuiTooltip>
         </div>
       </div>

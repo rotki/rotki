@@ -2013,11 +2013,6 @@
   },
   "defi_wizard": {
     "steps": {
-      "select_accounts": {
-        "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
-        "subtitle": "Select accounts",
-        "title": "Select accounts"
-      },
       "select_modules": {
         "hint": "If no modules are specified, querying for the supported modules will be disabled.",
         "subtitle": "Select the modules you would like to activate.",
@@ -3148,17 +3143,17 @@
       "disable_all": "Disable All",
       "enable_all": "Enable All"
     },
+    "all_accounts": "All",
     "filter": "Search module(s)",
+    "select_accounts_hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
     "table": {
-      "enabled": "Enabled"
+      "enabled": "Enabled",
+      "select_accounts": "Select accounts"
     }
   },
   "module_settings": {
-    "active_modules": "Active modules",
     "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
     "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
-    "select_accounts": "Selected accounts",
-    "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
     "title": "Module Settings"
   },
   "navigation_menu": {

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { type TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { type Module } from '@/types/modules';
+import { type CamelCase } from '@/types/common';
 
 export const PeriodicClientQueryResult = z.object({
   lastBalanceSave: z.number(),
@@ -79,7 +80,7 @@ export const Watchers = z.array(Watcher);
 export type Watchers = z.infer<typeof Watchers>;
 
 export type QueriedAddresses = {
-  readonly [module in Module]?: string[];
+  readonly [module in CamelCase<Module>]?: string[];
 };
 
 export interface QueriedAddressPayload {

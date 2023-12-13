@@ -49,9 +49,7 @@ describe('DefiWizard.vue', () => {
     expect.assertions(1);
     await wrapper.find('.defi-wizard__select-modules').trigger('click');
     await wrapper.vm.$nextTick();
-    await wrapper.find('.defi-wizard__select-accounts').trigger('click');
-    await wrapper.vm.$nextTick();
-    await wrapper.find('.defi-wizard__done').trigger('click');
+    await wrapper.find('[data-cy=defi-wizard-done]').trigger('click');
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(

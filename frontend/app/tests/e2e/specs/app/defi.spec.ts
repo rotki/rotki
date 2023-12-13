@@ -18,7 +18,6 @@ describe('defi', () => {
     page.visit();
     page.goToSelectModules();
     page.selectModules();
-    page.selectAccounts();
     page.defiOverviewIsVisible();
   });
 });

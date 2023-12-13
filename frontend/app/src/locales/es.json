@@ -1835,11 +1835,6 @@
   },
   "defi_wizard": {
     "steps": {
-      "select_accounts": {
-        "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
-        "subtitle": "Select accounts",
-        "title": "Select accounts"
-      },
       "select_modules": {
         "hint": "If no modules are specified, querying for the supported modules will be disabled.",
         "subtitle": "Select the modules you would like to activate.",
@@ -2899,11 +2894,8 @@
     }
   },
   "module_settings": {
-    "active_modules": "Active modules",
     "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
     "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
-    "select_accounts": "Selected accounts",
-    "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
     "title": "Module Settings"
   },
   "navigation_menu": {
@@ -3154,7 +3146,8 @@
       "apr": "APR",
       "no_entries_found": "No {title} entries found",
       "pool": "Pool",
-      "profit_loss": "Profit/Loss"
+      "profit_loss": "Profit/Loss",
+      "select_address": "@:common.select_address"
     },
     "eth2_staking": {
       "based_of_performance": "Based of performance of",
