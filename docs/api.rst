@@ -4214,6 +4214,7 @@ Dealing with trades
    :reqjson string quote_asset: Optionally filter trades by quote_asset. A valid asset identifier has to be provided. If missing trades are not filtered by quote asset.
    :reqjson string trade_type: Optionally filter trades by type. A valid trade type (buy, sell) has to be provided. If missing trades are not filtered by type.
    :reqjson bool include_ignored_trades: Determines whether ignored trades should be included in the result returned. Defaults to ``"true"``.
+   :reqjson bool exclude_ignored_assets: Determines whether the trades with ignored assets should be included in the result returned. Defaults to ``"true"``.
    :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
    .. _trades_schema_section:
@@ -4477,6 +4478,7 @@ Querying asset movements
    :reqjson string asset: Optionally filter asset movements by asset. A valid asset identifier has to be provided. If missing, movements are not filtered by asset.
    :reqjson string action: Optionally filter asset movements by action type. A valid action type (deposit, withdrawals) has to be provided. If missing movements are not filtered by type.
    :reqjson bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+   :reqjson bool exclude_ignored_assets: Optional. If this is true then the asset movements of ignored assets are not returned, defaults to ``"true"``.
 
 
    **Example Response**:
