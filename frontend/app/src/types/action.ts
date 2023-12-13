@@ -26,8 +26,8 @@ export interface Version {
 export interface ActionDataEntry<T = string> {
   readonly identifier: T;
   readonly label: string;
-  readonly icon?: string | null;
-  readonly image?: string | null;
+  readonly icon?: string;
+  readonly image?: string;
   readonly color?: ContextColorsType;
   readonly matcher?: (identifier: string) => boolean | null;
   readonly detailPath?: string | null;

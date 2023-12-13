@@ -9,10 +9,10 @@ interface LiquidityPageInfo {
 
 const props = withDefaults(
   defineProps<{
-    location?: 'uniswap_v2' | 'uniswap_v3' | 'balancer' | 'sushiswap' | null;
+    location?: 'uniswap_v2' | 'uniswap_v3' | 'balancer' | 'sushiswap';
   }>(),
   {
-    location: null
+    location: undefined
   }
 );
 
@@ -103,10 +103,10 @@ onBeforeMount(async () => {
         <template v-for="slot in ['item', 'selection']" #[slot]="data">
           <div v-if="data.item" :key="slot" class="flex items-center gap-2">
             <AdaptiveWrapper width="24" height="24">
-              <VImg
-                width="24px"
+              <AppImage
+                width="1.5"
                 contain
-                max-height="24px"
+                max-height="1.5"
                 :src="data.item.image"
               />
             </AdaptiveWrapper>

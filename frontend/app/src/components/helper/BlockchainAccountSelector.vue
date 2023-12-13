@@ -228,7 +228,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             v-if="multiple"
             :key="data.item.chain + data.item.address"
             v-bind="data.attrs"
-            :clickable="data.select"
+            clickable
             closeable
             class="m-0.5"
             @click:close="data.parent.selectItem(data.item)"
