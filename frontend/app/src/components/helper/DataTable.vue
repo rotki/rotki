@@ -290,7 +290,7 @@ const { dark } = useTheme();
       <div class="v-data-table__wrapper clone__wrapper">
         <table ref="cloneTableRef" class="clone__table" />
         <div>
-          <VProgressLinear v-if="loading" indeterminate />
+          <RuiProgress v-if="loading" variant="indeterminate" />
         </div>
       </div>
     </div>

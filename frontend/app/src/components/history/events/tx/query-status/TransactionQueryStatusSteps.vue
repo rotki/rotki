@@ -40,12 +40,13 @@ const css = useCssModule();
           <div :class="isStepCompleted(item, index) ? 'text-rui-success' : ''">
             {{ step }}
           </div>
-          <VProgressCircular
+          <RuiProgress
             v-if="isStepInProgress(item, index)"
             :class="css['stepper__progress']"
             size="32"
-            indeterminate
-            width="2"
+            variant="indeterminate"
+            circular
+            thickness="2"
             color="primary"
           />
         </VStepperStep>
