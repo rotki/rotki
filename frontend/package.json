@@ -55,8 +55,8 @@
   ],
   "pnpm": {
     "patchedDependencies": {
-      "bignumber.js@9.1.1": "patches/bignumber.js@9.1.1.patch",
-      "vuetify@2.7.0": "patches/vuetify@2.7.0.patch"
+      "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch",
+      "vuetify@2.7.1": "patches/vuetify@2.7.1.patch"
     }
   },
   "lint-staged": {

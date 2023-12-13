@@ -1,0 +1,170 @@
+diff --git a/lib/components/VCard/VCard.js b/lib/components/VCard/VCard.js
+index f432b8c151b912da7fc2d70da0655a682f1e17de..e2d6a5a406152c0c9fcd84bfa0de1460b8a1ed54 100644
+--- a/lib/components/VCard/VCard.js
++++ b/lib/components/VCard/VCard.js
+@@ -12,6 +12,10 @@ import mixins from '../../util/mixins';
+ export default mixins(Loadable, Routable, VSheet).extend({
+   name: 'v-card',
+   props: {
++    outlined: {
++      type: Boolean,
++      default: true
++    },
+     flat: Boolean,
+     hover: Boolean,
+     img: String,
+diff --git a/lib/components/VMenu/VMenu.js b/lib/components/VMenu/VMenu.js
+index 282e927d620019c3c038dde9ccd96e166bbb2403..66c3da333c10d463a7672eee9e15d95d5769929c 100644
+--- a/lib/components/VMenu/VMenu.js
++++ b/lib/components/VMenu/VMenu.js
+@@ -144,24 +144,7 @@ export default baseMixins.extend({
+ 
+     listIndex(next, prev) {
+       if (next in this.tiles) {
+-        const tile = this.tiles[next];
+-        tile.classList.add('v-list-item--highlighted');
+-        const scrollTop = this.$refs.content.scrollTop;
+-        const contentHeight = this.$refs.content.clientHeight;
+-
+-        if (scrollTop > tile.offsetTop - 8) {
+-          goTo(tile.offsetTop - tile.clientHeight, {
+-            appOffset: false,
+-            duration: 300,
+-            container: this.$refs.content
+-          });
+-        } else if (scrollTop + contentHeight < tile.offsetTop + tile.clientHeight + 8) {
+-          goTo(tile.offsetTop - contentHeight + tile.clientHeight * 2, {
+-            appOffset: false,
+-            duration: 300,
+-            container: this.$refs.content
+-          });
+-        }
++        this.setHighlightClass(next);
+       }
+ 
+       prev in this.tiles && this.tiles[prev].classList.remove('v-list-item--highlighted');
+@@ -181,6 +164,33 @@ export default baseMixins.extend({
+   },
+ 
+   methods: {
++    setListIndex(index) {
++      this.listIndex = index;
++      this.setHighlightClass(index);
++    },
++
++    setHighlightClass(index) {
++      if (index in this.tiles) {
++        const tile = this.tiles[index];
++        tile.classList.add('v-list-item--highlighted');
++        const scrollTop = this.$refs.content.scrollTop;
++        const contentHeight = this.$refs.content.clientHeight;
++
++        if (scrollTop > tile.offsetTop - 8) {
++          goTo(tile.offsetTop - tile.clientHeight, {
++            appOffset: false,
++            duration: 300,
++            container: this.$refs.content
++          });
++        } else if (scrollTop + contentHeight < tile.offsetTop + tile.clientHeight + 8) {
++          goTo(tile.offsetTop - contentHeight + tile.clientHeight * 2, {
++            appOffset: false,
++            duration: 300,
++            container: this.$refs.content
++          });
++        }
++      }
++    },
+     activate() {
+       // Update coordinates and dimensions of menu
+       // and its activator
+diff --git a/lib/components/VSelect/VSelect.js b/lib/components/VSelect/VSelect.js
+index 0507a0d6f055af6783858e197d20021ab34edd26..a7766ed35a12443699ed8b53949f85ef3a4d5349 100644
+--- a/lib/components/VSelect/VSelect.js
++++ b/lib/components/VSelect/VSelect.js
+@@ -789,7 +789,7 @@ export default baseMixins.extend().extend({
+     },
+ 
+     setMenuIndex(index) {
+-      this.$refs.menu && (this.$refs.menu.listIndex = index);
++      this.$refs.menu && (this.$refs.menu.setListIndex(index));
+     },
+ 
+     setSelectedItems() {
+diff --git a/lib/components/VSwitch/VSwitch.js b/lib/components/VSwitch/VSwitch.js
+index a6acaeb422a3a8515a4ba7164b5867f15c59221a..32765adff755340bfb1bcc03809ffead7cd8f003 100644
+--- a/lib/components/VSwitch/VSwitch.js
++++ b/lib/components/VSwitch/VSwitch.js
+@@ -19,7 +19,10 @@ export default Selectable.extend({
+     Touch
+   },
+   props: {
+-    inset: Boolean,
++    inset: {
++      type: Boolean,
++      default: true
++    },
+     loading: {
+       type: [Boolean, String],
+       default: false
+diff --git a/lib/mixins/overlayable/index.js b/lib/mixins/overlayable/index.js
+index d766251e11ca6bc2637c942e2459acaa90cb1eee..3081b10fbb2d4529614c5fb2a4390b5326aa058a 100644
+--- a/lib/mixins/overlayable/index.js
++++ b/lib/mixins/overlayable/index.js
+@@ -113,6 +113,8 @@ export default Vue.extend().extend({
+ 
+     shouldScroll(el, e) {
+       if (el.hasAttribute('data-app')) return false;
++      if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.hasAttribute('data-app')) return false;
++      
+       const dir = e.shiftKey || e.deltaX ? 'x' : 'y';
+       const delta = dir === 'y' ? e.deltaY : e.deltaX || e.deltaY;
+       let alreadyAtStart;
+diff --git a/src/components/VGrid/_grid.sass b/src/components/VGrid/_grid.sass
+index d7e016c5385d421a8a342a59903f38741ee38c92..37fef9df64608f3978e9eaba9050dd852d6d23b6 100644
+--- a/src/components/VGrid/_grid.sass
++++ b/src/components/VGrid/_grid.sass
+@@ -93,7 +93,6 @@
+ 
+       $m: $m - 1
+ 
+-.flex,
+ .child-flex > *
+   flex: 1 1 auto
+   max-width: 100%
+diff --git a/src/styles/generic/_reset.scss b/src/styles/generic/_reset.scss
+index 9b3f56c975c7a4aef13677d452ff0da0f7a892ef..16f5da46597d4bfe4732ee8d7af792ad92a0632b 100644
+--- a/src/styles/generic/_reset.scss
++++ b/src/styles/generic/_reset.scss
+@@ -204,7 +204,6 @@ input,
+ select,
+ textarea {
+   background-color: transparent;
+-  border-style: none;
+ }
+ 
+ /* Style select like a standard input */
+diff --git a/src/styles/settings/_utilities.scss b/src/styles/settings/_utilities.scss
+index 6d8aa6bf68526921d6161d72b2b921927f9bf5be..4f1848a76382908331a310600f2783fcd49f225d 100644
+--- a/src/styles/settings/_utilities.scss
++++ b/src/styles/settings/_utilities.scss
+@@ -52,11 +52,6 @@ $utilities: map-deep-merge(
+     ),
+ 
+     // Flex utilities
+-    "flex": (
+-      responsive: true,
+-      property: flex,
+-      values: (fill: 1 1 auto)
+-    ),
+     "flex-direction": (
+       responsive: true,
+       property: flex-direction,
+@@ -420,7 +415,7 @@ $utilities: map-deep-merge(
+         font-family,
+         text-transform
+       ),
+-      class: text,
++      class: text-vuetify,
+       unimportant: (
+         font-weight,
+         line-height

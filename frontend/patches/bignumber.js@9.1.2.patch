@@ -1,0 +1,13 @@
+diff --git a/bignumber.d.ts b/bignumber.d.ts
+index c5a60a8bdb2ab7b14fcd61a796fd63212fe7bab2..26c7be1a34aa6e9f1e5d832a4a8377f6d802cb4e 100644
+--- a/bignumber.d.ts
++++ b/bignumber.d.ts
+@@ -330,7 +330,7 @@ export namespace BigNumber {
+ export declare class BigNumber implements BigNumber.Instance {
+ 
+   /** Used internally to identify a BigNumber instance. */
+-  private readonly _isBigNumber: true;
++  readonly _isBigNumber: true;
+ 
+   /** The coefficient of the value of this BigNumber, an array of base 1e14 integer numbers, or null. */
+   readonly c: number[] | null;
