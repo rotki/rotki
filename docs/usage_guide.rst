@@ -1287,6 +1287,13 @@ the select suggestion using the up/down arrows in your keyboard. You can submit 
 
 After adding your filters you can press enter to close the menu.
 
+By default, all trades will be processed in accounting, but you can ignore unwanted trades, so they won't be processed.
+You can select the checkbox on the left part of each entry and click ``Ignore``/``Unignore``.
+
+.. image:: images/sc_history_trades_ignore.png
+   :alt: Ignore trades
+   :align: center
+
 Filtering deposits & withdrawals
 ================================
 
@@ -1308,6 +1315,12 @@ For deposits you can use the following filters:
 .. [2] The date filter has to be in the DD/MM/YYYY HH:mm:ss format. You can completely skip the time part or just the seconds part, thus making DD/MM/YYYY or DD/MM/YYYY HH:mm acceptable.
 
 
+By default, all deposits/withdrawals will be processed in accounting, but you can ignore unwanted deposit/withdrawals, so they won't be processed.
+You can select the checkbox on the left part of each entry and click ``Ignore``/``Unignore``.
+
+.. image:: images/sc_history_deposits_ignore.png
+   :alt: Ignore deposits/withdrawals
+   :align: center
 
 History events
 =====================
@@ -1333,6 +1346,8 @@ History events can be filtered if you have a premium subscription activated. You
 .. image:: images/events_query_process.png
    :alt: History events query status breakdown
    :align: center
+
+By default, all events will be processed in accounting, but you can ignore unwanted events, so they won't be processed. You can click on the three dots to display the options for the group of events, and click ``Ignore events in accounting``/``Unignore events in accounting``.
 
 It is possible that you need to redecode events for an evm transaction. To do that you have two options. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
 
