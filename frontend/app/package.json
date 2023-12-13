@@ -48,7 +48,7 @@
     "@vueuse/math": "10.7.0",
     "@vueuse/shared": "10.7.0",
     "axios": "1.6.2",
-    "bignumber.js": "9.1.1",
+    "bignumber.js": "9.1.2",
     "chart.js": "4.4.1",
     "chartjs-plugin-zoom": "2.0.0",
     "dayjs": "1.11.10",
@@ -71,7 +71,7 @@
     "vue-i18n": "8.28.2",
     "vue-i18n-bridge": "9.8.0",
     "vue-router": "3.6.5",
-    "vuetify": "2.7.0",
+    "vuetify": "2.7.1",
     "zod": "3.22.4"
   },
   "devDependencies": {
