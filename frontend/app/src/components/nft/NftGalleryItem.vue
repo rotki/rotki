@@ -108,11 +108,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         tooltip-class="max-w-[10rem]"
       >
         <template #activator>
-          <ExternalLink
-            :url="item.externalLink || undefined"
-            class="w-full"
-            custom
-          >
+          <ExternalLink :url="item.externalLink" class="w-full" custom>
             <video
               v-if="isMediaVideo"
               controls
