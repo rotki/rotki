@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    value?: string | null;
+    value?: string;
     justify?: 'end' | 'start';
     assetPadding?: number;
   }>(),
   {
-    value: null,
+    value: undefined,
     justify: 'end',
     assetPadding: 0
   }
