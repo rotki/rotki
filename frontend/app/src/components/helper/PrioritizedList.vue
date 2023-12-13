@@ -150,7 +150,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           </span>
         </RuiTooltip>
       </div>
-      <VSimpleTable>
+      <SimpleTable>
         <thead>
           <tr>
             <th class="w-10" />
@@ -219,7 +219,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             </td>
           </tr>
         </tbody>
-      </VSimpleTable>
+      </SimpleTable>
     </RuiCard>
     <ActionStatusIndicator class="my-4" :status="status" />
   </div>

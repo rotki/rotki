@@ -643,11 +643,11 @@ const abortLogin = () => {
   }
 
   &__actions {
+    @apply flex flex-col justify-stretch space-y-8 pt-6;
+
     &__footer {
       @apply flex items-center justify-center text-rui-text-secondary;
     }
-
-    @apply flex flex-col justify-stretch space-y-8 pt-6;
   }
 }
 </style>

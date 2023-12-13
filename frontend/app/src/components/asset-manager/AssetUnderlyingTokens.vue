@@ -14,7 +14,7 @@ const { t } = useI18n();
     <template #title>
       {{ t('asset_table.underlying_tokens') }}
     </template>
-    <VSimpleTable>
+    <SimpleTable>
       <thead>
         <tr>
           <th>{{ t('common.address') }}</th>
@@ -37,6 +37,6 @@ const { t } = useI18n();
           </td>
         </tr>
       </tbody>
-    </VSimpleTable>
+    </SimpleTable>
   </TableExpandContainer>
 </template>

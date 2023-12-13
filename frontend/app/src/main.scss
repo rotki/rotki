@@ -25,13 +25,13 @@ body {
 }
 
 .container {
-  max-width: 1500px;
   @apply px-4;
+  max-width: 1500px;
 }
 
 aside {
-  max-height: calc(100vh - 64px);
   @apply fixed #{!important};
+  max-height: calc(100vh - 64px);
 }
 
 .table-inside-dialog {
@@ -100,6 +100,8 @@ input {
 }
 
 .v-card {
+  @apply rounded-lg #{!important};
+
   &__subtitle,
   &__text,
   &__title,
@@ -112,18 +114,16 @@ input {
   }
 
   &__text {
+    @apply pb-6;
+
     &.no-padding {
       @apply p-0 #{!important};
     }
-
-    @apply pb-6;
   }
 
   &__actions {
     @apply pb-6 #{!important};
   }
-
-  @apply rounded-lg #{!important};
 }
 
 

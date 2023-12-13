@@ -139,16 +139,19 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
 
 <style module lang="scss">
 .labeled-address-display {
+  @apply w-full hover:cursor-default;
+  @apply bg-rui-grey-100 #{!important};
+
   > span {
     @apply w-full flex items-center px-0;
   }
 
   &__address {
+    @apply flex items-center gap-2 text-rui-text-secondary;
+
     &--mobile {
       @apply max-w-[9.375rem];
     }
-
-    @apply flex items-center gap-2 text-rui-text-secondary;
   }
 
   &__divider {
@@ -158,9 +161,6 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   &__actions {
     @apply flex items-center h-[1.75rem];
   }
-
-  @apply w-full hover:cursor-default;
-  @apply bg-rui-grey-100 #{!important};
 }
 
 :global(.dark) {

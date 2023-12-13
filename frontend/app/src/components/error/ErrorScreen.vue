@@ -72,6 +72,8 @@ const errorText = computed(() => {
 
 <style scoped lang="scss">
 .error-screen {
+  @apply bg-white dark:bg-black;
+
   height: 100%;
   width: 100%;
   z-index: 99999;
@@ -104,7 +106,5 @@ const errorText = computed(() => {
       width: 100%;
     }
   }
-
-  @apply bg-white dark:bg-black;
 }
 </style>

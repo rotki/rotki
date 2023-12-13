@@ -107,11 +107,11 @@ const steps = [
 }
 
 .container {
+  @apply h-full grow flex flex-col;
+
   &__footer {
     @apply p-6 lg:p-8 flex items-center justify-between lg:justify-end;
   }
-
-  @apply h-full grow flex flex-col;
 }
 
 .wrapper {
