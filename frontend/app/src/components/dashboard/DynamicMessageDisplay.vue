@@ -23,8 +23,8 @@ const emit = defineEmits<{
 
         <ExternalLink
           v-if="message.action"
+          color="primary"
           :url="message.action?.url"
-          class="underline"
         >
           {{ message.action.text }}
         </ExternalLink>

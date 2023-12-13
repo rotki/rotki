@@ -18,13 +18,17 @@ const NftCollectionInfo = z.object({
   name: z.string().nullable(),
   largeImage: z.string().nullable()
 });
+
 const Nft = z.object({
   tokenIdentifier: z.string().nonempty(),
   name: z.string().nullable(),
   collection: NftCollectionInfo,
   backgroundColor: z.string().nullable(),
   imageUrl: z.string().nullable(),
-  externalLink: z.string().nullable(),
+  externalLink: z
+    .string()
+    .nullable()
+    .transform(item => item || undefined),
   permalink: z.string().nullable(),
   priceEth: NumericString,
   priceUsd: NumericString

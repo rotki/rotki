@@ -21,7 +21,6 @@ const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
-const { premiumURL } = useInterop();
 const sortProperties = [
   {
     text: t('common.name'),
@@ -266,20 +265,21 @@ const sortNfts = (
         />
       </div>
     </div>
-    <div
+    <RuiDivider />
+    <i18n
       v-if="!premium && visibleNfts.length > 0"
-      class="flex justify-center text-rui-text-secondary"
+      path="nft_gallery.upgrade"
+      class="text-rui-text-secondary text-center"
     >
-      <i18n path="nft_gallery.upgrade">
-        <template #limit> {{ limit }}</template>
-        <template #link>
-          <BaseExternalLink
-            :text="t('upgrade_row.rotki_premium')"
-            :href="premiumURL"
-          />
-        </template>
-      </i18n>
-    </div>
+      <template #limit> {{ limit }}</template>
+      <template #link>
+        <ExternalLink
+          :text="t('upgrade_row.rotki_premium')"
+          color="primary"
+          premium
+        />
+      </template>
+    </i18n>
     <div
       v-if="visibleNfts.length === 0"
       class="min-h-[60vh] flex justify-center align-center text--secondary text-h6"

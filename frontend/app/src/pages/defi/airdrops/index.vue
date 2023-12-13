@@ -228,15 +228,11 @@ onMounted(async () => {
           <AirdropDisplay :source="item.source" />
         </template>
         <template #item.link="{ item }">
-          <ExternalLinkButton
-            v-if="!hasDetails(item.source)"
-            icon
-            color="primary"
-            :url="item.link"
-            variant="text"
-          >
-            <RuiIcon size="16" name="external-link-line" />
-          </ExternalLinkButton>
+          <ExternalLink v-if="!hasDetails(item.source)" :url="item.link" custom>
+            <RuiButton variant="text" color="primary" icon>
+              <RuiIcon size="16" name="external-link-line" />
+            </RuiButton>
+          </ExternalLink>
           <RowExpander
             v-else
             :expanded="expanded.includes(item)"

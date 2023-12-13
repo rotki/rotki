@@ -338,10 +338,9 @@ const abortLogin = () => {
           <p class="mb-3">{{ t('login.description.welcome') }}</p>
           <i18n path="login.description.more_details" tag="p">
             <template #documentation>
-              <BaseExternalLink
+              <ExternalLink
                 :text="t('login.description.our_docs')"
-                :href="usageGuideUrl"
-                class="underline !text-rui-text-secondary"
+                :url="usageGuideUrl"
               />
             </template>
           </i18n>

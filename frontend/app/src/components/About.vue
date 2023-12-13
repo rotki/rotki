@@ -107,8 +107,8 @@ const { copy } = useClipboard({ source: versionText });
       <div class="flex items-center">
         <div class="font-bold">{{ version.version }}</div>
         <div class="ml-4">
-          <BaseExternalLink
-            :href="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
+          <ExternalLink
+            :url="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
             :text="t('about.release_notes')"
           />
         </div>

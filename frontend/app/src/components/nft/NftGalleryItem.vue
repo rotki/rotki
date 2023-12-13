@@ -108,7 +108,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         tooltip-class="max-w-[10rem]"
       >
         <template #activator>
-          <BaseExternalLink :href="item.externalLink" class="w-full">
+          <ExternalLink :url="item.externalLink" class="w-full" custom>
             <video
               v-if="isMediaVideo"
               controls
@@ -117,7 +117,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
               :style="mediaStyle"
             />
             <AppImage v-else :src="imageUrl" contain :style="mediaStyle" />
-          </BaseExternalLink>
+          </ExternalLink>
         </template>
 
         {{ t('nft_balance_table.hidden_hint') }}

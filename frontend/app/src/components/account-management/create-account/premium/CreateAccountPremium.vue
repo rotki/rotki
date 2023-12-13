@@ -34,11 +34,7 @@ const premiumSelectionButtons = computed(() => [
       class="text-center text-rui-text-secondary whitespace-break-spaces"
     >
       <template #premiumLink>
-        <BaseExternalLink
-          :text="t('create_account.premium.premium_link_text')"
-          href="https://rotki.com/products"
-          class="!text-rui-text-secondary underline"
-        />
+        <ExternalLink :text="t('common.here')" premium />.
       </template>
     </i18n>
     <div class="mt-8 flex justify-center gap-5">

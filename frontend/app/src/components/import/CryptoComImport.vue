@@ -12,7 +12,10 @@ const { t } = useI18n();
     <ul class="list-disc">
       <li>
         <i18n tag="span" path="import_data.cryptocom.line_one">
-          <ExternalLink url="https://github.com/rotki/rotki/issues/new/choose">
+          <ExternalLink
+            color="primary"
+            url="https://github.com/rotki/rotki/issues/new/choose"
+          >
             {{ t('import_data.cryptocom.line_one_link') }}
           </ExternalLink>
         </i18n>

@@ -1434,7 +1434,7 @@
     "unclaimed": "No reclamado",
     "validator_index": "Índice de validador",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}"
+    "visit_website": "To get a premium subscription please visit our {0}."
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
@@ -1508,7 +1508,6 @@
     },
     "premium": {
       "button_premium_approve": "Sí, habilitar premium",
-      "premium_link_text": "aquí.",
       "premium_question": "¿Ya eres un usuario premium de rotki y quieres habilitar funciones premium?\nEsto es necesario si deseas sincronizar tu base de datos de rotki desde otro dispositivo al crear la cuenta. Puedes comprar premium {premiumLink}"
     },
     "steps": {

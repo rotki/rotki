@@ -770,14 +770,9 @@ watchImmediate(route, async route => {
           >
             <template #tooltip>
               <i18n tag="span" path="transactions.filtering_premium_hint">
-                <template #link>
-                  <ExternalLink
-                    class="font-bold"
-                    url="https://rotki.com/products"
-                  >
-                    {{ t('common.website') }}
-                  </ExternalLink>
-                </template>
+                <ExternalLink class="!font-bold !text-white" premium>
+                  {{ t('common.website') }}
+                </ExternalLink>
               </i18n>
             </template>
           </TableFilter>

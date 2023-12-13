@@ -1439,7 +1439,7 @@
     "unclaimed": "αδιεκδίκητος",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}"
+    "visit_website": "To get a premium subscription please visit our {0}."
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
@@ -1513,7 +1513,6 @@
     },
     "premium": {
       "button_premium_approve": "Ναι, ενεργοποιήστε το premium",
-      "premium_link_text": "εδώ.",
       "premium_question": "Είστε ήδη χρήστης premium του rotki και θέλετε να ενεργοποιήσετε τις λειτουργίες premium?\nΑυτό είναι απαραίτητο εάν θέλετε να συγχρονίσετε τη βάση δεδομένων rotki από άλλη συσκευή κατά τη δημιουργία λογαριασμού. Μπορείτε να αγοράσετε premium {premiumLink}"
     },
     "steps": {

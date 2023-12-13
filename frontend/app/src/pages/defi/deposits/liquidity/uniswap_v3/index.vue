@@ -26,8 +26,6 @@ const { isModuleEnabled } = useModules();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { t } = useI18n();
 
-const { premiumURL } = useInterop();
-
 const enabled = isModuleEnabled(uniswap);
 const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
 const primaryRefreshing = isLoading(Section.DEFI_UNISWAP_V3_BALANCES);
@@ -75,8 +73,8 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       {{ t('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
-      <i18n tag="div" path="uniswap.loading_non_premium">
-        <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
+      <i18n path="uniswap.loading_non_premium">
+        <ExternalLink :text="t('uniswap.premium')" color="primary" premium />
       </i18n>
     </template>
   </ProgressScreen>
