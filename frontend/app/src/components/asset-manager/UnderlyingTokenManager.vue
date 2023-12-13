@@ -17,7 +17,6 @@ const input = (value: UnderlyingToken[]) => emit('input', value);
 const underlyingAddress = ref<string>('');
 const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
 const underlyingWeight = ref<string>('');
-const form = ref<any>(null);
 
 const rules = {
   address: {
@@ -73,7 +72,6 @@ const addToken = () => {
     underlyingTokens.push(token);
   }
 
-  (get(form) as any)?.reset();
   get(v$).$reset();
   input(underlyingTokens);
 };
@@ -96,7 +94,7 @@ const deleteToken = (address: string) => {
 </script>
 
 <template>
-  <VForm ref="form" :value="!v$.$invalid">
+  <form>
     <div class="text-h6">
       {{ t('underlying_token_manager.labels.tokens') }}
     </div>
@@ -180,5 +178,5 @@ const deleteToken = (address: string) => {
         </tbody>
       </VSimpleTable>
     </RuiCard>
-  </VForm>
+  </form>
 </template>

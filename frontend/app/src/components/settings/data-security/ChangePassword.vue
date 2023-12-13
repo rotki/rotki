@@ -3,15 +3,10 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
-interface Form {
-  reset: () => boolean;
-}
-
 const currentPassword = ref('');
 const newPassword = ref('');
 const newPasswordConfirm = ref('');
 const loading = ref(false);
-const form = ref();
 
 const { t } = useI18n();
 
@@ -50,8 +45,6 @@ const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useSessionStore();
 
 const reset = () => {
-  const passwordForm = get(form) as Form;
-  passwordForm.reset();
   get(v$).$reset();
 };
 
@@ -70,10 +63,10 @@ const change = async () => {
 </script>
 
 <template>
-  <Card>
-    <template #title>{{ t('change_password.title') }}</template>
+  <RuiCard>
+    <template #header>{{ t('change_password.title') }}</template>
 
-    <VForm ref="form">
+    <form>
       <RuiAlert
         v-if="premiumSync"
         class="mb-4"
@@ -107,11 +100,10 @@ const change = async () => {
         :error-messages="toMessages(v$.newPasswordConfirm)"
         variant="outlined"
       />
-    </VForm>
+    </form>
 
-    <template #buttons>
+    <template #footer>
       <RuiButton
-        depressed
         class="user-security-settings__buttons__change-password"
         color="primary"
         :loading="loading"
@@ -121,5 +113,5 @@ const change = async () => {
         {{ t('change_password.button') }}
       </RuiButton>
     </template>
-  </Card>
+  </RuiCard>
 </template>
