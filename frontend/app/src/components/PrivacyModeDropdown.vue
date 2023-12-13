@@ -173,6 +173,8 @@ watch([enabled, multiplier], setData);
     border-radius: 0.5rem;
 
     .slider-wrapper {
+      @apply p-8;
+
       .v-input {
         :deep(.v-slider) {
           .v-slider {
@@ -265,17 +267,17 @@ watch([enabled, multiplier], setData);
         }
         /* stylelint-enable plugin/stylelint-bem-namics */
       }
-
-      @apply p-8;
     }
 
     .scrambler {
+      @apply px-4 mb-4;
+
       &-toggle {
+        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l;
+
         :deep(svg) {
           @apply text-white;
         }
-
-        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l;
       }
 
       &-data {
@@ -283,8 +285,6 @@ watch([enabled, multiplier], setData);
           @apply rounded-l-none;
         }
       }
-
-      @apply px-4 mb-4;
     }
   }
 }

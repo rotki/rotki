@@ -112,11 +112,11 @@ onMounted(async () => fetchMessages());
 }
 
 .container {
+  @apply h-full grow flex flex-col;
+
   &__footer {
     @apply p-6 lg:p-8 flex items-center justify-between;
   }
-
-  @apply h-full grow flex flex-col;
 }
 
 .wrapper {
@@ -129,8 +129,8 @@ onMounted(async () => fetchMessages());
 
 .footer {
   &__text {
-    letter-spacing: 0.025rem;
     @apply font-normal text-sm leading-6 text-rui-text-secondary;
+    letter-spacing: 0.025rem;
   }
 }
 </style>

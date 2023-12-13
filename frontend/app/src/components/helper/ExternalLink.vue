@@ -58,12 +58,11 @@ const css = useCssModule();
 
 <style lang="scss" module>
 .button {
+  @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
   font-weight: inherit !important;
 
   span {
     @apply underline;
   }
-
-  @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
 }
 </style>

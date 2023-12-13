@@ -305,6 +305,9 @@ const navItems: MenuItem[] = [
     }
 
     &--active {
+      @apply bg-rui-primary font-bold;
+      @apply text-white;
+
       :deep(.v-list-item__icon) {
         /* stylelint-enable selector-class-pattern,selector-nested-pattern */
         @apply text-white;
@@ -314,8 +317,6 @@ const navItems: MenuItem[] = [
         opacity: 1 !important;
         filter: brightness(0) invert(100%);
       }
-      @apply bg-rui-primary font-bold;
-      @apply text-white;
     }
   }
 

@@ -254,8 +254,8 @@ const { copy } = useClipboard({ source: versionText });
 }
 
 .label {
-  min-width: 130px;
   @apply font-medium py-0.5;
+  min-width: 130px;
 }
 
 .directory {

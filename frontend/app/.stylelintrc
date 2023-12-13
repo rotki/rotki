@@ -37,11 +37,21 @@
     "selector-class-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
     "selector-nested-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
     "order/order": [
+      {
+        "type": "at-rule",
+        "name": "apply"
+      },
       "custom-properties",
       "dollar-variables",
       "declarations",
       "rules",
       "at-rules"
+    ],
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "apply", "variants", "responsive", "screen", "each", "for"]
+      }
     ]
   }
 }

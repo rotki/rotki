@@ -16,7 +16,7 @@ const copyright = computed(() =>
 
 <style lang="scss" module>
 .text {
-  letter-spacing: 0.025rem;
   @apply font-normal text-sm leading-6 text-rui-text-secondary;
+  letter-spacing: 0.025rem;
 }
 </style>

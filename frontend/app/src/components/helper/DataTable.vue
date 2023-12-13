@@ -349,13 +349,13 @@ const { dark } = useTheme();
 
     tr {
       &.append-row {
+        @apply border-b;
+
         border-color: var(--border-color);
 
         td {
           @apply border-none;
         }
-
-        @apply border-b;
       }
 
       &:not(.v-data-table__expanded__content) {
@@ -369,8 +369,9 @@ const { dark } = useTheme();
       }
 
       td {
-        border-color: var(--border-color);
         @apply border-b;
+
+        border-color: var(--border-color);
       }
     }
   }
