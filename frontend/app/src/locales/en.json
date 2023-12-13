@@ -1524,6 +1524,7 @@
     "account": "Account",
     "actions": {
       "accept": "Accept",
+      "add": "Add",
       "back": "Back",
       "cancel": "Cancel",
       "clear_selection": "Clear Selection",

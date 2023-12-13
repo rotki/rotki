@@ -94,10 +94,11 @@ const deleteToken = (address: string) => {
 </script>
 
 <template>
-  <form>
+  <form class="flex flex-col gap-4">
     <div class="text-h6">
       {{ t('underlying_token_manager.labels.tokens') }}
     </div>
+
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 my-2">
       <div class="md:col-span-2">
         <RuiTextField
@@ -108,6 +109,7 @@ const deleteToken = (address: string) => {
           :label="t('common.address')"
         />
       </div>
+
       <div class="col-span-1">
         <VSelect
           v-model="tokenKind"
@@ -118,6 +120,7 @@ const deleteToken = (address: string) => {
           item-value="identifier"
         />
       </div>
+
       <div class="col-span-1">
         <RuiTextField
           v-model="underlyingWeight"
@@ -127,56 +130,64 @@ const deleteToken = (address: string) => {
           max="100"
           min="1"
           :error-messages="toMessages(v$.weight)"
-          :hint="t('underlying_token_manager.hint')"
           :label="t('underlying_token_manager.labels.weight')"
         >
-          <template #append-outer>
-            <RuiButton
-              variant="text"
-              color="primary"
-              icon
-              :disabled="v$.$invalid"
-              class="mt-n2"
-              @click="addToken()"
-            >
-              <RuiIcon name="add-line" />
-            </RuiButton>
+          <template #append>
+            <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+              <template #activator>
+                <RuiButton type="button" variant="text" icon size="sm">
+                  <RuiIcon :size="20" name="question-line" />
+                </RuiButton>
+              </template>
+              {{ t('underlying_token_manager.hint') }}
+            </RuiTooltip>
           </template>
         </RuiTextField>
       </div>
+
+      <RuiButton
+        color="primary"
+        :disabled="v$.$invalid"
+        class=""
+        @click="addToken()"
+      >
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('common.actions.add') }}
+      </RuiButton>
     </div>
-    <RuiCard class="underlying-tokens">
-      <VSimpleTable fixed-header height="200px">
-        <thead>
-          <tr>
-            <th>{{ t('common.address') }}</th>
-            <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
-            <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="token in value" :key="token.address">
-            <td class="grow">{{ token.address }}</td>
-            <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
-            <td class="shrink text-no-wrap">
-              {{
-                t('underlying_token_manager.tokens.weight_percentage', {
-                  weight: token.weight
-                })
-              }}
-            </td>
-            <td>
-              <RowActions
-                :edit-tooltip="t('underlying_token_manager.edit_tooltip')"
-                :delete-tooltip="t('underlying_token_manager.delete_tooltip')"
-                @delete-click="deleteToken(token.address)"
-                @edit-click="editToken(token)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </VSimpleTable>
-    </RuiCard>
+
+    <SimpleTable height="200px" class="underlying-tokens">
+      <thead>
+        <tr>
+          <th>{{ t('common.address') }}</th>
+          <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
+          <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
+          <th />
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="token in value" :key="token.address">
+          <td class="grow">{{ token.address }}</td>
+          <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
+          <td class="shrink text-no-wrap">
+            {{
+              t('underlying_token_manager.tokens.weight_percentage', {
+                weight: token.weight
+              })
+            }}
+          </td>
+          <td>
+            <RowActions
+              :edit-tooltip="t('underlying_token_manager.edit_tooltip')"
+              :delete-tooltip="t('underlying_token_manager.delete_tooltip')"
+              @delete-click="deleteToken(token.address)"
+              @edit-click="editToken(token)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </SimpleTable>
   </form>
 </template>
