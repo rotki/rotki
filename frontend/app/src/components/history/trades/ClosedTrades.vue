@@ -361,7 +361,7 @@ watch(loading, async (isLoading, wasLoading) => {
       <VSwitch
         v-if="mainPage"
         v-model="hideIgnoredTrades"
-        class="mb-4"
+        class="mb-4 max-w-max"
         hide-details
         :label="t('closed_trades.hide_ignored_trades')"
       />
