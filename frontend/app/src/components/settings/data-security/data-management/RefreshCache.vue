@@ -43,14 +43,14 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
 
 <template>
   <div class="mb-2">
-    <div class="mb-6">
-      <div class="text-h6">
+    <RuiCardHeader class="p-0 mb-4">
+      <template #header>
         {{ t('data_management.refresh_cache.title') }}
-      </div>
-      <div>
+      </template>
+      <template #subheader>
         {{ t('data_management.refresh_cache.subtitle') }}
-      </div>
-    </div>
+      </template>
+    </RuiCardHeader>
 
     <div class="flex items-center gap-4">
       <VAutocomplete

@@ -70,14 +70,14 @@ const css = useCssModule();
 
 <template>
   <div>
-    <div class="mb-6">
-      <div class="text-h6">
+    <RuiCardHeader class="p-0 mb-4">
+      <template #header>
         {{ t('data_management.purge_images_cache.title') }}
-      </div>
-      <div>
+      </template>
+      <template #subheader>
         {{ t('data_management.purge_images_cache.subtitle') }}
-      </div>
-    </div>
+      </template>
+    </RuiCardHeader>
 
     <div class="flex items-center gap-4">
       <div class="flex flex-col md:flex-row md:gap-4 flex-1">

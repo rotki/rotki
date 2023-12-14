@@ -37,7 +37,7 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
         :value="event.balance.usdValue"
         :price-asset="event.asset"
         :fiat-currency="CURRENCY_USD"
-        class="grey--text"
+        class="text-rui-text-secondary"
         :timestamp="event.timestamp"
         milliseconds
       />

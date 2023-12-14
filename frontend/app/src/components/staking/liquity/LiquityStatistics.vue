@@ -302,7 +302,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                         />
                       </div>
                     </div>
-                    <div v-else class="grey--text pb-2">
+                    <div v-else class="text-rui-text-secondary pb-2">
                       {{ t('liquity_statistic.no_stability_pool_gains') }}
                     </div>
                   </div>
@@ -358,7 +358,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                         />
                       </div>
                     </div>
-                    <div v-else class="grey--text pb-2">
+                    <div v-else class="text-rui-text-secondary pb-2">
                       {{ t('liquity_statistic.no_staking_gains') }}
                     </div>
                   </div>

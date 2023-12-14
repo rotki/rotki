@@ -92,8 +92,7 @@ const { copy } = useClipboard({ source: versionText });
 </script>
 
 <template>
-  <!-- TODO: Remove bg class when https://github.com/rotki/ui-library/issues/124 is resolved -->
-  <RuiCard variant="flat" class="dark:bg-[#1E1E1E]">
+  <RuiCard variant="flat">
     <template #custom-header>
       <div class="p-6 bg-rui-primary text-white">
         <RuiLogo :custom-src="remoteAboutLogo" />

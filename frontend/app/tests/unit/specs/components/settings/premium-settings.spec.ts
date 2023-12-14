@@ -1,7 +1,6 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import Vuetify from 'vuetify';
-import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 
 vi.mock('@/composables/electron-interop', () => {
@@ -29,9 +28,6 @@ describe('PremiumSettings.vue', () => {
     return mount(PremiumSettings, {
       pinia,
       vuetify,
-      components: {
-        Card
-      },
       stubs: ['v-dialog', 'i18n', 'card-title']
     });
   }

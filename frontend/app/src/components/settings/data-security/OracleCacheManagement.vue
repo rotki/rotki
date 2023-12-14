@@ -167,103 +167,101 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
 </script>
 
 <template>
-  <VCard class="mt-8">
-    <VCardTitle>
-      <CardTitle>{{ t('oracle_cache_management.title') }}</CardTitle>
-    </VCardTitle>
-    <VCardSubtitle>
+  <RuiCard class="mt-8">
+    <template #header>
+      {{ t('oracle_cache_management.title') }}
+    </template>
+    <template #subheader>
       {{ t('oracle_cache_management.subtitle') }}
-    </VCardSubtitle>
-    <VCardText>
-      <VAutocomplete
-        v-model="selection"
-        :label="t('oracle_cache_management.select_oracle')"
-        prepend-inner-icon="mdi-magnify"
-        outlined
-        :items="oracles"
-        item-value="identifier"
-        item-text="identifier"
-      >
-        <template #selection="{ item }">
-          <PrioritizedListEntry :data="item" />
-        </template>
-        <template #item="{ item }">
-          <PrioritizedListEntry :data="item" />
-        </template>
-      </VAutocomplete>
-      <div class="pb-8">
-        <div class="flex items-start gap-4">
-          <AssetSelect
-            v-model="fromAsset"
-            clearable
-            :disabled="pending"
-            outlined
-            :label="t('oracle_cache_management.from_asset')"
-          />
-          <AssetSelect
-            v-model="toAsset"
-            clearable
-            :disabled="pending"
-            outlined
-            :label="t('oracle_cache_management.to_asset')"
-          />
+    </template>
+    <VAutocomplete
+      v-model="selection"
+      :label="t('oracle_cache_management.select_oracle')"
+      prepend-inner-icon="mdi-magnify"
+      outlined
+      :items="oracles"
+      item-value="identifier"
+      item-text="identifier"
+    >
+      <template #selection="{ item }">
+        <PrioritizedListEntry :data="item" />
+      </template>
+      <template #item="{ item }">
+        <PrioritizedListEntry :data="item" />
+      </template>
+    </VAutocomplete>
+    <div class="pb-8">
+      <div class="flex items-start gap-4">
+        <AssetSelect
+          v-model="fromAsset"
+          clearable
+          :disabled="pending"
+          outlined
+          :label="t('oracle_cache_management.from_asset')"
+        />
+        <AssetSelect
+          v-model="toAsset"
+          clearable
+          :disabled="pending"
+          outlined
+          :label="t('oracle_cache_management.to_asset')"
+        />
+        <RuiButton
+          class="mt-1"
+          variant="text"
+          icon
+          large
+          @click="clearFilter()"
+        >
+          <RuiIcon name="close-line" />
+        </RuiButton>
+      </div>
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+        <template #activator>
           <RuiButton
-            class="mt-1"
-            variant="text"
-            icon
-            large
-            @click="clearFilter()"
+            :loading="pending"
+            color="primary"
+            :disabled="!fromAsset || !toAsset || pending"
+            size="lg"
+            @click="fetchPrices()"
           >
-            <RuiIcon name="close-line" />
+            <template #prepend>
+              <RuiIcon name="add-line" />
+            </template>
+            {{ t('oracle_cache_management.create_cache') }}
           </RuiButton>
-        </div>
+        </template>
+        <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
+      </RuiTooltip>
+    </div>
+    <DataTable :headers="headers" :loading="loading" :items="filteredData">
+      <template #item.fromAsset="{ item }">
+        <AssetDetails opens-details :asset="item.fromAsset" />
+      </template>
+      <template #item.toAsset="{ item }">
+        <AssetDetails opens-details :asset="item.toAsset" />
+      </template>
+      <template #item.toTimestamp="{ item }">
+        <DateDisplay :timestamp="item.toTimestamp" />
+      </template>
+      <template #item.fromTimestamp="{ item }">
+        <DateDisplay :timestamp="item.fromTimestamp" />
+      </template>
+      <template #item.actions="{ item }">
         <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
           <template #activator>
             <RuiButton
-              :loading="pending"
               color="primary"
-              :disabled="!fromAsset || !toAsset || pending"
-              size="lg"
-              @click="fetchPrices()"
+              variant="text"
+              icon
+              @click="showDeleteConfirmation(item)"
             >
-              <template #prepend>
-                <RuiIcon name="add-line" />
-              </template>
-              {{ t('oracle_cache_management.create_cache') }}
+              <RuiIcon size="16" name="delete-bin-line" />
             </RuiButton>
           </template>
-          <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
+          <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
         </RuiTooltip>
-      </div>
-      <DataTable :headers="headers" :loading="loading" :items="filteredData">
-        <template #item.fromAsset="{ item }">
-          <AssetDetails opens-details :asset="item.fromAsset" />
-        </template>
-        <template #item.toAsset="{ item }">
-          <AssetDetails opens-details :asset="item.toAsset" />
-        </template>
-        <template #item.toTimestamp="{ item }">
-          <DateDisplay :timestamp="item.toTimestamp" />
-        </template>
-        <template #item.fromTimestamp="{ item }">
-          <DateDisplay :timestamp="item.fromTimestamp" />
-        </template>
-        <template #item.actions="{ item }">
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
-            <template #activator>
-              <RuiButton
-                color="primary"
-                variant="text"
-                icon
-                @click="showDeleteConfirmation(item)"
-              >
-                <RuiIcon size="16" name="delete-bin-line" />
-              </RuiButton>
-            </template>
-            <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
-          </RuiTooltip>
-        </template>
-      </DataTable>
-    </VCardText>
-  </VCard>
+      </template>
+    </DataTable>
+  </RuiCard>
 </template>

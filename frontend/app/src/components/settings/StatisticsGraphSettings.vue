@@ -28,17 +28,17 @@ const showMenu: Ref<boolean> = ref(false);
       </MenuTooltipButton>
     </template>
 
-    <Card>
+    <RuiCard variant="flat">
       <SsfGraphMultiplierSetting @updated="updated()" />
       <RuiDivider class="my-4" />
       <InferZeroTimedBalancesSetting @updated="updated()" />
 
-      <template #buttons>
+      <template #footer>
         <div class="grow" />
         <RuiButton color="primary" @click="showMenu = false">
           {{ t('common.actions.close') }}
         </RuiButton>
       </template>
-    </Card>
+    </RuiCard>
   </VMenu>
 </template>

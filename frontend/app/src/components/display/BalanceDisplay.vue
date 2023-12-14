@@ -7,7 +7,7 @@ const props = withDefaults(
     value?: Balance | null;
     noIcon?: boolean;
     noJustify?: boolean;
-    align?: string;
+    align?: 'start' | 'end';
     mode?: 'gain' | 'loss' | '';
     assetPadding?: number;
     ticker?: boolean;
@@ -76,7 +76,13 @@ const valueInCurrency = computed(() => {
       'text-rui-error': mode === 'loss'
     }"
   >
-    <div :class="`d-flex flex-column align-${align}`">
+    <div
+      class="flex flex-col"
+      :class="{
+        'items-start': align === 'start',
+        'items-end': align === 'end'
+      }"
+    >
       <AmountDisplay
         :loading="loading"
         :asset="asset"

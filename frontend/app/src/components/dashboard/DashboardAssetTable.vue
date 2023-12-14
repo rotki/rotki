@@ -190,6 +190,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         :fiat-currency="currencySymbol"
         :value="total"
         show-currency="symbol"
+        class="text-h6 font-bold"
       />
     </template>
     <DataTable
@@ -243,7 +244,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         <PercentageDisplay :value="percentageOfCurrentGroup(item.usdValue)" />
       </template>
       <template #no-results>
-        <span class="grey--text text--darken-2">
+        <span class="text-rui-text-secondary">
           {{
             t('dashboard_asset_table.no_search_result', {
               search
@@ -298,7 +299,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 <style module lang="scss">
 .dashboard-asset-table {
   &__search {
-    @apply p-0 m-0 max-w-[28rem] w-full mr-4 grow text-sm;
+    @apply max-w-[28rem] w-full;
   }
 }
 </style>

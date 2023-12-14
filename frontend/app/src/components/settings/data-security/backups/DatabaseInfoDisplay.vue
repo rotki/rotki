@@ -20,7 +20,8 @@ const { t } = useI18n();
 const userDetails = computed(() => [
   {
     value: props.directory,
-    label: t('database_info_display.directory')
+    label: t('database_info_display.directory'),
+    copiable: true
   },
   {
     value: props.userDb.version,
@@ -55,19 +56,27 @@ const [DefineRow, ReuseRow] = createReusableTemplate<{
       {{ t('database_info_display.title') }}
     </template>
 
-    <DefineRow #default="{ label, value }">
+    <DefineRow #default="{ label, value, copiable }">
       <div class="flex gap-4 items-center">
         <span class="font-bold min-w-[9rem]">
           {{ label }}
         </span>
-        <span class="text-rui-text-secondary">
-          {{ value }}
+        <span
+          class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2"
+        >
+          <span :title="value" class="text-truncate">{{ value }}</span>
+          <CopyButton
+            v-if="copiable"
+            size="sm"
+            :tooltip="value"
+            :value="value"
+          />
         </span>
       </div>
     </DefineRow>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <div>
+      <div class="overflow-hidden">
         <div class="font-bold text-h6 mb-2">
           {{ t('database_info_display.userdb') }}
         </div>
@@ -78,7 +87,7 @@ const [DefineRow, ReuseRow] = createReusableTemplate<{
           v-bind="detail"
         />
       </div>
-      <div>
+      <div class="overflow-hidden">
         <div class="font-bold text-h6 mb-2">
           {{ t('database_info_display.globaldb') }}
         </div>

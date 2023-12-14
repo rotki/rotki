@@ -67,7 +67,11 @@ const click = () => emit('click');
         <span :class="css.title" data-cy="details-symbol">
           {{ title }}
         </span>
-        <span v-if="subtitle" class="grey--text" :class="css.subtitle">
+        <span
+          v-if="subtitle"
+          class="text-rui-text-secondary"
+          :class="css.subtitle"
+        >
           <RuiTooltip
             :disabled="large"
             :popper="{ placement: 'top' }"

@@ -41,54 +41,48 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VCard v-bind="$attrs" :outlined="false">
-    <div
-      :class="{
-        'mx-4 pt-2': !noPadding
-      }"
+  <RuiCard variant="flat" :no-padding="noPadding">
+    <VAutocomplete
+      :value="value"
+      :label="t('liquidity_pool_selector.label')"
+      :items="pools"
+      :dense="dense"
+      :outlined="outlined"
+      :filter="filter"
+      :menu-props="{ closeOnContentClick: true }"
+      multiple
+      clearable
+      deletable-chips
+      single-line
+      hide-details
+      hide-selected
+      item-value="address"
+      chips
+      @input="input($event)"
     >
-      <VAutocomplete
-        :value="value"
-        :label="t('liquidity_pool_selector.label')"
-        :items="pools"
-        :dense="dense"
-        :outlined="outlined"
-        :filter="filter"
-        :menu-props="{ closeOnContentClick: true }"
-        multiple
-        clearable
-        deletable-chips
-        single-line
-        hide-details
-        hide-selected
-        item-value="address"
-        chips
-        @input="input($event)"
-      >
-        <template #selection="data">
-          <RuiChip
-            class="font-medium"
-            v-bind="data.attrs"
-            closeable
-            size="sm"
-            :input-value="data.selected"
-            @click="data.select"
-            @click:close="remove(data.item)"
-          >
-            {{ getPoolName(type, data.item.assets) }}
-          </RuiChip>
-        </template>
-        <template #item="{ item }">
-          <VListItemContent
-            :id="`ua-${item.address.toLocaleLowerCase()}`"
-            class="font-medium"
-          >
-            <VListItemTitle>
-              {{ getPoolName(type, item.assets) }}
-            </VListItemTitle>
-          </VListItemContent>
-        </template>
-      </VAutocomplete>
-    </div>
-  </VCard>
+      <template #selection="data">
+        <RuiChip
+          class="font-medium"
+          v-bind="data.attrs"
+          closeable
+          size="sm"
+          :input-value="data.selected"
+          @click="data.select"
+          @click:close="remove(data.item)"
+        >
+          {{ getPoolName(type, data.item.assets) }}
+        </RuiChip>
+      </template>
+      <template #item="{ item }">
+        <VListItemContent
+          :id="`ua-${item.address.toLocaleLowerCase()}`"
+          class="font-medium"
+        >
+          <VListItemTitle>
+            {{ getPoolName(type, item.assets) }}
+          </VListItemTitle>
+        </VListItemContent>
+      </template>
+    </VAutocomplete>
+  </RuiCard>
 </template>

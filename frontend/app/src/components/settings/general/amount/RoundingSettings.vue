@@ -26,12 +26,14 @@ const { t } = useI18n();
 
 <template>
   <div class="rounding-settings mt-8">
-    <div class="text-h6">
-      {{ t('rounding_settings.title') }}
-    </div>
-    <div class="text-subtitle-1">
-      {{ t('rounding_settings.subtitle') }}
-    </div>
+    <RuiCardHeader class="p-0 mb-4">
+      <template #header>
+        {{ t('rounding_settings.title') }}
+      </template>
+      <template #subheader>
+        {{ t('rounding_settings.subtitle') }}
+      </template>
+    </RuiCardHeader>
     <div class="grid md:grid-cols-2 gap-6 mt-4">
       <RoundingSelector
         :value="amountRoundingMode"

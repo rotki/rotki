@@ -138,17 +138,15 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <template>
-  <Card>
-    <template #title>
+  <RuiCard>
+    <template #header>
       {{ t('asset_locations.title') }}
     </template>
-    <template #actions>
-      <div class="flex justify-end">
-        <div class="w-full md:w-[30rem]">
-          <TagFilter v-model="onlyTags" />
-        </div>
+    <div class="flex justify-end">
+      <div class="w-full md:w-[30rem]">
+        <TagFilter v-model="onlyTags" />
       </div>
-    </template>
+    </div>
     <DataTable
       :headers="tableHeaders"
       :items="visibleAssetLocations"
@@ -184,14 +182,5 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         <PercentageDisplay :value="getPercentage(item.balance.usdValue)" />
       </template>
     </DataTable>
-  </Card>
+  </RuiCard>
 </template>
-
-<style scoped lang="scss">
-.asset-locations-table {
-  &__tag {
-    margin-right: 8px;
-    margin-bottom: 2px;
-  }
-}
-</style>

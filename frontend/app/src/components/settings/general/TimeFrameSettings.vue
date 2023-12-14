@@ -102,12 +102,14 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
 
 <template>
   <Fragment>
-    <h6 class="text-h6">
-      {{ t('timeframe_settings.default_timeframe') }}
-    </h6>
-    <div class="text-body-2 text-rui-text-secondary mb-4">
-      {{ t('timeframe_settings.default_timeframe_description') }}
-    </div>
+    <RuiCardHeader class="p-0 mb-4">
+      <template #header>
+        {{ t('timeframe_settings.default_timeframe') }}
+      </template>
+      <template #subheader>
+        {{ t('timeframe_settings.default_timeframe_description') }}
+      </template>
+    </RuiCardHeader>
     <RuiCard>
       <div class="text-subtitle-1">
         {{ t('timeframe_settings.visible_timeframes') }}

@@ -171,6 +171,7 @@ watch(loading, async (isLoading, wasLoading) => {
         :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
+        class="text-h6 font-bold"
       />
     </template>
 

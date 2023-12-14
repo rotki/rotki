@@ -25,12 +25,12 @@ const loadingData = computed<boolean>(
 </script>
 
 <template>
-  <Card v-if="loadingData || locationBreakdown.length > 0">
-    <template #title> {{ t('common.assets') }} </template>
+  <RuiCard v-if="loadingData || locationBreakdown.length > 0">
+    <template #header> {{ t('common.assets') }} </template>
     <AssetBalances
       :loading="loadingData"
       :balances="locationBreakdown"
       hide-breakdown
     />
-  </Card>
+  </RuiCard>
 </template>

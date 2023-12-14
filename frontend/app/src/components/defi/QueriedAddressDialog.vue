@@ -94,34 +94,20 @@ const close = () => {
   >
     <RuiCard>
       <template #custom-header>
-        <div class="flex items-center justify-between p-4">
-          <AdaptiveWrapper
-            class="flex items-center mr-4"
-            width="26px"
-            height="26px"
-          >
-            <AppImage
-              width="26px"
-              contain
-              max-height="24px"
-              :src="moduleIcon"
-            />
+        <div class="flex items-center justify-between p-4 gap-4">
+          <AdaptiveWrapper>
+            <AppImage size="24px" contain :src="moduleIcon" />
           </AdaptiveWrapper>
-          <div>
-            <h5 class="text-h6">
+          <RuiCardHeader class="p-0">
+            <template #header>
               {{ t('queried_address_dialog.title') }}
-            </h5>
-            <div class="text-rui-text-secondary text-body-2">
+            </template>
+            <template #subheader>
               {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
-            </div>
-          </div>
+            </template>
+          </RuiCardHeader>
 
-          <RuiButton
-            class="shrink-0 -me-3"
-            variant="text"
-            icon
-            @click="close()"
-          >
+          <RuiButton class="shrink-0" variant="text" icon @click="close()">
             <RuiIcon name="close-line" />
           </RuiButton>
         </div>

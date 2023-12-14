@@ -26,16 +26,13 @@ import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
-import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import Card from '@/components/helper/Card.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -87,8 +84,6 @@ export function registerComponents(): void {
   Vue.component('AssetDetails', AssetDetails);
   Vue.component('DefiProtocolIcon', DefiProtocolIcon);
   // version: 2
-  Vue.component('AssetMovementDisplay', AssetMovementDisplay);
-  Vue.component('EventTypeDisplay', EventTypeDisplay);
   //  CryptoIcon was replaced with AssetIcon on v11
   Vue.component('BalanceDisplay', BalanceDisplay);
   // version: 3
@@ -104,7 +99,6 @@ export function registerComponents(): void {
   // version 8
   Vue.component('CardTitle', CardTitle);
   // version 9
-  Vue.component('Card', Card);
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('TableFilter', TableFilter);
   // version 10

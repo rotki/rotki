@@ -58,12 +58,14 @@ onMounted(() => {
 
 <template>
   <div>
-    <CardTitle class="font-medium mb-2">
-      {{ t('statistics_graph_settings.multiplier.title') }}
-    </CardTitle>
-    <VCardSubtitle class="pa-0 mb-4">
-      {{ t('statistics_graph_settings.multiplier.subtitle') }}
-    </VCardSubtitle>
+    <RuiCardHeader class="p-0 mb-6">
+      <template #header>
+        {{ t('statistics_graph_settings.multiplier.title') }}
+      </template>
+      <template #subheader>
+        {{ t('statistics_graph_settings.multiplier.subtitle') }}
+      </template>
+    </RuiCardHeader>
     <SettingsOption
       #default="{ error, success, update }"
       setting="ssfGraphMultiplier"
@@ -83,13 +85,13 @@ onMounted(() => {
       />
     </SettingsOption>
 
-    <VCardSubtitle class="pa-0 mt-2">
+    <div class="text-body-2 text-rui-text-secondary mt-2">
       <span v-if="period === 0">
         {{ t('statistics_graph_settings.multiplier.off') }}
       </span>
       <span v-else>
         {{ t('statistics_graph_settings.multiplier.on', { period }) }}
       </span>
-    </VCardSubtitle>
+    </div>
   </div>
 </template>

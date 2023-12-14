@@ -45,8 +45,8 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card>
-    <template #title>{{ t('manage_user_assets.title') }}</template>
+  <RuiCard>
+    <template #header>{{ t('manage_user_assets.title') }}</template>
 
     <div class="flex flex-col gap-4">
       <RuiAlert type="info">
@@ -58,10 +58,10 @@ const { t } = useI18n();
         <template #subheader>
           {{ t('manage_user_assets.export.subtitle') }}
         </template>
-        <RuiAlert v-if="exportError" class="my-2" type="error">
+        <RuiAlert v-if="exportError" type="error">
           {{ exportError }}
         </RuiAlert>
-        <div class="flex flex-row items-center">
+        <template #footer>
           <RuiButton
             color="primary"
             :loading="downloading"
@@ -69,13 +69,11 @@ const { t } = useI18n();
           >
             {{ t('manage_user_assets.export.button') }}
           </RuiButton>
-          <div v-if="downloaded" class="flex items-center gap-2 ml-6">
+          <div v-if="downloaded || true" class="flex items-center gap-2 ml-4">
             <SuccessDisplay success />
-            <span>
-              {{ t('manage_user_assets.export.success') }}
-            </span>
+            {{ t('manage_user_assets.export.success') }}
           </div>
-        </div>
+        </template>
       </RuiCard>
 
       <RuiCard>
@@ -92,16 +90,18 @@ const { t } = useI18n();
           @update:uploaded="uploaded = $event"
           @update:error-message="importError = $event"
         />
-        <RuiButton
-          color="primary"
-          class="mt-4"
-          :disabled="importDisabled"
-          :loading="uploading"
-          @click="importZip()"
-        >
-          {{ t('common.actions.import') }}
-        </RuiButton>
+        <template #footer>
+          <RuiButton
+            color="primary"
+            class="mt-4"
+            :disabled="importDisabled"
+            :loading="uploading"
+            @click="importZip()"
+          >
+            {{ t('common.actions.import') }}
+          </RuiButton>
+        </template>
       </RuiCard>
     </div>
-  </Card>
+  </RuiCard>
 </template>

@@ -60,8 +60,8 @@ const updateSecondaryValue = (value: string) => {
   <div
     class="wrapper flex"
     :class="{
-      'flex-column': !reversed,
-      'flex-column-reverse': reversed
+      'flex-col': !reversed,
+      'flex-col-reverse': reversed
     }"
   >
     <AmountInput

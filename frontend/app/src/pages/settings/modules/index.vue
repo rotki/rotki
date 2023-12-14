@@ -10,7 +10,9 @@ const { t } = useI18n();
     <template #subheader>
       {{ t('module_settings.active_modules_description') }}
     </template>
-    <ModuleSelector class="mt-6" />
-    <span class="text-caption" v-text="t('module_settings.hint')" />
+    <ModuleSelector />
+    <span class="text-caption text-rui-text-secondary">
+      {{ t('module_settings.hint') }}
+    </span>
   </RuiCard>
 </template>

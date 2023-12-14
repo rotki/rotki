@@ -181,6 +181,7 @@ watch(errorMessages, errors => {
       v-model="userAddresses"
       variant="outlined"
       color="primary"
+      min-rows="5"
       :disabled="disabled"
       :error-messages="toMessages(v$.userAddresses)"
       :hint="t('account_form.labels.addresses_hint')"
