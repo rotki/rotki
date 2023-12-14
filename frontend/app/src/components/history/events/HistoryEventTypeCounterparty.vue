@@ -23,8 +23,8 @@ const [DefineText, ReuseText] = createReusableTemplate();
 <template>
   <div>
     <DefineImage>
-      <div>
-        <VAvatar v-if="counterparty" size="24">
+      <div class="rounded-full overflow-hidden bg-white">
+        <div v-if="counterparty">
           <RuiIcon
             v-if="counterparty.icon"
             :name="counterparty.icon"
@@ -35,20 +35,31 @@ const [DefineText, ReuseText] = createReusableTemplate();
             v-else-if="counterparty.image"
             :src="`${imagePath}${counterparty.image}`"
             contain
-            size="16px"
+            size="20px"
           />
 
-          <EnsAvatar v-else :address="counterparty.label" />
-        </VAvatar>
-        <EnsAvatar v-else-if="event.address" :address="event.address" avatar />
+          <EnsAvatar v-else size="20px" :address="counterparty.label" />
+        </div>
+        <EnsAvatar
+          v-else-if="event.address"
+          size="20px"
+          :address="event.address"
+          avatar
+        />
       </div>
     </DefineImage>
     <DefineText>
       <div>{{ counterparty?.label || event?.address }}</div>
     </DefineText>
     <template v-if="counterparty || event.address">
-      <VBadge v-if="!text" avatar overlap color="white">
-        <template #badge>
+      <RuiBadge
+        v-if="!text"
+        class="[&_span]:!px-0"
+        color="default"
+        offset-x="-4"
+        offset-y="4"
+      >
+        <template #icon>
           <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
               <ReuseImage />
@@ -57,7 +68,7 @@ const [DefineText, ReuseText] = createReusableTemplate();
           </RuiTooltip>
         </template>
         <slot />
-      </VBadge>
+      </RuiBadge>
       <div v-else class="flex items-center gap-2">
         <AdaptiveWrapper>
           <ReuseImage />

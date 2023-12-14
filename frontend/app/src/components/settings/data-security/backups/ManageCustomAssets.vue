@@ -69,7 +69,7 @@ const { t } = useI18n();
           >
             {{ t('manage_user_assets.export.button') }}
           </RuiButton>
-          <div v-if="downloaded || true" class="flex items-center gap-2 ml-4">
+          <div v-if="downloaded" class="flex items-center gap-2 ml-4">
             <SuccessDisplay success />
             {{ t('manage_user_assets.export.success') }}
           </div>
