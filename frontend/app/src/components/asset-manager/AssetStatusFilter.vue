@@ -39,6 +39,18 @@ const handlingSelection = computed({
     }
   }
 });
+
+const onlyShowOwned = computed({
+  get() {
+    return props.value.onlyShowOwned;
+  },
+  set(value: boolean) {
+    emit('input', {
+      ...props.value,
+      onlyShowOwned: value
+    });
+  }
+});
 </script>
 
 <template>
@@ -57,23 +69,13 @@ const handlingSelection = computed({
       </RuiButton>
     </template>
     <VList data-cy="asset-filter-menu">
-      <VListItem
-        link
-        @click="
-          emit('input', {
-            ...value,
-            onlyShowOwned: !value.onlyShowOwned
-          })
-        "
-      >
-        <VCheckbox
-          data-cy="asset-filter-only-show-owned"
-          :input-value="value.onlyShowOwned"
-          class="mt-0 py-2"
-          :label="t('asset_table.only_show_owned')"
-          hide-details
-        />
-      </VListItem>
+      <RuiCheckbox
+        v-model="onlyShowOwned"
+        data-cy="asset-filter-only-show-owned"
+        class="mt-0 px-4 py-2"
+        :label="t('asset_table.only_show_owned')"
+        hide-details
+      />
       <VListItem
         :class="css['filter-heading']"
         class="font-bold text-uppercase py-2"
