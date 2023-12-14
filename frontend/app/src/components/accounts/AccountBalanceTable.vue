@@ -434,19 +434,19 @@ defineExpose({
     v-on="rootListeners"
   >
     <template #header.accountSelection>
-      <VSimpleCheckbox
+      <RuiCheckbox
         :disabled="nonExpandedBalances.length === 0"
-        :ripple="false"
         :value="allSelected"
+        hide-details
         color="primary"
         @input="setSelected($event)"
       />
     </template>
     <template #item.accountSelection="{ item }">
-      <VSimpleCheckbox
-        :ripple="false"
+      <RuiCheckbox
         data-cy="account-balances-item-checkbox"
         color="primary"
+        hide-details
         :value="selected.includes(item.address)"
         @input="selectionChanged(item.address, $event)"
       />

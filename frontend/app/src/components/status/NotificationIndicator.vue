@@ -15,16 +15,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VBadge
-    :value="count"
+  <RuiBadge
+    :text="count.toString()"
     color="primary"
-    right
-    overlap
-    :class="$style.indicator"
+    placement="top"
+    offset-y="14"
+    offset-x="-12"
   >
-    <template #badge>
-      <span>{{ count }}</span>
-    </template>
     <MenuTooltipButton
       :tooltip="t('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-4"
@@ -45,21 +42,10 @@ const { t } = useI18n();
         <RuiProgress variant="indeterminate" circular size="20" thickness="2" />
       </div>
     </MenuTooltipButton>
-  </VBadge>
+  </RuiBadge>
 </template>
 
 <style module lang="scss">
-.indicator {
-  :global {
-    .v-badge {
-      &__badge {
-        bottom: calc(100% - 20px) !important;
-        left: calc(100% - 20px) !important;
-      }
-    }
-  }
-}
-
 .visible {
   transform: rotate(-25deg);
 }
