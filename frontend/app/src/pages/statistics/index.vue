@@ -6,11 +6,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VContainer>
+  <div class="container">
     <NoPremiumPlaceholder
       v-if="!premium"
       :text="t('statistics.no_premium_label')"
     />
     <PremiumStatistics v-else />
-  </VContainer>
+  </div>
 </template>

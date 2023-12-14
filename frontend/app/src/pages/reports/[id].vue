@@ -87,7 +87,7 @@ const regenerateReport = async () => {
   <ProgressScreen v-if="loading">
     {{ t('profit_loss_report.loading') }}
   </ProgressScreen>
-  <VContainer v-else>
+  <div v-else class="container">
     <div class="flex flex-col gap-8">
       <ReportHeader :period="report" />
       <RuiAlert v-if="showUpgradeMessage" type="warning">
@@ -144,5 +144,5 @@ const regenerateReport = async () => {
         @update:page="onPage($event)"
       />
     </div>
-  </VContainer>
+  </div>
 </template>

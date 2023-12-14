@@ -199,7 +199,7 @@ const progress = computed(() => reportsStore.progress);
 </script>
 
 <template>
-  <VContainer>
+  <div class="container">
     <ReportGenerator
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
@@ -261,5 +261,5 @@ const progress = computed(() => reportsStore.progress);
         </template>
       </RuiCard>
     </VDialog>
-  </VContainer>
+  </div>
 </template>
