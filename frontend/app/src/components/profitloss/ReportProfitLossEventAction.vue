@@ -90,14 +90,12 @@ const updatePrice = async () => {
         </RuiButton>
       </template>
       <VList>
-        <VListItem link @click="openEditHistoricPriceDialog()">
-          <VListItemIcon class="mr-4">
+        <RuiButton variant="list" @click="openEditHistoricPriceDialog()">
+          <template #prepend>
             <RuiIcon name="edit-line" />
-          </VListItemIcon>
-          <VListItemContent>
-            {{ t('profit_loss_events.edit_historic_price') }}
-          </VListItemContent>
-        </VListItem>
+          </template>
+          {{ t('profit_loss_events.edit_historic_price') }}
+        </RuiButton>
       </VList>
     </VMenu>
 

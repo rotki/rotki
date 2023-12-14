@@ -6,6 +6,8 @@ const { t } = useI18n();
   <RuiCard class="mt-8">
     <template #header>{{ t('asset_update.restore.title') }}</template>
     <template #subheader>{{ t('asset_update.restore.subtitle') }}</template>
-    <RestoreAssetDbButton />
+    <template #footer>
+      <RestoreAssetDbButton />
+    </template>
   </RuiCard>
 </template>

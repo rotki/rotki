@@ -58,50 +58,47 @@ const { darkModeEnabled } = useDarkMode();
           </VListItemTitle>
         </VListItem>
         <RuiDivider />
-        <VListItem
-          key="settings"
-          class="user-dropdown__settings px-6 py-1"
-          to="/settings/general"
-        >
-          <VListItemAvatar size="24">
-            <RuiIcon color="primary" name="settings-4-line" />
-          </VListItemAvatar>
-          <VListItemTitle>
+        <RouterLink to="/settings/general">
+          <RuiButton
+            key="settings"
+            variant="list"
+            class="user-dropdown__settings"
+          >
+            <template #prepend>
+              <RuiIcon color="primary" name="settings-4-line" />
+            </template>
             {{ t('user_dropdown.settings') }}
-          </VListItemTitle>
-        </VListItem>
+          </RuiButton>
+        </RouterLink>
 
-        <VListItem
+        <RuiButton
           v-if="xs"
           key="privacy-mode"
-          class="px-6 py-1"
+          variant="list"
           @click="togglePrivacyMode()"
         >
-          <VListItemAvatar size="24">
+          <template #prepend>
             <RuiIcon color="primary" :name="privacyModeIcon" />
-          </VListItemAvatar>
-          <VListItemTitle>
-            {{ t('user_dropdown.change_privacy_mode.label') }}
-          </VListItemTitle>
-        </VListItem>
+          </template>
+          {{ t('user_dropdown.change_privacy_mode.label') }}
+        </RuiButton>
 
         <ThemeControl v-if="xs" :dark-mode-enabled="darkModeEnabled" menu>
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
 
         <RuiDivider />
-        <VListItem
+        <RuiButton
           key="logout"
-          class="user-dropdown__logout px-6 py-1"
+          variant="list"
+          class="user-dropdown__logout"
           @click="showConfirmation()"
         >
-          <VListItemAvatar size="24">
+          <template #prepend>
             <RuiIcon color="primary" name="logout-box-r-line" />
-          </VListItemAvatar>
-          <VListItemTitle>
-            {{ t('user_dropdown.logout') }}
-          </VListItemTitle>
-        </VListItem>
+          </template>
+          {{ t('user_dropdown.logout') }}
+        </RuiButton>
       </VList>
     </VMenu>
   </div>

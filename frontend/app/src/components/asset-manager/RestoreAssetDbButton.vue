@@ -89,12 +89,7 @@ const showDoneConfirmation = () => {
 <template>
   <VMenu v-if="dropdown" offset-x left>
     <template #activator="{ on }">
-      <RuiButton
-        id="reset-asset-activator"
-        variant="text"
-        class="!p-3 rounded-none"
-        v-on="on"
-      >
+      <RuiButton id="reset-asset-activator" variant="list" v-on="on">
         <template #prepend>
           <RuiIcon name="restart-line" />
         </template>
