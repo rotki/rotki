@@ -21,7 +21,7 @@ maxminddb==2.5.1
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc==2.2.3; sys_platform == 'win32'
 cryptography==41.0.7
-py-machineid==0.4.4
+py-machineid==0.4.6
 more-itertools==10.1.0  # for peekable iterators
 regex==2023.10.3  # used for unicode information in detection of spam tokens
 
@@ -30,7 +30,7 @@ flask-cors==4.0.0
 flask==3.0.0
 marshmallow==3.20.1
 webargs==8.3.0
-werkzeug==3.0.0
+werkzeug==3.0.1
 
 # for icon validation
 filetype==1.2.0
