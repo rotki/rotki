@@ -201,6 +201,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         :value="totalInUsd"
         show-currency="symbol"
         fiat-currency="USD"
+        class="text-h6 font-bold"
       />
     </template>
     <DataTable

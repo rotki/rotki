@@ -134,7 +134,7 @@ const fallbackData = computed(() => {
         >
           <template #activator>
             <div
-              class="my-2"
+              class="my-2 bg-rui-grey-200 rounded"
               :class="css.preview"
               :style="styled"
               @click="!renderImage ? showAllowDomainConfirmation() : null"
@@ -148,6 +148,7 @@ const fallbackData = computed(() => {
                 />
                 <AppImage
                   v-else
+                  class="rounded overflow-hidden"
                   :src="imageUrl"
                   width="100%"
                   height="100%"
@@ -171,13 +172,12 @@ const fallbackData = computed(() => {
           <VSkeletonLoader class="mt-1" width="80" type="text" />
         </template>
         <div v-else-if="name" :class="css['nft-details']">
-          <div class="font-medium" :class="css['nft-details__entry']">
+          <div class="font-medium text-truncate">
             {{ name }}
           </div>
           <div
             v-if="collectionName"
-            class="grey--text"
-            :class="css['nft-details__entry']"
+            class="text-rui-text-secondary text-truncate"
           >
             {{ collectionName }}
           </div>
@@ -203,7 +203,6 @@ const fallbackData = computed(() => {
 
 <style module lang="scss">
 .preview {
-  background: #f5f5f5;
   width: v-bind(size);
   height: v-bind(size);
   max-width: v-bind(size);
@@ -213,11 +212,5 @@ const fallbackData = computed(() => {
 .nft-details {
   flex: 1;
   max-width: 400px;
-
-  &__entry {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-  }
 }
 </style>

@@ -1,11 +1,9 @@
 <template>
-  <Card class="mt-8">
-    <template #title><slot name="title" /></template>
-    <template v-if="$slots.subtitle" #subtitle>
+  <RuiCard class="mt-8">
+    <template #header><slot name="title" /></template>
+    <template v-if="$slots.subtitle" #subheader>
       <slot name="subtitle" />
     </template>
-    <template #default>
-      <slot />
-    </template>
-  </Card>
+    <slot />
+  </RuiCard>
 </template>

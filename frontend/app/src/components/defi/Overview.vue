@@ -106,18 +106,14 @@ const imageUrl = computed(() => {
         <RuiCard>
           <template #custom-header>
             <div class="flex items-center p-4 gap-4">
-              <AppImage
-                :src="imageUrl"
-                max-width="32px"
-                max-height="32px"
-                contain
-              />
-              <div>
-                <div class="text-h5">{{ name }}</div>
-                <div class="text-body-1 text-rui-text-secondary">
+              <AppImage :src="imageUrl" size="32px" contain />
+
+              <RuiCardHeader class="p-0">
+                <template #header> {{ name }} </template>
+                <template #subheader>
                   {{ t('overview.details_dialog.subtitle') }}
-                </div>
-              </div>
+                </template>
+              </RuiCardHeader>
             </div>
           </template>
           <div class="h-[300px]">

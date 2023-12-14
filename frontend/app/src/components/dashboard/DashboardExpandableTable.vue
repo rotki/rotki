@@ -5,35 +5,34 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
 
 <template>
-  <Card :class="{ 'pb-6': expanded }">
-    <template #title>
-      <div class="flex items-center">
-        <div class="mr-2">
+  <RuiCard :class="{ '[&>div:last-child]:!py-0': !expanded }">
+    <template #custom-header>
+      <div class="flex justify-between items-center p-2 pr-4">
+        <CardTitle>
           <RuiButton variant="text" icon @click="expanded = !expanded">
             <RuiIcon
               :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'"
             />
           </RuiButton>
-        </div>
-        <div class="flex items-center gap-x-2">
-          <slot name="title" />
+          <div class="flex items-center gap-x-2">
+            <slot name="title" />
+          </div>
+        </CardTitle>
+
+        <div class="flex items-center gap-2">
+          <slot v-if="expanded" name="details" />
+          <slot v-else name="shortDetails" />
         </div>
       </div>
     </template>
-    <template #details>
-      <slot v-if="expanded" name="details" />
-      <slot v-else name="shortDetails" />
-    </template>
-    <template #default>
-      <VExpansionPanels :value="panel">
-        <VExpansionPanel>
-          <VExpansionPanelContent>
-            <slot />
-          </VExpansionPanelContent>
-        </VExpansionPanel>
-      </VExpansionPanels>
-    </template>
-  </Card>
+    <VExpansionPanels :value="panel">
+      <VExpansionPanel>
+        <VExpansionPanelContent>
+          <slot />
+        </VExpansionPanelContent>
+      </VExpansionPanel>
+    </VExpansionPanels>
+  </RuiCard>
 </template>
 
 <style scoped lang="scss">

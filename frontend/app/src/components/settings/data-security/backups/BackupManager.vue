@@ -220,14 +220,16 @@ const showMassDeleteConfirmation = () => {
       :global-db="globalDb"
       :user-db="userDb"
     />
-    <Card class="mt-8">
-      <template #title>{{ t('backup_manager.title') }}</template>
-      <template #details>
-        <RefreshButton
-          :loading="loading"
-          :tooltip="t('database_manager.refresh_tooltip')"
-          @refresh="loadInfo()"
-        />
+    <RuiCard class="mt-8">
+      <template #header>
+        <CardTitle>
+          <RefreshButton
+            :loading="loading"
+            :tooltip="t('database_manager.refresh_tooltip')"
+            @refresh="loadInfo()"
+          />
+          {{ t('backup_manager.title') }}
+        </CardTitle>
       </template>
       <DatabaseBackups
         :loading="loading"
@@ -237,7 +239,7 @@ const showMassDeleteConfirmation = () => {
         @change="onSelectedChange($event)"
         @remove="remove($event)"
       />
-      <template #buttons>
+      <template #footer>
         <div class="flex gap-3">
           <RuiButton
             color="primary"
@@ -256,6 +258,6 @@ const showMassDeleteConfirmation = () => {
           </RuiButton>
         </div>
       </template>
-    </Card>
+    </RuiCard>
   </Fragment>
 </template>

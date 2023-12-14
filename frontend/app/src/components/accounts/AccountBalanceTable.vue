@@ -493,7 +493,7 @@ defineExpose({
     <template v-if="balances.length > 0" #body.append="{ isMobile }">
       <RowAppend
         :label="t('common.total')"
-        :class-name="{ 'flex-column': isMobile }"
+        :class-name="{ 'flex-col': isMobile }"
         :left-patch-colspan="1"
         :right-patch-colspan="3"
         :is-mobile="isMobile"

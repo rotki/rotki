@@ -653,11 +653,11 @@ const css = useCssModule();
             </div>
             <div
               v-if="tooltipContent.currentBalance"
-              class="rotki-grey--text text-center"
+              class="text-rui-text-secondary text-center"
             >
               {{ t('net_worth_chart.current_balance') }}
             </div>
-            <div v-else class="rotki-grey--text text-center">
+            <div v-else class="text-rui-text-secondary text-center">
               {{ tooltipContent.time }}
             </div>
           </div>

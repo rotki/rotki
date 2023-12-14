@@ -81,7 +81,7 @@ watch([enabled, multiplier], setData);
           <RuiIcon size="16" name="arrow-down-s-line" />
         </RuiButton>
       </template>
-      <VCard>
+      <RuiCard no-padding>
         <div class="slider-wrapper" :style="sliderWrapperStyle">
           <VSlider
             :value="privacyMode"
@@ -155,7 +155,7 @@ watch([enabled, multiplier], setData);
             </RuiTextField>
           </SettingsOption>
         </div>
-      </VCard>
+      </RuiCard>
     </VMenu>
   </div>
 </template>

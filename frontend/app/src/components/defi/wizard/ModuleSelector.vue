@@ -37,7 +37,7 @@ const headers = computed<DataTableColumn[]>(() => [
     label: t('module_selector.table.enabled'),
     key: 'enabled',
     align: 'end',
-    cellClass: 'd-flex justify-end align-center'
+    cellClass: 'flex justify-end align-center'
   }
 ]);
 

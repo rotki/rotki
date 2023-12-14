@@ -297,24 +297,24 @@ const showResetConfirmation = () => {
 </script>
 
 <template>
-  <Card contained class="pt-4">
-    <div class="mb-4">
-      <CardTitle class="font-medium">
-        {{ t('frontend_settings.title') }}
-      </CardTitle>
-    </div>
-
+  <BigDialog
+    :display="true"
+    :title="t('frontend_settings.title')"
+    @cancel="dismiss()"
+  >
     <div class="mb-8">
       <LanguageSetting use-local-setting class="mb-10" />
     </div>
 
     <div class="mb-4">
-      <CardTitle class="font-medium">
-        {{ t('backend_settings.title') }}
-      </CardTitle>
-      <VCardSubtitle class="pa-0">
-        {{ t('backend_settings.subtitle') }}
-      </VCardSubtitle>
+      <RuiCardHeader class="p-0">
+        <template #header>
+          {{ t('backend_settings.title') }}
+        </template>
+        <template #subheader>
+          {{ t('backend_settings.subtitle') }}
+        </template>
+      </RuiCardHeader>
     </div>
 
     <div class="flex flex-col gap-4">
@@ -395,110 +395,110 @@ const showResetConfirmation = () => {
           </div>
         </template>
       </VSelect>
-
-      <VExpansionPanels flat>
-        <VExpansionPanel>
-          <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
-            {{ t('backend_settings.advanced') }}
-          </VExpansionPanelHeader>
-          <VExpansionPanelContent>
-            <RuiTextField
-              v-model="maxLogSize"
-              data-cy="max-log-size-input"
-              class="mb-4"
-              variant="outlined"
-              color="primary"
-              :hint="
-                !!fileConfig.maxSizeInMbAllLogs
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.max_log_size.hint')
-              "
-              :label="t('backend_settings.max_log_size.label')"
-              :disabled="!!fileConfig.maxSizeInMbAllLogs"
-              :loading="!configuration || !defaultBackendArguments"
-              :error-messages="toMessages(v$.maxLogSize)"
-              type="number"
-            >
-              <template #append>
-                <SettingResetButton
-                  v-if="!isMaxSizeDefault"
-                  data-cy="reset-max-log-size"
-                  @click="resetDefaultArguments('size')"
-                />
-              </template>
-            </RuiTextField>
-            <RuiTextField
-              v-model="maxLogFiles"
-              data-cy="max-log-files-input"
-              variant="outlined"
-              color="primary"
-              class="mb-4"
-              :hint="t('backend_settings.max_log_files.hint')"
-              :label="
-                !!fileConfig.maxLogfilesNum
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.max_log_files.label')
-              "
-              :disabled="!!fileConfig.maxLogfilesNum"
-              :loading="!configuration || !defaultBackendArguments"
-              :error-messages="toMessages(v$.maxLogFiles)"
-              type="number"
-            >
-              <template #append>
-                <SettingResetButton
-                  v-if="!isMaxLogFilesDefault"
-                  data-cy="reset-max-log-files"
-                  @click="resetDefaultArguments('files')"
-                />
-              </template>
-            </RuiTextField>
-
-            <RuiTextField
-              v-model="sqliteInstructions"
-              data-cy="sqlite-instructions-input"
-              variant="outlined"
-              color="primary"
-              class="mb-4"
-              :hint="
-                !!fileConfig.sqliteInstructions
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.sqlite_instructions.hint')
-              "
-              :label="t('backend_settings.sqlite_instructions.label')"
-              :disabled="!!fileConfig.sqliteInstructions"
-              :loading="!configuration || !defaultBackendArguments"
-              :error-messages="toMessages(v$.sqliteInstructions)"
-              type="number"
-            >
-              <template #append>
-                <SettingResetButton
-                  v-if="!isSqliteInstructionsDefaults"
-                  data-cy="reset-sqlite-instructions"
-                  @click="resetDefaultArguments('instructions')"
-                />
-              </template>
-            </RuiTextField>
-
-            <RuiCheckbox
-              v-model="logFromOtherModules"
-              color="primary"
-              data-cy="log-from-other-modules-checkbox"
-              :label="t('backend_settings.log_from_other_modules.label')"
-              :disabled="fileConfig.logFromOtherModules"
-              :hint="
-                fileConfig.logFromOtherModules
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.log_from_other_modules.hint')
-              "
-            >
-              {{ t('backend_settings.log_from_other_modules.label') }}
-            </RuiCheckbox>
-          </VExpansionPanelContent>
-        </VExpansionPanel>
-      </VExpansionPanels>
     </div>
 
-    <template #buttons>
+    <VExpansionPanels flat>
+      <VExpansionPanel>
+        <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
+          {{ t('backend_settings.advanced') }}
+        </VExpansionPanelHeader>
+        <VExpansionPanelContent>
+          <RuiTextField
+            v-model="maxLogSize"
+            data-cy="max-log-size-input"
+            class="mb-4"
+            variant="outlined"
+            color="primary"
+            :hint="
+              !!fileConfig.maxSizeInMbAllLogs
+                ? t('backend_settings.config_file_disabled')
+                : t('backend_settings.max_log_size.hint')
+            "
+            :label="t('backend_settings.max_log_size.label')"
+            :disabled="!!fileConfig.maxSizeInMbAllLogs"
+            :loading="!configuration || !defaultBackendArguments"
+            :error-messages="toMessages(v$.maxLogSize)"
+            type="number"
+          >
+            <template #append>
+              <SettingResetButton
+                v-if="!isMaxSizeDefault"
+                data-cy="reset-max-log-size"
+                @click="resetDefaultArguments('size')"
+              />
+            </template>
+          </RuiTextField>
+          <RuiTextField
+            v-model="maxLogFiles"
+            data-cy="max-log-files-input"
+            variant="outlined"
+            color="primary"
+            class="mb-4"
+            :hint="t('backend_settings.max_log_files.hint')"
+            :label="
+              !!fileConfig.maxLogfilesNum
+                ? t('backend_settings.config_file_disabled')
+                : t('backend_settings.max_log_files.label')
+            "
+            :disabled="!!fileConfig.maxLogfilesNum"
+            :loading="!configuration || !defaultBackendArguments"
+            :error-messages="toMessages(v$.maxLogFiles)"
+            type="number"
+          >
+            <template #append>
+              <SettingResetButton
+                v-if="!isMaxLogFilesDefault"
+                data-cy="reset-max-log-files"
+                @click="resetDefaultArguments('files')"
+              />
+            </template>
+          </RuiTextField>
+
+          <RuiTextField
+            v-model="sqliteInstructions"
+            data-cy="sqlite-instructions-input"
+            variant="outlined"
+            color="primary"
+            class="mb-4"
+            :hint="
+              !!fileConfig.sqliteInstructions
+                ? t('backend_settings.config_file_disabled')
+                : t('backend_settings.sqlite_instructions.hint')
+            "
+            :label="t('backend_settings.sqlite_instructions.label')"
+            :disabled="!!fileConfig.sqliteInstructions"
+            :loading="!configuration || !defaultBackendArguments"
+            :error-messages="toMessages(v$.sqliteInstructions)"
+            type="number"
+          >
+            <template #append>
+              <SettingResetButton
+                v-if="!isSqliteInstructionsDefaults"
+                data-cy="reset-sqlite-instructions"
+                @click="resetDefaultArguments('instructions')"
+              />
+            </template>
+          </RuiTextField>
+
+          <RuiCheckbox
+            v-model="logFromOtherModules"
+            color="primary"
+            data-cy="log-from-other-modules-checkbox"
+            :label="t('backend_settings.log_from_other_modules.label')"
+            :disabled="fileConfig.logFromOtherModules"
+            :hint="
+              fileConfig.logFromOtherModules
+                ? t('backend_settings.config_file_disabled')
+                : t('backend_settings.log_from_other_modules.hint')
+            "
+          >
+            {{ t('backend_settings.log_from_other_modules.label') }}
+          </RuiCheckbox>
+        </VExpansionPanelContent>
+      </VExpansionPanel>
+    </VExpansionPanels>
+
+    <template #footer>
       <div class="flex justify-end w-full gap-2">
         <RuiButton variant="text" color="primary" @click="dismiss()">
           {{ t('common.actions.cancel') }}
@@ -520,7 +520,7 @@ const showResetConfirmation = () => {
         </RuiButton>
       </div>
     </template>
-  </Card>
+  </BigDialog>
 </template>
 
 <style scoped lang="scss">

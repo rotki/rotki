@@ -42,24 +42,26 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      {{ t('common.actions.generate') }}
-    </template>
-    <template #details>
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
-        <template #activator>
-          <RouterLink :to="accountSettingsRoute">
-            <RuiButton variant="text" icon color="primary">
-              <RuiIcon name="settings-3-line" />
-            </RuiButton>
-          </RouterLink>
-        </template>
-        <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
-      </RuiTooltip>
+  <RuiCard>
+    <template #custom-header>
+      <div class="flex justify-between p-4">
+        <CardTitle>
+          {{ t('common.actions.generate') }}
+        </CardTitle>
+        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <template #activator>
+            <RouterLink :to="accountSettingsRoute">
+              <RuiButton variant="text" icon color="primary">
+                <RuiIcon name="settings-3-line" />
+              </RuiButton>
+            </RouterLink>
+          </template>
+          <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
+        </RuiTooltip>
+      </div>
     </template>
     <RangeSelector v-model="range" @update:valid="valid = $event" />
-    <template #buttons>
+    <template #footer>
       <div class="flex gap-4 w-full">
         <div class="grow">
           <RuiButton
@@ -117,5 +119,5 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
         </div>
       </div>
     </template>
-  </Card>
+  </RuiCard>
 </template>

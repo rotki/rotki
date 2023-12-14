@@ -133,7 +133,7 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <VCard outlined class="overflow-hidden">
+    <RuiCard no-padding class="overflow-hidden">
       <VList max-height="300px" three-line class="py-0 overflow-auto">
         <template v-for="(item, index) in nodes">
           <RuiDivider v-if="index !== 0" :key="index" />
@@ -247,7 +247,7 @@ onUnmounted(() => {
         :is-etherscan="editMode && isEtherscan(selectedNode)"
         @reset="resetForm()"
       />
-    </VCard>
+    </RuiCard>
 
     <RuiButton
       class="mt-8"

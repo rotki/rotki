@@ -73,26 +73,28 @@ const css = useCssModule();
 
       <RuiDivider class="mb-4 -mx-4" />
 
-      <div class="flex flex-row gap-2 w-full">
-        <div class="grow" />
-        <RuiButton
-          color="primary"
-          variant="outlined"
-          data-cy="cancel"
-          @click="cancel()"
-        >
-          {{ secondary }}
-        </RuiButton>
-        <RuiButton
-          data-cy="confirm"
-          :color="themes[confirmType].color"
-          :disabled="actionDisabled || loading"
-          :loading="loading"
-          @click="confirm()"
-        >
-          {{ primary }}
-        </RuiButton>
-      </div>
+      <slot name="footer">
+        <div class="flex flex-row gap-2 w-full">
+          <div class="grow" />
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            data-cy="cancel"
+            @click="cancel()"
+          >
+            {{ secondary }}
+          </RuiButton>
+          <RuiButton
+            data-cy="confirm"
+            :color="themes[confirmType].color"
+            :disabled="actionDisabled || loading"
+            :loading="loading"
+            @click="confirm()"
+          >
+            {{ primary }}
+          </RuiButton>
+        </div>
+      </slot>
     </RuiCard>
   </VBottomSheet>
 </template>

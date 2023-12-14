@@ -459,7 +459,7 @@ onBeforeMount(async () => {
               <template v-if="item.texts">
                 <span v-for="(text, index) in item.texts" :key="text + index">
                   <span v-if="index === item.texts.length - 1">{{ text }}</span>
-                  <span v-else class="grey--text">
+                  <span v-else class="text-rui-text-secondary">
                     {{ text }}
                     <RuiIcon
                       class="d-inline mr-2"

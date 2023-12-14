@@ -76,7 +76,7 @@ const valueInCurrency = computed(() => {
       'text-rui-error': mode === 'loss'
     }"
   >
-    <div :class="`d-flex flex-column align-${align}`">
+    <div :class="`flex flex-col align-${align}`">
       <AmountDisplay
         :loading="loading"
         :asset="asset"

@@ -92,24 +92,27 @@ const warningUrl =
 <template>
   <div>
     <div>
-      <div class="text-h6">
-        {{
-          t(
-            'general_settings.nft_setting.subtitle.nft_images_rendering_setting'
-          )
-        }}
-      </div>
-      <i18n
-        tag="div"
-        class="mt-1"
-        path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
-      >
-        <template #link>
-          <ExternalLink color="primary" :url="warningUrl">
-            {{ t('common.here') }}
-          </ExternalLink>
+      <RuiCardHeader class="p-0">
+        <template #header>
+          {{
+            t(
+              'general_settings.nft_setting.subtitle.nft_images_rendering_setting'
+            )
+          }}
         </template>
-      </i18n>
+        <template #subheader>
+          <i18n
+            tag="div"
+            path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
+          >
+            <template #link>
+              <ExternalLink color="primary" :url="warningUrl">
+                {{ t('common.here') }}
+              </ExternalLink>
+            </template>
+          </i18n>
+        </template>
+      </RuiCardHeader>
     </div>
     <SettingsOption
       #default="{ error, success, update }"

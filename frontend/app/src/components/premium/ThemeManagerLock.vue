@@ -4,8 +4,15 @@ const { t } = useI18n();
 
 <template>
   <div class="theme-manager">
-    <div class="text-h6 mt-4">{{ t('theme_manager_lock.title') }}</div>
-    <div class="text-subtitle-1">{{ t('theme_manager_lock.subtitle') }}</div>
+    <RuiCardHeader class="p-0">
+      <template #header>
+        {{ t('theme_manager_lock.title') }}
+      </template>
+      <template #subheader>
+        {{ t('theme_manager_lock.subtitle') }}
+      </template>
+    </RuiCardHeader>
+
     <RuiCard dense class="mt-4">
       <div class="flex items-center gap-2 text-body-2">
         <PremiumLock />

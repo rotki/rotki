@@ -154,50 +154,40 @@ const showDeleteConfirmation = () => {
 
 <template>
   <VDialog :value="value" max-width="600" @input="updateVisibility($event)">
-    <Card>
-      <template #title>
+    <RuiCard>
+      <template #header>
         {{ t('dashboard.snapshot.export_database_snapshot') }}
       </template>
-      <template #subtitle>
+      <template #subheader>
         {{ t('dashboard.snapshot.subtitle') }}
       </template>
-      <div class="mb-n2">
-        <div>
-          <div>{{ t('common.datetime') }}:</div>
-          <div class="font-bold">
-            <DateDisplay :timestamp="timestamp" />
-          </div>
-        </div>
-        <div class="pt-2">
-          <div>{{ t('common.balance') }}:</div>
-          <div>
-            <AmountDisplay
-              v-if="formattedSelectedBalance"
-              :value="formattedSelectedBalance"
-              :fiat-currency="currencySymbol"
-              class="font-bold"
-            />
-          </div>
-        </div>
+      <div>
+        <div class="text-rui-text-secondary">{{ t('common.datetime') }}:</div>
+        <DateDisplay :timestamp="timestamp" class="font-bold" />
       </div>
-      <template #buttons>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <RuiButton color="primary" @click="editMode = true">
-              <template #prepend>
-                <RuiIcon name="edit-line" />
-              </template>
-              {{ t('common.actions.edit') }}
-            </RuiButton>
-            <RuiButton color="error" @click="showDeleteConfirmation()">
-              <template #prepend>
-                <RuiIcon name="delete-bin-5-line" />
-              </template>
-              {{ t('common.actions.delete') }}
-            </RuiButton>
-          </div>
-        </div>
-
+      <div class="pt-2">
+        <div class="text-rui-text-secondary">{{ t('common.balance') }}:</div>
+        <AmountDisplay
+          v-if="formattedSelectedBalance"
+          :value="formattedSelectedBalance"
+          :fiat-currency="currencySymbol"
+          class="font-bold"
+        />
+      </div>
+      <template #footer>
+        <RuiButton color="primary" @click="editMode = true">
+          <template #prepend>
+            <RuiIcon name="edit-line" />
+          </template>
+          {{ t('common.actions.edit') }}
+        </RuiButton>
+        <RuiButton color="error" @click="showDeleteConfirmation()">
+          <template #prepend>
+            <RuiIcon name="delete-bin-5-line" />
+          </template>
+          {{ t('common.actions.delete') }}
+        </RuiButton>
+        <div class="grow" />
         <RuiButton color="primary" @click="exportSnapshot()">
           <template #prepend>
             <RuiIcon name="file-download-line" />
@@ -205,7 +195,7 @@ const showDeleteConfirmation = () => {
           {{ t('common.actions.download') }}
         </RuiButton>
       </template>
-    </Card>
+    </RuiCard>
     <EditSnapshotDialog
       v-if="editMode"
       :timestamp="timestamp"

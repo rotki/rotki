@@ -150,7 +150,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           </span>
         </RuiTooltip>
       </div>
-      <SimpleTable>
+      <SimpleTable variant="default">
         <thead>
           <tr>
             <th class="w-10" />

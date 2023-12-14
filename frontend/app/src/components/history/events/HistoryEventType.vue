@@ -38,7 +38,10 @@ const evmOrEthDepositEvent = computed(
 
     <div class="ml-4">
       <div class="font-bold text-uppercase">{{ attrs.label }}</div>
-      <div v-if="event.locationLabel" class="grey--text flex items-center">
+      <div
+        v-if="event.locationLabel"
+        class="text-rui-text-secondary flex items-center"
+      >
         <LocationIcon
           v-if="onlineEvent"
           icon
