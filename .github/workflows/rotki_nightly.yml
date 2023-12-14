@@ -64,3 +64,7 @@ jobs:
                 exit 1;
             fi
           done
+        - name: install axios
+          run: npm install axios
+        - name: Check Links
+          run: node frontend/app/src/checkLinks.js

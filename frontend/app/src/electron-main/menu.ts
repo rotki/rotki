@@ -1,5 +1,6 @@
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
+import { externalLinks } from '@/externalLinks';
 import {
   IPC_ABOUT,
   IPC_DEBUG_SETTINGS,
@@ -45,7 +46,7 @@ const helpMenu = {
       label: 'Usage Guide',
       click: async () => {
         await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/usage_guide.html'
+          externalLinks.usageGuide
         );
       }
     },
@@ -53,7 +54,7 @@ const helpMenu = {
       label: 'Frequently Asked Questions',
       click: async () => {
         await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/faq.html'
+          externalLinks.faq
         );
       }
     },
@@ -62,7 +63,7 @@ const helpMenu = {
       label: 'Release Notes',
       click: async () => {
         await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/changelog.html'
+          externalLinks.changeLog
         );
       }
     },

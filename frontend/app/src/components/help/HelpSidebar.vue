@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import IndexedDb from '@/utils/indexed-db';
+import { externalLinks } from '@/externalLinks';
 
 defineProps<{
   visible: boolean;
@@ -23,13 +24,13 @@ const entries: Entry[] = [
     icon: 'book-open-line',
     title: t('help_sidebar.user_guide.title').toString(),
     subtitle: t('help_sidebar.user_guide.subtitle').toString(),
-    link: 'https://rotki.readthedocs.io/en/latest/usage_guide.html'
+    link: externalLinks.usageGuide
   },
   {
     icon: 'questionnaire-line',
     title: t('help_sidebar.faq.title').toString(),
     subtitle: t('help_sidebar.faq.subtitle').toString(),
-    link: 'https://rotki.readthedocs.io/en/latest/faq.html'
+    link: externalLinks.faq
   },
   {
     icon: 'discord-line',
