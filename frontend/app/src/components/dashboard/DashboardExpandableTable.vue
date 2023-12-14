@@ -7,16 +7,14 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 <template>
   <RuiCard :class="{ '[&>div:last-child]:!py-0': !expanded }">
     <template #custom-header>
-      <div class="flex justify-between items-center p-2 pr-4">
+      <div class="flex justify-between items-center p-4">
         <CardTitle>
           <RuiButton variant="text" icon @click="expanded = !expanded">
             <RuiIcon
               :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'"
             />
           </RuiButton>
-          <div class="flex items-center gap-x-2">
-            <slot name="title" />
-          </div>
+          <slot name="title" />
         </CardTitle>
 
         <div class="flex items-center gap-2">
