@@ -65,7 +65,7 @@ const css = useCssModule();
             :key="getKey(item)"
             class="flex items-center"
           >
-            <div class="mr-4">
+            <div class="mr-4 flex">
               <RuiProgress
                 v-if="!isItemFinished(item)"
                 size="20"
