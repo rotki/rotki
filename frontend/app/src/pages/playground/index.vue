@@ -3,8 +3,8 @@ const message = 'put your changes here';
 </script>
 
 <template>
-  <VContainer>
+  <div class="container">
     <div>{{ message }}</div>
     <!-- insert components to be tested here -->
-  </VContainer>
+  </div>
 </template>
