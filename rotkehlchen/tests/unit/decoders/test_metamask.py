@@ -86,7 +86,7 @@ def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accoun
         asset=A_LUX,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} LUX in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} LUX in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -99,7 +99,7 @@ def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accoun
         asset=A_ETH,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} ETH as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} ETH as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -112,7 +112,7 @@ def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accoun
         asset=A_ETH,
         balance=Balance(amount=FVal(metamask_fee)),
         location_label=user_address,
-        notes=f'Spend {metamask_fee} ETH as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {metamask_fee} ETH as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     )]
@@ -132,7 +132,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702292675000)
-    swap_amount = '0.05'
+    swap_amount = '0.0495625'
     received_amount = '2595.147664794130524115'
     gas_fees = '0.004927174848537517'
     fee_amount = '0.0004375'
@@ -158,7 +158,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
         asset=A_ETH,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} ETH in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} ETH in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -171,7 +171,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
         asset=A_OTACON,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} OTACON as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} OTACON as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -184,7 +184,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
         asset=A_ETH,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} ETH as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} ETH as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     )]
@@ -204,7 +204,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702376699000)
-    swap_amount = '573.633952'
+    swap_amount = '568.614655'
     received_amount = '157279690809.1035325007342546'
     gas_fees = '0.007519637280969888'
     fee_amount = '5.019297'
@@ -230,7 +230,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
         asset=A_USDT,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} USDT in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} USDT in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -243,7 +243,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
         asset=A_INU,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} INU as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} INU as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -256,7 +256,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
         asset=A_USDT,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} USDT as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} USDT as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     )]
@@ -302,7 +302,7 @@ def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accou
         asset=A_MOG,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} Mog in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} Mog in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -315,7 +315,7 @@ def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accou
         asset=A_USDC,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} USDC as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} USDC as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -328,7 +328,7 @@ def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accou
         asset=A_USDC,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} USDC as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} USDC as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     )]
@@ -348,7 +348,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702399619000)
-    swap_amount = '90.089829604845390012'
+    swap_amount = '89.301543595802992849'
     received_amount = '323.028598123743886055'
     gas_fees = '0.036588478688486165'
     fee_amount = '0.788286009042397163'
@@ -387,7 +387,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
         asset=A_AAVE,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} AAVE in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} AAVE in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -400,7 +400,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
         asset=A_INJ,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} INJ as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} INJ as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmEvent(
@@ -413,7 +413,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
         asset=A_AAVE,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} AAVE as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} AAVE as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     )]
@@ -433,7 +433,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
     )
     user_address = arbitrum_one_accounts[0]
     timestamp = TimestampMS(1702461343000)
-    swap_amount = '45.3'
+    swap_amount = '44.903625'
     received_amount = '0.020630400240849773'
     gas_fees = '0.0003196843'
     metamask_fee = '0.396375'
@@ -459,7 +459,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
         asset=A_ARBITRUM_USDC,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} USDC in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} USDC in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
     ), EvmEvent(
@@ -472,7 +472,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
         asset=A_ETH,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} ETH as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} ETH as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
     ), EvmEvent(
@@ -485,7 +485,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
         asset=A_ARBITRUM_USDC,
         balance=Balance(amount=FVal(metamask_fee)),
         location_label=user_address,
-        notes=f'Spend {metamask_fee} USDC as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {metamask_fee} USDC as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
     )]
@@ -505,7 +505,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
     )
     user_address = optimism_accounts[0]
     timestamp = TimestampMS(1702469285000)
-    swap_amount = '150'
+    swap_amount = '148.6875'
     received_amount = '148.608467'
     gas_fees = '0.000354333259086529'
     fee_amount = '1.3125'
@@ -531,7 +531,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
         asset=A_OPTIMISM_USDT,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} USDT in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} USDT in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
     ), EvmEvent(
@@ -544,7 +544,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
         asset=A_OPTIMISM_USDC,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} USDC as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} USDC as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
     ), EvmEvent(
@@ -557,7 +557,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
         asset=A_OPTIMISM_USDT,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} USDT as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} USDT as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
     )]
@@ -578,7 +578,7 @@ def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accou
     user_address = polygon_pos_accounts[0]
     timestamp = TimestampMS(1702471426000)
     approval_amount = '115792089237316195423570985000000000000000000000000000000000000000000000'
-    swap_amount = '18.970181'
+    swap_amount = '18.804192'
     received_amount = '22.278327092660803452'
     gas_fees = '0.079877964587736024'
     fee_amount = '0.165989'
@@ -616,7 +616,7 @@ def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accou
         asset=A_POLYGON_USDC,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} USDC in {CPT_METAMASK_SWAPS}',
+        notes=f'Swap {swap_amount} USDC in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     ), EvmEvent(
@@ -629,7 +629,7 @@ def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accou
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} MATIC as the result of a {CPT_METAMASK_SWAPS} swap',
+        notes=f'Receive {received_amount} MATIC as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     ), EvmEvent(
@@ -642,7 +642,7 @@ def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accou
         asset=A_POLYGON_USDC,
         balance=Balance(amount=FVal(fee_amount)),
         location_label=user_address,
-        notes=f'Spend {fee_amount} USDC as {CPT_METAMASK_SWAPS} fees',
+        notes=f'Spend {fee_amount} USDC as metamask fees',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     )]
