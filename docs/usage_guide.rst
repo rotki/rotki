@@ -196,6 +196,11 @@ Treat staked ETH as ETH
 
 If this setting is set then ETH2 (staked ETH) will appear as ETH in the UI and all the tables and charts will use ETH combining the values of both ETH and ETH2.
 
+EVM Chains for which to skip automatic detection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configure which EVM chains should not automatically detect tokens. By default, EVM chains detect activities of all registered EVM accounts in other EVM chains.
+
 
 Amount Settings
 -----------------

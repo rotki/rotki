@@ -61,7 +61,7 @@ const removeChain = (chain: Blockchain) =>
       {{ t('general_settings.labels.chains_to_skip_detection') }}
     </div>
     <SettingsOption
-      #default="{ error, success, update, loading }"
+      #default="{ error, success, update, updateImmediate, loading }"
       setting="evmchainsToSkipDetection"
       :error-message="
         t('general_settings.validation.chains_to_skip_detection.error')
@@ -94,7 +94,7 @@ const removeChain = (chain: Blockchain) =>
             size="sm"
             variant="filled"
             closeable
-            @click:close="update(removeChain(item))"
+            @click:close="updateImmediate(removeChain(item))"
           >
             <span class="flex gap-1 -ml-1">
               <ChainIcon :chain="item" size="0.875rem" />
