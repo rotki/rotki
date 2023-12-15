@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_GUSD, A_WETH
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_ETH, A_EUR, A_GUSD, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -1227,7 +1227,9 @@ def test_ignoring_trades(rotkehlchen_api_server):
 def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
     """Check that pagination is respected when `include_ignored_trades` is True."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    trades = make_random_trades(10)
+    trades = make_random_trades(5, base_asset=A_ETH)
+    trades.extend(make_random_trades(5, base_asset=A_BTC))
+    trades.sort(key=lambda x: x.timestamp)
     trades_to_ignore = [trades[0].identifier, trades[1].identifier]
 
     # populate db with trades
@@ -1278,3 +1280,20 @@ def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
     assert len(result['entries']) == 7
     assert result['entries_found'] == 10
     assert result['entries_total'] == len(trades)
+
+    # ignore an asset and check it works fine with pagination
+    toggle_ignore_an_asset(rotkehlchen_api_server, A_ETH)
+    # now fetch trades and check that `exclude_ignored_assets` filter works with pagination
+    for exclude_ignored_assets, expected_length in ((False, 8), (True, 5)):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'tradesresource',
+            ), json={
+                'exclude_ignored_assets': exclude_ignored_assets,
+                'limit': 8,
+                'offset': 0,
+            },
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == expected_length

@@ -216,7 +216,7 @@ def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
     } for note_number in range(num_notes)]
 
 
-def make_random_trades(num_trades: int) -> list[Trade]:
+def make_random_trades(num_trades: int, base_asset=A_ETH) -> list[Trade]:
     """Make random trades to be used in tests."""
     trades = []
     for idx in range(num_trades):
@@ -226,7 +226,7 @@ def make_random_trades(num_trades: int) -> list[Trade]:
                 timestamp=Timestamp(random.randint(100000, 10000000)),
                 trade_type=trade_type,
                 location=Location.EXTERNAL,
-                base_asset=A_ETH,
+                base_asset=base_asset,
                 quote_asset=A_USDC,
                 amount=AssetAmount(FVal(idx)),
                 rate=Price(FVal(idx)),
