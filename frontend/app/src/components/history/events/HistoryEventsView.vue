@@ -195,8 +195,8 @@ const {
       accounts: get(usedAccounts).map(
         account => `${account.address}#${account.chain}`
       ),
-      customizedEventsOnly: get(customizedEventsOnly).toString(),
-      excludeIgnoredAssets: (!get(showIgnoredAssets)).toString()
+      customizedEventsOnly: get(customizedEventsOnly),
+      excludeIgnoredAssets: !get(showIgnoredAssets)
     })),
     defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(
       () => {
@@ -243,10 +243,6 @@ const {
   }
 );
 
-watch([customizedEventsOnly, showIgnoredAssets], () => {
-  setPage(1);
-});
-
 const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
 
 const isEventsLoading: Ref<boolean> = ref(false);
@@ -263,7 +259,8 @@ const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
       limit: -1,
       offset: 0,
       eventIdentifiers: eventsHeaderData.map(item => item.eventIdentifier),
-      groupByEventIds: false
+      groupByEventIds: false,
+      excludeIgnoredAssets: !get(showIgnoredAssets)
     });
 
     return response.data;

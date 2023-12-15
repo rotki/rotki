@@ -7,6 +7,10 @@ import {
 } from '@rotki/common/lib/blockchain';
 
 export type LocationQuery = Dictionary<
+  string | (string | null)[] | null | undefined | boolean
+>;
+
+export type RawLocationQuery = Dictionary<
   string | (string | null)[] | null | undefined
 >;
 

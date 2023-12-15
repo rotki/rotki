@@ -106,13 +106,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 });
 
 const extraParams = computed(() => ({
-  includeIgnoredTrades: (!get(hideIgnoredTrades)).toString(),
-  excludeIgnoredAssets: (!get(showIgnoredAssets)).toString()
+  includeIgnoredTrades: !get(hideIgnoredTrades),
+  excludeIgnoredAssets: !get(showIgnoredAssets)
 }));
-
-watch([hideIgnoredTrades, showIgnoredAssets], () => {
-  setPage(1);
-});
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;

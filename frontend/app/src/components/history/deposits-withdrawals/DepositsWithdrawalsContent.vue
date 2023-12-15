@@ -83,12 +83,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 });
 
 const extraParams = computed(() => ({
-  excludeIgnoredAssets: (!get(showIgnoredAssets)).toString()
+  excludeIgnoredAssets: !get(showIgnoredAssets)
 }));
-
-watch(showIgnoredAssets, () => {
-  setPage(1);
-});
 
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
 
