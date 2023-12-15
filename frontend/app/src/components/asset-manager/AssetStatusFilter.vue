@@ -20,15 +20,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <VMenu offset-y :close-on-content-click="false">
-    <template #activator="{ on }">
-      <RuiButton variant="outlined" data-cy="asset-filter" v-on="on">
-        <template #append>
-          <RuiIcon name="arrow-down-s-line" />
-        </template>
-        {{ t('common.actions.filter') }}
-      </RuiButton>
-    </template>
+  <TableStatusFilter>
     <VList data-cy="asset-filter-menu">
       <VListItem
         link
@@ -85,7 +77,7 @@ const css = useCssModule();
         </VRadioGroup>
       </VListItem>
     </VList>
-  </VMenu>
+  </TableStatusFilter>
 </template>
 
 <style module lang="scss">

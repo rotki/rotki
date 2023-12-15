@@ -350,7 +350,7 @@ const { t } = useI18n();
     :disabled="!disabled || !slots.tooltip"
     open-delay="400"
     close-delay="1000"
-    class="block"
+    class="block flex-1"
     tooltip-class="max-w-[12rem]"
   >
     <template #activator>

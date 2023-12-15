@@ -50,8 +50,8 @@ export interface TradeRequestPayload extends PaginationRequestPayload<Trade> {
   readonly baseAsset?: string;
   readonly quoteAsset?: string;
   readonly tradeType?: string;
-
   readonly includeIgnoredTrades?: boolean;
+  readonly excludeIgnoredAssets?: boolean;
 }
 
 export interface TradeEntry extends Trade, EntryMeta {}

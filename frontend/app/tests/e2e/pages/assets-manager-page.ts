@@ -6,24 +6,24 @@ export class AssetsManagerPage {
   }
 
   ignoredAssets() {
-    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=status-filter]').click();
     return cy
       .get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)')
       .invoke('text')
       .then(text => {
-        cy.get('[data-cy=asset-filter]').click();
+        cy.get('[data-cy=status-filter]').click();
         cy.wrap(text.replace(/[^\d.]/g, ''));
       });
   }
 
   ignoredAssetCount(number: number) {
-    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('be.visible');
     cy.get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)').should(
       'include.text',
       number.toString()
     );
-    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
   }
 
@@ -71,14 +71,14 @@ export class AssetsManagerPage {
   }
 
   selectShowAll(): void {
-    cy.get('[data-cy=asset-filter]').scrollIntoView();
-    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=status-filter]').scrollIntoView();
+    cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('be.visible');
     cy.get(
       '[data-cy=asset-filter-ignored] .v-radio:first-child'
     ).scrollIntoView();
     cy.get('[data-cy=asset-filter-ignored] .v-radio:first-child').click();
-    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
   }
 
