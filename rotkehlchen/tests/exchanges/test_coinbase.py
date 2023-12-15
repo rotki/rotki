@@ -140,6 +140,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             response_str,
             expected_warnings_num,
             expected_errors_num,
+            expected_balances_for_no_warnings=1,
             contains_expected_msg=None,
     ):
         def mock_coinbase_accounts(url, timeout):  # pylint: disable=unused-argument
@@ -157,9 +158,10 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             assert len(warnings) == 0
             assert len(errors) == 0
             assert msg == ''
-            assert len(balances) == 1
-            assert balances[A_BTC].amount == FVal('4')
-            assert balances[A_BTC].usd_value == FVal('6')
+            assert len(balances) == expected_balances_for_no_warnings
+            if len(balances) != 0:
+                assert balances[A_BTC].amount == FVal('4')
+                assert balances[A_BTC].usd_value == FVal('6')
         else:
             assert len(warnings) == expected_warnings_num
             assert len(errors) == expected_errors_num
@@ -179,22 +181,22 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     )
     # account entry without "balance" key
     input_data = data.replace('"balance"', '"foo"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry without amount in "balance"
     input_data = data.replace('"amount"', '"foo"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry without currency in "balance"
     input_data = data.replace('"currency"', '"foo"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry with invalid balance amount
     input_data = data.replace('"4.00000000"', '"csadasdsd"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry with unknown asset
     input_data = data.replace('"BTC"', '"DDSADSAD"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=1, expected_errors_num=0)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry with invalid asset
     input_data = data.replace('"BTC"', 'null')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
 
 
 def test_coinbase_query_trade_history(function_scope_coinbase):

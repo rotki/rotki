@@ -378,10 +378,16 @@ class Coinbase(ExchangeInterface):
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in resp:
             try:
-                if not account['balance']:
+                if (balance := account.get('balance')) is None:
                     continue
 
-                amount = deserialize_asset_amount(account['balance']['amount'])
+                if (amount_str := balance.get('amount')) is not None:
+                    amount = deserialize_asset_amount(amount_str)
+                elif (amount_str := balance.get('value')) is not None:
+                    amount = deserialize_asset_amount(account['balance']['value'])
+                else:  # missing both amount and value
+                    log.error(f'Got coinbase account with neither amount, nor value key in balance: {account}')  # noqa: E501
+                    continue
 
                 # ignore empty balances. Coinbase returns zero balances for everything
                 # a user does not own
@@ -389,7 +395,6 @@ class Coinbase(ExchangeInterface):
                     continue
 
                 asset = asset_from_coinbase(account['balance']['currency'])
-
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
@@ -404,13 +409,13 @@ class Coinbase(ExchangeInterface):
                     usd_value=amount * usd_price,
                 )
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
+                log.warning(
                     f'Found coinbase balance result with unknown asset '
                     f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
+                log.warning(
                     f'Found coinbase balance result with unsupported asset '
                     f'{e.identifier}. Ignoring it.',
                 )
@@ -419,10 +424,6 @@ class Coinbase(ExchangeInterface):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Error processing a coinbase account balance. Check logs '
-                    'for details. Ignoring it.',
-                )
                 log.error(
                     'Error processing a coinbase account balance',
                     account_balance=account,

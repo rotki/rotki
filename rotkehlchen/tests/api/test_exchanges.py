@@ -30,6 +30,7 @@ from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -797,6 +798,40 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         response = requests.get(
             api_url_for(server, 'assetmovementsresource') + '?' + urlencode(data))
         assert_okay(response)
+
+    # now test `exclude_ignored_assets` query param
+    with setup.polo_patch:
+        data = {'only_cache': True}
+        without_ignore_response = requests.get(
+            api_url_for(server, 'assetmovementsresource'),
+            json=data,
+        )
+        without_ignore_response = assert_proper_response_with_result(without_ignore_response)
+
+        toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
+        data |= {'exclude_ignored_assets': True}
+        ignored_response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
+        ignored_response = assert_proper_response_with_result(ignored_response)
+        default_response = requests.get(api_url_for(server, 'assetmovementsresource'))
+        default_response = assert_proper_response_with_result(default_response)
+        assert ignored_response == default_response, '`exclude_ignored_assets` should be True by default'  # noqa: E501
+
+        assert all(
+            x['entry']['asset'] != 'BTC'
+            for x in ignored_response['entries']
+        ), 'BTC asset movements should have now been ignored for accounting'
+        assert len(ignored_response['entries']) == 6, 'Only 6 asset movements should have been returned'  # noqa: E501
+
+        data['exclude_ignored_assets'] = False
+        not_exclude_response = requests.get(
+            api_url_for(server, 'assetmovementsresource'),
+            json=data,
+        )
+        not_exclude_response = assert_proper_response_with_result(not_exclude_response)
+        assert not_exclude_response == without_ignore_response, '`exclude_ignored_assets` = False should not exclude any asset movements'  # noqa: E501
+
+        # reset the ignored status of BTC
+        toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
 
     # and now test pagination
     data = {'only_cache': True, 'offset': 1, 'limit': 2, 'location': 'kraken'}

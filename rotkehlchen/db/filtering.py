@@ -608,6 +608,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             trade_type: list[TradeType] | None = None,
             location: Location | None = None,
             trades_idx_to_ignore: set[str] | None = None,
+            exclude_ignored_assets: bool = False,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -657,6 +658,18 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
                 values=trades_idx_to_ignore,
             ))
 
+        if exclude_ignored_assets is True:
+            filters.append(DBIgnoredAssetsFilter(
+                and_op=True,
+                asset_key='base_asset',
+                operator='NOT IN',
+            ))
+            filters.append(DBIgnoredAssetsFilter(
+                and_op=True,
+                asset_key='quote_asset',
+                operator='NOT IN',
+            ))
+
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
@@ -681,6 +694,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             assets: tuple[Asset, ...] | None = None,
             action: list[AssetMovementCategory] | None = None,
             location: Location | None = None,
+            exclude_ignored_assets: bool = False,
     ) -> 'AssetMovementsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -708,6 +722,13 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+
+        if exclude_ignored_assets is True:
+            filters.append(DBIgnoredAssetsFilter(
+                and_op=True,
+                asset_key='asset',
+                operator='NOT IN',
+            ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,

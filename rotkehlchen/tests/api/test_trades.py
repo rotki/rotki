@@ -7,10 +7,11 @@ import requests
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_GUSD, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -1149,10 +1150,15 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
 
 
 def test_ignoring_trades(rotkehlchen_api_server):
-    """Check that ignoring trades filter works as expected."""
+    """Check that ignoring trades and ignoring assets filter works as expected."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     trades = make_random_trades(3)
     trade_to_ignore = trades[0].identifier
+
+    trades[2].base_asset = A_AAVE
+    trades[2].quote_asset = A_GUSD
+    trade_with_asset_ignored = trades[2].identifier
+    asset_to_ignore = A_GUSD
 
     # populate db with trades
     with rotki.data.db.user_write() as cursor:
@@ -1170,7 +1176,7 @@ def test_ignoring_trades(rotkehlchen_api_server):
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
     assert result[ActionType.TRADE] == {trade_to_ignore}
 
-    # now fetch trades and check for the behaviour of the filter
+    # now fetch trades and check for the behaviour of the `include_ignored_trades` filter
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -1190,6 +1196,32 @@ def test_ignoring_trades(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == len(trades) - 1
     assert trade_to_ignore not in {entry['entry']['trade_id'] for entry in result['entries']}
+
+    # ignore an asset
+    toggle_ignore_an_asset(rotkehlchen_api_server, asset_to_ignore)
+
+    # now fetch trades and check for the behaviour of the `exclude_ignored_assets` filter
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={'exclude_ignored_assets': 'True'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == len(trades) - 1
+    assert trade_with_asset_ignored not in {
+        entry['entry']['trade_id'] for entry in result['entries']
+    }
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={'exclude_ignored_assets': 'False'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == len(trades)
+    assert trade_with_asset_ignored in {entry['entry']['trade_id'] for entry in result['entries']}
 
 
 def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
