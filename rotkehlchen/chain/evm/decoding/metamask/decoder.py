@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -71,7 +70,6 @@ class MetamaskCommonDecoder(DecoderInterface):
                 break
 
         out_event = in_event = None
-        to_amount = ZERO
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.TRADE and
@@ -83,20 +81,19 @@ class MetamaskCommonDecoder(DecoderInterface):
                 event.counterparty = CPT_METAMASK_SWAPS
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {CPT_METAMASK_SWAPS}'  # noqa: E501
+                event.notes = f'Swap {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in metamask'  # noqa: E501
                 event.address = self.router_address
                 out_event = event
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender:  # find the receive event  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = CPT_METAMASK_SWAPS
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a {CPT_METAMASK_SWAPS} swap'  # noqa: E501
+                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a metamask swap'  # noqa: E501
                 event.address = self.router_address
                 # use this index as the event may be a native currency transfer
                 # and appear at the start
                 event.sequence_index = context.tx_log.log_index
                 in_event = event
-                to_amount = event.balance.amount
             elif (
                 event.event_type == HistoryEventType.TRADE and
                 event.event_subtype == HistoryEventSubType.SPEND and
@@ -128,12 +125,14 @@ class MetamaskCommonDecoder(DecoderInterface):
             else:
                 fee_asset = out_event.asset.resolve_to_evm_token()
 
-        # if fee_asset is a token, update only if it's in the Receive event
+        # update the in_event/out_event to adjust their balance with fees
         fee_amount = asset_normalized_value(amount=fee_raw, asset=fee_asset)
-        full_amount = to_amount + fee_amount
         if in_event.asset == fee_asset:
-            in_event.balance.amount = full_amount
-            in_event.notes = f'Receive {full_amount} {fee_asset.symbol} as the result of a {CPT_METAMASK_SWAPS} swap'  # noqa: E501
+            in_event.balance.amount += fee_amount
+            in_event.notes = f'Receive {in_event.balance.amount} {fee_asset.symbol} as the result of a metamask swap'  # noqa: E501
+        elif out_event.asset == fee_asset:
+            out_event.balance.amount -= fee_amount
+            out_event.notes = f'Swap {out_event.balance.amount} {fee_asset.symbol} in metamask'
 
         # And now create a new event for the fee
         fee_event = self.base.make_event_from_transaction(
@@ -144,7 +143,7 @@ class MetamaskCommonDecoder(DecoderInterface):
             asset=fee_asset,
             balance=Balance(amount=fee_amount),
             location_label=sender,
-            notes=f'Spend {fee_amount} {fee_asset.symbol} as {CPT_METAMASK_SWAPS} fees',
+            notes=f'Spend {fee_amount} {fee_asset.symbol} as metamask fees',
             counterparty=CPT_METAMASK_SWAPS,
             address=context.transaction.to_address,
         )
