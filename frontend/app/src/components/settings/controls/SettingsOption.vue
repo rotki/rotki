@@ -54,7 +54,7 @@ const getMessage = (
   return message(value);
 };
 
-const update = useDebounceFn(async (newValue: any) => {
+const updateImmediate = async (newValue: any) => {
   stop();
   clear();
   set(loading, true);
@@ -83,7 +83,9 @@ const update = useDebounceFn(async (newValue: any) => {
     setError(result.error);
   }
   emit('finished');
-}, 1500);
+};
+
+const update = useDebounceFn(updateImmediate, 1500);
 </script>
 
 <template>
@@ -92,6 +94,7 @@ const update = useDebounceFn(async (newValue: any) => {
       :error="error"
       :success="success"
       :update="update"
+      :update-immediate="updateImmediate"
       :loading="loading"
     />
   </div>
