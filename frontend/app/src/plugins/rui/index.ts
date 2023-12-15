@@ -51,6 +51,7 @@ import {
   RiEarthLine,
   RiEditLine,
   RiEqualLine,
+  RiEqualizerLine,
   RiErrorWarningLine,
   RiExchangeBoxLine,
   RiExchangeLine,
@@ -325,6 +326,7 @@ Vue.use(RuiPlugin, {
     RiUploadLine,
     RiQuillPenLine,
     RiFileInfoLine,
-    RiListCheck2
+    RiListCheck2,
+    RiEqualizerLine
   ]
 });
