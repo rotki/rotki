@@ -47,7 +47,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             rate=Price(amount_sold / amount_bought),
             base_asset=asset,
             quote_asset=symbol_to_asset_or_token(csv_row['Quote Currency']),
-            trade_type=TradeType.SELL if csv_row['Type'] == 'Sell' else TradeType.BUY,
+            trade_type=TradeType.deserialize(csv_row['Type']),
             amount=amount_bought,
             notes=csv_row['Description'],
         )

@@ -673,13 +673,14 @@ class TradeType(DBCharEnumMixIn):
                 f'Failed to deserialize trade type symbol from {type(symbol)} entry',
             )
 
-        if symbol in {'buy', 'LIMIT_BUY', 'BUY', 'Buy'}:
+        sanitized_symbol = symbol.strip().lower()
+        if sanitized_symbol in {'buy', 'limit_buy'}:
             return TradeType.BUY
-        if symbol in {'sell', 'LIMIT_SELL', 'SELL', 'Sell'}:
+        if sanitized_symbol in {'sell', 'limit_sell'}:
             return TradeType.SELL
-        if symbol in {'settlement_buy', 'settlement buy'}:
+        if sanitized_symbol in {'settlement_buy', 'settlement buy'}:
             return TradeType.SETTLEMENT_BUY
-        if symbol in {'settlement_sell', 'settlement sell'}:
+        if sanitized_symbol in {'settlement_sell', 'settlement sell'}:
             return TradeType.SETTLEMENT_SELL
 
         # else
