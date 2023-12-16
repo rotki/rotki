@@ -15,19 +15,13 @@ import type { ChangePasswordPayload } from '@/types/session';
 import type { ActionStatus } from '@/types/action';
 
 export const useSessionStore = defineStore('session', () => {
-  const showUpdatePopup: Ref<boolean> = ref(false);
-  const darkModeEnabled: Ref<boolean> = ref(false);
-  const checkForAssetUpdate: Ref<boolean> = ref(false);
+  const showUpdatePopup = ref<boolean>(false);
+  const darkModeEnabled = ref<boolean>(false);
+  const checkForAssetUpdate = ref<boolean>(false);
 
   const authStore = useSessionAuthStore();
-  const {
-    logged,
-    username,
-    syncConflict,
-    conflictExist,
-    incompleteUpgradeConflict,
-    shouldFetchData,
-  } = storeToRefs(authStore);
+  const { logged, username, syncConflict, conflictExist, incompleteUpgradeConflict, shouldFetchData }
+    = storeToRefs(authStore);
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
@@ -62,12 +56,7 @@ export const useSessionStore = defineStore('session', () => {
     return { success: false, message };
   };
 
-  const unlock = ({
-    settings,
-    exchanges,
-    fetchData,
-    username: user,
-  }: UnlockPayload): ActionStatus => {
+  const unlock = ({ settings, exchanges, fetchData, username: user }: UnlockPayload): ActionStatus => {
     try {
       initialize(settings, exchanges);
       set(username, user);
@@ -83,20 +72,14 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const createAccount = async (
-    payload: CreateAccountPayload,
-  ): Promise<ActionStatus> => {
+  const createAccount = async (payload: CreateAccountPayload): Promise<ActionStatus> => {
     try {
       start();
       const taskType = TaskType.CREATE_ACCOUNT;
       const { taskId } = await usersApi.createAccount(payload);
-      const { result } = await awaitTask<UserAccount, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: 'creating account',
-        },
-      );
+      const { result } = await awaitTask<UserAccount, TaskMeta>(taskId, taskType, {
+        title: 'creating account',
+      });
       const { settings, exchanges } = UserAccount.parse(result);
       const data: UnlockPayload = {
         settings,
@@ -112,13 +95,9 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const login = async (
-    credentials: LoginCredentials,
-  ): Promise<ActionStatus> => {
+  const login = async (credentials: LoginCredentials): Promise<ActionStatus> => {
     try {
-      const username = credentials.username
-        ? credentials.username
-        : lastLogin();
+      const username = credentials.username ? credentials.username : lastLogin();
       const isLogged = await usersApi.checkIfLogged(username);
 
       let settings: UserSettingsModel;
@@ -126,10 +105,7 @@ export const useSessionStore = defineStore('session', () => {
       const conflict = get(conflictExist);
 
       if (isLogged && !conflict) {
-        [settings, exchanges] = await Promise.all([
-          settingsApi.getSettings(),
-          exchangeApi.getExchanges(),
-        ]);
+        [settings, exchanges] = await Promise.all([settingsApi.getSettings(), exchangeApi.getExchanges()]);
       }
       else {
         if (!credentials.username)
@@ -140,13 +116,9 @@ export const useSessionStore = defineStore('session', () => {
         const taskType = TaskType.LOGIN;
         const { taskId } = await usersApi.login(credentials);
         start();
-        const { result } = await awaitTask<UserAccount, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: 'login in',
-          },
-        );
+        const { result } = await awaitTask<UserAccount, TaskMeta>(taskId, taskType, {
+          title: 'login in',
+        });
 
         const account = UserAccount.parse(result);
         ({ settings, exchanges } = account);
@@ -191,8 +163,7 @@ export const useSessionStore = defineStore('session', () => {
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
     try {
       const loggedUsers = await usersApi.loggedUsers();
-      for (const user of loggedUsers)
-        await usersApi.logout(user);
+      for (const user of loggedUsers) await usersApi.logout(user);
 
       return { success: true };
     }
@@ -209,16 +180,9 @@ export const useSessionStore = defineStore('session', () => {
     set(showUpdatePopup, await checkForUpdates());
   };
 
-  const changePassword = async ({
-    currentPassword,
-    newPassword,
-  }: ChangePasswordPayload): Promise<ActionStatus> => {
+  const changePassword = async ({ currentPassword, newPassword }: ChangePasswordPayload): Promise<ActionStatus> => {
     try {
-      const success = await usersApi.changeUserPassword(
-        get(username),
-        currentPassword,
-        newPassword,
-      );
+      const success = await usersApi.changeUserPassword(get(username), currentPassword, newPassword);
       setMessage({
         description: t('actions.session.password_change.success').toString(),
         success: true,
@@ -250,7 +214,7 @@ export const useSessionStore = defineStore('session', () => {
   const { lastLanguage } = useLastLanguage();
   const { language } = storeToRefs(useFrontendSettingsStore());
 
-  const adaptiveLanguage: ComputedRef<SupportedLanguage> = computed(() => {
+  const adaptiveLanguage = computed<SupportedLanguage>(() => {
     const selectedLanguageVal = get(lastLanguage);
     return !get(logged) && selectedLanguageVal !== 'undefined'
       ? (selectedLanguageVal as SupportedLanguage)

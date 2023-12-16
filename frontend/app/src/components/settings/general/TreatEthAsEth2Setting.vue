@@ -22,7 +22,7 @@ const { t } = useI18n();
       :label="t('general_settings.labels.treat_eth2_as_eth')"
       :success-messages="success"
       :error-messages="error"
-      @input="updateImmediate($event)"
+      @update:model-value="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

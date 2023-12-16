@@ -7,17 +7,17 @@ import type { Module } from '@/types/modules';
 import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 
 const props = defineProps<{
-  value: AccountManage;
+  modelValue: AccountManage;
   loading: boolean;
   errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: AccountManage): void;
+  (e: 'update:model-value', value: AccountManage): void;
   (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
-const { value: modelValue } = toRefs(props);
+const { modelValue } = toRefs(props);
 
 const address = ref<InstanceType<typeof AddressInput>>();
 const selectedModules = ref<Module[]>([]);
@@ -25,10 +25,10 @@ const selectedModules = ref<Module[]>([]);
 const { isEvm } = useSupportedChains();
 
 const errors = useKebabVModel(props, 'errorMessages', emit);
-const editMode = computed(() => props.value.mode === 'edit');
+const editMode = computed(() => props.modelValue.mode === 'edit');
 
 function updateVModel(value: AccountManage): void {
-  emit('input', value);
+  emit('update:model-value', value);
 }
 
 const tags = computed<string[]>({
@@ -60,7 +60,7 @@ const tags = computed<string[]>({
 const label = computed<string>({
   get() {
     const model = get(modelValue);
-    return (model.mode === 'edit' ? model.data.label : (model.data.length > 0 ? model.data[0].label : null)) ?? '';
+    return (model.mode === 'edit' ? model.data.label : model.data.length > 0 ? model.data[0].label : null) ?? '';
   },
   set(label: string) {
     const model = get(modelValue);
@@ -154,7 +154,7 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-6">
     <ModuleActivator
-      v-if="value.chain === Blockchain.ETH && !editMode"
+      v-if="modelValue.chain === Blockchain.ETH && !editMode"
       @update:selection="selectedModules = $event"
     />
 
@@ -162,21 +162,20 @@ defineExpose({
       v-if="showEvmCheck"
       name="selector"
       :disabled="loading"
-      :attrs="{ value: allEvmChains }"
-      :on="{ input: onAllEvmChainsUpdate }"
+      :attrs="{ 'modelValue': allEvmChains, 'onUpdate:model-value': onAllEvmChainsUpdate }"
     />
 
     <div class="flex flex-col gap-4">
       <AddressInput
         ref="address"
-        :addresses.sync="addresses"
-        :error-messages.sync="errors"
+        v-model:addresses="addresses"
+        v-model:error-messages="errors"
         :disabled="loading || editMode"
         :multi="!editMode"
       />
       <AccountDataInput
-        :tags.sync="tags"
-        :label.sync="label"
+        v-model:tags="tags"
+        v-model:label="label"
         :disabled="loading"
       />
     </div>

@@ -12,8 +12,7 @@ const { isTaskRunning } = useTaskStore();
 const { t } = useI18n();
 
 const { locationBreakdown: breakdown } = useBalancesBreakdown();
-const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]>
-  = breakdown(identifier);
+const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = breakdown(identifier);
 
 const loadingData = computed<boolean>(
   () =>

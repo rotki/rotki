@@ -2,36 +2,36 @@
 import dayjs, { type Dayjs } from 'dayjs';
 import { DateFormat } from '@/types/date-format';
 
-const props = defineProps<{
-  value: Dayjs;
+defineProps<{
   visibleDate: Dayjs;
   today: Dayjs;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', date: Dayjs): void;
   (e: 'set-today'): void;
 }>();
 
-const vModel = useSimpleVModel(props, emit);
+const model = defineModel<Dayjs>({ required: true });
 
 const { t } = useI18n();
 
 const datePicker = ref();
 const datetime = ref<string>('0');
 
-watchImmediate(vModel, (vModel) => {
-  set(datetime, convertFromTimestamp(get(vModel).unix()));
-});
+watch(
+  model,
+  (model) => {
+    set(datetime, convertFromTimestamp(get(model).unix()));
+  },
+  {
+    immediate: true,
+  },
+);
 
 function goToSelectedDate() {
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    true,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  set(vModel, dayjs(timestamp));
+  set(model, dayjs(timestamp));
 }
 </script>
 
@@ -40,52 +40,50 @@ function goToSelectedDate() {
     color="primary"
     variant="outlined"
   >
-    <template #default>
-      <RuiButton
-        :disabled="visibleDate.isSame(today, 'day')"
-        @click="emit('set-today')"
-      >
-        {{ t('calendar.today') }}
-      </RuiButton>
-      <RuiMenu wrapper-class="h-full">
-        <template #activator="{ on }">
-          <RuiButton
-            size="sm"
-            class="!p-2 !outline-none h-full"
-            color="primary"
-            variant="outlined"
-            v-on="on"
-          >
-            <RuiIcon
-              size="20"
-              name="arrow-down-s-line"
-            />
-          </RuiButton>
-        </template>
-        <div class="p-4 flex items-start">
-          <DateTimePicker
-            ref="datePicker"
-            v-model="datetime"
-            class="w-[12rem] [&_fieldset]:!rounded-r-none"
-            dense
-            :label="t('calendar.go_to_date')"
-            date-only
-            input-only
-            @keydown.enter="goToSelectedDate()"
+    <RuiButton
+      :disabled="visibleDate.isSame(today, 'day')"
+      @click="emit('set-today')"
+    >
+      {{ t('calendar.today') }}
+    </RuiButton>
+    <RuiMenu wrapper-class="h-full">
+      <template #activator="{ attrs }">
+        <RuiButton
+          size="sm"
+          class="!p-2 !outline-none h-full"
+          color="primary"
+          variant="outlined"
+          v-bind="attrs"
+        >
+          <RuiIcon
+            size="20"
+            name="arrow-down-s-line"
           />
-          <RuiButton
-            color="primary"
-            :disabled="!datePicker?.valid"
-            class="!rounded-l-none !p-2 !py-2.5"
-            @click="goToSelectedDate()"
-          >
-            <RuiIcon
-              name="corner-down-left-line"
-              size="20"
-            />
-          </RuiButton>
-        </div>
-      </RuiMenu>
-    </template>
+        </RuiButton>
+      </template>
+      <div class="p-4 flex items-start">
+        <DateTimePicker
+          ref="datePicker"
+          v-model="datetime"
+          class="w-[12rem] [&_fieldset]:!rounded-r-none"
+          dense
+          :label="t('calendar.go_to_date')"
+          date-only
+          input-only
+          @keydown.enter="goToSelectedDate()"
+        />
+        <RuiButton
+          color="primary"
+          :disabled="!datePicker?.valid"
+          class="!rounded-l-none !p-2 !py-2.5"
+          @click="goToSelectedDate()"
+        >
+          <RuiIcon
+            name="corner-down-left-line"
+            size="20"
+          />
+        </RuiButton>
+      </div>
+    </RuiMenu>
   </RuiButtonGroup>
 </template>

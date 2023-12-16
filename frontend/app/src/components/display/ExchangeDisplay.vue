@@ -1,8 +1,11 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  exchange: string;
-  size?: string;
-}>(), { size: '1.5rem' });
+const props = withDefaults(
+  defineProps<{
+    exchange: string;
+    size?: string;
+  }>(),
+  { size: '1.5rem' },
+);
 
 const { exchange } = toRefs(props);
 const { locationData } = useLocations();

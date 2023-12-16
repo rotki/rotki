@@ -15,14 +15,10 @@ export const useMessageStore = defineStore('message', () => {
 
   const { t } = useI18n();
 
-  const setMessage = (
-    msg: SemiPartial<Message, 'description'> = emptyMessage(),
-  ): void => {
+  const setMessage = (msg: SemiPartial<Message, 'description'> = emptyMessage()): void => {
     set(message, {
       ...{
-        title: msg.success
-          ? t('message.success.title')
-          : t('message.error.title'),
+        title: msg.success ? t('message.success.title') : t('message.error.title'),
         success: false,
       },
       ...msg,

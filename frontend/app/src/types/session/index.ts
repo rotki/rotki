@@ -9,9 +9,7 @@ export const PeriodicClientQueryResult = z.object({
   connectedNodes: z.record(z.array(z.string())),
 });
 
-export type PeriodicClientQueryResult = z.infer<
-  typeof PeriodicClientQueryResult
->;
+export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResult>;
 
 export const Messages = z.object({
   warnings: z.array(z.string()),

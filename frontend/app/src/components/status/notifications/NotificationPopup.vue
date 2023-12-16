@@ -48,7 +48,7 @@ watch(showNotificationBar, (showNotificationBar) => {
     :timeout="visibleNotification.duration"
     width="400px"
     class="top-[3.5rem]"
-    @input="displayed([visibleNotification.id])"
+    @update:model-value="displayed([visibleNotification.id])"
   >
     <Notification
       popup
@@ -56,9 +56,7 @@ watch(showNotificationBar, (showNotificationBar) => {
       @dismiss="dismiss(visibleNotification.id)"
     />
     <template v-if="queue.length > 0">
-      <div
-        class="flex justify-between p-2 items-center border-t border-default"
-      >
+      <div class="flex justify-between p-2 items-center border-t border-default">
         <RuiTooltip
           :open-delay="400"
           :popper="{ placement: 'right' }"

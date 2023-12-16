@@ -1,14 +1,7 @@
-import {
-  AssetInfo,
-  AssetInfoWithTransformer,
-  SupportedAsset,
-} from '@rotki/common/lib/data';
+import { AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
-import type {
-  ConflictResolutionStrategy,
-  PaginationRequestPayload,
-} from '@/types/common';
+import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -61,8 +54,7 @@ export const AssetMap = z.object({
 
 export type AssetMap = z.infer<typeof AssetMap>;
 
-export interface AssetRequestPayload
-  extends PaginationRequestPayload<SupportedAsset> {
+export interface AssetRequestPayload extends PaginationRequestPayload<SupportedAsset> {
   assetType?: string;
   name?: string;
   symbol?: string;
@@ -89,8 +81,7 @@ export const CustomAssets = CollectionCommonFields.extend({
 
 export type CustomAssets = z.infer<typeof CustomAssets>;
 
-export interface CustomAssetRequestPayload
-  extends PaginationRequestPayload<CustomAsset> {
+export interface CustomAssetRequestPayload extends PaginationRequestPayload<CustomAsset> {
   name?: string;
   identifier?: string;
   customAssetType?: string;
@@ -102,8 +93,7 @@ export const IgnoredAssetHandlingType = {
   SHOW_ONLY: 'show_only',
 } as const;
 
-export type IgnoredAssetsHandlingType =
-  (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
+export type IgnoredAssetsHandlingType = (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
 
 export const IgnoredAssetResponse = z.object({
   successful: z.array(z.string()),
@@ -129,9 +119,7 @@ export interface AssetIdResponse {
   readonly identifier: string;
 }
 
-export type ConflictResolution = Readonly<
-  Record<string, ConflictResolutionStrategy>
->;
+export type ConflictResolution = Readonly<Record<string, ConflictResolutionStrategy>>;
 
 export const EVM_TOKEN = 'evm token';
 
@@ -161,8 +149,7 @@ export const CexMapping = CexMappingDeletePayload.extend({
 
 export type CexMapping = z.infer<typeof CexMapping>;
 
-export interface CexMappingRequestPayload
-  extends PaginationRequestPayload<CexMapping> {
+export interface CexMappingRequestPayload extends PaginationRequestPayload<CexMapping> {
   location?: string;
 }
 

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
-const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(
-  useAccountingSettingsStore(),
-);
+const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
   set(ethStakingTaxableAfterWithdrawalEnabled, get(enabled));
@@ -12,12 +10,8 @@ const { t } = useI18n();
 
 function getSuccessMessage(enabled: boolean) {
   return enabled
-    ? t(
-      'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled',
-    )
-    : t(
-      'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled',
-    );
+    ? t('account_settings.messages.eth_staking_taxable_after_withdrawal.enabled')
+    : t('account_settings.messages.eth_staking_taxable_after_withdrawal.disabled');
 }
 </script>
 
@@ -25,9 +19,7 @@ function getSuccessMessage(enabled: boolean) {
   <SettingsOption
     #default="{ error, success, update }"
     setting="ethStakingTaxableAfterWithdrawalEnabled"
-    :error-message="
-      t('account_settings.messages.eth_staking_taxable_after_withdrawal.error')
-    "
+    :error-message="t('account_settings.messages.eth_staking_taxable_after_withdrawal.error')"
     :success-message="getSuccessMessage"
   >
     <RuiSwitch
@@ -35,13 +27,9 @@ function getSuccessMessage(enabled: boolean) {
       class="accounting-settings__eth-staking-taxable-after-withdrawal"
       :success-messages="success"
       :error-messages="error"
-      :label="
-        t(
-          'accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled',
-        )
-      "
+      :label="t('accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled')"
       color="primary"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

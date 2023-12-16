@@ -32,9 +32,7 @@ const slots = useSlots();
     class="py-4 h-auto"
   >
     <template #custom-header>
-      <CardTitle
-        class="capitalize flex-nowrap flex justify-between gap-2 pb-2 px-6"
-      >
+      <CardTitle class="capitalize flex-nowrap flex justify-between gap-2 pb-2 px-6">
         <NavigatorLink
           :enabled="!!navigatesTo"
           :to="{ path: navigatesTo }"

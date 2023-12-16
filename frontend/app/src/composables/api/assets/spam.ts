@@ -18,13 +18,10 @@ export function useAssetSpamApi() {
   };
 
   const removeAssetFromSpamList = async (token: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/assets/evm/spam/',
-      {
-        data: { token },
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/assets/evm/spam/', {
+      data: { token },
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };

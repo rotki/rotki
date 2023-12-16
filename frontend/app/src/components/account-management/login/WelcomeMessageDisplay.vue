@@ -15,13 +15,7 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
 async function fetchSvg() {
   const url = get(activeItem).icon;
 
-  if (
-    !url
-    || !(
-      checkIfDevelopment()
-      || url.startsWith(`https://raw.githubusercontent.com/rotki/data`)
-    )
-  )
+  if (!url || !(checkIfDevelopment() || url.startsWith(`https://raw.githubusercontent.com/rotki/data`)))
     return;
 
   try {
@@ -97,11 +91,11 @@ const css = useCssModule();
 
       <RuiFooterStepper
         v-if="steps > 1"
-        :value="step"
+        :model-value="step"
         :pages="steps"
         variant="bullet"
         hide-buttons
-        @input="onNavigate($event)"
+        @update:model-value="onNavigate($event)"
       />
     </div>
   </div>

@@ -1,14 +1,11 @@
-import type {
-  EditHistoryEventPayload,
-  NewHistoryEventPayload,
-} from '@/types/history/events';
+import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events';
 import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 
 export const useHistoryEventsForm = createSharedComposable(() => {
   const { setMessage } = useMessageStore();
   const { editHistoryEvent, addHistoryEvent } = useHistoryEvents();
 
-  const defaultNotes: Ref<boolean> = ref(false);
+  const defaultNotes = ref<boolean>(false);
   const getPayloadNotes = (newNotes?: string | null, oldNotes?: string | null) => {
     if (!get(defaultNotes) || newNotes !== oldNotes)
       return newNotes;
@@ -18,7 +15,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
   const saveHistoryEventHandler = async (
     payload: NewHistoryEventPayload | EditHistoryEventPayload,
-    assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | null>,
+    assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | undefined>,
     errorMessages: Ref<Record<string, string[]>>,
     reset: () => any,
   ) => {
@@ -31,9 +28,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
     const edit = 'identifier' in payload;
 
-    const result = !edit
-      ? await addHistoryEvent(payload)
-      : await editHistoryEvent(payload);
+    const result = !edit ? await addHistoryEvent(payload) : await editHistoryEvent(payload);
 
     if (result.success) {
       reset();

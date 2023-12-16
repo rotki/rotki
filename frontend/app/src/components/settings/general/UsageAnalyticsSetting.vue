@@ -22,7 +22,7 @@ const { t } = useI18n();
       :label="t('general_settings.labels.anonymous_analytics')"
       :success-messages="success"
       :error-messages="error"
-      @input="updateImmediate($event)"
+      @update:model-value="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

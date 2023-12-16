@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 import type { GalleryNft } from '@/types/nfts';
 
 const props = defineProps<{
@@ -13,35 +13,23 @@ const frontendStore = useFrontendSettingsStore();
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
 const { updateSetting } = frontendStore;
 
-const imageUrlSource: ComputedRef<string | null> = computed(
-  () => get(item).imageUrl,
-);
+const imageUrlSource = computed<string | null>(() => get(item).imageUrl);
 
-const {
-  shouldRender,
-  isVideo,
-  renderedMedia,
-} = useNftImage(imageUrlSource);
+const { shouldRender, isVideo, renderedMedia } = useNftImage(imageUrlSource);
 
-const name = computed(() =>
-  get(item).name ? get(item).name : get(item).collection.name,
-);
+const name = computed(() => (get(item).name ? get(item).name : get(item).collection.name));
 
 const { t } = useI18n();
 const css = useCssModule();
 
-const domain: ComputedRef<string | null> = computed(() =>
-  getDomain(get(imageUrlSource) || ''),
-);
+const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
 
 const { show } = useConfirmStore();
 
 function showAllowDomainConfirmation() {
   show(
     {
-      title: t(
-        'general_settings.nft_setting.update_whitelist_confirmation.title',
-      ),
+      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
       message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
         {
@@ -60,15 +48,12 @@ function allowDomain() {
   if (!domainVal)
     return;
 
-  const newWhitelisted = [
-    ...get(whitelistedDomainsForNftImages),
-    domainVal,
-  ].filter(uniqueStrings);
+  const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
 
   updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
 }
 
-const mediaStyle: ComputedRef<StyleValue> = computed(() => {
+const mediaStyle = computed<StyleValue>(() => {
   const backgroundColor = get(item).backgroundColor;
   if (!get(shouldRender) || !backgroundColor)
     return {};

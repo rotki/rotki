@@ -1,10 +1,5 @@
 import { groupBy } from 'lodash-es';
-import type {
-  AssetBalance,
-  AssetBalanceWithPrice,
-  Balance,
-  BigNumber,
-} from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
 export function useBalanceSorting() {
@@ -39,14 +34,11 @@ export function useBalanceSorting() {
       const grouped = groupedBalances[key];
       const isAssetCollection = key.startsWith('collection-');
       const collectionKey = key.split('collection-')[1];
-      const assetCollectionInfo = !isAssetCollection
-        ? false
-        : get(fetchedAssetCollections)?.[collectionKey];
+      const assetCollectionInfo = !isAssetCollection ? false : get(fetchedAssetCollections)?.[collectionKey];
 
       if (assetCollectionInfo && grouped.length > 1) {
         const sumBalance = grouped.reduce(
-          (accumulator, currentBalance) =>
-            balanceSum(accumulator, currentBalance),
+          (accumulator, currentBalance) => balanceSum(accumulator, currentBalance),
           zeroBalance(),
         );
 

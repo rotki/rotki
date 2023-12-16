@@ -4,11 +4,7 @@ import dayjs from 'dayjs';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 import type { Writeable } from '@/types';
-import type {
-  NewTrade,
-  Trade,
-  TradeType,
-} from '@/types/history/trade';
+import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
 
 const props = withDefaults(
   defineProps<{
@@ -50,34 +46,19 @@ const quoteSymbol = assetSymbol(quote);
 
 const rules = {
   baseAsset: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_base').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_base').toString(), required),
   },
   quoteAsset: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_quote').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote').toString(), required),
   },
   amount: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_amount').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_amount').toString(), required),
   },
   rate: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_rate').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate').toString(), required),
   },
   quoteAmount: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_quote_amount').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount').toString(), required),
   },
   fee: {
     required: helpers.withMessage(
@@ -118,9 +99,7 @@ function triggerFeeValidator() {
 }
 
 const quoteHint = computed<string>(() =>
-  get(type) === 'buy'
-    ? t('external_trade_form.buy_quote').toString()
-    : t('external_trade_form.sell_quote').toString(),
+  get(type) === 'buy' ? t('external_trade_form.buy_quote').toString() : t('external_trade_form.sell_quote').toString(),
 );
 
 const shouldRenderSummary = computed<boolean>(
@@ -218,25 +197,12 @@ async function save(): Promise<boolean> {
 setSubmitFunc(save);
 
 function updateRate(forceUpdate = false) {
-  if (
-    get(amount)
-    && get(rate)
-    && (!get(quoteAmountInputFocused) || forceUpdate)
-  ) {
-    set(
-      quoteAmount,
-      get(numericAmount).multipliedBy(get(numericRate)).toFixed(),
-    );
-  }
+  if (get(amount) && get(rate) && (!get(quoteAmountInputFocused) || forceUpdate))
+    set(quoteAmount, get(numericAmount).multipliedBy(get(numericRate)).toFixed());
 }
 
 async function fetchPrice() {
-  if (
-    (get(rate) && get(editableItem))
-    || !get(datetime)
-    || !get(base)
-    || !get(quote)
-  )
+  if ((get(rate) && get(editableItem)) || !get(datetime) || !get(base) || !get(quote))
     return;
 
   const timestamp = convertToTimestamp(get(datetime));
@@ -318,19 +284,17 @@ onMounted(setEditMode);
         >
           <RuiRadio
             :label="t('external_trade_form.trade_type.buy')"
-            internal-value="buy"
+            value="buy"
             data-cy="trade-input-buy"
           />
           <RuiRadio
             :label="t('external_trade_form.trade_type.sell')"
-            internal-value="sell"
+            value="sell"
             data-cy="trade-input-sell"
           />
         </RuiRadioGroup>
       </div>
-      <div
-        class="col-span-3 flex flex-col md:flex-row md:items-start gap-x-4 pt-4"
-      >
+      <div class="col-span-3 flex flex-col md:flex-row md:items-start gap-x-4 pt-4">
         <AssetSelect
           v-model="base"
           class="flex-1"
@@ -369,9 +333,9 @@ onMounted(setEditMode);
         @blur="v$.amount.$touch()"
       />
       <TwoFieldsAmountInput
+        v-model:primary-value="rate"
+        v-model:secondary-value="quoteAmount"
         class="-mb-5"
-        :primary-value.sync="rate"
-        :secondary-value.sync="quoteAmount"
         :loading="fetching"
         :disabled="fetching"
         data-cy="trade-rate"
@@ -393,9 +357,9 @@ onMounted(setEditMode);
           size="16"
           name="chat-quote-line"
         />
-        <i18n
+        <i18n-t
           v-if="type === 'buy'"
-          path="external_trade_form.summary.buy"
+          keypath="external_trade_form.summary.buy"
         >
           <template #label>
             <strong>{{ t('external_trade_form.summary.label') }}</strong>
@@ -422,11 +386,11 @@ onMounted(setEditMode);
               />
             </strong>
           </template>
-        </i18n>
-        <i18n
+        </i18n-t>
+        <i18n-t
           v-if="type === 'sell'"
           tag="span"
-          path="external_trade_form.summary.sell"
+          keypath="external_trade_form.summary.sell"
         >
           <template #label>
             <strong>{{ t('external_trade_form.summary.label') }}</strong>
@@ -453,7 +417,7 @@ onMounted(setEditMode);
               />
             </strong>
           </template>
-        </i18n>
+        </i18n-t>
       </div>
     </div>
 
@@ -470,7 +434,7 @@ onMounted(setEditMode);
         :label="t('external_trade_form.fee.label')"
         :hint="t('external_trade_form.fee.hint')"
         :error-messages="toMessages(v$.fee)"
-        @input="triggerFeeValidator()"
+        @update:model-value="triggerFeeValidator()"
       />
       <AssetSelect
         ref="feeCurrencyInput"
@@ -480,7 +444,7 @@ onMounted(setEditMode);
         :label="t('external_trade_form.fee_currency.label')"
         :hint="t('external_trade_form.fee_currency.hint')"
         :error-messages="toMessages(v$.feeCurrency)"
-        @input="triggerFeeValidator()"
+        @update:model-value="triggerFeeValidator()"
       />
     </div>
 

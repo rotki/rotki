@@ -23,13 +23,7 @@ function binaryDependencyPlugin(): Plugin {
         return;
       }
       const parsedPath = parse(rootDir);
-      const psList = join(
-        parsedPath.dir,
-        'app',
-        'node_modules',
-        'ps-list',
-        'vendor',
-      );
+      const psList = join(parsedPath.dir, 'app', 'node_modules', 'ps-list', 'vendor');
       const files = fs.readdirSync(psList);
       const output = join(rootDir, outDir, 'vendor');
       if (!fs.existsSync(output))
@@ -53,6 +47,9 @@ export default defineConfig({
       '@': `${join(PACKAGE_ROOT, 'src')}/`,
     },
   },
+  optimizeDeps: {
+    include: ['tasklist > csv'],
+  },
   plugins: [binaryDependencyPlugin()],
   build: {
     sourcemap: isDevelopment ? 'inline' : false,
@@ -61,15 +58,10 @@ export default defineConfig({
     minify: !isDevelopment,
     lib: {
       entry: 'src/background.ts',
-      formats: ['cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        'csv',
-        'electron',
-        'electron-devtools-installer',
-        ...builtinModules.flatMap(p => [p, `node:${p}`]),
-      ],
+      external: ['csv', 'electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: '[name].js',
       },

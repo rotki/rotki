@@ -35,8 +35,7 @@ export const AssetMovementCollectionResponse = CollectionCommonFields.extend({
   ),
 });
 
-export interface AssetMovementRequestPayload
-  extends PaginationRequestPayload<AssetMovement> {
+export interface AssetMovementRequestPayload extends PaginationRequestPayload<AssetMovement> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;

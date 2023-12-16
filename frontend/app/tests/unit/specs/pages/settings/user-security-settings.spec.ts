@@ -1,29 +1,19 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import UserSecuritySettings from '@/pages/settings/data-security/index.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
-vi.mock('@/services/backup', () => ({
-  useBackupApi: () => ({
-    info: vi.fn(),
-  }),
-}));
-
 describe('userSecuritySettings.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof UserSecuritySettings>>;
 
   function createWrapper() {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(UserSecuritySettings, {
-      pinia,
-      stubs: [
-        'card-title',
-        'asset-select',
-        'asset-update',
-        'confirm-dialog',
-        'data-table',
-      ],
-      provide: libraryDefaults,
+      global: {
+        plugins: [pinia],
+        stubs: ['card-title', 'asset-select', 'asset-update', 'confirm-dialog', 'data-table'],
+        provide: libraryDefaults,
+      },
     });
   }
 

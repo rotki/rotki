@@ -1,28 +1,25 @@
 import flushPromises from 'flush-promises';
+import type Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { LocationQuery } from '@/types/route';
 import type { Filters, Matcher } from '@/composables/filters/trades';
-import type {
-  Trade,
-  TradeEntry,
-  TradeRequestPayload,
-} from '@/types/history/trade';
-import type Vue from 'vue';
+import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 
-vi.mock('vue-router/composables', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+vi.mock('vue-router', () => {
+  const route = ref({
+    query: ref({}),
+  });
+  return {
+    useRoute: vi.fn().mockReturnValue(route),
+    useRouter: vi.fn().mockReturnValue({
+      push: vi.fn(({ query }) => {
+        set(route, { query });
+        return true;
+      }),
     }),
-  ),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(({ query }) => {
-      useRoute().query = query;
-      return true;
-    }),
-  }),
-}));
+  };
+});
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<Vue>('vue');
@@ -34,11 +31,9 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchTrades: (
-    payload: MaybeRef<TradeRequestPayload>
-  ) => Promise<Collection<TradeEntry>>;
-  const locationOverview: MaybeRef<string | null> = ref('');
-  const mainPage: Ref<boolean> = ref(false);
+  let fetchTrades: (payload: MaybeRef<TradeRequestPayload>) => Promise<Collection<TradeEntry>>;
+  const locationOverview = ref<string | null>('');
+  const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
 
@@ -67,15 +62,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const {
-        userAction,
-        filters,
-        sort,
-        state,
-        fetchData,
-        applyRouteFilter,
-        isLoading,
-      } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
         Trade,
         TradeRequestPayload,
         TradeEntry,
@@ -147,7 +134,7 @@ describe('composables::history/filter-paginate', () => {
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(route.query).toEqual(query);
+      expect(get(route).query).toEqual(query);
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);

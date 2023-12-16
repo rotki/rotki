@@ -1,14 +1,15 @@
 <script lang="ts" setup>
 import { z } from 'zod';
-import type { ConflictResolution } from '@/types/asset';
-import type { Collection } from '@/types/collection';
-import type { ConflictResolutionStrategy } from '@/types/common';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
   AccountingRuleConflictResolution,
+  AccountingTreatment,
 } from '@/types/settings/accounting';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { ConflictResolution } from '@/types/asset';
+import type { Collection } from '@/types/collection';
+import type { ConflictResolutionStrategy } from '@/types/common';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -42,7 +43,7 @@ onMounted(() => {
   fetchData();
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
   {
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
@@ -100,13 +101,14 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } = useHistoryEventMappings();
 
 function getHistoryEventTypeName(eventType: string): string {
-  return get(historyEventTypesData).find(item => item.identifier === eventType)
-    ?.label ?? toSentenceCase(eventType);
+  return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
 }
 
 function getHistoryEventSubTypeName(eventSubtype: string): string {
-  return get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
-    ?.label ?? toSentenceCase(eventSubtype);
+  return (
+    get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)?.label
+    ?? toSentenceCase(eventSubtype)
+  );
 }
 
 function getType(eventType: string, eventSubtype: string) {
@@ -118,21 +120,24 @@ function getType(eventType: string, eventSubtype: string) {
   );
 }
 
-function diffClass(localSetting: boolean | string, remoteSetting: boolean | string) {
+function diffClass(
+  localSetting: boolean | string | AccountingTreatment | null,
+  remoteSetting: boolean | string | AccountingTreatment | null,
+) {
   if (localSetting !== remoteSetting)
     return 'bg-rui-error-lighter/[0.2]';
 
   return '';
 }
 
-const resolution: Ref<ConflictResolution> = ref({});
+const resolution = ref<ConflictResolution>({});
 const resolutionLength = computed(() => Object.keys(get(resolution)).length);
 
 const solveAllUsing = ref<ConflictResolutionStrategy>();
 
 const { setMessage } = useMessageStore();
 
-const loading: Ref<boolean> = ref(false);
+const loading = ref<boolean>(false);
 
 const { total } = getCollectionData<AccountingRuleConflict>(state);
 
@@ -194,14 +199,12 @@ async function save() {
     @confirm="save()"
   >
     <template #default="{ wrapper }">
-      <div
-        class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4"
-      >
+      <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
         <RuiCheckbox
-          :value="!!solveAllUsing"
+          :model-value="!!solveAllUsing"
           color="primary"
           hide-details
-          @input="solveAllUsing = $event ? 'local' : undefined"
+          @update:model-value="solveAllUsing = $event ? 'local' : undefined"
         >
           {{ t('conflict_dialog.all_buttons_description') }}
         </RuiCheckbox>
@@ -212,27 +215,25 @@ async function save() {
           required
           variant="outlined"
         >
-          <template #default>
-            <RuiButton
-              value="local"
-              @click="solveAllUsing = 'local'"
-            >
-              {{ t('conflict_dialog.keep_local') }}
-            </RuiButton>
-            <RuiButton
-              value="remote"
-              @click="solveAllUsing = 'remote'"
-            >
-              {{ t('conflict_dialog.keep_remote') }}
-            </RuiButton>
-          </template>
+          <RuiButton
+            model-value="local"
+            @click="solveAllUsing = 'local'"
+          >
+            {{ t('conflict_dialog.keep_local') }}
+          </RuiButton>
+          <RuiButton
+            model-value="remote"
+            @click="solveAllUsing = 'remote'"
+          >
+            {{ t('conflict_dialog.keep_remote') }}
+          </RuiButton>
         </RuiButtonGroup>
       </div>
 
       <div class="text-caption pt-4 pb-1">
-        <i18n
+        <i18n-t
           v-if="!solveAllUsing"
-          path="conflict_dialog.hint"
+          keypath="conflict_dialog.hint"
           tag="span"
         >
           <template #conflicts>
@@ -241,16 +242,16 @@ async function save() {
           <template #remaining>
             <span class="font-medium"> {{ remaining }} </span>
           </template>
-        </i18n>
-        <i18n
+        </i18n-t>
+        <i18n-t
           v-else
-          path="conflict_dialog.resolve_all_hint"
+          keypath="conflict_dialog.resolve_all_hint"
           tag="span"
         >
           <template #source>
             <span class="font-medium">{{ solveAllUsing }}</span>
           </template>
-        </i18n>
+        </i18n-t>
       </div>
 
       <CollectionHandler
@@ -260,15 +261,14 @@ async function save() {
       >
         <template #default="{ data }">
           <RuiDataTable
+            v-model:pagination.external="pagination"
             :cols="tableHeaders"
             :loading="isLoading"
-            :pagination.sync="pagination"
-            :pagination-modifiers="{ external: true }"
             :rows="data"
             disable-floating-header
             mobile-breakpoint="0"
             outlined
-            row-attr="identifier"
+            row-attr="localId"
             :scroller="wrapper"
           >
             <template #header.taxable>
@@ -305,18 +305,10 @@ async function save() {
                       name="information-line"
                       size="18"
                     />
-                    {{
-                      t(
-                        'accounting_settings.rule.labels.count_entire_amount_spend',
-                      )
-                    }}
+                    {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
                   </div>
                 </template>
-                {{
-                  t(
-                    'accounting_settings.rule.labels.count_entire_amount_spend_subtitle',
-                  )
-                }}
+                {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
               </RuiTooltip>
             </template>
             <template #header.countCostBasisPnl>
@@ -333,16 +325,10 @@ async function save() {
                       name="information-line"
                       size="18"
                     />
-                    {{
-                      t('accounting_settings.rule.labels.count_cost_basis_pnl')
-                    }}
+                    {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
                   </div>
                 </template>
-                {{
-                  t(
-                    'accounting_settings.rule.labels.count_cost_basis_pnl_subtitle',
-                  )
-                }}
+                {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
               </RuiTooltip>
             </template>
             <template #item.eventTypeAndSubtype="{ row }">
@@ -351,13 +337,7 @@ async function save() {
             </template>
             <template #item.resultingCombination="{ row }">
               <HistoryEventTypeCombination
-
-                :type="
-                  getType(
-                    row.localData.eventType,
-                    row.localData.eventSubtype,
-                  )
-                "
+                :type="getType(row.localData.eventType, row.localData.eventSubtype)"
                 show-label
               />
             </template>
@@ -371,23 +351,13 @@ async function save() {
             <template #item.taxable="{ row }">
               <div class="w-full flex flex-col items-center justify-center">
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.taxable.value,
-                      row.remoteData.taxable.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.localData.taxable"
                   identifier="taxable"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.taxable.value,
-                      row.remoteData.taxable.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.remoteData.taxable"
                   identifier="taxable"
                 />
@@ -396,23 +366,13 @@ async function save() {
             <template #item.countEntireAmountSpend="{ row }">
               <div class="w-full flex flex-col items-center justify-center">
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.taxable.value,
-                      row.remoteData.taxable.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.localData.countEntireAmountSpend"
                   identifier="countEntireAmountSpend"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.taxable.value,
-                      row.remoteData.taxable.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.remoteData.countEntireAmountSpend"
                   identifier="countEntireAmountSpend"
                 />
@@ -421,23 +381,13 @@ async function save() {
             <template #item.countCostBasisPnl="{ row }">
               <div class="w-full flex flex-col items-center justify-center">
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.countCostBasisPnl.value,
-                      row.remoteData.countCostBasisPnl.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.countCostBasisPnl.value, row.remoteData.countCostBasisPnl.value)"
                   :item="row.localData.countCostBasisPnl"
                   identifier="countCostBasisPnl"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="
-                    diffClass(
-                      row.localData.countCostBasisPnl.value,
-                      row.remoteData.countCostBasisPnl.value,
-                    )
-                  "
+                  :class="diffClass(row.localData.countCostBasisPnl.value, row.remoteData.countCostBasisPnl.value)"
                   :item="row.remoteData.countCostBasisPnl"
                   identifier="countCostBasisPnl"
                 />
@@ -447,12 +397,7 @@ async function save() {
               <div class="w-full flex flex-col items-center justify-center">
                 <BadgeDisplay
                   v-if="row.localData.accountingTreatment"
-                  :class="
-                    diffClass(
-                      row.localData.accountingTreatment,
-                      row.remoteData.accountingTreatment,
-                    )
-                  "
+                  :class="diffClass(row.localData.accountingTreatment, row.remoteData.accountingTreatment)"
                 >
                   {{ row.localData.accountingTreatment }}
                 </BadgeDisplay>
@@ -460,12 +405,7 @@ async function save() {
                 <RuiDivider class="w-full my-2" />
                 <BadgeDisplay
                   v-if="row.remoteData.accountingTreatment"
-                  :class="
-                    diffClass(
-                      row.localData.accountingTreatment,
-                      row.remoteData.accountingTreatment,
-                    )
-                  "
+                  :class="diffClass(row.localData.accountingTreatment, row.remoteData.accountingTreatment)"
                 >
                   {{ row.remoteData.accountingTreatment }}
                 </BadgeDisplay>
@@ -482,20 +422,18 @@ async function save() {
                 variant="outlined"
                 vertical
               >
-                <template #default>
-                  <RuiButton
-                    class="w-full"
-                    value="local"
-                  >
-                    {{ t('conflict_dialog.action.local') }}
-                  </RuiButton>
-                  <RuiButton
-                    class="w-full"
-                    value="remote"
-                  >
-                    {{ t('conflict_dialog.action.remote') }}
-                  </RuiButton>
-                </template>
+                <RuiButton
+                  class="w-full"
+                  value="local"
+                >
+                  {{ t('conflict_dialog.action.local') }}
+                </RuiButton>
+                <RuiButton
+                  class="w-full"
+                  value="remote"
+                >
+                  {{ t('conflict_dialog.action.remote') }}
+                </RuiButton>
               </RuiButtonGroup>
             </template>
           </RuiDataTable>

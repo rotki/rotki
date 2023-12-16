@@ -1,12 +1,20 @@
 import { z } from 'zod';
-import { contextColors } from '@rotki/ui-library-compat';
+import { type RuiIcons, contextColors, isRuiIcon } from '@rotki/ui-library';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
+const RuiIcon = z.string().transform((icon) => {
+  if (isRuiIcon(icon))
+    return icon;
+
+  console.warn(`${icon} returned from the backend does not match RuiIcons`);
+  return 'question-line' satisfies RuiIcons;
+});
+
 const HistoryEventCategoryDetail = z.object({
   label: z.string(),
-  icon: z.string(),
+  icon: RuiIcon,
   color: z.enum(contextColors).optional(),
 });
 
@@ -17,30 +25,22 @@ const HistoryEventCategory = z.object({
   direction: HistoryEventCategoryDirection,
 });
 
-export const HistoryEventCategoryDetailWithId
-  = HistoryEventCategoryDetail.extend({
-    identifier: z.string(),
-    direction: HistoryEventCategoryDirection,
-  });
+export const HistoryEventCategoryDetailWithId = HistoryEventCategoryDetail.extend({
+  identifier: z.string(),
+  direction: HistoryEventCategoryDirection,
+});
 
-export type HistoryEventCategoryDetailWithId = z.infer<
-  typeof HistoryEventCategoryDetailWithId
->;
+export type HistoryEventCategoryDetailWithId = z.infer<typeof HistoryEventCategoryDetailWithId>;
 
 export const HistoryEventCategoryMapping = z.record(HistoryEventCategory);
 
-export type HistoryEventCategoryMapping = z.infer<
-  typeof HistoryEventCategoryMapping
->;
+export type HistoryEventCategoryMapping = z.infer<typeof HistoryEventCategoryMapping>;
 
 export const HistoryEventTypeData = z.object({
   globalMappings: HistoryEventTypeMapping,
   eventCategoryDetails: HistoryEventCategoryMapping,
-  accountingEventsIcons: z.record(z.string()),
-  entryTypeMappings: z.record(
-    z.nativeEnum(HistoryEventEntryType),
-    z.record(HistoryEventTypeMapping),
-  ),
+  accountingEventsIcons: z.record(RuiIcon),
+  entryTypeMappings: z.record(z.nativeEnum(HistoryEventEntryType), z.record(HistoryEventTypeMapping)),
 });
 
 export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;

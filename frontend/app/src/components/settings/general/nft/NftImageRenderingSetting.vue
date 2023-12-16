@@ -13,26 +13,24 @@ const { t } = useI18n();
 const confirmStore = useConfirmStore();
 const frontendStore = useFrontendSettingsStore();
 const { visible } = storeToRefs(confirmStore);
-const {
-  renderAllNftImages: renderAll,
-  whitelistedDomainsForNftImages: whitelist,
-} = storeToRefs(frontendStore);
+const { renderAllNftImages: renderAll, whitelistedDomainsForNftImages: whitelist } = storeToRefs(frontendStore);
 
 const renderAllNftImages = ref<'all' | 'whitelisted'>('all');
 const whitelistedDomains = ref('');
 const showUpdateWhitelistConfirmation = ref(false);
 
-const decodedDomains = computed<string[]>(() => get(whitelistedDomains)
-  .split(',')
-  .filter(value => !!value)
-  .map(val => getDomain(val.trim())),
+const decodedDomains = computed<string[]>(() =>
+  get(whitelistedDomains)
+    .split(',')
+    .filter(value => !!value)
+    .map(val => getDomain(val.trim())),
 );
 
-const whitelistedDomainsForNftImages = computed<string[]>(() => [...get(whitelist), ...get(decodedDomains)].filter(uniqueStrings));
-
-const changed = computed(
-  () => !isEqual(get(whitelistedDomainsForNftImages), get(whitelist)),
+const whitelistedDomainsForNftImages = computed<string[]>(() =>
+  [...get(whitelist), ...get(decodedDomains)].filter(uniqueStrings),
 );
+
+const changed = computed(() => !isEqual(get(whitelistedDomainsForNftImages), get(whitelist)));
 
 const { show } = confirmStore;
 
@@ -74,16 +72,12 @@ onMounted(() => {
     <template #custom-header>
       <RuiCardHeader :class="{ 'px-0': noPadding }">
         <template #header>
-          {{
-            t(
-              'general_settings.nft_setting.subtitle.nft_images_rendering_setting',
-            )
-          }}
+          {{ t('general_settings.nft_setting.subtitle.nft_images_rendering_setting') }}
         </template>
         <template #subheader>
-          <i18n
+          <i18n-t
             tag="div"
-            path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
+            keypath="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
           >
             <template #link>
               <ExternalLink
@@ -93,11 +87,10 @@ onMounted(() => {
                 {{ t('common.here') }}
               </ExternalLink>
             </template>
-          </i18n>
+          </i18n-t>
         </template>
       </RuiCardHeader>
     </template>
-
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       setting="renderAllNftImages"
@@ -108,22 +101,14 @@ onMounted(() => {
         color="primary"
         :success-messages="success"
         :error-messages="error"
-        @input="updateRenderingSetting($event, updateImmediate)"
+        @update:model-value="updateRenderingSetting($event, updateImmediate)"
       >
-        <template #default>
-          <RuiRadio internal-value="all">
-            {{
-              t('general_settings.nft_setting.label.render_setting.allow_all')
-            }}
-          </RuiRadio>
-          <RuiRadio internal-value="whitelisted">
-            {{
-              t(
-                'general_settings.nft_setting.label.render_setting.only_allow_whitelisted',
-              )
-            }}
-          </RuiRadio>
-        </template>
+        <RuiRadio value="all">
+          {{ t('general_settings.nft_setting.label.render_setting.allow_all') }}
+        </RuiRadio>
+        <RuiRadio value="whitelisted">
+          {{ t('general_settings.nft_setting.label.render_setting.only_allow_whitelisted') }}
+        </RuiRadio>
       </RuiRadioGroup>
     </SettingsOption>
 
@@ -140,9 +125,7 @@ onMounted(() => {
         <RuiTextField
           v-model.trim="whitelistedDomains"
           :label="t('general_settings.nft_setting.label.whitelist_domains')"
-          :hint="
-            t('general_settings.nft_setting.label.whitelisted_domains_hint')
-          "
+          :hint="t('general_settings.nft_setting.label.whitelisted_domains_hint')"
           :success-messages="success"
           :error-messages="error"
           :disabled="renderAllNftImages === 'all'"
@@ -177,7 +160,7 @@ onMounted(() => {
             :disabled="renderAllNftImages !== 'whitelisted'"
             :closeable="renderAllNftImages === 'whitelisted'"
             size="sm"
-            @click:close="updateImmediate(whitelist.filter(domain => domain !== item))"
+            @click:close="updateImmediate(whitelist.filter((domain) => domain !== item))"
           >
             {{ item }}
           </RuiChip>
@@ -186,19 +169,15 @@ onMounted(() => {
 
       <ConfirmDialog
         :display="showUpdateWhitelistConfirmation"
-        :title="
-          t('general_settings.nft_setting.update_whitelist_confirmation.title')
-        "
-        :message="
-          t(
-            'general_settings.nft_setting.update_whitelist_confirmation.message',
-            1,
-          )
-        "
+        :title="t('general_settings.nft_setting.update_whitelist_confirmation.title')"
+        :message="t('general_settings.nft_setting.update_whitelist_confirmation.message', 1)"
         max-width="700"
         class="test-class"
         @cancel="showUpdateWhitelistConfirmation = false"
-        @confirm="updateImmediate(whitelistedDomainsForNftImages); showUpdateWhitelistConfirmation = false"
+        @confirm="
+          updateImmediate(whitelistedDomainsForNftImages);
+          showUpdateWhitelistConfirmation = false;
+        "
       >
         <RuiCard
           outlined

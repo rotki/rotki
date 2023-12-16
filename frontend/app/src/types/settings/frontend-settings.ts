@@ -51,19 +51,11 @@ const RoundingMode = z
 
 export type RoundingMode = z.infer<typeof RoundingMode>;
 
-const RefreshPeriod = z
-  .number()
-  .min(-1)
-  .max(Constraints.MAX_MINUTES_DELAY)
-  .int();
+const RefreshPeriod = z.number().min(-1).max(Constraints.MAX_MINUTES_DELAY).int();
 
 export type RefreshPeriod = z.infer<typeof RefreshPeriod>;
 
-const QueryPeriod = z
-  .number()
-  .int()
-  .max(Constraints.MAX_SECONDS_DELAY)
-  .nonnegative();
+const QueryPeriod = z.number().int().max(Constraints.MAX_SECONDS_DELAY).nonnegative();
 
 export enum DashboardTableType {
   ASSETS = 'ASSETS',
@@ -73,29 +65,15 @@ export enum DashboardTableType {
 }
 
 const DashboardTablesVisibleColumns = z.object({
-  [DashboardTableType.ASSETS]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-  ),
-  [DashboardTableType.LIABILITIES]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-  ),
-  [DashboardTableType.NFT]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-  ),
-  [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-  ),
+  [DashboardTableType.ASSETS]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
+  [DashboardTableType.LIABILITIES]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
+  [DashboardTableType.NFT]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
+  [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
 });
 
-export type DashboardTablesVisibleColumns = z.infer<
-  typeof DashboardTablesVisibleColumns
->;
+export type DashboardTablesVisibleColumns = z.infer<typeof DashboardTablesVisibleColumns>;
 
-const VersionUpdateCheckFrequency = z
-  .number()
-  .min(-1)
-  .max(Constraints.MAX_HOURS_DELAY)
-  .int();
+const VersionUpdateCheckFrequency = z.number().min(-1).max(Constraints.MAX_HOURS_DELAY).int();
 
 export enum SupportedLanguage {
   EN = 'en',
@@ -113,9 +91,7 @@ export enum BlockchainRefreshButtonBehaviour {
   REDETECT_TOKENS = 'REDETECT_TOKENS',
 }
 
-const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(
-  BlockchainRefreshButtonBehaviour,
-);
+const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(BlockchainRefreshButtonBehaviour);
 
 const SavedFilterLocationEnum = z.nativeEnum(SavedFilterLocation);
 
@@ -123,16 +99,11 @@ export const FrontendSettings = z.object({
   defiSetupDone: z.boolean().default(false),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
   timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
-  visibleTimeframes: z
-    .array(TimeFrameSetting)
-    .default(Defaults.DEFAULT_VISIBLE_TIMEFRAMES),
+  visibleTimeframes: z.array(TimeFrameSetting).default(Defaults.DEFAULT_VISIBLE_TIMEFRAMES),
   lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
   queryPeriod: z.preprocess(
     queryPeriod =>
-      Math.min(
-        Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
-        Constraints.MAX_SECONDS_DELAY,
-      ),
+      Math.min(Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD, Constraints.MAX_SECONDS_DELAY),
     QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD),
   ),
   profitLossReportPeriod: ProfitLossTimeframe.default({
@@ -141,17 +112,11 @@ export const FrontendSettings = z.object({
   }),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
-  currencyLocation: CurrencyLocationEnum.default(
-    Defaults.DEFAULT_CURRENCY_LOCATION,
-  ),
+  currencyLocation: CurrencyLocationEnum.default(Defaults.DEFAULT_CURRENCY_LOCATION),
   abbreviateNumber: z.boolean().default(false),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
   refreshPeriod: z.preprocess(
-    refreshPeriod =>
-      Math.min(
-        Number.parseInt(refreshPeriod as string) || -1,
-        Constraints.MAX_MINUTES_DELAY,
-      ),
+    refreshPeriod => Math.min(Number.parseInt(refreshPeriod as string) || -1, Constraints.MAX_MINUTES_DELAY),
     RefreshPeriod.default(-1),
   ),
   explorers: ExplorersSettings.default({}),
@@ -172,24 +137,20 @@ export const FrontendSettings = z.object({
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
-        Number.parseInt(versionUpdateCheckFrequency as string)
-        || Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+        Number.parseInt(versionUpdateCheckFrequency as string) || Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
         Constraints.MAX_HOURS_DELAY,
       ),
-    VersionUpdateCheckFrequency.default(
-      Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-    ),
+    VersionUpdateCheckFrequency.default(Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY),
   ),
   enableAliasNames: z.boolean().default(true),
-  blockchainRefreshButtonBehaviour:
-    BlockchainRefreshButtonBehaviourEnum.default(
-      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-    ),
+  blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
+    BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+  ),
   shouldRefreshValidatorDailyStats: z.boolean().default(false),
   savedFilters: z
     .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
-  // eslint-disable-next-line unicorn/prefer-top-level-await
+    // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),
 });
 

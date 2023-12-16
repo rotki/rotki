@@ -74,13 +74,12 @@ defineExpose({
     <slot
       name="selector"
       :disabled="loading"
-      :attrs="{ value: allEvmChains }"
-      :on="{ input: onAllEvmChainsUpdate }"
+      :attrs="{ 'modelValue': allEvmChains, 'onUpdate:model-value': onAllEvmChainsUpdate }"
     />
     <div class="mt-4">
       <AccountDataInput
-        :tags.sync="tags"
-        :label.sync="label"
+        v-model:tags="tags"
+        v-model:label="label"
         :disabled="loading"
       />
     </div>

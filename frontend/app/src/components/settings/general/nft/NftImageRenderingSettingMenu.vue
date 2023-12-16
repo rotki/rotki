@@ -8,12 +8,12 @@ const dialogOpen = ref(false);
     :popper="{ placement: 'bottom-end' }"
     :persistent="dialogOpen"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         variant="text"
         icon
         class="!p-2"
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon name="file-settings-line" />
       </RuiButton>

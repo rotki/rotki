@@ -10,10 +10,7 @@ export const truncationPoints: Record<string, number> = {
 };
 
 export function findAddressKnownPrefix(address: string) {
-  const truncatePrefixExceptions = [
-    '0x',
-    ...Object.values(XpubPrefix),
-  ];
+  const truncatePrefixExceptions = ['0x', ...Object.values(XpubPrefix)];
 
   let knownPrefix = '';
   for (const prefix of truncatePrefixExceptions) {
@@ -41,8 +38,5 @@ export function truncateAddress(address: string, truncLength = 4): string {
   if (length <= truncLength * 2 + startPadding)
     return address;
 
-  return `${address.slice(0, truncLength + startPadding)}...${address.slice(
-    length - truncLength,
-    length,
-  )}`;
+  return `${address.slice(0, truncLength + startPadding)}...${address.slice(length - truncLength, length)}`;
 }

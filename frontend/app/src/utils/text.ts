@@ -49,10 +49,7 @@ export function toSnakeCase(string: string): string {
  * toCapitalCase('this is a sentence'); // This Is A Sentence
  */
 export function toCapitalCase(string: string): string {
-  return string.replace(
-    /\p{L}+('\p{L}+)?/gu,
-    txt => txt.charAt(0).toUpperCase() + txt.slice(1),
-  );
+  return string.replace(/\p{L}+('\p{L}+)?/gu, txt => txt.charAt(0).toUpperCase() + txt.slice(1));
 }
 
 /**
@@ -67,7 +64,10 @@ export function toCapitalCase(string: string): string {
  * @example
  * toHumanReadable('polygon_pos', 'uppercase'); // POLYGON POS
  */
-export function toHumanReadable(value: string, transform?: 'capitalize' | 'sentence' | 'uppercase' | 'lowercase'): string {
+export function toHumanReadable(
+  value: string,
+  transform?: 'capitalize' | 'sentence' | 'uppercase' | 'lowercase',
+): string {
   if (!value)
     return '';
 
@@ -97,19 +97,12 @@ export function toHumanReadable(value: string, transform?: 'capitalize' | 'sente
  * transformCase('lorem_ipsum', true); // loremIpsum
  */
 export function transformCase(key: string, camelCase = false): string {
-  if (camelCase) {
-    return key.includes('_')
-      ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
-      : key;
-  }
+  if (camelCase)
+    return key.includes('_') ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase()) : key;
 
   return key.replace(/([A-Z])/gu, (_, p1, offset, string) => {
     const nextCharOffset = offset + 1;
-    if (
-      (nextCharOffset < string.length
-      && /([A-Z])/.test(string[nextCharOffset]))
-      || nextCharOffset === string.length
-    )
+    if ((nextCharOffset < string.length && /([A-Z])/.test(string[nextCharOffset])) || nextCharOffset === string.length)
       return p1;
 
     return `_${p1.toLowerCase()}`;

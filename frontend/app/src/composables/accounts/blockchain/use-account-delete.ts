@@ -66,13 +66,15 @@ export function useAccountDelete() {
       await deleteEth2Validators(validators);
 
     if (chainAccounts.length > 0) {
-      const deletion = chainAccounts.reduce((previousValue, currentValue) => {
-        if (!previousValue[currentValue.chain])
-          previousValue[currentValue.chain] = [currentValue.address];
-        else
-          previousValue[currentValue.chain].push(currentValue.address);
-        return previousValue;
-      }, {} as Record<string, string[]>);
+      const deletion = chainAccounts.reduce(
+        (previousValue, currentValue) => {
+          if (!previousValue[currentValue.chain])
+            previousValue[currentValue.chain] = [currentValue.address];
+          else previousValue[currentValue.chain].push(currentValue.address);
+          return previousValue;
+        },
+        {} as Record<string, string[]>,
+      );
       for (const [chain, accounts] of Object.entries(deletion)) {
         await removeAccount({
           accounts,
@@ -81,10 +83,8 @@ export function useAccountDelete() {
       }
     }
 
-    if (xpubs.length > 0) {
-      for (const xpub of xpubs)
-        await deleteXpub(xpub);
-    }
+    if (xpubs.length > 0)
+      for (const xpub of xpubs) await deleteXpub(xpub);
 
     startPromise(refreshAccounts());
   }

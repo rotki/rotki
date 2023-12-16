@@ -25,7 +25,7 @@ const { t } = useI18n();
       :hint="t('general_settings.nft_setting.label.include_nfts_hint')"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

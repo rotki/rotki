@@ -1,10 +1,5 @@
 import { externalLinks } from '@/data/external-links';
-import type {
-  BackendOptions,
-  Listeners,
-  SystemVersion,
-  TrayUpdate,
-} from '@/electron-main/ipc';
+import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import type { WebVersion } from '@/types';
 
 const electronApp = !!window.interop;
@@ -66,9 +61,7 @@ const interop = {
     return response.addresses;
   },
 
-  restartBackend: async (
-    options: Partial<BackendOptions>,
-  ): Promise<boolean> => {
+  restartBackend: async (options: Partial<BackendOptions>): Promise<boolean> => {
     assert(window.interop);
     return await window.interop.restartBackend(options);
   },
@@ -98,10 +91,7 @@ const interop = {
     window.interop?.updateTray(update);
   },
 
-  storePassword: async (
-    username: string,
-    password: string,
-  ): Promise<boolean | undefined> => {
+  storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
     assert(window.interop);
     return await window.interop.storePassword(username, password);
   },
@@ -115,16 +105,12 @@ const interop = {
     await window.interop?.clearPassword();
   },
 
-  checkForUpdates: async () =>
-    (await window.interop?.checkForUpdates()) ?? false,
+  checkForUpdates: async () => (await window.interop?.checkForUpdates()) ?? false,
 
-  downloadUpdate: async (
-    progress: (percentage: number) => void,
-  ): Promise<boolean> =>
+  downloadUpdate: async (progress: (percentage: number) => void): Promise<boolean> =>
     (await window.interop?.downloadUpdate(progress)) ?? false,
 
-  installUpdate: async (): Promise<boolean | Error> =>
-    (await window.interop?.installUpdate()) ?? false,
+  installUpdate: async (): Promise<boolean | Error> => (await window.interop?.installUpdate()) ?? false,
 };
 
 export const useInterop = () => interop;

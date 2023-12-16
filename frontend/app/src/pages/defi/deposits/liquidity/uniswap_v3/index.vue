@@ -40,9 +40,7 @@ const balances = computed(() => {
   const pools = get(selectedPools);
   const balances = get(uniswapBalances(addresses));
 
-  return pools.length === 0
-    ? balances
-    : balances.filter(({ address }) => pools.includes(address));
+  return pools.length === 0 ? balances : balances.filter(({ address }) => pools.includes(address));
 });
 
 const premium = usePremium();
@@ -59,11 +57,9 @@ onMounted(async () => {
   await refresh();
 });
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3',
-    ).toLocaleLowerCase(),
+    title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3').toLocaleLowerCase(),
   }),
 );
 </script>
@@ -81,13 +77,13 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       v-if="!premium"
       #default
     >
-      <i18n path="uniswap.loading_non_premium">
+      <i18n-t keypath="uniswap.loading_non_premium">
         <ExternalLink
           :text="t('uniswap.premium')"
           color="primary"
           premium
         />
-      </i18n>
+      </i18n-t>
     </template>
   </ProgressScreen>
   <TablePageLayout

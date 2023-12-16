@@ -2,12 +2,9 @@
 /* eslint-disable max-lines,import/max-dependencies */
 
 import { setupLayouts } from 'virtual:generated-layouts';
-import Vue from 'vue';
-import Router, { type Route } from 'vue-router';
+import { type RouteLocationNormalized, createRouter, createWebHashHistory } from 'vue-router';
 import { Routes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
-
-Vue.use(Router);
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 
@@ -170,7 +167,7 @@ const routes = setupLayouts([
           {
             path: Routes.DEFI_DEPOSITS_LIQUIDITY,
             component: async () => await import('../pages/defi/deposits/liquidity/index.vue'),
-            props: (route: Route) => ({
+            props: (route: RouteLocationNormalized) => ({
               location: route.params.location ?? null,
             }),
           },
@@ -201,7 +198,9 @@ const routes = setupLayouts([
       noteLocation: NoteLocation.STAKING,
     },
     component: async () => await import('../pages/staking/index.vue'),
-    props: (route: Route) => ({ location: route.params.location ?? null }),
+    props: (route: RouteLocationNormalized) => ({
+      location: route.params.location ?? null,
+    }),
   },
   {
     path: Routes.PROFIT_LOSS_REPORTS,
@@ -240,13 +239,17 @@ const routes = setupLayouts([
         path: Routes.ASSET_MANAGER_MANAGED,
         name: 'asset-manager-managed',
         component: async () => await import('../pages/asset-manager/managed/index.vue'),
-        props: (route: Route) => ({ identifier: route.query.id ?? null }),
+        props: (route: RouteLocationNormalized) => ({
+          identifier: route.query.id ?? null,
+        }),
       },
       {
         path: Routes.ASSET_MANAGER_CUSTOM,
         name: 'asset-manager-custom',
         component: async () => await import('../pages/asset-manager/custom/index.vue'),
-        props: (route: Route) => ({ identifier: route.query.id ?? null }),
+        props: (route: RouteLocationNormalized) => ({
+          identifier: route.query.id ?? null,
+        }),
       },
       {
         path: Routes.ASSET_MANAGER_MORE,
@@ -414,28 +417,31 @@ const routes = setupLayouts([
     : []),
 ]);
 
-export const router = new Router({
-  mode: 'hash',
-  base,
-  scrollBehavior: (to, from, savedPosition) => {
+export const router = createRouter({
+  history: createWebHashHistory(base),
+  scrollBehavior: async (to, from, savedPosition) => {
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
       if (element) {
-        nextTick(() => {
-          document.body.scrollTo({ left: 0, top: element.offsetTop });
+        await nextTick(() => {
+          document.body.scrollTo({
+            left: 0,
+            top: element.offsetTop,
+            behavior: 'smooth',
+          });
         });
       }
 
-      return { selector: to.hash };
+      return { el: to.hash };
     }
     else if (savedPosition) {
-      document.body.scrollTo(savedPosition.x, savedPosition.y);
+      document.body.scrollTo(savedPosition.left, savedPosition.top);
       return savedPosition;
     }
 
     if (from.path !== to.path) {
       document.body.scrollTo(0, 0);
-      return { x: 0, y: 0 };
+      return { top: 0, left: 0 };
     }
   },
   routes,
@@ -445,9 +451,7 @@ router.beforeEach((to, from, next) => {
   const store = useSessionAuthStore();
   const logged = store.logged;
   if (logged) {
-    if (
-      [Routes.USER, Routes.USER_CREATE, Routes.USER_LOGIN].includes(to.path)
-    )
+    if ([Routes.USER, Routes.USER_CREATE, Routes.USER_LOGIN].includes(to.path))
       return next(Routes.DASHBOARD);
 
     next();

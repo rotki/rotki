@@ -38,14 +38,10 @@ export class RotkiApp {
     cy.get('[data-cy="create-account__premium__button__continue"]').click();
     cy.get('[data-cy="create-account__fields__username"]').type(username);
     cy.get('[data-cy="create-account__fields__password"]').type(password);
-    cy.get('[data-cy="create-account__fields__password-repeat"]').type(
-      password,
-    );
+    cy.get('[data-cy="create-account__fields__password-repeat"]').type(password);
     cy.get('[data-cy="create-account__boxes__user-prompted"] > label').click();
     cy.get('[data-cy="create-account__credentials__button__continue"]').click();
-    cy.get(
-      '[data-cy="create-account__submit-analytics__button__continue"]',
-    ).click();
+    cy.get('[data-cy="create-account__submit-analytics__button__continue"]').click();
     cy.get('[data-cy=account-management-forms]').should('not.exist');
     cy.updateAssets();
     this.loadEnv();
@@ -117,18 +113,14 @@ export class RotkiApp {
 
   changePrivacyMode(mode: number) {
     this.togglePrivacyMenu(true);
-    cy.get(
-      `[data-cy="privacy-mode-dropdown__input"] + div > div:nth-child(${mode + 1})`,
-    ).as('label');
+    cy.get(`[data-cy="privacy-mode-dropdown__input"] + div > div:nth-child(${mode + 1})`).as('label');
 
     cy.get('@label').click();
     this.togglePrivacyMenu();
   }
 
   toggleScrambler(enable: boolean) {
-    cy.get(
-      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]',
-    ).as('input');
+    cy.get('[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]').as('input');
 
     if (enable) {
       cy.get('@input').should('not.be.checked');

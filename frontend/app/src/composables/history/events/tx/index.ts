@@ -74,9 +74,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       }
     }
     finally {
-      setStatus(
-        get(isTaskRunning(taskType, { isEvm })) ? Status.REFRESHING : Status.LOADED,
-      );
+      setStatus(get(isTaskRunning(taskType, { isEvm })) ? Status.REFRESHING : Status.LOADED);
     }
   };
 
@@ -107,10 +105,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const getEvmLikeAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
     Object.entries(get(addresses))
       .filter(([chain]) => isEvmLikeChains(chain) && (chains.length === 0 || chains.includes(chain)))
-      .flatMap(([evmChain, addresses]) => addresses.map(address => ({
-        address,
-        evmChain,
-      })));
+      .flatMap(([evmChain, addresses]) =>
+        addresses.map(address => ({
+          address,
+          evmChain,
+        })),
+      );
 
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
@@ -157,13 +157,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const refreshTransactionsHandler = async (addresses: EvmChainAddress[], type: TransactionChainType = TransactionChainType.EVM) => {
-    const groupedByChains = Object.entries(
-      groupBy(addresses, account => account.evmChain),
-    ).map(([evmChain, data]) => ({
-      evmChain,
-      data,
-    }));
+  const refreshTransactionsHandler = async (
+    addresses: EvmChainAddress[],
+    type: TransactionChainType = TransactionChainType.EVM,
+  ) => {
+    const groupedByChains = Object.entries(groupBy(addresses, account => account.evmChain)).map(
+      ([evmChain, data]) => ({
+        evmChain,
+        data,
+      }),
+    );
 
     await awaitParallelExecution(
       groupedByChains,
@@ -172,11 +175,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     );
 
     const isEvm = type === TransactionChainType.EVM;
-    if (addresses.length > 0) {
-      setStatus(
-        get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED,
-      );
-    }
+    if (addresses.length > 0)
+      setStatus(get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED);
   };
 
   const refreshTransactions = async (
@@ -189,13 +189,9 @@ export const useHistoryTransactions = createSharedComposable(() => {
       return;
     }
 
-    const evmAccounts: EvmChainAddress[] = disableEvmEvents
-      ? []
-      : getEvmAccounts(chains);
+    const evmAccounts: EvmChainAddress[] = disableEvmEvents ? [] : getEvmAccounts(chains);
 
-    const evmLikeAccounts: EvmChainAddress[] = disableEvmEvents
-      ? []
-      : getEvmLikeAccounts(chains);
+    const evmLikeAccounts: EvmChainAddress[] = disableEvmEvents ? [] : getEvmLikeAccounts(chains);
 
     if (evmAccounts.length + evmLikeAccounts.length > 0) {
       setStatus(Status.REFRESHING);

@@ -19,46 +19,31 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useExchangeApi() {
-  const queryRemoveExchange = async ({
-    location,
-    name,
-  }: Exchange): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/exchanges',
-      {
-        data: {
-          name,
-          location,
-        },
-        validateStatus: validStatus,
+  const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>('/exchanges', {
+      data: {
+        name,
+        location,
       },
-    );
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const queryExchangeBalances = async (
-    location: string,
-    ignoreCache = false,
-  ): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      `/exchanges/balances/${location}`,
-      {
-        params: snakeCaseTransformer({
-          asyncQuery: true,
-          ignoreCache: ignoreCache ? true : undefined,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+  const queryExchangeBalances = async (location: string, ignoreCache = false): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>(`/exchanges/balances/${location}`, {
+      params: snakeCaseTransformer({
+        asyncQuery: true,
+        ignoreCache: ignoreCache ? true : undefined,
+      }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const querySetupExchange = async (
-    payload: ExchangePayload,
-    edit: boolean,
-  ): Promise<boolean> => {
+  const querySetupExchange = async (payload: ExchangePayload, edit: boolean): Promise<boolean> => {
     let response: AxiosResponse<ActionResult<boolean>>;
 
     if (!edit) {
@@ -84,42 +69,30 @@ export function useExchangeApi() {
   };
 
   const getExchanges = async (): Promise<Exchanges> => {
-    const response = await api.instance.get<ActionResult<Exchanges>>(
-      '/exchanges',
-      {
-        validateStatus: validWithSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<Exchanges>>('/exchanges', {
+      validateStatus: validWithSessionStatus,
+    });
 
     const data = handleResponse(response);
     return Exchanges.parse(data);
   };
 
   const queryBinanceMarkets = async (location: string): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/exchanges/binance/pairs',
-      {
-        params: snakeCaseTransformer({
-          location,
-        }),
-      },
-    );
+    const response = await api.instance.get<ActionResult<string[]>>('/exchanges/binance/pairs', {
+      params: snakeCaseTransformer({
+        location,
+      }),
+    });
 
     return handleResponse(response);
   };
 
-  const queryBinanceUserMarkets = async (
-    name: string,
-    location: string,
-  ): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      `/exchanges/binance/pairs/${name}`,
-      {
-        params: snakeCaseTransformer({
-          location,
-        }),
-      },
-    );
+  const queryBinanceUserMarkets = async (name: string, location: string): Promise<string[]> => {
+    const response = await api.instance.get<ActionResult<string[]>>(`/exchanges/binance/pairs/${name}`, {
+      params: snakeCaseTransformer({
+        location,
+      }),
+    });
 
     return handleResponse(response);
   };
@@ -146,8 +119,7 @@ export function useExchangeApi() {
         nonEmptyProperties({
           asyncQuery,
           ...payload,
-          orderByAttributes:
-            payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
+          orderByAttributes: payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
         }),
       ),
       {
@@ -159,19 +131,13 @@ export function useExchangeApi() {
     return handleResponse(response);
   };
 
-  const getExchangeSavingsTask = (
-    payload: ExchangeSavingsRequestPayload,
-  ): Promise<PendingTask> =>
+  const getExchangeSavingsTask = (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> =>
     internalExchangeSavings<PendingTask>(payload, true);
 
   const getExchangeSavings = async (
     payload: ExchangeSavingsRequestPayload,
   ): Promise<ExchangeSavingsCollectionResponse> => {
-    const response
-      = await internalExchangeSavings<ExchangeSavingsCollectionResponse>(
-        payload,
-        false,
-      );
+    const response = await internalExchangeSavings<ExchangeSavingsCollectionResponse>(payload, false);
 
     return ExchangeSavingsCollectionResponse.parse(response);
   };

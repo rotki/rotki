@@ -4,9 +4,10 @@ import type { TablePagination } from '@/types/pagination';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 
-export function mapCollectionResponse<T, C extends CollectionResponse<T>>(response: C): Collection<T> & Omit<C, Entries> {
-  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest }
-    = response;
+export function mapCollectionResponse<T, C extends CollectionResponse<T>>(
+  response: C,
+): Collection<T> & Omit<C, Entries> {
+  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest } = response;
   return {
     data: entries,
     found: entriesFound,
@@ -36,16 +37,12 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   entriesFoundTotal: ComputedRef<number | undefined>;
   totalUsdValue: ComputedRef<TotalValue>;
 } {
-  const data: ComputedRef<T[]> = computed(() => get(collection).data);
-  const limit: ComputedRef<number> = computed(() => get(collection).limit);
-  const found: ComputedRef<number> = computed(() => get(collection).found);
-  const total: ComputedRef<number> = computed(() => get(collection).total);
-  const entriesFoundTotal: ComputedRef<number | undefined> = computed(
-    () => get(collection).entriesFoundTotal,
-  );
-  const totalUsdValue: ComputedRef<TotalValue> = computed(
-    () => get(collection).totalUsdValue,
-  );
+  const data = computed<T[]>(() => get(collection).data);
+  const limit = computed<number>(() => get(collection).limit);
+  const found = computed<number>(() => get(collection).found);
+  const total = computed<number>(() => get(collection).total);
+  const entriesFoundTotal = computed<number | undefined>(() => get(collection).entriesFoundTotal);
+  const totalUsdValue = computed<TotalValue>(() => get(collection).totalUsdValue);
 
   return {
     data,
@@ -57,13 +54,18 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   };
 }
 
-export function setupEntryLimit(limit: Ref<number>, found: Ref<number>, total: Ref<number>, entryFoundTotal?: Ref<number | undefined>): {
-  itemLength: ComputedRef<number>;
-  showUpgradeRow: ComputedRef<boolean>;
-} {
+export function setupEntryLimit(
+  limit: Ref<number>,
+  found: Ref<number>,
+  total: Ref<number>,
+  entryFoundTotal?: Ref<number | undefined>,
+): {
+    itemLength: ComputedRef<number>;
+    showUpgradeRow: ComputedRef<boolean>;
+  } {
   const premium = usePremium();
 
-  const itemLength: ComputedRef<number> = computed(() => {
+  const itemLength = computed<number>(() => {
     const isPremium = get(premium);
     const totalFound = get(found);
     const entryLimit = get(limit);
@@ -74,7 +76,7 @@ export function setupEntryLimit(limit: Ref<number>, found: Ref<number>, total: R
     return Math.min(totalFound, entryLimit);
   });
 
-  const showUpgradeRow: ComputedRef<boolean> = computed(() => {
+  const showUpgradeRow = computed<boolean>(() => {
     if (isDefined(entryFoundTotal))
       return get(found) < get(entryFoundTotal)!;
 
@@ -96,12 +98,8 @@ export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
   return {
     page: 1,
     itemsPerPage,
-    sortBy: sortByKey
-      ? Array.isArray(sortByKey) ? sortByKey : [sortByKey]
-      : ['timestamp' as keyof T],
-    sortDesc: defaultSortBy?.ascending
-      ? defaultSortBy?.ascending.map(bool => !bool)
-      : [true],
+    sortBy: sortByKey ? (Array.isArray(sortByKey) ? sortByKey : [sortByKey]) : ['timestamp' as keyof T],
+    sortDesc: defaultSortBy?.ascending ? defaultSortBy?.ascending.map(bool => !bool) : [true],
     singleSort: sortByKey ? !Array.isArray(sortByKey) : false,
   };
 }

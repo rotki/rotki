@@ -1,10 +1,6 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validStatus,
-  validWithoutSessionStatus,
-} from '@/services/utils';
+import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { AssetMap, AssetsWithId } from '@/types/asset';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
@@ -43,19 +39,14 @@ export function useAssetInfoApi() {
     return AssetsWithId.parse(handleResponse(response));
   };
 
-  const erc20details = async (
-    payload: EvmChainAddress,
-  ): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/blockchains/evm/erc20details',
-      {
-        params: snakeCaseTransformer({
-          asyncQuery: true,
-          ...payload,
-        }),
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+  const erc20details = async (payload: EvmChainAddress): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>('/blockchains/evm/erc20details', {
+      params: snakeCaseTransformer({
+        asyncQuery: true,
+        ...payload,
+      }),
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };

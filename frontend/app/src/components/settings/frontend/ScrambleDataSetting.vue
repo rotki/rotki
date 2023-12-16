@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(
-  useSessionSettingsStore(),
-);
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
 
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
@@ -39,7 +37,7 @@ const css = useCssModule();
         :label="t('frontend_settings.label.scramble')"
         :success-messages="success"
         :error-messages="error"
-        @input="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
     <SettingsOption

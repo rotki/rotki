@@ -10,10 +10,7 @@ onMounted(async () => {
 <template>
   <TablePageLayout
     data-cy="external-keys"
-    :title="[
-      t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.external_services'),
-    ]"
+    :title="[t('navigation_menu.api_keys'), t('navigation_menu.api_keys_sub.external_services')]"
   >
     <template #buttons>
       <HintMenuIcon>

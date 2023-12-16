@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import {
-  Module,
-  SUPPORTED_MODULES,
-  type SupportedModule,
-} from '@/types/modules';
+import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { CamelCase } from '@/types/common';
+
+type ModuleEntry = SupportedModule & { enabled: boolean };
 
 const { t } = useI18n();
 
@@ -23,7 +21,7 @@ const { update: updateSettings } = useSettingsStore();
 const balancesStore = useNonFungibleBalancesStore();
 const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [
   {
     label: t('common.name'),
     key: 'name',
@@ -41,7 +39,7 @@ const headers = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const modules = computed<(SupportedModule & { enabled: boolean })[]>(() => {
+const modules = computed<ModuleEntry[]>(() => {
   const active = get(activeModules);
   const filter = get(search).toLowerCase();
   const filteredModules = filter
@@ -56,11 +54,7 @@ const modules = computed<(SupportedModule & { enabled: boolean })[]>(() => {
 const { start: fetch } = useTimeoutFn(() => resetStatus(), 800, {
   immediate: false,
 });
-const { start: clearNfBalances } = useTimeoutFn(
-  () => balancesStore.$reset(),
-  800,
-  { immediate: false },
-);
+const { start: clearNfBalances } = useTimeoutFn(() => balancesStore.$reset(), 800, { immediate: false });
 
 async function update(activeModules: Module[]) {
   set(loading, true);
@@ -73,15 +67,13 @@ async function switchModule(module: Module, enabled: boolean) {
   let modules: Module[];
   if (enabled)
     modules = [...active, module];
-  else
-    modules = active.filter(m => m !== module);
+  else modules = active.filter(m => m !== module);
 
   await update(modules);
   if (module === Module.NFTS) {
     if (enabled)
       fetch();
-    else
-      clearNfBalances();
+    else clearNfBalances();
   }
 }
 
@@ -201,10 +193,10 @@ onMounted(async () => {
           color="primary"
           :data-cy="`${row.identifier}-module-switch`"
           :disabled="loading"
-          :value="row.enabled"
+          :model-value="row.enabled"
           hide-details
           class="py-2"
-          @input="switchModule(row.identifier, $event)"
+          @update:model-value="switchModule(row.identifier, $event)"
         />
       </template>
     </RuiDataTable>

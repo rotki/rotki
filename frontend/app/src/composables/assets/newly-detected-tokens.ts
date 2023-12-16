@@ -7,7 +7,7 @@ function createStorage(username: string): Ref<NewDetectedToken[]> {
 }
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
-  let internalTokens: Ref<NewDetectedToken[]> = ref([]);
+  let internalTokens = ref<NewDetectedToken[]>([]);
   const ignoredAssetStore = useIgnoredAssetsStore();
   const { ignoredAssets } = storeToRefs(ignoredAssetStore);
   const { addIgnoredAsset } = ignoredAssetStore;
@@ -27,30 +27,23 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     }
 
     const tokenList = [...get(internalTokens)];
-    const tokenIndex = tokenList.findIndex(
-      ({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier,
-    );
+    const tokenIndex = tokenList.findIndex(({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier);
 
     if (tokenIndex === -1)
       tokenList.push(data);
-    else
-      tokenList.splice(tokenIndex, 1, data);
+    else tokenList.splice(tokenIndex, 1, data);
 
     set(internalTokens, tokenList.slice(-MAX_SIZE));
     return tokenIndex === -1;
   };
 
   const removeNewDetectedTokens = (tokensToRemove: string[]) => {
-    const filtered = get(internalTokens).filter(
-      item => !tokensToRemove.includes(item.tokenIdentifier),
-    );
+    const filtered = get(internalTokens).filter(item => !tokensToRemove.includes(item.tokenIdentifier));
 
     set(internalTokens, filtered);
   };
 
-  const tokens: ComputedRef<NewDetectedToken[]> = computed(() =>
-    get(internalTokens),
-  );
+  const tokens = computed<NewDetectedToken[]>(() => get(internalTokens));
 
   watch(ignoredAssets, (value, oldValue) => {
     const ignoredItems = value.filter(x => !oldValue.includes(x));

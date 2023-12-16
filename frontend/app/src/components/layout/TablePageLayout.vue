@@ -1,10 +1,7 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>(),
-  {
-    title: undefined,
-  },
-);
+withDefaults(defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>(), {
+  title: undefined,
+});
 </script>
 
 <template>
@@ -21,7 +18,7 @@ withDefaults(
           <slot name="title">
             <template v-for="(item, index) in title">
               <span
-                v-if="index < title.length - 1"
+                v-if="title && index < title.length - 1"
                 :key="index.toString()"
                 class="text-rui-text-secondary"
               >

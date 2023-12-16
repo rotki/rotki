@@ -7,10 +7,7 @@ import { isEmpty } from 'lodash-es';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
-import type {
-  EthWithdrawalEvent,
-  NewEthWithdrawalEventPayload,
-} from '@/types/history/events';
+import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -28,35 +25,28 @@ const { t } = useI18n();
 const { editableItem, groupHeader } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const assetPriceForm: Ref<InstanceType<
-  typeof HistoryEventAssetPriceForm
-> | null> = ref(null);
+const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
-const eventIdentifier: Ref<string> = ref('');
-const datetime: Ref<string> = ref('');
-const amount: Ref<string> = ref('');
-const usdValue: Ref<string> = ref('');
-const validatorIndex: Ref<string> = ref('');
-const withdrawalAddress: Ref<string> = ref('');
-const isExit: Ref<boolean> = ref(false);
+const eventIdentifier = ref<string>('');
+const datetime = ref<string>('');
+const amount = ref<string>('');
+const usdValue = ref<string>('');
+const validatorIndex = ref<string>('');
+const withdrawalAddress = ref<string>('');
+const isExit = ref<boolean>(false);
 
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
-      t(
-        'transactions.events.form.event_identifier.validation.non_empty',
-      ),
+      t('transactions.events.form.event_identifier.validation.non_empty'),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   timestamp: { externalServerValidation: () => true },
   amount: {
-    required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   usdValue: {
     required: helpers.withMessage(
@@ -67,26 +57,12 @@ const rules = {
     ),
   },
   validatorIndex: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.validator_index.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
   },
   withdrawalAddress: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.withdrawal_address.validation.non_empty',
-      ),
-      required,
-    ),
-    isValid: helpers.withMessage(
-      t(
-        'transactions.events.form.withdrawal_address.validation.valid',
-      ),
-      (value: string) => isValidEthAddress(value),
-    ),
+    required: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.non_empty'), required),
+    isValid: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.valid'), (value: string) =>
+      isValidEthAddress(value)),
   },
 };
 
@@ -113,14 +89,7 @@ const v$ = setValidation(
 
 function reset() {
   set(eventIdentifier, null);
-  set(
-    datetime,
-    convertFromTimestamp(
-      dayjs().valueOf(),
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, '0');
   set(usdValue, '0');
   set(validatorIndex, '');
@@ -133,14 +102,7 @@ function reset() {
 
 function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -152,14 +114,7 @@ function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(usdValue, '0');
 }
 
@@ -169,11 +124,7 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    true,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthWithdrawalEventPayload = {
     eventIdentifier: get(eventIdentifier),
@@ -254,11 +205,11 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
+      v-model:amount="amount"
+      v-model:usd-value="usdValue"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"
-      :amount.sync="amount"
-      :usd-value.sync="usdValue"
       disable-asset
     />
 

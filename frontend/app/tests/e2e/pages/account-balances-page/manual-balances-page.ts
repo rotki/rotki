@@ -23,8 +23,7 @@ export class ManualBalancesPage {
     selectAsset('.manual-balances-form__asset', balance.keyword, balance.asset);
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
-    for (const tag of balance.tags)
-      cy.get('.manual-balances-form__tags').type(`${tag}{enter}`);
+    for (const tag of balance.tags) cy.get('.manual-balances-form__tags').type(`${tag}{enter}`);
 
     cy.get('.manual-balances-form__location').click();
     cy.get('.manual-balances-form__location').type(balance.location);
@@ -32,9 +31,7 @@ export class ManualBalancesPage {
     cy.get('.manual-balances-form__location').type('{enter}');
     cy.get('[role=menu-content]').should('not.exist');
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.exist',
-    );
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should('not.exist');
     cy.get('[data-cy=price-refresh]').should('not.be.disabled');
   }
 
@@ -50,9 +47,7 @@ export class ManualBalancesPage {
     for (const balance of balances) {
       cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
-      cy.get('@row')
-        .find('[data-cy=manual-balances__amount]')
-        .should('contain', formatAmount(balance.amount));
+      cy.get('@row').find('[data-cy=manual-balances__amount]').should('contain', formatAmount(balance.amount));
 
       i += 1;
     }
@@ -63,38 +58,26 @@ export class ManualBalancesPage {
     for (const balance of balances) {
       cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
-      cy.get('@row')
-        .find('[data-cy=manual-balances__amount]')
-        .should('not.contain', formatAmount(balance.amount));
+      cy.get('@row').find('[data-cy=manual-balances__amount]').should('not.contain', formatAmount(balance.amount));
 
       i += 1;
     }
   }
 
   isVisible(position: number, balance: FixtureManualBalance) {
-    cy.get('[data-cy="manual-balances"] tbody')
-      .find('tr')
-      .eq(position)
-      .as('row');
+    cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(position).as('row');
 
     cy.get('@row').find('[data-cy=label]').should('contain', balance.label);
 
-    cy.get('@row')
-      .find('[data-cy=manual-balances__amount]')
-      .should('contain', formatAmount(balance.amount));
+    cy.get('@row').find('[data-cy=manual-balances__amount]').should('contain', formatAmount(balance.amount));
 
     cy.get('[data-cy="manual-balances"] thead').first().scrollIntoView();
 
-    cy.get('@row')
-      .find('[data-cy=manual-balances__location]')
-      .should('contain', toSentenceCase(balance.location));
+    cy.get('@row').find('[data-cy=manual-balances__location]').should('contain', toSentenceCase(balance.location));
 
-    cy.get('@row')
-      .find('[data-cy=list-title]')
-      .should('contain.text', balance.asset);
+    cy.get('@row').find('[data-cy=list-title]').should('contain.text', balance.asset);
 
-    for (const tag of balance.tags)
-      cy.get('@row').find('.tag').contains(tag).should('be.visible');
+    for (const tag of balance.tags) cy.get('@row').find('.tag').contains(tag).should('be.visible');
   }
 
   private getLocationBalances() {
@@ -107,10 +90,7 @@ export class ManualBalancesPage {
         return true;
       }
 
-      const amount = $element
-        .closest('tr')
-        .find('td:nth-child(6) [data-cy="display-amount"]')
-        .text();
+      const amount = $element.closest('tr').find('td:nth-child(6) [data-cy="display-amount"]').text();
       updateLocationBalance(amount, balances, location);
     });
 
@@ -149,18 +129,12 @@ export class ManualBalancesPage {
     cy.get('@edit-form').find('.manual-balances-form__amount input').clear();
     cy.get('@edit-form').find('.manual-balances-form__amount').type(amount);
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.exist',
-    );
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should('not.exist');
     cy.get('[data-cy=price-refresh]').should('not.be.disabled');
   }
 
   deleteBalance(position: number) {
-    cy.get('[data-cy="manual-balances"] tbody')
-      .find('tr')
-      .eq(position)
-      .find('button[data-cy="row-delete"]')
-      .click();
+    cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(position).find('button[data-cy="row-delete"]').click();
 
     this.confirmDelete();
   }

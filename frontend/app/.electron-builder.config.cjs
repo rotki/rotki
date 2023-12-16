@@ -12,10 +12,11 @@ if (includeDebPackage)
   LINUX_TARGETS.push('deb');
 
 /**
+ module.exports = {
  * @type {import("electron-builder").Configuration}
  * @see https://www.electron.build/configuration/configuration
  */
-const config = {
+module.exports = {
   appId: 'com.rotki.app',
   directories: {
     output: 'build',
@@ -82,7 +83,5 @@ const config = {
     icon: 'public/assets/images/rotki_1024x1024.png',
     category: 'Finance',
   },
-  ...(isCI ? { afterSign: 'scripts/notarize.js' } : {}),
+  ...(isCI ? { afterSign: 'scripts/notarize.cjs' } : {}),
 };
-
-module.exports = config;

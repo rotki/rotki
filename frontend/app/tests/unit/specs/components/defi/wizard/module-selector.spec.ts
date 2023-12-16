@@ -1,4 +1,4 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import flushPromises from 'flush-promises';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
@@ -13,15 +13,19 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
 }));
 
 describe('moduleSelector.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof ModuleSelector>>;
   let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
   let pinia: Pinia;
   let api: ReturnType<typeof useSettingsApi>;
 
-  const createWrapper = () => mount(ModuleSelector, {
-    pinia,
-    provide: libraryDefaults,
-  });
+  const createWrapper = () =>
+    mount(ModuleSelector, {
+      global: {
+        stubs: ['card'],
+        plugins: [pinia],
+        provide: libraryDefaults,
+      },
+    });
 
   beforeEach(() => {
     pinia = createPinia();
@@ -35,10 +39,12 @@ describe('moduleSelector.vue', () => {
     api.setSettings = vi.fn();
   });
 
+  afterEach(() => {
+    wrapper.unmount();
+  });
+
   it('displays active modules', () => {
-    expect(
-      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
-    ).toBeTruthy();
+    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
   });
 
   it('disables module on click', async () => {
@@ -48,15 +54,11 @@ describe('moduleSelector.vue', () => {
       accounting: {},
       other: { havePremium: false, premiumShouldSync: false },
     });
-    expect(
-      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
-    ).toBeTruthy();
+    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
     await wrapper.find('[data-cy=aave-module-switch] input').trigger('input', { target: false });
     await nextTick();
     await flushPromises();
-    expect(
-      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
-    ).toBeFalsy();
+    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeFalsy();
     expect(settingsStore.activeModules).toEqual([]);
   });
 });

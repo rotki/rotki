@@ -23,11 +23,7 @@ function sortBy(a: any, b: any, asc: boolean): number {
   if (!isNaN(aValue) && !isNaN(bValue))
     return Number(aValue) - Number(bValue);
 
-  return `${aValue}`.localeCompare(
-        `${bValue}`,
-        undefined,
-        sortOptions,
-  );
+  return `${aValue}`.localeCompare(`${bValue}`, undefined, sortOptions);
 }
 
 function includes(value: string, search: string): boolean {
@@ -35,12 +31,7 @@ function includes(value: string, search: string): boolean {
 }
 
 function filterBalance(balance: ManualBalance, filters: Filters): boolean {
-  const {
-    tags: tagFilter,
-    label: labelFilter,
-    asset: assetFilter,
-    location: locationFilter,
-  } = filters;
+  const { tags: tagFilter, label: labelFilter, asset: assetFilter, location: locationFilter } = filters;
 
   const matches: { name: keyof typeof filters; matches: boolean }[] = [];
 
@@ -66,41 +57,35 @@ export function sortAndFilterManualBalance(
     resolveAssetPrice: (asset: string) => BigNumber | undefined;
   },
 ): Collection<ManualBalanceWithPrice> {
-  const {
-    offset,
-    limit,
-    orderByAttributes = [],
-    ascending = [],
-    tags,
-    label,
-    asset,
-    location,
-  } = params;
+  const { offset, limit, orderByAttributes = [], ascending = [], tags, label, asset, location } = params;
 
   const hasFilter = !!label || !!asset || !!location || (!!tags && tags.length > 0);
 
   const filtered = !hasFilter
     ? balances
-    : balances.filter(balance => filterBalance(balance, {
-      tags,
-      label,
-      asset,
-      location,
-    }));
+    : balances.filter(balance =>
+      filterBalance(balance, {
+        tags,
+        label,
+        asset,
+        location,
+      }),
+    );
 
-  const sorted = orderByAttributes.length <= 0
-    ? filtered
-    : filtered.sort((a, b) => {
-      for (const [i, attr] of orderByAttributes.entries()) {
-        const key = camelCase(attr) as keyof ManualBalanceWithValue;
-        const asc = ascending[i];
+  const sorted
+    = orderByAttributes.length <= 0
+      ? filtered
+      : filtered.sort((a, b) => {
+        for (const [i, attr] of orderByAttributes.entries()) {
+          const key = camelCase(attr) as keyof ManualBalanceWithValue;
+          const asc = ascending[i];
 
-        const order = sortBy(a[key], b[key], asc);
-        if (order)
-          return order;
-      }
-      return 0;
-    });
+          const order = sortBy(a[key], b[key], asc);
+          if (order)
+            return order;
+        }
+        return 0;
+      });
 
   const total = filtered.reduce((acc, item) => {
     const price = resolvers.resolveAssetPrice(item.asset);

@@ -37,18 +37,14 @@ const { t } = useI18n();
 const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);
 
-const primaryText = computed(
-  () => get(primaryAction) || t('common.actions.confirm'),
-);
+const primaryText = computed(() => get(primaryAction) || t('common.actions.confirm'));
 
-const secondaryText = computed(
-  () => get(secondaryAction) || t('common.actions.cancel'),
-);
+const secondaryText = computed(() => get(secondaryAction) || t('common.actions.cancel'));
 </script>
 
 <template>
   <RuiDialog
-    :value="display"
+    :model-value="display"
     persistent
     :max-width="maxWidth"
     @keydown.esc.stop="emit('cancel')"

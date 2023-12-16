@@ -5,50 +5,59 @@ import { toMessages } from '@/utils/validation';
 import type { Writeable } from '@/types';
 
 const props = defineProps<{
-  exchange: ExchangePayload;
+  modelValue: ExchangePayload;
   editMode: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: ExchangePayload): void;
+  (e: 'update:model-value', value: ExchangePayload): void;
 }>();
 
-const { editMode, exchange } = toRefs(props);
+const { editMode, modelValue } = toRefs(props);
 const editKeys = ref(false);
 
 const name = computed({
   get() {
-    return props.exchange.name ?? undefined;
+    return props.modelValue.name ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, newName: value ?? null });
+    updateModelValue({ ...props.modelValue, newName: value ?? null });
   },
 });
 
 const apiKey = computed({
   get() {
-    return props.exchange.apiKey ?? undefined;
+    return props.modelValue.apiKey ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, apiKey: value ?? null });
+    updateModelValue({ ...props.modelValue, apiKey: value ?? null });
   },
 });
 
 const apiSecret = computed({
   get() {
-    return props.exchange.apiSecret ?? undefined;
+    return props.modelValue.apiSecret ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, apiSecret: value ?? null });
+    updateModelValue({ ...props.modelValue, apiSecret: value ?? null });
   },
 });
 
 const passphrase = computed({
   get() {
-    return props.exchange.passphrase ?? undefined;
+    return props.modelValue.passphrase ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, passphrase: value ?? null });
+    updateModelValue({ ...props.modelValue, passphrase: value ?? null });
+  },
+});
+
+const krakenAccountType = computed<KrakenAccountType | undefined>({
+  get() {
+    return props.modelValue.krakenAccountType ?? undefined;
+  },
+  set(value?: KrakenAccountType) {
+    updateModelValue({ ...props.modelValue, krakenAccountType: value ?? null });
   },
 });
 
@@ -57,23 +66,23 @@ const { exchangesWithPassphrase, exchangesWithoutApiSecret } = storeToRefs(useLo
 const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
 
   return !get(exchangesWithoutApiSecret).includes(location);
 });
 
 const requiresPassphrase = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
   return get(exchangesWithPassphrase).includes(location);
 });
 
 const isBinance = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
   return ['binance', 'binanceus'].includes(location);
 });
 
 const isCoinbase = computed(() => {
-  const { location } = get(exchange);
+  const { location } = get(modelValue);
   return ['coinbase'].includes(location);
 });
 
@@ -89,15 +98,15 @@ function toggleEdit() {
   set(editKeys, !get(editKeys));
 
   if (!get(editKeys)) {
-    input({
-      ...get(exchange),
+    updateModelValue({
+      ...props.modelValue,
       apiSecret: null,
       apiKey: null,
     });
   }
 }
 
-function input(payload: ExchangePayload) {
+function updateModelValue(payload: ExchangePayload) {
   const newPayload: Writeable<ExchangePayload> = {
     ...payload,
   };
@@ -105,16 +114,16 @@ function input(payload: ExchangePayload) {
   if (get(isCoinbase) && payload.apiSecret)
     newPayload.apiSecret = payload.apiSecret.replace(/\\n/g, '\n');
 
-  emit('input', newPayload);
+  emit('update:model-value', newPayload);
 }
 
 onMounted(() => {
   if (get(editMode))
     return;
 
-  input({
-    ...get(exchange),
-    name: suggestedName(get(exchange).location),
+  updateModelValue({
+    ...props.modelValue,
+    name: suggestedName(props.modelValue.location),
   });
 });
 
@@ -132,22 +141,13 @@ const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
 const rules = {
   name: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredUnless(editMode),
-    ),
+    required: helpers.withMessage(t('exchange_keys_form.name.non_empty'), requiredUnless(editMode)),
   },
   newName: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredIf(editMode),
-    ),
+    required: helpers.withMessage(t('exchange_keys_form.name.non_empty'), requiredIf(editMode)),
   },
   apiKey: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.api_key.non_empty'),
-      requiredIf(sensitiveFieldEditable),
-    ),
+    required: helpers.withMessage(t('exchange_keys_form.api_key.non_empty'), requiredIf(sensitiveFieldEditable)),
   },
   apiSecret: {
     required: helpers.withMessage(
@@ -165,10 +165,10 @@ const rules = {
 
 const { setValidation } = useExchangeApiKeysForm();
 
-const v$ = setValidation(rules, exchange, { $autoDirty: true });
+const v$ = setValidation(rules, modelValue, { $autoDirty: true });
 
 function onExchangeChange(exchange: string) {
-  input({
+  updateModelValue({
     name: suggestedName(exchange),
     newName: null,
     location: exchange,
@@ -196,11 +196,11 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <ExchangeInput
         show-with-key-only
-        :value="exchange.location"
+        :model-value="modelValue.location"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
         :disabled="editMode"
-        @input="onExchangeChange($event)"
+        @update:model-value="onExchangeChange($event)"
       />
 
       <RuiTextField
@@ -217,24 +217,23 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
         v-else
         variant="outlined"
         color="primary"
-        :value="exchange.name"
+        :model-value="modelValue.name"
         :error-messages="toMessages(v$.name)"
         data-cy="name"
         :label="t('common.name')"
-        @input="input({ ...exchange, name: $event })"
+        @update:model-value="updateModelValue({ ...modelValue, name: $event })"
       />
     </div>
 
     <RuiMenuSelect
-      v-if="exchange.location === 'kraken'"
-      :value="exchange.krakenAccountType"
+      v-if="modelValue.location === 'kraken'"
+      v-model="krakenAccountType"
       data-cy="account-type"
       :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
       key-attr="identifier"
       text-attr="label"
       variant="outlined"
-      @input="input({ ...exchange, krakenAccountType: $event })"
     />
 
     <div
@@ -260,9 +259,7 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
           </RuiButton>
         </template>
         {{
-          !editKeys
-            ? t('exchange_keys_form.edit.activate_tooltip')
-            : t('exchange_keys_form.edit.deactivate_tooltip')
+          !editKeys ? t('exchange_keys_form.edit.activate_tooltip') : t('exchange_keys_form.edit.deactivate_tooltip')
         }}
       </RuiTooltip>
     </div>
@@ -306,9 +303,9 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
 
     <BinancePairsSelector
       v-if="isBinance"
-      :name="exchange.name"
-      :location="exchange.location"
-      @input="input({ ...exchange, binanceMarkets: $event })"
+      :name="modelValue.name"
+      :location="modelValue.location"
+      @update:selection="updateModelValue({ ...modelValue, binanceMarkets: $event })"
     />
   </div>
 </template>

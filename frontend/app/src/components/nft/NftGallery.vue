@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type TablePaginationData,
-  useBreakpoint,
-} from '@rotki/ui-library-compat';
+import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { keyBy } from 'lodash-es';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
@@ -15,13 +12,13 @@ defineProps<{ modules: Module[] }>();
 
 const { t } = useI18n();
 
-const prices: Ref<Record<string, NftPrice>> = ref({});
+const prices = ref<Record<string, NftPrice>>({});
 const priceError = ref('');
 const total = ref(0);
 const limit = ref(0);
 const error = ref('');
 const loading = ref(true);
-const perAccount: Ref<Nfts | null> = ref(null);
+const perAccount = ref<Nfts | null>(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
@@ -81,7 +78,9 @@ const nfts = computed<GalleryNft[]>(() => {
         const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
         allNfts.push({ ...nft, priceAsset, priceInAsset, priceUsd, address });
       }
-      else { allNfts.push({ ...nft, address }); }
+      else {
+        allNfts.push({ ...nft, address });
+      }
     }
   }
   return allNfts;
@@ -96,9 +95,7 @@ const items = computed(() => {
   if (hasAccounts || selection) {
     return allNfts
       .filter(({ address, collection }) => {
-        const sameAccount = hasAccounts
-          ? accounts.find(account => getAccountAddress(account) === address)
-          : true;
+        const sameAccount = hasAccounts ? accounts.find(account => getAccountAddress(account) === address) : true;
         const sameCollection = selection ? selection === collection.name : true;
         return sameAccount && sameCollection;
       })
@@ -129,9 +126,7 @@ const visibleNfts = computed(() => {
   return get(items).slice(start, start + perPage);
 });
 
-const availableAddresses = computed(() =>
-  get(perAccount) ? Object.keys(get(perAccount)!) : [],
-);
+const availableAddresses = computed(() => (get(perAccount) ? Object.keys(get(perAccount)!) : []));
 
 const collections = computed(() => {
   if (!get(nfts))
@@ -159,9 +154,7 @@ async function fetchNfts(ignoreCache = false) {
 }
 
 const noData = computed(
-  () =>
-    get(visibleNfts).length === 0
-    && !(get(selectedCollection) || get(selectedAccounts).length > 0),
+  () => get(visibleNfts).length === 0 && !(get(selectedCollection) || get(selectedAccounts).length > 0),
 );
 
 const { fetchNftsPrices } = useAssetPricesApi();
@@ -184,7 +177,12 @@ function updateSortBy(value: string) {
 onMounted(fetchPrices);
 onMounted(fetchNfts);
 
-function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref<boolean>, a: GalleryNft, b: GalleryNft): number {
+function sortNfts(
+  sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
+  sortDesc: Ref<boolean>,
+  a: GalleryNft,
+  b: GalleryNft,
+): number {
   const sortProp = get(sortBy);
   const desc = get(sortDesc);
   const isCollection = sortProp === 'collection';
@@ -196,9 +194,7 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
       : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
   }
   else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
-    return (
-      desc ? bElement.minus(aElement) : aElement.minus(bElement)
-    ).toNumber();
+    return (desc ? bElement.minus(aElement) : aElement.minus(bElement)).toNumber();
   }
   else if (aElement === null && bElement === null) {
     return 0;
@@ -261,12 +257,14 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
             v-model="selectedCollection"
             class="md:col-span-3"
             :items="collections"
+            variant="outlined"
+            density="compact"
           />
 
           <NftSorter
+            v-model:sort-desc="sortDescending"
             class="md:col-span-2"
             :sort-by="sortBy"
-            :sort-desc.sync="sortDescending"
             @update:sort-by="updateSortBy($event)"
           />
         </div>
@@ -276,7 +274,10 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
         v-if="!premium && visibleNfts.length > 0"
         type="info"
       >
-        <i18n path="nft_gallery.upgrade">
+        <i18n-t
+          keypath="nft_gallery.upgrade"
+          tag="span"
+        >
           <template #limit>
             {{ limit }}
           </template>
@@ -287,7 +288,7 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
               premium
             />
           </template>
-        </i18n>
+        </i18n-t>
       </RuiAlert>
 
       <div

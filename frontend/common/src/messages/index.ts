@@ -24,8 +24,7 @@ export const NotificationCategory = {
   ADDRESS_MIGRATION: 'address_migration',
 } as const;
 
-export type NotificationCategory =
-  (typeof NotificationCategory)[keyof typeof NotificationCategory];
+export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];
 
 export interface Message {
   readonly title: string;
@@ -70,7 +69,4 @@ export interface NotificationData extends NotificationBase {
   readonly date: Date;
 }
 
-export type Notification = SemiPartial<
-  NotificationPayload,
-  'title' | 'message'
->;
+export type Notification = SemiPartial<NotificationPayload, 'title' | 'message'>;

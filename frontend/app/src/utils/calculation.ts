@@ -32,24 +32,15 @@ export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance
 }
 
 export function calculatePercentage(value: BigNumber, divider: BigNumber): string {
-  const percentage = divider.isZero()
-    ? 0
-    : value.div(divider).multipliedBy(100);
+  const percentage = divider.isZero() ? 0 : value.div(divider).multipliedBy(100);
   return percentage.toFixed(2);
 }
 
 export function bigNumberSum(value: BigNumber[]): BigNumber {
-  return value.reduce(
-    (previousValue, currentValue) => previousValue.plus(currentValue),
-    Zero,
-  );
+  return value.reduce((previousValue, currentValue) => previousValue.plus(currentValue), Zero);
 }
 
-export function aggregateTotal(
-  balances: any[],
-  mainCurrency: string,
-  exchangeRate: BigNumber,
-): BigNumber {
+export function aggregateTotal(balances: any[], mainCurrency: string, exchangeRate: BigNumber): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
     if (currentValue.asset === mainCurrency)
       return previousValue.plus(currentValue.amount);

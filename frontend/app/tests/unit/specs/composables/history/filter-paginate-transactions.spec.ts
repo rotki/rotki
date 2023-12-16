@@ -1,31 +1,30 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
+import { vi } from 'vitest';
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
-import type {
-  HistoryEvent,
-  HistoryEventRequestPayload,
-} from '@/types/history/events';
+import type { HistoryEvent, HistoryEventRequestPayload } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+vi.mock('vue-router', () => {
+  const route = ref({
+    query: {},
+  });
+  return {
+    useRoute: vi.fn().mockReturnValue(route),
+    useRouter: vi.fn().mockReturnValue({
+      push: vi.fn(({ query }) => {
+        set(route, { query });
+        return true;
+      }),
     }),
-  ),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(({ query }) => {
-      useRoute().query = query;
-      return true;
-    }),
-  }),
-}));
+  };
+});
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<Vue>('vue');
@@ -37,15 +36,13 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchHistoryEvents: (
-    payload: MaybeRef<HistoryEventRequestPayload>
-  ) => Promise<Collection<HistoryEvent>>;
+  let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEvent>>;
   const locationOverview: MaybeRef<string | null> = null;
-  const mainPage: Ref<boolean> = ref(false);
-  const protocols: Ref<string[]> = ref([]);
-  const eventTypes: Ref<string[]> = ref([]);
-  const eventSubTypes: Ref<string[]> = ref([]);
-  const accounts: Ref<Account[]> = ref([
+  const mainPage = ref<boolean>(false);
+  const protocols = ref<string[]>([]);
+  const eventTypes = ref<string[]>([]);
+  const eventSubTypes = ref<string[]>([]);
+  const accounts = ref<Account[]>([
     {
       address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
       chain: Blockchain.ETH,
@@ -73,35 +70,23 @@ describe('composables::history/filter-paginate', () => {
     };
 
     const extraParams = computed(() => ({
-      accounts: get(accounts).map(
-        account => `${account.address}#${account.chain}`,
-      ),
+      accounts: get(accounts).map(account => `${account.address}#${account.chain}`),
     }));
 
-    const customPageParams = computed<Partial<HistoryEventRequestPayload>>(
-      () => ({
-        protocols: get(protocols),
-        eventTypes: get(eventTypes),
-        eventSubtypes: get(eventSubTypes),
-        location: 'ethereum',
-        locationLabels: get(accounts)[0].address,
-      }),
-    );
+    const customPageParams = computed<Partial<HistoryEventRequestPayload>>(() => ({
+      protocols: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
+      location: 'ethereum',
+      locationLabels: get(accounts)[0].address,
+    }));
 
     beforeEach(() => {
       set(mainPage, true);
     });
 
     it('initialize composable correctly', async () => {
-      const {
-        userAction,
-        filters,
-        sort,
-        state,
-        fetchData,
-        applyRouteFilter,
-        isLoading,
-      } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
         HistoryEvent,
@@ -194,7 +179,7 @@ describe('composables::history/filter-paginate', () => {
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(route.query).toEqual(query);
+      expect(get(route).query).toEqual(query);
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);
@@ -213,7 +198,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('add protocols to filters and expect the value to be set', async () => {
-      set(protocols, ['gas', 'ens']);
+      set(protocols, ['ga s', 'ens']);
 
       const query = {
         sortBy: ['timestamp'],
@@ -254,25 +239,24 @@ describe('composables::history/filter-paginate', () => {
     it('exclusion filters', async () => {
       const fetchHistoryEvents = vi.fn();
 
-      const { userAction, fetchData, isLoading, updateFilter }
-        = usePaginationFilters<
-          HistoryEvent,
-          HistoryEventRequestPayload,
-          HistoryEvent,
-          Collection<HistoryEvent>,
-          Filters,
-          Matcher
-        >(
-          locationOverview,
-          mainPage,
-          () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-          fetchHistoryEvents,
-          {
-            onUpdateFilters,
-            extraParams,
-            customPageParams,
-          },
-        );
+      const { userAction, fetchData, isLoading, updateFilter } = usePaginationFilters<
+        HistoryEvent,
+        HistoryEventRequestPayload,
+        HistoryEvent,
+        Collection<HistoryEvent>,
+        Filters,
+        Matcher
+      >(
+        locationOverview,
+        mainPage,
+        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        fetchHistoryEvents,
+        {
+          onUpdateFilters,
+          extraParams,
+          customPageParams,
+        },
+      );
 
       updateFilter({
         location: 'protocols',

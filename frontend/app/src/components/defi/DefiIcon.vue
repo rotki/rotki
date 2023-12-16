@@ -2,7 +2,7 @@
 import { toSentenceCase } from '@/utils/text';
 
 interface Item {
-  icon: string;
+  icon?: string;
   name: string;
 }
 
@@ -10,12 +10,10 @@ withDefaults(
   defineProps<{
     item: Item;
     size?: string;
-    loading?: boolean;
     vertical?: boolean;
   }>(),
   {
     size: '1.5rem',
-    loading: false,
     vertical: false,
   },
 );
@@ -31,7 +29,7 @@ withDefaults(
       class="icon-bg"
       :src="item.icon"
       :size="size"
-      :loading="loading"
+      :loading="!item.icon"
       contain
     />
     <div

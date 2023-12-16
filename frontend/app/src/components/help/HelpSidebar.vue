@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { IndexedDb } from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
-
-const props = defineProps<{
-  visible: boolean;
-}>();
+import type { RuiIcons } from '@rotki/ui-library';
 
 const emit = defineEmits<{
-  (e: 'update:visible', visible: boolean): void;
   (e: 'about'): void;
 }>();
 
 const { t } = useI18n();
 
-const display = useVModel(props, 'visible', emit);
+const display = defineModel<boolean>({ required: true });
 
 interface Entry {
-  readonly icon: string;
+  readonly icon: RuiIcons;
   readonly title: string;
   readonly subtitle: string;
   readonly link: string;

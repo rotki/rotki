@@ -24,13 +24,10 @@ interface BlockieOptions {
 const randSeed = new Array(4); // Xorshift: [x, y, z, w] 32 bit values
 
 function seedRand(seed: string) {
-  for (let i = 0; i < randSeed.length; i++)
-    randSeed[i] = 0;
+  for (let i = 0; i < randSeed.length; i++) randSeed[i] = 0;
 
-  for (let i = 0; i < seed.length; i++) {
-    randSeed[i % 4]
-      = (randSeed[i % 4] << 5) - randSeed[i % 4] + seed.charCodeAt(i);
-  }
+  for (let i = 0; i < seed.length; i++)
+    randSeed[i % 4] = (randSeed[i % 4] << 5) - randSeed[i % 4] + seed.charCodeAt(i);
 }
 
 function rand() {
@@ -75,8 +72,7 @@ function createImageData(size: number) {
     r.reverse();
     row = row.concat(r);
 
-    for (const element of row)
-      data.push(element);
+    for (const element of row) data.push(element);
   }
 
   return data;
@@ -120,12 +116,7 @@ function renderIcon(opts: Partial<BlockieOptions>, canvas: HTMLCanvasElement) {
         // if data is 2, choose spot color, if 1 choose foreground
         cc.fillStyle = imageDatum === 1 ? newOpts.color : newOpts.spotColor;
 
-        cc.fillRect(
-          col * newOpts.scale,
-          row * newOpts.scale,
-          newOpts.scale,
-          newOpts.scale,
-        );
+        cc.fillRect(col * newOpts.scale, row * newOpts.scale, newOpts.scale, newOpts.scale);
       }
     }
   }

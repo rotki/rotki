@@ -21,11 +21,7 @@ export const ModuleEnum = z.nativeEnum(Module);
 
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
 
-export const DECENTRALIZED_EXCHANGES = [
-  Module.UNISWAP,
-  Module.BALANCER,
-  Module.SUSHISWAP,
-];
+export const DECENTRALIZED_EXCHANGES = [Module.UNISWAP, Module.BALANCER, Module.SUSHISWAP];
 
 export interface SupportedModule {
   name: string;

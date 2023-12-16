@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { isNft } from '@/utils/nft';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
-import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
 const { t } = useI18n();
 
-const price: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
+const price = ref<Partial<ManualPriceFormPayload> | null>(null);
 const filter = ref<string>();
-const editMode: Ref<boolean> = ref(false);
+const editMode = ref<boolean>(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const sort: Ref<DataTableSortData> = ref([]);
+const sort = ref<DataTableSortData<ManualPriceWithUsd>>([]);
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
@@ -54,18 +51,12 @@ const headers = computed<DataTableColumn[]>(() => [
 
 const router = useRouter();
 const route = useRoute();
-const {
-  items,
-  loading,
-  refreshing,
-  deletePrice,
-  refreshCurrentPrices,
-} = useLatestPrices(t, filter);
+const { items, loading, refreshing, deletePrice, refreshCurrentPrices } = useLatestPrices(t, filter);
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
-function showDeleteConfirmation(item: ManualPrice) {
+function showDeleteConfirmation(item: ManualPriceWithUsd) {
   show(
     {
       title: t('price_table.delete.dialog.title'),
@@ -75,7 +66,7 @@ function showDeleteConfirmation(item: ManualPrice) {
   );
 }
 
-function openForm(selectedEntry: ManualPrice | null = null) {
+function openForm(selectedEntry: ManualPriceWithUsd | null = null) {
   set(editMode, !!selectedEntry);
   if (selectedEntry) {
     set(price, {
@@ -105,12 +96,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.manage_prices'),
-      t('navigation_menu.manage_prices_sub.latest_prices'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.manage_prices'), t('navigation_menu.manage_prices_sub.latest_prices')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -160,13 +146,13 @@ onMounted(async () => {
         </AssetSelect>
       </div>
       <RuiDataTable
+        v-model:sort="sort"
         outlined
         dense
         :cols="headers"
         :loading="loading || refreshing"
         :rows="items"
         row-attr="id"
-        :sort.sync="sort"
       >
         <template #item.fromAsset="{ row }">
           <NftDetails

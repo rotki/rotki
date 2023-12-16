@@ -22,7 +22,7 @@ const { t } = useI18n();
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

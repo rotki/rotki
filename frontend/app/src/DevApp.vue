@@ -33,7 +33,7 @@ const integrationData = computed(() => {
   });
 
   const protocols = get(counterparties)
-    .filter(item => item !== 'gas' && !(/v\d+$/).test(item)) // remove gas, and anything that has version number
+    .filter(item => item !== 'gas' && !/v\d+$/.test(item)) // remove gas, and anything that has version number
     .filter(uniqueStrings)
     .map((item) => {
       const data = get(getCounterpartyData(item));
@@ -62,9 +62,7 @@ const copyText = 'Copy Integration JSON Data';
     id="rotki"
     class="w-full h-full"
   >
-    <nav
-      class="border-default bg-white dark:bg-black border-b flex gap-4 items-center fixed w-full p-2 top-0"
-    >
+    <nav class="border-default bg-white dark:bg-black border-b flex gap-4 items-center fixed w-full p-2 top-0">
       <RouterLink :to="Routes.DASHBOARD">
         <RuiButton
           variant="text"

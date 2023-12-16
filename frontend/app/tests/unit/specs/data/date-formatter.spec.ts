@@ -109,9 +109,7 @@ describe('dateFormatter', () => {
   it('should return the timezone if the pattern is %z', () => {
     expect(converter.format(date, '%z')).toEqual('+0000');
     overrideTimezoneOffset(+120);
-    expect(
-      converter.format(new Date('2019-02-03T13:09:09-02:00'), '%z'),
-    ).toEqual('-0200');
+    expect(converter.format(new Date('2019-02-03T13:09:09-02:00'), '%z')).toEqual('-0200');
   });
 
   it('should return the timezone if the pattern is %Z', () => {

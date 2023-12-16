@@ -18,27 +18,25 @@ interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;
 }
 
-export function useIgnore<T extends EntryMeta>({ actionType, toData }: EvmTxIgnoreAction<T> | CommonIgnoreAction<T>, selected: Ref<T[]>, refresh: () => any) {
+export function useIgnore<T extends EntryMeta>(
+  { actionType, toData }: EvmTxIgnoreAction<T> | CommonIgnoreAction<T>,
+  selected: Ref<T[]>,
+  refresh: () => any,
+) {
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
   const api = useHistoryIgnoringApi();
 
-  const ignoreInAccounting = async (
-    payload: IgnorePayload,
-    ignore: boolean,
-  ): Promise<ActionStatus> => {
+  const ignoreInAccounting = async (payload: IgnorePayload, ignore: boolean): Promise<ActionStatus> => {
     try {
-      ignore
-        ? await api.ignoreActions(payload)
-        : await api.unignoreActions(payload);
+      ignore ? await api.ignoreActions(payload) : await api.unignoreActions(payload);
     }
     catch (error: any) {
       let title: string;
       let description: string;
       if (ignore)
         title = t('actions.ignore.error.title');
-      else
-        title = t('actions.unignore.error.title');
+      else title = t('actions.unignore.error.title');
 
       if (ignore) {
         description = t('actions.ignore.error.description', {
@@ -64,9 +62,8 @@ export function useIgnore<T extends EntryMeta>({ actionType, toData }: EvmTxIgno
   const ignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
     await ignoreInAccounting(payload, true);
 
-  const unignoreActions = async (
-    payload: IgnorePayload,
-  ): Promise<ActionStatus> => await ignoreInAccounting(payload, false);
+  const unignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
+    await ignoreInAccounting(payload, false);
 
   const ignore = async (ignored: boolean) => {
     let payload: IgnorePayload;
@@ -103,8 +100,7 @@ export function useIgnore<T extends EntryMeta>({ actionType, toData }: EvmTxIgno
 
     if (ignored)
       status = await ignoreActions(payload);
-    else
-      status = await unignoreActions(payload);
+    else status = await unignoreActions(payload);
 
     if (status.success) {
       refresh();

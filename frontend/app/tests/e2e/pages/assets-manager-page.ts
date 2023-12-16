@@ -30,26 +30,19 @@ export class AssetsManagerPage {
 
   ignoredAssetCount(number: number) {
     this.openStatusFilter();
-    cy.get('[data-cy=asset-filter-show_only]').should(
-      'include.text',
-      number.toString(),
-    );
+    cy.get('[data-cy=asset-filter-show_only]').should('include.text', number.toString());
     this.closeStatusFilter();
   }
 
   visibleEntries(visible: number) {
     // the total row is added to the visible entries
-    cy.get('[data-cy=managed-assets-table] tbody')
-      .find('tr')
-      .should('have.length', visible);
+    cy.get('[data-cy=managed-assets-table] tbody').find('tr').should('have.length', visible);
   }
 
   searchAsset(asset: string) {
     cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
     cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
-    cy.get('[data-cy="table-filter"] input').type(
-      `symbol: ${asset}{enter}{esc}`,
-    );
+    cy.get('[data-cy="table-filter"] input').type(`symbol: ${asset}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
@@ -57,9 +50,7 @@ export class AssetsManagerPage {
   searchAssetByAddress(address: string) {
     cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
     cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
-    cy.get('[data-cy="table-filter"] input').type(
-      `address: ${address}{enter}{esc}`,
-    );
+    cy.get('[data-cy="table-filter"] input').type(`address: ${address}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
@@ -67,18 +58,16 @@ export class AssetsManagerPage {
   addIgnoredAsset(asset: string) {
     this.searchAsset(asset);
 
-    cy.get(
-      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-    ).then(($switch) => {
-      const initialValue = $switch.is(':checked');
-      expect(initialValue, 'false');
-      cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).click();
-      cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).should('be.checked');
-    });
+    cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').then(
+      ($switch) => {
+        const initialValue = $switch.is(':checked');
+        expect(initialValue, 'false');
+        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').click();
+        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').should(
+          'be.checked',
+        );
+      },
+    );
   }
 
   selectShowAll(): void {
@@ -90,18 +79,17 @@ export class AssetsManagerPage {
 
   removeIgnoredAsset(asset: string) {
     this.searchAsset(asset);
-    cy.get(
-      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-    ).then(($switch) => {
-      const initialValue = $switch.is(':checked');
-      expect(initialValue, 'true');
-      cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).click();
-      cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).should('not.be.checked', 'false');
-    });
+    cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').then(
+      ($switch) => {
+        const initialValue = $switch.is(':checked');
+        expect(initialValue, 'true');
+        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').click();
+        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').should(
+          'not.be.checked',
+          'false',
+        );
+      },
+    );
   }
 
   createWaitForDeleteManagedAssets() {
@@ -112,16 +100,12 @@ export class AssetsManagerPage {
 
     return () => {
       // Wait for response.status to be 200
-      cy.wait('@apiCall', { timeout: 30000 })
-        .its('response.statusCode')
-        .should('equal', 200);
+      cy.wait('@apiCall', { timeout: 30000 }).its('response.statusCode').should('equal', 200);
     };
   }
 
   confirmDelete() {
-    cy.get('[data-cy=confirm-dialog]')
-      .find('[data-cy=dialog-title]')
-      .should('contain', 'Delete asset');
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=dialog-title]').should('contain', 'Delete asset');
     const waitForAssetDeleted = this.createWaitForDeleteManagedAssets();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
     waitForAssetDeleted();
@@ -147,9 +131,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] h5')
-      .contains('Add a new asset')
-      .should('be.visible');
+    cy.get('[data-cy=bottom-dialog] h5').contains('Add a new asset').should('be.visible');
 
     // on load the confirm button should be visible and enabled
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
@@ -177,9 +159,7 @@ export class AssetsManagerPage {
     cy.get('@submitButton').trigger('click');
 
     cy.get('[data-cy=address-input] .details').as('addressMessage');
-    cy.get('@addressMessage')
-      .contains('The value is required')
-      .should('be.visible');
+    cy.get('@addressMessage').contains('The value is required').should('be.visible');
 
     // enter address
     cy.get('@addressInput').type(address);
@@ -191,31 +171,21 @@ export class AssetsManagerPage {
 
     // expect to see backend validation messages
     cy.get('@chainMessage').scrollIntoView();
-    cy.get('@chainMessage')
-      .contains('Field may not be null.')
-      .should('be.visible');
-    cy.get('@tokenMessage')
-      .contains('Field may not be null.')
-      .should('be.visible');
-    cy.get('@decimalMessage')
-      .contains('Field may not be null.')
-      .should('be.visible');
+    cy.get('@chainMessage').contains('Field may not be null.').should('be.visible');
+    cy.get('@tokenMessage').contains('Field may not be null.').should('be.visible');
+    cy.get('@decimalMessage').contains('Field may not be null.').should('be.visible');
 
     cy.get('@chainMessage').should('not.be.empty');
     // select a chain
     cy.get('@chainInput').click();
-    cy.get('[role="menu-content"] button[type="button"]')
-      .first()
-      .click();
+    cy.get('[role="menu-content"] button[type="button"]').first().click();
     // selecting a chain should clear the validation message
     cy.get('@chainMessage').should('be.empty');
 
     cy.get('@tokenMessage').should('not.be.empty');
     // select a token
     cy.get('@tokenInput').click();
-    cy.get('[role="menu-content"] button[type="button"]')
-      .first()
-      .click();
+    cy.get('[role="menu-content"] button[type="button"]').first().click();
     // selecting a chain should clear the validation message
     cy.get('@tokenMessage').should('be.empty');
 
@@ -241,10 +211,7 @@ export class AssetsManagerPage {
     // search the asset
     this.searchAssetByAddress(address);
 
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
-      'contain',
-      symbol,
-    );
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
   }
 
   addOtherAsset() {
@@ -254,9 +221,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
     cy.get('@typeInput').click();
-    cy.get('[role="menu-content"] button[type="button"]')
-      .contains('Own chain')
-      .click();
+    cy.get('[role="menu-content"] button[type="button"]').contains('Own chain').click();
 
     cy.get('@nameInput').clear();
     cy.get('@nameInput').type('NAME 2');
@@ -275,10 +240,7 @@ export class AssetsManagerPage {
     // search the asset
     this.searchAsset(symbol);
 
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
-      'contain',
-      symbol,
-    );
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
   }
 
   editEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
@@ -291,9 +253,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] h5')
-      .contains('Edit an asset')
-      .should('be.visible');
+    cy.get('[data-cy=bottom-dialog] h5').contains('Edit an asset').should('be.visible');
 
     cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
@@ -312,9 +272,6 @@ export class AssetsManagerPage {
     // dialog should not be visible
     cy.get('[data-cy=bottom-dialog]').should('not.exist');
 
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
-      'contain',
-      symbol,
-    );
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
   }
 }

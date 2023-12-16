@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ProtocolVersion } from '@/types/defi';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { YearnVaultAsset } from '@/types/defi/yearn';
+import type { BigNumber } from '@rotki/common';
+
+interface VaultAssets extends YearnVaultAsset {
+  underlyingUsdValue: BigNumber;
+  vaultUsdValue: BigNumber;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -18,7 +21,7 @@ const props = withDefaults(
 );
 const { selectedAddresses, version } = toRefs(props);
 
-const sortBy = ref<DataTableSortData>({
+const sortBy = ref<DataTableSortData<VaultAssets>>({
   column: 'roi',
   direction: 'desc' as const,
 });
@@ -26,7 +29,7 @@ const sortBy = ref<DataTableSortData>({
 const { yearnVaultsAssets } = useYearnStore();
 const { t } = useI18n();
 
-const columns: DataTableColumn[] = [
+const columns: DataTableColumn<VaultAssets>[] = [
   { label: t('yearn_asset_table.headers.vault'), key: 'vault' },
   {
     label: t('yearn_asset_table.headers.version'),
@@ -53,7 +56,7 @@ const columns: DataTableColumn[] = [
   },
 ];
 
-const vaults = computed(() => {
+const vaults = computed<VaultAssets[]>(() => {
   const protocolVersion = get(version);
   let v1Assets: YearnVaultAsset[] = [];
 

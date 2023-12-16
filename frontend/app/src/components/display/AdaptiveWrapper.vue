@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library-compat';
+import { useRotkiTheme } from '@rotki/ui-library';
 
 const props = withDefaults(
   defineProps<{

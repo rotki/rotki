@@ -1,7 +1,7 @@
-const { spawn } = require('node:child_process');
-const process = require('node:process');
-const fs = require('node:fs');
-const path = require('node:path');
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
   process.stdout.write(`\u001B[31mError\u001B[0m: Not CI or VIRTUAL_ENV\n\n`);
@@ -23,12 +23,11 @@ function cleanupData() {
     if (fs.statSync(currentPath).isDirectory())
       fs.rmSync(currentPath, { recursive: true });
   }
-};
+}
 
 if (!fs.existsSync(dataDir))
   fs.mkdirSync(dataDir, { recursive: true });
-else
-  cleanupData();
+else cleanupData();
 
 const logDir = path.join(testDir, 'logs');
 

@@ -13,12 +13,12 @@ const { deleteExchangeData } = useExchangeApi();
 
 const { t } = useI18n();
 
-const source: Ref<Purgeable> = ref(Purgeable.TRANSACTIONS);
+const source = ref<Purgeable>(Purgeable.TRANSACTIONS);
 
-const centralizedExchangeToClear: Ref<string> = ref('');
-const decentralizedExchangeToClear: Ref<string> = ref('');
-const chainToClear: Ref<string> = ref('');
-const moduleToClear: Ref<string> = ref('');
+const centralizedExchangeToClear = ref<string>('');
+const decentralizedExchangeToClear = ref<string>('');
+const chainToClear = ref<string>('');
+const moduleToClear = ref<string>('');
 
 const purgable = [
   {
@@ -58,8 +58,7 @@ async function purgeSource(source: Purgeable) {
   else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
     if (value)
       await deleteModuleData(value as Module);
-    else
-      await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
+    else await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
   }
 
   await purgeCache(source, value);
@@ -82,9 +81,7 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
 
     let message = '';
     if (source === Purgeable.TRANSACTIONS) {
-      message = t(
-        'data_management.purge_data.transaction_purge_confirm.message',
-      );
+      message = t('data_management.purge_data.transaction_purge_confirm.message');
     }
     else if (value) {
       message = t('data_management.purge_data.confirm.message', {
@@ -133,7 +130,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
         />
         <ChainSelect
           v-if="source === Purgeable.TRANSACTIONS"
-          :model-value.sync="chainToClear"
+          v-model="chainToClear"
           class="flex-1"
           clearable
           persistent-hint

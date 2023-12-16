@@ -26,6 +26,7 @@ export class BlockchainBalancesPage {
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
+    cy.get('[data-cy="account-blockchain-field"] input').should('not.be.disabled');
     cy.get('[data-cy="account-blockchain-field"]').click();
     cy.get('[data-cy="account-blockchain-field"]').type(balance.chainName);
     cy.get('[role=menu-content] button:first-child').should('contain.text', balance.chainName);
@@ -39,8 +40,7 @@ export class BlockchainBalancesPage {
     cy.get('[data-cy="account-address-field"]').type(balance.address);
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 
-    for (const tag of balance.tags)
-      cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
+    for (const tag of balance.tags) cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
 
@@ -54,9 +54,7 @@ export class BlockchainBalancesPage {
       );
     }
 
-    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.exist',
-    );
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should('not.exist');
   }
 
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
@@ -68,9 +66,7 @@ export class BlockchainBalancesPage {
     }).as('blockchain-section');
 
     cy.get('@blockchain-section').should('exist');
-    cy.get('@blockchain-section')
-      .get('tbody td div[role=progressbar]', { timeout: 300000 })
-      .should('not.exist');
+    cy.get('@blockchain-section').get('tbody td div[role=progressbar]', { timeout: 300000 }).should('not.exist');
 
     cy.get('@blockchain-section')
       .find('tbody')
@@ -78,27 +74,18 @@ export class BlockchainBalancesPage {
       .eq(position + (this.isGrouped(balance) ? 0 : 1))
       .as('row');
 
-    cy.get('@row')
-      .find('[data-cy="labeled-address-display"]')
-      .as('address-label');
+    cy.get('@row').find('[data-cy="labeled-address-display"]').as('address-label');
     cy.get('@address-label').scrollIntoView();
     cy.get('@address-label').trigger('mouseover');
 
     cy.get('div[role=tooltip').as('address-tooltip');
 
-    cy.get('@address-tooltip')
-      .find('div[role=tooltip-content]')
-      .contains(balance.label);
-    cy.get('@address-tooltip')
-      .find('div[role=tooltip-content]')
-      .contains(balance.address);
+    cy.get('@address-tooltip').find('div[role=tooltip-content]').contains(balance.label);
+    cy.get('@address-tooltip').find('div[role=tooltip-content]').contains(balance.address);
 
-    for (const tag of balance.tags)
-      cy.get('@row').find('.tag').contains(tag).should('be.visible');
+    for (const tag of balance.tags) cy.get('@row').find('.tag').contains(tag).should('be.visible');
 
-    cy.get('@row')
-      .find('[data-cy="labeled-address-display"]')
-      .as('address-label');
+    cy.get('@row').find('[data-cy="labeled-address-display"]').as('address-label');
     cy.get('@address-label').scrollIntoView();
     cy.get('@address-label').trigger('mouseleave');
   }
@@ -106,16 +93,11 @@ export class BlockchainBalancesPage {
   private getBalances() {
     const balances: Map<string, BigNumber> = new Map();
 
-    cy.get(
-      '[data-cy=blockchain-asset-balances] > tbody > [class*=_tr__empty]',
-      {
-        timeout: 300000,
-      },
-    ).should('not.exist');
+    cy.get('[data-cy=blockchain-asset-balances] > tbody > [class*=_tr__empty]', {
+      timeout: 300000,
+    }).should('not.exist');
 
-    cy.get('[data-cy=account-balances]').each($element =>
-      this.updateTableBalance($element, balances),
-    );
+    cy.get('[data-cy=account-balances]').each($element => this.updateTableBalance($element, balances));
 
     return cy.wrap(balances);
   }
@@ -137,10 +119,7 @@ export class BlockchainBalancesPage {
     });
   }
 
-  private updateTableBalance(
-    $element: JQuery<HTMLElement>,
-    balances: Map<string, BigNumber>,
-  ) {
+  private updateTableBalance($element: JQuery<HTMLElement>, balances: Map<string, BigNumber>) {
     const id = $element.attr('id');
     if (!id)
       return;
@@ -162,19 +141,13 @@ export class BlockchainBalancesPage {
       .should('not.exist');
 
     cy.get(`@${blockchain}-table`)
-      .find(
-        `> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`,
-      )
+      .find(`> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`)
       .then((el) => {
         updateLocationBalance(el.text(), balances, blockchain);
       });
   }
 
-  editBalance(
-    balance: FixtureBlockchainBalance,
-    position: number,
-    label: string,
-  ) {
+  editBalance(balance: FixtureBlockchainBalance, position: number, label: string) {
     cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
@@ -183,16 +156,12 @@ export class BlockchainBalancesPage {
       .click();
 
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');
-    cy.get('@edit-form')
-      .find('[data-cy="account-label-field"]')
-      .as('account-label');
+    cy.get('@edit-form').find('[data-cy="account-label-field"]').as('account-label');
     cy.get('@account-label').click();
     cy.get('@account-label').clear();
     cy.get('@account-label').type(label);
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.exist',
-    );
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should('not.exist');
   }
 
   deleteBalance(balance: FixtureBlockchainBalance, position: number) {
@@ -215,9 +184,7 @@ export class BlockchainBalancesPage {
   }
 
   confirmDelete() {
-    cy.get('[data-cy=confirm-dialog]')
-      .find('[data-cy=dialog-title]')
-      .should('contain', 'Account delete');
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=dialog-title]').should('contain', 'Account delete');
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
   }
 }

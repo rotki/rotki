@@ -12,7 +12,7 @@ const refreshable = [
   },
 ];
 
-const source: Ref<RefreshableCache> = ref(RefreshableCache.GENERAL_CACHE);
+const source = ref<RefreshableCache>(RefreshableCache.GENERAL_CACHE);
 
 const { refreshGeneralCache } = useSessionPurge();
 const { protocolCacheStatus } = storeToRefs(useHistoryStore());
@@ -47,7 +47,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
 
 const { getChainName } = useSupportedChains();
 
-const hint: ComputedRef<string> = computed(() => {
+const hint = computed<string>(() => {
   if (!get(taskRunning))
     return '';
 

@@ -1,10 +1,6 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  paramsSerializer,
-  validWithParamsSessionAndExternalService,
-} from '@/services/utils';
+import { handleResponse, paramsSerializer, validWithParamsSessionAndExternalService } from '@/services/utils';
 import {
   type AssetMovement,
   AssetMovementCollectionResponse,
@@ -16,35 +12,26 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useAssetMovementsApi() {
-  const internalAssetMovements = async <T>(
-    payload: AssetMovementRequestPayload,
-    asyncQuery: boolean,
-  ): Promise<T> => {
-    const response = await api.instance.get<ActionResult<T>>(
-      '/asset_movements',
-      {
-        params: snakeCaseTransformer({
-          asyncQuery,
-          ...payload,
-        }),
-        paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-      },
-    );
+  const internalAssetMovements = async <T>(payload: AssetMovementRequestPayload, asyncQuery: boolean): Promise<T> => {
+    const response = await api.instance.get<ActionResult<T>>('/asset_movements', {
+      params: snakeCaseTransformer({
+        asyncQuery,
+        ...payload,
+      }),
+      paramsSerializer,
+      validateStatus: validWithParamsSessionAndExternalService,
+    });
 
     return handleResponse(response);
   };
 
-  const getAssetMovementsTask = (
-    payload: AssetMovementRequestPayload,
-  ): Promise<PendingTask> => internalAssetMovements<PendingTask>(payload, true);
+  const getAssetMovementsTask = (payload: AssetMovementRequestPayload): Promise<PendingTask> =>
+    internalAssetMovements<PendingTask>(payload, true);
 
   const getAssetMovements = async (
     payload: AssetMovementRequestPayload,
   ): Promise<CollectionResponse<EntryWithMeta<AssetMovement>>> => {
-    const response = await internalAssetMovements<
-      CollectionResponse<EntryWithMeta<AssetMovement>>
-    >(payload, false);
+    const response = await internalAssetMovements<CollectionResponse<EntryWithMeta<AssetMovement>>>(payload, false);
 
     return AssetMovementCollectionResponse.parse(response);
   };

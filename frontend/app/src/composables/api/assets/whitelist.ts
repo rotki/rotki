@@ -4,12 +4,9 @@ import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useAssetWhitelistApi() {
   const getWhitelistedAssets = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/assets/ignored/whitelist',
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored/whitelist', {
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };
@@ -29,13 +26,10 @@ export function useAssetWhitelistApi() {
   };
 
   const removeAssetFromWhitelist = async (token: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/assets/ignored/whitelist',
-      {
-        data: { token },
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/assets/ignored/whitelist', {
+      data: { token },
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };

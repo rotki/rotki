@@ -1,7 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  GeneralAccountData,
-} from '@/types/blockchain/accounts';
+import type { GeneralAccountData } from '@/types/blockchain/accounts';
 
 function removeTag(tagName: string, tags?: string[]): string[] | undefined {
   if (!tags)

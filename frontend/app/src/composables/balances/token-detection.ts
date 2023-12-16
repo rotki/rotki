@@ -7,12 +7,15 @@ export function useTokenDetection(chain: MaybeRef<string>, accountAddress: Maybe
   const { addresses } = useBlockchainStore();
   const { supportsTransactions } = useSupportedChains();
 
-  const isDetectingTaskRunning = (address: string | null) => computed(() => get(
-    isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-      chain: get(chain),
-      ...(address ? { address } : {}),
-    }),
-  ));
+  const isDetectingTaskRunning = (address: string | null) =>
+    computed(() =>
+      get(
+        isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+          chain: get(chain),
+          ...(address ? { address } : {}),
+        }),
+      ),
+    );
 
   const detectingTokens = computed<boolean>(() => {
     const address = get(accountAddress);

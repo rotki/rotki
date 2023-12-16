@@ -6,10 +6,7 @@ const EvmRpcNode = z.object({
   name: z.string().min(1),
   endpoint: z.string(),
   owned: z.boolean(),
-  weight: z.preprocess(
-    weight => Number.parseFloat(weight as string),
-    z.number().nonnegative().max(100),
-  ),
+  weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
   active: z.boolean(),
   blockchain: z.string().min(1),
 });

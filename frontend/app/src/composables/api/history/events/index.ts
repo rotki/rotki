@@ -34,7 +34,10 @@ export function useHistoryEventsApi() {
     asyncQuery: boolean,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<T> => {
-    const accounts = type === TransactionChainType.EVM ? payload.accounts : payload.accounts.map(({ address, evmChain }) => ({ address, chain: evmChain }));
+    const accounts
+      = type === TransactionChainType.EVM
+        ? payload.accounts
+        : payload.accounts.map(({ address, evmChain }) => ({ address, chain: evmChain }));
     const response = await api.instance.post<ActionResult<T>>(
       `/blockchains/${type}/transactions`,
       snakeCaseTransformer(
@@ -58,13 +61,10 @@ export function useHistoryEventsApi() {
   ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true, type);
 
   const deleteTransactions = async (chain: string, txHash?: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/blockchains/transactions',
-      {
-        validateStatus: validStatus,
-        data: chain ? snakeCaseTransformer({ chain, txHash }) : null,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/transactions', {
+      validateStatus: validStatus,
+      data: chain ? snakeCaseTransformer({ chain, txHash }) : null,
+    });
 
     return handleResponse(response);
   };
@@ -84,16 +84,15 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const getUndecodedTransactionsBreakdown = async (type: TransactionChainType = TransactionChainType.EVM): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      `/blockchains/${type}/transactions/decode`,
-      {
-        params: snakeCaseTransformer({
-          asyncQuery: true,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+  const getUndecodedTransactionsBreakdown = async (
+    type: TransactionChainType = TransactionChainType.EVM,
+  ): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>(`/blockchains/${type}/transactions/decode`, {
+      params: snakeCaseTransformer({
+        asyncQuery: true,
+      }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
@@ -116,22 +115,8 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const addHistoryEvent = async (
-    event: NewHistoryEventPayload,
-  ): Promise<{ identifier: number }> => {
-    const response = await api.instance.put<
-      ActionResult<{ identifier: number }>
-    >('/history/events', snakeCaseTransformer(event), {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
-
-  const editHistoryEvent = async (
-    event: EditHistoryEventPayload,
-  ): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
+  const addHistoryEvent = async (event: NewHistoryEventPayload): Promise<{ identifier: number }> => {
+    const response = await api.instance.put<ActionResult<{ identifier: number }>>(
       '/history/events',
       snakeCaseTransformer(event),
       {
@@ -142,36 +127,31 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const deleteHistoryEvent = async (
-    identifiers: number[],
-    forceDelete = false,
-  ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/history/events',
-      {
-        data: snakeCaseTransformer({ identifiers, forceDelete }),
-        validateStatus: validStatus,
-      },
-    );
+  const editHistoryEvent = async (event: EditHistoryEventPayload): Promise<boolean> => {
+    const response = await api.instance.patch<ActionResult<boolean>>('/history/events', snakeCaseTransformer(event), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const getEventDetails = async (
-    identifier: number,
-  ): Promise<HistoryEventDetail> => {
-    const response = await api.instance.get<ActionResult<HistoryEventDetail>>(
-      '/history/events/details',
-      {
-        params: snakeCaseTransformer({ identifier }),
-      },
-    );
+  const deleteHistoryEvent = async (identifiers: number[], forceDelete = false): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>('/history/events', {
+      data: snakeCaseTransformer({ identifiers, forceDelete }),
+      validateStatus: validStatus,
+    });
+
+    return handleResponse(response);
+  };
+
+  const getEventDetails = async (identifier: number): Promise<HistoryEventDetail> => {
+    const response = await api.instance.get<ActionResult<HistoryEventDetail>>('/history/events/details', {
+      params: snakeCaseTransformer({ identifier }),
+    });
     return HistoryEventDetail.parse(handleResponse(response));
   };
 
-  const addTransactionHash = async (
-    payload: AddTransactionHashPayload,
-  ): Promise<boolean> => {
+  const addTransactionHash = async (payload: AddTransactionHashPayload): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/blockchains/evm/transactions/add-hash',
       snakeCaseTransformer(payload),
@@ -184,32 +164,23 @@ export function useHistoryEventsApi() {
   };
 
   const getTransactionTypeMappings = async (): Promise<HistoryEventTypeData> => {
-    const response = await api.instance.get<
-      ActionResult<HistoryEventTypeData>
-    >('/history/events/type_mappings', {
+    const response = await api.instance.get<ActionResult<HistoryEventTypeData>>('/history/events/type_mappings', {
       validateStatus: validStatus,
     });
 
     return HistoryEventTypeData.parse(handleResponse(response));
   };
 
-  const getHistoryEventCounterpartiesData = async (): Promise<
-    ActionDataEntry[]
-  > => {
-    const response = await api.instance.get<ActionResult<ActionDataEntry[]>>(
-      '/history/events/counterparties',
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const getHistoryEventCounterpartiesData = async (): Promise<ActionDataEntry[]> => {
+    const response = await api.instance.get<ActionResult<ActionDataEntry[]>>('/history/events/counterparties', {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const getHistoryEventProductsData = async (): Promise<HistoryEventProductData> => {
-    const response = await api.instance.get<
-      ActionResult<HistoryEventProductData>
-    >('/history/events/products', {
+    const response = await api.instance.get<ActionResult<HistoryEventProductData>>('/history/events/products', {
       validateStatus: validStatus,
     });
 
@@ -219,18 +190,18 @@ export function useHistoryEventsApi() {
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload,
   ): Promise<CollectionResponse<HistoryEventEntryWithMeta>> => {
-    const response = await api.instance.post<
-      ActionResult<CollectionResponse<HistoryEventEntryWithMeta>>
-    >('/history/events', snakeCaseTransformer(payload), {
-      validateStatus: validStatus,
-    });
+    const response = await api.instance.post<ActionResult<CollectionResponse<HistoryEventEntryWithMeta>>>(
+      '/history/events',
+      snakeCaseTransformer(payload),
+      {
+        validateStatus: validStatus,
+      },
+    );
 
     return HistoryEventsCollectionResponse.parse(handleResponse(response));
   };
 
-  const queryOnlineHistoryEvents = async (
-    payload: OnlineHistoryEventsRequestPayload,
-  ): Promise<PendingTask> => {
+  const queryOnlineHistoryEvents = async (payload: OnlineHistoryEventsRequestPayload): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/events/query',
       snakeCaseTransformer(payload),
@@ -246,7 +217,9 @@ export function useHistoryEventsApi() {
     filters: HistoryEventRequestPayload,
     directoryPath?: string,
   ): Promise<PendingTask> => {
-    const func = directoryPath ? api.instance.post<ActionResult<PendingTask>> : api.instance.put<ActionResult<PendingTask>>;
+    const func = directoryPath
+      ? api.instance.post<ActionResult<PendingTask>>
+      : api.instance.put<ActionResult<PendingTask>>;
     const response = await func(
       '/history/events/export',
       snakeCaseTransformer({

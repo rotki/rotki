@@ -1,15 +1,7 @@
 import { isEmpty } from 'lodash-es';
-import {
-  TaskNotFoundError,
-  type TaskResultResponse,
-  type TaskStatus,
-} from '@/types/task';
+import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { handleResponse, validTaskStatus } from '@/services/utils';
-import {
-  IncompleteUpgradeError,
-  SyncConflictError,
-  SyncConflictPayload,
-} from '@/types/login';
+import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
 import { api } from '@/services/rotkehlchen-api';
 import { ApiValidationError } from '@/types/api/errors';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
@@ -17,12 +9,9 @@ import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useTaskApi() {
   const queryTasks = async (): Promise<TaskStatus> => {
-    const response = await api.instance.get<ActionResult<TaskStatus>>(
-      `/tasks`,
-      {
-        validateStatus: validTaskStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<TaskStatus>>(`/tasks`, {
+      validateStatus: validTaskStatus,
+    });
 
     return handleResponse(response);
   };
@@ -35,9 +24,7 @@ export function useTaskApi() {
     if (transformer)
       config.transformResponse = transformer;
 
-    const response = await api.instance.get<
-      ActionResult<TaskResultResponse<ActionResult<T>>>
-    >(`/tasks/${id}`, config);
+    const response = await api.instance.get<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, config);
 
     if (response.status === 404)
       throw new TaskNotFoundError(`Task with id ${id} not found`);
@@ -52,10 +39,7 @@ export function useTaskApi() {
           if (isEmpty(result))
             throw new IncompleteUpgradeError(message);
 
-          throw new SyncConflictError(
-            message,
-            SyncConflictPayload.parse(result),
-          );
+          throw new SyncConflictError(message, SyncConflictPayload.parse(result));
         }
       }
       else if (statusCode === 400) {
@@ -75,10 +59,7 @@ export function useTaskApi() {
       validateStatus: validTaskStatus,
     };
 
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      `/tasks/${id}`,
-      config,
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>(`/tasks/${id}`, config);
 
     if (response.status === 404)
       throw new TaskNotFoundError(`Task with id ${id} not found`);

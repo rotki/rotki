@@ -6,19 +6,14 @@ import { toMessages } from '@/utils/validation';
 
 const balanceSaveFrequency = ref<string>('0');
 
-const { balanceSaveFrequency: frequency } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { balanceSaveFrequency: frequency } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
 
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
 const rules = {
   balanceSaveFrequency: {
-    required: helpers.withMessage(
-      t('general_settings.validation.balance_frequency.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('general_settings.validation.balance_frequency.non_empty'), required),
     between: helpers.withMessage(
       t('general_settings.validation.balance_frequency.invalid_frequency', {
         start: 1,
@@ -67,10 +62,8 @@ onMounted(() => {
       :label="t('general_settings.labels.balance_saving_frequency')"
       type="number"
       :success-messages="success"
-      :error-messages="
-        error || toMessages(v$.balanceSaveFrequency)
-      "
-      @input="callIfValid($event, update)"
+      :error-messages="error || toMessages(v$.balanceSaveFrequency)"
+      @update:model-value="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>

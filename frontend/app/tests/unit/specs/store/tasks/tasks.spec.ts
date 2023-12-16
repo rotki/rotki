@@ -1,12 +1,7 @@
 import { HttpResponse, http } from 'msw';
 import { expect } from 'vitest';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  BackendCancelledTaskError,
-  type TaskMeta,
-  type TaskResultResponse,
-  type TaskStatus,
-} from '@/types/task';
+import { BackendCancelledTaskError, type TaskMeta, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { server } from '../../../setup-files/server';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -21,12 +16,16 @@ function getResult<T>(t: T, message?: string): ActionResult<T> {
   };
 }
 
-function getTaskResult<T>(id: number, data: T, options?: {
-  requestStatus?: number;
-  taskResultStatus?: 'completed' | 'not-found' | 'pending';
-  taskResultMessage?: string;
-  taskResultStatusCode?: number;
-}) {
+function getTaskResult<T>(
+  id: number,
+  data: T,
+  options?: {
+    requestStatus?: number;
+    taskResultStatus?: 'completed' | 'not-found' | 'pending';
+    taskResultMessage?: string;
+    taskResultStatusCode?: number;
+  },
+) {
   return {
     id,
     status: options?.requestStatus ?? 200,
@@ -47,8 +46,7 @@ function mockTasks(data: {
   }[];
 }) {
   return [
-    http.get(`${backendUrl}/api/1/tasks`, () =>
-      HttpResponse.json(getResult(data.status), { status: 200 })),
+    http.get(`${backendUrl}/api/1/tasks`, () => HttpResponse.json(getResult(data.status), { status: 200 })),
     ...data.tasks.map(task =>
       http.get(`${backendUrl}/api/1/tasks/${task.id}`, () =>
         HttpResponse.json(getResult(task.body), { status: task.status })),
@@ -184,10 +182,7 @@ describe('store:tasks', () => {
 
     const get = vi.spyOn(api.instance, 'get');
 
-    await Promise.all([
-      store.awaitTask<boolean, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta()),
-      store.monitor(),
-    ]);
+    await Promise.all([store.awaitTask<boolean, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta()), store.monitor()]);
     await vi.advanceTimersByTimeAsync(10000);
     const [response] = await Promise.all([
       store.awaitTask<boolean, TaskMeta>(2, TaskType.TX, getMeta()),
@@ -213,18 +208,8 @@ describe('store:tasks', () => {
     );
 
     const [response, response2] = await Promise.all([
-      store.awaitTask<number, TaskMeta>(
-        1,
-        TaskType.IMPORT_CSV,
-        getMeta(),
-        true,
-      ),
-      store.awaitTask<number, TaskMeta>(
-        2,
-        TaskType.IMPORT_CSV,
-        getMeta(),
-        true,
-      ),
+      store.awaitTask<number, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta(), true),
+      store.awaitTask<number, TaskMeta>(2, TaskType.IMPORT_CSV, getMeta(), true),
       store.monitor(),
     ]);
 
@@ -249,15 +234,7 @@ describe('store:tasks', () => {
     );
 
     await expect(
-      Promise.all([
-        store.awaitTask<number, TaskMeta>(
-          1,
-          TaskType.IMPORT_CSV,
-          getMeta(),
-          true,
-        ),
-        store.monitor(),
-      ]),
+      Promise.all([store.awaitTask<number, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta(), true), store.monitor()]),
     ).rejects.toThrow(new Error('failed'));
   });
 
@@ -274,20 +251,8 @@ describe('store:tasks', () => {
     );
 
     await expect(
-      Promise.all([
-        store.awaitTask<number, TaskMeta>(
-          1,
-          TaskType.IMPORT_CSV,
-          getMeta(),
-          true,
-        ),
-        store.monitor(),
-      ]),
-    ).rejects.toThrow(
-      new BackendCancelledTaskError(
-        'Backend cancelled task_id: 1, task_type: IMPORT_CSV',
-      ),
-    );
+      Promise.all([store.awaitTask<number, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta(), true), store.monitor()]),
+    ).rejects.toThrow(new BackendCancelledTaskError('Backend cancelled task_id: 1, task_type: IMPORT_CSV'));
   });
 
   it('not found tasks result into an error', async () => {
@@ -307,12 +272,7 @@ describe('store:tasks', () => {
     );
 
     const [response] = await Promise.all([
-      store.awaitTask<number, TaskMeta>(
-        1,
-        TaskType.IMPORT_CSV,
-        getMeta(),
-        true,
-      ),
+      store.awaitTask<number, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta(), true),
       store.monitor(),
     ]);
 

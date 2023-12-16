@@ -16,17 +16,14 @@ export class AmountFormatter {
     roundingMode?: BigNumber.RoundingMode,
     abbreviateNumber?: boolean,
   ) {
-    const usedRoundingMode
-      = roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
+    const usedRoundingMode = roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
 
     if (abbreviateNumber) {
-      const usedAbbreviation = abbreviationList.find(([digitNum, _]) =>
-        amount.abs().gte((10 ** digitNum)),
-      );
+      const usedAbbreviation = abbreviationList.find(([digitNum, _]) => amount.abs().gte(10 ** digitNum));
 
       if (usedAbbreviation) {
         return `${amount
-          .dividedBy((10 ** usedAbbreviation[0]))
+          .dividedBy(10 ** usedAbbreviation[0])
           .toFormat(
             precision,
             usedRoundingMode,
@@ -35,11 +32,7 @@ export class AmountFormatter {
       }
     }
 
-    return amount.toFormat(
-      precision,
-      usedRoundingMode,
-      getBnFormat(thousandSeparator, decimalSeparator),
-    );
+    return amount.toFormat(precision, usedRoundingMode, getBnFormat(thousandSeparator, decimalSeparator));
   }
 }
 

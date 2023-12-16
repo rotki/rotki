@@ -1,25 +1,22 @@
 import flushPromises from 'flush-promises';
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  ExchangeSavingsCollection,
-  ExchangeSavingsEvent,
-  ExchangeSavingsRequestPayload,
-} from '@/types/exchanges';
+import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+vi.mock('vue-router', () => {
+  const route = ref({
+    query: {},
+  });
+  return {
+    useRoute: vi.fn().mockReturnValue(route),
+    useRouter: vi.fn().mockReturnValue({
+      push: vi.fn(({ query }) => {
+        set(route, { query });
+        return true;
+      }),
     }),
-  ),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(({ query }) => {
-      useRoute().query = query;
-      return true;
-    }),
-  }),
-}));
+  };
+});
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<Vue>('vue');
@@ -31,11 +28,9 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchExchangeSavings: (
-    payload: MaybeRef<ExchangeSavingsRequestPayload>
-  ) => Promise<ExchangeSavingsCollection>;
-  const exchange: MaybeRef<string> = ref('binance');
-  const mainPage: Ref<boolean> = ref(false);
+  let fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;
+  const exchange = ref<string>('binance');
+  const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
 
@@ -68,15 +63,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const {
-        userAction,
-        filters,
-        sort,
-        state,
-        fetchData,
-        applyRouteFilter,
-        isLoading,
-      } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
@@ -93,10 +80,12 @@ describe('composables::history/filter-paginate', () => {
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(sort)).toHaveLength(1);
-      expect(get(sort)).toMatchObject([{
-        column: 'timestamp',
-        direction: 'asc',
-      }]);
+      expect(get(sort)).toMatchObject([
+        {
+          column: 'timestamp',
+          direction: 'asc',
+        },
+      ]);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).assets).toHaveLength(0);
       expect(get(state).received).toHaveLength(0);
@@ -157,7 +146,7 @@ describe('composables::history/filter-paginate', () => {
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(route.query).toEqual(query);
+      expect(get(route).query).toEqual(query);
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);

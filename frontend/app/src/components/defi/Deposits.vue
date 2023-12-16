@@ -4,23 +4,14 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { DefiProtocol, Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
-import {
-  AaveEarnedDetails,
-  CompoundLendingDetails,
-} from '@/premium/premium';
+import { AaveEarnedDetails, CompoundLendingDetails } from '@/premium/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;
 
-const modules: Module[] = [
-  Module.AAVE,
-  Module.COMPOUND,
-  Module.YEARN,
-  Module.YEARN_V2,
-  Module.MAKERDAO_DSR,
-];
+const modules: Module[] = [Module.AAVE, Module.COMPOUND, Module.YEARN, Module.YEARN_V2, Module.MAKERDAO_DSR];
 
 const chains = [Blockchain.ETH];
 
@@ -58,16 +49,12 @@ const lendingBalances = computed(() => {
   return get(defiLending.aggregatedLendingBalances(protocols, addresses));
 });
 
-const totalEarnedInAave = computed(() =>
-  get(aaveStore.aaveTotalEarned(get(selectedAddresses))),
-);
+const totalEarnedInAave = computed(() => get(aaveStore.aaveTotalEarned(get(selectedAddresses))));
 
 const effectiveInterestRate = computed<BigNumber>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return bigNumberify(
-    get(defiLending.effectiveInterestRate(protocols, addresses)),
-  );
+  return bigNumberify(get(defiLending.effectiveInterestRate(protocols, addresses)));
 });
 
 const totalLendingDeposit = computed<BigNumber>(() => {
@@ -124,7 +111,7 @@ onMounted(async () => {
   await defiLending.fetchLending();
 });
 
-const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
+const transactionEventProtocols = computed<string[]>(() => {
   const selectedProtocol = get(protocol);
 
   const mapping: { [key in DefiProtocol]?: string[] } = {
@@ -144,7 +131,7 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   return mappedProtocol;
 });
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('common.deposits').toLocaleLowerCase(),
   }),
@@ -153,11 +140,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
 
 <template>
   <TablePageLayout
-    :title="[
-      t('navigation_menu.defi'),
-      t('common.deposits'),
-      t('navigation_menu.defi_sub.deposits_sub.protocols'),
-    ]"
+    :title="[t('navigation_menu.defi'), t('common.deposits'), t('navigation_menu.defi_sub.deposits_sub.protocols')]"
   >
     <template #buttons>
       <div class="flex items-center gap-4">

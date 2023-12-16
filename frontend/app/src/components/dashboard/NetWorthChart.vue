@@ -5,14 +5,9 @@ import {
   type Timeframes,
   getTimeframeByRange,
 } from '@rotki/common/lib/settings/graphs';
-import {
-  Chart,
-  type ChartConfiguration,
-  type ChartOptions,
-  type TooltipOptions,
-} from 'chart.js';
+import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
 import dayjs from 'dayjs';
-import { useRotkiTheme } from '@rotki/ui-library-compat';
+import { useRotkiTheme } from '@rotki/ui-library';
 import type { NetValue } from '@rotki/common/lib/statistics';
 import type { ValueOverTime } from '@/types/graphs';
 
@@ -250,14 +245,8 @@ function createScales(isRange = false) {
       crossAlign: isRange ? 'center' : 'near',
     },
     time: {
-      unit: () =>
-        isRange
-          ? get(rangeTimeframe).xAxisTimeUnit
-          : get(activeTimeframe).xAxisTimeUnit,
-      stepSize: () =>
-        isRange
-          ? get(rangeTimeframe).xAxisStepSize
-          : get(activeTimeframe).xAxisStepSize,
+      unit: () => (isRange ? get(rangeTimeframe).xAxisTimeUnit : get(activeTimeframe).xAxisTimeUnit),
+      stepSize: () => (isRange ? get(rangeTimeframe).xAxisStepSize : get(activeTimeframe).xAxisStepSize),
       displayFormats: () => {
         const format = isRange
           ? get(rangeTimeframe).xAxisLabelDisplayFormat
@@ -315,9 +304,7 @@ function createTooltip(): Partial<TooltipOptions> {
     set(tooltipContent, {
       value: bigNumberify(y),
       time: `${time}`,
-      currentBalance:
-        get(showVirtualCurrentData)
-        && item.dataIndex === get(balanceData).length - 1,
+      currentBalance: get(showVirtualCurrentData) && item.dataIndex === get(balanceData).length - 1,
     });
 
     nextTick(() => {
@@ -391,8 +378,7 @@ watch(dataTimeRange, (dataTimeRange) => {
   if (!chart)
     return;
 
-  chart.options.plugins!.zoom!.zoom!.drag!.enabled
-    = dataTimeRange.range > oneHourTimestamp;
+  chart.options.plugins!.zoom!.zoom!.drag!.enabled = dataTimeRange.range > oneHourTimestamp;
   updateChart(false, false);
 });
 
@@ -465,23 +451,14 @@ function canvasClicked(event: MouseEvent) {
     if (get(isDblClick))
       return;
 
-    const axisData = chart?.getElementsAtEventForMode(
-      event,
-      'index',
-      { intersect: false },
-      false,
-    );
+    const axisData = chart?.getElementsAtEventForMode(event, 'index', { intersect: false }, false);
 
     if (axisData && axisData.length > 0) {
       const index = axisData[0].index;
       const balanceDataVal = get(balanceData);
       const data = balanceDataVal[index];
 
-      if (
-        data.x
-        && data.y
-        && !(get(showVirtualCurrentData) && index === balanceDataVal.length - 1)
-      ) {
+      if (data.x && data.y && !(get(showVirtualCurrentData) && index === balanceDataVal.length - 1)) {
         set(selectedTimestamp, data.x / 1000);
         set(selectedBalance, data.y);
 
@@ -592,19 +569,11 @@ function rangeButtonMouseMove(event: MouseEvent) {
     let limitedMin = Math.max(min, newMin);
     let limitedMax = Math.min(max, newMax);
 
-    if (limitedMin === min) {
-      limitedMax = Math.min(
-        max,
-        Math.max(limitedMax, limitedMin + oneHourTimestamp),
-      );
-    }
+    if (limitedMin === min)
+      limitedMax = Math.min(max, Math.max(limitedMax, limitedMin + oneHourTimestamp));
 
-    if (limitedMax === max) {
-      limitedMin = Math.max(
-        min,
-        Math.min(limitedMin, limitedMax - oneHourTimestamp),
-      );
-    }
+    if (limitedMax === max)
+      limitedMin = Math.max(min, Math.min(limitedMin, limitedMax - oneHourTimestamp));
 
     xAxis.min = limitedMin;
     xAxis.max = limitedMax;
@@ -686,12 +655,7 @@ const css = useCssModule();
           :style="rangeMarkerStyle"
           @mousedown="rangeButtonMouseDown('both', $event)"
         >
-          <div
-            :class="[
-              css.range__marker__limit,
-              css['range__marker__limit--start'],
-            ]"
-          >
+          <div :class="[css.range__marker__limit, css['range__marker__limit--start']]">
             <RuiButton
               :class="css.range__marker__limit__button"
               :color="isDark ? 'primary' : undefined"
@@ -704,12 +668,7 @@ const css = useCssModule();
               />
             </RuiButton>
           </div>
-          <div
-            :class="[
-              css.range__marker__limit,
-              css['range__marker__limit--end'],
-            ]"
-          >
+          <div :class="[css.range__marker__limit, css['range__marker__limit--end']]">
             <RuiButton
               :class="css.range__marker__limit__button"
               :color="isDark ? 'primary' : undefined"

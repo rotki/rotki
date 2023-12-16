@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
 
@@ -20,14 +20,14 @@ const { t } = useI18n();
 
 const { costBasis, currency } = toRefs(props);
 
-const sort = ref<DataTableSortData>({
-  column: 'time',
-  direction: 'asc' as const,
+const sort = ref<DataTableSortData<Acquisition>>({
+  column: 'timestamp',
+  direction: 'asc',
 });
 
 const css = useCssModule();
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<Acquisition>[]>(() => [
   {
     label: t('cost_basis_table.headers.amount'),
     key: 'amount',
@@ -80,14 +80,11 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
       ...event,
     };
   });
-},
-);
+});
 </script>
 
 <template>
-  <div
-    class="relative"
-  >
+  <div class="relative">
     <div
       v-if="showGroupLine"
       :class="css.group"
@@ -123,11 +120,11 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
         no-padding
       >
         <RuiDataTable
+          v-model:sort="sort"
           :class="css.table"
           :rows="matchedAcquisitions"
           :cols="cols"
-          :sort.sync="sort"
-          row-attr="id"
+          row-attr="amount"
           outlined
         >
           <template #item.amount="{ row }">

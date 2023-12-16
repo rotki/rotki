@@ -94,9 +94,7 @@ describe('store::assets/index', () => {
     });
 
     it('error', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed'),
-      );
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await store.checkForUpdate();
 
@@ -160,9 +158,7 @@ describe('store::assets/index', () => {
     });
 
     it('error', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed'),
-      );
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await store.applyUpdates(payload);
 
@@ -186,10 +182,7 @@ describe('store::assets/index', () => {
 
       const result = await store.mergeAssets(payload);
 
-      expect(api.mergeAssets).toHaveBeenCalledWith(
-        payload.sourceIdentifier,
-        payload.targetIdentifier,
-      );
+      expect(api.mergeAssets).toHaveBeenCalledWith(payload.sourceIdentifier, payload.targetIdentifier);
 
       expect(result).toEqual({
         success: true,
@@ -201,10 +194,7 @@ describe('store::assets/index', () => {
 
       const result = await store.mergeAssets(payload);
 
-      expect(api.mergeAssets).toHaveBeenCalledWith(
-        payload.sourceIdentifier,
-        payload.targetIdentifier,
-      );
+      expect(api.mergeAssets).toHaveBeenCalledWith(payload.sourceIdentifier, payload.targetIdentifier);
 
       expect(result).toEqual({
         success: false,
@@ -232,9 +222,7 @@ describe('store::assets/index', () => {
     });
 
     it('failed', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed'),
-      );
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await store.importCustomAssets(file);
 

@@ -1,14 +1,6 @@
 import { BigNumber } from '@rotki/common';
-import {
-  DARK_THEME,
-  LIGHT_THEME,
-  SELECTED_THEME,
-  Theme,
-} from '@rotki/common/lib/settings';
-import {
-  TimeFramePeriod,
-  TimeFramePersist,
-} from '@rotki/common/lib/settings/graphs';
+import { DARK_THEME, LIGHT_THEME, SELECTED_THEME, Theme } from '@rotki/common/lib/settings';
+import { TimeFramePeriod, TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -64,8 +56,7 @@ describe('settings:utils', () => {
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
       enableAliasNames: true,
-      blockchainRefreshButtonBehaviour:
-        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
     });

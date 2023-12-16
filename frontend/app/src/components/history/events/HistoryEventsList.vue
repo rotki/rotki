@@ -20,19 +20,19 @@ const emit = defineEmits<{
     data: {
       canDelete: boolean;
       item: HistoryEventEntry;
-    }
+    },
   ): void;
   (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
 }>();
 
 const PER_BATCH = 6;
-const currentLimit: Ref<number> = ref(0);
+const currentLimit = ref<number>(0);
 
 const { t } = useI18n();
 
 const { eventGroup, allEvents } = toRefs(props);
 
-const events: ComputedRef<HistoryEventEntry[]> = computed(() => {
+const events = computed<HistoryEventEntry[]>(() => {
   const all = get(allEvents);
   const eventHeader = get(eventGroup);
   if (all.length === 0)
@@ -40,10 +40,7 @@ const events: ComputedRef<HistoryEventEntry[]> = computed(() => {
 
   const eventIdentifierHeader = eventHeader.eventIdentifier;
   const filtered = all
-    .filter(
-      ({ eventIdentifier, hidden }) =>
-        eventIdentifier === eventIdentifierHeader && !hidden,
-    )
+    .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
     .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 
   if (filtered.length > 0)
@@ -52,30 +49,21 @@ const events: ComputedRef<HistoryEventEntry[]> = computed(() => {
   return [eventHeader];
 });
 
-const ignoredInAccounting = useRefMap(
-  eventGroup,
-  ({ ignoredInAccounting }) => !!ignoredInAccounting,
-);
+const ignoredInAccounting = useRefMap(eventGroup, ({ ignoredInAccounting }) => !!ignoredInAccounting);
 
 const showDropdown = computed(() => {
   const length = get(events).length;
   return (get(ignoredInAccounting) || length > PER_BATCH) && length > 0;
 });
 
-watch(
-  [eventGroup, ignoredInAccounting],
-  ([current, currentIgnored], [old, oldIgnored]) => {
-    if (
-      current.eventIdentifier !== old.eventIdentifier
-      || currentIgnored !== oldIgnored
-    )
-      set(currentLimit, currentIgnored ? 0 : PER_BATCH);
-  },
-);
+watch([eventGroup, ignoredInAccounting], ([current, currentIgnored], [old, oldIgnored]) => {
+  if (current.eventIdentifier !== old.eventIdentifier || currentIgnored !== oldIgnored)
+    set(currentLimit, currentIgnored ? 0 : PER_BATCH);
+});
 
 const [DefineTable, ReuseTable] = createReusableTemplate<{ data: HistoryEventEntry[] }>();
 
-const limitedEvents: ComputedRef<HistoryEventEntry[]> = computed(() => {
+const limitedEvents = computed<HistoryEventEntry[]>(() => {
   const limit = get(currentLimit);
   if (limit === 0)
     return [];
@@ -87,8 +75,7 @@ function handleMoreClick() {
   const limit = get(currentLimit);
   if (limit < get(events).length)
     set(currentLimit, limit + PER_BATCH);
-  else
-    set(currentLimit, 0);
+  else set(currentLimit, 0);
 }
 </script>
 
@@ -113,13 +100,9 @@ function handleMoreClick() {
       v-else
       :value="0"
     >
-      <RuiAccordion
-        eager
-      >
+      <RuiAccordion eager>
         <template #default>
-          <ReuseTable
-            :data="limitedEvents"
-          />
+          <ReuseTable :data="limitedEvents" />
         </template>
       </RuiAccordion>
     </RuiAccordions>

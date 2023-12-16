@@ -304,9 +304,7 @@ describe('balancer', () => {
       },
     ];
 
-    const actualResult = get(
-      balancerBalances(['0xc45c9537cc44f973174016E1bc30D65E11205A2A']),
-    );
+    const actualResult = get(balancerBalances(['0xc45c9537cc44f973174016E1bc30D65E11205A2A']));
 
     expect(actualResult).toMatchObject(expectedResult);
   });

@@ -1,4 +1,4 @@
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 import type { Nullable } from '@rotki/common';
 import type { Pinned } from '@/types/session';
 
@@ -36,8 +36,5 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useAreaVisibilityStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useAreaVisibilityStore, import.meta.hot));

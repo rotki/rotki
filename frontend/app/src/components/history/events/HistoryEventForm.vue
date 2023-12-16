@@ -18,12 +18,10 @@ const props = withDefaults(
 const { t } = useI18n();
 const { groupHeader, editableItem } = toRefs(props);
 
-const entryType: Ref<HistoryEventEntryType> = ref(
-  HistoryEventEntryType.HISTORY_EVENT,
-);
+const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 
-function getEvent<T extends HistoryEvent>(event: HistoryEvent, type: HistoryEventEntryType): T | undefined {
-  if (isOfEventType<T>(event, type))
+function getEvent<T extends HistoryEvent>(event: HistoryEvent | undefined, type: HistoryEventEntryType): T | undefined {
+  if (event && isOfEventType<T>(event, type))
     return event;
 
   return undefined;
@@ -76,40 +74,26 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       data-cy="history-event-form"
       :next-sequence="nextSequence"
       :group-header="getEvent(groupHeader, HistoryEventEntryType.HISTORY_EVENT)"
-      :editable-item="
-        getEvent(editableItem, HistoryEventEntryType.HISTORY_EVENT)
-      "
+      :editable-item="getEvent(editableItem, HistoryEventEntryType.HISTORY_EVENT)"
     />
     <EthBlockEventForm
       v-if="entryType === HistoryEventEntryType.ETH_BLOCK_EVENT"
       data-cy="eth-block-event-form"
-      :group-header="
-        getEvent(groupHeader, HistoryEventEntryType.ETH_BLOCK_EVENT)
-      "
-      :editable-item="
-        getEvent(editableItem, HistoryEventEntryType.ETH_BLOCK_EVENT)
-      "
+      :group-header="getEvent(groupHeader, HistoryEventEntryType.ETH_BLOCK_EVENT)"
+      :editable-item="getEvent(editableItem, HistoryEventEntryType.ETH_BLOCK_EVENT)"
     />
     <EthDepositEventForm
       v-if="entryType === HistoryEventEntryType.ETH_DEPOSIT_EVENT"
       data-cy="eth-deposit-event-form"
       :next-sequence="nextSequence"
-      :group-header="
-        getEvent(groupHeader, HistoryEventEntryType.ETH_DEPOSIT_EVENT)
-      "
-      :editable-item="
-        getEvent(editableItem, HistoryEventEntryType.ETH_DEPOSIT_EVENT)
-      "
+      :group-header="getEvent(groupHeader, HistoryEventEntryType.ETH_DEPOSIT_EVENT)"
+      :editable-item="getEvent(editableItem, HistoryEventEntryType.ETH_DEPOSIT_EVENT)"
     />
     <EthWithdrawalEventForm
       v-if="entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT"
       data-cy="eth-withdrawal-event-form"
-      :group-header="
-        getEvent(groupHeader, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)
-      "
-      :editable-item="
-        getEvent(editableItem, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)
-      "
+      :group-header="getEvent(groupHeader, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)"
+      :editable-item="getEvent(editableItem, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)"
     />
   </form>
 </template>

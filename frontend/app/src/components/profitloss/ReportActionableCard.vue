@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
-import type {
-  EditableMissingPrice,
-  SelectedReport,
-} from '@/types/reports';
+import type { EditableMissingPrice, MissingAcquisition, MissingPrice, SelectedReport } from '@/types/reports';
 import type { Pinned } from '@/types/session';
 import type { DialogType } from '@/types/dialogs';
+import type { Component } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -24,9 +22,7 @@ const emit = defineEmits<{
 const ReportMissingAcquisitions = defineAsyncComponent(
   () => import('@/components/profitloss/ReportMissingAcquisitions.vue'),
 );
-const ReportMissingPrices = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportMissingPrices.vue'),
-);
+const ReportMissingPrices = defineAsyncComponent(() => import('@/components/profitloss/ReportMissingPrices.vue'));
 
 const { t } = useI18n();
 const { report, isPinned } = toRefs(props);
@@ -81,12 +77,18 @@ function pinSection() {
   setDialog(false);
 }
 
-const stepperContents = computed(() => {
+const stepperContents = computed<
+  {
+    key: string;
+    title: string;
+    hint: string;
+    selector: Component;
+    items: MissingAcquisition[] | MissingPrice[];
+  }[]
+>(() => {
   const contents = [];
 
-  const missingAcquisitionsLength = get(
-    actionableItemsLength,
-  ).missingAcquisitionsLength;
+  const missingAcquisitionsLength = get(actionableItemsLength).missingAcquisitionsLength;
 
   if (missingAcquisitionsLength > 0) {
     contents.push({
@@ -94,9 +96,7 @@ const stepperContents = computed(() => {
       title: t('profit_loss_report.actionable.missing_acquisitions.title', {
         total: missingAcquisitionsLength,
       }).toString(),
-      hint: t(
-        'profit_loss_report.actionable.missing_acquisitions.hint',
-      ).toString(),
+      hint: t('profit_loss_report.actionable.missing_acquisitions.hint').toString(),
       selector: ReportMissingAcquisitions,
       items: get(actionableItems).missingAcquisitions,
     });
@@ -126,12 +126,8 @@ const { show } = useConfirmStore();
 
 function showFinishDialog() {
   let type: DialogType = 'success';
-  let title = t(
-    'profit_loss_report.actionable.missing_prices.all_prices_filled',
-  );
-  let message = toSentenceCase(
-    t('profit_loss_report.actionable.missing_prices.regenerate_report_nudge'),
-  );
+  let title = t('profit_loss_report.actionable.missing_prices.all_prices_filled');
+  let message = toSentenceCase(t('profit_loss_report.actionable.missing_prices.regenerate_report_nudge'));
 
   const filledMissingPricesVal = get(filledMissingPrices);
   const skippedMissingPricesVal = get(skippedMissingPrices);
@@ -139,18 +135,13 @@ function showFinishDialog() {
   if (filledMissingPricesVal === 0) {
     type = 'warning';
     title = t('profit_loss_report.actionable.missing_prices.no_filled_prices');
-    message = t(
-      'profit_loss_report.actionable.missing_prices.skipped_all_events_confirmation',
-    );
+    message = t('profit_loss_report.actionable.missing_prices.skipped_all_events_confirmation');
   }
   else if (skippedMissingPricesVal) {
     type = 'warning';
-    title = t(
-      'profit_loss_report.actionable.missing_prices.total_skipped_prices',
-      {
-        total: skippedMissingPricesVal,
-      },
-    );
+    title = t('profit_loss_report.actionable.missing_prices.total_skipped_prices', {
+      total: skippedMissingPricesVal,
+    });
     message = `${t('profit_loss_report.actionable.missing_prices.if_sure')} ${t(
       'profit_loss_report.actionable.missing_prices.regenerate_report_nudge',
     )}`;
@@ -170,17 +161,14 @@ function showFinishDialog() {
     () => {
       if (filledMissingPricesVal)
         regenerateReport();
-      else
-        ignoreIssues();
+      else ignoreIssues();
     },
   );
 }
 
 function submitActionableItems(missingPrices: EditableMissingPrice[]) {
   const total = missingPrices.length;
-  const filled = missingPrices.filter(
-    (missingPrice: EditableMissingPrice) => !!missingPrice.price,
-  ).length;
+  const filled = missingPrices.filter((missingPrice: EditableMissingPrice) => !!missingPrice.price).length;
   set(totalMissingPrices, total);
   set(filledMissingPrices, filled);
   set(skippedMissingPrices, total - filled);
@@ -202,8 +190,7 @@ function regenerateReport() {
 function close() {
   if (get(isPinned))
     setPinned(null);
-  else
-    setDialog(false);
+  else setDialog(false);
 }
 </script>
 

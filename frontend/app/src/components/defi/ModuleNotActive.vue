@@ -41,9 +41,9 @@ const { top } = useElementBounding(wrapper);
           />
         </div>
       </div>
-      <i18n
+      <i18n-t
         tag="span"
-        path="module_not_active.not_active"
+        keypath="module_not_active.not_active"
         class="text-center text-rui-text-secondary"
       >
         <template #link>
@@ -68,7 +68,7 @@ const { top } = useElementBounding(wrapper);
             {{ name(module) }}
           </span>
         </template>
-      </i18n>
+      </i18n-t>
     </div>
   </div>
 </template>

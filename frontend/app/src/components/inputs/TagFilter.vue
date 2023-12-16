@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { Tag } from '@/types/tags';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    value: string[];
     disabled?: boolean;
     hideDetails?: boolean;
   }>(),
@@ -13,8 +12,7 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', tags: string[]): void }>();
-const { value } = toRefs(props);
+const model = defineModel<string[]>({ required: true });
 
 const { t } = useI18n();
 
@@ -24,15 +22,11 @@ const availableTagsList = computed<Tag[]>(() => {
   const tags = get(availableTags);
   return Object.values(tags);
 });
-
-function input(tags: string[]) {
-  emit('input', tags);
-}
 </script>
 
 <template>
   <RuiAutoComplete
-    :value="value"
+    v-model="model"
     :disabled="disabled"
     :options="availableTagsList"
     class="tag-filter"
@@ -44,9 +38,8 @@ function input(tags: string[]) {
     clearable
     dense
     :hide-details="hideDetails"
-    @input="input($event)"
   >
-    <template #selection="{ item, chipOn, chipAttrs }">
+    <template #selection="{ item, chipAttrs }">
       <RuiChip
         tile
         size="sm"
@@ -56,7 +49,6 @@ function input(tags: string[]) {
         closeable
         clickable
         v-bind="chipAttrs"
-        v-on="chipOn"
       >
         {{ item.name }}
       </RuiChip>

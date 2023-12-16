@@ -21,23 +21,20 @@ const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
 const { supportedChains, txEvmChains } = useSupportedChains();
 
-const busy = computed<Busy>(() => Object.fromEntries(
-  get(supportedChains).map(chain => ([chain.id, isAccountOperationRunning(chain.id)])),
-));
+const busy = computed<Busy>(() =>
+  Object.fromEntries(get(supportedChains).map(chain => [chain.id, isAccountOperationRunning(chain.id)])),
+);
 
 const customTitles = computed<Record<string, string>>(() => ({
   [Blockchain.ETH2]: t('blockchain_balances.balances.eth2'),
 }));
 
-const accounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() => Object.fromEntries(
-  get(supportedChains).map(chain => [
-    chain.id,
-    getBlockchainAccounts(chain.id),
-  ]),
-));
+const accounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() =>
+  Object.fromEntries(get(supportedChains).map(chain => [chain.id, getBlockchainAccounts(chain.id)])),
+);
 
-const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
-  () => get(txEvmChains).some(chain => get(accounts)[chain.id]?.length > 0),
+const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(() =>
+  get(txEvmChains).some(chain => get(accounts)[chain.id]?.length > 0),
 );
 
 const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => getBlockchainAccounts('loopring'));
@@ -67,10 +64,7 @@ onMounted(async () => {
 
 <template>
   <TablePageLayout
-    :title="[
-      t('navigation_menu.accounts_balances'),
-      t('navigation_menu.accounts_balances_sub.blockchain_balances'),
-    ]"
+    :title="[t('navigation_menu.accounts_balances'), t('navigation_menu.accounts_balances_sub.blockchain_balances')]"
   >
     <template #buttons>
       <PriceRefresh />
@@ -113,7 +107,7 @@ onMounted(async () => {
 
       <template v-for="chain in supportedChains">
         <LazyLoader
-          v-if="accounts[chain.id] && accounts[chain.id].length > 0 || busy[chain.id].value"
+          v-if="(accounts[chain.id] && accounts[chain.id].length > 0) || busy[chain.id].value"
           :id="`blockchain-balances-${chain.id}`"
           :key="chain.id"
           data-cy="account-balances"
@@ -129,9 +123,7 @@ onMounted(async () => {
         </LazyLoader>
       </template>
 
-      <LazyLoader
-        id="blockchain-balances-LRC"
-      >
+      <LazyLoader id="blockchain-balances-LRC">
         <AccountBalances
           v-if="loopringAccounts.length > 0"
           loopring

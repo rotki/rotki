@@ -11,10 +11,7 @@ export class AccountingSettingsPage {
     cy.get('.accounting-settings__taxfree-period-days input').clear();
     cy.get('.accounting-settings__taxfree-period-days input').type(value);
     cy.get('.accounting-settings__taxfree-period-days input').blur();
-    this.confirmInlineSuccess(
-      '.accounting-settings__taxfree-period-days .details',
-      value,
-    );
+    this.confirmInlineSuccess('.accounting-settings__taxfree-period-days .details', value);
   }
 
   changeSwitch(target: string, enabled: boolean) {
@@ -27,9 +24,7 @@ export class AccountingSettingsPage {
   }
 
   verifySwitchState(target: string, enabled: boolean) {
-    cy.get(`${target} input`).should(
-      enabled ? 'be.checked' : 'not.be.checked',
-    );
+    cy.get(`${target} input`).should(enabled ? 'be.checked' : 'not.be.checked');
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {

@@ -39,7 +39,7 @@ onBeforeMount(() => {
       clearable
       @paste="update($event.clipboardData.getData('text'))"
       @click:clear="update('')"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

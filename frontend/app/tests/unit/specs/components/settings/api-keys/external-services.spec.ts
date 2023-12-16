@@ -1,10 +1,11 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { createCustomPinia } from '../../../../utils/create-pinia';
 import type { ExternalServiceKeys } from '@/types/user';
 import type { EvmChainInfo } from '@/types/api/chains';
@@ -28,13 +29,13 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('vue-router/composables', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      hash: '',
-    }),
-  ),
+vi.mock('vue-router', () => ({
+  useRoute: vi.fn().mockImplementation(() => ref({ hash: '' })),
   useRouter: vi.fn(),
+  createRouter: vi.fn().mockImplementation(() => ({
+    beforeEach: vi.fn(),
+  })),
+  createWebHashHistory: vi.fn(),
 }));
 
 vi.mock('@/composables/api/settings/external-services-api', () => ({
@@ -46,7 +47,7 @@ vi.mock('@/composables/api/settings/external-services-api', () => ({
 }));
 
 describe('/settings/api-keys/external-services', () => {
-  let wrapper: Wrapper<ExternalServices>;
+  let wrapper: VueWrapper<InstanceType<typeof ExternalServices>>;
   let pinia: Pinia;
   let api: ReturnType<typeof useExternalServicesApi>;
 
@@ -61,15 +62,18 @@ describe('/settings/api-keys/external-services', () => {
     },
   };
 
-  function createWrapper(): Wrapper<ExternalServices> {
+  function createWrapper(): VueWrapper<InstanceType<typeof ExternalServices>> {
     return mount(ExternalServices, {
-      pinia,
+      global: {
+        plugins: [pinia],
+        stubs: {
+          Transition: false,
+          RouterLink: true,
+          RuiTabs: true,
+        },
+      },
       components: {
         EvmChainIcon,
-      },
-      stubs: ['RuiTabs'],
-      propsData: {
-        value: '',
       },
     });
   }
@@ -84,7 +88,7 @@ describe('/settings/api-keys/external-services', () => {
 
   afterEach(() => {
     useSessionStore().$reset();
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   describe('first time', () => {
@@ -100,16 +104,10 @@ describe('/settings/api-keys/external-services', () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input',
-        )
+        .find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]',
-        )
-        .trigger('click');
+      await wrapper.find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]').trigger('click');
       await flushPromises();
       await vi.advanceTimersToNextTimerAsync();
       expect(mock).toHaveBeenCalledWith([{ name: 'etherscan', apiKey: '123' }]);
@@ -119,48 +117,32 @@ describe('/settings/api-keys/external-services', () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key] input',
-        )
+        .find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
       await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__save]',
-        )
+        .find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__save]')
         .trigger('click');
       await flushPromises();
       const message = wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details',
-        )
+        .find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details')
         .text();
       expect(message).toMatch('Cryptocompare');
       await vi.advanceTimersToNextTimerAsync();
-      expect(mock).toHaveBeenCalledWith([
-        { name: 'cryptocompare', apiKey: '123' },
-      ]);
+      expect(mock).toHaveBeenCalledWith([{ name: 'cryptocompare', apiKey: '123' }]);
     });
 
     it('save fails with an error', async () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input',
-        )
+        .find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]',
-        )
-        .trigger('click');
+      await wrapper.find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]').trigger('click');
       await flushPromises();
       const message = wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__content] .details',
-        )
+        .find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__content] .details')
         .text();
       expect(message).toMatch('mock failure');
       await vi.advanceTimersToNextTimerAsync();
@@ -168,29 +150,17 @@ describe('/settings/api-keys/external-services', () => {
 
     it('delete is disabled', () => {
       expect(
-        wrapper
-          .find(
-            '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]',
-          )
-          .attributes('disabled'),
-      ).toBe('disabled');
+        wrapper.find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]').attributes(),
+      ).toHaveProperty('disabled');
       expect(
-        wrapper
-          .find(
-            '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]',
-          )
-          .attributes('disabled'),
-      ).toBe('disabled');
+        wrapper.find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]').attributes(),
+      ).toHaveProperty('disabled');
     });
 
     it('save is disabled', () => {
       expect(
-        wrapper
-          .find(
-            '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]',
-          )
-          .attributes('disabled'),
-      ).toBe('disabled');
+        wrapper.find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]').attributes(),
+      ).toHaveProperty('disabled');
     });
   });
 
@@ -203,25 +173,17 @@ describe('/settings/api-keys/external-services', () => {
     });
 
     it('the fields get updated', () => {
-      const etherscanKey = wrapper.find(
-        '[data-cy=external-keys] [data-cy=etherscan]',
-      );
-      const cryptoCompare = wrapper.find(
-        '[data-cy=external-keys] [data-cy=cryptocompare]',
-      );
+      const etherscanKey = wrapper.find('[data-cy=etherscan]').findComponent(ServiceKey);
+      const cryptoCompare = wrapper.find('[data-cy=cryptocompare]').findComponent(ServiceKey);
 
-      expect(etherscanKey.vm.$children[0].$props.apiKey).toBe('123');
-      expect(cryptoCompare.vm.$props.apiKey).toBe('123');
+      expect(etherscanKey.vm.apiKey).toBe('123');
+      expect(cryptoCompare.vm.apiKey).toBe('123');
     });
 
     it('confirm and delete etherscan key', async () => {
       const mock = vi.mocked(api.deleteExternalServices);
       mock.mockResolvedValueOnce({});
-      await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]',
-        )
-        .trigger('click');
+      await wrapper.find('[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]').trigger('click');
       await nextTick();
 
       const confirmStore = useConfirmStore();
@@ -237,9 +199,7 @@ describe('/settings/api-keys/external-services', () => {
       const mock = vi.mocked(api.deleteExternalServices);
       mock.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]',
-        )
+        .find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]')
         .trigger('click');
       await nextTick();
 
@@ -252,9 +212,7 @@ describe('/settings/api-keys/external-services', () => {
       expect(confirmStore.visible).toBeFalsy();
 
       const message = wrapper
-        .find(
-          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details',
-        )
+        .find('[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details')
         .text();
       expect(message).toMatch('mock failure');
     });

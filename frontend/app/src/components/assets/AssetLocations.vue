@@ -3,10 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BigNumber } from '@rotki/common';
 
 type AssetLocations = AssetLocation[];
@@ -22,7 +19,7 @@ const { t } = useI18n();
 
 const { identifier } = toRefs(props);
 
-const sort = ref<DataTableSortData>({
+const sort = ref<DataTableSortData<AssetLocation>>({
   column: 'amount',
   direction: 'desc',
 });
@@ -35,9 +32,7 @@ const { assetBreakdown } = useBalancesBreakdown();
 
 const onlyTags = ref<string[]>([]);
 
-const totalUsdValue = computed<BigNumber>(
-  () => get(assetPriceInfo(identifier)).usdValue,
-);
+const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
 
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));
@@ -57,11 +52,9 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
   const locations = get(assetLocations).map(item => ({
     ...item,
     label:
-      (isBlockchain(item.location)
-        ? get(addressNameSelector(item.address, item.location))
-        : null)
-        || item.label
-        || item.address,
+      (isBlockchain(item.location) ? get(addressNameSelector(item.address, item.location)) : null)
+      || item.label
+      || item.address,
   }));
 
   if (get(onlyTags).length === 0)
@@ -74,18 +67,14 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
 });
 
 function getPercentage(usdValue: BigNumber): string {
-  const percentage = get(totalUsdValue).isZero()
-    ? 0
-    : usdValue.div(get(totalUsdValue)).multipliedBy(100);
+  const percentage = get(totalUsdValue).isZero() ? 0 : usdValue.div(get(totalUsdValue)).multipliedBy(100);
 
   return percentage.toFixed(2);
 }
 
-const headers = computed<DataTableColumn[]>(() => {
+const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
   const visibleItemsLength = get(visibleAssetLocations).length;
-  const eth2Length = get(visibleAssetLocations).filter(
-    account => account?.location === Blockchain.ETH2,
-  ).length;
+  const eth2Length = get(visibleAssetLocations).filter(account => account?.location === Blockchain.ETH2).length;
 
   const labelAccount = t('common.account');
   const labelValidator = t('asset_locations.header.validator');
@@ -95,8 +84,7 @@ const headers = computed<DataTableColumn[]>(() => {
     label = labelAccount;
   else if (eth2Length === visibleItemsLength)
     label = labelValidator;
-  else
-    label = `${labelAccount} / ${labelValidator}`;
+  else label = `${labelAccount} / ${labelValidator}`;
 
   return [
     {
@@ -146,12 +134,12 @@ const headers = computed<DataTableColumn[]>(() => {
       </div>
     </div>
     <RuiDataTable
+      v-model:sort="sort"
       :cols="headers"
       :rows="visibleAssetLocations"
       outlined
       dense
       row-attr="location"
-      :sort.sync="sort"
       :loading="detailsLoading"
     >
       <template #item.location="{ row }">
@@ -168,6 +156,7 @@ const headers = computed<DataTableColumn[]>(() => {
             :account="row.account"
           />
           <TagDisplay
+            v-if="row.tags"
             :tags="row.tags"
             small
           />

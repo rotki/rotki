@@ -38,38 +38,34 @@ function getWeekday(date: string | Dayjs) {
   return dayjsValue.weekday();
 }
 
-const numberOfDaysInMonth: ComputedRef<number> = computed(() => dayjs(get(visibleDate)).daysInMonth());
+const numberOfDaysInMonth = computed<number>(() => dayjs(get(visibleDate)).daysInMonth());
 
-const currentMonthDays = computed(() => [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
-  date: dayjs(`${get(year)}-${get(month)}-${index + 1}`),
-  isCurrentMonth: true,
-})));
+const currentMonthDays = computed(() =>
+  [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
+    date: dayjs(`${get(year)}-${get(month)}-${index + 1}`),
+    isCurrentMonth: true,
+  })),
+);
 
 const previousMonthDays = computed(() => {
   const firstDayOfTheMonthWeekday = getWeekday(get(currentMonthDays)[0].date);
   const previousMonth = dayjs(`${get(year)}-${get(month)}-01`).subtract(1, 'month');
 
   // Cover first day of the month being sunday (firstDayOfTheMonthWeekday === 0)
-  const visibleNumberOfDaysFromPreviousMonth = firstDayOfTheMonthWeekday
-    ? firstDayOfTheMonthWeekday - 1
-    : 6;
+  const visibleNumberOfDaysFromPreviousMonth = firstDayOfTheMonthWeekday ? firstDayOfTheMonthWeekday - 1 : 6;
 
   const previousMonthLastMondayDayOfMonth = dayjs(get(currentMonthDays)[0].date)
     .subtract(visibleNumberOfDaysFromPreviousMonth, 'day')
     .date();
 
   return [...new Array(visibleNumberOfDaysFromPreviousMonth)].map((_, index) => ({
-    date: dayjs(
-      `${previousMonth.year()}-${previousMonth.month() + 1}-${previousMonthLastMondayDayOfMonth + index}`,
-    ),
+    date: dayjs(`${previousMonth.year()}-${previousMonth.month() + 1}-${previousMonthLastMondayDayOfMonth + index}`),
     isCurrentMonth: false,
   }));
 });
 
 const nextMonthDays = computed(() => {
-  const lastDayOfTheMonthWeekday = getWeekday(
-    `${get(year)}-${get(month)}-${get(currentMonthDays).length}`,
-  );
+  const lastDayOfTheMonthWeekday = getWeekday(`${get(year)}-${get(month)}-${get(currentMonthDays).length}`);
 
   const nextMonth = dayjs(`${get(year)}-${get(month)}-01`).add(1, 'month');
 
@@ -83,11 +79,7 @@ const nextMonthDays = computed(() => {
   }));
 });
 
-const days = computed(() => ([
-  ...get(previousMonthDays),
-  ...get(currentMonthDays),
-  ...get(nextMonthDays),
-]));
+const days = computed(() => [...get(previousMonthDays), ...get(currentMonthDays), ...get(nextMonthDays)]);
 
 watchImmediate(days, (days) => {
   const firstDay = days[0].date;

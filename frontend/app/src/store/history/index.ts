@@ -8,10 +8,13 @@ export const useHistoryStore = defineStore('history', () => {
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
-  const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() => Object.values(get(undecodedTransactionsStatus))
-    .filter(status => status.total > 0));
+  const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
+    Object.values(get(undecodedTransactionsStatus)).filter(status => status.total > 0),
+  );
 
-  const protocolCacheStatus = computed<ProtocolCacheUpdatesData[]>(() => Object.values(get(protocolCacheUpdateStatus)).filter(status => status.total > 0));
+  const protocolCacheStatus = computed<ProtocolCacheUpdatesData[]>(() =>
+    Object.values(get(protocolCacheUpdateStatus)).filter(status => status.total > 0),
+  );
 
   const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
     set(receivingProtocolCacheStatus, false);
@@ -69,7 +72,8 @@ export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] => Object.values(get(undecodedTransactionsStatus));
+  const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] =>
+    Object.values(get(undecodedTransactionsStatus));
 
   const fetchAssociatedLocations = async () => {
     try {

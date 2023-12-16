@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
-const path = require('node:path');
-const process = require('node:process');
-const { startAndTest } = require('start-server-and-test');
-const { ArgumentParser } = require('argparse');
+import path from 'node:path';
+import process from 'node:process';
+import { startAndTest } from 'start-server-and-test';
+import { ArgumentParser } from 'argparse';
+import { config } from 'dotenv';
 
 function info(msg) {
   console.info(`\n\u001B[32m${msg}\u001B[0m\n`);
-};
+}
 
 const parser = new ArgumentParser({
   description: 'contract tests, this checks compliance between frontend and backend',
@@ -16,7 +17,7 @@ parser.add_argument('--spec', { help: 'specific spec to run ' });
 
 const { spec } = parser.parse_args();
 
-require('dotenv').config({
+config({
   path: path.join(process.cwd(), '.env.contract'),
 });
 

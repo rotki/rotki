@@ -13,9 +13,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const api = useSettingsApi();
 
-  const setKrakenAccountType = async (
-    krakenAccountType: KrakenAccountType,
-  ): Promise<void> => {
+  const setKrakenAccountType = async (krakenAccountType: KrakenAccountType): Promise<void> => {
     try {
       const { general } = await api.setSettings({
         krakenAccountType,
@@ -23,9 +21,7 @@ export const useSettingsStore = defineStore('settings', () => {
       generalStore.update(general);
       setMessage({
         title: t('actions.session.kraken_account.success.title').toString(),
-        description: t(
-          'actions.session.kraken_account.success.message',
-        ).toString(),
+        description: t('actions.session.kraken_account.success.message').toString(),
         success: true,
       });
     }
@@ -62,21 +58,14 @@ export const useSettingsStore = defineStore('settings', () => {
     };
   };
 
-  const enableModule = async (payload: {
-    readonly enable: Module[];
-    readonly addresses: string[];
-  }): Promise<void> => {
+  const enableModule = async (payload: { readonly enable: Module[]; readonly addresses: string[] }): Promise<void> => {
     const activeModules = generalStore.activeModules;
-    const modules: Module[] = [...activeModules, ...payload.enable].filter(
-      uniqueStrings,
-    );
+    const modules: Module[] = [...activeModules, ...payload.enable].filter(uniqueStrings);
 
     await update({ activeModules: modules });
 
-    for (const module of payload.enable) {
-      for (const address of payload.addresses)
-        await addQueriedAddress({ module, address });
-    }
+    for (const module of payload.enable)
+      for (const address of payload.addresses) await addQueriedAddress({ module, address });
   };
 
   return {

@@ -21,9 +21,7 @@ export interface InitialSettings {
   readonly submitUsageAnalytics: boolean;
 }
 
-export const AccountSession = z.record(
-  z.enum(['loggedin', 'loggedout'] as const),
-);
+export const AccountSession = z.record(z.enum(['loggedin', 'loggedout'] as const));
 
 export type AccountSession = z.infer<typeof AccountSession>;
 

@@ -49,9 +49,7 @@ describe('composables::nft', () => {
     });
 
     it('failed', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed'),
-      );
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await store.fetchNfts(true);
 

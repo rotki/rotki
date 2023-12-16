@@ -1,8 +1,4 @@
-import type {
-  EditExchange,
-  Exchange,
-  ExchangeSetupPayload,
-} from '@/types/exchanges';
+import type { EditExchange, Exchange, ExchangeSetupPayload } from '@/types/exchanges';
 
 export const useExchangesStore = defineStore('exchanges', () => {
   const exchangeBalancesStore = useExchangeBalancesStore();
@@ -18,25 +14,16 @@ export const useExchangesStore = defineStore('exchanges', () => {
   const { t } = useI18n();
 
   const getExchangeNonce = (exchange: string): ComputedRef<number> =>
-    computed(
-      () =>
-        get(connectedExchanges).filter(({ location }) => location === exchange)
-          .length + 1,
-    );
+    computed(() => get(connectedExchanges).filter(({ location }) => location === exchange).length + 1);
 
   const addExchange = (exchange: Exchange): void => {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
 
-  const editExchange = ({
-    exchange: { location, name: oldName, krakenAccountType },
-    newName,
-  }: EditExchange): void => {
+  const editExchange = ({ exchange: { location, name: oldName, krakenAccountType }, newName }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
     const name = newName ?? oldName;
-    const index = exchanges.findIndex(
-      value => value.name === oldName && value.location === location,
-    );
+    const index = exchanges.findIndex(value => value.name === oldName && value.location === location);
     exchanges[index] = {
       ...exchanges[index],
       name,
@@ -52,8 +39,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
       const connected = get(connectedExchanges);
       if (success) {
         const exchangeIndex = connected.findIndex(
-          ({ location, name }) =>
-            name === exchange.name && location === exchange.location,
+          ({ location, name }) => name === exchange.name && location === exchange.location,
         );
         assert(
           exchangeIndex >= 0,
@@ -65,8 +51,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
         const exchanges = [...connected];
         const balances = { ...get(exchangeBalances) };
         const index = exchanges.findIndex(
-          ({ location, name }) =>
-            name === exchange.name && location === exchange.location,
+          ({ location, name }) => name === exchange.name && location === exchange.location,
         );
         // can't modify in place or else the vue reactivity does not work
         exchanges.splice(index, 1);
@@ -97,10 +82,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
     }
   };
 
-  const setupExchange = async ({
-    exchange,
-    edit,
-  }: ExchangeSetupPayload): Promise<boolean> => {
+  const setupExchange = async ({ exchange, edit }: ExchangeSetupPayload): Promise<boolean> => {
     try {
       const success = await querySetupExchange(exchange, edit);
       const exchangeEntry: Exchange = {

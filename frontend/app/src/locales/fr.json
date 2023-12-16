@@ -925,11 +925,11 @@
     },
     "transactions_redecode_by_chain": {
       "error": {
-        "description": "Échec du décodage des événements de {chaîne} : {error}",
+        "description": "Échec du décodage des événements de {chain} : {error}",
         "title": "Décodage des événements des transactions"
       },
       "task": {
-        "description": "Décodage des transactions pour les événements {chaîne}",
+        "description": "Décodage des transactions pour les événements {chain}",
         "title": "Décodage des événements de transaction"
       }
     },

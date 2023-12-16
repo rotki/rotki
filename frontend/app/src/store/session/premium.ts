@@ -5,9 +5,6 @@ import type { ActionStatus } from '@/types/action';
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);
   const premiumSync = ref(false);
-  const componentsReady = ref(false);
-
-  const showComponents = computed(() => get(premium) && get(componentsReady));
 
   const api = usePremiumCredentialsApi();
 
@@ -15,15 +12,9 @@ export const usePremiumStore = defineStore('session/premium', () => {
     apiKey,
     apiSecret,
     username,
-  }: PremiumCredentialsPayload): Promise<
-    ActionStatus<string | ValidationErrors>
-  > => {
+  }: PremiumCredentialsPayload): Promise<ActionStatus<string | ValidationErrors>> => {
     try {
-      const success = await api.setPremiumCredentials(
-        username,
-        apiKey,
-        apiSecret,
-      );
+      const success = await api.setPremiumCredentials(username, apiKey, apiSecret);
 
       if (success)
         set(premium, true);
@@ -65,8 +56,6 @@ export const usePremiumStore = defineStore('session/premium', () => {
   return {
     premium,
     premiumSync,
-    componentsReady,
-    showComponents,
     setup,
     deletePremium,
   };

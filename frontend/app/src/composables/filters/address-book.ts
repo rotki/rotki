@@ -12,10 +12,7 @@ enum AddressBookFilterValueKeys {
   ADDRESS = 'address',
 }
 
-export type Matcher = SearchMatcher<
-  AddressBookFilterKeys,
-  AddressBookFilterValueKeys
->;
+export type Matcher = SearchMatcher<AddressBookFilterKeys, AddressBookFilterValueKeys>;
 
 export type Filters = MatchedKeyword<AddressBookFilterValueKeys>;
 

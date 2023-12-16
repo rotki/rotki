@@ -40,16 +40,16 @@ const backendChanged = (url: string | null) => emit('backend-changed', url);
 const { logoutRemoteSession } = useSessionStore();
 const css = useCssModule();
 
-const username: Ref<string> = ref('');
-const usernameSearch: Ref<string> = ref('');
-const password: Ref<string> = ref('');
-const rememberUsername: Ref<boolean> = ref(false);
-const rememberPassword: Ref<boolean> = ref(false);
-const customBackendDisplay: Ref<boolean> = ref(false);
-const customBackendUrl: Ref<string> = ref('');
-const customBackendSessionOnly: Ref<boolean> = ref(false);
-const customBackendSaved: Ref<boolean> = ref(false);
-const dynamicMessageDialog: Ref<boolean> = ref(false);
+const username = ref<string>('');
+const usernameSearch = ref<string>('');
+const password = ref<string>('');
+const rememberUsername = ref<boolean>(false);
+const rememberPassword = ref<boolean>(false);
+const customBackendDisplay = ref<boolean>(false);
+const customBackendUrl = ref<string>('');
+const customBackendSessionOnly = ref<boolean>(false);
+const customBackendSaved = ref<boolean>(false);
+const dynamicMessageDialog = ref<boolean>(false);
 
 const usernameRef: Ref = ref();
 const passwordRef: Ref = ref();
@@ -61,32 +61,20 @@ const { welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
 
 const rules = {
   username: {
-    required: helpers.withMessage(
-      t('login.validation.non_empty_username'),
-      required,
-    ),
+    required: helpers.withMessage(t('login.validation.non_empty_username'), required),
     isValidUsername: helpers.withMessage(
       t('login.validation.valid_username'),
       (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
     ),
   },
   password: {
-    required: helpers.withMessage(
-      t('login.validation.non_empty_password'),
-      required,
-    ),
+    required: helpers.withMessage(t('login.validation.non_empty_password'), required),
   },
   customBackendUrl: {
-    required: helpers.withMessage(
-      t('login.custom_backend.validation.non_empty'),
-      requiredIf(customBackendDisplay),
-    ),
+    required: helpers.withMessage(t('login.custom_backend.validation.non_empty'), requiredIf(customBackendDisplay)),
     isValidUrl: helpers.withMessage(
       t('login.custom_backend.validation.url'),
-      (v: string): boolean =>
-        !get(customBackendDisplay)
-        || (v.length < 300
-        && isValidUrl(v)),
+      (v: string): boolean => !get(customBackendDisplay) || (v.length < 300 && isValidUrl(v)),
     ),
   },
 };
@@ -105,26 +93,21 @@ const v$ = useVuelidate(
 
 const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
 
-watch(
-  [username, password],
-  ([username, password], [oldUsername, oldPassword]) => {
-    // touched should not be emitted when restoring from local storage
-    if (!oldUsername && username === get(savedUsername))
-      return;
+watch([username, password], ([username, password], [oldUsername, oldPassword]) => {
+  // touched should not be emitted when restoring from local storage
+  if (!oldUsername && username === get(savedUsername))
+    return;
 
-    if (username !== oldUsername || password !== oldPassword)
-      touched();
-  },
-);
+  if (username !== oldUsername || password !== oldPassword)
+    touched();
+});
 
-const isLoggedInError = useArraySome(errors, error =>
-  error.includes('is already logged in'));
+const isLoggedInError = useArraySome(errors, error => error.includes('is already logged in'));
 
 const usernameError = useArrayFind(errors, error => error.startsWith('User '));
-const passwordError = useArrayFind(errors, error =>
-  error.startsWith('Wrong password '));
+const passwordError = useArrayFind(errors, error => error.startsWith('Wrong password '));
 
-const savedUsernames: Ref<string[]> = ref([]);
+const savedUsernames = ref<string[]>([]);
 
 const orderedUsernamesList = computed(() => {
   const search = get(usernameSearch) || '';
@@ -136,9 +119,7 @@ const orderedUsernamesList = computed(() => {
   return usernames.sort((a, b) => compareTextByKeyword(a, b, search));
 });
 
-const hasServerError = computed(
-  () => !!get(usernameError) || !!get(passwordError),
-);
+const hasServerError = computed(() => !!get(usernameError) || !!get(passwordError));
 
 const usernameErrors = computed(() => {
   const formErrors = [...toMessages(get(v$).username)];
@@ -177,9 +158,7 @@ function focusElement(element: any) {
   if (!element)
     return;
 
-  const input = element.$el.querySelector(
-    'input:not([type=hidden])',
-  ) as HTMLInputElement;
+  const input = element.$el.querySelector('input:not([type=hidden])') as HTMLInputElement;
   input.focus();
 }
 
@@ -209,12 +188,7 @@ function clearCustomBackend() {
 }
 
 function checkRememberUsername() {
-  set(
-    rememberUsername,
-    !!get(savedRememberUsername)
-    || !!get(savedRememberPassword)
-    || !get(isDocker),
-  );
+  set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !get(isDocker));
 }
 
 async function loadSettings() {
@@ -244,10 +218,9 @@ onBeforeMount(async () => {
   set(savedUsernames, profiles);
   if (profiles.length === 0) {
     const { currentRoute } = router;
-    if (!currentRoute.query.disableNoUserRedirection)
+    if (!get(currentRoute).query.disableNoUserRedirection)
       newAccount();
-    else
-      await router.replace({ query: {} });
+    else await router.replace({ query: {} });
   }
 });
 
@@ -284,10 +257,7 @@ watch(rememberPassword, async (remember: boolean, previous: boolean) => {
   checkRememberUsername();
 });
 
-async function login(actions?: {
-  syncApproval?: SyncApproval;
-  resumeFromBackup?: boolean;
-}) {
+async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
   const credentials: LoginCredentials = {
     username: get(username),
     password: get(password),
@@ -310,10 +280,10 @@ function abortLogin() {
 <template>
   <Transition
     appear
-    enter-class="translate-y-5 opacity-0"
+    enter-from-class="translate-y-5 opacity-0"
     enter-to-class="translate-y-0 opacity-1"
     enter-active-class="transform duration-300"
-    leave-class="-translate-y-0 opacity-1"
+    leave-from-class="-translate-y-0 opacity-1"
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
@@ -327,8 +297,8 @@ function abortLogin() {
           <p class="mb-3">
             {{ t('login.description.welcome') }}
           </p>
-          <i18n
-            path="login.description.more_details"
+          <i18n-t
+            keypath="login.description.more_details"
             tag="p"
           >
             <template #documentation>
@@ -337,7 +307,7 @@ function abortLogin() {
                 :url="externalLinks.usageGuide"
               />
             </template>
-          </i18n>
+          </i18n-t>
         </div>
 
         <div>
@@ -363,7 +333,7 @@ function abortLogin() {
               v-else
               ref="usernameRef"
               v-model="username"
-              :search-input.sync="usernameSearch"
+              v-model:search-input="usernameSearch"
               :label="t('login.label_username')"
               :options="orderedUsernamesList"
               :disabled="loading || conflictExist || customBackendDisplay"
@@ -384,7 +354,7 @@ function abortLogin() {
               </template>
               <template #no-data>
                 <div class="px-4 py-2 text-body-2 font-medium">
-                  <i18n path="login.no_profiles_found">
+                  <i18n-t keypath="login.no_profiles_found">
                     <template #create_account>
                       <RuiButton
                         color="primary"
@@ -397,7 +367,7 @@ function abortLogin() {
                         {{ t('login.button_create_account') }}
                       </RuiButton>
                     </template>
-                  </i18n>
+                  </i18n-t>
                 </div>
               </template>
             </RuiAutoComplete>
@@ -421,9 +391,7 @@ function abortLogin() {
                 <RuiCheckbox
                   v-if="isDocker"
                   v-model="rememberUsername"
-                  :disabled="
-                    customBackendDisplay || rememberPassword || loading
-                  "
+                  :disabled="customBackendDisplay || rememberPassword || loading"
                   color="primary"
                   hide-details
                   :class="css.remember"
@@ -482,11 +450,7 @@ function abortLogin() {
                       <RuiIcon
                         size="16"
                         class="-ml-2"
-                        :name="
-                          customBackendDisplay
-                            ? 'arrow-up-s-line'
-                            : 'arrow-down-s-line'
-                        "
+                        :name="customBackendDisplay ? 'arrow-up-s-line' : 'arrow-down-s-line'"
                       />
                     </template>
                   </RuiButton>
@@ -495,10 +459,10 @@ function abortLogin() {
             </div>
 
             <Transition
-              enter-class="h-0 opacity-0"
+              enter-from-class="h-0 opacity-0"
               enter-to-class="h-full opacity-1"
               enter-active-class="transition duration-300"
-              leave-class="h-full opacity-1"
+              leave-from-class="h-full opacity-1"
               leave-to-class="h-0 opacity-0"
               leave-active-class="transition duration-100"
             >
@@ -568,9 +532,7 @@ function abortLogin() {
               </div>
             </Transition>
 
-            <PremiumSyncConflictAlert
-              @proceed="login({ syncApproval: $event })"
-            />
+            <PremiumSyncConflictAlert @proceed="login({ syncApproval: $event })" />
 
             <IncompleteUpgradeAlert
               @confirm="login({ resumeFromBackup: true })"
@@ -581,12 +543,7 @@ function abortLogin() {
               <RuiButton
                 color="primary"
                 size="lg"
-                :disabled="
-                  v$.$invalid
-                    || loading
-                    || conflictExist
-                    || customBackendDisplay
-                "
+                :disabled="v$.$invalid || loading || conflictExist || customBackendDisplay"
                 :loading="loading"
                 type="submit"
                 data-cy="login-submit"
@@ -599,7 +556,7 @@ function abortLogin() {
                 v-model="dynamicMessageDialog"
                 max-width="400"
               >
-                <template #activator="{ on }">
+                <template #activator="{ attrs }">
                   <RuiButton
                     color="primary"
                     class="lg:hidden w-full"
@@ -608,7 +565,7 @@ function abortLogin() {
                     variant="outlined"
                     type="button"
                     data-cy="show-dynamic-messages"
-                    v-on="on"
+                    v-bind="attrs"
                   >
                     {{ welcomeMessage.action.text }}
                   </RuiButton>

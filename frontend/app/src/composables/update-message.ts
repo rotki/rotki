@@ -6,9 +6,7 @@ export const useUpdateMessage = createSharedComposable(() => {
 
   const { appVersion } = storeToRefs(useMainStore());
 
-  const link = computed(() =>
-    externalLinks.releasesVersion.replace('$version', get(appVersion)),
-  );
+  const link = computed(() => externalLinks.releasesVersion.replace('$version', get(appVersion)));
 
   const setShowNotes = (appVersion: string, lastUsed: string): void => {
     if (!appVersion || appVersion.includes('dev'))

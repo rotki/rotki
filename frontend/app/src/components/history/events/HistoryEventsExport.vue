@@ -16,8 +16,7 @@ const { t } = useI18n();
 
 const { appSession, openDirectory } = useInterop();
 
-const { exportHistoryEventsCSV }
-  = useHistoryEventsApi();
+const { exportHistoryEventsCSV } = useHistoryEventsApi();
 
 const { awaitTask, isTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
@@ -25,14 +24,10 @@ const { notify } = useNotificationsStore();
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | object; message?: string } | null> {
   try {
     const { taskId } = await exportHistoryEventsCSV(get(filters), directoryPath);
-    const { result } = await awaitTask<boolean | object, TaskMeta>(
-      taskId,
-      TaskType.EXPORT_HISTORY_EVENTS,
-      {
-        title: t('actions.history_events_export.title'),
-        transformer: [jsonTransformer],
-      },
-    );
+    const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
+      title: t('actions.history_events_export.title'),
+      transformer: [jsonTransformer],
+    });
 
     return {
       result,
@@ -79,11 +74,7 @@ async function exportCSV(): Promise<void> {
       };
     }
     else {
-      downloadFileByTextContent(
-        JSON.stringify(result, null, 2),
-        'history_events.json',
-        'application/json',
-      );
+      downloadFileByTextContent(JSON.stringify(result, null, 2), 'history_events.json', 'application/json');
     }
   }
   catch (error: any) {

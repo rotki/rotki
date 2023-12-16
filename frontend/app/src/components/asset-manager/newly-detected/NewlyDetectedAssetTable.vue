@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import type { NewDetectedToken } from '@/types/websocket-messages';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+
+interface Token extends NewDetectedToken {
+  address: string;
+  evmChain: Blockchain;
+}
 
 const { t } = useI18n();
 
@@ -13,7 +15,7 @@ const { cache } = storeToRefs(useAssetCacheStore());
 
 const { getChain } = useSupportedChains();
 
-const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() =>
+const mappedTokens = computed<Token[]>(() =>
   get(tokens).map((data) => {
     const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
 
@@ -25,7 +27,7 @@ const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() =>
   }),
 );
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<Token>[]>(() => [
   {
     label: t('common.asset'),
     key: 'tokenIdentifier',
@@ -60,8 +62,8 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const selected: Ref<string[]> = ref([]);
-const sort: Ref<DataTableSortData> = ref({
+const selected = ref<string[]>([]);
+const sort = ref<DataTableSortData<NewDetectedToken>>({
   direction: 'desc' as const,
 });
 
@@ -144,9 +146,7 @@ async function ignoreTokens(identifiers?: string[]) {
           </div>
         </div>
 
-        <div
-          class="border-b sm:border-r border-default align-self-stretch sm:w-0"
-        />
+        <div class="border-b sm:border-r border-default align-self-stretch sm:w-0" />
 
         <div class="flex gap-4 justify-between grow">
           <div class="flex gap-4">
@@ -198,7 +198,6 @@ async function ignoreTokens(identifiers?: string[]) {
       outlined
       dense
       row-attr="tokenIdentifier"
-      @update:sort="sort = $event"
     >
       <template #item.tokenIdentifier="{ row }">
         <AssetDetails

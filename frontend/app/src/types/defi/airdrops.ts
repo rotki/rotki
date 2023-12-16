@@ -22,6 +22,7 @@ const Airdrop = z.object({
   details: z.array(PoapDeliveryDetails).optional(),
   cutoffTime: z.number().optional(),
   hasDecoder: z.boolean().optional(),
+  iconUrl: z.string().optional(),
 });
 
 export type Airdrop = z.infer<typeof Airdrop>;
@@ -48,9 +49,7 @@ const PoapDelivery = z.object({
 
 export type PoapDelivery = z.infer<typeof PoapDelivery>;
 
-const AirdropDetails = z.record(
-  AirdropDetail.or(z.array(PoapDelivery)).optional(),
-);
+const AirdropDetails = z.record(AirdropDetail.or(z.array(PoapDelivery)).optional());
 
 export const Airdrops = z.record(AirdropDetails);
 

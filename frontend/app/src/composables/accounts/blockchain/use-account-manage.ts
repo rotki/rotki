@@ -107,7 +107,6 @@ export function editBlockchainAccount(account: BlockchainAccountWithBalance): Ac
         label: account.label,
         address: account.data.address,
       },
-
     } satisfies AccountManageEdit;
   }
 }
@@ -215,10 +214,7 @@ export function useAccountManage() {
       if (isEdit) {
         assert(payload.publicKey);
         assert(payload.ownershipPercentage);
-        updateEthStakingOwnership(
-          payload.publicKey,
-          bigNumberify(payload.ownershipPercentage),
-        );
+        updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
         startPromise(fetchAccounts(Blockchain.ETH2));
       }
       else {

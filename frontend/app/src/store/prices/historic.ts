@@ -72,29 +72,21 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     };
   };
 
-  const {
-    cache,
-    isPending,
-    retrieve,
-    reset,
-    deleteCacheKey,
-  } = useItemCache<BigNumber>(keys => fetchHistoricPrices(keys));
+  const { cache, isPending, retrieve, reset, deleteCacheKey } = useItemCache<BigNumber>(keys =>
+    fetchHistoricPrices(keys),
+  );
 
-  const historicPriceInCurrentCurrency = (
-    fromAsset: string,
-    timestamp: number,
-  ): ComputedRef<BigNumber> => computed(() => {
-    const key = createKey(fromAsset, timestamp);
+  const historicPriceInCurrentCurrency = (fromAsset: string, timestamp: number): ComputedRef<BigNumber> =>
+    computed(() => {
+      const key = createKey(fromAsset, timestamp);
 
-    if (get(isPending(key)))
-      return NoPrice;
+      if (get(isPending(key)))
+        return NoPrice;
 
-    return get(retrieve(key)) || NoPrice;
-  });
+      return get(retrieve(key)) || NoPrice;
+    });
 
-  const resetHistoricalPricesData = (
-    items: { fromAsset: string; timestamp: number }[],
-  ) => {
+  const resetHistoricalPricesData = (items: { fromAsset: string; timestamp: number }[]) => {
     items.forEach((item) => {
       const key = createKey(item.fromAsset, item.timestamp);
       deleteCacheKey(key);
@@ -116,8 +108,5 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useHistoricCachePriceStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useHistoricCachePriceStore, import.meta.hot));

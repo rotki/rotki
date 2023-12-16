@@ -66,8 +66,7 @@ export class LimitedParallelizationQueue {
     if (this.runningTasks.size < this.parallelization) {
       if (this.runningTasks.has(identifier))
         this.pendingTasks.set(identifier, fn);
-      else
-        startPromise(this.run(identifier, fn));
+      else startPromise(this.run(identifier, fn));
     }
     else {
       this.pendingTasks.set(identifier, fn);

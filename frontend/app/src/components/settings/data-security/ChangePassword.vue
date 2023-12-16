@@ -12,34 +12,18 @@ const { t } = useI18n();
 
 const rules = {
   currentPassword: {
-    required: helpers.withMessage(
-      t('change_password.validation.empty_password'),
-      required,
-    ),
+    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
   },
   newPassword: {
-    required: helpers.withMessage(
-      t('change_password.validation.empty_password'),
-      required,
-    ),
+    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
   },
   newPasswordConfirm: {
-    required: helpers.withMessage(
-      t('change_password.validation.empty_confirmation'),
-      required,
-    ),
-    same: helpers.withMessage(
-      t('change_password.validation.password_mismatch'),
-      sameAs(newPassword),
-    ),
+    required: helpers.withMessage(t('change_password.validation.empty_confirmation'), required),
+    same: helpers.withMessage(t('change_password.validation.password_mismatch'), sameAs(newPassword)),
   },
 };
 
-const v$ = useVuelidate(
-  rules,
-  { currentPassword, newPassword, newPasswordConfirm },
-  { $autoDirty: true },
-);
+const v$ = useVuelidate(rules, { currentPassword, newPassword, newPasswordConfirm }, { $autoDirty: true });
 
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useSessionStore();

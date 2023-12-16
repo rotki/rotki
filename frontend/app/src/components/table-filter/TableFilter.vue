@@ -8,15 +8,19 @@ import type {
   Suggestion,
 } from '@/types/filtering';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     matches: MatchedKeywordWithBehaviour<any>;
     matchers: SearchMatcher<any, any>[];
-    location?: SavedFilterLocation | null;
+    location?: SavedFilterLocation;
     disabled?: boolean;
   }>(),
   {
-    location: null,
+    location: undefined,
     disabled: false,
   },
 );
@@ -29,8 +33,6 @@ const { matchers, matches } = toRefs(props);
 
 const input = ref();
 const selection = ref<Suggestion[]>([]);
-
-const selectionWithIdentifier = computed(() => selection.value.map((item, index) => ({ ...item, indexValue: index })));
 
 const search = ref('');
 const selectedSuggestion = ref(0);
@@ -46,7 +48,7 @@ const validKeys = computed(() => get(matchers).map(({ key }) => key));
 const selectedMatcher = computed(() => {
   const searchKey = splitSearch(get(search));
   const key = get(validKeys).find(value => value === searchKey.key);
-  return matcherForKey(key) ?? null;
+  return matcherForKey(key) ?? undefined;
 });
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
@@ -117,8 +119,7 @@ function updateMatches(pairs: Suggestion[]) {
       }
     }
     else if ('asset' in matcher) {
-      transformedKeyword
-        = typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
+      transformedKeyword = typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
     }
     else {
       transformedKeyword = true;
@@ -151,10 +152,7 @@ function applyFilter(filter: Suggestion) {
   const matcher = matcherForKey(key);
   assert(matcher);
 
-  if (
-    index >= 0
-    && (!matcher.multiple || newSelection[index].exclude !== filter.exclude)
-  )
+  if (index >= 0 && (!matcher.multiple || newSelection[index].exclude !== filter.exclude))
     newSelection = newSelection.filter(item => item.key !== key);
 
   newSelection.push(filter);
@@ -163,11 +161,8 @@ function applyFilter(filter: Suggestion) {
   set(search, '');
 }
 
-const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() => {
-  const filteredByUsedKeys = get(matchers).filter(
-    ({ key, multiple }) =>
-      (!get(usedKeys).includes(key) || multiple),
-  );
+const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
+  const filteredByUsedKeys = get(matchers).filter(({ key, multiple }) => !get(usedKeys).includes(key) || multiple);
 
   const searchVal = get(search);
   if (!searchVal)
@@ -192,7 +187,7 @@ async function applySuggestion() {
 
   const filter = get(suggestedFilter);
   if (filter.value) {
-    nextTick(() => applyFilter(filter));
+    await nextTick(() => applyFilter(filter));
   }
   else {
     const { key, value: keyword, exclude } = splitSearch(get(search));
@@ -209,18 +204,11 @@ async function applySuggestion() {
         asset = true;
       }
       else if (!('boolean' in matcher)) {
-        logger.debug(
-          'Matcher doesn\'t have asset=true, string=true, or boolean=true.',
-          selectedMatcher,
-        );
+        logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
       }
 
-      if (
-        suggestedItems.length === 0
-        && 'validate' in matcher
-        && matcher.validate(keyword)
-      ) {
-        nextTick(() =>
+      if (suggestedItems.length === 0 && 'validate' in matcher && matcher.validate(keyword)) {
+        await nextTick(() =>
           applyFilter({
             key,
             asset,
@@ -256,9 +244,7 @@ watch(search, () => {
 });
 
 function moveSuggestion(up: boolean) {
-  const total = get(selectedMatcher)
-    ? get(suggestedFilter).total
-    : get(filteredMatchers).length;
+  const total = get(selectedMatcher) ? get(suggestedFilter).total : get(filteredMatchers).length;
 
   let position = get(selectedSuggestion);
   const move = up ? -1 : 1;
@@ -269,8 +255,7 @@ function moveSuggestion(up: boolean) {
     set(selectedSuggestion, 0);
   else if (position < 0)
     set(selectedSuggestion, total - 1);
-  else
-    set(selectedSuggestion, position);
+  else set(selectedSuggestion, position);
 }
 
 // TODO: This is too specific for custom asset, move it!
@@ -293,11 +278,11 @@ function getSuggestionText(suggestion: Suggestion) {
   };
 }
 
-function selectItem(suggestion: Suggestion) {
-  nextTick(() => {
+async function selectItem(suggestion: Suggestion) {
+  await nextTick(async () => {
     const suggestionText = getSuggestionText(suggestion);
     set(search, suggestionText.text);
-    nextTick(() => {
+    await nextTick(() => {
       get(input)?.setSelectionRange?.(suggestionText.startSelection, suggestionText.endSelection);
     });
   });
@@ -319,9 +304,7 @@ function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
     values.forEach((value) => {
       let deserializedValue = null;
       if (asset) {
-        const prevAssetSelection = oldSelection.find(
-          ({ key }) => key === foundMatchers.key,
-        );
+        const prevAssetSelection = oldSelection.find(({ key }) => key === foundMatchers.key);
         if (prevAssetSelection)
           deserializedValue = prevAssetSelection.value;
       }
@@ -337,8 +320,7 @@ function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
             normalizedValue = value.substring(1);
             exclude = true;
           }
-          deserializedValue
-            = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
+          deserializedValue = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
         }
       }
 
@@ -384,7 +366,8 @@ const { t } = useI18n();
       >
         <RuiAutoComplete
           ref="input"
-          :value="selectionWithIdentifier"
+          v-model:search-input="search"
+          :model-value="selection"
           variant="outlined"
           dense
           :disabled="disabled"
@@ -393,18 +376,15 @@ const { t } = useI18n();
           hide-details
           custom-value
           :options="[]"
-          key-attr="indexValue"
           return-object
           disable-interaction
-          :search-input.sync="search"
-          @input="updateMatches($event)"
+          v-bind="$attrs"
+          @update:model-value="updateMatches($event)"
           @keydown.enter="applySuggestion()"
-          @keydown.up.prevent
-          @keydown.up="moveSuggestion(true)"
-          @keydown.down.prevent
-          @keydown.down="moveSuggestion(false)"
+          @keydown.up.prevent="moveSuggestion(true)"
+          @keydown.down.prevent="moveSuggestion(false)"
         >
-          <template #selection="{ item, chipOn, chipAttrs }">
+          <template #selection="{ item, chipAttrs }">
             <RuiChip
               tile
               size="sm"
@@ -413,7 +393,6 @@ const { t } = useI18n();
               closeable
               v-bind="chipAttrs"
               @click="clickItem(item)"
-              v-on="chipOn"
             >
               <SuggestedItem
                 chip
@@ -425,12 +404,9 @@ const { t } = useI18n();
             <FilterDropdown
               class="py-4"
               :matchers="filteredMatchers"
-              :used="usedKeys"
               :keyword="search"
               :selected-matcher="selectedMatcher"
-              :selection="selection"
               :selected-suggestion="selectedSuggestion"
-              :location="location"
               @apply-filter="applyFilter($event)"
               @suggest="suggestedFilter = $event"
               @click="setSearchToMatcherKey($event)"

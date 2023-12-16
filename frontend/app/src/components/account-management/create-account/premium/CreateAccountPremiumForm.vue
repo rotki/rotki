@@ -53,16 +53,10 @@ watch(enabled, (enabled) => {
 
 const rules = {
   apiKey: {
-    required: helpers.withMessage(
-      t('premium_credentials.validation.non_empty_key').toString(),
-      requiredIf(enabled),
-    ),
+    required: helpers.withMessage(t('premium_credentials.validation.non_empty_key').toString(), requiredIf(enabled)),
   },
   apiSecret: {
-    required: helpers.withMessage(
-      t('premium_credentials.validation.non_empty_secret').toString(),
-      requiredIf(enabled),
-    ),
+    required: helpers.withMessage(t('premium_credentials.validation.non_empty_secret').toString(), requiredIf(enabled)),
   },
 };
 

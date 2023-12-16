@@ -4,30 +4,21 @@ const { t } = useI18n();
 const labels = [
   {
     title: t('user_dropdown.change_privacy_mode.normal_mode.label'),
-    description: t(
-      'user_dropdown.change_privacy_mode.normal_mode.description',
-    ),
+    description: t('user_dropdown.change_privacy_mode.normal_mode.description'),
   },
   {
     title: t('user_dropdown.change_privacy_mode.semi_private_mode.label'),
-    description: t(
-      'user_dropdown.change_privacy_mode.semi_private_mode.description',
-    ),
+    description: t('user_dropdown.change_privacy_mode.semi_private_mode.description'),
   },
   {
     title: t('user_dropdown.change_privacy_mode.private_mode.label'),
-    description: t(
-      'user_dropdown.change_privacy_mode.private_mode.description',
-    ),
+    description: t('user_dropdown.change_privacy_mode.private_mode.description'),
   },
 ];
 
-const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode }
-  = usePrivacyMode();
+const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } = usePrivacyMode();
 
-const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(
-  useSessionSettingsStore(),
-);
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
 
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
@@ -52,14 +43,15 @@ const css = useCssModule();
       menu-class="privacy-menu-content w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown"
+          v-bind="attrs"
           @click="togglePrivacyMode()"
         >
           <RuiBadge
-            :value="enabled"
+            :model-value="enabled"
             color="error"
             dot
             placement="top"
@@ -75,8 +67,8 @@ const css = useCssModule();
           :class="css.expander"
           icon
           variant="text"
+          v-bind="attrs"
           size="sm"
-          v-on="on"
         >
           <RuiIcon
             size="16"
@@ -91,7 +83,7 @@ const css = useCssModule();
         >
           <RuiSlider
             id="privacy-mode-slider"
-            :value="privacyMode"
+            :model-value="privacyMode"
             class="h-40 w-8"
             data-cy="privacy-mode-dropdown__input"
             :step="1"
@@ -103,7 +95,7 @@ const css = useCssModule();
             slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
             tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
             vertical
-            @input="changePrivacyMode($event)"
+            @update:model-value="changePrivacyMode($event)"
           />
           <div class="flex-1 flex flex-col-reverse justify-stretch -my-7 select-none">
             <div
@@ -135,7 +127,7 @@ const css = useCssModule();
               size="sm"
               data-cy="privacy-mode-scramble__toggle"
               hide-details
-              @input="updateScramble($event)"
+              @update:model-value="updateScramble($event)"
             >
               <span class="text-white">
                 {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
@@ -162,7 +154,7 @@ const css = useCssModule();
               data-cy="privacy-mode-scramble__multiplier"
               hide-details
               dense
-              @input="updateMultiplier($event || 1)"
+              @update:model-value="updateMultiplier($event || 1)"
             >
               <template #append>
                 <RuiButton

@@ -7,10 +7,7 @@ import { isEmpty } from 'lodash-es';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
-import type {
-  EthDepositEvent,
-  NewEthDepositEventPayload,
-} from '@/types/history/events';
+import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -31,47 +28,35 @@ const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const assetPriceForm: Ref<InstanceType<
-  typeof HistoryEventAssetPriceForm
-> | null> = ref(null);
+const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
-const txHash: Ref<string> = ref('');
-const eventIdentifier: Ref<string | undefined> = ref();
-const datetime: Ref<string> = ref('');
-const amount: Ref<string> = ref('');
-const usdValue: Ref<string> = ref('');
-const sequenceIndex: Ref<string> = ref('');
-const validatorIndex: Ref<string> = ref('');
-const depositor: Ref<string> = ref('');
-const extraData: Ref<object> = ref({});
+const txHash = ref<string>('');
+const eventIdentifier = ref<string | undefined>();
+const datetime = ref<string>('');
+const amount = ref<string>('');
+const usdValue = ref<string>('');
+const sequenceIndex = ref<string>('');
+const validatorIndex = ref<string>('');
+const depositor = ref<string>('');
+const extraData = ref<object>({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
   timestamp: { externalServerValidation: () => true },
   txHash: {
-    required: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.non_empty'),
-      required,
-    ),
-    isValid: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.valid'),
-      (value: string) => isValidTxHash(value),
-    ),
+    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
+      isValidTxHash(value)),
   },
   eventIdentifier: {
     required: helpers.withMessage(
-      t(
-        'transactions.events.form.event_identifier.validation.non_empty',
-      ),
+      t('transactions.events.form.event_identifier.validation.non_empty'),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   amount: {
-    required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   usdValue: {
     required: helpers.withMessage(
@@ -82,31 +67,16 @@ const rules = {
     ),
   },
   sequenceIndex: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.sequence_index.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
   },
 
   validatorIndex: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.validator_index.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
   },
   depositor: {
-    required: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.non_empty'),
-      required,
-    ),
-    isValid: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.valid'),
-      (value: string) => isValidEthAddress(value),
-    ),
+    required: helpers.withMessage(t('transactions.events.form.depositor.validation.non_empty'), required),
+    isValid: helpers.withMessage(t('transactions.events.form.depositor.validation.valid'), (value: string) =>
+      isValidEthAddress(value)),
   },
 };
 
@@ -137,14 +107,7 @@ function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(
-    datetime,
-    convertFromTimestamp(
-      dayjs().valueOf(),
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, '0');
   set(usdValue, '0');
   set(validatorIndex, '');
@@ -159,14 +122,7 @@ function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -180,14 +136,7 @@ function applyGroupHeaderData(entry: EthDepositEvent) {
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(usdValue, '0');
 }
 
@@ -197,11 +146,7 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    true,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthDepositEventPayload = {
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
@@ -293,11 +238,11 @@ const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
+      v-model:amount="amount"
+      v-model:usd-value="usdValue"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"
-      :amount.sync="amount"
-      :usd-value.sync="usdValue"
       disable-asset
     />
 

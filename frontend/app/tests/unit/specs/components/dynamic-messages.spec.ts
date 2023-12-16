@@ -3,10 +3,7 @@ import { expect } from 'vitest';
 import dayjs from 'dayjs';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { server } from '../../setup-files/server';
-import type {
-  DashboardMessage,
-  WelcomeMessage,
-} from '@/types/dynamic-messages';
+import type { DashboardMessage, WelcomeMessage } from '@/types/dynamic-messages';
 
 const period = {
   start: dayjs('2023/10/11').unix(),
@@ -38,14 +35,10 @@ describe('useDynamicMessages', () => {
     const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([testDash], { status: 200 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () => HttpResponse.json({}, { status: 404 }),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([testDash], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
     );
     vi.setSystemTime(dayjs('2023/10/12').toDate());
     await fetchMessages();
@@ -57,14 +50,10 @@ describe('useDynamicMessages', () => {
     const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([testDash], { status: 200 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () => HttpResponse.json({}, { status: 404 }),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([testDash], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
     );
     vi.setSystemTime(dayjs('2023/10/15').toDate());
     await fetchMessages();
@@ -76,35 +65,25 @@ describe('useDynamicMessages', () => {
     const { welcomeMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([], { status: 404 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () => HttpResponse.json({ messages: [testWelcome] }, { status: 200 }),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([], { status: 404 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({ messages: [testWelcome] }, { status: 200 })),
     );
     vi.setSystemTime(dayjs('2023/10/12').toDate());
     await fetchMessages();
 
-    expect(get(welcomeMessage)).toMatchObject(
-      camelCaseTransformer(testWelcome),
-    );
+    expect(get(welcomeMessage)).toMatchObject(camelCaseTransformer(testWelcome));
   });
 
   it('should not show invalid period welcome message', async () => {
     const { welcomeMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([], { status: 404 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () => HttpResponse.json({ messages: [testWelcome] }, { status: 200 }),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([], { status: 404 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({ messages: [testWelcome] }, { status: 200 })),
     );
     vi.setSystemTime(dayjs('2023/10/10').toDate());
     await fetchMessages();
@@ -116,18 +95,10 @@ describe('useDynamicMessages', () => {
     const { welcomeHeader, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([], { status: 404 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () =>
-          HttpResponse.json(
-            { header: 'test', text: 'test', messages: [] },
-            { status: 200 },
-          ),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([], { status: 404 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({ header: 'test', text: 'test', messages: [] }, { status: 200 })),
     );
 
     await fetchMessages();
@@ -141,14 +112,10 @@ describe('useDynamicMessages', () => {
     const { welcomeHeader, fetchMessages } = useDynamicMessages();
 
     server.use(
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        () => HttpResponse.json([], { status: 404 }),
-      ),
-      http.get(
-        'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        () => HttpResponse.json({}, { status: 404 }),
-      ),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([], { status: 404 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
     );
 
     await fetchMessages();

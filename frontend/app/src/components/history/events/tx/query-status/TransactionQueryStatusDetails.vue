@@ -29,12 +29,13 @@ defineProps<{ item: EvmTransactionQueryData }>();
         />
       </template>
 
-      <i18n
-        :path="
+      <i18n-t
+        :keypath="
           item.period[0] === 0
             ? 'transactions.query_status.latest_period_end_date'
             : 'transactions.query_status.latest_period_date_range'
         "
+        tag="span"
       >
         <template #start>
           <DateDisplay :timestamp="item.period[0]" />
@@ -42,7 +43,7 @@ defineProps<{ item: EvmTransactionQueryData }>();
         <template #end>
           <DateDisplay :timestamp="item.period[1]" />
         </template>
-      </i18n>
+      </i18n-t>
     </RuiTooltip>
   </div>
 </template>

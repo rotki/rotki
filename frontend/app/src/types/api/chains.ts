@@ -29,7 +29,8 @@ const EvmChainInfo = BasicChainInfo.extend({
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;
 
-export const ChainInfo = EvmChainInfo.or(SubstrateChainInfo).or(EvmLikeChainInfo)
+export const ChainInfo = EvmChainInfo.or(SubstrateChainInfo)
+  .or(EvmLikeChainInfo)
   .or(BasicChainInfo)
   .transform(obj => ({
     ...obj,

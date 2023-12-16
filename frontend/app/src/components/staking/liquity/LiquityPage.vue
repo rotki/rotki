@@ -35,29 +35,20 @@ watch(moduleEnabled, async (enabled) => {
     await fetch();
 });
 
-watch(
-  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
-  async (current, old) => {
-    if (!old && current)
-      await fetchStaking();
-  },
-);
+watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING), async (current, old) => {
+  if (!old && current)
+    await fetchStaking();
+});
 
-watch(
-  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS),
-  async (current, old) => {
-    if (!old && current)
-      await fetchPools();
-  },
-);
+watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS), async (current, old) => {
+  if (!old && current)
+    await fetchPools();
+});
 
-watch(
-  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS),
-  async (current, old) => {
-    if (!old && current)
-      await fetchStatistics();
-  },
-);
+watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS), async (current, old) => {
+  if (!old && current)
+    await fetchStatistics();
+});
 
 const { t } = useI18n();
 </script>

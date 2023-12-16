@@ -9,9 +9,7 @@
       </div>
     </div>
     <div>
-      <div
-        class="text-subtitle-1 uppercase font-bold text-rui-text text-break mb-1"
-      >
+      <div class="text-subtitle-1 uppercase font-bold text-rui-text text-break mb-1">
         <slot name="name" />
       </div>
       <div>

@@ -16,7 +16,7 @@ import type {
   HistoryEventEntry,
   HistoryEventRequestPayload,
 } from '@/types/history/events';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@/types';
 import type { Collection } from '@/types/collection';
@@ -58,8 +58,8 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
-const customizedEventsOnly: Ref<boolean> = ref(false);
-const showIgnoredAssets: Ref<boolean> = ref(false);
+const customizedEventsOnly = ref<boolean>(false);
+const showIgnoredAssets = ref<boolean>(false);
 
 const {
   location,
@@ -80,14 +80,12 @@ const nextSequence = ref<string>();
 const selectedGroupEventHeader = ref<HistoryEvent>();
 const eventToDelete = ref<HistoryEventEntry>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
-const missingRulesDialog: Ref<boolean> = ref(false);
+const missingRulesDialog = ref<boolean>(false);
 const transactionToIgnore = ref<HistoryEventEntry>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 
-const usedTitle: ComputedRef<string> = computed(
-  () => get(sectionTitle) || t('transactions.title'),
-);
+const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
 const usedAccounts = computed<Account[]>(() => {
   if (isDefined(useExternalAccountFilter))
@@ -100,7 +98,7 @@ const usedAccounts = computed<Account[]>(() => {
   return accountData.length > 0 ? [accountData[0]] : accountData;
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<HistoryEventEntry>[]>(() => [
   {
     label: '',
     key: 'ignoredInAccounting',
@@ -149,11 +147,8 @@ const { deleteTransactions } = useHistoryEventsApi();
 
 const { refreshTransactions } = useHistoryTransactions();
 
-const {
-  pullAndRedecodeTransaction,
-  fetchUndecodedTransactionsStatus,
-  redecodeTransactions,
-} = useHistoryTransactionDecoding();
+const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus, redecodeTransactions }
+  = useHistoryTransactionDecoding();
 const { getAccountByAddress } = useBlockchainStore();
 
 const { notify } = useNotificationsStore();
@@ -201,30 +196,31 @@ const {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
       const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0)
+      if (!accountsParsed || accountsParsed.length === 0) {
         set(accounts, []);
-      else
-        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+      }
+      else {
+        set(
+          accounts,
+          accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
+        );
+      }
     },
     extraParams: computed(() => ({
-      accounts: get(usedAccounts).map(
-        account => `${account.address}#${account.chain}`,
-      ),
+      accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
       customizedEventsOnly: get(customizedEventsOnly),
       excludeIgnoredAssets: !get(showIgnoredAssets),
     })),
-    defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(
-      () => {
-        if (isDefined(entryTypes)) {
-          return {
-            entryTypes: {
-              values: get(entryTypes),
-            },
-          };
-        }
-        return undefined;
-      },
-    ),
+    defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(() => {
+      if (isDefined(entryTypes)) {
+        return {
+          entryTypes: {
+            values: get(entryTypes),
+          },
+        };
+      }
+      return undefined;
+    }),
     customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
         counterparties: get(protocols),
@@ -262,11 +258,11 @@ async function fetchDataAndLocations() {
 
 const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
 
-const isEventsLoading: Ref<boolean> = ref(false);
-const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
-const decodingStatusDialogOpen: Ref<boolean> = ref(false);
-const protocolCacheStatusDialogOpen: Ref<boolean> = ref(false);
-const currentAction: Ref<'decode' | 'query'> = ref('query');
+const isEventsLoading = ref<boolean>(false);
+const decodingStatusDialogPersistent = ref<boolean>(false);
+const decodingStatusDialogOpen = ref<boolean>(false);
+const protocolCacheStatusDialogOpen = ref<boolean>(false);
+const currentAction = ref<'decode' | 'query'>('query');
 const route = useRoute();
 
 const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
@@ -344,10 +340,7 @@ async function forceRedecodeEvmEvents(data: EvmChainAndTxHash) {
 
 async function resetEventsHandler(data: EvmHistoryEvent) {
   const eventIds = get(allEvents)
-    .filter(
-      event =>
-        isEvmEvent(event) && event.txHash === data.txHash && event.customized,
-    )
+    .filter(event => isEvmEvent(event) && event.txHash === data.txHash && event.customized)
     .map(event => event.identifier);
 
   if (eventIds.length > 0)
@@ -415,8 +408,7 @@ setPostSubmitFunc(() => {
   const groupHeader = get(selectedGroupEventHeader);
   if (groupHeader)
     fetchDataAndRefreshEvents(toEvmChainAndTxHash(groupHeader));
-  else
-    fetchDataAndLocations();
+  else fetchDataAndLocations();
 });
 
 function suggestNextSequence(): string {
@@ -432,10 +424,7 @@ function suggestNextSequence(): string {
 
   const eventIdentifierHeader = eventHeader.eventIdentifier;
   const filtered = all
-    .filter(
-      ({ eventIdentifier, hidden }) =>
-        eventIdentifier === eventIdentifierHeader && !hidden,
-    )
+    .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
     .map(({ sequenceIndex }) => Number(sequenceIndex))
     .sort((a, b) => b - a);
 
@@ -456,17 +445,10 @@ function editEventHandler(event: HistoryEvent, groupHeader?: HistoryEvent) {
   setOpenDialog(true);
 }
 
-function promptForDelete({
-  item,
-  canDelete,
-}: {
-  item: HistoryEventEntry;
-  canDelete: boolean;
-}) {
+function promptForDelete({ item, canDelete }: { item: HistoryEventEntry; canDelete: boolean }) {
   if (canDelete)
     set(eventToDelete, item);
-  else
-    set(transactionToIgnore, item);
+  else set(transactionToIgnore, item);
 
   showDeleteConfirmation();
 }
@@ -497,26 +479,23 @@ function getItemClass(item: HistoryEventEntry) {
   return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
-watch(
-  [filters, usedAccounts],
-  ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
-    const filterChanged = !isEqual(filters, oldFilters);
-    const accountsChanged = !isEqual(usedAccounts, oldAccounts);
+watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+  const filterChanged = !isEqual(filters, oldFilters);
+  const accountsChanged = !isEqual(usedAccounts, oldAccounts);
 
-    if (!(filterChanged || accountsChanged))
-      return;
+  if (!(filterChanged || accountsChanged))
+    return;
 
-    if (accountsChanged && usedAccounts.length > 0) {
-      const updatedFilter = { ...get(filters) };
-      updateFilter(updatedFilter);
-    }
+  if (accountsChanged && usedAccounts.length > 0) {
+    const updatedFilter = { ...get(filters) };
+    updateFilter(updatedFilter);
+  }
 
-    if (filterChanged || accountsChanged) {
-      set(locationOverview, filters.location);
-      setPage(1);
-    }
-  },
-);
+  if (filterChanged || accountsChanged) {
+    set(locationOverview, filters.location);
+    setPage(1);
+  }
+});
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
@@ -528,29 +507,15 @@ const isTransactionsLoading = isTaskRunning(TaskType.TX);
 const { isAllFinished: isQueryingTxsFinished } = toRefs(useTxQueryStatusStore());
 const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 
-const refreshing = logicOr(
-  sectionLoading,
-  eventTaskLoading,
-  onlineHistoryEventsLoading,
-  protocolCacheUpdatesLoading,
-);
+const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
 
-const querying = not(
-  logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished),
-);
+const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
 
 const shouldFetchEventsRegularly = logicOr(querying, refreshing);
 
-const loading = refDebounced(
-  logicOr(isEventsGroupHeaderLoading, isEventsLoading),
-  300,
-);
+const loading = refDebounced(logicOr(isEventsGroupHeaderLoading, isEventsLoading), 300);
 
-const processing = logicOr(
-  isTransactionsLoading,
-  querying,
-  refreshing,
-);
+const processing = logicOr(isTransactionsLoading, querying, refreshing);
 
 const { pause, resume, isActive } = useIntervalFn(() => {
   startPromise(fetchDataAndLocations());
@@ -618,8 +583,7 @@ const historyEventMappings = useHistoryEventMappings();
 async function refresh(userInitiated = false) {
   if (userInitiated)
     startPromise(historyEventMappings.refresh());
-  else
-    startPromise(fetchDataAndLocations());
+  else startPromise(fetchDataAndLocations());
 
   set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
@@ -637,10 +601,7 @@ watch(eventTaskLoading, async (isLoading, wasLoading) => {
     await fetchDataAndLocations();
 });
 
-const {
-  setOpenDialog: setTxFormOpenDialog,
-  setPostSubmitFunc: setTxFormPostSubmitFunc,
-} = useHistoryTransactionsForm();
+const { setOpenDialog: setTxFormOpenDialog, setPostSubmitFunc: setTxFormPostSubmitFunc } = useHistoryTransactionsForm();
 
 setTxFormPostSubmitFunc((payload) => {
   if (payload)
@@ -657,15 +618,9 @@ async function fetchDataAndRefreshEvents(data: EvmChainAndTxHash, reDecodeEvents
     await forceRedecodeEvmEvents(data);
 }
 
-const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(
-  entryTypes,
-  type => isEvmEventType(type),
-);
+const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isEvmEventType(type));
 
-const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
-  entryTypes,
-  type => isOnlineHistoryEventType(type),
-);
+const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isOnlineHistoryEventType(type));
 
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
@@ -714,9 +669,9 @@ watchImmediate(route, async (route) => {
         menu-class="max-w-[24rem]"
         close-on-content-click
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiBadge
-            :value="eventTaskLoading"
+            :model-value="eventTaskLoading"
             color="primary"
             dot
             placement="top"
@@ -728,7 +683,7 @@ watchImmediate(route, async (route) => {
               icon
               size="sm"
               class="!p-2"
-              v-on="on"
+              v-bind="attrs"
             >
               <RuiIcon name="more-2-fill" />
             </RuiButton>
@@ -742,7 +697,7 @@ watchImmediate(route, async (route) => {
             >
               <template #prepend>
                 <RuiBadge
-                  :value="eventTaskLoading"
+                  :model-value="eventTaskLoading"
                   color="primary"
                   dot
                   placement="top"
@@ -808,8 +763,8 @@ watchImmediate(route, async (route) => {
             </div>
           </TableStatusFilter>
           <TableFilter
+            v-model:matches="filters"
             class="min-w-[20rem]"
-            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
           />
@@ -828,7 +783,7 @@ watchImmediate(route, async (route) => {
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
           class="min-w-[15rem] max-w-[20rem]"
-          :value="accounts"
+          :model-value="accounts"
           :chains="txChainIds"
           dense
           :label="t('transactions.filter.account')"
@@ -837,7 +792,7 @@ watchImmediate(route, async (route) => {
           multichain
           hide-chain-icon
           unique
-          @input="onFilterAccountsChanged($event)"
+          @update:model-value="onFilterAccountsChanged($event)"
         />
       </HistoryTableActions>
 
@@ -845,25 +800,14 @@ watchImmediate(route, async (route) => {
         :collection="eventsHeader"
         @set-page="setPage($event)"
       >
-        <template
-          #default="{
-            data: eventsData,
-            showUpgradeRow,
-            limit,
-            total,
-            found,
-            entriesFoundTotal,
-          }"
-        >
+        <template #default="{ data: eventsData, showUpgradeRow, limit, total, found, entriesFoundTotal }">
           <RuiDataTable
+            v-model:pagination.external="pagination"
+            v-model:sort.external="sort"
             :expanded="eventsData"
             :cols="tableHeaders"
             :rows="eventsData"
             :loading="loading"
-            :pagination.sync="pagination"
-            :pagination-modifiers="{ external: true }"
-            :sort.sync="sort"
-            :sort-modifiers="{ external: true }"
             :item-class="getItemClass"
             :empty="{ label: t('data_table.no_data') }"
             :texts="{
@@ -871,7 +815,7 @@ watchImmediate(route, async (route) => {
               itemsNumber: t('data_table.items_no'),
               of: t('common.of'),
             }"
-            row-attr="txHash"
+            row-attr="identifier"
             outlined
           >
             <template #item.ignoredInAccounting="{ row }">
@@ -931,6 +875,7 @@ watchImmediate(route, async (route) => {
             </template>
             <template #body.prepend="{ colspan }">
               <HistoryQueryStatus
+                v-model:current-action="currentAction"
                 :include-evm-events="includeEvmEvents"
                 :include-online-events="includeOnlineEvents"
                 :only-chains="onlyChains"
@@ -939,7 +884,6 @@ watchImmediate(route, async (route) => {
                 :decoding="eventTaskLoading"
                 :colspan="colspan"
                 :loading="processing"
-                :current-action.sync="currentAction"
                 @show-decode-details="decodingStatusDialogOpen = true"
                 @show-protocol-refresh-details="protocolCacheStatusDialogOpen = true"
               />

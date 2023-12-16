@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const showGraphRangeSelector = ref<boolean>(true);
-const { showGraphRangeSelector: enabled } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { showGraphRangeSelector: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
   set(showGraphRangeSelector, get(enabled));
@@ -24,7 +22,7 @@ const { t } = useI18n();
       :success-messages="success"
       :error-messages="error"
       color="primary"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

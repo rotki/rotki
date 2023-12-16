@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 
@@ -8,6 +9,7 @@ interface MappedGroupedItems {
   asset: string;
   startDate: number;
   endDate: number;
+  totalAmountMissing: BigNumber;
   acquisitions: MissingAcquisition[];
 }
 
@@ -27,8 +29,7 @@ const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   get(items).forEach((item: MissingAcquisition) => {
     if (grouped[item.asset])
       grouped[item.asset].push(item);
-    else
-      grouped[item.asset] = [item];
+    else grouped[item.asset] = [item];
   });
 
   return Object.keys(grouped).map((key) => {
@@ -53,8 +54,8 @@ const expanded = ref<MappedGroupedItems[]>([]);
 
 const tableRef = ref<any>(null);
 
-const sort: Ref<DataTableSortData> = ref([]);
-const childSort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<MappedGroupedItems>>([]);
+const childSort = ref<DataTableSortData<MissingAcquisition>>({
   column: 'time',
   direction: 'asc' as const,
 });
@@ -63,7 +64,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { t } = useI18n();
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -94,7 +95,7 @@ const headers = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const childHeaders = computed<DataTableColumn[]>(() => [
+const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
   {
     label: t('common.datetime'),
     key: 'time',
@@ -123,16 +124,16 @@ const css = useCssModule();
   <div>
     <RuiDataTable
       ref="tableRef"
+      v-model:sort="sort"
+      v-model:expanded="expanded"
       class="table-inside-dialog"
       :class="{
         [css['table--pinned']]: isPinned,
       }"
       :cols="headers"
       :rows="groupedMissingAcquisitions"
-      :sort.sync="sort"
       row-attr="asset"
       single-expand
-      :expanded.sync="expanded"
       :scroller="tableContainer"
       :dense="isPinned"
     >
@@ -167,11 +168,11 @@ const css = useCssModule();
             :popper="{ placement: 'bottom-end' }"
             close-on-content-click
           >
-            <template #activator="{ on }">
+            <template #activator="{ attrs }">
               <RuiButton
                 variant="text"
                 icon
-                v-on="on"
+                v-bind="attrs"
               >
                 <RuiIcon
                   size="20"
@@ -207,22 +208,18 @@ const css = useCssModule();
                 />
               </BadgeDisplay>
             </template>
-            {{
-              t(
-                'profit_loss_report.actionable.missing_acquisitions.asset_is_ignored',
-              )
-            }}
+            {{ t('profit_loss_report.actionable.missing_acquisitions.asset_is_ignored') }}
           </RuiTooltip>
         </div>
       </template>
       <template #expanded-item="{ row }">
         <RuiDataTable
+          v-model:sort="childSort"
           :cols="childHeaders"
           :rows="row.acquisitions"
           :scroller="tableContainer"
-          :sort.sync="childSort"
           outlined
-          row-attr=""
+          row-attr="asset"
         >
           <template #item.time="{ row: childItem }">
             <DateDisplay :timestamp="childItem.time" />

@@ -13,7 +13,7 @@ const props = withDefaults(
     notes?: string;
     amount?: BigNumber;
     asset?: string;
-    chain?: Blockchain;
+    chain?: string;
     noTxHash?: boolean;
     validatorIndex?: number;
     blockNumber?: number;
@@ -30,8 +30,7 @@ const props = withDefaults(
   },
 );
 
-const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterparty }
-  = toRefs(props);
+const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterparty } = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
 
@@ -53,7 +52,10 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
 </script>
 
 <template>
-  <div>
+  <div
+    v-bind="$attrs"
+    class="inline-flex items-center gap-x-1 flex-wrap"
+  >
     <template v-for="(note, index) in formattedNotes">
       <HashLink
         v-if="note.showHashLink && isLinkType(note.type)"
@@ -87,7 +89,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       />
 
       <template v-else>
-        {{ note.word }}
+        {{ `${note.word} ` }}
       </template>
     </template>
   </div>

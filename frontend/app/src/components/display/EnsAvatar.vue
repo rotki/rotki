@@ -19,12 +19,12 @@ const props = withDefaults(
   },
 );
 
-const success: Ref<boolean> = ref(false);
-const failed: Ref<boolean> = ref(false);
+const success = ref<boolean>(false);
+const failed = ref<boolean>(false);
 
 const { getEnsAvatarUrl } = useAddressesNamesStore();
 
-const avatarUrl: ComputedRef<string | null> = computed(() => {
+const avatarUrl = computed<string | null>(() => {
   if (props.blockchain !== Blockchain.ETH)
     return null;
 

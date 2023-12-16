@@ -7,7 +7,12 @@
  * @param fn Takes an item <T> and returns a void {@link Promise}. The function represents queued work.
  * @param parallelization The number of operations to run in parallel
  */
-export function awaitParallelExecution<T>(items: T[], genId: (item: T) => string, fn: (item: T) => Promise<void>, parallelization = 4): Promise<void> {
+export function awaitParallelExecution<T>(
+  items: T[],
+  genId: (item: T) => string,
+  fn: (item: T) => Promise<void>,
+  parallelization = 4,
+): Promise<void> {
   const queue = new LimitedParallelizationQueue(parallelization);
   return new Promise((resolve) => {
     if (items.length === 0)
@@ -17,7 +22,6 @@ export function awaitParallelExecution<T>(items: T[], genId: (item: T) => string
       queue.setOnCompletion(undefined);
       resolve();
     });
-    for (const item of items)
-      queue.queue(genId(item), () => fn(item));
+    for (const item of items) queue.queue(genId(item), () => fn(item));
   });
 }

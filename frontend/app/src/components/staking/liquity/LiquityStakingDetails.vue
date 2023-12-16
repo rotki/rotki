@@ -32,20 +32,15 @@ const accountFilter = useArrayMap(selectedAccounts, account => ({
   chain: account.chain,
 }));
 
-const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(() => {
+const aggregatedStake = computed<LiquityStakingDetailEntry | null>(() => {
   const allStakes: LiquityStakingDetails = get(staking);
-  const selectedAddresses = get(selectedAccounts).map(
-    account => getAccountAddress(account),
-  );
+  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
 
   const filteredStakes: LiquityStakingDetailEntry[] = [];
 
   for (const address in allStakes) {
     const stake = allStakes[address];
-    if (
-      selectedAddresses.length > 0
-      && !selectedAddresses.includes(address)
-    )
+    if (selectedAddresses.length > 0 && !selectedAddresses.includes(address))
       continue;
 
     if (stake.balances)
@@ -81,10 +76,7 @@ const aggregatedStakingPool = computed<LiquityPoolDetailEntry | null>(() => {
 
   for (const address in allPools) {
     const pool = allPools[address];
-    if (
-      selectedAddresses.length > 0
-      && !selectedAddresses.includes(address)
-    )
+    if (selectedAddresses.length > 0 && !selectedAddresses.includes(address))
       continue;
 
     if (pool.balances)
@@ -118,20 +110,13 @@ const proxyInformation = computed<Record<string, string[]> | null>(() => {
   const allStakes: LiquityStakingDetails = get(staking);
   const allPools: LiquityPoolDetails = get(stakingPools);
 
-  const selectedAddresses = get(selectedAccounts).map(
-    account => getAccountAddress(account),
-  );
+  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
 
   const addToProxies = (mainAddress: string, proxyAddresses: string[]) => {
-    if (!proxies[mainAddress]) {
+    if (!proxies[mainAddress])
       proxies[mainAddress] = proxyAddresses;
-    }
-    else {
-      proxies[mainAddress] = [
-        ...proxies[mainAddress],
-        ...proxyAddresses,
-      ].filter(uniqueStrings);
-    }
+    else
+      proxies[mainAddress] = [...proxies[mainAddress], ...proxyAddresses].filter(uniqueStrings);
   };
 
   selectedAddresses.forEach((address) => {
@@ -184,38 +169,23 @@ const aggregatedStatistic = computed<LiquityStatisticDetails | null>(() => {
 
       let key: keyof typeof remaining;
 
-      for (key in remaining) {
-        aggregatedStatistic[key] = aggregatedStatistic[key].plus(
-          remaining[key],
-        );
-      }
+      for (key in remaining)
+        aggregatedStatistic[key] = aggregatedStatistic[key].plus(remaining[key]);
 
-      const mergeAssetBalances = (
-        items1: AssetBalance[],
-        items2: AssetBalance[],
-      ) => {
+      const mergeAssetBalances = (items1: AssetBalance[], items2: AssetBalance[]) => {
         const aggregated = [...items1, ...items2];
 
-        const uniqueAssets = aggregated
-          .map(({ asset }) => asset)
-          .filter(uniqueStrings);
+        const uniqueAssets = aggregated.map(({ asset }) => asset).filter(uniqueStrings);
 
         return uniqueAssets.map(asset => ({
           asset,
           ...aggregated
             .filter((item: AssetBalance) => asset === item.asset)
-            .reduce(
-              (previous: Balance, current: Balance) =>
-                balanceSum(previous, current),
-              zeroBalance(),
-            ),
+            .reduce((previous: Balance, current: Balance) => balanceSum(previous, current), zeroBalance()),
         }));
       };
 
-      aggregatedStatistic.stakingGains = mergeAssetBalances(
-        aggregatedStatistic.stakingGains,
-        stakingGains,
-      );
+      aggregatedStatistic.stakingGains = mergeAssetBalances(aggregatedStatistic.stakingGains, stakingGains);
       aggregatedStatistic.stabilityPoolGains = mergeAssetBalances(
         aggregatedStatistic.stabilityPoolGains,
         stabilityPoolGains,
@@ -227,9 +197,7 @@ const aggregatedStatistic = computed<LiquityStatisticDetails | null>(() => {
 });
 
 const availableAddresses = computed(() =>
-  [...Object.keys(get(staking)), ...Object.keys(get(stakingPools))].filter(
-    uniqueStrings,
-  ),
+  [...Object.keys(get(staking)), ...Object.keys(get(stakingPools))].filter(uniqueStrings),
 );
 
 function refresh() {
@@ -285,12 +253,12 @@ const slots = useSlots();
         :popper="{ placement: 'right-start' }"
         menu-class="max-w-[25rem]"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiButton
             variant="text"
             class="!p-2"
             icon
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="information-line" />
           </RuiButton>

@@ -65,17 +65,12 @@ const keyTypeListData = computed<XpubType[]>(() => {
   if (get(blockchain) === Blockchain.BTC)
     return keyType;
 
-  return keyType.filter(
-    item => ![XpubPrefix.ZPUB, XpubPrefix.P2TR].includes(item.value),
-  );
+  return keyType.filter(item => ![XpubPrefix.ZPUB, XpubPrefix.P2TR].includes(item.value));
 });
 
 const rules = {
   xpub: {
-    required: helpers.withMessage(
-      t('account_form.validation.xpub_non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('account_form.validation.xpub_non_empty'), required),
   },
   derivationPath: {
     basic: () => true,

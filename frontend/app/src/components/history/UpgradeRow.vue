@@ -29,9 +29,9 @@ const { t } = useI18n();
       :colspan="colspan"
       class="font-medium py-2"
     >
-      <i18n
+      <i18n-t
         v-if="events"
-        path="upgrade_row.events"
+        keypath="upgrade_row.events"
         tag="div"
         class="md:text-center"
       >
@@ -63,11 +63,11 @@ const { t } = useI18n();
             :timestamp="timeEnd"
           />
         </template>
-      </i18n>
-      <i18n
+      </i18n-t>
+      <i18n-t
         v-else
         tag="div"
-        path="upgrade_row.upgrade"
+        keypath="upgrade_row.upgrade"
         class="md:text-center"
       >
         <template #total>
@@ -86,7 +86,7 @@ const { t } = useI18n();
             color="primary"
           />
         </template>
-      </i18n>
+      </i18n-t>
     </td>
   </tr>
 </template>

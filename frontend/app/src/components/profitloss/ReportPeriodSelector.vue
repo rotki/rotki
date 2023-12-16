@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { Quarter } from '@/types/settings/frontend-settings';
-import type {
-  PeriodChangedEvent,
-  SelectionChangedEvent,
-} from '@/types/reports';
+import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
@@ -82,8 +79,7 @@ watch([year, quarter], () => {
 const periods = computed(() => {
   const periods: string[] = [];
   const fullYear = new Date().getFullYear();
-  for (let year = fullYear; year > fullYear - 5; year--)
-    periods.push(year.toString());
+  for (let year = fullYear; year > fullYear - 5; year--) periods.push(year.toString());
 
   return periods;
 });
@@ -153,24 +149,22 @@ const quarterModel = computed({
         class="flex-wrap justify-center"
         active-color="primary"
       >
-        <template #default>
-          <RuiButton
-            v-for="period in periods"
-            :key="period"
-            :color="year === period ? 'primary' : undefined"
-            class="px-4"
-            :value="period"
-          >
-            {{ period }}
-          </RuiButton>
-          <RuiButton
-            value="custom"
-            class="px-4"
-            :color="isCustom ? 'primary' : undefined"
-          >
-            {{ t('generate.custom_selection') }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          v-for="period in periods"
+          :key="period"
+          :color="year === period ? 'primary' : undefined"
+          class="px-4"
+          :model-value="period"
+        >
+          {{ period }}
+        </RuiButton>
+        <RuiButton
+          model-value="custom"
+          class="px-4"
+          :color="isCustom ? 'primary' : undefined"
+        >
+          {{ t('generate.custom_selection') }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
     <div
@@ -187,17 +181,15 @@ const quarterModel = computed({
         class="flex-wrap justify-center"
         active-color="primary"
       >
-        <template #default>
-          <RuiButton
-            v-for="subPeriod in subPeriods"
-            :key="subPeriod.id"
-            :color="quarter === subPeriod.id ? 'primary' : undefined"
-            :value="subPeriod.id"
-            :disabled="isStartAfterNow(subPeriod.id)"
-          >
-            {{ subPeriod.name }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          v-for="subPeriod in subPeriods"
+          :key="subPeriod.id"
+          :color="quarter === subPeriod.id ? 'primary' : undefined"
+          :value="subPeriod.id"
+          :disabled="isStartAfterNow(subPeriod.id)"
+        >
+          {{ subPeriod.name }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
   </div>

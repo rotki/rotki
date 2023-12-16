@@ -63,7 +63,7 @@ onMounted(async () => {
 <template>
   <RuiNotification
     v-if="isPackaged"
-    :value="showUpdatePopup"
+    :model-value="showUpdatePopup"
     :timeout="-1"
     class="top-[3.5rem]"
     width="380px"
@@ -102,9 +102,9 @@ onMounted(async () => {
             {{ t('update_popup.download_progress') }}
           </span>
           <div v-else-if="!downloadReady">
-            <i18n
+            <i18n-t
               tag="div"
-              path="update_popup.messages"
+              keypath="update_popup.messages"
             >
               <template #releaseNotes>
                 <ExternalLink
@@ -112,7 +112,7 @@ onMounted(async () => {
                   :url="externalLinks.releases"
                 />
               </template>
-            </i18n>
+            </i18n-t>
             <div>{{ t('update_popup.download_nudge') }}</div>
           </div>
           <span v-else>{{ t('update_popup.downloaded') }}</span>
@@ -137,7 +137,7 @@ onMounted(async () => {
         v-if="downloading"
         class="mt-4"
         color="primary"
-        :value="percentage"
+        :model-value="percentage"
         show-label
       />
 

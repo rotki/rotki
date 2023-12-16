@@ -39,9 +39,7 @@ describe('composables::history/notes', () => {
   it('with amount and asset', () => {
     const notes = 'Receive 100 ETH';
 
-    const formatted = get(
-      formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' }),
-    );
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' }));
 
     const expected: NoteFormat[] = [
       {
@@ -109,8 +107,7 @@ describe('composables::history/notes', () => {
   });
 
   describe('with TX Hash', () => {
-    const txHash
-      = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
+    const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `TxHash ${txHash}`;
 
     it('noTxHash = false', () => {
@@ -132,9 +129,7 @@ describe('composables::history/notes', () => {
     });
 
     it('multiple txHash', () => {
-      const formatted = get(
-        formatNotes({ notes: `TxHash ${txHash},${txHash}, ${txHash}` }),
-      );
+      const formatted = get(formatNotes({ notes: `TxHash ${txHash},${txHash}, ${txHash}` }));
 
       const expected: NoteFormat[] = [
         {
@@ -302,14 +297,20 @@ describe('composables::history/notes', () => {
 
     const notesData = formatNotes({ notes, counterparty: 'monerium' });
     let formatted = get(notesData);
-    let notesToString = formatted.filter(item => item.type === NoteType.WORD).map(item => item.word).join('');
+    let notesToString = formatted
+      .filter(item => item.type === NoteType.WORD)
+      .map(item => item.word)
+      .join('');
     let included = notesToString.includes(iban.split(' ').join(''));
 
     expect(included).toBeTruthy();
 
     store.update({ scrambleData: true });
     formatted = get(notesData);
-    notesToString = formatted.filter(item => item.type === NoteType.WORD).map(item => item.word).join('');
+    notesToString = formatted
+      .filter(item => item.type === NoteType.WORD)
+      .map(item => item.word)
+      .join('');
     included = notesToString.includes(iban.split(' ').join(''));
 
     expect(included).toBeFalsy();

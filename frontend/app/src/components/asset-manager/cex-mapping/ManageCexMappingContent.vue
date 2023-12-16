@@ -7,8 +7,8 @@ const { t } = useI18n();
 
 const { fetchAllCexMapping, deleteCexMapping } = useAssetCexMappingApi();
 
-const selectedLocation: Ref<string> = ref('');
-const selectedSymbol: Ref<string> = ref('');
+const selectedLocation = ref<string>('');
+const selectedSymbol = ref<string>('');
 
 const extraParams = computed(() => {
   const location = get(selectedLocation);
@@ -27,18 +27,19 @@ const {
   editableItem,
   fetchData,
   pagination,
-} = usePaginationFilters<
-  CexMapping,
-  CexMappingRequestPayload,
-  CexMapping,
-  Collection<CexMapping>
->(null, true, useEmptyFilter, fetchAllCexMapping, {
-  onUpdateFilters(query) {
-    set(selectedLocation, query.location || '');
-    set(selectedSymbol, query.locationSymbol || '');
+} = usePaginationFilters<CexMapping, CexMappingRequestPayload, CexMapping, Collection<CexMapping>>(
+  null,
+  true,
+  useEmptyFilter,
+  fetchAllCexMapping,
+  {
+    onUpdateFilters(query) {
+      set(selectedLocation, query.location || '');
+      set(selectedSymbol, query.locationSymbol || '');
+    },
+    extraParams,
   },
-  extraParams,
-});
+);
 
 onMounted(async () => {
   await fetchData();
@@ -89,9 +90,7 @@ function showDeleteConfirmation(item: CexMapping) {
 }
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.cex_mapping.edit_title')
-    : t('asset_management.cex_mapping.add_title'),
+  get(editableItem) ? t('asset_management.cex_mapping.edit_title') : t('asset_management.cex_mapping.add_title'),
 );
 </script>
 
@@ -126,11 +125,11 @@ const dialogTitle = computed<string>(() =>
     </template>
     <RuiCard>
       <ManageCexMappingTable
+        v-model:location="selectedLocation"
+        v-model:symbol="selectedSymbol"
+        v-model:pagination="pagination"
         :collection="state"
-        :location.sync="selectedLocation"
-        :symbol.sync="selectedSymbol"
         :loading="loading"
-        :pagination.sync="pagination"
         @refresh="fetchData()"
         @edit="edit($event)"
         @delete="showDeleteConfirmation($event)"

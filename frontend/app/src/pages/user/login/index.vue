@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import type { LoginCredentials } from '@/types/login';
 
 const { t } = useI18n();
@@ -9,9 +8,7 @@ const { backendChanged } = useBackendManagement();
 const { userLogin, errors, loading } = useAccountManagement();
 const { checkForAssetUpdate } = storeToRefs(useSessionStore());
 
-const showUpgradeProgress: ComputedRef<boolean> = computed(
-  () => get(upgradeVisible) && get(errors).length === 0,
-);
+const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && get(errors).length === 0);
 
 const isDocker = import.meta.env.VITE_DOCKER;
 
@@ -44,72 +41,70 @@ onMounted(() => fetchMessages());
 </script>
 
 <template>
-  <Fragment>
-    <section :class="css.section">
-      <div :class="css.container">
+  <section :class="css.section">
+    <div :class="css.container">
+      <RotkiLogo
+        :class="css.logo__mobile"
+        unique-key="0"
+      />
+      <div :class="css.wrapper">
+        <div data-cy="account-management">
+          <UserHost>
+            <div v-if="checkForAssetUpdate">
+              <AssetUpdate
+                headless
+                @skip="navigate()"
+              />
+            </div>
+            <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
+            <LoginForm
+              v-else
+              :loading="loading"
+              :is-docker="isDocker"
+              :errors="errors"
+              @touched="errors = []"
+              @login="handleLogin($event)"
+              @backend-changed="backendChanged($event)"
+              @new-account="navigateToUserCreation()"
+            />
+          </UserHost>
+        </div>
+      </div>
+      <footer :class="css.container__footer">
+        <AccountManagementFooterText #default="{ copyright }">
+          {{ copyright }}
+        </AccountManagementFooterText>
+        <div class="ml-4">
+          <AdaptiveFooterButton />
+        </div>
+      </footer>
+    </div>
+  </section>
+  <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
+    <div>
+      <span :class="css.logo">
         <RotkiLogo
-          :class="css.logo__mobile"
+          size="2"
           unique-key="0"
         />
-        <div :class="css.wrapper">
-          <div data-cy="account-management">
-            <UserHost>
-              <div v-if="checkForAssetUpdate">
-                <AssetUpdate
-                  headless
-                  @skip="navigate()"
-                />
-              </div>
-              <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
-              <LoginForm
-                v-else
-                :loading="loading"
-                :is-docker="isDocker"
-                :errors="errors"
-                @touched="errors = []"
-                @login="handleLogin($event)"
-                @backend-changed="backendChanged($event)"
-                @new-account="navigateToUserCreation()"
-              />
-            </UserHost>
-          </div>
-        </div>
-        <footer :class="css.container__footer">
-          <AccountManagementFooterText #default="{ copyright }">
-            {{ copyright }}
-          </AccountManagementFooterText>
-          <div class="ml-4">
-            <AdaptiveFooterButton />
-          </div>
-        </footer>
-      </div>
-    </section>
-    <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
-      <div>
-        <span :class="css.logo">
-          <RotkiLogo
-            size="2"
-            unique-key="0"
-          />
-        </span>
-        <h2 class="text-h3 font-light xl:text-h2 mb-6">
-          {{ header.header }}
-        </h2>
-        <p class="text-body-2">
-          {{ header.text }}
-        </p>
-        <NewReleaseChangelog
-          v-if="showReleaseNotes"
-          class="mt-4"
-        />
-        <WelcomeMessageDisplay
-          v-else-if="welcomeMessage"
-          class="mt-6"
-          :messages="activeWelcomeMessages"
-        />
-      </div>
-    </AccountManagementAside>
-  </Fragment>
+      </span>
+      <h2 class="text-h3 font-light xl:text-h2 mb-6">
+        {{ header.header }}
+      </h2>
+      <p class="text-body-2">
+        {{ header.text }}
+      </p>
+      <NewReleaseChangelog
+        v-if="showReleaseNotes"
+        class="mt-4"
+      />
+      <WelcomeMessageDisplay
+        v-else-if="welcomeMessage"
+        class="mt-6"
+        :messages="activeWelcomeMessages"
+      />
+    </div>
+  </AccountManagementAside>
 </template>
 
 <style module lang="scss">

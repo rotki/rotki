@@ -42,22 +42,22 @@ enum HistoryEventFilterValueKeys {
   ADDRESSES = 'addresses',
 }
 
-export type Matcher = SearchMatcher<
-  HistoryEventFilterKeys,
-  HistoryEventFilterValueKeys
->;
+export type Matcher = SearchMatcher<HistoryEventFilterKeys, HistoryEventFilterValueKeys>;
 
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
-export function useHistoryEventFilter(disabled: {
-  protocols?: boolean;
-  products?: boolean;
-  locations?: boolean;
-  period?: boolean;
-  validators?: boolean;
-  eventTypes?: boolean;
-  eventSubtypes?: boolean;
-}, entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>): FilterSchema<Filters, Matcher> {
+export function useHistoryEventFilter(
+  disabled: {
+    protocols?: boolean;
+    products?: boolean;
+    locations?: boolean;
+    period?: boolean;
+    validators?: boolean;
+    eventTypes?: boolean;
+    eventSubtypes?: boolean;
+  },
+  entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>,
+): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -112,24 +112,15 @@ export function useHistoryEventFilter(disabled: {
 
     const entryTypesVal = get(entryTypes);
     const evmOrEthDepositEventsIncluded
-      = !entryTypesVal
-      || entryTypesVal.some(
-        type => isEvmEventType(type) || isEthDepositEventType(type),
-      );
+      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type));
 
     const evmOrOnlineEventsIncluded
-      = !entryTypesVal
-      || entryTypesVal.some(
-        type => isEvmEventType(type) || isOnlineHistoryEventType(type),
-      );
+      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type));
 
     const eventsWithValidatorIndexIncluded
       = !entryTypesVal
       || entryTypesVal.some(
-        type =>
-          isWithdrawalEventType(type)
-          || isEthBlockEventType(type)
-          || isEthDepositEventType(type),
+        type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type),
       );
 
     if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
@@ -175,8 +166,7 @@ export function useHistoryEventFilter(disabled: {
         description: t('transactions.filter.entry_type'),
         string: true,
         multiple: true,
-        suggestions: () =>
-          entryTypesVal ?? Object.values(HistoryEventEntryType),
+        suggestions: () => entryTypesVal ?? Object.values(HistoryEventEntryType),
         validate: (type: string) => !!type,
         allowExclusion: true,
         behaviourRequired: true,

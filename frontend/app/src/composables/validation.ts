@@ -7,11 +7,7 @@ export function useValidation<V extends ValidationArgs>(v$: MaybeRef<Validation<
     return validator.$error;
   };
 
-  const callIfValid = <T = unknown>(
-    value: T,
-    method: (e: T) => void,
-    invalid: () => boolean = hasError,
-  ) => {
+  const callIfValid = <T = unknown>(value: T, method: (e: T) => void, invalid: () => boolean = hasError) => {
     if (!invalid())
       method(value);
   };

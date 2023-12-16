@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import {
-  helpers,
-  requiredUnless,
-} from '@vuelidate/validators';
+import { helpers, requiredUnless } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
@@ -43,9 +40,7 @@ const rules = {
     requiredUnlessKey: requiredUnless(logicAnd(publicKey)),
     consistOfNumbers: helpers.withMessage(
       t('eth2_input.validator_index.validation'),
-      (value: string) =>
-        !value || consistOfNumbers(value)
-      ,
+      (value: string) => !value || consistOfNumbers(value),
     ),
   },
   publicKey: {
@@ -84,20 +79,17 @@ watch(errorMessages, (errors) => {
 
 watchImmediate(validator, updateProperties);
 
-watch(
-  [validatorIndex, publicKey, ownershipPercentage],
-  ([validatorIndex, publicKey, ownershipPercentage]) => {
-    const validator: Eth2Validator | null
-      = validatorIndex || publicKey
-        ? {
-            validatorIndex: onlyIfTruthy(validatorIndex)?.trim(),
-            publicKey: onlyIfTruthy(publicKey)?.trim(),
-            ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim(),
-          }
-        : null;
-    emit('update:validator', validator);
-  },
-);
+watch([validatorIndex, publicKey, ownershipPercentage], ([validatorIndex, publicKey, ownershipPercentage]) => {
+  const validator: Eth2Validator | null
+    = validatorIndex || publicKey
+      ? {
+          validatorIndex: onlyIfTruthy(validatorIndex)?.trim(),
+          publicKey: onlyIfTruthy(publicKey)?.trim(),
+          ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim(),
+        }
+      : null;
+  emit('update:validator', validator);
+});
 
 defineExpose({
   validate,

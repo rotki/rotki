@@ -7,7 +7,7 @@ import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{
-    value: BigNumber;
+    value: BigNumber | undefined;
     loading?: boolean;
     amount?: BigNumber;
     // This is what the fiat currency is `value` in. If it is null, it means we want to show it the way it is, no conversion, e.g. amount of an asset.
@@ -73,18 +73,11 @@ const {
 
 const { t } = useI18n();
 
-const {
-  currency,
-  currencySymbol: currentCurrency,
-  floatingPrecision,
-} = storeToRefs(useGeneralSettingsStore());
+const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(
-  useSessionSettingsStore(),
-);
+const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(useSessionSettingsStore());
 
-const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency }
-  = useBalancePricesStore();
+const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
 
 const {
   abbreviateNumber,
@@ -100,8 +93,7 @@ const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
-const { historicPriceInCurrentCurrency, isPending, createKey }
-  = useHistoricCachePriceStore();
+const { historicPriceInCurrentCurrency, isPending, createKey } = useHistoricCachePriceStore();
 
 const { assetSymbol } = useAssetInfoRetrieval();
 
@@ -115,8 +107,11 @@ const evaluating = or(
   isPending(createKey(get(sourceCurrency) || '', get(timestampToUse))),
 );
 
-const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
+const latestFiatValue = computed<BigNumber>(() => {
   const currentValue = get(value);
+  if (!currentValue)
+    return Zero;
+
   const to = get(currentCurrency);
   const from = get(sourceCurrency);
 
@@ -129,14 +124,14 @@ const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
   if (!multiplierRate || !dividerRate)
     return currentValue;
 
-  return currentValue.multipliedBy(multiplierRate).dividedBy(dividerRate);
+  return currentValue?.multipliedBy(multiplierRate).dividedBy(dividerRate) ?? Zero;
 });
 
-const internalValue: ComputedRef<BigNumber> = computed(() => {
+const internalValue = computed<BigNumber>(() => {
   // If there is no `sourceCurrency`, it means that no fiat currency, or the unit is asset not fiat, hence we should just show the `value` passed.
   // If `forceCurrency` is true, we should also just return the value.
   if (!isDefined(sourceCurrency) || get(forceCurrency))
-    return get(value);
+    return get(value) ?? Zero;
 
   const sourceCurrencyVal = get(sourceCurrency);
   const currentCurrencyVal = get(currentCurrency);
@@ -157,9 +152,7 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
   }
 
   if (timestampVal > 0 && get(amount) && priceAssetVal) {
-    const assetHistoricRate = get(
-      historicPriceInCurrentCurrency(priceAssetVal, timestampVal),
-    );
+    const assetHistoricRate = get(historicPriceInCurrentCurrency(priceAssetVal, timestampVal));
     if (assetHistoricRate.isPositive())
       return get(amount).multipliedBy(assetHistoricRate);
   }
@@ -169,53 +162,46 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
     let calculatedValue = get(latestFiatValue);
 
     if (timestampVal > 0) {
-      const historicRate = get(
-        historicPriceInCurrentCurrency(sourceCurrencyVal, timestampVal),
-      );
+      const historicRate = get(historicPriceInCurrentCurrency(sourceCurrencyVal, timestampVal));
 
       if (historicRate.isPositive())
-        calculatedValue = get(value).multipliedBy(historicRate);
-      else
-        calculatedValue = Zero;
+        calculatedValue = get(value)?.multipliedBy(historicRate) ?? Zero;
+      else calculatedValue = Zero;
     }
 
     return calculatedValue;
   }
 
-  return get(value);
+  return get(value) ?? Zero;
 });
 
 const displayValue: ComputedRef<BigNumber> = useNumberScrambler({
   value: internalValue,
   multiplier: scrambleMultiplier,
-  enabled: computed(
-    () => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount)),
-  ),
+  enabled: computed(() => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
 });
 
 // Check if the `realValue` is NaN
-const isNaN: ComputedRef<boolean> = computed(() => get(displayValue).isNaN());
+const isNaN = computed<boolean>(() => get(displayValue).isNaN());
 
 // Decimal place of `realValue`
-const decimalPlaces: ComputedRef<number> = computed(
-  () => get(displayValue).decimalPlaces() ?? 0,
-);
+const decimalPlaces = computed<number>(() => get(displayValue).decimalPlaces() ?? 0);
 
 // Set exponential notation when the `realValue` is too big
-const showExponential: ComputedRef<boolean> = computed(() =>
-  get(displayValue).gt(1e18),
+const showExponential = computed<boolean>(() => get(displayValue).gt(1e18));
+
+const abbreviate = computed(
+  () => get(abbreviateNumber) && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)),
 );
 
-const abbreviate = computed(() => get(abbreviateNumber) && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)));
-
-const rounding: ComputedRef<RoundingMode | undefined> = computed(() => {
+const rounding = computed<RoundingMode | undefined>(() => {
   if (isDefined(sourceCurrency))
     return get(valueRoundingMode);
 
   return get(amountRoundingMode);
 });
 
-const renderedValue: ComputedRef<string> = computed(() => {
+const renderedValue = computed<string>(() => {
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
 
   if (get(isNaN))
@@ -239,19 +225,15 @@ const renderedValue: ComputedRef<string> = computed(() => {
   );
 });
 
-const tooltip: ComputedRef<string | null> = computed(() => {
-  if (
-    get(decimalPlaces) > get(floatingPrecision)
-    || get(showExponential)
-    || get(abbreviate)
-  ) {
+const tooltip = computed<string | null>(() => {
+  if (get(decimalPlaces) > get(floatingPrecision) || get(showExponential) || get(abbreviate)) {
     const value = get(displayValue);
     return value.toFormat(value.decimalPlaces() ?? 0);
   }
   return null;
 });
 
-const displayCurrency: ComputedRef<Currency> = computed(() => {
+const displayCurrency = computed<Currency>(() => {
   const fiat = get(sourceCurrency);
   if (get(forceCurrency) && fiat)
     return findCurrency(fiat);
@@ -259,7 +241,7 @@ const displayCurrency: ComputedRef<Currency> = computed(() => {
   return get(currency);
 });
 
-const comparisonSymbol: ComputedRef<'' | '<' | '>'> = computed(() => {
+const comparisonSymbol = computed<'' | '<' | '>'>(() => {
   const value = get(displayValue);
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
   const decimals = get(decimalPlaces);
@@ -267,27 +249,23 @@ const comparisonSymbol: ComputedRef<'' | '<' | '>'> = computed(() => {
 
   if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP)
     return '<';
-  else if (
-    value.abs().lt(1)
-    && hiddenDecimals
-    && get(rounding) === BigNumber.ROUND_DOWN
-  )
+  else if (value.abs().lt(1) && hiddenDecimals && get(rounding) === BigNumber.ROUND_DOWN)
     return '>';
 
   return '';
 });
 
-const defaultShownCurrency: ComputedRef<ShownCurrency> = computed(() => {
+const defaultShownCurrency = computed<ShownCurrency>(() => {
   const type = props.showCurrency;
   return type === 'none' && !!get(sourceCurrency) ? 'symbol' : type;
 });
 
-const shouldShowCurrency: ComputedRef<boolean> = computed(
+const shouldShowCurrency = computed<boolean>(
   () => !get(isNaN) && !!(get(defaultShownCurrency) !== 'none' || get(asset)),
 );
 
 // Copy
-const copyValue: ComputedRef<string> = computed(() => {
+const copyValue = computed<string>(() => {
   if (get(isNaN))
     return '-';
 

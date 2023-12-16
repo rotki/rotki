@@ -83,7 +83,7 @@ describe('composables::random-stepper', () => {
     expect(get(steps)).toEqual(5);
 
     vi.advanceTimersByTime(900);
-    onNavigate(2);
+    await onNavigate(2);
 
     expect(get(step)).toEqual(2);
 
@@ -96,7 +96,7 @@ describe('composables::random-stepper', () => {
     vi.advanceTimersByTime(1100);
     expect(get(step)).not.toEqual(2);
 
-    onNavigate(2);
+    await onNavigate(2);
     expect(get(step)).toEqual(2);
   });
 });

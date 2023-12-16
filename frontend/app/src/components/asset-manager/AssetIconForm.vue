@@ -10,7 +10,7 @@ const props = withDefaults(
 const { identifier } = toRefs(props);
 
 const preview = computed<string | null>(() => get(identifier) ?? null);
-const icon = ref<File | null>(null);
+const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
 const { notify } = useNotificationsStore();
@@ -50,8 +50,7 @@ async function saveIcon(identifier: string) {
   try {
     if (appSession)
       await setIcon(identifier, iconVal.path);
-    else
-      await uploadIcon(identifier, iconVal);
+    else await uploadIcon(identifier, iconVal);
 
     setLastRefreshedAssetIcon();
   }
@@ -67,7 +66,7 @@ async function saveIcon(identifier: string) {
   }
 }
 
-const previewImageSource: Ref<string> = ref('');
+const previewImageSource = ref<string>('');
 watch(icon, (icon) => {
   if (icon && icon.type.startsWith('image')) {
     const reader = new FileReader();

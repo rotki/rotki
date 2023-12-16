@@ -2,30 +2,11 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetInfo } from '../data';
 import type { LpType, ProfitLossModel } from '../defi';
-import type {
-  BalancerBalance,
-  BalancerProfitLoss,
-} from '../defi/balancer';
-import type {
-  XswapBalance,
-  XswapPool,
-  XswapPoolProfit,
-} from '../defi/xswap';
+import type { BalancerBalance, BalancerProfitLoss } from '../defi/balancer';
+import type { XswapBalance, XswapPool, XswapPoolProfit } from '../defi/xswap';
 import type { AssetBalanceWithPrice, BigNumber } from '../index';
-import type {
-  DebugSettings,
-  FrontendSettingsPayload,
-  Theme,
-  Themes,
-  TimeUnit,
-} from '../settings';
-import type {
-  LocationData,
-  NetValue,
-  OwnedAssets,
-  TimedAssetBalances,
-  TimedBalances,
-} from '../statistics';
+import type { DebugSettings, FrontendSettingsPayload, Theme, Themes, TimeUnit } from '../settings';
+import type { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from '../statistics';
 
 export interface PremiumInterface {
   readonly useHostComponents: boolean;
@@ -38,12 +19,7 @@ export interface StatisticsApi {
   assetValueDistribution: () => Promise<TimedAssetBalances>;
   locationValueDistribution: () => Promise<LocationData>;
   ownedAssets: () => Promise<OwnedAssets>;
-  timedBalances: (
-    asset: string,
-    start: number,
-    end: number,
-    collectionId?: number
-  ) => Promise<TimedBalances>;
+  timedBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedBalances>;
   fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
 }
@@ -133,14 +109,8 @@ export interface SettingsApi {
   isDark: ComputedRef<boolean>;
   user: UserSettingsApi;
   i18n: {
-    t: (
-      key: string,
-      values?: Record<string, unknown>,
-      choice?: number
-    ) => string;
-    te: (
-      key: string,
-    ) => boolean;
+    t: (key: string, values?: Record<string, unknown>, choice?: number) => string;
+    te: (key: string) => boolean;
   };
 }
 

@@ -29,17 +29,11 @@ export const LiquityStakingDetailEntry = z.object({
   staked: AssetBalance,
 });
 
-export type LiquityStakingDetailEntry = z.infer<
-  typeof LiquityStakingDetailEntry
->;
+export type LiquityStakingDetailEntry = z.infer<typeof LiquityStakingDetailEntry>;
 
-export const LiquityStakingDetailProxyEntries = z.record(
-  LiquityStakingDetailEntry,
-);
+export const LiquityStakingDetailProxyEntries = z.record(LiquityStakingDetailEntry);
 
-export type LiquityStakingDetailProxyEntries = z.infer<
-  typeof LiquityStakingDetailProxyEntries
->;
+export type LiquityStakingDetailProxyEntries = z.infer<typeof LiquityStakingDetailProxyEntries>;
 
 export const LiquityStakingDetail = z.object({
   balances: LiquityStakingDetailEntry.nullable(),
@@ -60,9 +54,7 @@ export type LiquityPoolDetailEntry = z.infer<typeof LiquityPoolDetailEntry>;
 
 export const LiquityPoolDetailProxyEntries = z.record(LiquityPoolDetailEntry);
 
-export type LiquityPoolDetailProxyEntries = z.infer<
-  typeof LiquityPoolDetailProxyEntries
->;
+export type LiquityPoolDetailProxyEntries = z.infer<typeof LiquityPoolDetailProxyEntries>;
 
 export const LiquityPoolDetail = z.object({
   balances: LiquityPoolDetailEntry.nullable(),

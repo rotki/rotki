@@ -14,15 +14,15 @@ const RawManualBalance = z.object({
 
 export type RawManualBalance = z.infer<typeof RawManualBalance>;
 
-export const ManualBalance = z.object({
-  identifier: z.number().positive(),
-}).merge(RawManualBalance);
+export const ManualBalance = z
+  .object({
+    identifier: z.number().positive(),
+  })
+  .merge(RawManualBalance);
 
 export type ManualBalance = z.infer<typeof ManualBalance>;
 
-export const ManualBalanceWithValue = ManualBalance.merge(
-  z.object({ usdValue: NumericString }),
-);
+export const ManualBalanceWithValue = ManualBalance.merge(z.object({ usdValue: NumericString }));
 
 export type ManualBalanceWithValue = z.infer<typeof ManualBalanceWithValue>;
 

@@ -33,15 +33,15 @@ onMounted(() => {
       :success-messages="success"
       :error-messages="error"
       inline
-      @input="update($event)"
+      @update:model-value="update($event)"
     >
       <RuiRadio
         :label="t('general_settings.amount.label.location_before')"
-        internal-value="before"
+        value="before"
       />
       <RuiRadio
         :label="t('general_settings.amount.label.location_after')"
-        internal-value="after"
+        value="after"
       />
     </RuiRadioGroup>
   </SettingsOption>

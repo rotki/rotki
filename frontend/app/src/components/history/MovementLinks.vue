@@ -14,10 +14,7 @@ const { t } = useI18n();
 // TODO: make it so that the chains are retrieved from the backend
 const chain = computed<Blockchain>(() => {
   const assetInLowerCase = get(item).asset.toLowerCase();
-  if (
-    get(isEvmIdentifier(get(item).asset))
-    || assetInLowerCase === Blockchain.ETH
-  )
+  if (get(isEvmIdentifier(get(item).asset)) || assetInLowerCase === Blockchain.ETH)
     return Blockchain.ETH;
 
   return assetInLowerCase as Blockchain;

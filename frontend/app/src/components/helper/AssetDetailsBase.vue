@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 import type { NftAsset } from '@/types/nfts';
 
 const props = withDefaults(
@@ -30,8 +30,8 @@ const props = withDefaults(
 const { asset, opensDetails, isCollectionParent } = toRefs(props);
 const rootAttrs = useAttrs();
 
-const symbol: ComputedRef<string> = computed(() => get(asset).symbol ?? '');
-const name: ComputedRef<string> = computed(() => get(asset).name ?? '');
+const symbol = computed<string>(() => get(asset).symbol ?? '');
+const name = computed<string>(() => get(asset).name ?? '');
 
 const router = useRouter();
 
@@ -53,9 +53,7 @@ async function navigate() {
 }
 
 const { isPending } = useAssetCacheStore();
-const loading: ComputedRef<boolean> = computed(() =>
-  get(isPending(get(asset).identifier)),
-);
+const loading = computed<boolean>(() => get(isPending(get(asset).identifier)));
 </script>
 
 <template>

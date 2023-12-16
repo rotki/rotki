@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
-import {
-  isEthDepositEventRef,
-  isEvmEventRef,
-  isOnlineHistoryEventRef,
-} from '@/utils/history/events';
+import { isEthDepositEventRef, isEvmEventRef, isOnlineHistoryEventRef } from '@/utils/history/events';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { HistoryEventEntry } from '@/types/history/events';
 
@@ -21,9 +17,7 @@ const attrs = getEventTypeData(event);
 const { t } = useI18n();
 
 const onlineEvent = isOnlineHistoryEventRef(event);
-const evmOrEthDepositEvent = computed(
-  () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)),
-);
+const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 </script>
 
 <template>

@@ -9,8 +9,8 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/address-book';
 
-const selectedChain: Ref<string | null> = ref(null);
-const enableForAllChains: Ref<boolean> = ref(false);
+const selectedChain = ref<string>();
+const enableForAllChains = ref<boolean>(false);
 
 const tab = ref<number>(0);
 const locations: AddressBookLocation[] = ['global', 'private'];
@@ -20,7 +20,7 @@ const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
 const emptyForm: () => AddressBookPayload = () => ({
   location: get(location),
-  blockchain: get(selectedChain),
+  blockchain: get(selectedChain) ?? null,
   address: '',
   name: '',
 });
@@ -34,36 +34,22 @@ const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
 const { getAddressBook, addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
-const {
-  filters,
-  matchers,
-  state,
-  isLoading,
-  fetchData,
-  sort,
-  pagination,
-} = usePaginationFilters<
+const { filters, matchers, state, isLoading, fetchData, sort, pagination } = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
   AddressBookEntry,
   Collection<AddressBookEntry>,
   Filters,
   Matcher
->(
-  null,
-  true,
-  useAddressBookFilter,
-  filter => getAddressBook(get(location), filter),
-  {
-    extraParams: computed(() => ({
-      blockchain: get(selectedChain),
-    })),
-    defaultSortBy: {
-      key: ['name'],
-      ascending: [true],
-    },
+>(null, true, useAddressBookFilter, filter => getAddressBook(get(location), filter), {
+  extraParams: computed(() => ({
+    blockchain: get(selectedChain),
+  })),
+  defaultSortBy: {
+    key: ['name'],
+    ascending: [true],
   },
-);
+});
 
 function openForm(item: AddressBookEntry | null = null) {
   set(editMode, !!item);
@@ -100,8 +86,7 @@ async function save() {
     };
     if (get(editMode))
       await updateAddressBook(location, [payload]);
-    else
-      await addAddressBook(location, [payload]);
+    else await addAddressBook(location, [payload]);
 
     set(tab, location === 'global' ? 0 : 1);
 
@@ -183,8 +168,8 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
 
         <div class="w-[20rem] max-w-[30rem]">
           <TableFilter
+            v-model:matches="filters"
             :matchers="matchers"
-            :matches.sync="filters"
           />
         </div>
       </div>
@@ -212,11 +197,11 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
         >
           <template #default>
             <AddressBookTable
+              v-model:sort="sort"
+              v-model:pagination="pagination"
               :collection="state"
               :location="loc"
               :loading="isLoading"
-              :sort.sync="sort"
-              :pagination.sync="pagination"
               :blockchain="selectedChain"
               @edit="openForm($event)"
               @refresh="fetchData()"
@@ -228,7 +213,7 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
 
     <AddressBookFormDialog
       v-model="formPayload"
-      :enable-for-all-chains.sync="enableForAllChains"
+      v-model:enable-for-all-chains="enableForAllChains"
       :edit-mode="editMode"
       :error-messages="errorMessages"
       @reset="resetForm()"

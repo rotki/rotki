@@ -5,9 +5,7 @@ import { toMessages } from '@/utils/validation';
 
 const oraclePenaltyThresholdCount = ref<string>('0');
 
-const { oraclePenaltyThresholdCount: frequency } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { oraclePenaltyThresholdCount: frequency } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
 
@@ -55,10 +53,8 @@ onMounted(() => {
       :hint="t('oracle_cache_management.penalty.hints.oracle_penalty_threshold_count')"
       type="number"
       :success-messages="success"
-      :error-messages="
-        error || toMessages(v$.oraclePenaltyThresholdCount)
-      "
-      @input="callIfValid($event, update)"
+      :error-messages="error || toMessages(v$.oraclePenaltyThresholdCount)"
+      @update:model-value="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>

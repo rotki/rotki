@@ -12,7 +12,9 @@ const remaining = computed<number>(() => props.item.total - props.item.processed
 
 const isComplete = computed<boolean>(() => get(remaining) === 0);
 
-const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.chain })));
+const decoding = computed<boolean>(() =>
+  get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.chain })),
+);
 </script>
 
 <template>

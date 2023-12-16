@@ -1,8 +1,6 @@
 describe('utils/text', () => {
   it('check return value of human readable function', () => {
-    expect(toHumanReadable('lorem_ipsum dolor sit_amet')).toEqual(
-      'lorem ipsum dolor sit amet',
-    );
+    expect(toHumanReadable('lorem_ipsum dolor sit_amet')).toEqual('lorem ipsum dolor sit amet');
     expect(toHumanReadable('polygon_pos')).toEqual('polygon pos');
     expect(toHumanReadable('polygon_pos', 'uppercase')).toEqual('POLYGON POS');
     expect(toHumanReadable('polygon_pos', 'capitalize')).toEqual('Polygon Pos');
@@ -15,17 +13,9 @@ describe('utils/text', () => {
   });
 
   it('check return value of transform case function', () => {
-    expect(transformCase('lorem_ipsum_dolor_sit_amet', true)).toEqual(
-      'loremIpsumDolorSitAmet',
-    );
-    expect(transformCase('lorem_ipsum_dolor_sit_amet')).toEqual(
-      'lorem_ipsum_dolor_sit_amet',
-    );
-    expect(transformCase('loremIpsumDolorSitAmet')).toEqual(
-      'lorem_ipsum_dolor_sit_amet',
-    );
-    expect(transformCase('loremIpsumDolorSitAmet', true)).toEqual(
-      'loremIpsumDolorSitAmet',
-    );
+    expect(transformCase('lorem_ipsum_dolor_sit_amet', true)).toEqual('loremIpsumDolorSitAmet');
+    expect(transformCase('lorem_ipsum_dolor_sit_amet')).toEqual('lorem_ipsum_dolor_sit_amet');
+    expect(transformCase('loremIpsumDolorSitAmet')).toEqual('lorem_ipsum_dolor_sit_amet');
+    expect(transformCase('loremIpsumDolorSitAmet', true)).toEqual('loremIpsumDolorSitAmet');
   });
 });

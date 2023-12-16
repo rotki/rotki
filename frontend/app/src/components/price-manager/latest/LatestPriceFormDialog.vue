@@ -19,7 +19,7 @@ const emptyPrice: () => ManualPriceFormPayload = () => ({
   price: '',
 });
 
-const form: Ref<ManualPriceFormPayload> = ref(emptyPrice());
+const form = ref<ManualPriceFormPayload>(emptyPrice());
 
 const { value, editMode } = toRefs(props);
 
@@ -28,8 +28,7 @@ watchImmediate(value, (value) => {
     set(form, { ...emptyPrice(), ...value });
 });
 
-const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit }
-  = useLatestPriceForm();
+const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit } = useLatestPriceForm();
 
 const { t } = useI18n();
 
@@ -43,11 +42,7 @@ onMounted(() => {
 <template>
   <BigDialog
     :display="openDialog"
-    :title="
-      editMode
-        ? t('price_management.dialog.edit_title')
-        : t('price_management.dialog.add_title')
-    "
+    :title="editMode ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
     :loading="submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"

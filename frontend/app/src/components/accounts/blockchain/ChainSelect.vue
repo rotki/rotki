@@ -8,7 +8,6 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: string | null;
     disabled?: boolean;
     dense?: boolean;
     evmOnly?: boolean;
@@ -16,7 +15,6 @@ const props = withDefaults(
     items?: string[];
   }>(),
   {
-    modelValue: null,
     disabled: false,
     dense: false,
     evmOnly: false,
@@ -25,13 +23,9 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', blockchain: string | null): void;
-}>();
+const model = defineModel<string | undefined>({ required: true });
 
-const rootAttrs = useAttrs();
-
-const { evmOnly, modelValue, excludeEthStaking, items } = toRefs(props);
+const { evmOnly, excludeEthStaking, items } = toRefs(props);
 
 const { isModuleEnabled } = useModules();
 
@@ -57,10 +51,6 @@ const filteredItems = computed(() => {
   return data;
 });
 
-function updateBlockchain(blockchain: Blockchain) {
-  emit('update:model-value', blockchain);
-}
-
 const mappedOptions = computed(() => {
   const filtered = get(filteredItems);
   return get(supportedChains).filter(item => filtered.includes(item.id));
@@ -69,19 +59,18 @@ const mappedOptions = computed(() => {
 
 <template>
   <RuiAutoComplete
+    v-model="model"
     :dense="dense"
     :disabled="disabled"
     :options="mappedOptions"
     :label="t('account_form.labels.blockchain')"
-    :value="modelValue"
     data-cy="account-blockchain-field"
     variant="outlined"
     auto-select-first
     key-attr="id"
     text-attr="name"
     :item-height="dense ? 48 : 56"
-    v-bind="rootAttrs"
-    @input="updateBlockchain($event)"
+    v-bind="$attrs"
   >
     <template #selection="{ item }">
       <ChainDisplay

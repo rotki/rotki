@@ -1,10 +1,5 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
-import {
-  handleResponse,
-  validFileOperationStatus,
-  validStatus,
-  validWithoutSessionStatus,
-} from '@/services/utils';
+import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { ActionStatus } from '@/types/action';
@@ -13,79 +8,53 @@ import type { PendingTask } from '@/types/task';
 
 export function useAssetsApi() {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/assets/updates',
-      {
-        params: snakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<PendingTask>>('/assets/updates', {
+      params: snakeCaseTransformer({ asyncQuery: true }),
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const performUpdate = async (
-    version: number,
-    conflicts?: ConflictResolution,
-  ): Promise<PendingTask> => {
+  const performUpdate = async (version: number, conflicts?: ConflictResolution): Promise<PendingTask> => {
     const data = {
       async_query: true,
       up_to_version: version,
       conflicts,
     };
 
-    const response = await api.instance.post<ActionResult<PendingTask>>(
-      '/assets/updates',
-      data,
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.post<ActionResult<PendingTask>>('/assets/updates', data, {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const mergeAssets = async (
-    sourceIdentifier: string,
-    targetAsset: string,
-  ): Promise<true> => {
+  const mergeAssets = async (sourceIdentifier: string, targetAsset: string): Promise<true> => {
     const data = snakeCaseTransformer({
       sourceIdentifier,
       targetAsset,
     });
-    const response = await api.instance.put<ActionResult<true>>(
-      '/assets/replace',
-      data,
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.put<ActionResult<true>>('/assets/replace', data, {
+      validateStatus: validStatus,
+    });
     return handleResponse(response);
   };
 
-  const restoreAssetsDatabase = async (
-    reset: 'hard' | 'soft',
-    ignoreWarnings: boolean,
-  ): Promise<PendingTask> => {
-    const response = await api.instance.delete<ActionResult<PendingTask>>(
-      '/assets/updates',
-      {
-        data: snakeCaseTransformer({
-          reset,
-          ignoreWarnings,
-          asyncQuery: true,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+  const restoreAssetsDatabase = async (reset: 'hard' | 'soft', ignoreWarnings: boolean): Promise<PendingTask> => {
+    const response = await api.instance.delete<ActionResult<PendingTask>>('/assets/updates', {
+      data: snakeCaseTransformer({
+        reset,
+        ignoreWarnings,
+        asyncQuery: true,
+      }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const importCustom = async (
-    file: File,
-    upload = false,
-  ): Promise<PendingTask> => {
+  const importCustom = async (file: File, upload = false): Promise<PendingTask> => {
     if (upload) {
       const data = new FormData();
       data.append('file', file);
@@ -159,13 +128,10 @@ export function useAssetsApi() {
       },
       ignoreCache ? { ignoreCache } : {},
     );
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/nfts',
-      {
-        params: snakeCaseTransformer(params),
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<PendingTask>>('/nfts', {
+      params: snakeCaseTransformer(params),
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };

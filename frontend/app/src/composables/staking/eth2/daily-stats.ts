@@ -13,7 +13,7 @@ export function useEth2DailyStats() {
     ascending: [false],
   });
 
-  const pagination: Ref<Eth2DailyStatsPayload> = ref(defaultPagination());
+  const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
 
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
@@ -52,12 +52,7 @@ export function useEth2DailyStats() {
         description: t('actions.eth2_staking_stats.task.description'),
       };
 
-      await awaitTask<Eth2DailyStats, TaskMeta>(
-        taskId,
-        taskType,
-        taskMeta,
-        true,
-      );
+      await awaitTask<Eth2DailyStats, TaskMeta>(taskId, taskType, taskMeta, true);
       setStatus(Status.LOADED);
       return true;
     }
@@ -78,9 +73,7 @@ export function useEth2DailyStats() {
     return false;
   };
 
-  const fetchStakingStats = async (
-    payload: MaybeRef<Eth2DailyStatsPayload>,
-  ): Promise<Eth2DailyStats> => {
+  const fetchStakingStats = async (payload: MaybeRef<Eth2DailyStatsPayload>): Promise<Eth2DailyStats> => {
     assert(get(premium));
 
     return await api.fetchStakingStats({
@@ -114,20 +107,17 @@ export function useEth2DailyStats() {
     return {
       ...objectOmit(dailyStats, ['entries']),
       entries: dailyStats.entries.map((stat) => {
-        const ownershipPercentage = validators.find(
-          ({ data }) => data.index === stat.validatorIndex,
-        )?.data?.ownershipPercentage;
-        return ({
+        const ownershipPercentage = validators.find(({ data }) => data.index === stat.validatorIndex)?.data
+          ?.ownershipPercentage;
+        return {
           ...stat,
           ownershipPercentage,
-        });
+        };
       }),
     };
   });
 
-  const fetchDailyStats = async (
-    payload: Eth2DailyStatsPayload,
-  ): Promise<void> => {
+  const fetchDailyStats = async (payload: Eth2DailyStatsPayload): Promise<void> => {
     await execute(0, payload);
   };
 

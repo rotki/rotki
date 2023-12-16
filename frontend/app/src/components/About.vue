@@ -9,9 +9,7 @@ const { version: getVersion, isPackaged, openPath } = useInterop();
 const { t } = useI18n();
 
 const { version, dataDirectory } = toRefs(store);
-const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
-  getVersion(),
-);
+const versionInfo = asyncComputed<SystemVersion | WebVersion>(() => getVersion());
 
 const premium = usePremium();
 const componentsVersion = computed(() => {

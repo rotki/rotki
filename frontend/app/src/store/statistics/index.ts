@@ -18,9 +18,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const settingsStore = useFrontendSettingsStore();
   const { nftsInNetValue } = storeToRefs(settingsStore);
   const { notify } = useNotificationsStore();
-  const { currencySymbol, floatingPrecision } = storeToRefs(
-    useGeneralSettingsStore(),
-  );
+  const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { balances, liabilities } = useAggregatedBalances();
   const { nonFungibleTotalValue } = storeToRefs(useNonFungibleBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
@@ -38,20 +36,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       const lpTotalBalance = get(lpTotal(false));
 
-      const assetValue = aggregatedBalances.reduce(
-        (sum, value) => sum.plus(value.usdValue),
-        Zero,
-      );
+      const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
 
-      const liabilityValue = totalLiabilities.reduce(
-        (sum, value) => sum.plus(value.usdValue),
-        Zero,
-      );
+      const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
 
-      return assetValue
-        .plus(nftTotal)
-        .plus(lpTotalBalance)
-        .minus(liabilityValue);
+      return assetValue.plus(nftTotal).plus(lpTotalBalance).minus(liabilityValue);
     });
 
   const totalNetWorth = computed(() => {
@@ -62,50 +51,48 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorthUsd = computed(() => get(calculateTotalValue(true)));
 
-  const getNetValue = (startingDate: number): ComputedRef<NetValue> => computed(() => {
-    const currency = get(currencySymbol);
-    const rate = get(exchangeRate(currency)) ?? One;
+  const getNetValue = (startingDate: number): ComputedRef<NetValue> =>
+    computed(() => {
+      const currency = get(currencySymbol);
+      const rate = get(exchangeRate(currency)) ?? One;
 
-    const convert = (value: BigNumber): BigNumber =>
-      currency === CURRENCY_USD ? value : value.multipliedBy(rate);
+      const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 
-    const { times, data } = get(netValue);
+      const { times, data } = get(netValue);
 
-    const now = Math.floor(Date.now() / 1000);
-    const netWorth = get(totalNetWorth);
+      const now = Math.floor(Date.now() / 1000);
+      const netWorth = get(totalNetWorth);
 
-    if (times.length === 0 && data.length === 0) {
-      const oneDayTimestamp = 24 * 60 * 60;
+      if (times.length === 0 && data.length === 0) {
+        const oneDayTimestamp = 24 * 60 * 60;
+
+        return {
+          times: [now - oneDayTimestamp, now],
+          data: [Zero, netWorth],
+        };
+      }
+
+      const nv: NetValue = { times: [], data: [] };
+
+      for (const [i, time] of times.entries()) {
+        if (time < startingDate)
+          continue;
+
+        nv.times.push(time);
+        nv.data.push(convert(data[i]));
+      }
 
       return {
-        times: [now - oneDayTimestamp, now],
-        data: [Zero, netWorth],
+        times: [...nv.times, now],
+        data: [...nv.data, netWorth],
       };
-    }
-
-    const nv: NetValue = { times: [], data: [] };
-
-    for (const [i, time] of times.entries()) {
-      if (time < startingDate)
-        continue;
-
-      nv.times.push(time);
-      nv.data.push(convert(data[i]));
-    }
-
-    return {
-      times: [...nv.times, now],
-      data: [...nv.data, netWorth],
-    };
-  });
+    });
 
   const overall = computed(() => {
     const currency = get(currencySymbol);
     const rate = get(exchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
-    const allTimeframes = timeframes((unit, amount) =>
-      dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix(),
-    );
+    const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
 
     const startingValue: () => BigNumber = () => {

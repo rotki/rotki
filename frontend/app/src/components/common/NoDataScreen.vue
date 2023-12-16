@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 
 withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 

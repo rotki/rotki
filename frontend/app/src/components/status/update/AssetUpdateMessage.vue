@@ -14,9 +14,9 @@ const emit = defineEmits<{
 
 const { versions } = toRefs(props);
 
-const partial: Ref<boolean> = ref(false);
-const upToVersion: Ref<string> = ref('0');
-const skipUpdate: Ref<boolean> = ref(false);
+const partial = ref<boolean>(false);
+const upToVersion = ref<string>('0');
+const skipUpdate = ref<boolean>(false);
 
 const multiple = computed(() => {
   const { remote, local } = get(versions);
@@ -70,10 +70,10 @@ const { t } = useI18n();
     <template #header>
       {{ t('asset_update.title') }}
     </template>
-    <i18n
+    <i18n-t
       class="text-body-1"
       tag="div"
-      path="asset_update.description"
+      keypath="asset_update.description"
     >
       <template #remote>
         <span class="font-medium">{{ versions.remote }}</span>
@@ -81,7 +81,7 @@ const { t } = useI18n();
       <template #local>
         <span class="font-medium">{{ versions.local }}</span>
       </template>
-    </i18n>
+    </i18n-t>
     <div class="text-body-1 mt-4">
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
@@ -104,7 +104,7 @@ const { t } = useI18n();
       <div class="ml-8 md:w-1/2">
         <RuiTextField
           :disabled="!partial"
-          :value="upToVersion"
+          :model-value="upToVersion"
           variant="outlined"
           color="primary"
           type="number"
@@ -113,7 +113,7 @@ const { t } = useI18n();
           :min="versions.local"
           :max="versions.remote"
           :label="t('asset_update.up_to_version')"
-          @input="onChange($event)"
+          @update:model-value="onChange($event)"
         />
       </div>
     </div>

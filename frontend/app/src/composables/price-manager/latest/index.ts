@@ -1,33 +1,28 @@
-import {
-  NotificationCategory,
-  type NotificationPayload,
-  Severity,
-} from '@rotki/common/lib/messages';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { omit } from 'lodash-es';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
 export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref<string | undefined>) {
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = ref(false);
   const refreshing = ref(false);
 
-  const { deleteLatestPrice, fetchLatestPrices, addLatestPrice }
-    = useAssetPricesApi();
+  const { deleteLatestPrice, fetchLatestPrices, addLatestPrice } = useAssetPricesApi();
   const { assetPrice } = useBalancePricesStore();
   const { refreshPrices } = useBalances();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
 
-  const latestAssets: ComputedRef<string[]> = computed(() =>
+  const latestAssets = computed<string[]>(() =>
     get(latestPrices)
       .flatMap(({ fromAsset, toAsset }) => [fromAsset, toAsset])
       .filter(asset => asset !== CURRENCY_USD),
   );
 
-  const items = computed(() => {
+  const items = computed<ManualPriceWithUsd[]>(() => {
     const filterVal = get(filter);
     const latestPricesVal = get(latestPrices);
 
@@ -35,12 +30,17 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
       ? latestPricesVal.filter(({ fromAsset }) => fromAsset === filterVal)
       : latestPricesVal;
 
-    return filteredItems.map(item => ({
-      ...item,
-      usdPrice: !isNft(item.fromAsset)
-        ? get(assetPrice(item.fromAsset))
-        : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price),
-    }));
+    return filteredItems.map(
+      (item, index) =>
+        ({
+          id: index + 1,
+          ...item,
+          usdPrice:
+            (!isNft(item.fromAsset)
+              ? get(assetPrice(item.fromAsset))
+              : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)) || Zero,
+        }) satisfies ManualPriceWithUsd,
+    );
   });
 
   const getLatestPrices = async () => {
@@ -65,18 +65,13 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     }
   };
 
-  const save = async (
-    data: ManualPriceFormPayload,
-    update: boolean,
-  ): Promise<boolean> => {
+  const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
     try {
       return await addLatestPrice(omit(data, 'usdPrice'));
     }
     catch (error: any) {
       const values = { message: error.message };
-      const title = update
-        ? t('price_management.edit.error.title')
-        : t('price_management.add.error.title');
+      const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
       const description = update
         ? t('price_management.edit.error.description', values)
         : t('price_management.add.error.description', values);
@@ -99,9 +94,7 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     set(refreshing, false);
   };
 
-  const deletePrice = async (
-    { fromAsset }: { fromAsset: string },
-  ) => {
+  const deletePrice = async ({ fromAsset }: { fromAsset: string }) => {
     try {
       await deleteLatestPrice(fromAsset);
       await refreshCurrentPrices([fromAsset]);

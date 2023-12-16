@@ -14,20 +14,14 @@ import type { PendingTask } from '@/types/task';
 
 export function useBlockchainBalancesApi() {
   const queryLoopringBalances = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      'blockchains/eth/modules/loopring/balances',
-      {
-        params: snakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+    const response = await api.instance.get<ActionResult<PendingTask>>('blockchains/eth/modules/loopring/balances', {
+      params: snakeCaseTransformer({ asyncQuery: true }),
+      validateStatus: validWithSessionAndExternalService,
+    });
     return handleResponse(response);
   };
 
-  const queryBlockchainBalances = async (
-    ignoreCache = false,
-    blockchain?: string,
-  ): Promise<PendingTask> => {
+  const queryBlockchainBalances = async (ignoreCache = false, blockchain?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -62,30 +56,17 @@ export function useBlockchainBalancesApi() {
     return handleResponse(response);
   };
 
-  const fetchDetectedTokensTask = (
-    chain: string,
-    addresses: string[],
-  ): Promise<PendingTask> => internalDetectedTokens<PendingTask>(chain, addresses, true);
+  const fetchDetectedTokensTask = (chain: string, addresses: string[]): Promise<PendingTask> =>
+    internalDetectedTokens<PendingTask>(chain, addresses, true);
 
-  const fetchDetectedTokens = async (
-    chain: string,
-    addresses: string[] | null,
-  ): Promise<EvmTokensRecord> => {
-    const response = await internalDetectedTokens<EvmTokensRecord>(
-      chain,
-      addresses,
-      false,
-    );
+  const fetchDetectedTokens = async (chain: string, addresses: string[] | null): Promise<EvmTokensRecord> => {
+    const response = await internalDetectedTokens<EvmTokensRecord>(chain, addresses, false);
 
     return EvmTokensRecord.parse(response);
   };
 
-  const deleteModuleData = async (
-    module: Nullable<Module> = null,
-  ): Promise<boolean> => {
-    const url = module
-      ? `/blockchains/eth/modules/${module}/data`
-      : `/blockchains/eth/modules/data`;
+  const deleteModuleData = async (module: Nullable<Module> = null): Promise<boolean> => {
+    const url = module ? `/blockchains/eth/modules/${module}/data` : `/blockchains/eth/modules/data`;
     const response = await api.instance.delete<ActionResult<boolean>>(url, {
       validateStatus: validStatus,
     });

@@ -1,37 +1,29 @@
 <script setup lang="ts">
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import type {
-  EvmChainAndTxHash,
-  HistoryEventEntry,
-} from '@/types/history/events';
+import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
-    value: boolean;
+    modelValue: boolean;
     event: HistoryEventEntry;
   }>(),
   {
     event: undefined,
-    value: false,
   },
 );
 
 const emit = defineEmits<{
   (e: 're-decode', data: EvmChainAndTxHash): void;
   (e: 'edit', event?: HistoryEventEntry): void;
-  (
-    e: 'add-rule',
-    data: Pick<
-      AccountingRuleEntry,
-      'eventType' | 'eventSubtype' | 'counterparty'
-    >
-  ): void;
-  (e: 'input', value: boolean): void;
+  (e: 'add-rule', data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>): void;
+  (e: 'update:model-value', value: boolean): void;
 }>();
 
 const { t } = useI18n();
 
 const { event } = toRefs(props);
+
+const model = useSimpleVModel(props, emit);
 
 const isEvm = computed(() => {
   const entry = get(event);
@@ -85,13 +77,13 @@ function onAddRule() {
 }
 
 function close() {
-  emit('input', false);
+  emit('update:model-value', false);
 }
 </script>
 
 <template>
   <RuiDialog
-    :value="value"
+    :model-value="model"
     :max-width="500"
     @closed="close()"
   >

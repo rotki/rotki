@@ -15,34 +15,25 @@ import type { ActionStatus } from '@/types/action';
 import type { PendingTask } from '@/types/task';
 
 export function useReportsApi() {
-  const generateReport = async ({
-    end,
-    start,
-  }: ProfitLossReportPeriod): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/history',
-      {
-        params: snakeCaseTransformer({
-          asyncQuery: true,
-          fromTimestamp: start,
-          toTimestamp: end,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+  const generateReport = async ({ end, start }: ProfitLossReportPeriod): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>('/history', {
+      params: snakeCaseTransformer({
+        asyncQuery: true,
+        fromTimestamp: start,
+        toTimestamp: end,
+      }),
+      validateStatus: validStatus,
+    });
     return handleResponse(response);
   };
 
   const exportReportCSV = async (directoryPath: string): Promise<boolean> => {
-    const response = await api.instance.get<ActionResult<boolean>>(
-      '/history/export',
-      {
-        params: snakeCaseTransformer({
-          directoryPath,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<boolean>>('/history/export', {
+      params: snakeCaseTransformer({
+        directoryPath,
+      }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
@@ -69,9 +60,7 @@ export function useReportsApi() {
     }
   };
 
-  const exportReportData = async (
-    payload: ProfitLossReportDebugPayload,
-  ): Promise<PendingTask> => {
+  const exportReportData = async (payload: ProfitLossReportDebugPayload): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/debug',
       snakeCaseTransformer({
@@ -103,26 +92,19 @@ export function useReportsApi() {
     const data = new FormData();
     data.append('filepath', filepath);
     data.append('async_query', 'true');
-    const response = await api.instance.patch<ActionResult<PendingTask>>(
-      '/history/debug',
-      data,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    const response = await api.instance.patch<ActionResult<PendingTask>>('/history/debug', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
       },
-    );
+    });
 
     return handleResponse(response);
   };
 
   const fetchActionableItems = async (): Promise<ReportActionableItem> => {
-    const response = await api.instance.get<ActionResult<ReportActionableItem>>(
-      '/history/actionable_items',
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<ReportActionableItem>>('/history/actionable_items', {
+      validateStatus: validStatus,
+    });
 
     const data = handleResponse(response);
     return ReportActionableItem.parse(data);
@@ -137,9 +119,7 @@ export function useReportsApi() {
   };
 
   const fetchReport = async (reportId: number): Promise<ProfitLossOverview> => {
-    const response = await api.instance.get<
-      ActionResult<ProfitLossReportOverview>
-    >(`/reports/${reportId}`, {
+    const response = await api.instance.get<ActionResult<ProfitLossReportOverview>>(`/reports/${reportId}`, {
       validateStatus: validStatus,
     });
     const data = handleResponse(response);
@@ -151,9 +131,7 @@ export function useReportsApi() {
     reportId: number,
     page: { limit: number; offset: number },
   ): Promise<ProfitLossReportEvents> => {
-    const response = await api.instance.post<
-      ActionResult<ProfitLossReportEvents>
-    >(`/reports/${reportId}/data`, page, {
+    const response = await api.instance.post<ActionResult<ProfitLossReportEvents>>(`/reports/${reportId}/data`, page, {
       validateStatus: validStatus,
     });
     const data = handleResponse(response);
@@ -161,12 +139,9 @@ export function useReportsApi() {
   };
 
   const deleteReport = async (reportId: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      `/reports/${reportId}`,
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>(`/reports/${reportId}`, {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };

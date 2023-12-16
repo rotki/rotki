@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  BaseAccountingSettings,
-  CostBasisMethod,
-} from '@/types/user';
+import type { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
 import type { ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
@@ -16,24 +13,20 @@ function taxFreePeriod(period: number) {
   return t('account_settings_display.days', { days });
 }
 
-const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
-  () => {
-    const method = get(accountingSettings).costBasisMethod;
-    if (!method)
-      return null;
+const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(() => {
+  const method = get(accountingSettings).costBasisMethod;
+  if (!method)
+    return null;
 
-    return (
-      get(costBasisMethodData).find(item => item.identifier === method) || null
-    );
-  },
-);
+  return get(costBasisMethodData).find(item => item.identifier === method) || null;
+});
 
 interface Item {
   label: string;
   data: boolean | string;
 }
 
-const items: ComputedRef<Item[]> = computed(() => {
+const items = computed<Item[]>(() => {
   const settings = get(accountingSettings);
   const items = [
     {
@@ -62,17 +55,13 @@ const items: ComputedRef<Item[]> = computed(() => {
     },
     {
       label: t('account_settings_display.tax_free_period'),
-      data: settings.taxfreeAfterPeriod
-        ? taxFreePeriod(settings.taxfreeAfterPeriod)
-        : false,
+      data: settings.taxfreeAfterPeriod ? taxFreePeriod(settings.taxfreeAfterPeriod) : false,
     },
   ];
 
   if (settings.ethStakingTaxableAfterWithdrawalEnabled !== undefined) {
     items.push({
-      label: t(
-        'account_settings_display.eth_staking_taxable_after_withdrawal_enabled',
-      ),
+      label: t('account_settings_display.eth_staking_taxable_after_withdrawal_enabled'),
       data: !!settings.ethStakingTaxableAfterWithdrawalEnabled,
     });
   }

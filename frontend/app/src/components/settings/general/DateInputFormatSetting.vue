@@ -5,9 +5,7 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { toMessages } from '@/utils/validation';
 
 const dateInputFormat = ref<string>('');
-const { dateInputFormat: inputFormat } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());
 
 const { t } = useI18n();
 
@@ -17,10 +15,7 @@ function containsValidDirectives(v: string) {
 
 const rules = {
   dateInputFormat: {
-    required: helpers.withMessage(
-      t('general_settings.date_display.validation.empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
       containsValidDirectives,
@@ -59,9 +54,9 @@ onMounted(() => {
       v-model="dateInputFormat"
       :label="t('general_settings.labels.date_input_format')"
       class="general-settings__fields__date-input-format"
-      :success-messages="success"
-      :error-messages="error || toMessages(v$.dateInputFormat)"
-      @input="callIfValid($event, updateImmediate)"
+      :success-messages="success ? [success] : []"
+      :error-messages="error ? [error] : toMessages(v$.dateInputFormat)"
+      @update:model-value="callIfValid($event, updateImmediate)"
     />
   </SettingsOption>
 </template>

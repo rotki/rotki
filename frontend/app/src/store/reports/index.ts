@@ -15,11 +15,7 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 
-function notify(info: {
-  title: string;
-  message: (value: { message: string }) => string;
-  error?: any;
-}): void {
+function notify(info: { title: string; message: (value: { message: string }) => string; error?: any }): void {
   logger.error(info.error);
   const message = info.error?.message ?? info.error ?? '';
   const { notify } = useNotificationsStore();
@@ -82,10 +78,10 @@ function defaultProgress(): Progress {
 }
 
 export const useReportsStore = defineStore('reports', () => {
-  const report: Ref<SelectedReport> = ref(defaultReport());
-  const reports: Ref<Reports> = ref(defaultReports());
+  const report = ref<SelectedReport>(defaultReport());
+  const reports = ref<Reports>(defaultReports());
   const loaded = ref(false);
-  const reportProgress: Ref<Progress> = ref(defaultProgress());
+  const reportProgress = ref<Progress>(defaultProgress());
   const reportError = ref(emptyError());
   const lastGeneratedReport = ref<number | null>(null);
   const actionableItems = ref<ReportActionableItem>({
@@ -174,17 +170,12 @@ export const useReportsStore = defineStore('reports', () => {
     }
   };
 
-  const fetchReport = async (
-    reportId: number,
-    page?: { limit: number; offset: number },
-  ): Promise<boolean> => {
+  const fetchReport = async (reportId: number, page?: { limit: number; offset: number }): Promise<boolean> => {
     set(loaded, false);
     const currentPage = page ?? { limit: get(itemsPerPage), offset: 0 };
 
     try {
-      const selectedReport = get(reports).entries.find(
-        value => value.identifier === reportId,
-      );
+      const selectedReport = get(reports).entries.find(value => value.identifier === reportId);
 
       if (!selectedReport)
         return false;
@@ -239,9 +230,7 @@ export const useReportsStore = defineStore('reports', () => {
     return true;
   };
 
-  const generateReport = async (
-    period: ProfitLossReportPeriod,
-  ): Promise<number> => {
+  const generateReport = async (period: ProfitLossReportPeriod): Promise<number> => {
     set(reportProgress, {
       processingState: '',
       totalProgress: '0',
@@ -253,13 +242,9 @@ export const useReportsStore = defineStore('reports', () => {
     const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await generateReportCaller(period);
-      const { result } = await awaitTask<number, TaskMeta>(
-        taskId,
-        TaskType.TRADE_HISTORY,
-        {
-          title: t('actions.reports.generate.task.title'),
-        },
-      );
+      const { result } = await awaitTask<number, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
+        title: t('actions.reports.generate.task.title'),
+      });
 
       if (result) {
         set(lastGeneratedReport, result);
@@ -294,9 +279,7 @@ export const useReportsStore = defineStore('reports', () => {
     }
   };
 
-  const exportReportData = async (
-    payload: ProfitLossReportDebugPayload,
-  ): Promise<boolean | object> => {
+  const exportReportData = async (payload: ProfitLossReportDebugPayload): Promise<boolean | object> => {
     set(reportProgress, {
       processingState: '',
       totalProgress: '0',
@@ -308,14 +291,10 @@ export const useReportsStore = defineStore('reports', () => {
     const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await exportReportDataCaller(payload);
-      const { result } = await awaitTask<boolean | object, TaskMeta>(
-        taskId,
-        TaskType.TRADE_HISTORY,
-        {
-          title: t('actions.reports.generate.task.title'),
-          transformer: [jsonTransformer],
-        },
-      );
+      const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
+        title: t('actions.reports.generate.task.title'),
+        transformer: [jsonTransformer],
+      });
 
       return result;
     }

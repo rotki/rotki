@@ -2,7 +2,7 @@
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
-import type { RawLocation } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
 defineOptions({
@@ -27,16 +27,14 @@ async function toggleIgnoreAsset() {
   const id = get(identifier);
   if (get(isIgnored))
     await unignoreAsset(id);
-  else
-    await ignoreAsset(id);
+  else await ignoreAsset(id);
 }
 
 async function toggleWhitelistAsset() {
   const id = get(identifier);
   if (get(isWhitelisted))
     await unWhitelistAsset(id);
-  else
-    await whitelistAsset(id);
+  else await whitelistAsset(id);
 
   refetchAssetInfo(id);
 }
@@ -60,14 +58,14 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
-const isCollectionParent: ComputedRef<boolean> = computed(() => {
+const isCollectionParent = computed<boolean>(() => {
   const currentRoute = get(route);
   const collectionParent = currentRoute.query.collectionParent;
 
   return !!collectionParent;
 });
 
-const collectionId: ComputedRef<number | undefined> = computed(() => {
+const collectionId = computed<number | undefined>(() => {
   if (!get(isCollectionParent))
     return undefined;
 
@@ -75,24 +73,19 @@ const collectionId: ComputedRef<number | undefined> = computed(() => {
   return (collectionId && parseInt(collectionId)) || undefined;
 });
 
-const editRoute = computed<RawLocation>(() => ({
-  path: get(isCustomAsset)
-    ? Routes.ASSET_MANAGER_CUSTOM
-    : Routes.ASSET_MANAGER_MANAGED,
+const editRoute = computed<RouteLocationRaw>(() => ({
+  path: get(isCustomAsset) ? Routes.ASSET_MANAGER_CUSTOM : Routes.ASSET_MANAGER_MANAGED,
   query: {
     id: get(identifier),
   },
 }));
 
 const { balances } = useAggregatedBalances();
-const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
+const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
   if (!get(isCollectionParent))
     return [];
 
-  return (
-    get(balances()).find(data => data.asset === get(identifier))?.breakdown
-    || []
-  );
+  return get(balances()).find(data => data.asset === get(identifier))?.breakdown || [];
 });
 
 function goToEdit() {
@@ -105,8 +98,7 @@ async function toggleSpam() {
   const id = get(identifier);
   if (get(isSpam))
     await removeAssetFromSpamList(id);
-  else
-    await markAssetAsSpam(id);
+  else await markAssetAsSpam(id);
 
   refetchAssetInfo(id);
 }
@@ -180,8 +172,8 @@ async function toggleSpam() {
               color="primary"
               hide-details
               :disabled="isWhitelisted || isSpam"
-              :value="isIgnored"
-              @input="toggleIgnoreAsset()"
+              :model-value="isIgnored"
+              @update:model-value="toggleIgnoreAsset()"
             />
           </template>
           {{ isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}

@@ -2,7 +2,7 @@ import type { AssetInfo } from '@rotki/common/lib/data';
 import type { AssetMap } from '@/types/asset';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
-  const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});
+  const fetchedAssetCollections = ref<Record<string, AssetInfo>>({});
 
   const { assetMapping } = useAssetInfoApi();
   const { t } = useI18n();
@@ -27,8 +27,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
   };
 
-  const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier }
-    = useItemCache<AssetInfo>(async (keys: string[]) => {
+  const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier } = useItemCache<AssetInfo>(
+    async (keys: string[]) => {
       const response = await getAssetMappingHandler(keys);
       return function* () {
         for (const key of keys) {
@@ -42,7 +42,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
           yield { item, key };
         }
       };
-    });
+    },
+  );
 
   return {
     cache,

@@ -1,9 +1,5 @@
 import { defaultGeneralSettings } from '@/data/factories';
-import {
-  type Currency,
-  type SupportedCurrency,
-  useCurrencies,
-} from '@/types/currencies';
+import { type Currency, type SupportedCurrency, useCurrencies } from '@/types/currencies';
 import type { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import type { Exchange } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
@@ -14,84 +10,42 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const { defaultCurrency } = useCurrencies();
   const settings = reactive(defaultGeneralSettings(get(defaultCurrency)));
 
-  const uiFloatingPrecision: ComputedRef<number> = computed(
-    () => settings.uiFloatingPrecision,
-  );
-  const submitUsageAnalytics: ComputedRef<boolean> = computed(
-    () => settings.submitUsageAnalytics,
-  );
-  const ksmRpcEndpoint: ComputedRef<string> = computed(
-    () => settings.ksmRpcEndpoint,
-  );
-  const dotRpcEndpoint: ComputedRef<string> = computed(
-    () => settings.dotRpcEndpoint,
-  );
-  const beaconRpcEndpoint: ComputedRef<string> = computed(
-    () => settings.beaconRpcEndpoint,
-  );
-  const balanceSaveFrequency: ComputedRef<number> = computed(
-    () => settings.balanceSaveFrequency,
-  );
-  const dateDisplayFormat: ComputedRef<string> = computed(
-    () => settings.dateDisplayFormat,
-  );
-  const mainCurrency: ComputedRef<Currency> = computed(
-    () => settings.mainCurrency,
-  );
-  const activeModules: ComputedRef<Module[]> = computed(
-    () => settings.activeModules,
-  );
-  const btcDerivationGapLimit: ComputedRef<number> = computed(
-    () => settings.btcDerivationGapLimit,
-  );
-  const displayDateInLocaltime: ComputedRef<boolean> = computed(
-    () => settings.displayDateInLocaltime,
-  );
-  const currentPriceOracles: ComputedRef<PriceOracle[]> = computed(
-    () => settings.currentPriceOracles,
-  );
-  const historicalPriceOracles: ComputedRef<PriceOracle[]> = computed(
-    () => settings.historicalPriceOracles,
-  );
-  const ssfGraphMultiplier: ComputedRef<number> = computed(
-    () => settings.ssfGraphMultiplier,
-  );
-  const inferZeroTimedBalances: ComputedRef<boolean> = computed(
-    () => settings.inferZeroTimedBalances,
-  );
-  const nonSyncingExchanges: ComputedRef<Exchange[]> = computed(
-    () => settings.nonSyncingExchanges,
-  );
-  const evmchainsToSkipDetection: ComputedRef<string[]> = computed(
-    () => settings.evmchainsToSkipDetection,
-  );
-  const treatEth2AsEth: ComputedRef<boolean> = computed(
-    () => settings.treatEth2AsEth,
-  );
-  const addressNamePriority: ComputedRef<AddressNamePriority[]> = computed(
-    () => settings.addressNamePriority,
-  );
-  const queryRetryLimit: ComputedRef<number> = computed(
-    () => settings.queryRetryLimit,
-  );
-  const connectTimeout: ComputedRef<number> = computed(
-    () => settings.connectTimeout,
-  );
-  const readTimeout: ComputedRef<number> = computed(() => settings.readTimeout);
+  const uiFloatingPrecision = computed<number>(() => settings.uiFloatingPrecision);
+  const submitUsageAnalytics = computed<boolean>(() => settings.submitUsageAnalytics);
+  const ksmRpcEndpoint = computed<string>(() => settings.ksmRpcEndpoint);
+  const dotRpcEndpoint = computed<string>(() => settings.dotRpcEndpoint);
+  const beaconRpcEndpoint = computed<string>(() => settings.beaconRpcEndpoint);
+  const balanceSaveFrequency = computed<number>(() => settings.balanceSaveFrequency);
+  const dateDisplayFormat = computed<string>(() => settings.dateDisplayFormat);
+  const mainCurrency = computed<Currency>(() => settings.mainCurrency);
+  const activeModules = computed<Module[]>(() => settings.activeModules);
+  const btcDerivationGapLimit = computed<number>(() => settings.btcDerivationGapLimit);
+  const displayDateInLocaltime = computed<boolean>(() => settings.displayDateInLocaltime);
+  const currentPriceOracles = computed<PriceOracle[]>(() => settings.currentPriceOracles);
+  const historicalPriceOracles = computed<PriceOracle[]>(() => settings.historicalPriceOracles);
+  const ssfGraphMultiplier = computed<number>(() => settings.ssfGraphMultiplier);
+  const inferZeroTimedBalances = computed<boolean>(() => settings.inferZeroTimedBalances);
+  const nonSyncingExchanges = computed<Exchange[]>(() => settings.nonSyncingExchanges);
+  const evmchainsToSkipDetection = computed<string[]>(() => settings.evmchainsToSkipDetection);
+  const treatEth2AsEth = computed<boolean>(() => settings.treatEth2AsEth);
+  const addressNamePriority = computed<AddressNamePriority[]>(() => settings.addressNamePriority);
+  const queryRetryLimit = computed<number>(() => settings.queryRetryLimit);
+  const connectTimeout = computed<number>(() => settings.connectTimeout);
+  const readTimeout = computed<number>(() => settings.readTimeout);
 
-  const oraclePenaltyThresholdCount: ComputedRef<number> = computed(() => settings.oraclePenaltyThresholdCount);
+  const oraclePenaltyThresholdCount = computed<number>(() => settings.oraclePenaltyThresholdCount);
 
-  const oraclePenaltyDuration: ComputedRef<number> = computed(() => settings.oraclePenaltyDuration);
+  const oraclePenaltyDuration = computed<number>(() => settings.oraclePenaltyDuration);
 
-  const autoDeleteCalendarEntries: ComputedRef<boolean> = computed(() => settings.autoDeleteCalendarEntries);
+  const autoDeleteCalendarEntries = computed<boolean>(() => settings.autoDeleteCalendarEntries);
 
-  const autoCreateCalendarReminders: ComputedRef<boolean> = computed(() => settings.autoCreateCalendarReminders);
+  const autoCreateCalendarReminders = computed<boolean>(() => settings.autoCreateCalendarReminders);
 
-  const askUserUponSizeDiscrepancy: ComputedRef<boolean> = computed(() => settings.askUserUponSizeDiscrepancy);
+  const askUserUponSizeDiscrepancy = computed<boolean>(() => settings.askUserUponSizeDiscrepancy);
 
-  const autoDetectTokens: ComputedRef<boolean> = computed(() => settings.autoDetectTokens);
+  const autoDetectTokens = computed<boolean>(() => settings.autoDetectTokens);
 
-  const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
+  const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
   });
@@ -139,8 +93,5 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useGeneralSettingsStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useGeneralSettingsStore, import.meta.hot));

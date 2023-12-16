@@ -1,18 +1,16 @@
 <script setup lang="ts">
 const props = defineProps<{
-  value: boolean;
+  modelValue: boolean;
   count: number;
 }>();
 
-const emit = defineEmits(['input']);
-
-const { value } = toRefs(props);
-
-function input() {
-  emit('input', !get(value));
-}
+const emit = defineEmits<{
+  (e: 'update:model-value', value: boolean): void;
+}>();
 
 const { t } = useI18n();
+
+const model = useSimpleVModel(props, emit);
 </script>
 
 <template>
@@ -35,10 +33,10 @@ const { t } = useI18n();
       variant="text"
       icon
       size="sm"
-      @click="input()"
+      @click="model = !model"
     >
       <RuiIcon
-        v-if="value"
+        v-if="model"
         name="arrow-up-s-line"
       />
       <RuiIcon

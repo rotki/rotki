@@ -29,7 +29,7 @@ const css = useCssModule();
 
 <template>
   <RuiDialog max-width="1200">
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -41,7 +41,7 @@ const css = useCssModule();
             icon
             class="mt-1"
             size="sm"
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="information-line" />
           </RuiButton>

@@ -114,10 +114,7 @@ describe('composables::blockchain/balances/index', () => {
 
       const assert = (times = 1) => {
         expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(
-          true,
-          Blockchain.ETH,
-        );
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(true, Blockchain.ETH);
       };
 
       const { isLoading } = useStatusStore();

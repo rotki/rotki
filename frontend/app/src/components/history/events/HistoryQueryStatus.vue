@@ -87,13 +87,11 @@ const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_C
   <HistoryQueryStatusBar
     v-if="loading || decoding || receivingProtocolCacheStatus || items.length > 0"
     :colspan="colspan"
-    :finished="isQuery ? !loading : (!receivingProtocolCacheStatus && !decoding)"
+    :finished="isQuery ? !loading : !receivingProtocolCacheStatus && !decoding"
     @reset="resetQueryStatus()"
   >
     <template #current>
-      <EventsCacheRefreshStatusCurrent
-        v-if="refreshProtocolCacheTaskRunning"
-      />
+      <EventsCacheRefreshStatusCurrent v-if="refreshProtocolCacheTaskRunning" />
       <HistoryQueryStatusCurrent
         v-else-if="isQuery"
         :finished="!loading"
@@ -128,7 +126,9 @@ const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_C
             icon
             size="sm"
             class="!p-2"
-            @click="refreshProtocolCacheTaskRunning ? emit('show-protocol-refresh-details') : emit('show-decode-details')"
+            @click="
+              refreshProtocolCacheTaskRunning ? emit('show-protocol-refresh-details') : emit('show-decode-details')
+            "
           >
             <template #append>
               <RuiIcon name="information-line" />

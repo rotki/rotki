@@ -30,13 +30,9 @@ export function useAssets() {
     try {
       const taskType = TaskType.ASSET_UPDATE;
       const { taskId } = await checkForAssetUpdate();
-      const { result } = await awaitTask<AssetDBVersion, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.assets.versions.task.title').toString(),
-        },
-      );
+      const { result } = await awaitTask<AssetDBVersion, TaskMeta>(taskId, taskType, {
+        title: t('actions.assets.versions.task.title').toString(),
+      });
 
       return {
         updateAvailable: result.local < result.remote && result.newChanges > 0,
@@ -62,19 +58,12 @@ export function useAssets() {
     }
   };
 
-  const applyUpdates = async ({
-    version,
-    resolution,
-  }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
+  const applyUpdates = async ({ version, resolution }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
     try {
       const { taskId } = await performUpdate(version, resolution);
-      const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(
-        taskId,
-        TaskType.ASSET_UPDATE_PERFORM,
-        {
-          title: t('actions.assets.update.task.title').toString(),
-        },
-      );
+      const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(taskId, TaskType.ASSET_UPDATE_PERFORM, {
+        title: t('actions.assets.update.task.title').toString(),
+      });
 
       if (typeof result === 'boolean') {
         return {
@@ -109,10 +98,7 @@ export function useAssets() {
     targetIdentifier,
   }: AssetMergePayload): Promise<ActionStatus<string | ValidationErrors>> => {
     try {
-      const success = await mergeAssetsCaller(
-        sourceIdentifier,
-        targetIdentifier,
-      );
+      const success = await mergeAssetsCaller(sourceIdentifier, targetIdentifier);
       return {
         success,
       };
@@ -155,9 +141,7 @@ export function useAssets() {
     try {
       let file: string | undefined;
       if (appSession) {
-        const directory = await openDirectory(
-          t('common.select_directory').toString(),
-        );
+        const directory = await openDirectory(t('common.select_directory').toString());
         if (!directory) {
           return {
             success: false,
@@ -176,14 +160,9 @@ export function useAssets() {
     }
   };
 
-  const restoreAssetsDatabase = async (
-    resetType: 'hard' | 'soft',
-  ): Promise<ActionStatus> => {
+  const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<ActionStatus> => {
     try {
-      const { taskId } = await restoreAssetsDatabaseCaller(
-        resetType,
-        resetType === 'hard',
-      );
+      const { taskId } = await restoreAssetsDatabaseCaller(resetType, resetType === 'hard');
       await awaitTask<boolean, TaskMeta>(taskId, TaskType.RESET_ASSET, {
         title: t('actions.assets.reset.task.title'),
       });

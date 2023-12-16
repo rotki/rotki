@@ -14,9 +14,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
             icon
             @click="expanded = !expanded"
           >
-            <RuiIcon
-              :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'"
-            />
+            <RuiIcon :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'" />
           </RuiButton>
           <slot name="title" />
         </CardTitle>
@@ -33,7 +31,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
         </div>
       </div>
     </template>
-    <RuiAccordions :value="panel">
+    <RuiAccordions :model-value="panel">
       <RuiAccordion eager>
         <template #default>
           <slot />

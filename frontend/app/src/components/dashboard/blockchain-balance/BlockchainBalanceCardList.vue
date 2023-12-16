@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import {
-  type BlockchainTotal,
-  SupportedSubBlockchainProtocolData,
-} from '@/types/blockchain';
+import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 import { toSentenceCase } from '@/utils/text';
 import type { ActionDataEntry } from '@/types/action';
 
@@ -19,9 +16,7 @@ const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
 function childData(identifier: string): ActionDataEntry | null {
-  return SupportedSubBlockchainProtocolData.find(
-    item => item.identifier === identifier,
-  ) || null;
+  return SupportedSubBlockchainProtocolData.find(item => item.identifier === identifier) || null;
 }
 
 const amount = useRefMap(total, ({ usdValue }) => usdValue);
@@ -32,9 +27,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 
 <template>
   <div>
-    <RouterLink
-      :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
-    >
+    <RouterLink :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`">
       <ListItem
         data-cy="blockchain-balance__summary"
         :data-location="total.chain"
@@ -61,9 +54,11 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
       </ListItem>
     </RouterLink>
     <div v-if="total.children.length > 0">
-      <template v-for="child in total.children">
+      <template
+        v-for="child in total.children"
+        :key="child.protocol"
+      >
         <BlockchainBalanceCardDetails
-          :key="child.protocol"
           :child="child"
           :details="childData(child.protocol)"
         />

@@ -6,25 +6,18 @@ import type { IgnorePayload } from '@/types/history/ignored';
 
 export function useHistoryIgnoringApi() {
   const ignoreActions = async (payload: IgnorePayload): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/actions/ignored',
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.put<ActionResult<boolean>>('/actions/ignored', snakeCaseTransformer(payload), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const unignoreActions = async (payload: IgnorePayload): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/actions/ignored',
-      {
-        data: snakeCaseTransformer(payload),
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/actions/ignored', {
+      data: snakeCaseTransformer(payload),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };

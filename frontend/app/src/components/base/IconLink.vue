@@ -29,7 +29,9 @@ const { href, onLinkClick } = useLinks(url);
         target="_blank"
         @click="onLinkClick()"
       >
-        <span v-if="text">{{ text }}</span>
+        <span v-if="text">
+          {{ text }}
+        </span>
         <template #append>
           <RuiIcon
             name="external-link-line"

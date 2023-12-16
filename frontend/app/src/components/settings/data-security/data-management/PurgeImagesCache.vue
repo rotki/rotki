@@ -14,14 +14,14 @@ const purgable = [
   },
 ];
 
-const source: Ref<PurgeableImageCache> = ref(PurgeableImageCache.ASSET_ICONS);
+const source = ref<PurgeableImageCache>(PurgeableImageCache.ASSET_ICONS);
 
-const assetToClear: Ref<string> = ref('');
-const ensToClear: Ref<string[]> = ref([]);
+const assetToClear = ref<string>('');
+const ensToClear = ref<string[]>([]);
 
 const { ensNames } = storeToRefs(useAddressesNamesStore());
 
-const ensNamesList: ComputedRef<string[]> = computed(
+const ensNamesList = computed<string[]>(
   () => Object.values(get(ensNames)).filter(value => !!value) as string[],
 );
 
@@ -45,25 +45,24 @@ async function purgeSource(source: PurgeableImageCache) {
   }
 }
 
-const { status, pending, showConfirmation }
-  = useCacheClear<PurgeableImageCache>(
-    purgable,
-    purgeSource,
-    (source: string) => ({
-      success: t('data_management.purge_images_cache.success', {
-        source,
-      }),
-      error: t('data_management.purge_images_cache.error', {
-        source,
-      }),
+const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>(
+  purgable,
+  purgeSource,
+  (source: string) => ({
+    success: t('data_management.purge_images_cache.success', {
+      source,
     }),
-    (source: string) => ({
-      title: t('data_management.purge_images_cache.confirm.title'),
-      message: t('data_management.purge_images_cache.confirm.message', {
-        source,
-      }),
+    error: t('data_management.purge_images_cache.error', {
+      source,
     }),
-  );
+  }),
+  (source: string) => ({
+    title: t('data_management.purge_images_cache.confirm.title'),
+    message: t('data_management.purge_images_cache.confirm.message', {
+      source,
+    }),
+  }),
+);
 </script>
 
 <template>

@@ -1,13 +1,6 @@
-import {
-  noRootCamelCaseTransformer,
-  snakeCaseTransformer,
-} from '@/services/axios-tranformers';
+import { noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validStatus,
-  validWithSessionStatus,
-} from '@/services/utils';
+import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type Tag, Tags } from '@/types/tags';
 import type { ActionResult } from '@rotki/common/lib/data';
 
@@ -22,26 +15,18 @@ export function useTagsApi() {
   };
 
   const queryAddTag = async (tag: Tag): Promise<Tags> => {
-    const response = await api.instance.put<ActionResult<Tags>>(
-      '/tags',
-      snakeCaseTransformer(tag),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.put<ActionResult<Tags>>('/tags', snakeCaseTransformer(tag), {
+      validateStatus: validStatus,
+    });
 
     const data = handleResponse(response);
     return Tags.parse(noRootCamelCaseTransformer(data));
   };
 
   const queryEditTag = async (tag: Tag): Promise<Tags> => {
-    const response = await api.instance.patch<ActionResult<Tags>>(
-      '/tags',
-      snakeCaseTransformer(tag),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.patch<ActionResult<Tags>>('/tags', snakeCaseTransformer(tag), {
+      validateStatus: validStatus,
+    });
 
     const data = handleResponse(response);
     return Tags.parse(noRootCamelCaseTransformer(data));

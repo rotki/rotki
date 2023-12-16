@@ -5,19 +5,13 @@ defineOptions({
 </script>
 
 <template>
-  <RuiMenu
-    v-bind="$attrs"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
-  >
-    <template #activator="{ on }">
+  <RuiMenu v-bind="$attrs">
+    <template #activator="{ attrs }">
       <RuiButton
         class="py-2.5 px-3 !outline-rui-grey-500 dark:!outline-rui-grey-700 !text-rui-text-secondary"
         variant="outlined"
         data-cy="status-filter"
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon
           size="20"

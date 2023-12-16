@@ -7,7 +7,7 @@ const route = useRoute();
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => isDevelopment && get(route).name === 'playground');
 
-const { locale } = useI18nLocale();
+const { locale } = useI18n();
 
 const { adaptiveLanguage } = storeToRefs(useSessionStore());
 
@@ -34,7 +34,6 @@ watch(adaptiveLanguage, (language) => {
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
     <slot />
-    <AppPremiumManager />
   </div>
   <DevApp v-else />
 </template>

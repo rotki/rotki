@@ -22,17 +22,13 @@ export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
 
 export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
 
-export const NonFungibleBalancesCollectionResponse
-  = CollectionCommonFields.extend({
-    entries: NonFungibleBalanceArray,
-  });
+export const NonFungibleBalancesCollectionResponse = CollectionCommonFields.extend({
+  entries: NonFungibleBalanceArray,
+});
 
-export type NonFungibleBalancesCollectionResponse = z.infer<
-  typeof NonFungibleBalancesCollectionResponse
->;
+export type NonFungibleBalancesCollectionResponse = z.infer<typeof NonFungibleBalancesCollectionResponse>;
 
-export interface NonFungibleBalancesRequestPayload
-  extends PaginationRequestPayload<NonFungibleBalance> {
+export interface NonFungibleBalancesRequestPayload extends PaginationRequestPayload<NonFungibleBalance> {
   readonly name?: string;
   readonly collectionName?: string;
   readonly ignoredAssetsHandling?: IgnoredAssetsHandlingType;

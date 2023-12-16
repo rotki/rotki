@@ -3,20 +3,18 @@ export function useRandomStepper(steps: number, interval: number = 10000) {
 
   function setRandomStep() {
     let newStep = get(step);
-    if (steps > 1) {
-      while (newStep === get(step))
-        newStep = Math.ceil(Math.random() * steps);
-    }
+    if (steps > 1)
+      while (newStep === get(step)) newStep = Math.ceil(Math.random() * steps);
 
     set(step, newStep);
   }
 
   const { pause, resume } = useIntervalFn(setRandomStep, interval);
 
-  function onNavigate(newStep: number) {
+  async function onNavigate(newStep: number) {
     pause();
     set(step, newStep);
-    nextTick(resume);
+    await nextTick(resume);
   }
 
   onMounted(() => {

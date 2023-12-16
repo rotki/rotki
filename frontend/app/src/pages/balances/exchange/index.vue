@@ -18,8 +18,7 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
-const { getBalances, refreshExchangeSavings, fetchExchangeSavings }
-  = useExchangeBalancesStore();
+const { getBalances, refreshExchangeSavings, fetchExchangeSavings } = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 
 const { refreshBalance } = useRefresh();
@@ -55,10 +54,7 @@ watch(route, () => {
 
 function exchangeBalance(exchange: string): BigNumber {
   const balances = get(getBalances(exchange));
-  return balances.reduce(
-    (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
-    Zero,
-  );
+  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
 }
 
 async function openExchangeDetails() {
@@ -84,8 +80,8 @@ function navigate() {
   });
 }
 
-const exchangeSavingsExist: Ref<boolean> = ref(false);
-const exchangeDetailTabs: Ref<number> = ref(0);
+const exchangeSavingsExist = ref<boolean>(false);
+const exchangeDetailTabs = ref<number>(0);
 
 watch(exchange, () => {
   set(exchangeDetailTabs, 0);
@@ -118,12 +114,7 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.accounts_balances'),
-      t('exchange_balances.title'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.accounts_balances'), t('exchange_balances.title')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -166,7 +157,7 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
             :label="t('exchange_balances.select_exchange')"
             hide-details
             variant="outlined"
-            @input="openExchangeDetails()"
+            @update:model-value="openExchangeDetails()"
           >
             <template #selection="{ item }">
               <ExchangeAmountRow
@@ -189,28 +180,26 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
             vertical
             color="primary"
           >
-            <template #default>
-              <RuiTab
-                v-for="(usedExchange, i) in usedExchanges"
-                :key="i"
-                link
-                class="h-[8rem]"
-                :to="`/accounts-balances/exchange-balances/${usedExchange}`"
-                :value="usedExchange"
-              >
-                <LocationDisplay
-                  :open-details="false"
-                  :identifier="usedExchange"
-                  size="36px"
-                />
-                <AmountDisplay
-                  class="mt-1 text-xl"
-                  show-currency="symbol"
-                  fiat-currency="USD"
-                  :value="exchangeBalance(usedExchange)"
-                />
-              </RuiTab>
-            </template>
+            <RuiTab
+              v-for="(usedExchange, i) in usedExchanges"
+              :key="i"
+              link
+              class="h-[8rem]"
+              :to="`/accounts-balances/exchange-balances/${usedExchange}`"
+              :model-value="usedExchange"
+            >
+              <LocationDisplay
+                :open-details="false"
+                :identifier="usedExchange"
+                size="36px"
+              />
+              <AmountDisplay
+                class="mt-1 text-xl"
+                show-currency="symbol"
+                fiat-currency="USD"
+                :value="exchangeBalance(usedExchange)"
+              />
+            </RuiTab>
           </RuiTabs>
         </div>
         <div class="flex-1">
@@ -219,33 +208,29 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
               v-model="exchangeDetailTabs"
               color="primary"
             >
-              <template #default>
-                <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-                <RuiTab v-if="exchangeSavingsExist">
-                  {{ t('exchange_balances.tabs.savings_interest_history') }}
-                </RuiTab>
-              </template>
+              <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
+              <RuiTab v-if="exchangeSavingsExist">
+                {{ t('exchange_balances.tabs.savings_interest_history') }}
+              </RuiTab>
             </RuiTabs>
 
             <RuiDivider />
 
             <RuiTabItems v-model="exchangeDetailTabs">
-              <template #default>
-                <RuiTabItem class="pt-4 md:pl-4">
-                  <AssetBalances
-                    hide-breakdown
-                    :loading="isExchangeLoading"
-                    :balances="balances"
-                    sticky-header
-                  />
-                </RuiTabItem>
-                <RuiTabItem
-                  v-if="exchangeSavingsExist && isBinance(exchange)"
-                  class="md:pl-4"
-                >
-                  <BinanceSavingDetail :exchange="exchange" />
-                </RuiTabItem>
-              </template>
+              <RuiTabItem class="pt-4 md:pl-4">
+                <AssetBalances
+                  hide-breakdown
+                  :loading="isExchangeLoading"
+                  :balances="balances"
+                  sticky-header
+                />
+              </RuiTabItem>
+              <RuiTabItem
+                v-if="exchangeSavingsExist && isBinance(exchange)"
+                class="md:pl-4"
+              >
+                <BinanceSavingDetail :exchange="exchange" />
+              </RuiTabItem>
             </RuiTabItems>
           </div>
 
@@ -261,14 +246,17 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
         v-else
         class="p-2"
       >
-        <i18n path="exchange_balances.no_connected_exchanges">
+        <i18n-t
+          keypath="exchange_balances.no_connected_exchanges"
+          tag="span"
+        >
           <InternalLink
             :to="Routes.API_KEYS_EXCHANGES"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}
           </InternalLink>
-        </i18n>
+        </i18n-t>
       </div>
     </RuiCard>
   </TablePageLayout>

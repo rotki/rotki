@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 
-const props = defineProps<{ value: boolean }>();
+const props = defineProps<{ modelValue: boolean }>();
 
-const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
 
 const display = useSimpleVModel(props, emit);
 

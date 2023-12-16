@@ -3,15 +3,11 @@ import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
-import type {
-  AssetMovement,
-  AssetMovementEntry,
-  AssetMovementRequestPayload,
-} from '@/types/history/asset-movements';
+import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@/types';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = withDefaults(
   defineProps<{
@@ -26,13 +22,13 @@ const { t } = useI18n();
 
 const { locationOverview } = toRefs(props);
 
-const showIgnoredAssets: Ref<boolean> = ref(false);
+const showIgnoredAssets = ref<boolean>(false);
 
 const mainPage = computed(() => get(locationOverview) === '');
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<AssetMovementEntry>[]>(() => {
   const overview = !get(mainPage);
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<AssetMovementEntry>[] = [
     {
       label: '',
       key: 'ignoredInAccounting',
@@ -147,7 +143,10 @@ const value = computed({
     return get(selected).map(({ identifier }: AssetMovementEntry) => identifier);
   },
   set: (values) => {
-    set(selected, get(assetMovements).data.filter(({ identifier }: AssetMovementEntry) => values?.includes(identifier)));
+    set(
+      selected,
+      get(assetMovements).data.filter(({ identifier }: AssetMovementEntry) => values?.includes(identifier)),
+    );
   },
 });
 
@@ -219,8 +218,8 @@ watch(loading, async (isLoading, wasLoading) => {
             </div>
           </TableStatusFilter>
           <TableFilter
+            v-model:matches="filters"
             class="min-w-full sm:min-w-[20rem]"
-            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"
           />
@@ -248,19 +247,16 @@ watch(loading, async (isLoading, wasLoading) => {
         :collection="assetMovements"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+        <template #default="{ data, limit, total, showUpgradeRow }">
           <RuiDataTable
             v-model="value"
-            :expanded.sync="expanded"
+            v-model:expanded="expanded"
+            v-model:sort.external="sort"
+            v-model:pagination.external="pagination"
             :cols="tableHeaders"
             :rows="data"
             :loading="isLoading || loading"
             :loading-text="t('deposits_withdrawals.loading')"
-            :pagination.sync="pagination"
-            :pagination-modifiers="{ external: true }"
-            :sort.sync="sort"
-            :sort-modifiers="{ external: true }"
-            :server-items-length="itemLength"
             class="asset-movements"
             outlined
             row-attr="identifier"
@@ -276,13 +272,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <LocationDisplay :identifier="row.location" />
             </template>
             <template #item.category="{ row }">
-              <BadgeDisplay
-                :color="
-                  row.category.toLowerCase() === 'withdrawal'
-                    ? 'grey'
-                    : 'green'
-                "
-              >
+              <BadgeDisplay :color="row.category.toLowerCase() === 'withdrawal' ? 'grey' : 'green'">
                 {{ row.category }}
               </BadgeDisplay>
             </template>

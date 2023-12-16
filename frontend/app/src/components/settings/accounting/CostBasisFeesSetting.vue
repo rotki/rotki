@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const includeFeesInCostBasis = ref(true);
-const { includeFeesInCostBasis: enabled } = storeToRefs(
-  useAccountingSettingsStore(),
-);
+const { includeFeesInCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
   set(includeFeesInCostBasis, get(enabled));
@@ -21,9 +19,7 @@ function getSuccessMessage(enabled: boolean) {
   <SettingsOption
     #default="{ error, success, update }"
     setting="includeFeesInCostBasis"
-    :error-message="
-      t('account_settings.messages.include_fees_in_cost_basis.error')
-    "
+    :error-message="t('account_settings.messages.include_fees_in_cost_basis.error')"
     :success-message="getSuccessMessage"
   >
     <RuiSwitch
@@ -33,7 +29,7 @@ function getSuccessMessage(enabled: boolean) {
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.include_fees_in_cost_basis')"
       color="primary"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

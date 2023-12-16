@@ -36,12 +36,12 @@ function toggleSpam() {
       menu-class="w-[15rem]"
       close-on-content-click
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <RuiButton
           class="!p-1"
           icon
           variant="text"
-          v-on="on"
+          v-bind="attrs"
         >
           <RuiIcon
             name="arrow-down-s-line"

@@ -99,12 +99,12 @@ function showDoneConfirmation() {
     v-if="dropdown"
     :popper="{ placement: 'left-start' }"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         id="reset-asset-activator"
         variant="list"
         :disabled="loading"
-        v-on="on"
+        v-bind="attrs"
       >
         <template #prepend>
           <RuiIcon name="restart-line" />

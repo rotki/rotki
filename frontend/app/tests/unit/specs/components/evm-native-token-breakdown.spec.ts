@@ -1,9 +1,5 @@
 import { type Pinia, setActivePinia } from 'pinia';
-import {
-  type ThisTypedMountOptions,
-  type Wrapper,
-  mount,
-} from '@vue/test-utils';
+import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { computed, ref } from 'vue';
 import { expect } from 'vitest';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
@@ -109,7 +105,7 @@ vi.mock('@/store/blockchain/index', () => ({
 }));
 
 describe('evmNativeTokenBreakdown.vue', () => {
-  let wrapper: Wrapper<EvmNativeTokenBreakdown>;
+  let wrapper: VueWrapper<InstanceType<typeof EvmNativeTokenBreakdown>>;
   let pinia: Pinia;
 
   beforeEach(() => {
@@ -117,14 +113,21 @@ describe('evmNativeTokenBreakdown.vue', () => {
     setActivePinia(pinia);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => mount(EvmNativeTokenBreakdown, {
-    pinia,
-    provide: libraryDefaults,
-    ...options,
+  afterEach(() => {
+    wrapper.unmount();
   });
 
+  const createWrapper = (options: ComponentMountingOptions<typeof EvmNativeTokenBreakdown>) =>
+    mount(EvmNativeTokenBreakdown, {
+      global: {
+        plugins: [pinia],
+        provide: libraryDefaults,
+      },
+      ...options,
+    });
+
   it('should show correct entries', () => {
-    wrapper = createWrapper({ propsData: { identifier: 'ETH' } });
+    wrapper = createWrapper({ props: { identifier: 'ETH' } });
     const expectedResult = [
       {
         location: 'ethereum',
@@ -151,18 +154,14 @@ describe('evmNativeTokenBreakdown.vue', () => {
     expectedResult.forEach((result, index) => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
-      expect(tr.find('td:nth-child(2)').text()).toBe(
-        result.amount.toFormat(2),
-      );
-      expect(tr.find('td:nth-child(3)').text()).toContain(
-        result.usdValue.toFormat(2),
-      );
+      expect(tr.find('td:nth-child(2)').text()).toBe(result.amount.toFormat(2));
+      expect(tr.find('td:nth-child(3)').text()).toContain(result.usdValue.toFormat(2));
     });
   });
 
   it('should show correct entries for blockchainOnly=true', () => {
     wrapper = createWrapper({
-      propsData: { identifier: 'ETH', blockchainOnly: true },
+      props: { identifier: 'ETH', blockchainOnly: true },
     });
     const expectedResult = [
       {
@@ -180,12 +179,8 @@ describe('evmNativeTokenBreakdown.vue', () => {
     expectedResult.forEach((result, index) => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
-      expect(tr.find('td:nth-child(2)').text()).toBe(
-        result.amount.toFormat(2),
-      );
-      expect(tr.find('td:nth-child(3)').text()).toContain(
-        result.usdValue.toFormat(2),
-      );
+      expect(tr.find('td:nth-child(2)').text()).toBe(result.amount.toFormat(2));
+      expect(tr.find('td:nth-child(3)').text()).toContain(result.usdValue.toFormat(2));
     });
   });
 });

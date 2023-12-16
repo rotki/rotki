@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-const path = require('node:path');
-const process = require('node:process');
-const { execSync } = require('node:child_process');
-const { startAndTest } = require('start-server-and-test');
-const { ArgumentParser } = require('argparse');
+import path from 'node:path';
+import process from 'node:process';
+import { execSync } from 'node:child_process';
+import { startAndTest } from 'start-server-and-test';
+import { ArgumentParser } from 'argparse';
+import { config } from 'dotenv';
 
 function info(msg) {
   console.info(`\n\u001B[32m${msg}\u001B[0m\n`);
@@ -23,7 +24,7 @@ parser.add_argument('--browser', {
 });
 const { ci, spec, browser } = parser.parse_args();
 
-require('dotenv').config({
+config({
   path: path.join(process.cwd(), '.env.e2e'),
 });
 

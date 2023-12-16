@@ -8,9 +8,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   const loanWatchers = computed(() => {
     const loanWatcherTypes = [WatcherType];
 
-    return get(watchers).filter(watcher =>
-      loanWatcherTypes.includes(watcher.type),
-    );
+    return get(watchers).filter(watcher => loanWatcherTypes.includes(watcher.type));
   });
 
   const { premium } = storeToRefs(usePremiumStore());
@@ -35,9 +33,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     }
   };
 
-  const addWatchers = async (
-    newWatchers: Omit<Watcher, 'identifier'>[],
-  ): Promise<void> => {
+  const addWatchers = async (newWatchers: Omit<Watcher, 'identifier'>[]): Promise<void> => {
     set(watchers, await api.addWatcher(newWatchers));
   };
 

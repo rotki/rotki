@@ -45,10 +45,7 @@ describe('settings::general', () => {
 
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
-    pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__currency-selector .details',
-      settings.currency,
-    );
+    pageGeneral.confirmInlineSuccess('.general-settings__fields__currency-selector .details', settings.currency);
   });
 
   it('change chains for which to exclude token detection and validate UI message', () => {

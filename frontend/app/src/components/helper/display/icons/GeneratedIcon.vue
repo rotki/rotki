@@ -21,9 +21,7 @@ const props = withDefaults(
 const { size, asset } = toRefs(props);
 
 const dimensions = computed<Dimension>(() => {
-  const match: RegExpMatchArray | null = get(size).match(
-    /^(\d+(?:\.\d)?)(\w+|%)?$/,
-  );
+  const match: RegExpMatchArray | null = get(size).match(/^(\d+(?:\.\d)?)(\w+|%)?$/);
   const value: string = match?.[1] ?? '0';
   const unit: string = match?.[2] ?? '';
   return {

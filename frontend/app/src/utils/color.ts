@@ -33,10 +33,7 @@ function randomInt(min: number, max: number): number {
  * toHex(255); // FF
  */
 function toHex(value: number): string {
-  return Math.round(value)
-    .toString(16)
-    .padStart(2, '0')
-    .toUpperCase();
+  return Math.round(value).toString(16).padStart(2, '0').toUpperCase();
 }
 
 export function rgbPointsToHex(r: number, g: number, b: number) {

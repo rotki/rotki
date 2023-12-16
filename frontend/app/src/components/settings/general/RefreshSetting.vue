@@ -14,10 +14,7 @@ const { t } = useI18n();
 
 const rules = {
   refreshPeriod: {
-    required: helpers.withMessage(
-      t('frontend_settings.validation.refresh_period.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('frontend_settings.validation.refresh_period.non_empty'), required),
     between: helpers.withMessage(
       t('frontend_settings.validation.refresh_period.invalid_period', {
         start: minRefreshPeriod,
@@ -31,9 +28,7 @@ const rules = {
 const v$ = useVuelidate(rules, { refreshPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { refreshPeriod: currentPeriod } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { refreshPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
 
 function resetRefreshPeriod() {
   const period = get(currentPeriod);
@@ -61,9 +56,7 @@ onMounted(() => {
           setting="refreshPeriod"
           frontend-setting
           :transform="transform"
-          :error-message="
-            t('frontend_settings.validation.refresh_period.error')
-          "
+          :error-message="t('frontend_settings.validation.refresh_period.error')"
           @finished="resetRefreshPeriod()"
         >
           <RuiTextField
@@ -77,10 +70,8 @@ onMounted(() => {
             :label="t('frontend_settings.label.refresh')"
             :hint="t('frontend_settings.hint.refresh')"
             :success-messages="success"
-            :error-messages="
-              error || toMessages(v$.refreshPeriod)
-            "
-            @input="callIfValid($event, update)"
+            :error-messages="error || toMessages(v$.refreshPeriod)"
+            @update:model-value="callIfValid($event, update)"
           />
         </SettingsOption>
       </div>
@@ -97,7 +88,7 @@ onMounted(() => {
           class="mt-4"
           :label="t('frontend_settings.label.refresh_enabled')"
           color="primary"
-          @input="updateImmediate($event)"
+          @update:model-value="updateImmediate($event)"
         />
       </SettingsOption>
     </div>

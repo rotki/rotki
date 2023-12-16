@@ -2,14 +2,14 @@
 import type { AddressBookPayload } from '@/types/eth-names';
 
 const props = defineProps<{
-  value: AddressBookPayload;
+  modelValue: AddressBookPayload;
   enableForAllChains: boolean;
   editMode: boolean;
   errorMessages: { address?: string[]; name?: string[] };
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: AddressBookPayload): void;
+  (e: 'update:model-value', value: AddressBookPayload): void;
   (e: 'update:enable-for-all-chains', enable: boolean): void;
   (e: 'reset'): void;
 }>();
@@ -29,19 +29,15 @@ const { t } = useI18n();
 <template>
   <BigDialog
     :display="openDialog"
-    :title="
-      editMode
-        ? t('address_book.dialog.edit_title')
-        : t('address_book.dialog.add_title')
-    "
+    :title="editMode ? t('address_book.dialog.edit_title') : t('address_book.dialog.add_title')"
     :loading="submitting"
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
     <AddressBookForm
       v-model="model"
+      v-model:enable-for-all-chains="enabledForAllChains"
       :edit="editMode"
-      :enable-for-all-chains.sync="enabledForAllChains"
       :error-messages="errorMessages"
     />
   </BigDialog>

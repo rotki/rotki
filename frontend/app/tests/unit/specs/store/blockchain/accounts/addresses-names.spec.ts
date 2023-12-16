@@ -1,10 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
-import type {
-  AddressBookEntry,
-  AddressBookSimplePayload,
-} from '@/types/eth-names';
+import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
@@ -59,28 +56,19 @@ describe('store::blockchain/accounts/addresses-names', () => {
     it('with addresses, forceUpdate=false', async () => {
       await store.fetchEnsNames(addresses, false);
 
-      expect(api.getEnsNames).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address),
-      );
+      expect(api.getEnsNames).toHaveBeenCalledWith(addresses.map(({ address }) => address));
     });
 
     it('with same addresses, forceUpdate=true', async () => {
       await store.fetchEnsNames(addresses, true);
 
-      expect(api.getEnsNamesTask).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address),
-      );
+      expect(api.getEnsNamesTask).toHaveBeenCalledWith(addresses.map(({ address }) => address));
     });
 
     it('filter invalid addresses, forceUpdate=true', async () => {
-      await store.fetchEnsNames(
-        [...addresses, { address: '0xinvalid', blockchain: Blockchain.ETH }],
-        true,
-      );
+      await store.fetchEnsNames([...addresses, { address: '0xinvalid', blockchain: Blockchain.ETH }], true);
 
-      expect(api.getEnsNamesTask).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address),
-      );
+      expect(api.getEnsNamesTask).toHaveBeenCalledWith(addresses.map(({ address }) => address));
     });
   });
 
@@ -207,13 +195,9 @@ describe('store::blockchain/accounts/addresses-names', () => {
       });
 
       vi.mocked(api.getAddressesNames).mockResolvedValue(mockedResult);
-      const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233',
-      );
+      const firstAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231233');
 
-      const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231',
-      );
+      const secondAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231231');
 
       expect(get(firstAddressName)).toEqual(null);
       expect(get(secondAddressName)).toEqual(null);
@@ -228,13 +212,9 @@ describe('store::blockchain/accounts/addresses-names', () => {
     });
 
     it('use the value from cache if addresses names has been fetched before', async () => {
-      const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233',
-      );
+      const firstAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231233');
 
-      const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231',
-      );
+      const secondAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231231');
 
       vi.advanceTimersByTime(2500);
       await flushPromises();
@@ -251,13 +231,9 @@ describe('store::blockchain/accounts/addresses-names', () => {
         enableAliasNames: false,
       });
 
-      const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233',
-      );
+      const firstAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231233');
 
-      const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231',
-      );
+      const secondAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231231');
 
       vi.advanceTimersByTime(2500);
       await flushPromises();

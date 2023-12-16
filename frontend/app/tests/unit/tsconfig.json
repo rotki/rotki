@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": ["vuetify", "vitest/globals"]
+    "types": ["vitest/globals"]
   },
   "include": ["**/*.ts", "../../src/auto-imports.d.ts"],
   "exclude": ["node_modules/**", "**/.*"],

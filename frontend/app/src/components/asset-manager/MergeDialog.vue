@@ -4,13 +4,11 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import type { AssetInfoWithId } from '@/types/asset';
 
-type Errors = Partial<
-  Record<'targetIdentifier' | 'sourceIdentifier', string[]>
->;
+type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>;
 
-const props = defineProps<{ value: boolean }>();
+const props = defineProps<{ modelValue: boolean }>();
 
-const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
 
 const display = useSimpleVModel(props, emit);
 
@@ -26,16 +24,10 @@ const { t } = useI18n();
 
 const rules = {
   sourceIdentifier: {
-    required: helpers.withMessage(
-      t('merge_dialog.source.non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('merge_dialog.source.non_empty').toString(), required),
   },
   targetIdentifier: {
-    required: helpers.withMessage(
-      t('merge_dialog.target.non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('merge_dialog.target.non_empty').toString(), required),
   },
 };
 
@@ -92,7 +84,7 @@ async function merge() {
 }
 
 function input(value: boolean) {
-  emit('input', value);
+  emit('update:model-value', value);
   setTimeout(() => reset(), 100);
 }
 
@@ -139,11 +131,11 @@ const excluded = computed(() => {
         </div>
         <AssetSelect
           v-model="targetIdentifier"
+          v-model:asset="target"
           outlined
           :error-messages="toMessages(v$.targetIdentifier)"
           :label="t('merge_dialog.target.label')"
           :disabled="pending"
-          :asset.sync="target"
           :excludes="excluded"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
           @focus="clearErrors()"

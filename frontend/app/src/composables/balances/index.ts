@@ -41,10 +41,7 @@ export const useBalances = createSharedComposable(() => {
     updateExchangePrices(pricesConvertedToUsd);
   };
 
-  const refreshPrices = async (
-    ignoreCache = false,
-    selectedAssets: string[] | null = null,
-  ): Promise<void> => {
+  const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
@@ -59,11 +56,8 @@ export const useBalances = createSharedComposable(() => {
     setStatus(Status.LOADED);
   };
 
-  const pendingAssets: Ref<string[]> = ref([]);
-  const noPriceAssets = useArrayFilter(
-    assets(),
-    asset => !get(assetPrice(asset)),
-  );
+  const pendingAssets = ref<string[]>([]);
+  const noPriceAssets = useArrayFilter(assets(), asset => !get(assetPrice(asset)));
 
   watchDebounced(
     noPriceAssets,
@@ -111,11 +105,7 @@ export const useBalances = createSharedComposable(() => {
   const fetch = async (): Promise<void> => {
     await fetchExchangeRates();
     startPromise(fetchBalances());
-    await Promise.allSettled([
-      fetchManualBalances(),
-      refreshAccounts(),
-      fetchConnectedExchangeBalances(),
-    ]);
+    await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
   };
 
   const autoRefresh = async () => {

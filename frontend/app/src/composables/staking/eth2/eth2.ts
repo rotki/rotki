@@ -45,13 +45,9 @@ export function useEth2Staking() {
     try {
       setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
       const { taskId } = await api.refreshStakingPerformance(defaults);
-      await awaitTask<EthStakingPerformanceResponse, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.staking.eth2.task.title'),
-        },
-      );
+      await awaitTask<EthStakingPerformanceResponse, TaskMeta>(taskId, taskType, {
+        title: t('actions.staking.eth2.task.title'),
+      });
 
       setStatus(Status.LOADED);
       return true;
@@ -85,20 +81,20 @@ export function useEth2Staking() {
     isLoading: performanceLoading,
   } = useAsyncState<EthStakingPerformanceResponse, MaybeRef<EthStakingPayload>[]>(
     fetchStakingPerformance,
-      {
-        validators: {},
-        entriesFound: 0,
-        entriesTotal: 0,
-        sums: {},
-      } satisfies EthStakingPerformanceResponse,
-      {
-        immediate: false,
-        resetOnExecute: false,
-        delay: 0,
-        onError: (error) => {
-          logger.error(error);
-        },
+    {
+      validators: {},
+      entriesFound: 0,
+      entriesTotal: 0,
+      sums: {},
+    } satisfies EthStakingPerformanceResponse,
+    {
+      immediate: false,
+      resetOnExecute: false,
+      delay: 0,
+      onError: (error) => {
+        logger.error(error);
       },
+    },
   );
 
   const performance = computed<EthStakingPerformance>(() => {
@@ -112,19 +108,17 @@ export function useEth2Staking() {
         const validator = accounts.find(x => x.data.index === index);
         const status = validator?.data?.status;
         const total = validator?.amount;
-        return ({
+        return {
           index,
           status,
           total,
           ...value,
-        });
+        };
       }),
     };
   });
 
-  const fetchPerformance = async (
-    payload: EthStakingPayload,
-  ): Promise<void> => {
+  const fetchPerformance = async (payload: EthStakingPayload): Promise<void> => {
     await execute(0, payload);
   };
 

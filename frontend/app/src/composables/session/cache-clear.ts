@@ -1,21 +1,25 @@
 import type { BaseMessage } from '@/types/messages';
 
-export function useCacheClear<T>(clearable: { id: T; text: string }[], clearHandle: (source: T) => Promise<void>, message: (source: string) => {
-  success: string;
-  error: string;
-}, confirmText: (
-  textSource: string,
-  source: T
-) => {
-  title: string;
-  message: string;
-}) {
-  const status: Ref<BaseMessage | null> = ref(null);
-  const confirm: Ref<boolean> = ref(false);
-  const pending: Ref<boolean> = ref(false);
+export function useCacheClear<T>(
+  clearable: { id: T; text: string }[],
+  clearHandle: (source: T) => Promise<void>,
+  message: (source: string) => {
+    success: string;
+    error: string;
+  },
+  confirmText: (
+    textSource: string,
+    source: T,
+  ) => {
+    title: string;
+    message: string;
+  },
+) {
+  const status = ref<BaseMessage | null>(null);
+  const confirm = ref<boolean>(false);
+  const pending = ref<boolean>(false);
 
-  const text = (source: T): string =>
-    clearable.find(({ id }) => id === source)?.text || '';
+  const text = (source: T): string => clearable.find(({ id }) => id === source)?.text || '';
 
   const clear = async (source: T) => {
     set(confirm, false);

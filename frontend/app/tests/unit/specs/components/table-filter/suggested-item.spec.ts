@@ -1,4 +1,4 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { Suggestion } from '@/types/filtering';
 
@@ -14,20 +14,14 @@ vi.mock('@/composables/assets/retrieval', () => ({
   }),
 }));
 
-vi.mocked(useCssModule).mockReturnValue({
-  comparator: 'comparator',
-});
-
 describe('table-filter/SuggestedItem.vue', () => {
-  let wrapper: Wrapper<any>;
-  const createWrapper = (props: {
-    suggestion?: Suggestion;
-    chip?: boolean;
-  }) => mount(SuggestedItem, {
-    propsData: {
-      ...props,
-    },
-  });
+  let wrapper: VueWrapper<InstanceType<typeof SuggestedItem>>;
+  const createWrapper = (props: { suggestion?: Suggestion; chip?: boolean }) =>
+    mount(SuggestedItem, {
+      props: {
+        ...props,
+      },
+    });
 
   const key = 'start';
   const value = '12/12/2012';
@@ -39,6 +33,10 @@ describe('table-filter/SuggestedItem.vue', () => {
     isCustomAsset: false,
     name: 'Name 1',
   };
+
+  afterEach(() => {
+    wrapper.unmount();
+  });
 
   describe('check if suggestion type is asset', () => {
     it('asset = false', () => {
@@ -53,12 +51,7 @@ describe('table-filter/SuggestedItem.vue', () => {
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
       expect(wrapper.find('span > span:nth-child(2)').text()).toBe('=');
-      expect(
-        wrapper
-          .find('span > span:nth-child(2)')
-          .classes()
-          .includes('comparator'),
-      ).toBe(false);
+      expect(wrapper.find('span > span:nth-child(2)').classes().includes('comparator')).toBe(false);
       expect(wrapper.find('span > span:nth-child(3)').text()).toBe(value);
     });
 
@@ -73,9 +66,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > span:nth-child(3)').text()).toBe(
-        `${asset.symbol} (${asset.evmChain})`,
-      );
+      expect(wrapper.find('span > span:nth-child(3)').text()).toBe(`${asset.symbol} (${asset.evmChain})`);
     });
 
     it('asset = true, send only the id', () => {
@@ -89,9 +80,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > span:nth-child(3)').text()).toBe(
-        'SYMBOL 2 (ethereum)',
-      );
+      expect(wrapper.find('span > span:nth-child(3)').text()).toBe('SYMBOL 2 (ethereum)');
     });
   });
 
@@ -119,9 +108,9 @@ describe('table-filter/SuggestedItem.vue', () => {
     };
     wrapper = createWrapper({ suggestion, chip: true });
 
-    expect(
-      wrapper.find('span > span:nth-child(2)').classes().includes('comparator'),
-    ).toBe(true);
+    expect(wrapper.find('span > span:nth-child(2)').classes()).toEqual(
+      expect.arrayContaining([expect.stringMatching(/_comparator_/)]),
+    );
   });
 
   it('for boolean value', async () => {
@@ -134,7 +123,7 @@ describe('table-filter/SuggestedItem.vue', () => {
     };
     wrapper = createWrapper({ suggestion });
 
-    await expect(wrapper.find('span').text()).toBe(`${key} = true`);
+    await expect(wrapper.find('span').text()).toBe(`${key}=true`);
 
     await wrapper.setProps({ chip: true });
 

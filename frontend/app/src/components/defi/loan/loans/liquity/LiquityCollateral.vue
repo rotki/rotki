@@ -43,9 +43,7 @@ const { t } = useI18n();
         :value="ratio.toFormat(2)"
       />
     </LoanRow>
-    <LoanRow
-      v-if="balances.totalCollateralRatio"
-    >
+    <LoanRow v-if="balances.totalCollateralRatio">
       <template #title>
         <div class="flex items-center gap-1">
           {{ t('loan_collateral.total_collateral_ratio') }}

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library-compat';
+import { useRotkiTheme } from '@rotki/ui-library';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import type { Writeable } from '@/types';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
-const balanceSnapshotFile = ref<File | null>(null);
-const locationDataSnapshotFile = ref<File | null>(null);
+const balanceSnapshotFile = ref<File>();
+const locationDataSnapshotFile = ref<File>();
 const importSnapshotLoading = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
@@ -41,18 +41,11 @@ async function importSnapshot() {
   let success = false;
   let message = '';
   try {
-    if (appSession) {
-      await importBalancesSnapshot(
-        get(balanceSnapshotFile)!.path,
-        get(locationDataSnapshotFile)!.path,
-      );
-    }
-    else {
-      await uploadBalancesSnapshot(
-        get(balanceSnapshotFile)!,
-        get(locationDataSnapshotFile)!,
-      );
-    }
+    if (appSession)
+      await importBalancesSnapshot(get(balanceSnapshotFile)!.path, get(locationDataSnapshotFile)!.path);
+    else
+      await uploadBalancesSnapshot(get(balanceSnapshotFile)!, get(locationDataSnapshotFile)!);
+
     success = true;
   }
   catch (error: any) {
@@ -94,13 +87,13 @@ async function importSnapshot() {
     :popper="{ placement: 'bottom-end' }"
     :persistent="importSnapshotDialog"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
         :variant="!isDark ? 'default' : 'text'"
         size="sm"
         custom-color
-        v-on="on"
+        v-bind="attrs"
       >
         <slot name="button-icon">
           <RuiIcon name="screenshot-2-line" />

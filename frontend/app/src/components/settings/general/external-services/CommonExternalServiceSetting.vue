@@ -68,7 +68,7 @@ onMounted(() => {
         :min="min"
         :success-messages="success"
         :error-messages="error || toMessages(v$.inputValue)"
-        @input="callIfValid($event, update)"
+        @update:model-value="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

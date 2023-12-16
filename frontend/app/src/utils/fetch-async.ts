@@ -5,10 +5,7 @@ import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
 import type { FetchData } from '@/types/fetch';
 
-export async function fetchDataAsync<T extends TaskMeta, R>(
-  data: FetchData<T, R>,
-  state: Ref<R>,
-): Promise<void> {
+export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R>, state: Ref<R>): Promise<void> {
   if (
     !get(data.state.activeModules).includes(data.requires.module)
     || (data.requires.premium && !get(data.state.isPremium))
@@ -21,10 +18,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
   const task = data.task;
   const { getStatus, setStatus } = useStatusUpdater(task.section);
 
-  if (
-    get(isTaskRunning(task.type, data.task.checkLoading))
-    || (getStatus() === Status.LOADED && !data.refresh)
-  ) {
+  if (get(isTaskRunning(task.type, data.task.checkLoading)) || (getStatus() === Status.LOADED && !data.refresh)) {
     logger.debug(`${Section[data.task.section]} is already loading`);
     return;
   }

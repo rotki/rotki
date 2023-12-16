@@ -20,11 +20,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
         return;
       }
 
-      const {
-        lastBalanceSave: balance,
-        lastDataUploadTs: upload,
-        connectedNodes: connected,
-      } = result;
+      const { lastBalanceSave: balance, lastDataUploadTs: upload, connectedNodes: connected } = result;
 
       if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);

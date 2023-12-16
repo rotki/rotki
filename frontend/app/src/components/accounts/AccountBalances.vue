@@ -58,7 +58,9 @@ const isSectionLoading = computed<boolean>(() => {
   return get(isLoading(Section.BLOCKCHAIN, section));
 });
 
-const selection = computed<BlockchainAccountWithBalance[]>(() => props.balances.filter(account => get(selectedAddresses).includes(getAccountId(account))));
+const selection = computed<BlockchainAccountWithBalance[]>(() =>
+  props.balances.filter(account => get(selectedAddresses).includes(getAccountId(account))),
+);
 
 function editAccount(account: BlockchainAccountWithBalance) {
   set(editedAccount, account);
@@ -124,9 +126,7 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
               data-cy="account-balances__delete-button"
               color="error"
               variant="outlined"
-              :disabled="
-                isAnyBalancesFetching || operationRunning || selectedAddresses.length === 0
-              "
+              :disabled="isAnyBalancesFetching || operationRunning || selectedAddresses.length === 0"
               @click="showConfirmation(selection)"
             >
               <template #prepend>
@@ -171,12 +171,12 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
     </div>
 
     <AccountBalanceTable
+      v-model:selected="selectedAddresses"
       class="mt-4"
       :loopring="loopring"
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
-      :selected.sync="selectedAddresses"
       @edit-click="editAccount($event)"
       @delete-xpub="showConfirmation([$event])"
     />

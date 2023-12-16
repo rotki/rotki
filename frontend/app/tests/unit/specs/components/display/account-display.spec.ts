@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
@@ -13,7 +13,7 @@ vi.mock('@/composables/api/assets/icon', () => ({
 vi.mock('@/services/websocket/websocket-service');
 
 describe('accountDisplay.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof AccountDisplay>>;
   let pinia: Pinia;
 
   const account: Account = {
@@ -23,11 +23,13 @@ describe('accountDisplay.vue', () => {
 
   function createWrapper() {
     return mount(AccountDisplay, {
-      pinia,
-      stubs: {
-        AssetIcon: true,
+      global: {
+        stubs: {
+          AssetIcon: true,
+        },
+        plugins: [pinia],
       },
-      propsData: {
+      props: {
         account,
       },
     });
@@ -37,6 +39,10 @@ describe('accountDisplay.vue', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     wrapper = createWrapper();
+  });
+
+  afterEach(() => {
+    wrapper.unmount();
   });
 
   it('does not blur anything by default', () => {

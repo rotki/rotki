@@ -5,28 +5,18 @@ export const useAccountLoading = createSharedComposable(() => {
 
   const { isTaskRunning } = useTaskStore();
 
-  const isQueryingBlockchain = isTaskRunning(
-    TaskType.QUERY_BLOCKCHAIN_BALANCES,
-  );
+  const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
   const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 
-  const isBlockchainLoading: ComputedRef<boolean> = computed(
-    () => get(isQueryingBlockchain) || get(isLoopringLoading),
-  );
+  const isBlockchainLoading = computed<boolean>(() => get(isQueryingBlockchain) || get(isLoopringLoading));
 
-  const isAccountOperationRunning = (
-    blockchain?: string,
-  ): ComputedRef<boolean> =>
+  const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> =>
     logicOr(
       isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {}),
       isTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {}),
     );
 
-  const loading: ComputedRef<boolean> = logicOr(
-    isAccountOperationRunning(),
-    pending,
-    isQueryingBlockchain,
-  );
+  const loading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending, isQueryingBlockchain);
 
   return {
     pending,

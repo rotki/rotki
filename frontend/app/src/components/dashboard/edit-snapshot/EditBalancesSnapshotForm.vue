@@ -31,16 +31,16 @@ const { t } = useI18n();
 const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const assetType: Ref<string> = ref('token');
+const assetType = ref<string>('token');
 
 const category = usePropVModel(props, 'form', 'category', emit);
 const assetIdentifier = usePropVModel(props, 'form', 'assetIdentifier', emit);
 const amount = usePropVModel(props, 'form', 'amount', emit);
 const usdValue = usePropVModel(props, 'form', 'usdValue', emit);
 const location = usePropVModel(props, 'form', 'location', emit);
-const price: Ref<string> = ref('1');
+const price = ref<string>('1');
 
-const usdValueInputFocused: Ref<boolean> = ref(false);
+const usdValueInputFocused = ref<boolean>(false);
 
 function checkAssetType() {
   const formVal = get(form);
@@ -51,15 +51,27 @@ function checkAssetType() {
 function updatePrice(forceUpdate = false) {
   const value = get(usdValue);
   const amountVal = get(amount);
-  if (value && amountVal && (get(usdValueInputFocused) || forceUpdate))
-    set(price, bigNumberify(get(usdValue)).div(bigNumberify(get(amount))).toFixed());
+  if (value && amountVal && (get(usdValueInputFocused) || forceUpdate)) {
+    set(
+      price,
+      bigNumberify(get(usdValue))
+        .div(bigNumberify(get(amount)))
+        .toFixed(),
+    );
+  }
 }
 
 function calculateValue(forceUpdate = false) {
   const priceVal = get(price);
   const amountVal = get(amount);
-  if (priceVal && amountVal && (!get(usdValueInputFocused) || forceUpdate))
-    set(usdValue, bigNumberify(get(price)).multipliedBy(bigNumberify(get(amount))).toFixed());
+  if (priceVal && amountVal && (!get(usdValueInputFocused) || forceUpdate)) {
+    set(
+      usdValue,
+      bigNumberify(get(price))
+        .multipliedBy(bigNumberify(get(amount)))
+        .toFixed(),
+    );
+  }
 }
 
 watchImmediate(form, () => {
@@ -90,42 +102,31 @@ watch(assetType, (assetType) => {
 
 const rules = {
   category: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.balances.rules.category').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.category').toString(), required),
   },
   assetIdentifier: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(), required),
   },
   amount: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString(), required),
   },
   price: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.balances.rules.price').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.price').toString(), required),
   },
   usdValue: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(), required),
   },
 };
 
 const { setValidation } = useEditBalancesSnapshotForm();
 
-const v$ = setValidation(rules, computed(() => ({ ...get(form), price })), {
-  $autoDirty: true,
-});
+const v$ = setValidation(
+  rules,
+  computed(() => ({ ...get(form), price })),
+  {
+    $autoDirty: true,
+  },
+);
 
 function updateAsset(asset: string) {
   emit('update:asset', asset);
@@ -150,16 +151,14 @@ function updateAsset(asset: string) {
           inline
           :disabled="edit"
         >
-          <template #default>
-            <RuiRadio
-              :label="t('dashboard.snapshot.edit.dialog.balances.token')"
-              internal-value="token"
-            />
-            <RuiRadio
-              :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
-              internal-value="nft"
-            />
-          </template>
+          <RuiRadio
+            :label="t('dashboard.snapshot.edit.dialog.balances.token')"
+            value="token"
+          />
+          <RuiRadio
+            :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
+            value="nft"
+          />
         </RuiRadioGroup>
         <AssetSelect
           v-if="assetType === 'token'"
@@ -182,8 +181,8 @@ function updateAsset(asset: string) {
           class="mb-1.5"
           :error-messages="toMessages(v$.assetIdentifier)"
           :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
-          @blur="updateAsset($event.target.value)"
         />
+        <!-- @blur="updateAsset($event.target.value)" temporarily removed until we figure out what's wrong -->
       </div>
     </div>
     <AmountInput
@@ -195,8 +194,8 @@ function updateAsset(asset: string) {
     />
 
     <TwoFieldsAmountInput
-      :primary-value.sync="price"
-      :secondary-value.sync="usdValue"
+      v-model:primary-value="price"
+      v-model:secondary-value="usdValue"
       data-cy="trade-rate"
       :label="{
         primary: t('common.price'),

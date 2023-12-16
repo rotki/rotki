@@ -15,10 +15,7 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useNftBalancesApi() {
-  const internalNfBalances = async <T>(
-    payload: NonFungibleBalancesRequestPayload,
-    asyncQuery: boolean,
-  ): Promise<T> => {
+  const internalNfBalances = async <T>(payload: NonFungibleBalancesRequestPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/nfts/balances', {
       params: snakeCaseTransformer({
         asyncQuery,
@@ -31,25 +28,21 @@ export function useNftBalancesApi() {
     return handleResponse(response);
   };
 
-  const fetchNfBalancesTask = (
-    payload: NonFungibleBalancesRequestPayload,
-  ): Promise<PendingTask> => internalNfBalances<PendingTask>(payload, true);
+  const fetchNfBalancesTask = (payload: NonFungibleBalancesRequestPayload): Promise<PendingTask> =>
+    internalNfBalances<PendingTask>(payload, true);
 
   const fetchNfBalances = async (
     payload: NonFungibleBalancesRequestPayload,
   ): Promise<NonFungibleBalancesCollectionResponse> => {
-    const response
-      = await internalNfBalances<NonFungibleBalancesCollectionResponse>(
-        snakeCaseTransformer(payload),
-        false,
-      );
+    const response = await internalNfBalances<NonFungibleBalancesCollectionResponse>(
+      snakeCaseTransformer(payload),
+      false,
+    );
 
     return NonFungibleBalancesCollectionResponse.parse(response);
   };
 
-  const getNftBalanceById = async (
-    identifier: string,
-  ): Promise<NonFungibleBalance> => {
+  const getNftBalanceById = async (identifier: string): Promise<NonFungibleBalance> => {
     const response = await api.instance.post<ActionResult<NonFungibleBalance>>(
       '/nfts',
       {

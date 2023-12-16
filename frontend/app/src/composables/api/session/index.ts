@@ -7,16 +7,13 @@ import type { PendingTask } from '@/types/task';
 
 export function useSessionApi() {
   const consumeMessages = async (): Promise<Messages> => {
-    const response
-      = await api.instance.get<ActionResult<Messages>>('/messages');
+    const response = await api.instance.get<ActionResult<Messages>>('/messages');
 
     return handleResponse(response);
   };
 
   const fetchPeriodicData = async (): Promise<PeriodicClientQueryResult> => {
-    const response = await api.instance.get<
-      ActionResult<PeriodicClientQueryResult>
-    >('/periodic', {
+    const response = await api.instance.get<ActionResult<PeriodicClientQueryResult>>('/periodic', {
       validateStatus: validWithSessionStatus,
     });
 

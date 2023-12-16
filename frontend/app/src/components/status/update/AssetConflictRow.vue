@@ -1,14 +1,11 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    field: string;
-    value?: string | number | null;
-    diff: boolean;
-  }>(),
-  {
-    value: null,
-  },
-);
+import type { UnderlyingToken } from '@rotki/common/lib/data';
+
+const props = defineProps<{
+  field: string;
+  value?: string | number | boolean | null | UnderlyingToken[];
+  diff: boolean;
+}>();
 
 const isStarted = computed(() => props.field === 'started');
 const isAddress = computed(() => props.field === 'address');

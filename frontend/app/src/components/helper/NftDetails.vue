@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -27,28 +27,18 @@ const balanceData = assetInfo(identifier);
 
 const { t } = useI18n();
 
-const imageUrlSource: ComputedRef<string | null> = computed(
-  () => get(balanceData)?.imageUrl || null,
-);
+const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl || null);
 
-const {
-  shouldRender,
-  isVideo,
-  renderedMedia,
-} = useNftImage(imageUrlSource);
+const { shouldRender, isVideo, renderedMedia } = useNftImage(imageUrlSource);
 
-const domain: ComputedRef<string | null> = computed(() =>
-  getDomain(get(imageUrlSource) || ''),
-);
+const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
 
 const { show } = useConfirmStore();
 
 function showAllowDomainConfirmation() {
   show(
     {
-      title: t(
-        'general_settings.nft_setting.update_whitelist_confirmation.title',
-      ),
+      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
       message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
         {
@@ -67,15 +57,12 @@ function allowDomain() {
   if (!domainVal)
     return;
 
-  const newWhitelisted = [
-    ...get(whitelistedDomainsForNftImages),
-    domainVal,
-  ].filter(uniqueStrings);
+  const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
 
   updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
 }
 
-const collectionName: ComputedRef<string | null> = computed(() => {
+const collectionName = computed<string | null>(() => {
   const data = get(balanceData);
   if (!data || !data.collectionName)
     return null;
@@ -84,7 +71,7 @@ const collectionName: ComputedRef<string | null> = computed(() => {
   return `${data.collectionName} #${tokenId}`;
 });
 
-const name: ComputedRef<string | null> = computed(() => {
+const name = computed<string | null>(() => {
   const data = get(balanceData);
   return data?.name || get(collectionName);
 });

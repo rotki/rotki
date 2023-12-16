@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  AssetPriceInfo,
-  ManualPriceFormPayload,
-} from '@/types/prices';
+import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
@@ -17,16 +14,14 @@ const { assetPriceInfo } = useAggregatedBalances();
 
 const { assetName } = useAssetInfoRetrieval();
 
-const info = computed<AssetPriceInfo>(() =>
-  get(assetPriceInfo(identifier, isCollectionParent)),
-);
+const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
 
 const { isManualAssetPrice } = useBalancePricesStore();
 const isManualPrice = isManualAssetPrice(identifier);
 
 const { t } = useI18n();
 
-const customPrice: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
+const customPrice = ref<Partial<ManualPriceFormPayload> | null>(null);
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
@@ -41,7 +36,9 @@ function setPriceForm() {
   set(customPrice, {
     fromAsset: get(identifier),
     toAsset,
-    price: get(info).usdPrice.multipliedBy(get(exchangeRate(toAsset)) ?? One).toFixed(),
+    price: get(info)
+      .usdPrice.multipliedBy(get(exchangeRate(toAsset)) ?? One)
+      .toFixed(),
   });
 }
 

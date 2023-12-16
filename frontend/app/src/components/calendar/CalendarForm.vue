@@ -23,12 +23,12 @@ const { editableItem, selectedDate } = toRefs(props);
 const { t } = useI18n();
 const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
-const name: Ref<string> = ref('');
-const description: Ref<string> = ref('');
-const counterparty: Ref<string> = ref('');
-const datetime: Ref<string> = ref('');
+const name = ref<string>('');
+const description = ref<string>('');
+const counterparty = ref<string>('');
+const datetime = ref<string>('');
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
-const color: Ref<string> = ref('');
+const color = ref<string>('');
 const autoDelete = ref(get(autoDeleteCalendarEntries));
 
 const errorMessages = ref<Record<string, string[]>>({});
@@ -39,10 +39,7 @@ const externalServerValidation = () => true;
 const rules = {
   timestamp: { externalServerValidation },
   name: {
-    required: helpers.withMessage(
-      t('calendar.form.name.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('calendar.form.name.validation.non_empty'), required),
   },
   description: { externalServerValidation },
   counterparty: { externalServerValidation },
@@ -88,7 +85,11 @@ watchImmediate(editableItem, (editableItem) => {
       const accountFound = Object.values(get(accountsPerChain))
         .flatMap(x => x)
         .filter(hasAccountAddress)
-        .find(item => getAccountAddress(item) === editableItem.address && (!editableItem.blockchain || editableItem.blockchain === item.chain));
+        .find(
+          item =>
+            getAccountAddress(item) === editableItem.address
+            && (!editableItem.blockchain || editableItem.blockchain === item.chain),
+        );
 
       if (accountFound)
         set(accounts, [accountFound]);
@@ -135,9 +136,7 @@ async function save() {
     return true;
   }
   catch (error: any) {
-    const errorTitle = editing
-      ? t('calendar.edit_error')
-      : t('calendar.add_error');
+    const errorTitle = editing ? t('calendar.edit_error') : t('calendar.add_error');
 
     let errors = error.message;
     if (error instanceof ApiValidationError)

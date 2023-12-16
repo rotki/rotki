@@ -11,8 +11,7 @@ vi.mock('@/store/tasks', () => ({
 
 describe('store::balances/manual', () => {
   setActivePinia(createPinia());
-  const store: ReturnType<typeof useBalancePricesStore>
-    = useBalancePricesStore();
+  const store: ReturnType<typeof useBalancePricesStore> = useBalancePricesStore();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,11 +40,7 @@ describe('store::balances/manual', () => {
         selectedAssets: ['DAI'],
       });
 
-      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(
-        ['DAI'],
-        CURRENCY_USD,
-        false,
-      );
+      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(['DAI'], CURRENCY_USD, false);
 
       const { prices } = storeToRefs(store);
       expect(get(prices)).toMatchObject({
@@ -79,11 +74,7 @@ describe('store::balances/manual', () => {
         selectedAssets: ['ETH'],
       });
 
-      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(
-        ['ETH'],
-        CURRENCY_USD,
-        false,
-      );
+      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(['ETH'], CURRENCY_USD, false);
 
       const { prices } = storeToRefs(store);
       expect(get(prices)).toMatchObject({
@@ -180,11 +171,7 @@ describe('store::balances/manual', () => {
         timestamp,
       });
 
-      expect(usePriceApi().queryHistoricalRate).toHaveBeenCalledWith(
-        'DAI',
-        'USD',
-        timestamp,
-      );
+      expect(usePriceApi().queryHistoricalRate).toHaveBeenCalledWith('DAI', 'USD', timestamp);
 
       expect(price).toEqual(bigNumberify(10));
     });

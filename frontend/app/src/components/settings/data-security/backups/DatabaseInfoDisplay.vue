@@ -62,9 +62,7 @@ const [DefineRow, ReuseRow] = createReusableTemplate<{
         <span class="font-bold min-w-[9rem]">
           {{ label }}
         </span>
-        <span
-          class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2"
-        >
+        <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
           <span
             :title="value"
             class="text-truncate"

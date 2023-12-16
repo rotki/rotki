@@ -8,10 +8,7 @@ type TransformMessageCallback<T = any> = (value: any) => T;
 
 const props = withDefaults(
   defineProps<{
-    setting:
-      | keyof SettingsUpdate
-      | keyof FrontendSettingsPayload
-      | keyof SessionSettings;
+    setting: keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings;
     frontendSetting?: boolean;
     sessionSetting?: boolean;
     transform?: TransformMessageCallback | null;
@@ -29,16 +26,8 @@ const props = withDefaults(
 
 const emit = defineEmits(['updated', 'finished']);
 
-const {
-  setting,
-  frontendSetting,
-  sessionSetting,
-  successMessage,
-  errorMessage,
-  transform,
-} = toRefs(props);
-const { error, success, clearAll, wait, stop, setSuccess, setError }
-  = useClearableMessages();
+const { setting, frontendSetting, sessionSetting, successMessage, errorMessage, transform } = toRefs(props);
+const { error, success, clearAll, wait, stop, setSuccess, setError } = useClearableMessages();
 const { updateSetting } = useSettings();
 
 const loading = ref(false);

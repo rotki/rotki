@@ -2,18 +2,9 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
-const props = defineProps<{
-  visible: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:visible', visible: boolean): void;
-  (e: 'about'): void;
-}>();
-
 const { t } = useI18n();
 
-const display = useVModel(props, 'visible', emit);
+const display = defineModel<boolean>({ required: true });
 
 const tab = ref<number>(0);
 
@@ -25,12 +16,12 @@ const location = computed<string>(() => {
   const meta = get(route).meta;
 
   if (meta && meta.noteLocation)
-    return meta.noteLocation;
+    return meta.noteLocation.toString();
 
   let noteLocation = '';
   get(route).matched.forEach((matched) => {
     if (matched.meta.noteLocation)
-      noteLocation = matched.meta.noteLocation;
+      noteLocation = matched.meta.noteLocation.toString();
   });
 
   return noteLocation;
@@ -78,34 +69,30 @@ watch(locationName, (locationName) => {
     :stateless="openDialog"
     position="right"
   >
-    <div
-      class="flex items-center justify-between gap-2 w-full border-b border-default"
-    >
+    <div class="flex items-center justify-between gap-2 w-full border-b border-default">
       <RuiTabs
         v-model="tab"
         class="tabs"
         color="primary"
       >
-        <template #default>
-          <RuiTab>
-            {{ t('notes_menu.tabs.general') }}
-          </RuiTab>
-          <RuiTab v-if="locationName">
-            <RuiTooltip
-              :popper="{ placement: 'bottom' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
-              </template>
-              {{
-                t('notes_menu.tabs.in_this_page_tooltip', {
-                  page: locationName,
-                })
-              }}
-            </RuiTooltip>
-          </RuiTab>
-        </template>
+        <RuiTab>
+          {{ t('notes_menu.tabs.general') }}
+        </RuiTab>
+        <RuiTab v-if="locationName">
+          <RuiTooltip
+            :popper="{ placement: 'bottom' }"
+            :open-delay="400"
+          >
+            <template #activator>
+              {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
+            </template>
+            {{
+              t('notes_menu.tabs.in_this_page_tooltip', {
+                page: locationName,
+              })
+            }}
+          </RuiTooltip>
+        </RuiTab>
       </RuiTabs>
 
       <RuiButton
@@ -119,7 +106,7 @@ watch(locationName, (locationName) => {
     </div>
 
     <UserNotesList
-      v-if="visible"
+      v-if="display"
       :key="location + tab"
       :location="tab === 0 ? '' : location"
     />

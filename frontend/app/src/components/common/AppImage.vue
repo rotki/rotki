@@ -40,8 +40,8 @@ const css = useCssModule();
 
 const { width, height, maxWidth, maxHeight, size } = toRefs(props);
 
-const error: Ref<boolean> = ref(false);
-const success: Ref<boolean> = ref(false);
+const error = ref<boolean>(false);
+const success = ref<boolean>(false);
 
 const style = computed(() => ({
   width: getSizeOrValue(width),

@@ -8,10 +8,7 @@ const maxFloatingPrecision = 8;
 const { t } = useI18n();
 const rules = {
   floatingPrecision: {
-    required: helpers.withMessage(
-      t('general_settings.validation.floating_precision.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('general_settings.validation.floating_precision.non_empty'), required),
   },
 };
 
@@ -61,10 +58,8 @@ onMounted(() => {
       :label="t('general_settings.amount.labels.floating_precision')"
       type="number"
       :success-messages="success"
-      :error-messages="
-        error || toMessages(v$.floatingPrecision)
-      "
-      @input="callIfValid($event, update)"
+      :error-messages="error || toMessages(v$.floatingPrecision)"
+      @update:model-value="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>

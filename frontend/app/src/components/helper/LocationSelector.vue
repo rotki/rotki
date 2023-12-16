@@ -4,15 +4,19 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
-    value?: string;
+    modelValue?: string;
     items?: string[];
     excludes?: string[];
   }>(),
-  { value: '', items: () => [], excludes: () => [] },
+  {
+    value: '',
+    items: () => [],
+    excludes: () => [],
+  },
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: string): void;
+  (e: 'update:model-value', value: string): void;
 }>();
 
 const model = useSimpleVModel(props, emit);
@@ -27,15 +31,9 @@ const locations = computed<TradeLocationData[]>(() => {
   const excludesVal = get(excludes);
 
   return get(tradeLocations).filter((item) => {
-    const included
-      = itemsVal && itemsVal.length > 0
-        ? itemsVal.includes(item.identifier)
-        : true;
+    const included = itemsVal && itemsVal.length > 0 ? itemsVal.includes(item.identifier) : true;
 
-    const excluded
-      = excludesVal && excludesVal.length > 0
-        ? excludesVal.includes(item.identifier)
-        : false;
+    const excluded = excludesVal && excludesVal.length > 0 ? excludesVal.includes(item.identifier) : false;
 
     return included && !excluded;
   });
@@ -61,10 +59,6 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     :item-height="52"
     auto-select-first
     v-bind="rootAttrs"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
     <template #item="{ item }">
       <LocationIcon

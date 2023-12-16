@@ -1,4 +1,4 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 
@@ -17,15 +17,17 @@ vi.mock('@/composables/api/session/premium-credentials', () => ({
 }));
 
 describe('premiumSettings.vue', () => {
-  let wrapper: Wrapper<PremiumSettings>;
+  let wrapper: VueWrapper<InstanceType<typeof PremiumSettings>>;
   let api: ReturnType<typeof usePremiumCredentialsApi>;
 
   function createWrapper() {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PremiumSettings, {
-      pinia,
-      stubs: ['i18n', 'card-title'],
+      global: {
+        plugins: [pinia],
+        stubs: ['i18n-t', 'card-title'],
+      },
     });
   }
 
@@ -33,6 +35,10 @@ describe('premiumSettings.vue', () => {
     document.body.dataset.app = 'true';
     wrapper = createWrapper();
     api = usePremiumCredentialsApi();
+  });
+
+  afterEach(() => {
+    wrapper.unmount();
   });
 
   it('updates premium status upon setting keys', async () => {

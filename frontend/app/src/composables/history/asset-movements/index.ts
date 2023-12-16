@@ -3,11 +3,7 @@ import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';
-import type {
-  AssetMovement,
-  AssetMovementEntry,
-  AssetMovementRequestPayload,
-} from '@/types/history/asset-movements';
+import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { TaskMeta } from '@/types/task';
 
 export function useAssetMovements() {
@@ -44,10 +40,7 @@ export function useAssetMovements() {
     };
 
     try {
-      await awaitTask<
-        CollectionResponse<EntryWithMeta<AssetMovement>>,
-        TaskMeta
-      >(taskId, taskType, taskMeta, true);
+      await awaitTask<CollectionResponse<EntryWithMeta<AssetMovement>>, TaskMeta>(taskId, taskType, taskMeta, true);
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
@@ -67,12 +60,8 @@ export function useAssetMovements() {
     return false;
   };
 
-  const refreshAssetMovements = async (
-    userInitiated = false,
-    location?: string,
-  ): Promise<void> => {
-    const { setStatus, isFirstLoad, resetStatus, fetchDisabled }
-      = useStatusUpdater(Section.ASSET_MOVEMENT);
+  const refreshAssetMovements = async (userInitiated = false, location?: string): Promise<void> => {
+    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } = useStatusUpdater(Section.ASSET_MOVEMENT);
 
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping asset movement refresh');
@@ -101,9 +90,7 @@ export function useAssetMovements() {
       ...get(payload),
       onlyCache: true,
     });
-    return mapCollectionEntriesWithMeta<AssetMovement>(
-      mapCollectionResponse(result),
-    );
+    return mapCollectionEntriesWithMeta<AssetMovement>(mapCollectionResponse(result));
   };
 
   return {

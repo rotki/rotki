@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { isBtcChain } from '@/types/blockchain/chains';
 import type { InputMode } from '@/types/input-mode';
 
@@ -26,7 +25,7 @@ const showInputModeSelector = logicOr(
   isEvmChain,
 );
 
-function updateModelValue(value: string | null) {
+function updateModelValue(value?: string) {
   if (!value)
     return;
 
@@ -35,18 +34,16 @@ function updateModelValue(value: string | null) {
 </script>
 
 <template>
-  <Fragment>
-    <ChainSelect
-      :disabled="loading || editMode"
-      :model-value="chain"
-      @update:model-value="updateModelValue($event)"
-    />
+  <ChainSelect
+    :disabled="loading || editMode"
+    :model-value="chain"
+    @update:model-value="updateModelValue($event)"
+  />
 
-    <InputModeSelect
-      v-if="!editMode && showInputModeSelector"
-      :input-mode="inputMode"
-      :blockchain="chain"
-      @update:input-mode="emit('update:input-mode', $event)"
-    />
-  </Fragment>
+  <InputModeSelect
+    v-if="!editMode && showInputModeSelector"
+    :input-mode="inputMode"
+    :blockchain="chain"
+    @update:input-mode="emit('update:input-mode', $event)"
+  />
 </template>

@@ -6,8 +6,7 @@ export interface Collateral<T = string> extends Balance {
   readonly asset: T;
 }
 
-export interface CollateralizedLoan<C extends Collateral | Collateral[]>
-  extends DefiLoan {
+export interface CollateralizedLoan<C extends Collateral | Collateral[]> extends DefiLoan {
   readonly collateral: C;
   readonly debt: Balance;
 }

@@ -13,11 +13,11 @@ const { t } = useI18n();
 
 const { premiumUserLoggedIn } = useInterop();
 
-const apiKey: Ref<string> = ref('');
-const apiSecret: Ref<string> = ref('');
-const sync: Ref<boolean> = ref(false);
-const edit: Ref<boolean> = ref(true);
-const $externalResults: Ref<Record<string, string[]>> = ref({});
+const apiKey = ref<string>('');
+const apiSecret = ref<string>('');
+const sync = ref<boolean>(false);
+const edit = ref<boolean>(true);
+const $externalResults = ref<Record<string, string[]>>({});
 
 const mainActionText = computed(() => {
   if (!get(premium))
@@ -132,25 +132,20 @@ const css = useCssModule();
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.premium'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.api_keys'), t('navigation_menu.api_keys_sub.premium')]">
     <RuiCard>
       <div class="flex flex-col gap-2">
         <div class="flex flex-row-reverse">
           <HintMenuIcon>
-            <i18n
+            <i18n-t
               tag="div"
-              path="premium_settings.subtitle"
+              keypath="premium_settings.subtitle"
             >
               <ExternalLink
                 :text="t('premium_settings.title')"
                 premium
               />
-            </i18n>
+            </i18n-t>
           </HintMenuIcon>
         </div>
 
@@ -195,7 +190,7 @@ const css = useCssModule();
         :disabled="!premium || edit"
         hide-details
         :label="t('premium_settings.actions.sync')"
-        @input="onSyncChange()"
+        @update:model-value="onSyncChange()"
       />
 
       <template #footer>

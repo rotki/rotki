@@ -1,24 +1,13 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-  TablePaginationData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { CustomAsset } from '@/types/asset';
-import type {
-  Filters,
-  Matcher,
-} from '@/composables/filters/custom-assets';
+import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     assets: CustomAsset[];
-    expanded: CustomAsset[];
-    pagination: TablePaginationData;
-    sort: DataTableSortData;
     matchers: Matcher[];
-    filters: Filters;
     loading?: boolean;
   }>(),
   { loading: false },
@@ -27,18 +16,16 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:pagination', pagination: TablePaginationData): void;
-  (e: 'update:sort', sort: DataTableSortData): void;
-  (e: 'update:filters', filters: Filters): void;
-  (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
 
 const { t } = useI18n();
 
-const paginationModel = useVModel(props, 'pagination', emit);
-const sortModel = useVModel(props, 'sort', emit);
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+const sortModel = defineModel<DataTableSortData<CustomAsset>>('sort', { required: true });
+const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true });
+const filtersModel = defineModel<Filters>('filters', { required: true });
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
   {
     label: t('common.asset'),
     key: 'name',
@@ -63,12 +50,6 @@ const cols = computed<DataTableColumn[]>(() => [
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 
-const updateFilter = (filters: Filters) => emit('update:filters', filters);
-
-function updateExpanded(expandedAssets: CustomAsset[]) {
-  return emit('update:expanded', expandedAssets);
-}
-
 function getAsset(item: CustomAsset) {
   return {
     name: item.name,
@@ -80,11 +61,11 @@ function getAsset(item: CustomAsset) {
 }
 
 function isExpanded(identifier: string) {
-  return some(props.expanded, { identifier });
+  return some(get(expandedModel), { identifier });
 }
 
 function expand(item: CustomAsset) {
-  updateExpanded(isExpanded(item.identifier) ? [] : [item]);
+  set(expandedModel, isExpanded(item.identifier) ? [] : [item]);
 }
 </script>
 
@@ -97,22 +78,19 @@ function expand(item: CustomAsset) {
         </HintMenuIcon>
         <div class="w-full sm:max-w-[25rem] self-center">
           <TableFilter
-            :matches="filters"
+            v-model:matches="filtersModel"
             :matchers="matchers"
-            @update:matches="updateFilter($event)"
           />
         </div>
       </div>
     </template>
     <RuiDataTable
+      v-model:pagination.external="paginationModel"
+      v-model:sort.external="sortModel"
       :rows="assets"
       :loading="loading"
       :cols="cols"
       :expanded="expanded"
-      :pagination.sync="paginationModel"
-      :pagination-modifiers="{ external: true }"
-      :sort.sync="sortModel"
-      :sort-modifiers="{ external: true }"
       row-attr="identifier"
       data-cy="custom-assets-table"
       single-expand

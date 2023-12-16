@@ -18,9 +18,7 @@ function convertMakerDAOVaults(vaults: ApiMakerDAOVault[]): MakerDAOVault[] {
     protocol: DefiProtocol.MAKERDAO_VAULTS,
     collateral: { ...vault.collateral, asset: vault.collateralAsset },
     collateralizationRatio: vault.collateralizationRatio ?? undefined,
-    liquidationPrice: vault.liquidationPrice
-      ? vault.liquidationPrice
-      : bigNumberify(Number.NaN),
+    liquidationPrice: vault.liquidationPrice ? vault.liquidationPrice : bigNumberify(Number.NaN),
   }));
 }
 
@@ -31,15 +29,13 @@ function defaultDsrBalances(): DSRBalances {
   };
 }
 
-type MakerDAOProtocol =
-  | typeof Module.MAKERDAO_DSR
-  | typeof Module.MAKERDAO_VAULTS;
+type MakerDAOProtocol = typeof Module.MAKERDAO_DSR | typeof Module.MAKERDAO_VAULTS;
 
 export const useMakerDaoStore = defineStore('defi/makerDao', () => {
-  const dsrHistory: Ref<DSRHistory> = ref({});
-  const dsrBalances: Ref<DSRBalances> = ref(defaultDsrBalances());
-  const makerDAOVaults: Ref<MakerDAOVault[]> = ref([]);
-  const makerDAOVaultDetails: Ref<MakerDAOVaultDetails> = ref([]);
+  const dsrHistory = ref<DSRHistory>({});
+  const dsrBalances = ref<DSRBalances>(defaultDsrBalances());
+  const makerDAOVaults = ref<MakerDAOVault[]>([]);
+  const makerDAOVaultDetails = ref<MakerDAOVaultDetails>([]);
 
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -68,13 +64,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     try {
       const taskType = TaskType.DSR_BALANCE;
       const { taskId } = await fetchDSRBalancesCaller();
-      const { result } = await awaitTask<DSRBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.defi.dsr_balances.task.title'),
-        },
-      );
+      const { result } = await awaitTask<DSRBalances, TaskMeta>(taskId, taskType, {
+        title: t('actions.defi.dsr_balances.task.title'),
+      });
       set(dsrBalances, DSRBalances.parse(result));
     }
     catch (error: any) {
@@ -110,13 +102,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     try {
       const taskType = TaskType.DSR_HISTORY;
       const { taskId } = await fetchDsrHistoriesCaller();
-      const { result } = await awaitTask<DSRHistory, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.defi.dsr_history.task.title'),
-        },
-      );
+      const { result } = await awaitTask<DSRHistory, TaskMeta>(taskId, taskType, {
+        title: t('actions.defi.dsr_history.task.title'),
+      });
 
       set(dsrHistory, DSRHistory.parse(result));
     }
@@ -151,18 +139,11 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     try {
       const taskType = TaskType.MAKERDAO_VAULTS;
       const { taskId } = await fetchMakerDAOVaultsCaller();
-      const { result } = await awaitTask<ApiMakerDAOVaults, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.defi.makerdao_vaults.task.title'),
-        },
-      );
+      const { result } = await awaitTask<ApiMakerDAOVaults, TaskMeta>(taskId, taskType, {
+        title: t('actions.defi.makerdao_vaults.task.title'),
+      });
 
-      set(
-        makerDAOVaults,
-        convertMakerDAOVaults(ApiMakerDAOVaults.parse(result)),
-      );
+      set(makerDAOVaults, convertMakerDAOVaults(ApiMakerDAOVaults.parse(result)));
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
@@ -196,23 +177,16 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
     try {
       const { taskId } = await fetchMakerDAOVaultDetailsCaller();
-      const { result } = await awaitTask<MakerDAOVaultDetails, TaskMeta>(
-        taskId,
-        TaskType.MAKERDAO_VAULT_DETAILS,
-        {
-          title: t('actions.defi.makerdao_vault_details.task.title'),
-        },
-      );
+      const { result } = await awaitTask<MakerDAOVaultDetails, TaskMeta>(taskId, TaskType.MAKERDAO_VAULT_DETAILS, {
+        title: t('actions.defi.makerdao_vault_details.task.title'),
+      });
 
       set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        const message = t(
-          'actions.defi.makerdao_vault_details.error.description',
-          { error: error.message },
-        );
+        const message = t('actions.defi.makerdao_vault_details.error.description', { error: error.message });
         const title = t('actions.defi.makerdao_vault_details.error.title');
         notify({
           title,
@@ -241,7 +215,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     }
   };
 
-  const addresses: ComputedRef<string[]> = computed(() =>
+  const addresses = computed<string[]>(() =>
     getProtocolAddresses(get(dsrBalances).balances, get(dsrHistory)),
   );
 

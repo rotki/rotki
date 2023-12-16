@@ -16,7 +16,7 @@ const router = useRouter();
 const route = useRoute();
 let firstPage = true;
 
-const selectedReport: ComputedRef<SelectedReport> = computed(() => get(report));
+const selectedReport = computed<SelectedReport>(() => get(report));
 const settings = computed(() => get(selectedReport).settings);
 
 const initialOpenReportActionable = ref<boolean>(false);
@@ -43,22 +43,12 @@ onMounted(async () => {
 });
 
 const showUpgradeMessage = computed(
-  () =>
-    get(report).entriesLimit > 0
-    && get(report).entriesLimit < get(report).entriesFound,
+  () => get(report).entriesLimit > 0 && get(report).entriesLimit < get(report).entriesFound,
 );
 
 onUnmounted(() => clearReport());
 
-async function onPage({
-  limit,
-  offset,
-  reportId,
-}: {
-  reportId: number;
-  limit: number;
-  offset: number;
-}) {
+async function onPage({ limit, offset, reportId }: { reportId: number; limit: number; offset: number }) {
   if (firstPage) {
     firstPage = false;
     return;
@@ -95,9 +85,9 @@ async function regenerateReport() {
         v-if="showUpgradeMessage"
         type="warning"
       >
-        <i18n
+        <i18n-t
           tag="div"
-          path="profit_loss_report.upgrade"
+          keypath="profit_loss_report.upgrade"
           class="text-subtitle-1"
         >
           <template #processed>
@@ -109,10 +99,10 @@ async function regenerateReport() {
               class="font-medium"
             />
           </template>
-        </i18n>
-        <i18n
+        </i18n-t>
+        <i18n-t
           tag="div"
-          path="profit_loss_report.upgrade2"
+          keypath="profit_loss_report.upgrade2"
         >
           <template #link>
             <ExternalLink
@@ -120,7 +110,7 @@ async function regenerateReport() {
               premium
             />
           </template>
-        </i18n>
+        </i18n-t>
       </RuiAlert>
       <AccountingSettingsDisplay :accounting-settings="settings" />
       <div class="flex gap-2">

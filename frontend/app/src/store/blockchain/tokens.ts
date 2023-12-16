@@ -2,10 +2,7 @@ import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
-import type {
-  EthDetectedTokensInfo,
-  EvmTokensRecord,
-} from '@/types/balances';
+import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
 function noTokens(): EthDetectedTokensInfo {
@@ -32,9 +29,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const monitoredAddresses = computed<Record<string, string[]>>(() => {
     const addressesPerChain = get(addresses);
-    return Object.fromEntries(
-      get(txEvmChains).map(chain => [chain.id, addressesPerChain[chain.id] ?? []]),
-    );
+    return Object.fromEntries(get(txEvmChains).map(chain => [chain.id, addressesPerChain[chain.id] ?? []]));
   });
 
   const setState = (chain: string, data: EvmTokensRecord) => {
@@ -48,10 +43,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     });
   };
 
-  const fetchDetectedTokens = async (
-    chain: string,
-    address: string | null = null,
-  ) => {
+  const fetchDetectedTokens = async (chain: string, address: string | null = null) => {
     try {
       if (address) {
         const { awaitTask } = useTaskStore();
@@ -69,12 +61,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           chain,
         };
 
-        const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(
-          taskId,
-          taskType,
-          taskMeta,
-          true,
-        );
+        const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(taskId, taskType, taskMeta, true);
 
         setState(chain, result);
       }
@@ -100,10 +87,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   };
 
-  const fetchDetected = async (
-    chain: string,
-    addresses: string[],
-  ): Promise<void> => {
+  const fetchDetected = async (chain: string, addresses: string[]): Promise<void> => {
     await awaitParallelExecution(
       addresses,
       address => address,
@@ -117,32 +101,30 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     return Object.keys(assets).filter(id => !get(isAssetIgnored(id)));
   };
 
-  const getEthDetectedTokensInfo = (
-    chain: MaybeRef<string>,
-    address: MaybeRef<string | null>,
-  ) => computed<EthDetectedTokensInfo>(() => {
-    const blockchain = get(chain);
-    if (!supportsTransactions(blockchain))
-      return noTokens();
+  const getEthDetectedTokensInfo = (chain: MaybeRef<string>, address: MaybeRef<string | null>) =>
+    computed<EthDetectedTokensInfo>(() => {
+      const blockchain = get(chain);
+      if (!supportsTransactions(blockchain))
+        return noTokens();
 
-    const state = get(tokensState);
-    const detected: EvmTokensRecord | undefined = state[blockchain];
-    const addr = get(address);
+      const state = get(tokensState);
+      const detected: EvmTokensRecord | undefined = state[blockchain];
+      const addr = get(address);
 
-    if (!addr)
-      return noTokens();
+      if (!addr)
+        return noTokens();
 
-    const info = detected?.[addr];
-    if (!info)
-      return noTokens();
+      const info = detected?.[addr];
+      if (!info)
+        return noTokens();
 
-    const tokens: string[] = getTokens(get(balances)[blockchain], addr);
-    return {
-      tokens,
-      total: tokens.length,
-      timestamp: info.lastUpdateTimestamp || null,
-    };
-  });
+      const tokens: string[] = getTokens(get(balances)[blockchain], addr);
+      return {
+        tokens,
+        total: tokens.length,
+        timestamp: info.lastUpdateTimestamp || null,
+      };
+    });
 
   watch(monitoredAddresses, async (curr, prev) => {
     for (const chain in curr) {
@@ -160,9 +142,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const detectionStatus = computed(() => {
     const isDetecting: Record<string, boolean> = {};
     get(txEvmChains).forEach(({ id }) => {
-      isDetecting[id] = get(isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-        chain: id,
-      }));
+      isDetecting[id] = get(
+        isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+          chain: id,
+        }),
+      );
     });
 
     return isDetecting;
@@ -177,10 +161,17 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       if (!isDetecting[chain] && wasDetecting[chain])
         pendingRefresh.push(chain);
     }
-    await awaitParallelExecution(pendingRefresh, chain => chain, chain => fetchBlockchainBalances({
-      blockchain: chain,
-      ignoreCache: true,
-    }), 2);
+
+    await awaitParallelExecution(
+      pendingRefresh,
+      chain => chain,
+      chain =>
+        fetchBlockchainBalances({
+          blockchain: chain,
+          ignoreCache: true,
+        }),
+      2,
+    );
   });
 
   return {
@@ -191,8 +182,5 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useBlockchainTokensStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useBlockchainTokensStore, import.meta.hot));

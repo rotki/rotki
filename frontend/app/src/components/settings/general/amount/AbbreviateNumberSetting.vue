@@ -4,8 +4,8 @@ import { abbreviationList } from '@/data/amount-formatter';
 
 const { t } = useI18n();
 
-const abbreviate: Ref<boolean> = ref(false);
-const minimumDigit: Ref<string> = ref(MINIMUM_DIGIT_TO_BE_ABBREVIATED.toString());
+const abbreviate = ref<boolean>(false);
+const minimumDigit = ref<string>(MINIMUM_DIGIT_TO_BE_ABBREVIATED.toString());
 const { abbreviateNumber, minimumDigitToBeAbbreviated } = storeToRefs(useFrontendSettingsStore());
 
 function resetMinimumDigitToBeAbbreviated() {
@@ -55,7 +55,7 @@ const items = computed(() => {
         color="primary"
         :success-messages="success"
         :error-messages="error"
-        @input="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
     <SettingsOption
@@ -77,7 +77,7 @@ const items = computed(() => {
         variant="outlined"
         :success-messages="success"
         :error-messages="error"
-        @input="updateImmediate($event)"
+        @update:model-value="updateImmediate($event)"
       />
     </SettingsOption>
   </div>

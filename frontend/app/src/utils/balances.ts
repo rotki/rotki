@@ -1,14 +1,7 @@
-import type {
-  AssetBalance,
-  Balance,
-  BigNumber,
-  HasBalance,
-} from '@rotki/common';
+import type { AssetBalance, Balance, BigNumber, HasBalance } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
-import type {
-  AssetBreakdown,
-} from '@/types/blockchain/accounts';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { Writeable } from '@/types';
 
 export function removeZeroAssets(entries: AssetBalances): AssetBalances {
@@ -17,10 +10,14 @@ export function removeZeroAssets(entries: AssetBalances): AssetBalances {
     if (balances[asset].amount.isZero())
       delete balances[asset];
   }
+
   return balances;
 }
 
-export function mergeAssociatedAssets(totals: MaybeRef<AssetBalances>, getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>): ComputedRef<AssetBalances> {
+export function mergeAssociatedAssets(
+  totals: MaybeRef<AssetBalances>,
+  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
+): ComputedRef<AssetBalances> {
   return computed(() => {
     const ownedAssets: AssetBalances = {};
 
@@ -30,8 +27,7 @@ export function mergeAssociatedAssets(totals: MaybeRef<AssetBalances>, getAssoci
       const ownedAsset = ownedAssets[associatedAsset];
       if (!ownedAsset)
         ownedAssets[associatedAsset] = { ...value };
-      else
-        ownedAssets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+      else ownedAssets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
     }
     return ownedAssets;
   });
@@ -42,14 +38,15 @@ export function mergeAssetBalances(a: AssetBalances, b: AssetBalances): AssetBal
   for (const [asset, value] of Object.entries(b)) {
     if (merged[asset])
       merged[asset] = { ...balanceSum(merged[asset], value) };
-    else
-      merged[asset] = value;
+    else merged[asset] = value;
   }
   return merged;
 }
 
-export function groupAssetBreakdown(breakdowns: AssetBreakdown[], groupBy: (item: AssetBreakdown) => string = (item: AssetBreakdown) =>
-  item.location + item.address): AssetBreakdown[] {
+export function groupAssetBreakdown(
+  breakdowns: AssetBreakdown[],
+  groupBy: (item: AssetBreakdown) => string = (item: AssetBreakdown) => item.location + item.address,
+): AssetBreakdown[] {
   const initial: Record<string, Writeable<AssetBreakdown>> = {};
   const grouped = breakdowns.reduce((acc, breakdown) => {
     const key = groupBy(breakdown);
@@ -62,22 +59,26 @@ export function groupAssetBreakdown(breakdowns: AssetBreakdown[], groupBy: (item
     return acc;
   }, initial);
 
-  return Object.values(grouped).sort((a, b) =>
-    sortDesc(a.usdValue, b.usdValue),
-  );
+  return Object.values(grouped).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 }
 
-export function appendAssetBalance(value: AssetBalance, assets: AssetBalances, getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>): void {
+export function appendAssetBalance(
+  value: AssetBalance,
+  assets: AssetBalances,
+  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
+): void {
   const identifier = getAssociatedAssetIdentifier(value.asset);
   const associatedAsset: string = get(identifier);
   const ownedAsset = assets[associatedAsset];
   if (!ownedAsset)
     assets[associatedAsset] = { ...value };
-  else
-    assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+  else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
 }
 
-export function sumAssetBalances(balances: AssetBalances[], getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>): AssetBalances {
+export function sumAssetBalances(
+  balances: AssetBalances[],
+  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
+): AssetBalances {
   const summed: AssetBalances = {};
   for (const balance of balances) {
     for (const [asset, value] of Object.entries(balance)) {
@@ -86,8 +87,7 @@ export function sumAssetBalances(balances: AssetBalances[], getAssociatedAssetId
 
       if (summed[associatedAsset])
         summed[associatedAsset] = balanceSum(value, summed[associatedAsset]);
-      else
-        summed[associatedAsset] = { ...value };
+      else summed[associatedAsset] = { ...value };
     }
   }
   return summed;

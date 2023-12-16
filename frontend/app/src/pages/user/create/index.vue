@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
-
 const { appVersion } = storeToRefs(useMainStore());
 
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());
@@ -10,7 +8,7 @@ const { createNewAccount, error, loading } = useAccountManagement();
 const { t } = useI18n();
 const css = useCssModule();
 
-const step: Ref<number> = ref(1);
+const step = ref<number>(1);
 const steps = [
   {
     title: t('create_account.steps.step_1.title'),
@@ -31,79 +29,77 @@ const steps = [
 </script>
 
 <template>
-  <Fragment>
-    <section :class="css.section">
-      <div :class="css.container">
-        <div :class="css.wrapper">
-          <div
-            class="pb-4"
-            data-cy="account-management"
-          >
-            <UserHost>
-              <UpgradeProgressDisplay v-if="upgradeVisible" />
-              <CreateAccountWizard
-                v-else
-                :step.sync="step"
-                :loading="loading"
-                :error="error"
-                @clear-error="error = ''"
-                @cancel="navigateToUserLogin(true)"
-                @confirm="createNewAccount($event)"
-              />
-            </UserHost>
-          </div>
-        </div>
-        <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
-          <RuiFooterStepper
-            :value="step"
-            :pages="steps.length"
-            variant="pill"
-          />
-        </div>
-        <footer :class="css.container__footer">
-          <AccountManagementFooterText
-            #default="{ copyright }"
-            class="lg:hidden"
-          >
-            {{ copyright }}
-          </AccountManagementFooterText>
-          <div class="ml-4">
-            <AdaptiveFooterButton />
-          </div>
-        </footer>
-      </div>
-    </section>
-    <AccountManagementAside class="hidden lg:flex justify-between">
-      <div class="p-12">
-        <div class="mb-10">
-          <RotkiLogo
-            size="2"
-            unique-key="1"
-            text
-          />
-        </div>
-        <div>
-          <RuiStepper
-            custom
-            orientation="vertical"
-            :step="step"
-            :steps="steps"
-          />
+  <section :class="css.section">
+    <div :class="css.container">
+      <div :class="css.wrapper">
+        <div
+          class="pb-4"
+          data-cy="account-management"
+        >
+          <UserHost>
+            <UpgradeProgressDisplay v-if="upgradeVisible" />
+            <CreateAccountWizard
+              v-else
+              v-model:step="step"
+              :loading="loading"
+              :error="error"
+              @clear-error="error = ''"
+              @cancel="navigateToUserLogin(true)"
+              @confirm="createNewAccount($event)"
+            />
+          </UserHost>
         </div>
       </div>
-      <AccountManagementFooterText
-        #default="{ copyright }"
-        class="flex items-center justify-between flex-wrap p-10"
-      >
-        <span>
-          {{ appVersion }}
-        </span>
-        <span>
+      <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
+        <RuiFooterStepper
+          :model-value="step"
+          :pages="steps.length"
+          variant="pill"
+        />
+      </div>
+      <footer :class="css.container__footer">
+        <AccountManagementFooterText
+          #default="{ copyright }"
+          class="lg:hidden"
+        >
           {{ copyright }}
-        </span>
-      </AccountManagementFooterText>
-    </AccountManagementAside>
-  </Fragment>
+        </AccountManagementFooterText>
+        <div class="ml-4">
+          <AdaptiveFooterButton />
+        </div>
+      </footer>
+    </div>
+  </section>
+  <AccountManagementAside class="hidden lg:flex justify-between">
+    <div class="p-12">
+      <div class="mb-10">
+        <RotkiLogo
+          size="2"
+          unique-key="1"
+          text
+        />
+      </div>
+      <div>
+        <RuiStepper
+          custom
+          orientation="vertical"
+          :step="step"
+          :steps="steps"
+        />
+      </div>
+    </div>
+    <AccountManagementFooterText
+      #default="{ copyright }"
+      class="flex items-center justify-between flex-wrap p-10"
+    >
+      <span>
+        {{ appVersion }}
+      </span>
+      <span>
+        {{ copyright }}
+      </span>
+    </AccountManagementFooterText>
+  </AccountManagementAside>
 </template>
 
 <style module lang="scss">

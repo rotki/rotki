@@ -1,13 +1,8 @@
-import {
-  TimeFramePeriod,
-  type TimeFrameSetting,
-} from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 export function isPeriodAllowed(period: TimeFrameSetting): boolean {
-  return (
-    period === TimeFramePeriod.WEEK || period === TimeFramePeriod.TWO_WEEKS
-  );
+  return period === TimeFramePeriod.WEEK || period === TimeFramePeriod.TWO_WEEKS;
 }
 
 export function getPlaceholderRule(): AccountingRuleEntry {

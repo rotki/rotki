@@ -1,25 +1,28 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 describe('assetBalances.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof AssetBalances>>;
   beforeEach(() => {
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(AssetBalances, {
-      pinia,
-      propsData: {
+      global: {
+        plugins: [pinia],
+        provide: libraryDefaults,
+      },
+      props: {
         balances: [],
       },
-      provide: libraryDefaults,
     });
   });
 
   afterEach(() => {
     useSessionStore().$reset();
+    wrapper.unmount();
   });
 
   it('table enters into loading state when balances load', async () => {

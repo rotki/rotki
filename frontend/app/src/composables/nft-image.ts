@@ -16,7 +16,7 @@ export function useNftImage(mediaUrl: Ref<string | null>) {
 
   const placeholder = './assets/images/placeholder.svg';
 
-  const shouldRender: ComputedRef<boolean> = computed(() => {
+  const shouldRender = computed<boolean>(() => {
     const media = get(mediaUrl);
 
     if (!media)
@@ -25,9 +25,9 @@ export function useNftImage(mediaUrl: Ref<string | null>) {
     return shouldRenderImage(media);
   });
 
-  const checkingType: Ref<boolean> = ref(false);
+  const checkingType = ref<boolean>(false);
 
-  const isVideo: Ref<boolean> = ref(false);
+  const isVideo = ref<boolean>(false);
 
   watch([mediaUrl, shouldRender], async ([media, shouldRender], [prevMedia, prevShouldRender]) => {
     if (media === prevMedia && shouldRender === prevShouldRender)

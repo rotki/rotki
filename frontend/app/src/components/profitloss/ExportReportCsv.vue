@@ -35,11 +35,8 @@ async function exportCSV() {
     }
     else {
       const result = await downloadReportCSV();
-      if (!result.success) {
-        showMessage(
-          result.message ?? t('profit_loss_report.download_failed'),
-        );
-      }
+      if (!result.success)
+        showMessage(result.message ?? t('profit_loss_report.download_failed'));
     }
   }
   catch (error: any) {
@@ -47,9 +44,7 @@ async function exportCSV() {
   }
 }
 
-const label = computed(() =>
-  appSession ? t('common.actions.export_csv') : t('common.actions.download_csv'),
-);
+const label = computed(() => (appSession ? t('common.actions.export_csv') : t('common.actions.download_csv')));
 </script>
 
 <template>

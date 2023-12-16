@@ -49,12 +49,7 @@ export function useSettings() {
   const { updateSetting: updateFrontendSettings } = useFrontendSettingsStore();
   const { update: updateSessionSettings } = useSessionSettingsStore();
 
-  const updateSetting = async <
-    T extends
-    | keyof SettingsUpdate
-    | keyof FrontendSettingsPayload
-    | keyof SessionSettings,
-  >(
+  const updateSetting = async <T extends keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings>(
     settingKey: T,
     settingValue: any,
     settingLocation: SettingLocation,

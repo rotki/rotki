@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { Account } from '@rotki/common/src/account';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
+
+defineOptions({
+  inheritAttrs: false,
+});
 
 const props = withDefaults(
   defineProps<{
@@ -13,7 +16,7 @@ const props = withDefaults(
     loading?: boolean;
     usableAddresses?: string[];
     multiple?: boolean;
-    value: AccountWithAddressData[];
+    modelValue: AccountWithAddressData[];
     chains?: string[];
     outlined?: boolean;
     dense?: boolean;
@@ -47,29 +50,27 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: AccountWithAddressData[]): void;
+  (e: 'update:model-value', value: AccountWithAddressData[]): void;
 }>();
 
-const {
-  chains,
-  value,
-  usableAddresses,
-  hideOnEmptyUsable,
-  multiple,
-  multichain,
-  unique,
-} = toRefs(props);
+const { chains, usableAddresses, hideOnEmptyUsable, multiple, multichain, unique } = toRefs(props);
 
 const { t } = useI18n();
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
 
-const accounts = computed<AccountWithAddressData[]>(
-  () => Object.values(get(accountsPerChain)).flatMap(x => x).filter(hasAccountAddress),
+const accounts = computed<AccountWithAddressData[]>(() =>
+  Object.values(get(accountsPerChain))
+    .flatMap(x => x)
+    .filter(hasAccountAddress),
 );
 
 const internalValue = computed(() => {
-  const accounts = get(value).map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
+  const accounts = props.modelValue.map(item => ({
+    ...item,
+    address: getAccountAddress(item),
+    key: getAccountId(item),
+  }));
   if (get(multiple))
     return accounts;
 
@@ -87,11 +88,10 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
     ? uniqBy(accountData, account => getAccountAddress(account))
     : accountData;
 
-  const filteredAccounts = filteredChains.length === 0
-    ? blockchainAccounts
-    : blockchainAccounts.filter(
-      ({ chain }) => chain === 'ALL' || filteredChains.includes(chain),
-    );
+  const filteredAccounts
+    = filteredChains.length === 0
+      ? blockchainAccounts
+      : blockchainAccounts.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
 
   if (get(multichain)) {
     const entries: Record<string, number> = {};
@@ -99,8 +99,7 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
       const address = getAccountAddress(account);
       if (entries[address])
         entries[address] += 1;
-      else
-        entries[address] = 1;
+      else entries[address] = 1;
     });
 
     for (const address in entries) {
@@ -108,14 +107,19 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
       if (count <= 1)
         continue;
 
-      filteredAccounts.push(createAccount({
-        address,
-        label: null,
-        tags: null,
-      }, {
-        chain: 'ALL',
-        nativeAsset: '',
-      }));
+      filteredAccounts.push(
+        createAccount(
+          {
+            address,
+            label: null,
+            tags: null,
+          },
+          {
+            chain: 'ALL',
+            nativeAsset: '',
+          },
+        ),
+      );
     }
   }
 
@@ -124,16 +128,20 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
 
 const hintText = computed(() => {
   const all = t('blockchain_account_selector.all').toString();
-  const selection = get(value);
+  const selection = props.modelValue;
   if (Array.isArray(selection))
     return selection.length > 0 ? selection.length.toString() : all;
 
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<Account[]>(() => {
+const displayedAccounts = computed<AccountWithAddressData[]>(() => {
   const addresses = get(usableAddresses);
-  const accounts = [...get(selectableAccounts)].map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
+  const accounts = [...get(selectableAccounts)].map(item => ({
+    ...item,
+    address: getAccountAddress(item),
+    key: getAccountId(item),
+  }));
   if (addresses.length > 0)
     return accounts.filter(account => addresses.includes(account.address));
 
@@ -166,43 +174,36 @@ function filterOutElements(
   lastElement: AccountWithAddressData,
   nextValue: AccountWithAddressData[],
 ): AccountWithAddressData[] {
-  if (lastElement.chain === 'ALL') {
-    return nextValue.filter(
-      x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL',
-    );
-  }
-  return nextValue.filter(
-    x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL',
-  );
+  if (lastElement.chain === 'ALL')
+    return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL');
+
+  return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL');
 }
 
 function input(nextValue: null | AccountWithAddressData | AccountWithAddressData[]) {
-  const previousValue = get(value);
+  const previousValue = props.modelValue;
   let result: AccountWithAddressData[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
     if (lastElement && nextValue.length > previousValue.length)
       result = filterOutElements(lastElement, nextValue);
-    else
-      result = nextValue;
+    else result = nextValue;
   }
   else {
     result = nextValue ? [nextValue] : [];
   }
 
-  emit('input', result);
+  emit('update:model-value', result);
 }
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
-
-const rootAttrs = useAttrs();
 </script>
 
 <template>
   <div>
     <DefineAutocomplete>
       <RuiAutoComplete
-        :value="internalValue"
+        :model-value="internalValue"
         :options="displayedAccounts"
         :filter="filter"
         auto-select-first
@@ -222,10 +223,10 @@ const rootAttrs = useAttrs();
         :label="label || t('blockchain_account_selector.default_label')"
         class="blockchain-account-selector"
         :error-messages="errorMessages"
-        v-bind="rootAttrs"
+        v-bind="$attrs"
         :no-data-text="t('blockchain_account_selector.no_data')"
         return-object
-        @input="input($event)"
+        @update:model-value="input($event)"
       >
         <template #selection="{ item }">
           <AccountDisplay

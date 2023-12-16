@@ -26,10 +26,7 @@ export function useBlockchainBalances() {
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-  const handleFetch = async (
-    blockchain: string,
-    ignoreCache = false,
-  ): Promise<void> => {
+  const handleFetch = async (blockchain: string, ignoreCache = false): Promise<void> => {
     try {
       setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
 
@@ -38,10 +35,7 @@ export function useBlockchainBalances() {
       if (account && account.length > 0) {
         const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain);
         const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-        const { result } = await awaitTask<
-            BlockchainBalances,
-            BlockchainMetadata
-        >(
+        const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
           taskId,
           taskType,
           {
@@ -57,10 +51,7 @@ export function useBlockchainBalances() {
 
         if (isBtcBalances(perAccount)) {
           const totals = parsedBalances.totals;
-          updateBalances(
-            blockchain,
-            convertBtcBalances(blockchain, totals, perAccount),
-          );
+          updateBalances(blockchain, convertBtcBalances(blockchain, totals, perAccount));
         }
         else {
           updateBalances(blockchain, parsedBalances);
@@ -94,11 +85,7 @@ export function useBlockchainBalances() {
     }
   };
 
-  const fetch = async (
-    blockchain: string,
-    ignoreCache = false,
-    periodic = false,
-  ): Promise<void> => {
+  const fetch = async (blockchain: string, ignoreCache = false, periodic = false): Promise<void> => {
     const { isLoading } = useStatusStore();
     const loading = isLoading(Section.BLOCKCHAIN, blockchain);
 
@@ -122,12 +109,15 @@ export function useBlockchainBalances() {
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
-    const chains: string[] = blockchain
-      ? [blockchain]
-      : get(supportedChains).map(chain => chain.id);
+    const chains: string[] = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
 
     try {
-      await awaitParallelExecution(chains, chain => chain, chain => fetch(chain, ignoreCache, periodic), 2);
+      await awaitParallelExecution(
+        chains,
+        chain => chain,
+        chain => fetch(chain, ignoreCache, periodic),
+        2,
+      );
     }
     catch (error: any) {
       logger.error(error);
@@ -156,24 +146,23 @@ export function useBlockchainBalances() {
     try {
       const taskType = TaskType.L2_LOOPRING;
       const { taskId } = await queryLoopringBalances();
-      const { result } = await awaitTask<AccountAssetBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.balances.loopring.task.title'),
-        },
-      );
+      const { result } = await awaitTask<AccountAssetBalances, TaskMeta>(taskId, taskType, {
+        title: t('actions.balances.loopring.task.title'),
+      });
 
       const loopringBalances = AccountAssetBalances.parse(result);
-      const accounts = Object.keys(loopringBalances).map(address => ({
-        data: {
-          address,
-        },
-        chain: 'loopring',
-        tags: [ReadOnlyTag.LOOPRING],
-        nativeAsset: Blockchain.ETH.toUpperCase(),
-        virtual: true,
-      } satisfies BlockchainAccount));
+      const accounts = Object.keys(loopringBalances).map(
+        address =>
+          ({
+            data: {
+              address,
+            },
+            chain: 'loopring',
+            tags: [ReadOnlyTag.LOOPRING],
+            nativeAsset: Blockchain.ETH.toUpperCase(),
+            virtual: true,
+          }) satisfies BlockchainAccount,
+      );
 
       const loopring = Object.fromEntries(
         Object.entries(loopringBalances).map(([address, assets]) => [
@@ -194,8 +183,7 @@ export function useBlockchainBalances() {
 
           if (!ownedAsset)
             assets[associatedAsset] = { ...value };
-          else
-            assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+          else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
         }
       }
 

@@ -28,13 +28,10 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
   const { t } = useI18n();
 
   const getEventTypeIdentifier = (label: string) =>
-    get(krakenStakingEventTypeData).find(data => data.label === label)
-      ?.identifier ?? label;
+    get(krakenStakingEventTypeData).find(data => data.label === label)?.identifier ?? label;
 
   const matchers = computed<Matcher[]>(() => {
-    const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(
-      data => data.label,
-    );
+    const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(data => data.label);
 
     return [
       {
@@ -74,11 +71,8 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
         }),
         string: true,
         suggestions: () => [],
-        validate: value =>
-          value.length > 0
-          && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString(),
+        validate: value => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
+        transformer: (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString(),
       },
     ];
   });

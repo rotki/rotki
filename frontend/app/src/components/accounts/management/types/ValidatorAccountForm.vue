@@ -5,13 +5,13 @@ import type { StakingValidatorManage } from '@/composables/accounts/blockchain/u
 import type { ValidationErrors } from '@/types/api/errors';
 
 const props = defineProps<{
-  value: StakingValidatorManage;
+  modelValue: StakingValidatorManage;
   errorMessages: ValidationErrors;
   loading: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: StakingValidatorManage): void;
+  (e: 'update:model-value', value: StakingValidatorManage): void;
   (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
@@ -36,9 +36,9 @@ const taskRunning = isTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
 <template>
   <Eth2Input
     ref="input"
-    :validator.sync="validator"
-    :edit-mode="value.mode === 'edit'"
+    v-model:validator="validator"
+    v-model:error-messages="errors"
+    :edit-mode="modelValue.mode === 'edit'"
     :disabled="loading || taskRunning"
-    :error-messages.sync="errors"
   />
 </template>

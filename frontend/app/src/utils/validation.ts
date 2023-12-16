@@ -12,7 +12,11 @@ export function toMessages(validation: BaseValidation): string[] {
   return validation.$errors.map(e => get(e.$message));
 }
 
-export async function checkBeforeSubmission<T>(submit: () => Promise<T> | void, v$?: MaybeRef<Validation>, validState?: Ref<boolean>): Promise<T | void> {
+export async function checkBeforeSubmission<T>(
+  submit: () => Promise<T> | void,
+  v$?: MaybeRef<Validation>,
+  validState?: Ref<boolean>,
+): Promise<T | void> {
   const validator = get(v$);
   let invalid = false;
 

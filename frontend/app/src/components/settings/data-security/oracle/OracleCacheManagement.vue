@@ -1,37 +1,36 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
+import { CRYPTOCOMPARE_PRIO_LIST_ITEM, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { OracleCacheMeta } from '@/types/prices';
 
+type OracleCacheEntry = OracleCacheMeta & { id: number };
+
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref([]);
+const sort = ref<DataTableSortData<OracleCacheEntry>>([]);
 
-const headers = computed<DataTableColumn[]>(() => [
+const columns = computed<DataTableColumn<OracleCacheEntry>[]>(() => [
   {
-    label: t('oracle_cache_management.headers.from').toString(),
+    label: t('oracle_cache_management.headers.from'),
     key: 'fromAsset',
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.to').toString(),
+    label: t('oracle_cache_management.headers.to'),
     key: 'toAsset',
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.from_date').toString(),
+    label: t('oracle_cache_management.headers.from_date'),
     key: 'fromTimestamp',
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.to_date').toString(),
+    label: t('oracle_cache_management.headers.to_date'),
     key: 'toTimestamp',
     sortable: true,
   },
@@ -42,10 +41,9 @@ const headers = computed<DataTableColumn[]>(() => [
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { createOracleCache, getPriceCache, deletePriceCache }
-  = useBalancePricesStore();
+const { createOracleCache, getPriceCache, deletePriceCache } = useBalancePricesStore();
 
-const oracles: PrioritizedListItemData[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
+const oracles: PrioritizedListItemData<PrioritizedListId>[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
 
 const loading = ref<boolean>(false);
 const confirmClear = ref<boolean>(false);
@@ -60,15 +58,20 @@ async function load() {
   set(loading, false);
 }
 
-const filteredData = computed<OracleCacheMeta[]>(() => {
+const rows = computed<OracleCacheEntry[]>(() => {
   const from = get(fromAsset);
   const to = get(toAsset);
 
-  return get(cacheData).filter((item) => {
-    const fromAssetMatch = !from || from === item.fromAsset;
-    const toAssetMatch = !to || to === item.toAsset;
-    return fromAssetMatch && toAssetMatch;
-  });
+  return get(cacheData)
+    .map((row, index) => ({
+      id: index + 1,
+      ...row,
+    }))
+    .filter((item) => {
+      const fromAssetMatch = !from || from === item.fromAsset;
+      const toAssetMatch = !to || to === item.toAsset;
+      return fromAssetMatch && toAssetMatch;
+    });
 });
 
 onMounted(async () => {
@@ -156,9 +159,7 @@ function clearFilter() {
 const { show } = useConfirmStore();
 
 function showDeleteConfirmation(entry: OracleCacheMeta) {
-  const deleteFromAsset = entry?.fromAsset
-    ? get(assetSymbol(entry.fromAsset))
-    : '';
+  const deleteFromAsset = entry?.fromAsset ? get(assetSymbol(entry.fromAsset)) : '';
   const deleteToAsset = entry?.toAsset ? get(assetSymbol(entry.toAsset)) : '';
 
   show(
@@ -246,13 +247,13 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
       </RuiTooltip>
     </div>
     <RuiDataTable
+      v-model:sort="sort"
       outlined
       dense
-      :cols="headers"
+      :cols="columns"
       :loading="loading"
-      :rows="filteredData"
+      :rows="rows"
       row-attr="id"
-      :sort.sync="sort"
     >
       <template #item.fromAsset="{ row }">
         <AssetDetails

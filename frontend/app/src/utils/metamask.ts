@@ -1,8 +1,5 @@
 export function isMetaMaskSupported(): boolean {
-  return (
-    (!!window.interop || (window.ethereum && window.ethereum.isMetaMask))
-    ?? false
-  );
+  return (!!window.interop || (window.ethereum && window.ethereum.isMetaMask)) ?? false;
 }
 
 export async function getMetamaskAddresses(): Promise<string[]> {
@@ -18,9 +15,7 @@ export async function getMetamaskAddresses(): Promise<string[]> {
     ],
   });
 
-  const accountPermission = permissions.find(
-    permission => permission.parentCapability === 'eth_accounts',
-  );
+  const accountPermission = permissions.find(permission => permission.parentCapability === 'eth_accounts');
 
   assert(accountPermission);
 

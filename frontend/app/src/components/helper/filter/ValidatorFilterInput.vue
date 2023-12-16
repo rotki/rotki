@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 
-const props = withDefaults(
+defineOptions({
+  inheritAttrs: false,
+});
+
+withDefaults(
   defineProps<{
-    value: Eth2ValidatorEntry[];
     items: Eth2ValidatorEntry[];
     loading?: boolean;
   }>(),
@@ -12,22 +15,14 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'input', value: Eth2ValidatorEntry[]): void;
-}>();
-
-const { value } = toRefs(props);
-
-function input(value: Eth2ValidatorEntry[]) {
-  emit('input', value);
-}
+const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
 
 const { t } = useI18n();
 </script>
 
 <template>
   <RuiAutoComplete
-    :value="value"
+    v-model="model"
     :options="items"
     :loading="loading"
     :disabled="loading"
@@ -44,7 +39,6 @@ const { t } = useI18n();
     :item-height="68"
     variant="outlined"
     :label="t('validator_filter_input.label')"
-    @input="input($event)"
   >
     <template #item="{ item }">
       <ValidatorDisplay

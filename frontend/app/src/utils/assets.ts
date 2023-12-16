@@ -21,18 +21,14 @@ function levenshtein(a: string, b: string): number {
   const alen = a.length;
   const blen = b.length;
   const row = new Array(alen);
-  for (i = 0; i <= alen; i++)
-    row[i] = i;
+  for (i = 0; i <= alen; i++) row[i] = i;
 
   for (i = 1; i <= blen; i++) {
     res = i;
     for (j = 1; j <= alen; j++) {
       tmp = row[j - 1];
       row[j - 1] = res;
-      res
-        = b[i - 1] === a[j - 1]
-          ? tmp
-          : Math.min(tmp + 1, Math.min(res + 1, row[j] + 1));
+      res = b[i - 1] === a[j - 1] ? tmp : Math.min(tmp + 1, Math.min(res + 1, row[j] + 1));
     }
   }
   return res;
@@ -86,12 +82,8 @@ export function compareTextByKeyword(a: string, b: string, keyword: string): num
   return rankA - rankB;
 }
 
-export function getSortItems(getInfo: (identifier: string) => AssetInfo | null) {
-  return (
-    items: AssetBalance[],
-    sortBy: (keyof AssetBalance)[],
-    sortDesc: boolean[],
-  ): AssetBalance[] => {
+export function getSortItems<T extends AssetBalance>(getInfo: (identifier: string) => AssetInfo | null) {
+  return (items: T[], sortBy: (keyof AssetBalance)[], sortDesc: boolean[]): T[] => {
     const sortByElement = sortBy[0];
     const sortByDesc = sortDesc[0];
     return items.sort((a, b) => {
@@ -101,16 +93,12 @@ export function getSortItems(getInfo: (identifier: string) => AssetInfo | null) 
         assert(aAsset && bAsset);
         const bSymbol = bAsset.symbol || '';
         const aSymbol = aAsset.symbol || '';
-        return sortByDesc
-          ? bSymbol.toLowerCase().localeCompare(aSymbol)
-          : aSymbol.toLowerCase().localeCompare(bSymbol);
+        return sortByDesc ? bSymbol.toLowerCase().localeCompare(aSymbol) : aSymbol.toLowerCase().localeCompare(bSymbol);
       }
 
       const aElement = a[sortByElement];
       const bElement = b[sortByElement];
-      return (
-        sortByDesc ? bElement.minus(aElement) : aElement.minus(bElement)
-      ).toNumber();
+      return (sortByDesc ? bElement.minus(aElement) : aElement.minus(bElement)).toNumber();
     });
   };
 }

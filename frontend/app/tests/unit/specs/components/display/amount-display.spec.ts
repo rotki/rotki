@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
@@ -9,15 +9,8 @@ import { createCustomPinia } from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { Pinia } from 'pinia';
 
-vi.mocked(useCssModule).mockReturnValue({
-  blur: 'blur',
-  profit: 'profit',
-  loss: 'loss',
-  display: 'display',
-});
-
 describe('amountDisplay.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof AmountDisplay>>;
   let pinia: Pinia;
 
   const createWrapper = (
@@ -34,18 +27,20 @@ describe('amountDisplay.vue', () => {
       priceOfAsset?: BigNumber;
       timestamp?: number;
     } = {},
-  ) => mount(AmountDisplay, {
-    pinia,
-    propsData: {
-      value,
-      ...props,
-    },
-  });
+  ) =>
+    mount(AmountDisplay, {
+      global: {
+        plugins: [pinia],
+      },
+      props: {
+        value,
+        ...props,
+      },
+    });
 
   beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
-    document.body.dataset.app = 'true';
     const { findCurrency } = useCurrencies();
 
     updateGeneralSettings({
@@ -59,6 +54,7 @@ describe('amountDisplay.vue', () => {
 
   afterEach(() => {
     useSessionStore().$reset();
+    wrapper.unmount();
   });
 
   describe('common case', () => {
@@ -66,14 +62,10 @@ describe('amountDisplay.vue', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD',
       });
-      expect(
-        wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
-      ).toMatch('1.44');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toMatch('1.44');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
-        '1.445280012',
-      );
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.445280012');
     });
 
     it('displays amount converted to selected fiat currency (does not double-convert)', async () => {
@@ -81,14 +73,10 @@ describe('amountDisplay.vue', () => {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR',
       });
-      expect(
-        wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
-      ).toMatch('1.20');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
-        '1.20440001',
-      );
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.20440001');
     });
 
     it('displays amount as it is without fiat conversion', async () => {
@@ -98,12 +86,10 @@ describe('amountDisplay.vue', () => {
           .find('[data-cy=amount-display]:nth-child(1)')
           .text()
           .replace(/ +(?= )/g, ''),
-      ).toBe('< 1.21');
+      ).toBe('<1.21');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
-        '1.20540001',
-      );
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.20540001');
     });
 
     it('display amount do not show decimal when `integer=true`', () => {
@@ -116,30 +102,22 @@ describe('amountDisplay.vue', () => {
         fiatCurrency: 'USD',
         forceCurrency: true,
       });
-      expect(
-        wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
-      ).toMatch('1.20');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
-        '1.20440001',
-      );
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.20440001');
     });
   });
 
   describe('check PnL', () => {
     it('check if profit', () => {
       const wrapper = createWrapper(bigNumberify(50), { pnl: true });
-      expect(
-        wrapper.find('[data-cy=amount-display].text-rui-success').exists(),
-      ).toBe(true);
+      expect(wrapper.find('[data-cy=amount-display].text-rui-success').exists()).toBe(true);
     });
 
     it('check if loss', () => {
       const wrapper = createWrapper(bigNumberify(-50), { pnl: true });
-      expect(
-        wrapper.find('[data-cy=amount-display].text-rui-error').exists(),
-      ).toBe(true);
+      expect(wrapper.find('[data-cy=amount-display].text-rui-error').exists()).toBe(true);
     });
   });
 
@@ -152,14 +130,10 @@ describe('amountDisplay.vue', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD',
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
-        '1.44',
-      );
+      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.44');
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
-        '1.445280012',
-      );
+      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe('1.445280012');
     });
 
     it('displays amount converted to selected fiat currency (does not double-convert) as scrambled', async () => {
@@ -167,26 +141,18 @@ describe('amountDisplay.vue', () => {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR',
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
-        '1.20',
-      );
+      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.20');
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
-        '1.20440001',
-      );
+      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe('1.20440001');
     });
 
     it('displays amount as it is without fiat conversion as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
-        '1.21',
-      );
+      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.21');
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
-        '1.20540001',
-      );
+      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe('1.20540001');
     });
   });
 
@@ -265,9 +231,7 @@ describe('amountDisplay.vue', () => {
       });
 
       const wrapper = createWrapper(bigNumberify(123456.78));
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '123,456.78',
-      );
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('123,456.78');
     });
 
     it('`Thousand separator=.` & `Decimal separator=,`', () => {
@@ -278,9 +242,7 @@ describe('amountDisplay.vue', () => {
       });
 
       const wrapper = createWrapper(bigNumberify(123456.78));
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '123.456,78',
-      );
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('123.456,78');
     });
   });
 
@@ -424,12 +386,8 @@ describe('amountDisplay.vue', () => {
         fiatCurrency: 'USD',
       });
 
-      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '480.00',
-      );
-      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '960.00',
-      );
+      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('480.00');
+      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe('960.00');
     });
 
     it('`isCurrentCurrency=true`', () => {
@@ -455,26 +413,17 @@ describe('amountDisplay.vue', () => {
         fiatCurrency: 'USD',
       });
 
-      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '500.00',
-      );
-      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe(
-        '1,000.00',
-      );
+      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('500.00');
+      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe('1,000.00');
     });
   });
 
   describe('uses historic price', () => {
     it('when timestamp is set and prices exists', async () => {
-      const getPrice = vi.spyOn(
-        useHistoricCachePriceStore(),
-        'historicPriceInCurrentCurrency',
-      );
+      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'historicPriceInCurrentCurrency');
       getPrice.mockReturnValue(computed(() => bigNumberify(1.2)));
 
-      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(
-        computed(() => false),
-      );
+      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(computed(() => false));
 
       wrapper = createWrapper(bigNumberify(1), {
         fiatCurrency: 'USD',
@@ -489,15 +438,10 @@ describe('amountDisplay.vue', () => {
     });
 
     it('when timestamp is set and prices does not exist', async () => {
-      const getPrice = vi.spyOn(
-        useHistoricCachePriceStore(),
-        'historicPriceInCurrentCurrency',
-      );
+      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'historicPriceInCurrentCurrency');
       getPrice.mockReturnValue(computed(() => Zero));
 
-      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(
-        computed(() => false),
-      );
+      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(computed(() => false));
 
       wrapper = createWrapper(bigNumberify(1), {
         fiatCurrency: 'USD',

@@ -13,9 +13,7 @@ const address = ref<string>('');
 const tx = ref<string>('');
 const block = ref<string>('');
 
-const defaultUrls: ComputedRef<ExplorerUrls> = computed(
-  () => explorerUrls[get(selection)],
-);
+const defaultUrls = computed<ExplorerUrls>(() => explorerUrls[get(selection)]);
 
 const userUrls = computed(() => {
   const userExplorers = get(explorers);
@@ -101,11 +99,11 @@ const { t } = useI18n();
         :label="t('explorers.chain_selector')"
         :item-height="56"
         variant="outlined"
-        @input="onChange()"
+        @update:model-value="onChange()"
       >
         <template #item="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
+            v-if="!additional.some((chain) => chain === item)"
             dense
             :chain="item"
           />
@@ -118,7 +116,7 @@ const { t } = useI18n();
         </template>
         <template #selection="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
+            v-if="!additional.some((chain) => chain === item)"
             dense
             :chain="item"
           />

@@ -2,9 +2,10 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AllLocation } from '@/types/location';
 
 export const useLocationStore = defineStore('locations', () => {
-  const allLocations: Ref<AllLocation> = ref({});
+  const allLocations = ref<AllLocation>({});
 
   const { fetchAllLocations } = useHistoryApi();
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const { t, te } = useI18n();
 
   const toTradeLocationData = (locations: AllLocation): TradeLocationData[] =>
@@ -18,8 +19,7 @@ export const useLocationStore = defineStore('locations', () => {
         const translationKey = `backend_mappings.trade_location.${identifier}`;
         if (te(translationKey))
           name = t(translationKey);
-        else
-          name = toSentenceCase(identifier);
+        else name = toSentenceCase(identifier);
       }
 
       const mapped = {
@@ -41,7 +41,7 @@ export const useLocationStore = defineStore('locations', () => {
     set(allLocations, locations);
   };
 
-  const allExchanges: ComputedRef<string[]> = computed(() => {
+  const allExchanges = computed<string[]>(() => {
     const locations = get(allLocations);
     return Object.keys(locations).filter((key) => {
       const location = locations[key];
@@ -49,25 +49,19 @@ export const useLocationStore = defineStore('locations', () => {
     });
   });
 
-  const exchangesWithKey: ComputedRef<string[]> = computed(() => {
+  const exchangesWithKey = computed<string[]>(() => {
     const locations = get(allLocations);
-    return get(allExchanges).filter(
-      key => locations[key].exchangeDetails?.isExchangeWithKey,
-    );
+    return get(allExchanges).filter(key => locations[key].exchangeDetails?.isExchangeWithKey);
   });
 
-  const exchangesWithPassphrase: ComputedRef<string[]> = computed(() => {
+  const exchangesWithPassphrase = computed<string[]>(() => {
     const locations = get(allLocations);
-    return get(exchangesWithKey).filter(
-      key => locations[key].exchangeDetails?.isExchangeWithPassphrase,
-    );
+    return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.isExchangeWithPassphrase);
   });
 
-  const exchangesWithoutApiSecret: ComputedRef<string[]> = computed(() => {
+  const exchangesWithoutApiSecret = computed<string[]>(() => {
     const locations = get(allLocations);
-    return get(exchangesWithKey).filter(
-      key => locations[key].exchangeDetails?.isExchangeWithoutApiSecret,
-    );
+    return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.isExchangeWithoutApiSecret);
   });
 
   return {

@@ -2,9 +2,7 @@
 import { Priority, Severity } from '@rotki/common/lib/messages';
 import { Routes } from '@/router/routes';
 
-defineProps<{ visible: boolean }>();
-
-const emit = defineEmits(['close']);
+const display = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();
 
@@ -19,14 +17,7 @@ const { prioritized: allNotifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
 
 function close() {
-  emit('close');
-}
-
-function input(visible: boolean) {
-  if (visible)
-    return;
-
-  close();
+  set(display, false);
 }
 
 function clear() {
@@ -61,7 +52,7 @@ const tabCategoriesLabel = computed(() => ({
   [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
 }));
 
-const selectedTab: Ref<TabCategory> = ref(TabCategory.VIEW_ALL);
+const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
 
 const selectedNotifications = computed(() => {
   const all = get(allNotifications);
@@ -84,33 +75,34 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 const contentWrapper = ref();
 const { y } = useScroll(contentWrapper);
 
-const initialAppear: Ref<boolean> = ref(false);
+const initialAppear = ref<boolean>(false);
 
-watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, currNotifications], [_, prevSelectedTab, prevNotifications]) => {
-  if (currSelectedTab !== prevSelectedTab || (prevNotifications.length === 0 && currNotifications.length > 0)) {
-    set(initialAppear, false);
-    nextTick(() => {
-      set(initialAppear, true);
-    });
-  }
-  else {
-    if (currentY > 0)
+watch(
+  [y, selectedTab, selectedNotifications],
+  ([currentY, currSelectedTab, currNotifications], [_, prevSelectedTab, prevNotifications]) => {
+    if (currSelectedTab !== prevSelectedTab || (prevNotifications.length === 0 && currNotifications.length > 0)) {
       set(initialAppear, false);
-    else
-      set(initialAppear, true);
-  }
-});
+      nextTick(() => {
+        set(initialAppear, true);
+      });
+    }
+    else {
+      if (currentY > 0)
+        set(initialAppear, false);
+      else set(initialAppear, true);
+    }
+  },
+);
 </script>
 
 <template>
   <RuiNavigationDrawer
+    v-model="display"
     :content-class="css.sidebar"
     width="400px"
-    :value="visible"
     position="right"
     temporary
     :stateless="dialogVisible"
-    @input="input($event)"
   >
     <DefineNoMessages>
       <div :class="css['no-messages']">
@@ -124,9 +116,7 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
         </div>
       </div>
     </DefineNoMessages>
-    <div
-      class="h-full overflow-hidden flex flex-col"
-    >
+    <div class="h-full overflow-hidden flex flex-col">
       <div class="flex justify-between items-center p-2 pl-4">
         <div class="text-h6">
           {{ t('notification_sidebar.title') }}
@@ -151,17 +141,15 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
             v-model="selectedTab"
             color="primary"
           >
-            <template #default>
-              <RuiTab
-                v-for="item in Object.values(TabCategory)"
-                :key="item"
-                size="sm"
-                class="!min-w-0"
-                :value="item"
-              >
-                {{ tabCategoriesLabel[item] }}
-              </RuiTab>
-            </template>
+            <RuiTab
+              v-for="item in Object.values(TabCategory)"
+              :key="item"
+              size="sm"
+              class="!min-w-0"
+              :value="item"
+            >
+              {{ tabCategoriesLabel[item] }}
+            </RuiTab>
           </RuiTabs>
         </div>
         <div

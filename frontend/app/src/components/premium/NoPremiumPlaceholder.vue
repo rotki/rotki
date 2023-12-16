@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 
 defineProps<{ text: string }>();
 
@@ -29,8 +29,8 @@ const { isMdAndUp } = useBreakpoint();
     <div class="text-subtitle-2 text-rui-text-secondary">
       {{ t('no_premium_placeholder.premium_only', { text }) }}
     </div>
-    <i18n
-      path="no_premium_placeholder.get_premium"
+    <i18n-t
+      keypath="no_premium_placeholder.get_premium"
       class="text-rui-text-secondary"
     >
       <ExternalLink
@@ -38,6 +38,6 @@ const { isMdAndUp } = useBreakpoint();
         color="primary"
         premium
       />
-    </i18n>
+    </i18n-t>
   </FullSizeContent>
 </template>

@@ -40,10 +40,7 @@ export function isAccountWithBalanceXpub(
   return 'xpub' in account.data;
 }
 
-export function createXpubAccount(
-  data: BitcoinXpubAccount,
-  extra: AccountExtraParams,
-): BlockchainAccount<XpubData> {
+export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
   return {
     data: {
       xpub: data.xpub,
@@ -65,10 +62,7 @@ export function createValidatorAccount(
   };
 }
 
-export function createAccount(
-  data: BasicBlockchainAccount,
-  extra: AccountExtraParams,
-): BlockchainAccount<AddressData> {
+export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraParams): BlockchainAccount<AddressData> {
   return {
     data: { address: data.address },
     tags: data.tags ?? undefined,
@@ -109,8 +103,7 @@ export function getAccountAddress(account: { data: BlockchainAccountData }): str
     return account.data.address;
   else if ('publicKey' in account.data)
     return account.data.publicKey;
-  else
-    return account.data.xpub;
+  else return account.data.xpub;
 }
 
 export function getAccountLabel(account: { data: BlockchainAccountData; label?: string }): string {
@@ -147,38 +140,45 @@ export function convertBtcAccounts(
     chain,
   };
 
-  const fromXpub = accounts.xpubs.flatMap(((xpub) => {
+  const fromXpub = accounts.xpubs.flatMap((xpub) => {
     const extras = {
       groupId: xpub.derivationPath ? `${xpub.xpub}#${xpub.derivationPath}#${chain}` : `${xpub.xpub}#${chain}`,
       ...chainInfo,
     };
     const group = createXpubAccount(xpub, { ...extras, groupHeader: true });
-    return [
-      group,
-      ...(xpub.addresses ? xpub.addresses.map(account => createAccount(account, extras)) : []),
-    ];
-  }));
+    return [group, ...(xpub.addresses ? xpub.addresses.map(account => createAccount(account, extras)) : [])];
+  });
 
   const standalone = accounts.standalone.map(account => createAccount(account, chainInfo));
 
   return [...fromXpub, ...standalone];
 }
 
-export function convertBtcBalances(chain: string, totals: BlockchainTotals, perAccountData: BtcBalances): BlockchainBalances {
+export function convertBtcBalances(
+  chain: string,
+  totals: BlockchainTotals,
+  perAccountData: BtcBalances,
+): BlockchainBalances {
   const chainBalances = Object.fromEntries(
-    Object.entries(
+    Object.entries({
+      ...perAccountData.standalone,
+      ...perAccountData.xpubs
+        ?.map(x => x.addresses)
+        .reduce(
+          (previousValue, currentValue) => ({
+            ...previousValue,
+            ...currentValue,
+          }),
+          {},
+        ),
+    }).map(([address, value]) => [
+      address,
       {
-        ...perAccountData.standalone,
-        ...perAccountData.xpubs?.map(x => x.addresses).reduce((previousValue, currentValue) => ({
-          ...previousValue,
-          ...currentValue,
-        }), {}),
+        assets: {
+          [chain.toUpperCase()]: value,
+        },
       },
-    ).map(([address, value]) => [address, {
-      assets: {
-        [chain.toUpperCase()]: value,
-      },
-    }]),
+    ]),
   );
   return {
     totals,

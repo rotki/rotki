@@ -1,8 +1,8 @@
 export const RuiAutoCompleteStub = {
   template: `
-    <div :data-cy="dataCy" :disabled="disabled">
+    <div :data-cy="dataCy" :disabled="disabled" v-bind="$attrs">
       <div>
-        <input :value="value?.toString()" class="input-value" type="text" @input="$emit('input', $event.value)">
+        <input :value="modelValue" class="input-value" type="text" @input="$emit('update:model-value', $event.value)">
       </div>
       <div class="selections">
         <span v-for="item in options">
@@ -15,7 +15,7 @@ export const RuiAutoCompleteStub = {
     </div>
   `,
   props: {
-    value: { type: [String, Array<string>] },
+    modelValue: { type: [String, Array<string>] },
     successMessages: { type: [String, Array<string>], default: () => [] },
     errorMessages: { type: [String, Array<string>], default: () => [] },
     options: { type: Array<any> },

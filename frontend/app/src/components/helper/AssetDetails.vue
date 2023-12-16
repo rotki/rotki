@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue/types/jsx';
+import { getAddressFromEvmIdentifier } from '@/utils/assets';
+import type { StyleValue } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 
 const props = withDefaults(
@@ -30,7 +31,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
 const address = reactify(getAddressFromEvmIdentifier)(asset);
 
-const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
+const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
   identifier: get(asset),
 }));

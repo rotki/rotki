@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  SYNC_DOWNLOAD,
-  SYNC_UPLOAD,
-  type SyncAction,
-} from '@/types/session/sync';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
 defineProps<{ pending: boolean }>();
 

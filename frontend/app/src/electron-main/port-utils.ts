@@ -12,15 +12,12 @@ function checkAvailability(port: number): Promise<number> {
       server.close();
       if (address && typeof address !== 'string')
         resolve(address.port);
-      else
-        reject(new Error(`Invalid Address value ${address}`));
+      else reject(new Error(`Invalid Address value ${address}`));
     });
   });
 }
 
-export async function selectPort(
-  startPort: number = DEFAULT_PORT,
-): Promise<number> {
+export async function selectPort(startPort: number = DEFAULT_PORT): Promise<number> {
   for (let portNumber = startPort; portNumber <= 65535; portNumber++) {
     try {
       return await checkAvailability(portNumber);

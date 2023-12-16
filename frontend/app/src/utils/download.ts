@@ -19,7 +19,11 @@ export function downloadFileByBlobResponse(response: AxiosResponse, filename: st
   downloadFileByUrl(url, filename);
 }
 
-export function downloadFileByTextContent(text: string, filename: string, type: 'text/plain' | 'application/json' | 'text/csv' = 'text/plain') {
+export function downloadFileByTextContent(
+  text: string,
+  filename: string,
+  type: 'text/plain' | 'application/json' | 'text/csv' = 'text/plain',
+) {
   const file = new Blob([text], {
     type,
   });

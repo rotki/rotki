@@ -23,7 +23,7 @@ const { t } = useI18n();
       :hint="t('general_settings.labels.auto_detect_tokens_hint')"
       :success-messages="success"
       :error-messages="error"
-      @input="updateImmediate($event)"
+      @update:model-value="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

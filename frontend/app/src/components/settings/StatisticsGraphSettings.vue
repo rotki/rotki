@@ -7,7 +7,7 @@ const { t } = useI18n();
 
 const updated = () => emit('updated');
 
-const showMenu: Ref<boolean> = ref(false);
+const showMenu = ref<boolean>(false);
 </script>
 
 <template>
@@ -16,12 +16,12 @@ const showMenu: Ref<boolean> = ref(false);
     menu-class="min-w-[18rem] max-w-[20rem]"
     :popper="{ placement: 'bottom-end' }"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
         custom-color
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon name="settings-4-line" />
       </MenuTooltipButton>

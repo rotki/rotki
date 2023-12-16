@@ -1,21 +1,15 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import type { SearchMatcher } from '@/types/filtering';
 
-vi.mocked(useCssModule).mockReturnValue({
-  selected: 'selected',
-});
-
 describe('table-filter/FilterEntry.vue', () => {
-  let wrapper: Wrapper<any>;
-  const createWrapper = (props: {
-    matcher: SearchMatcher<any>;
-    active: boolean;
-  }) => mount(FilterEntry, {
-    propsData: {
-      ...props,
-    },
-  });
+  let wrapper: VueWrapper<InstanceType<typeof FilterEntry>>;
+  const createWrapper = (props: { matcher: SearchMatcher<any>; active: boolean }) =>
+    mount(FilterEntry, {
+      props: {
+        ...props,
+      },
+    });
 
   const matcher: SearchMatcher<any> = {
     key: 'start',
@@ -25,16 +19,18 @@ describe('table-filter/FilterEntry.vue', () => {
     validate: () => true,
   };
 
+  afterEach(() => {
+    wrapper.unmount();
+  });
+
   it('common case', () => {
     wrapper = createWrapper({ matcher, active: false });
-    expect(wrapper.find('button').text()).toBe(
-      `${matcher.key}:  ${matcher.description}`,
-    );
-    expect(wrapper.find('.selected').exists()).toBeFalsy();
+    expect(wrapper.find('button').text()).toBe(`${matcher.key}: ${matcher.description}`);
+    expect(wrapper.classes()).not.toEqual(expect.arrayContaining([expect.stringMatching(/_selected_/)]));
   });
 
   it('active = true', () => {
     wrapper = createWrapper({ matcher, active: true });
-    expect(wrapper.find('.selected').exists()).toBeTruthy();
+    expect(wrapper.classes()).toEqual(expect.arrayContaining([expect.stringMatching(/_selected_/)]));
   });
 });

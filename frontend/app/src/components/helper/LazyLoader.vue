@@ -1,18 +1,21 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  minHeight?: string;
-  initialAppear?: boolean;
-}>(), {
-  minHeight: '16px',
-  initialAppear: false,
-});
+const props = withDefaults(
+  defineProps<{
+    minHeight?: string;
+    initialAppear?: boolean;
+  }>(),
+  {
+    minHeight: '16px',
+    initialAppear: false,
+  },
+);
 
 const { minHeight, initialAppear } = toRefs(props);
 
 const wrapper = ref();
-const appear: Ref<boolean> = ref(get(initialAppear));
+const appear = ref<boolean>(get(initialAppear));
 const appearDebounced = refDebounced(appear, 200);
-const height: Ref<string> = ref('max-content');
+const height = ref<string>('max-content');
 const usedAppear = logicAnd(appear, appearDebounced);
 
 useIntersectionObserver(
@@ -30,9 +33,8 @@ const { height: originalHeight } = useElementBounding(wrapper);
 watch(usedAppear, (appear) => {
   if (appear)
     set(height, 'max-content');
-  else
-    // To retain then height when the element disappear, so it doesn't break the scrolling position
-    set(height, `${get(originalHeight)}px`);
+  // To retain then height when the element disappear, so it doesn't break the scrolling position
+  else set(height, `${get(originalHeight)}px`);
 });
 
 function show() {

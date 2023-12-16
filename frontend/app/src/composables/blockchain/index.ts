@@ -6,11 +6,7 @@ import { Section } from '@/types/status';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { Account } from '@rotki/common/lib/account';
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  AccountPayload,
-  AddAccountsPayload,
-  XpubAccountPayload,
-} from '@/types/blockchain/accounts';
+import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 
@@ -31,10 +27,7 @@ export function useBlockchains() {
 
   const { resetStatus: resetNftSectionStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
-  const getNewAccountPayload = (
-    chain: string,
-    payload: AccountPayload[],
-  ): AccountPayload[] => {
+  const getNewAccountPayload = (chain: string, payload: AccountPayload[]): AccountPayload[] => {
     const knownAddresses: string[] = getAddresses(chain);
     return payload.filter(({ address }) => {
       const key = address.toLocaleLowerCase();
@@ -42,20 +35,20 @@ export function useBlockchains() {
     });
   };
 
-  const getChainsText = (chains: string[], explanation?: string) => chains.map((chain) => {
-    let text = `- ${get(getChainName(chain))}`;
-    if (explanation)
-      text += ` (${explanation})`;
+  const getChainsText = (chains: string[], explanation?: string) =>
+    chains
+      .map((chain) => {
+        let text = `- ${get(getChainName(chain))}`;
+        if (explanation)
+          text += ` (${explanation})`;
 
-    return text;
-  }).join('\n');
+        return text;
+      })
+      .join('\n');
 
   const { fetchEnsNames } = useAddressesNamesStore();
 
-  const fetchAccounts = async (
-    blockchain?: string,
-    refreshEns: boolean = false,
-  ): Promise<void> => {
+  const fetchAccounts = async (blockchain?: string, refreshEns: boolean = false): Promise<void> => {
     const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
     await awaitParallelExecution(chains, chain => chain, fetch, 2);
 
@@ -73,19 +66,14 @@ export function useBlockchains() {
       startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
-  const refreshAccounts = async (
-    blockchain?: MaybeRef<string>,
-    periodic = false,
-  ) => {
+  const refreshAccounts = async (blockchain?: MaybeRef<string>, periodic = false) => {
     const chain = get(blockchain);
     await fetchAccounts(chain, true);
 
     const isEth = chain === Blockchain.ETH;
     const isEth2 = chain === Blockchain.ETH2;
 
-    const pending: Promise<any>[] = [
-      fetchBlockchainBalances({ blockchain: chain, ignoreCache: isEth2 }, periodic),
-    ];
+    const pending: Promise<any>[] = [fetchBlockchainBalances({ blockchain: chain, ignoreCache: isEth2 }, periodic)];
 
     if (isEth || !chain) {
       pending.push(fetchLoopringBalances(false));
@@ -104,24 +92,30 @@ export function useBlockchains() {
   ): void {
     const listOfFailureText: string[] = [];
     if (noActivity) {
-      listOfFailureText.push(getChainsText(
-        Object.values(noActivity)[0],
-        t('actions.balances.blockchain_accounts_add.error.failed_reason.no_activity'),
-      ));
+      listOfFailureText.push(
+        getChainsText(
+          Object.values(noActivity)[0],
+          t('actions.balances.blockchain_accounts_add.error.failed_reason.no_activity'),
+        ),
+      );
     }
 
     if (existed) {
-      listOfFailureText.push(getChainsText(
-        Object.values(existed)[0],
-        t('actions.balances.blockchain_accounts_add.error.failed_reason.existed'),
-      ));
+      listOfFailureText.push(
+        getChainsText(
+          Object.values(existed)[0],
+          t('actions.balances.blockchain_accounts_add.error.failed_reason.existed'),
+        ),
+      );
     }
 
     if (ethContracts) {
-      listOfFailureText.push(getChainsText(
-        [t('actions.balances.blockchain_accounts_add.error.non_eth')],
-        t('actions.balances.blockchain_accounts_add.error.failed_reason.is_contract'),
-      ));
+      listOfFailureText.push(
+        getChainsText(
+          [t('actions.balances.blockchain_accounts_add.error.non_eth')],
+          t('actions.balances.blockchain_accounts_add.error.failed_reason.is_contract'),
+        ),
+      );
     }
 
     if (failed)
@@ -140,9 +134,7 @@ export function useBlockchains() {
     });
   }
 
-  const addEvmAccounts = async (
-    payload: AddAccountsPayload,
-  ): Promise<void> => {
+  const addEvmAccounts = async (payload: AddAccountsPayload): Promise<void> => {
     const blockchain = 'EVM';
 
     const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
@@ -176,10 +168,14 @@ export function useBlockchains() {
 
           notify({
             title,
-            message: t('actions.balances.blockchain_accounts_add.success.description', {
-              address: account.address,
-              list: !isAll ? getChainsText(chains) : '',
-            }, isAll ? 1 : 2),
+            message: t(
+              'actions.balances.blockchain_accounts_add.success.description',
+              {
+                address: account.address,
+                list: !isAll ? getChainsText(chains) : '',
+              },
+              isAll ? 1 : 2,
+            ),
             severity: Severity.INFO,
             display: true,
           });
@@ -198,8 +194,7 @@ export function useBlockchains() {
 
     if (singleAddition)
       await addSingleAddress(payload.payload[0]);
-    else
-      await Promise.allSettled(payload.payload.map(addSingleAddress));
+    else await Promise.allSettled(payload.payload.map(addSingleAddress));
 
     if (failedAddition.length > 0) {
       const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
@@ -290,8 +285,7 @@ export function useBlockchains() {
 
     if (singleAddition)
       await addSingleAddress(isXpub ? data : filteredPayload[0]);
-    else
-      await Promise.allSettled(filteredPayload.map(addSingleAddress));
+    else await Promise.allSettled(filteredPayload.map(addSingleAddress));
 
     const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: chain });
 
@@ -334,14 +328,11 @@ export function useBlockchains() {
     }
     catch (error: any) {
       logger.error(error);
-      const description = t(
-        'actions.balances.blockchain_accounts_add.error.description',
-        {
-          error: error.message,
-          address: filteredPayload.length,
-          blockchain: chain,
-        },
-      );
+      const description = t('actions.balances.blockchain_accounts_add.error.description', {
+        error: error.message,
+        address: filteredPayload.length,
+        blockchain: chain,
+      });
       notify({
         title,
         message: description,

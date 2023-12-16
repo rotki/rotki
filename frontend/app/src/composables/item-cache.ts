@@ -8,24 +8,25 @@ export interface CacheEntry<T> {
   item: T;
 }
 
-type CacheFetch<T> = (
-  keys: string[]
-) => Promise<() => IterableIterator<CacheEntry<T>>>;
+type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
 
 interface CacheOptions {
   expiry: number;
   size: number;
 }
 
-export function useItemCache<T>(fetch: CacheFetch<T>, options: CacheOptions = {
-  size: CACHE_SIZE,
-  expiry: CACHE_EXPIRY,
-}) {
+export function useItemCache<T>(
+  fetch: CacheFetch<T>,
+  options: CacheOptions = {
+    size: CACHE_SIZE,
+    expiry: CACHE_EXPIRY,
+  },
+) {
   const recent: Map<string, number> = new Map();
   const unknown: Map<string, number> = new Map();
-  const cache: Ref<Record<string, T | null>> = ref({});
-  const pending: Ref<Record<string, boolean>> = ref({});
-  const batch: Ref<string[]> = ref([]);
+  const cache = ref<Record<string, T | null>>({});
+  const pending = ref<Record<string, boolean>>({});
+  const batch = ref<string[]>([]);
 
   const deleteCacheKey = (key: string): void => {
     const copy = { ...get(cache) };
@@ -95,8 +96,7 @@ export function useItemCache<T>(fetch: CacheFetch<T>, options: CacheOptions = {
       logger.error(error);
     }
     finally {
-      for (const key of keys)
-        resetPending(key);
+      for (const key of keys) resetPending(key);
     }
   }
 

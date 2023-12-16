@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isTransactionEvent } from '@/utils/report';
-import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library';
 import type { ProfitLossEvent, ProfitLossEvents, SelectedReport } from '@/types/reports';
+
+interface GroupLine {
+  top: boolean;
+  bottom: boolean;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -17,30 +22,27 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (
-    e: 'update:page',
-    page: { reportId: number; offset: number; limit: number }
-  ): void;
+  (e: 'update:page', page: { reportId: number; offset: number; limit: number }): void;
 }>();
 
 const { t } = useI18n();
 
-type PnLItem = ProfitLossEvent & { id: number };
+type PnLItem = ProfitLossEvent & { id: number; groupLine: GroupLine };
 
 const { report } = toRefs(props);
 
-const tablePagination = ref<DataTableOptions['pagination']>();
+const tablePagination = ref<DataTableOptions<PnLItem>['pagination']>();
 const expanded = ref([]);
 
-const sort: Ref<DataTableSortData> = ref({
-  column: 'time',
-  direction: 'asc' as const,
+const sort = ref<DataTableSortData<PnLItem>>({
+  column: 'timestamp',
+  direction: 'asc',
 });
 
 const route = useRoute();
 const { getChain } = useSupportedChains();
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   {
     label: '',
     key: 'group',
@@ -91,7 +93,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
   {
     label: t('common.datetime'),
-    key: 'time',
+    key: 'timestamp',
   },
   {
     label: t('common.notes'),
@@ -105,11 +107,13 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const items = computed<PnLItem[]>(() => get(report).entries.map((value, index) => ({
-  ...value,
-  id: index,
-  groupLine: checkGroupLine(get(report).entries, index),
-})));
+const items = computed<PnLItem[]>(() =>
+  get(report).entries.map((value, index) => ({
+    ...value,
+    id: index,
+    groupLine: checkGroupLine(get(report).entries, index),
+  })),
+);
 
 const itemLength = computed(() => {
   const { entriesFound, entriesLimit } = report.value;
@@ -121,12 +125,9 @@ const itemLength = computed(() => {
 
 const premium = usePremium();
 
-const showUpgradeMessage = computed(
-  () =>
-    !premium.value && report.value.totalActions > report.value.processedActions,
-);
+const showUpgradeMessage = computed(() => !premium.value && report.value.totalActions > report.value.processedActions);
 
-function updatePagination(tableOptions: DataTableOptions) {
+function updatePagination(tableOptions: DataTableOptions<PnLItem>) {
   const { pagination } = tableOptions;
   set(tablePagination, pagination);
 
@@ -172,17 +173,17 @@ const css = useCssModule();
       {{ t('common.events') }}
     </template>
     <RuiDataTable
+      v-model:expanded="expanded"
+      v-model:sort="sort"
       :cols="tableHeaders"
       :rows="items"
       :loading="loading || refreshing"
-      :expanded.sync="expanded"
       :pagination="{
         limit: tablePagination?.limit ?? 10,
         page: tablePagination?.page ?? 1,
         total: itemLength,
       }"
       :pagination-modifiers="{ external: true }"
-      :sort.sync="sort"
       outlined
       single-expand
       sticky-header
@@ -218,7 +219,7 @@ const css = useCssModule();
       <template #item.location="{ row }">
         <LocationDisplay :identifier="row.location" />
       </template>
-      <template #item.time="{ row }">
+      <template #item.timestamp="{ row }">
         <DateDisplay :timestamp="row.timestamp" />
       </template>
       <template #item.free_amount="{ row }">
@@ -293,9 +294,7 @@ const css = useCssModule();
           <HistoryEventNote
             v-if="isTransactionEvent(row)"
             :notes="row.notes"
-            :amount="
-              row.taxableAmount.isZero() ? row.freeAmount : row.taxableAmount
-            "
+            :amount="row.taxableAmount.isZero() ? row.freeAmount : row.taxableAmount"
             :asset="row.assetIdentifier"
             :chain="getChain(row.location)"
           />
@@ -326,15 +325,12 @@ const css = useCssModule();
             />
           </template>
 
-          {{
-            isExpanded(row.id)
-              ? t('profit_loss_events.cost_basis.hide')
-              : t('profit_loss_events.cost_basis.show')
-          }}
+          {{ isExpanded(row.id) ? t('profit_loss_events.cost_basis.hide') : t('profit_loss_events.cost_basis.show') }}
         </RuiTooltip>
       </template>
       <template #expanded-item="{ row }">
         <CostBasisTable
+          v-if="row.costBasis"
           :show-group-line="row.groupLine.bottom"
           :currency="report.settings.profitCurrency"
           :cost-basis="row.costBasis"

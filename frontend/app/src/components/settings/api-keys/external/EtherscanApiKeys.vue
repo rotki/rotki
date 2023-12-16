@@ -3,7 +3,7 @@ import type { EvmChainInfo } from '@/types/api/chains';
 
 const { txEvmChains } = useSupportedChains();
 
-const tabIndex: Ref<number> = ref(0);
+const tabIndex = ref<number>(0);
 
 const { t } = useI18n();
 const route = useRoute();

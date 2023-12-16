@@ -19,10 +19,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
       onError: (backendOutput: string | Error, code: BackendCode) => {
         logger.error(backendOutput, code);
         if (code === BackendCode.TERMINATED) {
-          const message
-            = typeof backendOutput === 'string'
-              ? backendOutput
-              : backendOutput.message;
+          const message = typeof backendOutput === 'string' ? backendOutput : backendOutput.message;
           set(startupErrorMessage, message);
         }
         else if (code === BackendCode.MACOS_VERSION) {
@@ -64,8 +61,5 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useBackendMessagesStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useBackendMessagesStore, import.meta.hot));

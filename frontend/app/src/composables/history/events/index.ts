@@ -32,14 +32,11 @@ export function useHistoryEvents() {
     payload: MaybeRef<HistoryEventRequestPayload>,
   ): Promise<Collection<HistoryEventEntry>> => {
     try {
-      const result = await fetchHistoryEventsCaller(
-        omit(get(payload), 'accounts'),
-      );
+      const result = await fetchHistoryEventsCaller(omit(get(payload), 'accounts'));
 
-      const { data, ...other } = mapCollectionResponse<
-        HistoryEventEntryWithMeta,
-        HistoryEventsCollectionResponse
-      >(result);
+      const { data, ...other } = mapCollectionResponse<HistoryEventEntryWithMeta, HistoryEventsCollectionResponse>(
+        result,
+      );
 
       const addressesNamesPayload: AddressBookSimplePayload[] = [];
       const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
@@ -82,9 +79,7 @@ export function useHistoryEvents() {
     }
   };
 
-  const addHistoryEvent = async (
-    event: NewHistoryEventPayload,
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
+  const addHistoryEvent = async (event: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {
@@ -100,9 +95,7 @@ export function useHistoryEvents() {
     return { success, message };
   };
 
-  const editHistoryEvent = async (
-    event: EditHistoryEventPayload,
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
+  const editHistoryEvent = async (event: EditHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {
@@ -118,10 +111,7 @@ export function useHistoryEvents() {
     return { success, message };
   };
 
-  const deleteHistoryEvent = async (
-    eventIds: number[],
-    forceDelete = false,
-  ): Promise<ActionStatus> => {
+  const deleteHistoryEvent = async (eventIds: number[], forceDelete = false): Promise<ActionStatus> => {
     let success = false;
     let message = '';
     try {

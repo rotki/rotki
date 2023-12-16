@@ -41,12 +41,8 @@ const eventSubtypeModel = computed({
     emit('update:event-subtype', newValue || '');
   },
 });
-const {
-  getEventTypeData,
-  historyEventTypesData,
-  historyEventSubTypesData,
-  historyEventTypeGlobalMapping,
-} = useHistoryEventMappings();
+const { getEventTypeData, historyEventTypesData, historyEventSubTypesData, historyEventTypeGlobalMapping }
+  = useHistoryEventMappings();
 
 const historyTypeCombination = computed(() =>
   get(
@@ -69,25 +65,22 @@ const showHistoryEventTypeCombinationWarning = computed(() => {
   return !get(historyTypeCombination).identifier;
 });
 
-const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]>
-  = computed(() => {
-    const eventTypeVal = get(eventType);
-    const allData = get(historyEventSubTypesData);
-    const globalMapping = get(historyEventTypeGlobalMapping);
+const historyEventSubTypeFilteredData = computed<ActionDataEntry[]>(() => {
+  const eventTypeVal = get(eventType);
+  const allData = get(historyEventSubTypesData);
+  const globalMapping = get(historyEventTypeGlobalMapping);
 
-    if (!eventTypeVal)
-      return allData;
+  if (!eventTypeVal)
+    return allData;
 
-    let globalMappingKeys: string[] = [];
+  let globalMappingKeys: string[] = [];
 
-    const globalMappingFound = globalMapping[eventTypeVal];
-    if (globalMappingFound)
-      globalMappingKeys = Object.keys(globalMappingFound);
+  const globalMappingFound = globalMapping[eventTypeVal];
+  if (globalMappingFound)
+    globalMappingKeys = Object.keys(globalMappingFound);
 
-    return allData.filter((data: ActionDataEntry) =>
-      globalMappingKeys.includes(data.identifier),
-    );
-  });
+  return allData.filter((data: ActionDataEntry) => globalMappingKeys.includes(data.identifier));
+});
 
 const { t } = useI18n();
 </script>

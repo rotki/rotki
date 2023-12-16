@@ -33,14 +33,11 @@ _adapters._date.override({
     if (value === null || valueType === 'undefined')
       return null;
 
-    if (valueType === 'string' && typeof format === 'string') {
-      return dayjs(value, format).isValid()
-        ? dayjs(value, format).valueOf()
-        : null;
-    }
-    else if (!(value instanceof dayjs)) {
+    if (valueType === 'string' && typeof format === 'string')
+      return dayjs(value, format).isValid() ? dayjs(value, format).valueOf() : null;
+    else if (!(value instanceof dayjs))
       return dayjs(value).isValid() ? dayjs(value).valueOf() : null;
-    }
+
     return null;
   },
   format(time: any, format: TimeUnit): string {
@@ -52,15 +49,10 @@ _adapters._date.override({
   diff(max: any, min: any, unit: TimeUnit) {
     return dayjs(max).diff(dayjs(min), unit);
   },
-  startOf(
-    time: any,
-    unit: (TimeUnit & QUnitType) | 'isoWeek',
-    weekday?: number,
-  ) {
+  startOf(time: any, unit: (TimeUnit & QUnitType) | 'isoWeek', weekday?: number) {
     if (unit === 'isoWeek') {
       // Ensure that weekday has a valid format
-      const validatedWeekday: number
-        = typeof weekday === 'number' && weekday > 0 && weekday < 7 ? weekday : 1;
+      const validatedWeekday: number = typeof weekday === 'number' && weekday > 0 && weekday < 7 ? weekday : 1;
       return dayjs(time).isoWeekday(validatedWeekday).startOf('day').valueOf();
     }
     return dayjs(time).startOf(unit).valueOf();

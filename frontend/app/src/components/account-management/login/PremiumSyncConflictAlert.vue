@@ -35,20 +35,20 @@ const lastModified = useRefMap(syncConflict, (conflict) => {
         class="mt-2 list-disc"
       >
         <li>
-          <i18n
-            path="login.sync_error.local_modified"
+          <i18n-t
+            keypath="login.sync_error.local_modified"
             class="font-medium"
           >
             <DateDisplay :timestamp="lastModified.local" />
-          </i18n>
+          </i18n-t>
         </li>
         <li class="mt-2">
-          <i18n
-            path="login.sync_error.remote_modified"
+          <i18n-t
+            keypath="login.sync_error.remote_modified"
             class="font-medium"
           >
             <DateDisplay :timestamp="lastModified.remote" />
-          </i18n>
+          </i18n-t>
         </li>
       </ul>
       <div class="mt-2">

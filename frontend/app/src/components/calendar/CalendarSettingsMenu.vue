@@ -5,9 +5,7 @@ const showMenu = ref(false);
 const autoDelete = ref(true);
 const autoCreateReminders = ref(true);
 
-const { autoDeleteCalendarEntries, autoCreateCalendarReminders } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { autoDeleteCalendarEntries, autoCreateCalendarReminders } = storeToRefs(useGeneralSettingsStore());
 
 function setAutoDelete() {
   set(autoDelete, get(autoDeleteCalendarEntries));
@@ -29,7 +27,7 @@ onMounted(() => {
     menu-class="w-full max-w-96 !bg-transparent"
     :popper="{ placement: 'bottom-end' }"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -38,7 +36,7 @@ onMounted(() => {
           <RuiButton
             variant="text"
             icon
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="settings-4-line" />
           </RuiButton>
@@ -63,7 +61,7 @@ onMounted(() => {
             color="primary"
             :error-messages="error"
             :success-messages="success"
-            @input="updateImmediate($event)"
+            @update:model-value="updateImmediate($event)"
           />
         </SettingsOption>
         <SettingsOption
@@ -78,7 +76,7 @@ onMounted(() => {
             color="primary"
             :error-messages="error"
             :success-messages="success"
-            @input="updateImmediate($event)"
+            @update:model-value="updateImmediate($event)"
           />
         </SettingsOption>
       </div>

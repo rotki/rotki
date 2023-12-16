@@ -27,7 +27,7 @@ const location = useRefPropVModel(formData, 'location');
 const asset = useRefPropVModel(formData, 'asset');
 const locationSymbol = useRefPropVModel(formData, 'locationSymbol');
 
-const forAllExchanges: Ref<boolean> = ref(false);
+const forAllExchanges = ref<boolean>(false);
 
 function checkEditableItem() {
   const form = get(editableItem);
@@ -35,7 +35,6 @@ function checkEditableItem() {
     set(forAllExchanges, !form.location);
     set(formData, form);
   }
-
   else {
     set(forAllExchanges, false);
     set(formData, emptyMapping());
@@ -62,10 +61,7 @@ const rules = {
     ),
   },
   asset: {
-    required: helpers.withMessage(
-      t('asset_management.cex_mapping.form.asset_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty').toString(), required),
   },
 };
 
@@ -94,9 +90,7 @@ async function save(): Promise<boolean> {
   try {
     if (editMode)
       success = await editCexMapping(payload);
-
-    else
-      success = await addCexMapping(payload);
+    else success = await addCexMapping(payload);
   }
   catch (error: any) {
     const obj = { message: error.message };

@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
-import type {
-  ExchangeSavingsCollection,
-  ExchangeSavingsEvent,
-  ExchangeSavingsRequestPayload,
-} from '@/types/exchanges';
+import type { AssetBalance } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 
 const props = defineProps<{
   exchange: 'binance' | 'binanceus';
@@ -70,12 +64,12 @@ onMounted(async () => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const receivedTableSort: Ref<DataTableSortData> = ref({
+const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const receivedTableHeaders = computed<DataTableColumn[]>(() => [
+const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -97,7 +91,7 @@ const receivedTableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
   {
     label: t('common.datetime'),
     key: 'timestamp',
@@ -133,12 +127,12 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       </template>
 
       <RuiDataTable
+        v-model:sort="receivedTableSort"
         outlined
         dense
         :cols="receivedTableHeaders"
         :rows="collection.received"
         :loading="isLoading"
-        :sort.sync="receivedTableSort"
         row-attr="asset"
       >
         <template #item.asset="{ row }">
@@ -181,14 +175,13 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       <CollectionHandler :collection="collection">
         <template #default="{ data }">
           <RuiDataTable
+            v-model:sort="sort"
+            v-model:pagination.external="pagination"
             outlined
             dense
             :cols="tableHeaders"
             :rows="data"
-            :sort.sync="sort"
-            :pagination.sync="pagination"
             row-attr="asset"
-            :pagination-modifiers="{ external: true }"
             :loading="isLoading"
           >
             <template #item.asset="{ row }">

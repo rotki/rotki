@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import Fragment from '@/components/helper/Fragment';
-import type {
-  DatabaseInfo,
-  UserDbBackup,
-  UserDbBackupWithId,
-} from '@/types/backup';
+import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();
 
@@ -16,8 +11,7 @@ const saving = ref(false);
 
 const backups = useRefMap(
   backupInfo,
-  info =>
-    info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
+  info => info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
 );
 
 const { notify } = useNotificationsStore();
@@ -75,9 +69,7 @@ async function loadInfo() {
 }
 
 function isSameEntry(firstDb: UserDbBackup, secondDb: UserDbBackup) {
-  return firstDb.version === secondDb.version
-    && firstDb.time === secondDb.time
-    && firstDb.size === secondDb.size;
+  return firstDb.version === secondDb.version && firstDb.time === secondDb.time && firstDb.size === secondDb.size;
 }
 
 async function massRemove() {
@@ -89,9 +81,7 @@ async function massRemove() {
     if (backups) {
       const info: DatabaseInfo = { ...backups };
       currentSelection.forEach((db: UserDbBackup) => {
-        const index = info.userdb.backups.findIndex(backup =>
-          isSameEntry(backup, db),
-        );
+        const index = info.userdb.backups.findIndex(backup => isSameEntry(backup, db));
         info.userdb.backups.splice(index, 1);
       });
       set(backupInfo, info);
@@ -117,9 +107,7 @@ async function remove(db: UserDbBackup) {
     const backups = get(backupInfo);
     if (backups) {
       const info: DatabaseInfo = { ...backups };
-      const index = info.userdb.backups.findIndex(backup =>
-        isSameEntry(backup, db),
-      );
+      const index = info.userdb.backups.findIndex(backup => isSameEntry(backup, db));
       info.userdb.backups.splice(index, 1);
       set(backupInfo, info);
 
@@ -193,50 +181,48 @@ onMounted(loadInfo);
 </script>
 
 <template>
-  <Fragment>
-    <DatabaseInfoDisplay
-      class="mt-8"
+  <DatabaseInfoDisplay
+    class="mt-8"
+    :directory="directory"
+    :global-db="globalDb"
+    :user-db="userDb"
+  />
+  <RuiCard class="mt-8">
+    <template #header>
+      <CardTitle>
+        <RefreshButton
+          :loading="loading"
+          :tooltip="t('database_manager.refresh_tooltip')"
+          @refresh="loadInfo()"
+        />
+        {{ t('backup_manager.title') }}
+      </CardTitle>
+    </template>
+    <DatabaseBackups
+      v-model:selected="selected"
+      :loading="loading"
+      :items="backups"
       :directory="directory"
-      :global-db="globalDb"
-      :user-db="userDb"
+      @remove="remove($event)"
     />
-    <RuiCard class="mt-8">
-      <template #header>
-        <CardTitle>
-          <RefreshButton
-            :loading="loading"
-            :tooltip="t('database_manager.refresh_tooltip')"
-            @refresh="loadInfo()"
-          />
-          {{ t('backup_manager.title') }}
-        </CardTitle>
-      </template>
-      <DatabaseBackups
-        :loading="loading"
-        :items="backups"
-        :directory="directory"
-        :selected.sync="selected"
-        @remove="remove($event)"
-      />
-      <template #footer>
-        <div class="flex gap-3">
-          <RuiButton
-            color="primary"
-            :disabled="saving"
-            :loading="saving"
-            @click="backup()"
-          >
-            {{ t('backup_manager.backup_button') }}
-          </RuiButton>
-          <RuiButton
-            v-if="selected.length > 0"
-            color="error"
-            @click="showMassDeleteConfirmation()"
-          >
-            {{ t('backup_manager.delete_selected') }}
-          </RuiButton>
-        </div>
-      </template>
-    </RuiCard>
-  </Fragment>
+    <template #footer>
+      <div class="flex gap-3">
+        <RuiButton
+          color="primary"
+          :disabled="saving"
+          :loading="saving"
+          @click="backup()"
+        >
+          {{ t('backup_manager.backup_button') }}
+        </RuiButton>
+        <RuiButton
+          v-if="selected.length > 0"
+          color="error"
+          @click="showMassDeleteConfirmation()"
+        >
+          {{ t('backup_manager.delete_selected') }}
+        </RuiButton>
+      </div>
+    </template>
+  </RuiCard>
 </template>

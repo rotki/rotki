@@ -5,7 +5,7 @@ import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
-    value: ManualPriceFormPayload;
+    modelValue: ManualPriceFormPayload;
     edit: boolean;
     disableFromAsset?: boolean;
   }>(),
@@ -15,54 +15,31 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', price: Partial<ManualPriceFormPayload>): void;
+  (e: 'update:model-value', price: Partial<ManualPriceFormPayload>): void;
 }>();
 
-const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
-const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
+const fromAsset = useSimplePropVModel(props, 'fromAsset', emit);
+const toAsset = useSimplePropVModel(props, 'toAsset', emit);
+const price = useSimplePropVModel(props, 'price', emit);
 
-const price = ref<string>('');
+const fromAssetSymbol = assetSymbol(fromAsset);
+const toAssetSymbol = assetSymbol(toAsset);
+
 const numericPrice = bigNumberifyFromRef(price);
-
-function input(price: Partial<ManualPriceFormPayload>) {
-  emit('input', { ...get(value), ...price });
-}
-
-watch(value, (val) => {
-  set(price, val.price);
-});
-
-watch(price, (val) => {
-  input({ price: val });
-});
-
-onMounted(() => {
-  set(price, get(value).price);
-});
 
 const { t } = useI18n();
 
 const rules = {
   fromAsset: {
-    required: helpers.withMessage(
-      t('price_form.from_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('price_form.from_non_empty').toString(), required),
   },
   toAsset: {
-    required: helpers.withMessage(
-      t('price_form.to_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('price_form.to_non_empty').toString(), required),
   },
   price: {
-    required: helpers.withMessage(
-      t('price_form.price_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('price_form.price_non_empty').toString(), required),
   },
 };
 
@@ -71,9 +48,9 @@ const { setValidation } = useLatestPriceForm();
 const v$ = setValidation(
   rules,
   {
-    fromAsset: computed(() => get(value).fromAsset),
-    toAsset: computed(() => get(value).toAsset),
-    price: computed(() => get(value).price),
+    fromAsset,
+    toAsset,
+    price,
   },
   { $autoDirty: true },
 );
@@ -83,20 +60,18 @@ const v$ = setValidation(
   <form class="flex flex-col gap-2">
     <div class="grid md:grid-cols-2 gap-x-4">
       <AssetSelect
-        :value="value.fromAsset"
+        v-model="fromAsset"
         :label="t('price_form.from_asset')"
         outlined
         include-nfts
         :disabled="edit || disableFromAsset"
         :error-messages="toMessages(v$.fromAsset)"
-        @input="input({ fromAsset: $event })"
       />
       <AssetSelect
-        :value="value.toAsset"
+        v-model="toAsset"
         :label="t('price_form.to_asset')"
         outlined
         :error-messages="toMessages(v$.toAsset)"
-        @input="input({ toAsset: $event })"
       />
     </div>
     <AmountInput
@@ -105,20 +80,20 @@ const v$ = setValidation(
       :error-messages="toMessages(v$.price)"
       :label="t('common.price')"
     />
-    <i18n
-      v-if="price && fromAsset && toAsset"
+    <i18n-t
+      v-if="price && fromAssetSymbol && toAssetSymbol"
       tag="div"
-      path="price_form.latest.hint"
+      keypath="price_form.latest.hint"
       class="text-caption text-rui-success -mt-7 pb-1 pl-3"
     >
       <template #fromAsset>
         <strong>
-          {{ fromAsset }}
+          {{ fromAssetSymbol }}
         </strong>
       </template>
       <template #toAsset>
         <strong>
-          {{ toAsset }}
+          {{ toAssetSymbol }}
         </strong>
       </template>
       <template #price>
@@ -129,6 +104,6 @@ const v$ = setValidation(
           />
         </strong>
       </template>
-    </i18n>
+    </i18n-t>
   </form>
 </template>

@@ -1,15 +1,7 @@
 <script setup lang="ts">
-const props = defineProps<{ visible: boolean }>();
+const display = defineModel<boolean>({ required: true });
 
-const emit = defineEmits<{
-  (e: 'update:visible', visible: boolean): void;
-}>();
-
-const display = useVModel(props, 'visible', emit);
-
-const ReportActionableCard = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportActionableCard.vue'),
-);
+const ReportActionableCard = defineAsyncComponent(() => import('@/components/profitloss/ReportActionableCard.vue'));
 
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 

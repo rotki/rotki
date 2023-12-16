@@ -1,9 +1,7 @@
 import type { HistoryEventProductData } from '@/types/history/events/event-type';
 
 export const useHistoryEventProductMappings = createSharedComposable(() => {
-  const {
-    getHistoryEventProductsData,
-  } = useHistoryEventsApi();
+  const { getHistoryEventProductsData } = useHistoryEventsApi();
 
   const defaultHistoryEventProductsData = () => ({
     mappings: {},
@@ -15,15 +13,9 @@ export const useHistoryEventProductMappings = createSharedComposable(() => {
     defaultHistoryEventProductsData(),
   );
 
-  const historyEventProductsMapping = useRefMap(
-    historyEventProductsData,
-    ({ mappings }) => mappings,
-  );
+  const historyEventProductsMapping = useRefMap(historyEventProductsData, ({ mappings }) => mappings);
 
-  const historyEventProducts = useRefMap(
-    historyEventProductsData,
-    ({ products }) => products,
-  );
+  const historyEventProducts = useRefMap(historyEventProductsData, ({ products }) => products);
 
   return {
     historyEventProductsData,

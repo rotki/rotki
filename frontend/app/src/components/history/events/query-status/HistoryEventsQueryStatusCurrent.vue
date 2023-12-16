@@ -12,8 +12,7 @@ const { locations } = toRefs(props);
 
 const { t } = useI18n();
 
-const { queryingLength, length, isAllFinished }
-  = useEventsQueryStatus(locations);
+const { queryingLength, length, isAllFinished } = useEventsQueryStatus(locations);
 </script>
 
 <template>
@@ -23,9 +22,7 @@ const { queryingLength, length, isAllFinished }
     </template>
 
     <template #running>
-      {{
-        t('transactions.query_status_events.group', queryingLength)
-      }}
+      {{ t('transactions.query_status_events.group', queryingLength) }}
     </template>
   </HistoryQueryStatusCurrent>
 </template>

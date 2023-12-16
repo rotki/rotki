@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
+import type { RuiIcons } from '@rotki/ui-library';
 
 interface NavItemDetails {
   readonly text: string;
   readonly route: string;
   readonly class?: string;
-  readonly icon: string;
+  readonly icon: RuiIcons;
   readonly image?: string;
   readonly component?: any;
 }
@@ -230,10 +231,12 @@ const navItems: MenuItem[] = [
     class="p-2"
     :class="{ '!p-0': isMini }"
   >
-    <template v-for="(navItem, i) in navItems">
+    <template
+      v-for="(navItem, i) in navItems"
+      :key="i"
+    >
       <RouterLink
         v-if="navItem.type === 'item'"
-        :key="i"
         :to="navItem.route"
         custom
       >
@@ -259,7 +262,6 @@ const navItems: MenuItem[] = [
         >
           <template #default="{ isActive: isActiveParent }">
             <NavigationMenuItem
-              :key="i"
               :class="`navigation__${navItem.class}`"
               :mini="isMini"
               :text="navItem.text"

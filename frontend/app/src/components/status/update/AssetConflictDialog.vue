@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common/lib/data';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { Writeable } from '@/types';
-import type {
-  AssetUpdateConflictResult,
-  ConflictResolution,
-} from '@/types/asset';
+import type { AssetUpdateConflictResult, ConflictResolution } from '@/types/asset';
 import type { ConflictResolutionStrategy } from '@/types/common';
 
 const props = defineProps<{
@@ -21,7 +18,7 @@ const { t } = useI18n();
 
 const { conflicts } = toRefs(props);
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AssetUpdateConflictResult>[]>(() => [
   {
     label: t('conflict_dialog.table.headers.local'),
     key: 'local',
@@ -68,8 +65,7 @@ function setResolution(strategy: ConflictResolutionStrategy) {
 function onStrategyChange(strategy?: ConflictResolutionStrategy) {
   if (Object.values(get(resolution)).every(strat => strat === strategy))
     set(strategyModeForAll, strategy);
-  else
-    set(strategyModeForAll, undefined);
+  else set(strategyModeForAll, undefined);
 }
 
 type AssetKey = keyof SupportedAsset;
@@ -78,12 +74,8 @@ function getConflictFields(conflict: AssetUpdateConflictResult): AssetKey[] {
   function nonNull(key: AssetKey, asset: SupportedAsset): boolean {
     return asset[key] !== null;
   }
-  const remote = Object.keys(conflict.remote).filter(value =>
-    nonNull(value as AssetKey, conflict.remote),
-  );
-  const local = Object.keys(conflict.local).filter(value =>
-    nonNull(value as AssetKey, conflict.local),
-  );
+  const remote = Object.keys(conflict.remote).filter(value => nonNull(value as AssetKey, conflict.remote));
+  const local = Object.keys(conflict.local).filter(value => nonNull(value as AssetKey, conflict.local));
   return [...remote, ...local].filter(uniqueStrings) as AssetKey[];
 }
 
@@ -99,15 +91,19 @@ const remaining = computed(() => {
 });
 
 const warnDuplicate = computed<boolean>(() => {
-  const identifiers = get(conflicts).map(({ identifier }) => identifier).sort();
+  const identifiers = get(conflicts)
+    .map(({ identifier }) => identifier)
+    .sort();
   const uniqueIdentifiers = identifiers.filter(uniqueStrings);
   return identifiers.length > uniqueIdentifiers.length;
 });
 
-const duplicateIdentifiers = computed<string[]>(() => get(conflicts)
-  .map(({ identifier }) => identifier)
-  .sort()
-  .filter((e, i, a) => a.indexOf(e) !== i));
+const duplicateIdentifiers = computed<string[]>(() =>
+  get(conflicts)
+    .map(({ identifier }) => identifier)
+    .sort()
+    .filter((e, i, a) => a.indexOf(e) !== i),
+);
 
 const valid = computed<boolean>(() => {
   const identifiers = get(conflicts)
@@ -123,6 +119,7 @@ const valid = computed<boolean>(() => {
     if (element !== identifiers[i])
       return false;
   }
+
   return true;
 });
 
@@ -158,8 +155,8 @@ onMounted(() => {
     @cancel="cancel()"
   >
     <template #subtitle>
-      <i18n
-        path="conflict_dialog.subtitle"
+      <i18n-t
+        keypath="conflict_dialog.subtitle"
         tag="span"
       >
         <template #conflicts>
@@ -168,7 +165,7 @@ onMounted(() => {
         <template #remaining>
           <span class="font-medium"> {{ remaining }} </span>
         </template>
-      </i18n>
+      </i18n-t>
     </template>
     <template #default="{ wrapper }">
       <RuiAlert
@@ -176,11 +173,14 @@ onMounted(() => {
         class="my-2"
         type="warning"
       >
-        <i18n path="conflict_dialog.duplicate_warn">
+        <i18n-t
+          keypath="conflict_dialog.duplicate_warn"
+          tag="span"
+        >
           <template #identifiers>
             <strong> {{ duplicateIdentifiers.join(', ') }} </strong>
           </template>
-        </i18n>
+        </i18n-t>
       </RuiAlert>
       <div
         v-if="!manualResolution"
@@ -190,8 +190,14 @@ onMounted(() => {
           {{ t('conflict_dialog.action_hint.top') }}
         </p>
         <ul class="pl-0 mb-6">
-          <li><span class="font-medium">- {{ t('conflict_dialog.keep_local') }}:</span> {{ t('conflict_dialog.keep_local_tooltip') }}</li>
-          <li><span class="font-medium">- {{ t('conflict_dialog.keep_remote') }}:</span> {{ t('conflict_dialog.keep_remote_tooltip') }}</li>
+          <li>
+            <span class="font-medium">- {{ t('conflict_dialog.keep_local') }}:</span>
+            {{ t('conflict_dialog.keep_local_tooltip') }}
+          </li>
+          <li>
+            <span class="font-medium">- {{ t('conflict_dialog.keep_remote') }}:</span>
+            {{ t('conflict_dialog.keep_remote_tooltip') }}
+          </li>
         </ul>
         <p class="mb-0">
           {{ t('conflict_dialog.action_hint.bottom') }}
@@ -268,16 +274,14 @@ onMounted(() => {
               v-model="resolution[conflict.identifier]"
               color="primary"
               variant="outlined"
-              @input="onStrategyChange(resolution[conflict.identifier])"
+              @update:model-value="onStrategyChange(resolution[conflict.identifier])"
             >
-              <template #default>
-                <RuiButton value="local">
-                  {{ t('conflict_dialog.action.local') }}
-                </RuiButton>
-                <RuiButton value="remote">
-                  {{ t('conflict_dialog.action.remote') }}
-                </RuiButton>
-              </template>
+              <RuiButton value="local">
+                {{ t('conflict_dialog.action.local') }}
+              </RuiButton>
+              <RuiButton value="remote">
+                {{ t('conflict_dialog.action.remote') }}
+              </RuiButton>
             </RuiButtonGroup>
           </template>
         </RuiDataTable>

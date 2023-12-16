@@ -1,32 +1,17 @@
 <script setup lang="ts">
-import {
-  NotificationCategory,
-  type NotificationPayload,
-  Severity,
-} from '@rotki/common/lib/messages';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-  TablePaginationData,
-} from '@rotki/ui-library-compat';
-import type {
-  AddressBookEntry,
-  AddressBookLocation,
-} from '@/types/eth-names';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 
 const props = defineProps<{
   collection: Collection<AddressBookEntry>;
   location: AddressBookLocation;
   loading: boolean;
-  sort: DataTableSortData;
-  pagination: TablePaginationData;
 }>();
 
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
-  (e: 'update:sort', sort: DataTableSortData): void;
-  (e: 'update:pagination', pagination: TablePaginationData): void;
   (e: 'refresh'): void;
 }>();
 
@@ -34,10 +19,10 @@ const { location } = toRefs(props);
 
 const { t } = useI18n();
 
-const paginationModel = useVModel(props, 'pagination', emit);
-const sortModel = useVModel(props, 'sort', emit);
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+const sortModel = defineModel<DataTableSortData<AddressBookEntry>>('sort', { required: true });
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
   {
     label: t('common.address'),
     key: 'address',
@@ -74,10 +59,7 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
   const { notify } = useNotificationsStore();
   const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();
 
-  const deleteAddressBook = async (
-    address: string,
-    blockchain: string | null,
-  ) => {
+  const deleteAddressBook = async (address: string, blockchain: string | null) => {
     try {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
       refresh();
@@ -127,13 +109,11 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
     >
       <template #default="{ data }">
         <RuiDataTable
+          v-model:pagination.external="paginationModel"
+          v-model:sort.external="sortModel"
           :rows="data"
           :cols="cols"
           :loading="loading"
-          :pagination.sync="paginationModel"
-          :pagination-modifiers="{ external: true }"
-          :sort.sync="sortModel"
-          :sort-modifiers="{ external: true }"
           row-attr="address"
           outlined
           dense
@@ -142,7 +122,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             <AccountDisplay
               :account="{
                 address: row.address,
-                chain: row.blockchain,
+                chain: row.blockchain ?? 'ALL',
               }"
               :use-alias-name="false"
               :truncate="false"

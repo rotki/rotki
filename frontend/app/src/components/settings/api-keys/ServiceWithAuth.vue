@@ -85,12 +85,16 @@ function cancel() {
   set(password, credentialVal.password);
 }
 
-watch(credential, () => {
-  updateStatus();
-}, {
-  immediate: true,
-  deep: true,
-});
+watch(
+  credential,
+  () => {
+    updateStatus();
+  },
+  {
+    immediate: true,
+    deep: true,
+  },
+);
 
 const slots = useSlots();
 </script>

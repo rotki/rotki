@@ -27,9 +27,7 @@ const currentModule = computed(() => {
   if (!currentModule)
     return undefined;
 
-  return SUPPORTED_MODULES.find(
-    ({ identifier }) => identifier === currentModule,
-  );
+  return SUPPORTED_MODULES.find(({ identifier }) => identifier === currentModule);
 });
 
 const moduleName = useRefMap(currentModule, m => m?.name);
@@ -52,10 +50,7 @@ const usableAddresses = computed(() => {
   if (!currentModule || moduleAddresses.length === 0)
     return accountList;
 
-  return accountList
-    .filter(
-      address => !moduleAddresses.includes(address),
-    );
+  return accountList.filter(address => !moduleAddresses.includes(address));
 });
 
 const addAddress = async function () {
@@ -83,7 +78,7 @@ function close() {
 
 <template>
   <RuiDialog
-    value
+    :model-value="true"
     max-width="450px"
     @closed="close()"
   >

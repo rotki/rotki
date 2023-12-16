@@ -64,9 +64,7 @@ const errorText = computed(() => {
       <template #subheader>
         {{ subtitle }}
       </template>
-      <div
-        class="font-light text-rui-text-secondary` error-screen__description"
-      >
+      <div class="font-light text-rui-text-secondary` error-screen__description">
         <pre class="text-caption text-wrap error-screen__description__message">
           {{ message }}
           <RuiDivider

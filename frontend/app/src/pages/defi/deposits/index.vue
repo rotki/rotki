@@ -4,7 +4,7 @@ import type { TabContent } from '@/types/tabs';
 
 const { appRoutes } = useAppRoutes();
 
-const tabs: ComputedRef<TabContent[]> = computed(() => {
+const tabs = computed<TabContent[]>(() => {
   const Routes = get(appRoutes);
   return [
     Routes.DEFI_DEPOSITS_PROTOCOLS,

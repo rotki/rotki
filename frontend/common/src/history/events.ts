@@ -6,5 +6,4 @@ export const HistoryEventEntryType = {
   ETH_DEPOSIT_EVENT: 'eth deposit event',
 } as const;
 
-export type HistoryEventEntryType =
-  (typeof HistoryEventEntryType)[keyof typeof HistoryEventEntryType];
+export type HistoryEventEntryType = (typeof HistoryEventEntryType)[keyof typeof HistoryEventEntryType];

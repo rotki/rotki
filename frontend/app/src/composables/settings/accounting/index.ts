@@ -99,9 +99,7 @@ export function useAccountingSettings() {
     }
   };
 
-  const resolveAccountingRuleConflicts = async (
-    payload: AccountingRuleConflictResolution,
-  ): Promise<ActionStatus> => {
+  const resolveAccountingRuleConflicts = async (payload: AccountingRuleConflictResolution): Promise<ActionStatus> => {
     try {
       await resolveAccountingRuleConflictsCaller(payload);
 
@@ -121,14 +119,10 @@ export function useAccountingSettings() {
   ): Promise<{ result: boolean | object; message?: string } | null> => {
     try {
       const { taskId } = await exportAccountingRules(directoryPath);
-      const { result } = await awaitTask<boolean | object, TaskMeta>(
-        taskId,
-        TaskType.EXPORT_ACCOUNTING_RULES,
-        {
-          title: t('actions.accounting_rules.export.title'),
-          transformer: [jsonTransformer],
-        },
-      );
+      const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.EXPORT_ACCOUNTING_RULES, {
+        title: t('actions.accounting_rules.export.title'),
+        transformer: [jsonTransformer],
+      });
 
       return {
         result,
@@ -176,11 +170,7 @@ export function useAccountingSettings() {
         };
       }
       else {
-        downloadFileByTextContent(
-          JSON.stringify(result, null, 2),
-          'accounting_rules.json',
-          'application/json',
-        );
+        downloadFileByTextContent(JSON.stringify(result, null, 2), 'accounting_rules.json', 'application/json');
       }
     }
     catch (error: any) {

@@ -11,13 +11,9 @@ const { t } = useI18n();
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :open-delay="200"
-    class="text-no-wrap "
+    class="text-no-wrap"
     :class="{ 'cursor-pointer': !disabled }"
     :disabled="disabled"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
     <template #activator>
       <slot />
@@ -30,9 +26,7 @@ const { t } = useI18n();
       <template v-if="tooltip">
         {{ tooltip }}
       </template>
-      <div
-        class="uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200"
-      >
+      <div class="uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200">
         <div
           :class="{
             '-mt-5': copied,

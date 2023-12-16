@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
-import {
-  CUSTOM_ASSET,
-  EVM_TOKEN,
-  IgnoredAssetHandlingType,
-  type IgnoredAssetsHandlingType,
-} from '@/types/asset';
+import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-  TablePaginationData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { ActionStatus } from '@/types/action';
 
@@ -22,9 +13,8 @@ const props = withDefaults(
     matchers: Matcher[];
     filters: Filters;
     pagination: TablePaginationData;
-    sort: DataTableSortData;
+    sort: DataTableSortData<SupportedAsset>;
     expanded: SupportedAsset[];
-    selected: string[];
     ignoredAssets: string[];
     ignoredFilter: {
       onlyShowOwned: boolean;
@@ -42,17 +32,16 @@ const emit = defineEmits<{
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
   (e: 'update:filters', filters: Filters): void;
-  (e: 'update:selected', selectedAssets: string[]): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
   (e: 'update:pagination', pagination: TablePaginationData): void;
-  (e: 'update:sort', sort: DataTableSortData): void;
+  (e: 'update:sort', sort: DataTableSortData<SupportedAsset>): void;
   (
     e: 'update:ignored-filter',
     value: {
       onlyShowOwned: boolean;
       onlyShowWhitelisted: boolean;
       ignoredAssetsHandling: IgnoredAssetsHandlingType;
-    }
+    },
   ): void;
 }>();
 
@@ -62,8 +51,9 @@ const { t } = useI18n();
 
 const paginationModel = useVModel(props, 'pagination', emit);
 const sortModel = useVModel(props, 'sort', emit);
+const selected = defineModel<string[]>('selected', { required: true });
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
     label: t('common.asset'),
     key: 'symbol',
@@ -107,10 +97,6 @@ const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 
-function updateSelected(selectedAssets: string[]) {
-  emit('update:selected', selectedAssets);
-}
-
 function updateExpanded(expandedAssets: SupportedAsset[]) {
   return emit('update:expanded', expandedAssets);
 }
@@ -119,21 +105,19 @@ const ignoredFilter = useKebabVModel(props, 'ignoredFilter', emit);
 
 const disabledIgnoreActions = computed(() => {
   const { ignoredAssetsHandling } = get(ignoredFilter);
-  return ({
+  return {
     ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
     unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
-  });
+  };
 });
 
-const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
+const formatType = (string?: string | null) => toSentenceCase(string ?? 'EVM token');
 
 function getAsset(item: SupportedAsset) {
   const name
     = item.name
     ?? item.symbol
-    ?? (isEvmIdentifier(item.identifier)
-      ? getAddressFromEvmIdentifier(item.identifier)
-      : item.identifier);
+    ?? (isEvmIdentifier(item.identifier) ? getAddressFromEvmIdentifier(item.identifier) : item.identifier);
 
   return {
     name,
@@ -159,8 +143,7 @@ const { getChain } = useSupportedChains();
 async function toggleIgnoreAsset(identifier: string) {
   if (get(isAssetIgnored(identifier)))
     await unignoreAsset(identifier);
-  else
-    await ignoreAsset(identifier);
+  else await ignoreAsset(identifier);
 
   if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
     emit('refresh');
@@ -174,8 +157,7 @@ async function toggleSpam(item: SupportedAsset) {
   const { identifier } = item;
   if (isSpamAsset(item))
     await removeAssetFromSpamList(identifier);
-  else
-    await markAssetAsSpam(identifier);
+  else await markAssetAsSpam(identifier);
 
   refetchAssetInfo(identifier);
 
@@ -185,14 +167,13 @@ async function toggleSpam(item: SupportedAsset) {
 async function toggleWhitelistAsset(identifier: string) {
   if (get(isAssetWhitelisted(identifier)))
     await unWhitelistAsset(identifier);
-  else
-    await whitelistAsset(identifier);
+  else await whitelistAsset(identifier);
 
   emit('refresh');
 }
 
 async function massIgnore(ignored: boolean) {
-  const ids = get(props.selected)
+  const ids = get(selected)
     .filter((identifier) => {
       const isItemIgnored = get(isAssetIgnored(identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
@@ -213,11 +194,10 @@ async function massIgnore(ignored: boolean) {
 
   if (ignored)
     status = await ignoreAsset(ids);
-  else
-    status = await unignoreAsset(ids);
+  else status = await unignoreAsset(ids);
 
   if (status.success) {
-    updateSelected([]);
+    set(selected, []);
     if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
       emit('refresh');
   }
@@ -262,7 +242,7 @@ const disabledRows = computed(() => {
           <RuiButton
             size="sm"
             variant="text"
-            @click="updateSelected([])"
+            @click="selected = []"
           >
             {{ t('common.actions.clear_selection') }}
           </RuiButton>
@@ -292,23 +272,21 @@ const disabledRows = computed(() => {
     >
       <template #default="{ data }">
         <RuiDataTable
+          v-model="selected"
+          v-model:pagination.external="paginationModel"
+          v-model:sort.external="sortModel"
           dense
           :value="selected"
           :rows="data"
           :loading="loading"
           :cols="cols"
           :expanded="expanded"
-          :pagination.sync="paginationModel"
-          :pagination-modifiers="{ external: true }"
-          :sort.sync="sortModel"
-          :sort-modifiers="{ external: true }"
           :disabled-rows="disabledRows"
           row-attr="identifier"
           data-cy="managed-assets-table"
           single-expand
           sticky-header
           outlined
-          @input="updateSelected($event ?? [])"
         >
           <template #item.symbol="{ row }">
             <AssetDetailsBase
@@ -321,7 +299,7 @@ const disabledRows = computed(() => {
             <HashLink
               v-if="row.address"
               :text="row.address"
-              :chain="getChain(row.evmChain)"
+              :chain="row?.evmChain ? getChain(row.evmChain) : undefined"
               hide-alias-name
             />
           </template>
@@ -341,26 +319,18 @@ const disabledRows = computed(() => {
                 :popper="{ placement: 'top' }"
                 :open-delay="400"
                 tooltip-class="max-w-[10rem]"
-                :disabled="
-                  !isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)
-                "
+                :disabled="!isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)"
               >
                 <template #activator>
                   <RuiSwitch
                     color="primary"
                     hide-details
-                    :disabled="
-                      isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
-                    "
-                    :value="isAssetIgnored(row.identifier).value"
-                    @input="toggleIgnoreAsset(row.identifier)"
+                    :disabled="isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)"
+                    :model-value="isAssetIgnored(row.identifier).value"
+                    @update:model-value="toggleIgnoreAsset(row.identifier)"
                   />
                 </template>
-                {{
-                  isSpamAsset(row)
-                    ? t('ignore.spam.hint')
-                    : t('ignore.whitelist.hint')
-                }}
+                {{ isSpamAsset(row) ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}
               </RuiTooltip>
 
               <ManagedAssetIgnoringMore

@@ -20,10 +20,7 @@ describe('settings::accounting', () => {
   });
 
   it('change gas costs switch & validate UI message', () => {
-    pageAccounting.changeSwitch(
-      '.accounting-settings__include-gas-costs',
-      false,
-    );
+    pageAccounting.changeSwitch('.accounting-settings__include-gas-costs', false);
   });
 
   it('change tax free period value and switch & validate UI message', () => {
@@ -32,35 +29,17 @@ describe('settings::accounting', () => {
   });
 
   it('change cost basis fee settings & validate UI message', () => {
-    pageAccounting.verifySwitchState(
-      '.accounting-settings__include-fees-in-cost-basis',
-      true,
-    );
-    pageAccounting.changeSwitch(
-      '.accounting-settings__include-fees-in-cost-basis',
-      false,
-    );
+    pageAccounting.verifySwitchState('.accounting-settings__include-fees-in-cost-basis', true);
+    pageAccounting.changeSwitch('.accounting-settings__include-fees-in-cost-basis', false);
   });
 
   it('verify changes persist', () => {
     app.relogin(username);
 
     pageAccounting.visit();
-    pageAccounting.verifySwitchState(
-      '.accounting-settings__crypto2crypto',
-      false,
-    );
-    pageAccounting.verifySwitchState(
-      '.accounting-settings__include-gas-costs',
-      false,
-    );
-    pageAccounting.verifySwitchState(
-      '.accounting-settings__taxfree-period',
-      false,
-    );
-    pageAccounting.verifySwitchState(
-      '.accounting-settings__include-fees-in-cost-basis',
-      false,
-    );
+    pageAccounting.verifySwitchState('.accounting-settings__crypto2crypto', false);
+    pageAccounting.verifySwitchState('.accounting-settings__include-gas-costs', false);
+    pageAccounting.verifySwitchState('.accounting-settings__taxfree-period', false);
+    pageAccounting.verifySwitchState('.accounting-settings__include-fees-in-cost-basis', false);
   });
 });

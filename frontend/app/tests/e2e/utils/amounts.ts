@@ -41,15 +41,10 @@ export function parseBigNumber(text: string): BigNumber {
  *
  * @return {void} - Returns nothing.
  */
-export function updateLocationBalance(
-  amount: string,
-  balances: Map<string, BigNumber>,
-  location: string,
-): void {
+export function updateLocationBalance(amount: string, balances: Map<string, BigNumber>, location: string): void {
   const balance = parseBigNumber(amount);
   const locationBalance = balances.get(location);
   if (!locationBalance)
     balances.set(location, balance);
-  else
-    balances.set(location, locationBalance.plus(balance));
+  else balances.set(location, locationBalance.plus(balance));
 }

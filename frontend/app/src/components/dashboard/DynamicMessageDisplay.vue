@@ -50,11 +50,11 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
     <RuiFooterStepper
       v-if="steps > 1"
       class="ml-auto"
-      :value="step"
+      :model-value="step"
       :pages="steps"
       variant="bullet"
       hide-buttons
-      @input="onNavigate($event)"
+      @update:model-value="onNavigate($event)"
     />
 
     <RuiButton

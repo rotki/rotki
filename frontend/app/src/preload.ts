@@ -28,11 +28,7 @@ import {
   IPC_VERSION,
 } from '@/electron-main/ipc-commands';
 import { checkIfDevelopment } from '@/utils/env-utils';
-import type {
-  Interop,
-  Listeners,
-  TrayUpdate,
-} from '@/electron-main/ipc';
+import type { Interop, Listeners, TrayUpdate } from '@/electron-main/ipc';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise((resolve) => {
@@ -48,9 +44,7 @@ const isDevelopment = checkIfDevelopment();
 interface DebugSettings {
   persistStore: boolean;
 }
-let debugSettings: DebugSettings | undefined = isDevelopment
-  ? ipcRenderer.sendSync(IPC_GET_DEBUG)
-  : undefined;
+let debugSettings: DebugSettings | undefined = isDevelopment ? ipcRenderer.sendSync(IPC_GET_DEBUG) : undefined;
 
 if (isDevelopment) {
   ipcRenderer.on(IPC_DEBUG_SETTINGS, (event, args) => {
@@ -62,8 +56,7 @@ contextBridge.exposeInMainWorld('interop', {
   openUrl: (url: string) => ipcRenderer.send(IPC_OPEN_URL, url),
   closeApp: () => ipcRenderer.send(IPC_CLOSE_APP),
   openDirectory: (title: string) => ipcAction(IPC_OPEN_DIRECTORY, title),
-  premiumUserLoggedIn: (premiumUser: boolean) =>
-    ipcRenderer.send(IPC_PREMIUM_LOGIN, premiumUser),
+  premiumUserLoggedIn: (premiumUser: boolean) => ipcRenderer.send(IPC_PREMIUM_LOGIN, premiumUser),
   setListeners(listeners: Listeners): void {
     ipcRenderer.on('failed', (event, error, code) => {
       listeners.onError(error, code);
@@ -82,9 +75,7 @@ contextBridge.exposeInMainWorld('interop', {
       listeners.onProcessDetected(pids);
     });
   },
-  debugSettings: isDevelopment
-    ? (): DebugSettings | undefined => debugSettings
-    : undefined,
+  debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
@@ -101,13 +92,11 @@ contextBridge.exposeInMainWorld('interop', {
   isMac: () => ipcAction(IPC_IS_MAC),
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
   config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults),
-  updateTray: (trayUpdate: TrayUpdate) =>
-    ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate),
+  updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate),
   logToFile(message: string) {
     ipcRenderer.send(IPC_LOG_TO_FILE, message);
   },
-  storePassword: (username: string, password: string) =>
-    ipcAction(IPC_STORE_PASSWORD, { username, password }),
+  storePassword: (username: string, password: string) => ipcAction(IPC_STORE_PASSWORD, { username, password }),
   getPassword: (username: string) => ipcAction(IPC_GET_PASSWORD, username),
   clearPassword: () => ipcAction(IPC_CLEAR_PASSWORD),
 } as Interop);

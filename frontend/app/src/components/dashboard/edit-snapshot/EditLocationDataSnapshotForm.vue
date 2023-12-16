@@ -26,16 +26,10 @@ const { t } = useI18n();
 
 const rules = {
   location: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.location_data.rules.location'),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.location_data.rules.location'), required),
   },
   value: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.location_data.rules.value'),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.location_data.rules.value'), required),
   },
 };
 

@@ -1,27 +1,19 @@
 <script setup lang="ts">
 import type { Dayjs } from 'dayjs';
 
-const props = defineProps<{
-  value: Dayjs;
-}>();
-
-const emit = defineEmits<{
-  (e: 'input', date: Dayjs): void;
-}>();
-
-const vModel = useSimpleVModel(props, emit);
+const model = defineModel<Dayjs>({ required: true });
 
 function prevMonth() {
-  const prevMonth = get(vModel).subtract(1, 'month');
-  set(vModel, prevMonth);
+  const prevMonth = get(model).subtract(1, 'month');
+  set(model, prevMonth);
 }
 
 function nextMonth() {
-  const nextMonth = get(vModel).add(1, 'month');
-  set(vModel, nextMonth);
+  const nextMonth = get(model).add(1, 'month');
+  set(model, nextMonth);
 }
 
-const readableMonthAndYear = computed(() => get(vModel).format('MMMM YYYY'));
+const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
 </script>
 
 <template>
@@ -45,7 +37,7 @@ const readableMonthAndYear = computed(() => get(vModel).format('MMMM YYYY'));
     <div class="pl-4">
       <RuiTextField
         class="cursor-pointer"
-        :value="readableMonthAndYear"
+        :model-value="readableMonthAndYear"
         variant="outlined"
         color="primary"
         readonly

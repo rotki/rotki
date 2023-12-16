@@ -13,10 +13,7 @@ enum CustomAssetFilterValueKeys {
   CUSTOM_ASSET_TYPE = 'custom_asset_type',
 }
 
-export type Matcher = SearchMatcher<
-  CustomAssetFilterKeys,
-  CustomAssetFilterValueKeys
->;
+export type Matcher = SearchMatcher<CustomAssetFilterKeys, CustomAssetFilterValueKeys>;
 
 export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 

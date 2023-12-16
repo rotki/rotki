@@ -7,13 +7,13 @@ import type { DefaultBackendArguments } from '@/types/backend';
 let intervalId: any = null;
 
 export const useMainStore = defineStore('main', () => {
-  const version: Ref<Version> = ref(defaultVersion());
-  const connected: Ref<boolean> = ref(false);
-  const connectionFailure: Ref<boolean> = ref(false);
-  const dataDirectory: Ref<string> = ref('');
-  const logLevel: Ref<LogLevel> = ref(getDefaultLogLevel());
-  const dockerRiskAccepted: Ref<boolean> = ref(true);
-  const defaultBackendArguments: Ref<DefaultBackendArguments> = ref({
+  const version = ref<Version>(defaultVersion());
+  const connected = ref<boolean>(false);
+  const connectionFailure = ref<boolean>(false);
+  const dataDirectory = ref<string>('');
+  const logLevel = ref<LogLevel>(getDefaultLogLevel());
+  const dockerRiskAccepted = ref<boolean>(true);
+  const defaultBackendArguments = ref<DefaultBackendArguments>({
     maxLogfilesNum: 0,
     maxSizeInMbAllLogs: 0,
     sqliteInstructions: 0,
@@ -29,16 +29,12 @@ export const useMainStore = defineStore('main', () => {
   const appVersion = computed(() => {
     const { version: appVersion } = get(version);
     const indexOfDev = appVersion.indexOf('dev');
-    return indexOfDev > 0
-      ? appVersion.slice(0, Math.max(0, indexOfDev + 3))
-      : appVersion;
+    return indexOfDev > 0 ? appVersion.slice(0, Math.max(0, indexOfDev + 3)) : appVersion;
   });
 
   const isDevelop = computed(() => {
     const { version: appVersion } = get(version);
-    return (
-      appVersion.includes('dev') || get(dataDirectory).includes('develop_data')
-    );
+    return appVersion.includes('dev') || get(dataDirectory).includes('develop_data');
   });
 
   const getVersion = async (): Promise<void> => {

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { Tag } from '@/types/tags';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    value: string[];
     disabled?: boolean;
     label?: string;
   }>(),
@@ -12,17 +11,13 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'input', tags: string[]): void;
-}>();
+const modelValue = defineModel<string[]>({ required: true });
 
 const { t } = useI18n();
-const { value } = toRefs(props);
 const store = useTagStore();
 const { tags } = storeToRefs(store);
 
 const manageTags = ref<boolean>(false);
-
 const search = ref<string>('');
 
 function randomScheme() {
@@ -53,9 +48,9 @@ async function createTag(name: string) {
 }
 
 function remove(tag: string) {
-  const tags = get(value);
+  const tags = get(modelValue);
   const index = tags.indexOf(tag);
-  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+  onUpdateModelValue([...tags.slice(0, index), ...tags.slice(index + 1)]);
 }
 
 function attemptTagCreation(element: string) {
@@ -70,7 +65,7 @@ function attemptTagCreation(element: string) {
     .catch(error => logger.error(error));
 }
 
-function input(_value: ({ name: string } | string | Tag)[]) {
+function onUpdateModelValue(_value: ({ name: string } | string | Tag)[]) {
   const tags: string[] = [];
   for (const element of _value) {
     if (typeof element === 'string') {
@@ -86,7 +81,7 @@ function input(_value: ({ name: string } | string | Tag)[]) {
     }
   }
 
-  emit('input', tags);
+  set(modelValue, tags);
 }
 
 watch(search, (keyword: string | null, previous: string | null) => {
@@ -94,47 +89,41 @@ watch(search, (keyword: string | null, previous: string | null) => {
     set(colorScheme, randomScheme());
 });
 
-const newTagBackground = computed<string>(
-  () => `#${get(colorScheme).backgroundColor}`,
-);
+const newTagBackground = computed<string>(() => `#${get(colorScheme).backgroundColor}`);
 
-const newTagForeground = computed<string>(
-  () => `#${get(colorScheme).foregroundColor}`,
-);
+const newTagForeground = computed<string>(() => `#${get(colorScheme).foregroundColor}`);
 
-const filteredValue = computed<Tag[]>(() =>
-  get(tags).filter(({ name }) => get(value).includes(name)),
-);
+const filteredValue = computed<Tag[]>(() => get(tags).filter(({ name }) => get(modelValue).includes(name)));
 
 watch(tags, () => {
   const filtered = get(filteredValue);
-  if (get(value).length > filtered.length)
-    input(filtered);
+  if (get(modelValue).length > filtered.length)
+    onUpdateModelValue(filtered);
 });
 </script>
 
 <template>
   <div class="flex items-start gap-2">
     <RuiAutoComplete
-      :value="filteredValue"
+      v-model:search-input="search"
+      :model-value="filteredValue"
       :disabled="disabled"
       :options="tags"
       class="tag-input flex-1"
       :hide-no-data="!search"
       :label="label"
       variant="outlined"
-      :search-input.sync="search"
       text-attr="name"
       key-attr="name"
       return-object
       custom-value
       :item-height="54"
-      @input="input($event)"
+      @update:model-value="onUpdateModelValue($event)"
     >
       <template #no-data>
         <ListItem
           class="p-2 py-4"
-          @click="input([...filteredValue, search])"
+          @click="onUpdateModelValue([...filteredValue, search])"
         >
           <template #title>
             <span>{{ t('common.actions.create') }}</span>
@@ -150,7 +139,7 @@ watch(tags, () => {
           </template>
         </ListItem>
       </template>
-      <template #selection="{ item, chipAttrs, chipOn }">
+      <template #selection="{ item, chipAttrs }">
         <RuiChip
           tile
           class="font-medium m-0.5"
@@ -161,7 +150,6 @@ watch(tags, () => {
           clickable
           size="sm"
           v-bind="chipAttrs"
-          v-on="chipOn"
         >
           {{ item.name }}
         </RuiChip>

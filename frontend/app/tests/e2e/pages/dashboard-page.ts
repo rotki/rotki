@@ -43,8 +43,7 @@ export class DashboardPage {
       if (!nftTableExists)
         return cy.wrap(Zero);
 
-      const selector
-        = 'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
+      const selector = 'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
       const $displayAmount = nftTable.find(selector);
 
       let amount = Zero;

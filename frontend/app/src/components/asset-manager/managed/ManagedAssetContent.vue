@@ -3,10 +3,7 @@ import { isEqual, keyBy } from 'lodash-es';
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { Collection } from '@/types/collection';
 import type { Nullable } from '@/types';
-import type {
-  AssetRequestPayload,
-  IgnoredAssetsHandlingType,
-} from '@/types/asset';
+import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 
 const props = withDefaults(
@@ -33,8 +30,7 @@ const ignoredFilter = ref<{
 });
 
 const extraParams = computed(() => {
-  const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted }
-    = get(ignoredFilter);
+  const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
   return {
     ignoredAssetsHandling,
     showUserOwnedAssetsOnly: onlyShowOwned.toString(),
@@ -92,9 +88,7 @@ const {
 });
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
+  get(editableItem) ? t('asset_management.edit_title') : t('asset_management.add_title'),
 );
 
 function add() {
@@ -175,8 +169,7 @@ onMounted(async () => {
   if (idToEdit || query.add) {
     if (idToEdit)
       await editAsset(get(identifier));
-    else
-      add();
+    else add();
 
     await router.replace({ query: {} });
   }
@@ -193,12 +186,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.assets'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.manage_assets'), t('navigation_menu.manage_assets_sub.assets')]">
     <template #buttons>
       <RuiButton
         color="primary"
@@ -222,16 +210,14 @@ watch(ignoredFilter, (oldValue, newValue) => {
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
-      <RuiMenu
-        :popper="{ placement: 'bottom-end' }"
-      >
-        <template #activator="{ on }">
+      <RuiMenu :popper="{ placement: 'bottom-end' }">
+        <template #activator="{ attrs }">
           <RuiButton
             variant="text"
             icon
             size="sm"
             class="!p-2"
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="more-2-fill" />
           </RuiButton>
@@ -265,17 +251,17 @@ watch(ignoredFilter, (oldValue, newValue) => {
       <MergeDialog v-model="mergeTool" />
 
       <ManagedAssetTable
+        v-model:filters="filters"
+        v-model:ignored-filter="ignoredFilter"
+        v-model:expanded="expanded"
+        v-model:selected="selectedRows"
+        v-model:pagination="pagination"
+        v-model:sort="sort"
         :collection="assets"
         :loading="loading"
         :change="!loading"
-        :filters.sync="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
-        :ignored-filter.sync="ignoredFilter"
-        :expanded.sync="expanded"
-        :selected.sync="selectedRows"
-        :pagination.sync="pagination"
-        :sort.sync="sort"
         @refresh="fetchData()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"

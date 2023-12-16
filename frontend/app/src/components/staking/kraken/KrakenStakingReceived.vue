@@ -7,15 +7,13 @@ defineProps<{
 }>();
 
 const { prices } = storeToRefs(useBalancePricesStore());
-const selection: Ref<'current' | 'historical'> = ref('current');
+const selection = ref<'current' | 'historical'>('current');
 const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
 
 function getBalance({ amount, asset, usdValue }: ReceivedAmount): Balance {
   const assetPrices = get(prices);
 
-  const currentPrice = assetPrices[asset]
-    ? assetPrices[asset].value.times(amount)
-    : Zero;
+  const currentPrice = assetPrices[asset] ? assetPrices[asset].value.times(amount) : Zero;
   return {
     amount,
     usdValue: get(selection) === 'current' ? currentPrice : usdValue,
@@ -41,14 +39,12 @@ const { t } = useI18n();
           variant="outlined"
           color="primary"
         >
-          <template #default>
-            <RuiButton value="current">
-              {{ t('kraken_staking_received.switch.current') }}
-            </RuiButton>
-            <RuiButton value="historical">
-              {{ t('kraken_staking_received.switch.historical') }}
-            </RuiButton>
-          </template>
+          <RuiButton value="current">
+            {{ t('kraken_staking_received.switch.current') }}
+          </RuiButton>
+          <RuiButton value="historical">
+            {{ t('kraken_staking_received.switch.historical') }}
+          </RuiButton>
         </RuiButtonGroup>
       </div>
     </template>

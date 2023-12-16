@@ -6,13 +6,13 @@ import ManualBalancesPriceForm from '@/components/accounts/manual-balances/Manua
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const props = defineProps<{
-  value: RawManualBalance | ManualBalance;
+  modelValue: RawManualBalance | ManualBalance;
   errorMessages: Record<string, string[]>;
   submitting: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: RawManualBalance | ManualBalance): void;
+  (e: 'update:model-value', value: RawManualBalance | ManualBalance): void;
   (e: 'update:error-messages', value: Record<string, string[]>): void;
 }>();
 
@@ -27,11 +27,11 @@ const location = useSimplePropVModel(props, 'location', emit);
 
 const tags = computed<string[]>({
   get() {
-    return props.value.tags ?? [];
+    return props.modelValue.tags ?? [];
   },
   set(tags: string[]) {
-    emit('input', {
-      ...props.value,
+    emit('update:model-value', {
+      ...props.modelValue,
       tags: tags.length > 0 ? tags : null,
     });
   },
@@ -39,11 +39,11 @@ const tags = computed<string[]>({
 
 const amount = computed({
   get() {
-    return props.value.amount.toString();
+    return props.modelValue.amount.toString();
   },
   set(amount: string) {
-    emit('input', {
-      ...props.value,
+    emit('update:model-value', {
+      ...props.modelValue,
       amount: bigNumberify(amount),
     });
   },
@@ -55,27 +55,20 @@ const { manualLabels } = useManualBalancesStore();
 
 const rules = {
   amount: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.amount'),
-      required,
-    ),
+    required: helpers.withMessage(t('manual_balances_form.validation.amount'), required),
   },
   label: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.label_empty'),
-      required,
+    required: helpers.withMessage(t('manual_balances_form.validation.label_empty'), required),
+    doesNotExist: helpers.withMessage(
+      ({ $model: label }) =>
+        t('manual_balances_form.validation.label_exists', {
+          label,
+        }),
+      (label: string) => !get(manualLabels).includes(label),
     ),
-    doesNotExist: helpers.withMessage(({
-      $model: label,
-    }) => t('manual_balances_form.validation.label_exists', {
-      label,
-    }), (label: string) => !get(manualLabels).includes(label)),
   },
   asset: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.asset'),
-      required,
-    ),
+    required: helpers.withMessage(t('manual_balances_form.validation.asset'), required),
   },
   location: {
     required,

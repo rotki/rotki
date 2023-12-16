@@ -4,7 +4,7 @@ import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{
-    value?: File | null;
+    modelValue?: File;
     source: ImportSourceType;
     loading?: boolean;
     fileFilter?: string;
@@ -12,7 +12,6 @@ const props = withDefaults(
     errorMessage?: string;
   }>(),
   {
-    value: undefined,
     loading: false,
     fileFilter: '.csv',
     uploaded: false,
@@ -21,7 +20,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', file: File | null): void;
+  (e: 'update:model-value', file?: File): void;
   (e: 'update:uploaded', uploaded: boolean): void;
   (e: 'update:error-message', message: string): void;
 }>();
@@ -72,8 +71,7 @@ function onSelect(event: Event) {
 
   if (!['icon', 'zip', 'csv', 'json'].includes(get(source)))
     check(target.files);
-  else
-    selected(target.files[0]);
+  else selected(target.files[0]);
 }
 
 function clearTimeoutHandler(timeout: Ref<NodeJS.Timeout | undefined>) {
@@ -174,13 +172,16 @@ defineExpose({
 });
 
 function formatFileFilter(fileFilter: string) {
-  return fileFilter.split(',').map((item) => {
-    let text = item.trim();
-    if (text.startsWith('.'))
-      text = text.slice(1);
+  return fileFilter
+    .split(',')
+    .map((item) => {
+      let text = item.trim();
+      if (text.startsWith('.'))
+        text = text.slice(1);
 
-    return text;
-  }).join(', ');
+      return text;
+    })
+    .join(', ');
 }
 </script>
 
@@ -238,8 +239,8 @@ function formatFileFilter(fileFilter: string) {
         </div>
 
         <div class="font-bold text-subtitle-1 pt-4">
-          <i18n
-            path="file_upload.drag_and_drop"
+          <i18n-t
+            keypath="file_upload.drag_and_drop"
             tag="div"
             class="flex justify-center"
           >
@@ -253,7 +254,7 @@ function formatFileFilter(fileFilter: string) {
                 {{ file ? t('file_upload.replace_file') : t('file_upload.click_to_upload') }}
               </RuiButton>
             </template>
-          </i18n>
+          </i18n-t>
 
           <div class="text-body-2 text-center font-normal">
             <div

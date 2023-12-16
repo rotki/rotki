@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
-import type {
-  AssetUpdateConflictResult,
-  AssetVersionUpdate,
-  ConflictResolution,
-} from '@/types/asset';
+import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false,
@@ -13,13 +8,13 @@ const props = withDefaults(defineProps<{ headless?: boolean }>(), {
 const emit = defineEmits<{ (e: 'skip'): void }>();
 
 const { headless } = toRefs(props);
-const checking: Ref<boolean> = ref(false);
-const applying: Ref<boolean> = ref(false);
-const inlineConfirm: Ref<boolean> = ref(false);
-const showUpdateDialog: Ref<boolean> = ref(false);
-const showConflictDialog: Ref<boolean> = ref(false);
-const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
-const changes: Ref<AssetVersionUpdate> = ref({
+const checking = ref<boolean>(false);
+const applying = ref<boolean>(false);
+const inlineConfirm = ref<boolean>(false);
+const showUpdateDialog = ref<boolean>(false);
+const showConflictDialog = ref<boolean>(false);
+const conflicts = ref<AssetUpdateConflictResult[]>([]);
+const changes = ref<AssetVersionUpdate>({
   local: 0,
   remote: 0,
   changes: 0,
@@ -157,60 +152,58 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Fragment>
-    <AssetUpdateSetting
-      v-if="!headless"
-      :loading="checking || applying"
-      :skipped="skipped"
-      @check="check()"
+  <AssetUpdateSetting
+    v-if="!headless"
+    :loading="checking || applying"
+    :skipped="skipped"
+    @check="check()"
+  />
+  <div v-else-if="headless">
+    <AssetUpdateStatus
+      v-if="status"
+      :status="status"
+      :remote-version="changes.upToVersion"
     />
-    <div v-else-if="headless">
-      <AssetUpdateStatus
-        v-if="status"
-        :status="status"
-        :remote-version="changes.upToVersion"
-      />
-      <AssetUpdateInlineConfirm
-        v-if="inlineConfirm"
-        class="max-w-[32rem] mx-auto"
-        :remote-version="changes.upToVersion"
-        @confirm="updateComplete()"
-      />
-    </div>
-    <div v-if="showUpdateDialog">
-      <RuiDialog
-        v-if="!headless"
-        value
-        max-width="500"
-        persistent
-      >
-        <AssetUpdateMessage
-          :headless="headless"
-          :versions="changes"
-          @update:versions="changes = $event"
-          @confirm="updateAssets()"
-          @dismiss="skip($event)"
-        />
-      </RuiDialog>
+    <AssetUpdateInlineConfirm
+      v-if="inlineConfirm"
+      class="max-w-[32rem] mx-auto"
+      :remote-version="changes.upToVersion"
+      @confirm="updateComplete()"
+    />
+  </div>
+  <div v-if="showUpdateDialog">
+    <RuiDialog
+      v-if="!headless"
+      value
+      max-width="500"
+      persistent
+    >
       <AssetUpdateMessage
-        v-else
-        class="max-w-[32rem] mx-auto"
         :headless="headless"
         :versions="changes"
         @update:versions="changes = $event"
         @confirm="updateAssets()"
         @dismiss="skip($event)"
       />
-    </div>
-
-    <AssetConflictDialog
-      v-if="showConflictDialog"
-      v-model="showConflictDialog"
-      :conflicts="conflicts"
-      @cancel="skip(false)"
-      @resolve="updateAssets($event)"
+    </RuiDialog>
+    <AssetUpdateMessage
+      v-else
+      class="max-w-[32rem] mx-auto"
+      :headless="headless"
+      :versions="changes"
+      @update:versions="changes = $event"
+      @confirm="updateAssets()"
+      @dismiss="skip($event)"
     />
-  </Fragment>
+  </div>
+
+  <AssetConflictDialog
+    v-if="showConflictDialog"
+    v-model="showConflictDialog"
+    :conflicts="conflicts"
+    @cancel="skip(false)"
+    @resolve="updateAssets($event)"
+  />
 </template>
 
 <style scoped lang="scss">

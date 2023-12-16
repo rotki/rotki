@@ -13,9 +13,7 @@ const { t } = useI18n();
 const range = ref({ start: '', end: '' });
 const valid = ref<boolean>(false);
 
-const startTimestamp = computed<number>(() =>
-  convertToTimestamp(get(range).start),
-);
+const startTimestamp = computed<number>(() => convertToTimestamp(get(range).start));
 
 const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
 
@@ -92,7 +90,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             close-on-content-click
             :popper="{ placement: 'bottom-end' }"
           >
-            <template #activator="{ on }">
+            <template #activator="{ attrs }">
               <RuiTooltip
                 :open-delay="400"
                 :popper="{ placement: 'top' }"
@@ -102,7 +100,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 <template #activator>
                   <RuiButton
                     size="lg"
-                    v-on="on"
+                    v-bind="attrs"
                   >
                     <template #prepend>
                       <RuiIcon name="bug-line" />

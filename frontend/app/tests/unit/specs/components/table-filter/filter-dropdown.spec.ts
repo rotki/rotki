@@ -1,28 +1,26 @@
-import {
-  type ThisTypedMountOptions,
-  type Wrapper,
-  mount,
-} from '@vue/test-utils';
+import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import type { StringSuggestionMatcher } from '@/types/filtering';
 
-vi.mocked(useCssModule).mockReturnValue({
-  suggestions: 'suggestions',
-});
-
 describe('table-filter/FilterDropdown.vue', () => {
-  let wrapper: Wrapper<any>;
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
+  let wrapper: VueWrapper<InstanceType<typeof FilterDropdown>>;
+  const createWrapper = (options: ComponentMountingOptions<typeof FilterDropdown> = {}) => {
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     return mount(FilterDropdown, {
-      pinia,
-      stubs: ['filter-entry', 'suggested-item', 'I18n'],
+      global: {
+        stubs: ['I18nT'],
+        plugins: [pinia],
+      },
       ...options,
     });
   };
+
+  afterEach(() => {
+    wrapper.unmount();
+  });
 
   const matchers: StringSuggestionMatcher<any>[] = [
     {
@@ -43,49 +41,40 @@ describe('table-filter/FilterDropdown.vue', () => {
   ];
 
   it('show all matchers options', () => {
-    const propsData = {
+    const props = {
       matchers,
       selectedSuggestion: 1,
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
-    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
-      matchers.length,
-    );
+    expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(matchers.length);
     expect(
-      wrapper
-        .find('.suggestions > button:nth-child(2)')
-        .classes()
-        .includes('highlightedMatcher'),
+      wrapper.find('[data-cy=suggestions] > button:nth-child(2)').classes().includes('highlightedMatcher'),
     ).toBeTruthy();
   });
 
   it('show unsupported filter message', () => {
-    const propsData = {
+    const props = {
       matchers: [],
       keyword: 'wrong_filter',
       selectedSuggestion: 0,
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
-    expect(
-      wrapper.find('div > div:first-child > span:first-child').text(),
-    ).toBe('table_filter.unsupported_filter');
+    expect(wrapper.find('div > div:first-child > span:first-child').text()).toBe('table_filter.unsupported_filter');
 
-    expect(wrapper.find('div > div:first-child > span:last-child').text()).toBe(
-      propsData.keyword,
-    );
+    expect(wrapper.find('div > div:first-child > span:last-child').text()).toBe(props.keyword);
   });
 
   it('show suggestions', async () => {
-    const propsData = {
+    const props = {
       matchers,
       selectedSuggestion: 0,
     };
 
-    const wrapper = createWrapper({ propsData });
+    const wrapper = createWrapper({ props });
 
     await wrapper.setProps({
       selectedMatcher: matchers[1],
@@ -95,29 +84,19 @@ describe('table-filter/FilterDropdown.vue', () => {
     await nextTick();
 
     const suggestions = matchers[1].suggestions();
-    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
-      suggestions.length,
-    );
+    expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(suggestions.length);
 
-    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
-      'type = type 1',
-    );
-    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
-      'type = type 2',
-    );
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(1)').text()).toBe('type=type 1');
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(2)').text()).toBe('type=type 2');
 
     await wrapper.setProps({
-      keyword: 'type !=',
+      keyword: 'type!=',
     });
 
     await nextTick();
 
-    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
-      'type != type 1',
-    );
-    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
-      'type != type 2',
-    );
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(1)').text()).toBe('type!=type 1');
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(2)').text()).toBe('type!=type 2');
 
     await wrapper.setProps({
       keyword: 'type=type 2',
@@ -125,21 +104,17 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await nextTick();
 
-    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
-      'type = type 2',
-    );
-    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
-      'type = type 1',
-    );
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(1)').text()).toBe('type=type 2');
+    expect(wrapper.find('[data-cy=suggestions] > button:nth-child(2)').text()).toBe('type=type 1');
   });
 
   it('show no suggestion message', async () => {
-    const propsData = {
+    const props = {
       matchers,
       selectedSuggestion: 0,
     };
 
-    const wrapper = createWrapper({ propsData });
+    const wrapper = createWrapper({ props });
 
     await wrapper.setProps({
       selectedMatcher: matchers[0],
@@ -148,8 +123,6 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await nextTick();
 
-    expect(wrapper.find('i18n-stub').attributes().path).toBe(
-      'table_filter.no_suggestions',
-    );
+    expect(wrapper.find('i18n-t-stub').attributes('keypath')).toBe('table_filter.no_suggestions');
   });
 });

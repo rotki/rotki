@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
-import {
-  type AccountingRuleEntry,
-  AccountingTreatment,
-} from '@/types/settings/accounting';
+import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
 
@@ -19,7 +16,7 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const state: Ref<AccountingRuleEntry> = ref(getPlaceholderRule());
+const state = ref<AccountingRuleEntry>(getPlaceholderRule());
 
 const externalServerValidation = () => true;
 
@@ -55,8 +52,7 @@ watch(editableItem, (editableItem) => {
 function reset(newState?: AccountingRuleEntry) {
   if (newState)
     set(state, { ...newState });
-  else
-    set(state, getPlaceholderRule());
+  else set(state, getPlaceholderRule());
 }
 
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
@@ -72,9 +68,7 @@ async function save() {
   };
 
   try {
-    const result = editing
-      ? await editAccountingRule(payload)
-      : await addAccountingRule(omit(payload, 'identifier'));
+    const result = editing ? await editAccountingRule(payload) : await addAccountingRule(omit(payload, 'identifier'));
 
     if (result)
       reset();
@@ -82,9 +76,7 @@ async function save() {
     return result;
   }
   catch (error: any) {
-    const errorTitle = editing
-      ? t('accounting_settings.rule.edit_error')
-      : t('accounting_settings.rule.add_error');
+    const errorTitle = editing ? t('accounting_settings.rule.edit_error') : t('accounting_settings.rule.add_error');
 
     let errors = error.message;
     if (error instanceof ApiValidationError)
@@ -107,19 +99,17 @@ async function save() {
 
 setSubmitFunc(save);
 
-const accountingTreatments = Object.values(AccountingTreatment).map(
-  identifier => ({
-    identifier,
-    label: toSentenceCase(identifier),
-  }),
-);
+const accountingTreatments = Object.values(AccountingTreatment).map(identifier => ({
+  identifier,
+  label: toSentenceCase(identifier),
+}));
 </script>
 
 <template>
   <form>
     <HistoryEventTypeForm
-      :event-type.sync="state.eventType"
-      :event-subtype.sync="state.eventSubtype"
+      v-model:event-type="state.eventType"
+      v-model:event-subtype="state.eventSubtype"
       :counterparty="state.counterparty"
       :v$="v$"
       disable-warning
@@ -146,9 +136,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
       class="border-t border-default"
       identifier="countEntireAmountSpend"
       :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
-      :hint="
-        t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')
-      "
+      :hint="t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')"
     />
 
     <AccountingRuleWithLinkedSetting

@@ -5,19 +5,19 @@ import type { Message } from '@rotki/common/lib/messages';
 
 const props = withDefaults(
   defineProps<{
-    value?: boolean;
+    modelValue?: boolean;
     timestamp?: number;
     balance?: number;
   }>(),
   {
-    value: false,
+    modelValue: false,
     timestamp: 0,
     balance: 0,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'input', visible: boolean): void;
+  (e: 'update:model-value', visible: boolean): void;
 }>();
 
 const { t } = useI18n();
@@ -93,8 +93,7 @@ async function exportSnapshotCSV() {
 async function exportSnapshot() {
   if (appSession)
     await exportSnapshotCSV();
-  else
-    await downloadSnapshot();
+  else await downloadSnapshot();
 }
 
 const { fetchNetValue } = useStatisticsStore();

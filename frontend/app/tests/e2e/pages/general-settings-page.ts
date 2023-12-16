@@ -17,17 +17,12 @@ export class GeneralSettingsPage {
   }
 
   setFloatingPrecision(value: string) {
-    this.setInputFieldValue(
-      '.general-settings__fields__floating-precision input',
-      value,
-    );
+    this.setInputFieldValue('.general-settings__fields__floating-precision input', value);
   }
 
   changeAnonymousUsageStatistics() {
     cy.get('.general-settings__fields__anonymous-usage-statistics input').click();
-    this.confirmInlineSuccess(
-      '.general-settings__fields__anonymous-usage-statistics .details .text-rui-success',
-    );
+    this.confirmInlineSuccess('.general-settings__fields__anonymous-usage-statistics .details .text-rui-success');
   }
 
   selectCurrency(value: string) {
@@ -44,17 +39,11 @@ export class GeneralSettingsPage {
   }
 
   setBalanceSaveFrequency(value: string) {
-    this.setInputFieldValue(
-      '.general-settings__fields__balance-save-frequency input',
-      value,
-    );
+    this.setInputFieldValue('.general-settings__fields__balance-save-frequency input', value);
   }
 
   setDateDisplayFormat(value: string) {
-    this.setInputFieldValue(
-      '.general-settings__fields__date-display-format input',
-      value,
-    );
+    this.setInputFieldValue('.general-settings__fields__date-display-format input', value);
   }
 
   toggleScrambleData() {
@@ -62,30 +51,16 @@ export class GeneralSettingsPage {
   }
 
   changePassword(currentPassword: string, newPassword: string) {
-    cy.get(
-      '.general-settings__account-and-security__fields__current-password input',
-    ).clear();
-    cy.get(
-      '.general-settings__account-and-security__fields__current-password input',
-    ).type(currentPassword);
+    cy.get('.general-settings__account-and-security__fields__current-password input').clear();
+    cy.get('.general-settings__account-and-security__fields__current-password input').type(currentPassword);
 
-    cy.get(
-      '.general-settings__account-and-security__fields__new-password input',
-    ).clear();
-    cy.get(
-      '.general-settings__account-and-security__fields__new-password input',
-    ).type(newPassword);
+    cy.get('.general-settings__account-and-security__fields__new-password input').clear();
+    cy.get('.general-settings__account-and-security__fields__new-password input').type(newPassword);
 
-    cy.get(
-      '.general-settings__account-and-security__fields__new-password-confirm input',
-    ).clear();
-    cy.get(
-      '.general-settings__account-and-security__fields__new-password-confirm input',
-    ).type(newPassword);
+    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').clear();
+    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').type(newPassword);
 
-    cy.get(
-      '.general-settings__account-and-security__buttons__change-password',
-    ).click();
+    cy.get('.general-settings__account-and-security__buttons__change-password').click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
@@ -104,39 +79,28 @@ export class GeneralSettingsPage {
     balanceSaveFrequency: string;
     rpcEndpoint: string;
   }) {
-    cy.get('.general-settings__fields__floating-precision input').should(
-      'have.value',
-      settings.floatingPrecision,
+    cy.get('.general-settings__fields__floating-precision input').should('have.value', settings.floatingPrecision);
+    cy.get('.general-settings__fields__anonymous-usage-statistics input').should(
+      settings.anonymousUsageStatistics ? 'be.checked' : 'not.be.checked',
     );
-    cy.get('.general-settings__fields__anonymous-usage-statistics input')
-      .should(settings.anonymousUsageStatistics ? 'be.checked' : 'not.be.checked');
-    cy.get(
-      '.general-settings__fields__currency-selector [data-id="activator"] span[class*=_value_]',
-    ).should('contain.text', settings.currency);
+    cy.get('.general-settings__fields__currency-selector [data-id="activator"] span[class*=_value_]').should(
+      'contain.text',
+      settings.currency,
+    );
     cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
       settings.balanceSaveFrequency,
     );
 
     settings.evmchainsToSkipDetection.forEach((item) => {
-      cy.get(`.general-settings__fields__account-chains-to-skip-detection .rui-chip[data-value=${item}]`).should('exist');
+      cy.get(`.general-settings__fields__account-chains-to-skip-detection [role=button][data-value=${item}]`).should(
+        'exist',
+      );
     });
-    cy.get('.general-settings__fields__date-display-format input').should(
-      'have.value',
-      settings.dateDisplayFormat,
-    );
-    cy.get('.general-settings__fields__thousand-separator input').should(
-      'have.value',
-      settings.thousandSeparator,
-    );
-    cy.get('.general-settings__fields__decimal-separator input').should(
-      'have.value',
-      settings.decimalSeparator,
-    );
-    cy.get('.general-settings__fields__currency-location input').should(
-      'have.length',
-      2,
-    );
+    cy.get('.general-settings__fields__date-display-format input').should('have.value', settings.dateDisplayFormat);
+    cy.get('.general-settings__fields__thousand-separator input').should('have.value', settings.thousandSeparator);
+    cy.get('.general-settings__fields__decimal-separator input').should('have.value', settings.decimalSeparator);
+    cy.get('.general-settings__fields__currency-location input').should('have.length', 2);
     cy.get(`.general-settings__fields__currency-location input:checked`).should(
       'have.value',
       settings.currencyLocation,
@@ -158,17 +122,11 @@ export class GeneralSettingsPage {
 
   confirmRPCAddition(name: string, endpoint: string) {
     cy.get('[data-cy=ethereum-node]').children().should('contain.text', name);
-    cy.get('[data-cy=ethereum-node]')
-      .children()
-      .should('contain.text', endpoint);
+    cy.get('[data-cy=ethereum-node]').children().should('contain.text', endpoint);
   }
 
   confirmRPCmissing(name: string, endpoint: string) {
-    cy.get('[data-cy=ethereum-node]')
-      .children()
-      .should('not.contain.text', name);
-    cy.get('[data-cy=ethereum-node]')
-      .children()
-      .should('not.contain.text', endpoint);
+    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', name);
+    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', endpoint);
   }
 }

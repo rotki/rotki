@@ -1,11 +1,7 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskType } from '@/types/task-type';
-import {
-  SYNC_DOWNLOAD,
-  SYNC_UPLOAD,
-  type SyncAction,
-} from '@/types/session/sync';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import type { TaskMeta } from '@/types/task';
 import type { DbUploadResult } from '@/types/websocket-messages';
 
@@ -16,17 +12,10 @@ export const useSync = createSharedComposable(() => {
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
   const confirmChecked = ref(false);
-  const uploadStatus = useSessionStorage<DbUploadResult>(
-    'rotki.upload_status.message',
-    null,
-    {
-      serializer,
-    },
-  );
-  const uploadStatusAlreadyHandled = useSessionStorage<boolean>(
-    'rotki.upload_status.handled',
-    false,
-  );
+  const uploadStatus = useSessionStorage<DbUploadResult>('rotki.upload_status.message', null, {
+    serializer,
+  });
+  const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
 
   const showSyncConfirmation = (action: SyncAction) => {
     set(syncAction, action);
@@ -63,13 +52,9 @@ export const useSync = createSharedComposable(() => {
         set(displaySyncConfirmation, false);
 
       const { taskId } = await useSyncApi().forceSync(action);
-      const { result, message } = await awaitTask<boolean, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.session.force_sync.task.title'),
-        },
-      );
+      const { result, message } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+        title: t('actions.session.force_sync.task.title'),
+      });
 
       if (result) {
         const title = t('actions.session.force_sync.success.title');

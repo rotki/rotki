@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Balance, NumericString } from '../../index';
+import { Balance, type BigNumber, NumericString } from '../../index';
+import type { LpType } from '../index';
 
 export const XswapAsset = z.object({
   asset: z.string(),
@@ -21,6 +22,16 @@ export const XswapBalance = z.object({
 });
 
 export type XswapBalance = z.infer<typeof XswapBalance>;
+
+export interface XSwapLiquidityBalance {
+  id: number;
+  type: 'nft' | 'token';
+  usdValue: BigNumber;
+  premiumOnly: boolean;
+  asset: string;
+  lpType: LpType;
+  assets: XswapBalance['assets'];
+}
 
 export const XswapBalances = z.record(z.array(XswapBalance));
 
@@ -46,20 +57,18 @@ export const XswapPool = z.object({
 
 export type XswapPool = z.infer<typeof XswapPool>;
 
-export const XswapEvents = z
-  .record(z.array(ApiXswapPoolDetails))
-  .transform((data) => {
-    const transformed: Record<string, XswapPoolDetails[]> = {};
-    // when parsed, data will be a record of ApiXswapPoolDetails[]
-    // we transform it to a record of XswapPoolDetails[]
-    Object.keys(data).forEach((address: string) => {
-      transformed[address] = data[address].map(balance => ({
-        ...balance,
-        address,
-      }));
-    });
-    return transformed;
+export const XswapEvents = z.record(z.array(ApiXswapPoolDetails)).transform((data) => {
+  const transformed: Record<string, XswapPoolDetails[]> = {};
+  // when parsed, data will be a record of ApiXswapPoolDetails[]
+  // we transform it to a record of XswapPoolDetails[]
+  Object.keys(data).forEach((address: string) => {
+    transformed[address] = data[address].map(balance => ({
+      ...balance,
+      address,
+    }));
   });
+  return transformed;
+});
 
 export type XswapEvents = z.infer<typeof XswapEvents>;
 

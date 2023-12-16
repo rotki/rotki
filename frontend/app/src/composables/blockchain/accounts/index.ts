@@ -34,10 +34,7 @@ export function useBlockchainAccounts() {
   const { t } = useI18n();
   const { getNativeAsset } = useSupportedChains();
 
-  const addAccount = async (
-    chain: string,
-    payload: AccountPayload[] | XpubAccountPayload,
-  ): Promise<string> => {
+  const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
     const taskType = TaskType.ADD_ACCOUNT;
     const { taskId } = await addBlockchainAccount(chain, payload);
 
@@ -56,11 +53,7 @@ export function useBlockchainAccounts() {
     return result.length > 0 ? result[0] : '';
   };
 
-  const addEvmAccount = async ({
-    address,
-    label,
-    tags,
-  }: AccountPayload): Promise<EvmAccountsResult> => {
+  const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<EvmAccountsResult> => {
     const taskType = TaskType.ADD_ACCOUNT;
     const { taskId } = await addEvmAccountCaller({
       address,
@@ -77,10 +70,7 @@ export function useBlockchainAccounts() {
           title: t('actions.balances.blockchain_accounts_add.task.title', {
             blockchain,
           }),
-          description: t(
-            'actions.balances.blockchain_accounts_add.task.description',
-            { address },
-          ),
+          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
         },
         true,
       );
@@ -90,7 +80,6 @@ export function useBlockchainAccounts() {
     catch (error: any) {
       if (!isTaskCancelled(error))
         throw error;
-
       return {};
     }
   };
@@ -103,10 +92,12 @@ export function useBlockchainAccounts() {
       return await editBtcAccount(payload, chain);
 
     const result = editBlockchainAccount(payload, chain);
-    resetAddressNamesData([{
-      ...payload,
-      blockchain: chain,
-    }]);
+    resetAddressNamesData([
+      {
+        ...payload,
+        blockchain: chain,
+      },
+    ]);
     return result;
   };
 
@@ -115,37 +106,24 @@ export function useBlockchainAccounts() {
     const { taskId } = await removeBlockchainAccount(chain, accounts);
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
-      await awaitTask<BlockchainBalances, BlockchainMetadata>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.balances.blockchain_account_removal.task.title', {
-            blockchain: chain,
-          }),
-          description: t(
-            'actions.balances.blockchain_account_removal.task.description',
-            { count: accounts.length },
-          ),
+      await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
+        title: t('actions.balances.blockchain_account_removal.task.title', {
           blockchain: chain,
-        },
-      );
+        }),
+        description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
+        blockchain: chain,
+      });
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        const title = t(
-          'actions.balances.blockchain_account_removal.error.title',
-          {
-            count: accounts.length,
-            blockchain: chain,
-          },
-        );
-        const description = t(
-          'actions.balances.blockchain_account_removal.error.description',
-          {
-            error: error.message,
-          },
-        );
+        const title = t('actions.balances.blockchain_account_removal.error.title', {
+          count: accounts.length,
+          blockchain: chain,
+        });
+        const description = t('actions.balances.blockchain_account_removal.error.description', {
+          error: error.message,
+        });
         notify({
           title,
           message: description,
@@ -155,9 +133,7 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const fetchBlockchainAccounts = async (
-    chain: string,
-  ): Promise<string[] | null> => {
+  const fetchBlockchainAccounts = async (chain: string): Promise<string[] | null> => {
     try {
       const accounts = await queryAccounts(chain);
       const chainInfo = {
@@ -165,7 +141,10 @@ export function useBlockchainAccounts() {
         chain,
       };
 
-      updateAccounts(chain, accounts.map(account => createAccount(account, chainInfo)));
+      updateAccounts(
+        chain,
+        accounts.map(account => createAccount(account, chainInfo)),
+      );
       return accounts.map(account => account.address);
     }
     catch (error: any) {
@@ -221,13 +200,10 @@ export function useBlockchainAccounts() {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         const title = t('actions.balances.xpub_removal.error.title');
-        const description = t(
-          'actions.balances.xpub_removal.error.description',
-          {
-            xpub: params.xpub,
-            error: error.message,
-          },
-        );
+        const description = t('actions.balances.xpub_removal.error.description', {
+          xpub: params.xpub,
+          error: error.message,
+        });
         notify({
           title,
           message: description,
@@ -242,8 +218,7 @@ export function useBlockchainAccounts() {
       await fetchBtcAccounts(blockchain);
     else if (blockchain === Blockchain.ETH2)
       await fetchEthStakingValidators();
-    else
-      await fetchBlockchainAccounts(blockchain);
+    else await fetchBlockchainAccounts(blockchain);
   };
 
   return {

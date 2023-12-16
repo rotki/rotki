@@ -9,10 +9,7 @@ const { hasRunningTasks, tasks } = storeToRefs(store);
 const { cancelTask, isTaskRunning } = store;
 const { show, dismiss } = useConfirmStore();
 
-const debounceDismiss = useDebounceFn(
-  (running: boolean) => !running && dismiss(),
-  1000,
-);
+const debounceDismiss = useDebounceFn((running: boolean) => !running && dismiss(), 1000);
 
 function showConfirmation(task: Task<TaskMeta>) {
   const taskRef = isTaskRunning(task.type, task.meta);

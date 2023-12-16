@@ -1,6 +1,7 @@
 import * as process from 'node:process';
-import fs from 'node:fs';
+import * as fs from 'node:fs';
 import { defineConfig } from 'cypress';
+import coverageTask from '@cypress/code-coverage/task';
 
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 const captureVideo = !!process.env.CI;
@@ -20,27 +21,19 @@ export default defineConfig({
     videoCompression: captureVideo,
     scrollBehavior: 'nearest',
     experimentalMemoryManagement: true,
-    numTestsKeptInMemory: 5,
-    setupNodeEvents(on, config) {
-      on(
-        'after:spec',
-        (spec: Cypress.Spec, results: CypressCommandLine.RunResult) => {
-          if (results && results.video && results.tests) {
-            // Do we have failures for any retry attempts?
-            const failures = results.tests.some(test =>
-              test.attempts.some(attempt => attempt.state === 'failed'),
-            );
-            if (!failures) {
-              // delete the video if the spec passed and no tests retried
-              fs.unlinkSync(results.video);
-            }
+    numTestsKeptInMemory: process.env.CI ? 1 : 5,
+    setupNodeEvents: (on, config) => {
+      on('after:spec', (spec: Cypress.Spec, results: CypressCommandLine.RunResult) => {
+        if (results && results.video) {
+          // Do we have failures for any retry attempts?
+          const failures = results.tests.some(test => test.attempts.some(attempt => attempt.state === 'failed'));
+          if (!failures) {
+            // delete the video if the spec passed and no tests retried
+            fs.unlinkSync(results.video);
           }
-        },
-      );
-      // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
-      require('@cypress/code-coverage/task')(on, config);
-      // include any other plugin code...
-      return config;
+        }
+      });
+      return coverageTask(on, config);
     },
   },
   defaultCommandTimeout: 60000,

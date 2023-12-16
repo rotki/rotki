@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 const props = withDefaults(
   defineProps<{
-    value: boolean;
-    balanceFile: File | null;
-    locationFile: File | null;
+    modelValue: boolean;
+    balanceFile?: File;
+    locationFile?: File;
     loading?: boolean;
     persistent?: boolean;
   }>(),
@@ -14,16 +14,16 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: boolean): void;
+  (e: 'update:model-value', value: boolean): void;
   (e: 'import'): boolean;
-  (e: 'update:balance-file', file: File | null): void;
-  (e: 'update:location-file', file: File | null): void;
+  (e: 'update:balance-file', file?: File): void;
+  (e: 'update:location-file', file?: File): void;
 }>();
 
 const { t } = useI18n();
 const visible = useSimpleVModel(props, emit);
 
-const balanceFile = computed<File | null>({
+const balanceFile = computed<File | undefined>({
   get() {
     return props.balanceFile;
   },
@@ -32,7 +32,7 @@ const balanceFile = computed<File | null>({
   },
 });
 
-const locationFile = computed<File | null>({
+const locationFile = computed<File | undefined>({
   get() {
     return props.locationFile;
   },
@@ -50,11 +50,11 @@ const complete = logicAnd(balanceFile, locationFile);
     max-width="600"
     :persistent="persistent"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         color="primary"
         variant="outlined"
-        v-on="on"
+        v-bind="attrs"
       >
         <template #prepend>
           <RuiIcon name="folder-received-line" />

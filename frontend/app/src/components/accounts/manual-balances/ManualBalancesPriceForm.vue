@@ -21,12 +21,7 @@ const fiatPriceHint = ref<BigNumber | null>();
 const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const {
-  fetchPrices,
-  toSelectedCurrency,
-  assetPrice,
-  isAssetPriceInCurrentCurrency,
-} = useBalancePricesStore();
+const { fetchPrices, toSelectedCurrency, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
 const { addLatestPrice } = useAssetPricesApi();
 
 const { fetchLatestPrices } = useAssetPricesApi();

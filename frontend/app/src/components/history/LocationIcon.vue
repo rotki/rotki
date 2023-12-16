@@ -52,6 +52,7 @@ const css = useCssModule();
         class="icon-bg"
       >
         <RuiIcon
+          v-if="location.icon"
           color="secondary"
           :size="size"
           :name="location.icon"

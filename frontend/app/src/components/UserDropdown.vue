@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 
 const { t } = useI18n();
 
@@ -41,11 +41,11 @@ const { darkModeEnabled } = useDarkMode();
       menu-class="user-dropdown__menu min-w-[10rem] max-w-[22rem]"
       close-on-content-click
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <MenuTooltipButton
           tooltip="Account"
           class-name="user-dropdown"
-          v-on="on"
+          v-bind="attrs"
         >
           <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>

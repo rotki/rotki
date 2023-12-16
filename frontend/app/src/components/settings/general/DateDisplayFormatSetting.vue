@@ -18,10 +18,7 @@ const { t } = useI18n();
 
 const rules = {
   dateDisplayFormat: {
-    required: helpers.withMessage(
-      t('general_settings.date_display.validation.empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
       containsValidDirectives,
@@ -34,9 +31,7 @@ const { callIfValid } = useValidation(v$);
 
 const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
 
-const dateDisplayFormatExample = computed<string>(() =>
-  displayDateFormatter.format(now, get(dateDisplayFormat)),
-);
+const dateDisplayFormatExample = computed<string>(() => displayDateFormatter.format(now, get(dateDisplayFormat)));
 
 function resetDateDisplayFormat() {
   set(dateDisplayFormat, get(format));
@@ -59,9 +54,7 @@ onMounted(() => {
     <SettingsOption
       #default="{ error, success, update, updateImmediate }"
       setting="dateDisplayFormat"
-      :error-message="
-        t('general_settings.validation.date_display_format.error')
-      "
+      :error-message="t('general_settings.validation.date_display_format.error')"
       :success-message="successMessage"
       class="flex items-start gap-4"
       @finished="resetDateDisplayFormat()"
@@ -74,15 +67,13 @@ onMounted(() => {
         :label="t('general_settings.labels.date_display_format')"
         type="text"
         :success-messages="success"
-        :error-messages="
-          error || toMessages(v$.dateDisplayFormat)
-        "
+        :error-messages="error || toMessages(v$.dateDisplayFormat)"
         :hint="
           t('general_settings.date_display_format_hint', {
             format: dateDisplayFormatExample,
           })
         "
-        @input="callIfValid($event, update)"
+        @update:model-value="callIfValid($event, update)"
       >
         <template #append>
           <RuiButton

@@ -2,7 +2,7 @@
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -29,13 +29,7 @@ const emit = defineEmits<{ (e: 'click'): void }>();
 
 const { t } = useI18n();
 
-const {
-  identifier,
-  padding,
-  size,
-  enableAssociation,
-  showChain,
-} = toRefs(props);
+const { identifier, padding, size, enableAssociation, showChain } = toRefs(props);
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
@@ -44,7 +38,7 @@ const css = useCssModule();
 
 const { currencies } = useCurrencies();
 
-const mappedIdentifier: ComputedRef<string> = computed(() => {
+const mappedIdentifier = computed<string>(() => {
   const id = getIdentifierFromSymbolMap(get(identifier));
   return isBlockchain(id) ? id.toUpperCase() : id;
 });
@@ -53,8 +47,7 @@ const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);
 
   const fiatCurrencies = get(currencies).filter(({ crypto }) => !crypto);
-  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)
-    ?.unicodeSymbol;
+  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
 });
 
 const { assetInfo } = useAssetInfoRetrieval();
@@ -90,16 +83,10 @@ const tooltip = computed(() => {
 
 const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
-const chainIconSize = computed(
-  () => `${(Number.parseInt(get(size)) * 50) / 100}px`,
-);
-const chainWrapperSize = computed(
-  () => `${Number.parseInt(get(chainIconSize)) + 4}px`,
-);
+const chainIconSize = computed(() => `${(Number.parseInt(get(size)) * 50) / 100}px`);
+const chainWrapperSize = computed(() => `${Number.parseInt(get(chainIconSize)) + 4}px`);
 const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
-const chainIconPosition = computed(
-  () => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`,
-);
+const chainIconPosition = computed(() => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`);
 
 const placeholderStyle = computed(() => {
   const pad = get(padding);

@@ -14,10 +14,7 @@ enum BlockchainAccountFilterValueKeys {
   LABEL = 'label',
 }
 
-export type Matcher = SearchMatcher<
-    BlockchainAccountFilterKeys,
-    BlockchainAccountFilterValueKeys
->;
+export type Matcher = SearchMatcher<BlockchainAccountFilterKeys, BlockchainAccountFilterValueKeys>;
 
 export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKeys>;
 
@@ -69,5 +66,8 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t']): 
 }
 
 export const AccountExternalFilterSchema = z.object({
-  tags: z.string().optional().transform(val => val ? val.split(',') : []),
+  tags: z
+    .string()
+    .optional()
+    .transform(val => (val ? val.split(',') : [])),
 });

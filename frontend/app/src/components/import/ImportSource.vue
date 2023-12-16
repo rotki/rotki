@@ -8,17 +8,14 @@ import { toMessages } from '@/utils/validation';
 import type { TaskMeta } from '@/types/task';
 import type { ImportSourceType } from '@/types/upload-types';
 
-const props = withDefaults(
-  defineProps<{ source: ImportSourceType; icon?: string }>(),
-  { icon: '' },
-);
+const props = withDefaults(defineProps<{ source: ImportSourceType; icon?: string }>(), { icon: '' });
 
 const { source } = toRefs(props);
-const dateInputFormat = ref<string | null>(null);
+const dateInputFormat = ref<string>();
 const uploaded = ref(false);
 const errorMessage = ref('');
 const formatHelp = ref<boolean>(false);
-const file = ref<File | null>(null);
+const file = ref<File>();
 
 const { t } = useI18n();
 const { appSession } = useInterop();
@@ -31,8 +28,7 @@ const rules = {
     ),
     validDate: helpers.withMessage(
       t('general_settings.date_display.validation.invalid').toString(),
-      (v: string | null): boolean =>
-        v === null || displayDateFormatter.containsValidDirectives(v),
+      (v: string | null): boolean => v === null || displayDateFormatter.containsValidDirectives(v),
     ),
   },
 };
@@ -62,23 +58,14 @@ const { importDataFrom, importFile } = useImportDataApi();
 async function uploadPackaged(file: string) {
   try {
     const sourceVal = get(source);
-    const { taskId } = await importDataFrom(
-      sourceVal,
-      file,
-      get(dateInputFormat) || null,
-    );
+    const { taskId } = await importDataFrom(sourceVal, file, get(dateInputFormat) || null);
 
     const taskMeta = {
       title: t('file_upload.task.title', { source: sourceVal }).toString(),
       source: sourceVal,
     };
 
-    const { result } = await awaitTask<boolean, TaskMeta>(
-      taskId,
-      taskType,
-      taskMeta,
-      true,
-    );
+    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
 
     if (result)
       set(uploaded, true);
@@ -110,11 +97,7 @@ async function uploadFile() {
           title: t('file_upload.task.title', { source: get(source) }),
           source: get(source),
         };
-        const { result } = await awaitTask<boolean, TaskMeta>(
-          taskId,
-          taskType,
-          taskMeta,
-        );
+        const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta);
 
         if (result)
           set(uploaded, true);
@@ -130,8 +113,7 @@ async function uploadFile() {
 function changeShouldCustomDateFormat() {
   if (get(dateInputFormat) === null)
     set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
-  else
-    set(dateInputFormat, null);
+  else set(dateInputFormat, null);
 }
 
 const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
@@ -147,18 +129,18 @@ const slots = useSlots();
     <form>
       <FileUpload
         v-model="file"
+        v-model:error-message="errorMessage"
         :loading="loading"
         :uploaded="uploaded"
         :source="source"
-        :error-message.sync="errorMessage"
         @update:uploaded="uploaded = $event"
       />
       <RuiSwitch
         v-if="!isRotkiCustomImport"
         color="primary"
         class="mt-4"
-        :value="dateInputFormat !== null"
-        @input="changeShouldCustomDateFormat()"
+        :model-value="dateInputFormat !== null"
+        @update:model-value="changeShouldCustomDateFormat()"
       >
         {{ t('file_upload.date_input_format.switch_label') }}
       </RuiSwitch>

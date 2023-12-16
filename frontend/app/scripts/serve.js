@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-const { spawn } = require('node:child_process');
-const process = require('node:process');
-const { ArgumentParser } = require('argparse');
-const electron = require('electron');
-const { createServer, build, createLogger } = require('vite');
-const { LOG_LEVEL, sharedConfig } = require('./setup');
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+import { ArgumentParser } from 'argparse';
+import electron from 'electron';
+import { build, createLogger, createServer } from 'vite';
+import { LOG_LEVEL, sharedConfig } from './setup.js';
 
 const parser = new ArgumentParser({
   description: 'Rotki frontend build',
@@ -78,21 +78,13 @@ function setupMainPackageWatcher({ config: { server } }) {
       if (remote_debugging_port)
         args.push(`--remote-debugging-port=${remote_debugging_port}`);
 
-      if (process.env.XDG_SESSION_TYPE === 'wayland') {
-        args.push(
-          '--enable-features=WaylandWindowDecorations',
-          '--ozone-platform-hint=auto',
-        );
-      }
+      if (process.env.XDG_SESSION_TYPE === 'wayland')
+        args.push('--enable-features=WaylandWindowDecorations', '--ozone-platform-hint=auto');
 
       spawnProcess = spawn(String(electron), args);
       childProcesses.push(spawnProcess);
 
-      spawnProcess.stdout.on(
-        'data',
-        d =>
-          d.toString().trim() && logger.warn(d.toString(), { timestamp: true }),
-      );
+      spawnProcess.stdout.on('data', d => d.toString().trim() && logger.warn(d.toString(), { timestamp: true }));
       spawnProcess.stderr.on('data', (d) => {
         const data = d.toString().trim();
         if (!data)

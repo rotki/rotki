@@ -20,19 +20,12 @@ function notificationDefaults(): NotificationPayload {
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
-  const data: Ref<NotificationData[]> = ref([]);
-  const lastDisplay: Ref<Record<string, number>> = useSessionStorage(
-    'rotki.notification.last_display',
-    {},
-  );
+  const data = ref<NotificationData[]>([]);
+  const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
 
   const prioritized = computed<NotificationData[]>(() => {
     const byDate = orderBy(get(data), n => n.date, 'desc');
-    return orderBy(
-      byDate,
-      (n: NotificationData) => n.priority ?? Priority.NORMAL,
-      'desc',
-    );
+    return orderBy(byDate, (n: NotificationData) => n.priority ?? Priority.NORMAL, 'desc');
   });
   const count = computed(() => get(data).length);
   const nextId = computed(() => {
@@ -43,14 +36,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
     let nextId: number;
     if (ids.length > 0)
       nextId = ids[0] + 1;
-    else
-      nextId = 1;
+    else nextId = 1;
 
     return nextId;
   });
-  const queue = computed(() =>
-    get(prioritized).filter(notification => notification.display),
-  );
+  const queue = computed(() => get(prioritized).filter(notification => notification.display));
 
   function update(payload: NotificationData[]): void {
     set(data, [...get(data), ...payload]);
@@ -70,21 +60,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
     set(data, notifications);
   }
 
-  const notify = (
-    newData: SemiPartial<NotificationPayload, 'title' | 'message'>,
-  ): void => {
+  const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
     const groupToFind = newData.group;
     const dataList = [...get(data)];
 
-    const notificationIndex = groupToFind
-      ? dataList.findIndex(({ group }) => group === groupToFind)
-      : -1;
+    const notificationIndex = groupToFind ? dataList.findIndex(({ group }) => group === groupToFind) : -1;
 
     if (notificationIndex === -1) {
-      const notification = createNotification(
-        get(nextId),
-        Object.assign(notificationDefaults(), newData),
-      );
+      const notification = createNotification(get(nextId), Object.assign(notificationDefaults(), newData));
 
       if (groupToFind && notification.display) {
         set(lastDisplay, {
@@ -161,8 +144,5 @@ export const useNotificationsStore = defineStore('notifications', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useNotificationsStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useNotificationsStore, import.meta.hot));

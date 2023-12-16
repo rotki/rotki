@@ -20,18 +20,12 @@ const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 
 enableCors(server);
 
-if (
-  componentsDir
-  && fs.existsSync(componentsDir)
-  && fs.statSync(componentsDir).isDirectory()
-) {
+if (componentsDir && fs.existsSync(componentsDir) && fs.statSync(componentsDir).isDirectory()) {
   logger.info('Enabling statistics renderer support');
   statistics(server, componentsDir);
 }
 else {
-  logger.warn(
-    'PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.',
-  );
+  logger.warn('PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.');
 }
 
 let mockedAsyncCalls: { [url: string]: any } = {};
@@ -46,9 +40,7 @@ if (fs.existsSync('async-mock.json')) {
   }
 }
 else {
-  logger.info(
-    'async-mock.json doesnt exist. No async_query mocking is enabled',
-  );
+  logger.info('async-mock.json doesnt exist. No async_query mocking is enabled');
 }
 
 function manipulateResponse(res: Response, callback: (original: any) => any) {
@@ -116,13 +108,11 @@ function handleTasksStatus(res: Response) {
     const result = data.result;
     if (result && result.pending)
       result.pending.push(...mockAsync.pending);
-    else
-      result.pending = mockAsync.pending;
+    else result.pending = mockAsync.pending;
 
     if (result && result.completed)
       result.completed.push(...mockAsync.completed);
-    else
-      result.completed = mockAsync.completed;
+    else result.completed = mockAsync.completed;
 
     return data;
   });
@@ -164,8 +154,7 @@ function increaseCounter(baseUrl: string, method: string) {
     counter[baseUrl] = { [method]: 1 };
   else if (!counter[baseUrl][method])
     counter[baseUrl][method] = 1;
-  else
-    counter[baseUrl][method] += 1;
+  else counter[baseUrl][method] += 1;
 }
 
 function getCounter(baseUrl: string, method: string): number {
@@ -191,8 +180,7 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
     const number = getCounter(baseUrl, req.method) - 1;
     if (number < response.length)
       pendingResponse = response[number];
-    else
-      pendingResponse = response.at(-1);
+    else pendingResponse = response.at(-1);
   }
   else if (typeof response === 'object') {
     pendingResponse = response;
@@ -218,9 +206,7 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
 function isAsyncQuery(req: Request) {
   return (
     req.method !== 'GET'
-    && req.rawHeaders.findIndex(h =>
-      h.toLocaleLowerCase().includes('application/json'),
-    )
+    && req.rawHeaders.findIndex(h => h.toLocaleLowerCase().includes('application/json'))
     && req.body
     && req.body.async_query === true
   );
@@ -233,11 +219,7 @@ function isPreflight(req: Request) {
   return req.method === 'OPTIONS' && index >= 0;
 }
 
-function onProxyReq(
-  proxyReq: http.ClientRequest,
-  req: Request,
-  _res: Response,
-) {
+function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response) {
   if (!req.body)
     return;
 
@@ -262,14 +244,8 @@ function mockPreflight(res: Response) {
   res.write = (chunk: any) => {
     try {
       res.header('Access-Control-Allow-Origin', '*');
-      res.header(
-        'Access-Control-Allow-Headers',
-        'X-Requested-With,content-type',
-      );
-      res.header(
-        'Access-Control-Allow-Methods',
-        'GET, POST, OPTIONS, PUT, PATCH, DELETE',
-      );
+      res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
       res.header('Access-Control-Allow-Credentials', 'true');
       res.status(200);
       res.statusMessage = 'OK';
@@ -289,11 +265,7 @@ function hasResponse(req: Request) {
   return !!mockResponse && !!mockResponse[req.method];
 }
 
-function onProxyRes(
-  proxyRes: http.IncomingMessage,
-  req: Request,
-  res: Response,
-) {
+function onProxyRes(proxyRes: http.IncomingMessage, req: Request, res: Response) {
   let handled = false;
   const url = req.url;
   const tasks = '/api/1/tasks/';

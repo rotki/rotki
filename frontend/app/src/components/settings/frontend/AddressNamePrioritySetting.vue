@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  PrioritizedListData,
-  type PrioritizedListItemData,
-} from '@/types/settings/prioritized-list-data';
+import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
   ENS_NAMES_PRIO_LIST_ITEM,
@@ -56,13 +53,13 @@ const { t } = useI18n();
       @finished="finishEditing()"
     >
       <PrioritizedList
-        :value="currentAddressNamePriorities"
+        :model-value="currentAddressNamePriorities"
         :all-items="availableCurrentAddressNamePriorities()"
         :item-data-name="t('address_name_priority_setting.data_name')"
         :disable-add="true"
         :disable-delete="true"
         :status="{ error, success }"
-        @input="updateImmediate($event)"
+        @update:model-value="updateImmediate($event)"
       />
     </SettingsOption>
   </div>

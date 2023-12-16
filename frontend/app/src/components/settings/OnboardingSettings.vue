@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import {
-  and,
-  helpers,
-  minValue,
-  numeric,
-  required,
-} from '@vuelidate/validators';
+import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { isEqual } from 'lodash-es';
 import { LogLevel } from '@/utils/log-level';
 import { toMessages } from '@/utils/validation';
+import type { RuiIcons } from '@rotki/ui-library';
 import type { BackendOptions } from '@/electron-main/ipc';
 import type { Writeable } from '@/types';
 import type { BackendConfiguration } from '@/types/backend';
@@ -22,22 +17,20 @@ const { t } = useI18n();
 
 const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 
-const userDataDirectory: Ref<string> = ref('');
-const userLogDirectory: Ref<string> = ref('');
-const logFromOtherModules: Ref<boolean> = ref(false);
-const valid: Ref<boolean> = ref(false);
+const userDataDirectory = ref<string>('');
+const userLogDirectory = ref<string>('');
+const logFromOtherModules = ref<boolean>(false);
+const valid = ref<boolean>(false);
 
-const maxLogSize: Ref<string> = ref('0');
-const sqliteInstructions: Ref<string> = ref('0');
-const maxLogFiles: Ref<string> = ref('0');
+const maxLogSize = ref<string>('0');
+const sqliteInstructions = ref<string>('0');
+const maxLogFiles = ref<string>('0');
 
 const { backendSettings } = useSettingsApi();
 
-const selecting: Ref<boolean> = ref(false);
-const confirmReset: Ref<boolean> = ref(false);
-const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
-  backendSettings(),
-);
+const selecting = ref<boolean>(false);
+const confirmReset = ref<boolean>(false);
+const configuration: Ref<BackendConfiguration> = asyncComputed(() => backendSettings());
 
 function parseValue(value?: string) {
   if (!value)
@@ -54,17 +47,10 @@ function stringifyValue(value?: number) {
   return value.toString();
 }
 
-const {
-  resetOptions,
-  saveOptions,
-  fileConfig,
-  logLevel,
-  defaultLogLevel,
-  defaultLogDirectory,
-  options,
-} = useBackendManagement(loaded);
+const { resetOptions, saveOptions, fileConfig, logLevel, defaultLogLevel, defaultLogDirectory, options }
+  = useBackendManagement(loaded);
 
-const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
+const initialOptions = computed<Partial<BackendOptions>>(() => {
   const config = get(configuration);
   const opts = get(options);
   const defaults = get(defaultBackendArguments);
@@ -73,18 +59,9 @@ const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
     dataDirectory: opts.dataDirectory ?? get(dataDirectory),
     logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
     logFromOtherModules: opts.logFromOtherModules ?? false,
-    maxLogfilesNum:
-        opts.maxLogfilesNum
-        ?? config?.maxLogfilesNum?.value
-        ?? defaults.maxLogfilesNum,
-    maxSizeInMbAllLogs:
-        opts.maxSizeInMbAllLogs
-        ?? config?.maxSizeInMbAllLogs?.value
-        ?? defaults.maxSizeInMbAllLogs,
-    sqliteInstructions:
-        opts.sqliteInstructions
-        ?? config?.sqliteInstructions?.value
-        ?? defaults.sqliteInstructions,
+    maxLogfilesNum: opts.maxLogfilesNum ?? config?.maxLogfilesNum?.value ?? defaults.maxLogfilesNum,
+    maxSizeInMbAllLogs: opts.maxSizeInMbAllLogs ?? config?.maxSizeInMbAllLogs?.value ?? defaults.maxSizeInMbAllLogs,
+    sqliteInstructions: opts.sqliteInstructions ?? config?.sqliteInstructions?.value ?? defaults.sqliteInstructions,
   };
 });
 
@@ -174,14 +151,8 @@ const anyValueChanged = computed(() => {
 const { openDirectory } = useInterop();
 
 const nonNegativeNumberRules = {
-  required: helpers.withMessage(
-    t('backend_settings.errors.non_empty'),
-    required,
-  ),
-  nonNegative: helpers.withMessage(
-    t('backend_settings.errors.min', { min: 0 }),
-    and(numeric, minValue(0)),
-  ),
+  required: helpers.withMessage(t('backend_settings.errors.non_empty'), required),
+  nonNegative: helpers.withMessage(t('backend_settings.errors.min', { min: 0 }), and(numeric, minValue(0))),
 };
 
 const rules = {
@@ -204,7 +175,7 @@ watch(v$, ({ $invalid }) => {
   set(valid, !$invalid);
 });
 
-function icon(level: LogLevel): string {
+function icon(level: LogLevel): RuiIcons {
   if (level === LogLevel.DEBUG)
     return 'bug-line';
   else if (level === LogLevel.INFO)
@@ -253,9 +224,7 @@ async function selectLogsDirectory() {
 
   set(selecting, true);
   try {
-    const directory = await openDirectory(
-      t('backend_settings.log_directory.select'),
-    );
+    const directory = await openDirectory(t('backend_settings.log_directory.select'));
     if (directory)
       set(userLogDirectory, directory);
   }
@@ -286,7 +255,7 @@ function showResetConfirmation() {
   );
 }
 
-const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: string }>();
+const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
 </script>
 
 <template>
@@ -355,11 +324,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: string }>();
         v-model="userLogDirectory"
         data-cy="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
-        :hint="
-          !!fileConfig.logDirectory
-            ? t('backend_settings.config_file_disabled')
-            : undefined
-        "
+        :hint="!!fileConfig.logDirectory ? t('backend_settings.config_file_disabled') : undefined"
         variant="outlined"
         color="primary"
         :label="t('backend_settings.settings.log_directory.label')"
@@ -384,11 +349,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: string }>();
         :disabled="!!fileConfig.loglevel"
         :label="t('backend_settings.settings.log_level.label')"
         :hide-details="!fileConfig.loglevel"
-        :hint="
-          !!fileConfig.loglevel
-            ? t('backend_settings.config_file_disabled')
-            : undefined
-        "
+        :hint="!!fileConfig.loglevel ? t('backend_settings.config_file_disabled') : undefined"
         variant="outlined"
       >
         <template #item="{ item }">

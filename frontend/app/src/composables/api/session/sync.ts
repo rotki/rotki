@@ -1,8 +1,5 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
-import {
-  handleResponse,
-  validWithParamsSessionAndExternalService,
-} from '@/services/utils';
+import { handleResponse, validWithParamsSessionAndExternalService } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { SyncAction } from '@/types/session/sync';

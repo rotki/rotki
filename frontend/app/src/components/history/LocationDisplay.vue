@@ -32,8 +32,7 @@ const route = computed<{ path: string }>(() => {
     path = tradeLocation.detailPath;
   else if (tradeLocation)
     path = Routes.LOCATIONS.replace(':identifier', tradeLocation.identifier);
-  else
-    path = '';
+  else path = '';
 
   return {
     path,

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
-import type {
-  ProfitLossOverviewItem,
-  SelectedReport,
-} from '@/types/reports';
+import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
-    report: SelectedReport;
+    report: SelectedReport | Report;
     symbol?: string | null;
     flat?: boolean;
     loading?: boolean;
@@ -21,9 +18,7 @@ const props = withDefaults(
 
 const { report } = toRefs(props);
 
-const total = computed<ProfitLossOverviewItem>(() =>
-  calculateTotalProfitLoss(get(report)),
-);
+const total = computed<ProfitLossOverviewItem>(() => calculateTotalProfitLoss(get(report)));
 
 const { t } = useI18n();
 </script>
@@ -33,13 +28,9 @@ const { t } = useI18n();
     <template #header>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <div
-      class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-600 w-full"
-    >
+    <div class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-600 w-full">
       <table class="w-full">
-        <thead
-          class="text-rui-text-secondary font-medium border-b border-default text-xs"
-        >
+        <thead class="text-rui-text-secondary font-medium border-b border-default text-xs">
           <tr>
             <th class="text-left p-4">
               {{ t('common.type') }}

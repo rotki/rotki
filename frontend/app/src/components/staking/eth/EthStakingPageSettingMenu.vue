@@ -2,9 +2,7 @@
 const { t } = useI18n();
 const value = ref(false);
 
-const { shouldRefreshValidatorDailyStats } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { shouldRefreshValidatorDailyStats } = storeToRefs(useFrontendSettingsStore());
 
 function setValue() {
   set(value, get(shouldRefreshValidatorDailyStats));
@@ -20,12 +18,12 @@ onBeforeMount(() => {
     menu-class="max-w-[20rem] [&>div]:h-[8rem]"
     :popper="{ placement: 'bottom-end' }"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         variant="text"
         icon
         class="!p-2"
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon name="settings-4-line" />
       </RuiButton>
@@ -43,11 +41,11 @@ onBeforeMount(() => {
       >
         <RuiSwitch
           :hint="t('eth2_page.setting.refresh_validator_daily_stats_on_load.hint')"
-          :value="value"
+          :model-value="value"
           color="primary"
           :success-messages="success"
           :error-messages="error"
-          @input="updateImmediate($event)"
+          @update:model-value="updateImmediate($event)"
         >
           {{ t('eth2_page.setting.refresh_validator_daily_stats_on_load.title') }}
         </RuiSwitch>

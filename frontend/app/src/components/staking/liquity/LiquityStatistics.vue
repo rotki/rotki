@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import type {
-  LiquityPoolDetailEntry,
-  LiquityStatisticDetails,
-} from '@rotki/common/lib/liquity';
+import type { LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common/lib/liquity';
 import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
 
 const props = withDefaults(
@@ -30,88 +27,73 @@ const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
 
 const selection = ref<'historical' | 'current'>('historical');
 
-const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null>
-  = computed(() => {
-    const statisticVal = get(statistic);
+const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
+  const statisticVal = get(statistic);
 
-    if (!statisticVal)
-      return null;
+  if (!statisticVal)
+    return null;
 
-    if (get(selection) === 'historical')
-      return statisticVal;
+  if (get(selection) === 'historical')
+    return statisticVal;
 
-    const stakingGains = statisticVal.stakingGains.map(
-      (stakingGain: AssetBalance) => {
-        const price = get(assetPrice(stakingGain.asset)) ?? One;
-
-        return {
-          ...stakingGain,
-          usdValue: stakingGain.amount.multipliedBy(price),
-        };
-      },
-    );
-
-    const stabilityPoolGains = statisticVal.stabilityPoolGains.map(
-      (stabilityPoolGain: AssetBalance) => {
-        const price = get(assetPrice(stabilityPoolGain.asset)) ?? One;
-
-        return {
-          ...stabilityPoolGain,
-          usdValue: stabilityPoolGain.amount.multipliedBy(price),
-        };
-      },
-    );
-
-    const totalUsdGainsStabilityPool = bigNumberSum(
-      stabilityPoolGains.map(({ usdValue }) => usdValue),
-    );
-
-    const totalUsdGainsStaking = bigNumberSum(
-      stakingGains.map(({ usdValue }) => usdValue),
-    );
+  const stakingGains = statisticVal.stakingGains.map((stakingGain: AssetBalance) => {
+    const price = get(assetPrice(stakingGain.asset)) ?? One;
 
     return {
-      ...statisticVal,
-      totalUsdGainsStabilityPool,
-      totalUsdGainsStaking,
-      totalDepositedStabilityPoolUsdValue:
-        statisticVal.totalDepositedStabilityPool.multipliedBy(
-          get(lusdPrice) ?? One,
-        ),
-      totalWithdrawnStabilityPoolUsdValue:
-        statisticVal.totalWithdrawnStabilityPool.multipliedBy(
-          get(lusdPrice) ?? One,
-        ),
-      stakingGains,
-      stabilityPoolGains,
+      ...stakingGain,
+      usdValue: stakingGain.amount.multipliedBy(price),
     };
   });
 
-const totalDepositedStabilityPoolBalance = useRefMap<
-  LiquityStatisticDetails | null,
-  Balance | null
->(statisticWithAdjustedPrice, (data) => {
-  if (!data)
-    return null;
+  const stabilityPoolGains = statisticVal.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
+    const price = get(assetPrice(stabilityPoolGain.asset)) ?? One;
+
+    return {
+      ...stabilityPoolGain,
+      usdValue: stabilityPoolGain.amount.multipliedBy(price),
+    };
+  });
+
+  const totalUsdGainsStabilityPool = bigNumberSum(stabilityPoolGains.map(({ usdValue }) => usdValue));
+
+  const totalUsdGainsStaking = bigNumberSum(stakingGains.map(({ usdValue }) => usdValue));
 
   return {
-    amount: data.totalDepositedStabilityPool,
-    usdValue: data.totalDepositedStabilityPoolUsdValue,
+    ...statisticVal,
+    totalUsdGainsStabilityPool,
+    totalUsdGainsStaking,
+    totalDepositedStabilityPoolUsdValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalWithdrawnStabilityPoolUsdValue: statisticVal.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    stakingGains,
+    stabilityPoolGains,
   };
 });
 
-const totalWithdrawnStabilityPoolBalance = useRefMap<
-  LiquityStatisticDetails | null,
-  Balance | null
->(statisticWithAdjustedPrice, (data) => {
-  if (!data)
-    return null;
+const totalDepositedStabilityPoolBalance = useRefMap<LiquityStatisticDetails | null, Balance | null>(
+  statisticWithAdjustedPrice,
+  (data) => {
+    if (!data)
+      return null;
 
-  return {
-    amount: data.totalWithdrawnStabilityPool,
-    usdValue: data.totalWithdrawnStabilityPoolUsdValue,
-  };
-});
+    return {
+      amount: data.totalDepositedStabilityPool,
+      usdValue: data.totalDepositedStabilityPoolUsdValue,
+    };
+  },
+);
+
+const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | null, Balance | null>(
+  statisticWithAdjustedPrice,
+  (data) => {
+    if (!data)
+      return null;
+
+    return {
+      amount: data.totalWithdrawnStabilityPool,
+      usdValue: data.totalWithdrawnStabilityPoolUsdValue,
+    };
+  },
+);
 
 /**
  * Calculate the estimated PnL, by finding difference between these two things:
@@ -134,19 +116,20 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<
  * @param poolDeposited
  * @return BigNumber
  */
-function calculatePnl(totalDepositedStabilityPool: BigNumber, totalWithdrawnStabilityPool: BigNumber, totalUsdGainsStabilityPool: BigNumber, poolGains: AssetBalance, poolRewards: AssetBalance, poolDeposited: AssetBalance): ComputedRef<BigNumber> {
+function calculatePnl(
+  totalDepositedStabilityPool: BigNumber,
+  totalWithdrawnStabilityPool: BigNumber,
+  totalUsdGainsStabilityPool: BigNumber,
+  poolGains: AssetBalance,
+  poolRewards: AssetBalance,
+  poolDeposited: AssetBalance,
+): ComputedRef<BigNumber> {
   return computed(() => {
-    const expectedAmount = totalDepositedStabilityPool.minus(
-      totalWithdrawnStabilityPool,
-    );
+    const expectedAmount = totalDepositedStabilityPool.minus(totalWithdrawnStabilityPool);
 
-    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(
-      get(assetPrice(poolGains.asset)) ?? One,
-    );
+    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(get(assetPrice(poolGains.asset)) ?? One);
 
-    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(
-      get(assetPrice(poolRewards.asset)) ?? One,
-    );
+    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(get(assetPrice(poolRewards.asset)) ?? One);
 
     const totalWithdrawals = totalUsdGainsStabilityPool
       .plus(liquidationGainsInCurrentPrice)
@@ -154,15 +137,13 @@ function calculatePnl(totalDepositedStabilityPool: BigNumber, totalWithdrawnStab
 
     const diffDeposited = expectedAmount.minus(poolDeposited.amount);
 
-    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(
-      get(lusdPrice) ?? One,
-    );
+    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(get(lusdPrice) ?? One);
 
     return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
   });
 }
 
-const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
+const totalPnl = computed<BigNumber | null>(() => {
   const statisticVal = get(statistic);
   const poolVal = get(pool);
 
@@ -195,14 +176,12 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
           variant="outlined"
           color="primary"
         >
-          <template #default>
-            <RuiButton value="current">
-              {{ t('liquity_statistic.switch.current') }}
-            </RuiButton>
-            <RuiButton value="historical">
-              {{ t('liquity_statistic.switch.historical') }}
-            </RuiButton>
-          </template>
+          <RuiButton value="current">
+            {{ t('liquity_statistic.switch.current') }}
+          </RuiButton>
+          <RuiButton value="historical">
+            {{ t('liquity_statistic.switch.historical') }}
+          </RuiButton>
         </RuiButtonGroup>
       </div>
     </template>
@@ -232,9 +211,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
         </div>
       </div>
 
-      <RuiAccordions
-        class="pt-4"
-      >
+      <RuiAccordions class="pt-4">
         <RuiAccordion
           header-class="pt-4 pb-4 -mb-4 border-t border-default justify-center w-full"
           class="flex-col-reverse"
@@ -245,9 +222,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                 <RuiDivider />
                 <div class="text-right py-4">
                   <div class="font-medium pb-2">
-                    {{
-                      t('liquity_statistic.total_deposited_stability_pool')
-                    }}
+                    {{ t('liquity_statistic.total_deposited_stability_pool') }}
                   </div>
                   <BalanceDisplay
                     :asset="LUSD_ID"
@@ -260,9 +235,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                 <RuiDivider />
                 <div class="text-right py-4">
                   <div class="font-medium pb-2">
-                    {{
-                      t('liquity_statistic.total_withdrawn_stability_pool')
-                    }}
+                    {{ t('liquity_statistic.total_withdrawn_stability_pool') }}
                   </div>
                   <BalanceDisplay
                     :asset="LUSD_ID"
@@ -278,11 +251,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                     {{ t('liquity_statistic.stability_pool_gains') }}
                   </div>
 
-                  <div
-                    v-if="
-                      statisticWithAdjustedPrice.stabilityPoolGains.length > 0
-                    "
-                  >
+                  <div v-if="statisticWithAdjustedPrice.stabilityPoolGains.length > 0">
                     <div
                       v-for="assetBalance in statisticWithAdjustedPrice.stabilityPoolGains"
                       :key="assetBalance.asset"
@@ -305,9 +274,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
               <div v-if="totalPnl">
                 <RuiDivider />
                 <div class="text-right py-4">
-                  <div
-                    class="flex items-center justify-end gap-2 font-medium pb-2"
-                  >
+                  <div class="flex items-center justify-end gap-2 font-medium pb-2">
                     <RuiTooltip
                       :popper="{ placement: 'top' }"
                       :open-delay="400"
@@ -339,9 +306,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                     {{ t('liquity_statistic.staking_gains') }}
                   </div>
 
-                  <div
-                    v-if="statisticWithAdjustedPrice.stakingGains.length > 0"
-                  >
+                  <div v-if="statisticWithAdjustedPrice.stakingGains.length > 0">
                     <div
                       v-for="assetBalance in statisticWithAdjustedPrice.stakingGains"
                       :key="assetBalance.asset"
@@ -365,11 +330,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
           </div>
           <template #header="{ open }">
             <div class="text-rui-text-secondary mr-4 grow-0">
-              {{
-                open
-                  ? t('liquity_statistic.view.hide')
-                  : t('liquity_statistic.view.show')
-              }}
+              {{ open ? t('liquity_statistic.view.hide') : t('liquity_statistic.view.show') }}
             </div>
           </template>
         </RuiAccordion>

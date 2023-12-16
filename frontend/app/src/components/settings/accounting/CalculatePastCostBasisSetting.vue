@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const calculatePastCostBasis = ref(false);
-const { calculatePastCostBasis: enabled } = storeToRefs(
-  useAccountingSettingsStore(),
-);
+const { calculatePastCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
 const { t } = useI18n();
 
 function switchSuccessMessage(enabled: boolean) {
@@ -30,7 +28,7 @@ onMounted(() => {
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.calculate_past_cost_basis')"
       color="primary"
-      @input="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

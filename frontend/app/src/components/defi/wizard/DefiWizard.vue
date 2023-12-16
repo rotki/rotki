@@ -33,10 +33,10 @@ const steps = computed(() => [
         </div>
         <Transition
           appear
-          enter-class="translate-x-5 opacity-0"
+          enter-from-class="translate-x-5 opacity-0"
           enter-to-class="translate-yx-0 opacity-1"
           enter-active-class="transform duration-300"
-          leave-class="-translate-x-0 opacity-1"
+          leave-from-class="-translate-x-0 opacity-1"
           leave-to-class="-translate-x-5 opacity-0"
           leave-active-class="transform duration-100"
           class="my-4 w-full"

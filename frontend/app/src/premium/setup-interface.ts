@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useRotkiTheme } from '@rotki/ui-library-compat';
+import { useRotkiTheme } from '@rotki/ui-library';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -13,12 +13,7 @@ import {
   utilsApi,
 } from '@/premium/premium-apis';
 import type { Themes, TimeUnit } from '@rotki/common/lib/settings';
-import type {
-  DataUtilities,
-  DateUtilities,
-  PremiumInterface,
-  SettingsApi,
-} from '@rotki/common/lib/premium';
+import type { DataUtilities, DateUtilities, PremiumInterface, SettingsApi } from '@rotki/common/lib/premium';
 import type { DateFormat } from '@/types/date-format';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
@@ -42,10 +37,7 @@ const date: DateUtilities = {
     return dayjs().subtract(amount, unit).unix();
   },
   toUserSelectedFormat(timestamp: number): string {
-    return displayDateFormatter.format(
-      new Date(timestamp * 1000),
-      useGeneralSettingsStore().dateDisplayFormat,
-    );
+    return displayDateFormatter.format(new Date(timestamp * 1000), useGeneralSettingsStore().dateDisplayFormat);
   },
   getDateInputISOFormat(format: string): string {
     return getDateInputISOFormat(format as DateFormat);
@@ -68,6 +60,7 @@ function data(): DataUtilities {
 }
 
 function settings(): SettingsApi {
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const { t, te } = useI18n();
   const frontendStore = useFrontendSettingsStore();
   return {

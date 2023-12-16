@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
-  undefined,
-);
+const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(undefined);
 const offlineReady = ref<boolean>(false);
 const needRefresh = ref<boolean>(false);
 const updating = ref<boolean>(false);
@@ -64,9 +62,7 @@ const { t } = useI18n();
       max-width="500"
     >
       <RuiCard>
-        <div
-          class="flex flex-col md:flex-row gap-4 text-center items-center justify-between"
-        >
+        <div class="flex flex-col md:flex-row gap-4 text-center items-center justify-between">
           {{ t('update_notifier.update_available') }}
           <RuiButton
             color="primary"

@@ -25,8 +25,7 @@ describe('store::assets/cache', () => {
     };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null>
-      = store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
@@ -40,8 +39,7 @@ describe('store::assets/cache', () => {
       assets: {},
     });
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null>
-      = store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
@@ -73,8 +71,7 @@ describe('store::assets/cache', () => {
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
     expect(get(firstRetrieval)).toEqual(asset);
     vi.advanceTimersByTime(1000 * 60 * 11);
-    const secondRetrieval: ComputedRef<AssetInfo | null>
-      = store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledTimes(2);
@@ -82,26 +79,23 @@ describe('store::assets/cache', () => {
   });
 
   it('should stop caching assets after cache limit is reached', async () => {
-    vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(
-      (identifier): Promise<AssetMap> => {
-        const mapping: AssetMap = { assetCollections: {}, assets: {} };
-        for (const id of identifier) {
-          mapping.assets[id] = {
-            symbol: id,
-            name: `name ${id}`,
-            isCustomAsset: false,
-          };
-        }
-        return Promise.resolve(mapping);
-      },
-    );
+    vi.mocked(useAssetInfoApi().assetMapping).mockImplementation((identifier): Promise<AssetMap> => {
+      const mapping: AssetMap = { assetCollections: {}, assets: {} };
+      for (const id of identifier) {
+        mapping.assets[id] = {
+          symbol: id,
+          name: `name ${id}`,
+          isCustomAsset: false,
+        };
+      }
+      return Promise.resolve(mapping);
+    });
 
     store.retrieve(`AST-0`);
     vi.advanceTimersByTime(3000);
     await flushPromises();
 
-    for (let i = 1; i < 50; i++)
-      store.retrieve(`AST-${i}`);
+    for (let i = 1; i < 50; i++) store.retrieve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
@@ -110,8 +104,7 @@ describe('store::assets/cache', () => {
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
-    for (let i = 51; i < 505; i++)
-      store.retrieve(`AST-${i}`);
+    for (let i = 51; i < 505; i++) store.retrieve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();

@@ -1,23 +1,17 @@
 <script setup lang="ts">
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
-import type {
-  HistoricalPrice,
-  HistoricalPriceFormPayload,
-} from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref([
+const sort = ref<DataTableSortData<HistoricalPrice>>([
   {
     column: 'timestamp',
     direction: 'desc' as const,
   },
 ]);
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
@@ -73,20 +67,10 @@ const update = ref(false);
 const router = useRouter();
 const route = useRoute();
 
-const { items, loading, save, deletePrice, refresh } = useHistoricPrices(
-  filter,
-  t,
-);
+const { items, loading, save, deletePrice, refresh } = useHistoricPrices(filter, t);
 
-const {
-  openDialog,
-  setOpenDialog,
-  submitting,
-  closeDialog,
-  setSubmitFunc,
-  trySubmit,
-  setPostSubmitFunc,
-} = useHistoricPriceForm();
+const { openDialog, setOpenDialog, submitting, closeDialog, setSubmitFunc, trySubmit, setPostSubmitFunc }
+  = useHistoricPriceForm();
 
 function openForm(hPrice: HistoricalPrice | null = null) {
   set(update, !!hPrice);
@@ -138,10 +122,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
 
 <template>
   <TablePageLayout
-    :title="[
-      t('navigation_menu.manage_prices'),
-      t('navigation_menu.manage_prices_sub.historic_prices'),
-    ]"
+    :title="[t('navigation_menu.manage_prices'), t('navigation_menu.manage_prices_sub.historic_prices')]"
   >
     <template #buttons>
       <RuiTooltip :open-delay="400">
@@ -198,13 +179,13 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         </AssetSelect>
       </div>
       <RuiDataTable
+        v-model:sort="sort"
         outlined
         dense
         :cols="headers"
         :loading="loading"
         :rows="items"
         row-attr="fromAsset"
-        :sort.sync="sort"
       >
         <template #item.fromAsset="{ row }">
           <AssetDetails :asset="row.fromAsset" />
@@ -238,11 +219,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
 
     <BigDialog
       :display="openDialog"
-      :title="
-        update
-          ? t('price_management.dialog.edit_title')
-          : t('price_management.dialog.add_title')
-      "
+      :title="update ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
       :loading="submitting"
       @confirm="trySubmit()"
       @cancel="hideForm()"

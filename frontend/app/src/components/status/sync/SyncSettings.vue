@@ -1,32 +1,25 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 
-const props = defineProps<{
-  value: boolean;
-}>();
+const model = defineModel<boolean>({ required: true });
 
-const emit = defineEmits<{
-  (e: 'input', value: boolean): void;
-}>();
-
-const vModel = useSimpleVModel(props, emit);
 const { t } = useI18n();
 const { isMdAndUp } = useBreakpoint();
 </script>
 
 <template>
   <RuiMenu
-    v-model="vModel"
+    v-model="model"
     :popper="{ placement: isMdAndUp ? 'right-start' : 'bottom-end' }"
     :close-on-content-click="false"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         variant="text"
         icon
         size="sm"
         class="!p-2"
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon
           size="20"
@@ -46,7 +39,7 @@ const { isMdAndUp } = useBreakpoint();
         <RuiButton
           color="primary"
           variant="outlined"
-          @click="vModel = false"
+          @click="model = false"
         >
           {{ t('common.actions.close') }}
         </RuiButton>

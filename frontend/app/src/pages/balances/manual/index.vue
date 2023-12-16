@@ -80,7 +80,7 @@ function add() {
 
 onMounted(async () => {
   const { currentRoute } = router;
-  if (currentRoute.query.add) {
+  if (get(currentRoute).query.add) {
     add();
     await router.replace({ query: {} });
   }
@@ -91,10 +91,7 @@ onMounted(async () => {
 
 <template>
   <TablePageLayout
-    :title="[
-      t('navigation_menu.accounts_balances'),
-      t('navigation_menu.accounts_balances_sub.manual_balances'),
-    ]"
+    :title="[t('navigation_menu.accounts_balances'), t('navigation_menu.accounts_balances_sub.manual_balances')]"
   >
     <template #buttons>
       <PriceRefresh />
@@ -137,8 +134,8 @@ onMounted(async () => {
         v-if="balance"
         ref="form"
         v-model="balance"
+        v-model:error-messages="errorMessages"
         :submitting="loading"
-        :error-messages.sync="errorMessages"
       />
     </BigDialog>
   </TablePageLayout>

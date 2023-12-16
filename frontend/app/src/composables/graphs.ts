@@ -1,4 +1,4 @@
-import { useRotkiTheme } from '@rotki/ui-library-compat';
+import { useRotkiTheme } from '@rotki/ui-library';
 import type { BigNumber } from '@rotki/common';
 import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import type { TooltipModel } from 'chart.js';
@@ -6,10 +6,7 @@ import type { TooltipModel } from 'chart.js';
 export function useGraph(canvasId: string) {
   const getCanvasCtx = (): CanvasRenderingContext2D => {
     const canvas = document.getElementById(canvasId);
-    assert(
-      canvas && canvas instanceof HTMLCanvasElement,
-      'Canvas could not be found',
-    );
+    assert(canvas && canvas instanceof HTMLCanvasElement, 'Canvas could not be found');
     const context = canvas.getContext('2d');
     assert(context, 'Context could not be found');
     return context;
@@ -23,7 +20,7 @@ export function useGraph(canvasId: string) {
   const secondaryBlack = '#3f1300';
 
   const baseColor = computed(() => get(usedTheme).graph);
-  const fadeColor = computed(() => get(isDark) ? '#1e1e1e' : white);
+  const fadeColor = computed(() => (get(isDark) ? '#1e1e1e' : white));
 
   const gradient = computed(() => {
     const context = getCanvasCtx();
@@ -71,9 +68,7 @@ export function useTooltip(id: string) {
     value: bigNumberify(0),
   });
 
-  const tooltipDisplayOption = ref<TooltipDisplayOption>(
-    getDefaultTooltipDisplayOption(),
-  );
+  const tooltipDisplayOption = ref<TooltipDisplayOption>(getDefaultTooltipDisplayOption());
   const tooltipContent = ref<TooltipContent>(getDefaultTooltipContent());
 
   const calculateTooltipPosition = (

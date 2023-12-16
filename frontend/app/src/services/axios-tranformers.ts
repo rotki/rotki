@@ -2,12 +2,14 @@ import { BigNumber } from '@rotki/common';
 import type { AxiosResponseHeaders, AxiosResponseTransformer } from 'axios';
 
 function isObject(data: any): boolean {
-  return typeof data === 'object'
+  return (
+    typeof data === 'object'
     && data !== null
     && !(data instanceof RegExp)
     && !(data instanceof Error)
     && !(data instanceof Date)
-    && !(data instanceof BigNumber);
+    && !(data instanceof BigNumber)
+  );
 }
 
 function getUpdatedKey(key: string, camelCase: boolean): string {
@@ -27,9 +29,7 @@ function convertKeys(data: any, camelCase: boolean, skipKey: boolean): any {
     const skipConversion = skipKey || isEvmIdentifier(key);
     const updatedKey = skipConversion ? key : getUpdatedKey(key, camelCase);
 
-    converted[updatedKey] = isObject(datum)
-      ? convertKeys(datum, camelCase, skipKey && key === 'result')
-      : datum;
+    converted[updatedKey] = isObject(datum) ? convertKeys(datum, camelCase, skipKey && key === 'result') : datum;
     return key;
   });
 
@@ -62,10 +62,7 @@ export function jsonTransformer(data: any, headers: AxiosResponseHeaders): Axios
 }
 
 export function setupTransformer(skipRoot = false): AxiosResponseTransformer[] {
-  return [
-    jsonTransformer,
-    skipRoot ? noRootCamelCaseTransformer : camelCaseTransformer,
-  ];
+  return [jsonTransformer, skipRoot ? noRootCamelCaseTransformer : camelCaseTransformer];
 }
 
 export const basicAxiosTransformer = setupTransformer();

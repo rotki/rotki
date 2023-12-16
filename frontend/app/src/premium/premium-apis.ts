@@ -9,17 +9,11 @@ import type {
   UserSettingsApi,
   UtilsApi,
 } from '@rotki/common/lib/premium';
-import type {
-  LocationData,
-  OwnedAssets,
-  TimedAssetBalances,
-  TimedBalances,
-} from '@rotki/common/lib/statistics';
+import type { LocationData, OwnedAssets, TimedAssetBalances, TimedBalances } from '@rotki/common/lib/statistics';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
-  const { assetInfo, assetSymbol, assetName, tokenAddress }
-    = useAssetInfoRetrieval();
+  const { assetInfo, assetSymbol, assetName, tokenAddress } = useAssetInfoRetrieval();
 
   return {
     assetInfo,
@@ -37,11 +31,8 @@ export function assetsApi(): AssetsApi {
 export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { fetchNetValue, getNetValue } = useStatisticsStore();
-  const {
-    queryLatestAssetValueDistribution,
-    queryLatestLocationValueDistribution,
-    queryTimedBalancesData,
-  } = useStatisticsApi();
+  const { queryLatestAssetValueDistribution, queryLatestLocationValueDistribution, queryTimedBalancesData }
+    = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
   return {
@@ -55,12 +46,7 @@ export function statisticsApi(): StatisticsApi {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
-    timedBalances(
-      asset: string,
-      start: number,
-      end: number,
-      collectionId?: number,
-    ): Promise<TimedBalances> {
+    timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
     async fetchNetValue(): Promise<void> {
@@ -71,22 +57,11 @@ export function statisticsApi(): StatisticsApi {
 }
 
 export function userSettings(): UserSettingsApi {
-  const {
-    privacyMode,
-    scrambleData,
-    shouldShowAmount,
-    shouldShowPercentage,
-    scrambleMultiplier,
-  } = storeToRefs(useSessionSettingsStore());
-  const { floatingPrecision, currencySymbol } = storeToRefs(
-    useGeneralSettingsStore(),
-  );
-  const {
-    selectedTheme,
-    dateInputFormat,
-    graphZeroBased,
-    showGraphRangeSelector,
-  } = storeToRefs(useFrontendSettingsStore());
+  const { privacyMode, scrambleData, shouldShowAmount, shouldShowPercentage, scrambleMultiplier }
+    = storeToRefs(useSessionSettingsStore());
+  const { floatingPrecision, currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { selectedTheme, dateInputFormat, graphZeroBased, showGraphRangeSelector }
+    = storeToRefs(useFrontendSettingsStore());
 
   return {
     floatingPrecision,
@@ -112,8 +87,7 @@ export function balancesApi(): BalancesApi {
     // TODO: deprecate on the next major components version (it's only here for backwards compat)
     aggregatedBalances: balances(false, false),
     balances: (groupMultiChain = false) => balances(false, groupMultiChain),
-    exchangeRate: (currency: string) =>
-      computed(() => get(exchangeRate(currency)) ?? One),
+    exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
   };
 }
 
@@ -122,21 +96,17 @@ export function balancerApi(): BalancerApi {
   const { pools, addresses } = storeToRefs(store);
   return {
     balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
-    balancerBalances: (addresses: string[]) =>
-      store.balancerBalances(addresses),
+    balancerBalances: (addresses: string[]) => store.balancerBalances(addresses),
     balancerPools: pools,
     balancerAddresses: addresses,
-    fetchBalancerBalances: async (refresh: boolean) =>
-      await store.fetchBalances(refresh),
+    fetchBalancerBalances: async (refresh: boolean) => await store.fetchBalances(refresh),
   };
 }
 
 type ProfitLossRef = ComputedRef<ProfitLossModel[]>;
 
 export function compoundApi(): CompoundApi {
-  const { rewards, debtLoss, interestProfit, liquidationProfit } = storeToRefs(
-    useCompoundStore(),
-  );
+  const { rewards, debtLoss, interestProfit, liquidationProfit } = storeToRefs(useCompoundStore());
 
   return {
     compoundRewards: rewards as ProfitLossRef,

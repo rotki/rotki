@@ -28,9 +28,7 @@ function checkEditableItem() {
   const form = get(editableItem);
   if (form)
     set(formData, form);
-
-  else
-    set(formData, emptyCustomAsset());
+  else set(formData, emptyCustomAsset());
 }
 
 watchImmediate(editableItem, checkEditableItem);
@@ -39,8 +37,7 @@ function input(asset: Partial<CustomAsset>) {
   set(formData, { ...get(formData), ...asset });
 }
 
-const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null>
-  = ref(null);
+const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
 
 const { t } = useI18n();
 
@@ -58,16 +55,10 @@ const note = computed({
 
 const rules = {
   name: {
-    required: helpers.withMessage(
-      t('asset_form.name_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('asset_form.name_non_empty').toString(), required),
   },
   type: {
-    required: helpers.withMessage(
-      t('asset_form.type_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('asset_form.type_non_empty').toString(), required),
   },
 };
 
@@ -110,9 +101,7 @@ async function save(): Promise<string> {
   catch (error: any) {
     const obj = { message: error.message };
     setMessage({
-      description: editMode
-        ? t('asset_management.edit_error', obj)
-        : t('asset_management.add_error', obj),
+      description: editMode ? t('asset_management.edit_error', obj) : t('asset_management.add_error', obj),
     });
   }
 

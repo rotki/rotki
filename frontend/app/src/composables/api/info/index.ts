@@ -7,14 +7,11 @@ import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useInfoApi() {
   const info = async (checkForUpdates = false): Promise<BackendInfo> => {
-    const response = await api.instance.get<ActionResult<BackendInfo>>(
-      '/info',
-      {
-        params: snakeCaseTransformer({
-          checkForUpdates,
-        }),
-      },
-    );
+    const response = await api.instance.get<ActionResult<BackendInfo>>('/info', {
+      params: snakeCaseTransformer({
+        checkForUpdates,
+      }),
+    });
     return BackendInfo.parse(handleResponse(response));
   };
 

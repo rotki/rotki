@@ -7,18 +7,14 @@ export const useLocations = createSharedComposable(() => {
   const { tradeLocations } = storeToRefs(useLocationStore());
 
   const exchangeName = (location: MaybeRef<string>): string => {
-    const exchange = get(tradeLocations).find(
-      tl => tl.identifier === get(location),
-    );
+    const exchange = get(tradeLocations).find(tl => tl.identifier === get(location));
 
     return exchange?.name ?? '';
   };
 
   const { getChainName, getChainImageUrl } = useSupportedChains();
 
-  const locationData = (
-    identifier: MaybeRef<string | null>,
-  ): ComputedRef<TradeLocationData | null> =>
+  const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> =>
     computed(() => {
       const id = get(identifier);
       if (!id)
@@ -39,8 +35,7 @@ export const useLocations = createSharedComposable(() => {
       return locations.find(location => location.identifier === id) ?? null;
     });
 
-  const getLocationData = (identifier: string): TradeLocationData | null =>
-    get(locationData(identifier));
+  const getLocationData = (identifier: string): TradeLocationData | null => get(locationData(identifier));
 
   return {
     tradeLocations,

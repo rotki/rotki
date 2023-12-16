@@ -11,7 +11,7 @@
       "vue-i18n",
       "vite/client",
       "vite-plugin-vue-layouts/client",
-      "unplugin-vue-define-options/macros-global"
+      "@intlify/unplugin-vue-i18n/messages"
     ]
   },
   "include": [
@@ -21,13 +21,5 @@
     "src/**/*.vue",
     "components.d.ts"
   ],
-  "exclude": ["node_modules/**", "**/.*"],
-  "ts-node": {
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  },
-  "vueCompilerOptions": {
-    "target": 2.7
-  }
+  "exclude": ["node_modules/**", "**/.*"]
 }

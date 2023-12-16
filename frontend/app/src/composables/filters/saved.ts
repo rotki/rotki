@@ -1,9 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  BaseSuggestion,
-  SavedFilterLocation,
-  Suggestion,
-} from '@/types/filtering';
+import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import type { ActionStatus } from '@/types/action';
 
 const LIMIT_PER_LOCATION = 10;
@@ -29,9 +25,7 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
 
   const { t } = useI18n();
 
-  const saveFilters = async (
-    filters: BaseSuggestion[][],
-  ): Promise<ActionStatus> => {
+  const saveFilters = async (filters: BaseSuggestion[][]): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };
     allSaved[get(location)] = filters;
     return await updateSetting({
@@ -55,10 +49,7 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
       ...currentFilters,
       newFilter.map(item => ({
         key: item.key,
-        value:
-          !item.asset || typeof item.value === 'string'
-            ? item.value
-            : item.value.identifier,
+        value: !item.asset || typeof item.value === 'string' ? item.value : item.value.identifier,
         exclude: item.exclude,
       })),
     ];

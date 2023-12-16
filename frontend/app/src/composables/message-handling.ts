@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {
   type Notification,
   type NotificationAction,
@@ -53,15 +52,11 @@ export function useMessageHandling() {
     setTxQueryStatus(data);
   };
 
-  const handleUnDecodedTransaction = (
-    data: EvmUnDecodedTransactionsData,
-  ): void => {
+  const handleUnDecodedTransaction = (data: EvmUnDecodedTransactionsData): void => {
     setUndecodedTransactionsStatus(data);
   };
 
-  const handleProtocolCacheUpdates = (
-    data: ProtocolCacheUpdatesData,
-  ): void => {
+  const handleProtocolCacheUpdates = (data: ProtocolCacheUpdatesData): void => {
     setProtocolCacheStatus(data);
   };
 
@@ -69,10 +64,7 @@ export function useMessageHandling() {
     setEventsQueryStatus(data);
   };
 
-  const handleLegacyMessage = (
-    message: string,
-    isWarning: boolean,
-  ): Notification => ({
+  const handleLegacyMessage = (message: string, isWarning: boolean): Notification => ({
     title: t('notification_messages.backend.title'),
     message,
     display: !isWarning,
@@ -80,9 +72,7 @@ export function useMessageHandling() {
     priority: Priority.BULK,
   });
 
-  const handlePremiumStatusUpdate = (
-    data: PremiumStatusUpdateData,
-  ): Notification | null => {
+  const handlePremiumStatusUpdate = (data: PremiumStatusUpdateData): Notification | null => {
     const { isPremiumActive: active, expired } = data;
     const premium = usePremium();
     const isPremium = get(premium);
@@ -113,12 +103,8 @@ export function useMessageHandling() {
   const { setUpgradedAddresses } = useAccountMigrationStore();
   const { getChainName } = useSupportedChains();
 
-  const handleNewTokenDetectedMessage = (
-    data: NewDetectedToken,
-  ): Notification | null => {
-    const notification = get(notifications).find(
-      ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS,
-    );
+  const handleNewTokenDetectedMessage = (data: NewDetectedToken): Notification | null => {
+    const notification = get(notifications).find(({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS);
 
     const countAdded = addNewDetectedToken(data);
     const count = (notification?.groupCount || 0) + +countAdded;
@@ -182,10 +168,14 @@ export function useMessageHandling() {
     const theGraphWarning = service === 'thegraph';
 
     return {
-      title: theGraphWarning ? t('notification_messages.missing_api_key.thegraph.title', metadata) : t('notification_messages.missing_api_key.etherscan.title', metadata),
+      title: theGraphWarning
+        ? t('notification_messages.missing_api_key.thegraph.title', metadata)
+        : t('notification_messages.missing_api_key.etherscan.title', metadata),
       message: '',
       i18nParam: {
-        message: theGraphWarning ? 'notification_messages.missing_api_key.thegraph.message' : 'notification_messages.missing_api_key.etherscan.message',
+        message: theGraphWarning
+          ? 'notification_messages.missing_api_key.thegraph.message'
+          : 'notification_messages.missing_api_key.etherscan.message',
         choice: 0,
         props: {
           ...metadata,
@@ -200,9 +190,7 @@ export function useMessageHandling() {
     };
   };
 
-  const handleAccountingRuleConflictMessage = (
-    data: AccountingRuleConflictData,
-  ): Notification => {
+  const handleAccountingRuleConflictMessage = (data: AccountingRuleConflictData): Notification => {
     const { numOfConflicts } = data;
 
     return {
@@ -269,9 +257,7 @@ export function useMessageHandling() {
   };
 
   const handleMessage = async (data: string): Promise<void> => {
-    const message: WebsocketMessage = WebsocketMessage.parse(
-      camelCaseTransformer(JSON.parse(data)),
-    );
+    const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
     const type = message.type;
 
     const notifications: Notification[] = [];
@@ -369,8 +355,7 @@ export function useMessageHandling() {
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
         updateDataMigrationStatus(object);
-      else
-        logger.error('unsupported message:', message);
+      else logger.error('unsupported message:', message);
     }
     catch {
       notifications.push(handleLegacyMessage(message, isWarning));

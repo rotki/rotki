@@ -93,9 +93,7 @@ interface EthStakingValidatorFilter {
   validators: Eth2ValidatorEntry[];
 }
 
-export type EthStakingFilter =
-  | EthStakingDepositorFilter
-  | EthStakingValidatorFilter;
+export type EthStakingFilter = EthStakingDepositorFilter | EthStakingValidatorFilter;
 
 export type EthStakingFilterType = 'address' | 'validator';
 

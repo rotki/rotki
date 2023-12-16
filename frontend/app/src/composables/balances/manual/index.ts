@@ -12,24 +12,17 @@ function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
     };
     if (!ownedAssets[asset])
       ownedAssets[asset] = balance;
-    else
-      ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
+    else ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
   }
   return ownedAssets;
 }
 
 export function useManualAssetBalances() {
-  const { manualBalances, manualLiabilities } = storeToRefs(
-    useManualBalancesStore(),
-  );
+  const { manualBalances, manualLiabilities } = storeToRefs(useManualBalancesStore());
 
-  const balances: ComputedRef<AssetBalances> = computed(() =>
-    toAssetBalances(get(manualBalances)),
-  );
+  const balances = computed<AssetBalances>(() => toAssetBalances(get(manualBalances)));
 
-  const liabilities: ComputedRef<AssetBalances> = computed(() =>
-    toAssetBalances(get(manualLiabilities)),
-  );
+  const liabilities = computed<AssetBalances>(() => toAssetBalances(get(manualLiabilities)));
 
   return {
     balances,

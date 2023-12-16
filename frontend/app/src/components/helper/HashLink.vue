@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
-import {
-  type ExplorerUrls,
-  explorerUrls,
-  isChains,
-} from '@/types/asset/asset-urls';
+import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 
 const props = withDefaults(
   defineProps<{
@@ -125,9 +121,7 @@ const base = computed<string>(() => {
 
 const url = computed<string>(() => get(base) + get(text));
 
-const displayUrl = computed<string>(
-  () => get(base) + truncateAddress(get(text), 10),
-);
+const displayUrl = computed<string>(() => get(base) + truncateAddress(get(text), 10));
 
 const { href, onLinkClick } = useLinks(url);
 </script>

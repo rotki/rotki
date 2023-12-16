@@ -11,19 +11,14 @@ import type { PendingTask } from '@/types/task';
 
 export function useManualBalancesApi() {
   const queryManualBalances = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      'balances/manual',
-      {
-        params: snakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+    const response = await api.instance.get<ActionResult<PendingTask>>('balances/manual', {
+      params: snakeCaseTransformer({ asyncQuery: true }),
+      validateStatus: validWithSessionAndExternalService,
+    });
     return handleResponse(response);
   };
 
-  const addManualBalances = async (
-    balances: RawManualBalance[],
-  ): Promise<PendingTask> => {
+  const addManualBalances = async (balances: RawManualBalance[]): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',
       snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
@@ -34,9 +29,7 @@ export function useManualBalancesApi() {
     return handleResponse(response);
   };
 
-  const editManualBalances = async (
-    balances: ManualBalance[],
-  ): Promise<PendingTask> => {
+  const editManualBalances = async (balances: ManualBalance[]): Promise<PendingTask> => {
     const response = await api.instance.patch<ActionResult<PendingTask>>(
       'balances/manual',
       snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
@@ -47,16 +40,11 @@ export function useManualBalancesApi() {
     return handleResponse(response);
   };
 
-  const deleteManualBalances = async (
-    ids: number[],
-  ): Promise<ManualBalances> => {
-    const response = await api.instance.delete<ActionResult<ManualBalances>>(
-      'balances/manual',
-      {
-        data: { ids },
-        validateStatus: validWithParamsSessionAndExternalService,
-      },
-    );
+  const deleteManualBalances = async (ids: number[]): Promise<ManualBalances> => {
+    const response = await api.instance.delete<ActionResult<ManualBalances>>('balances/manual', {
+      data: { ids },
+      validateStatus: validWithParamsSessionAndExternalService,
+    });
     return ManualBalances.parse(handleResponse(response));
   };
 

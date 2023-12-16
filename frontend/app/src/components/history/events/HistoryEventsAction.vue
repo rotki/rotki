@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { toEvmChainAndTxHash } from '@/utils/history';
-import type {
-  EvmChainAndTxHash,
-  EvmHistoryEvent,
-  HistoryEventEntry,
-} from '@/types/history/events';
+import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -30,7 +26,10 @@ const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
-const deleteTxAndEvents = ({ txHash, location }: EvmHistoryEvent) => emit('delete-tx', { txHash, evmChain: getChain(location) });
+
+function deleteTxAndEvents({ txHash, location }: EvmHistoryEvent) {
+  return emit('delete-tx', { txHash, evmChain: getChain(location) });
+}
 </script>
 
 <template>
@@ -40,13 +39,13 @@ const deleteTxAndEvents = ({ txHash, location }: EvmHistoryEvent) => emit('delet
       :popper="{ placement: 'bottom-end' }"
       close-on-content-click
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <RuiButton
           variant="text"
           icon
           size="sm"
           class="!p-2"
-          v-on="on"
+          v-bind="attrs"
         >
           <RuiIcon
             name="more-2-fill"
@@ -71,11 +70,7 @@ const deleteTxAndEvents = ({ txHash, location }: EvmHistoryEvent) => emit('delet
           <template #prepend>
             <RuiIcon :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'" />
           </template>
-          {{
-            event.ignoredInAccounting
-              ? t('transactions.unignore')
-              : t('transactions.ignore')
-          }}
+          {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
         </RuiButton>
         <template v-if="evmEvent">
           <RuiButton

@@ -20,9 +20,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 
 export function useAssetManagementApi() {
-  const queryAllAssets = async (
-    payload: MaybeRef<AssetRequestPayload>,
-  ): Promise<Collection<SupportedAsset>> => {
+  const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
       snakeCaseTransformer(get(payload)),
@@ -31,9 +29,7 @@ export function useAssetManagementApi() {
       },
     );
 
-    return mapCollectionResponse(
-      SupportedAssets.parse(handleResponse(response)),
-    );
+    return mapCollectionResponse(SupportedAssets.parse(handleResponse(response)));
   };
 
   const queryAllCustomAssets = async (
@@ -51,110 +47,75 @@ export function useAssetManagementApi() {
   };
 
   const queryOwnedAssets = async (): Promise<string[]> => {
-    const ownedAssets = await api.instance.get<ActionResult<string[]>>(
-      '/assets',
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const ownedAssets = await api.instance.get<ActionResult<string[]>>('/assets', {
+      validateStatus: validStatus,
+    });
 
     return OwnedAssets.parse(handleResponse(ownedAssets));
   };
 
   const getAssetTypes = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/assets/types',
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<string[]>>('/assets/types', {
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const addAsset = async (
-    asset: Omit<SupportedAsset, 'identifier'>,
-  ): Promise<AssetIdResponse> => {
-    const response = await api.instance.put<ActionResult<AssetIdResponse>>(
-      '/assets/all',
-      snakeCaseTransformer(asset),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addAsset = async (asset: Omit<SupportedAsset, 'identifier'>): Promise<AssetIdResponse> => {
+    const response = await api.instance.put<ActionResult<AssetIdResponse>>('/assets/all', snakeCaseTransformer(asset), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const editAsset = async (asset: SupportedAsset): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/assets/all',
-      snakeCaseTransformer(asset),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.patch<ActionResult<boolean>>('/assets/all', snakeCaseTransformer(asset), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const deleteAsset = async (identifier: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/assets/all',
-      {
-        data: snakeCaseTransformer({ identifier }),
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/assets/all', {
+      data: snakeCaseTransformer({ identifier }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const getCustomAssetTypes = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/assets/custom/types',
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<string[]>>('/assets/custom/types', {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const addCustomAsset = async (
-    asset: Omit<CustomAsset, 'identifier'>,
-  ): Promise<string> => {
-    const response = await api.instance.put<ActionResult<string>>(
-      '/assets/custom',
-      snakeCaseTransformer(asset),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addCustomAsset = async (asset: Omit<CustomAsset, 'identifier'>): Promise<string> => {
+    const response = await api.instance.put<ActionResult<string>>('/assets/custom', snakeCaseTransformer(asset), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const editCustomAsset = async (asset: CustomAsset): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/assets/custom',
-      snakeCaseTransformer(asset),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.patch<ActionResult<boolean>>('/assets/custom', snakeCaseTransformer(asset), {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
   const deleteCustomAsset = async (identifier: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/assets/custom',
-      {
-        data: snakeCaseTransformer({ identifier }),
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/assets/custom', {
+      data: snakeCaseTransformer({ identifier }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };

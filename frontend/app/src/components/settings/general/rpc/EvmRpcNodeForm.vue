@@ -6,12 +6,12 @@ import { toMessages } from '@/utils/validation';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const props = defineProps<{
-  value: EvmRpcNodeManageState;
+  modelValue: EvmRpcNodeManageState;
   errorMessages: Record<string, string[] | string>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: EvmRpcNodeManageState): void;
+  (e: 'update:model-value', value: EvmRpcNodeManageState): void;
   (e: 'update:error-messages', value: Record<string, string[] | string>): void;
 }>();
 
@@ -53,16 +53,20 @@ const rules = {
   weight: { required, between: between(0, 100) },
 };
 
-const v$ = useVuelidate(rules, {
-  name,
-  endpoint,
-  weight,
-  active,
-  owned,
-}, {
-  $autoDirty: true,
-  $externalResults: errors,
-});
+const v$ = useVuelidate(
+  rules,
+  {
+    name,
+    endpoint,
+    weight,
+    active,
+    owned,
+  },
+  {
+    $autoDirty: true,
+    $externalResults: errors,
+  },
+);
 
 watch(errors, (errors) => {
   if (!isEmpty(errors))

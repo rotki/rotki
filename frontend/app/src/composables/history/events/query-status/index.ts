@@ -1,10 +1,10 @@
-export function useQueryStatus<T extends { period?: [number, number] }>(data: ComputedRef<T[]>, isStatusFinished: (item: T) => boolean) {
-  const sortedQueryStatus = useSorted<T>(
-    data,
-    (a, b) => (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0),
-  );
+export function useQueryStatus<T extends { period?: [number, number] }>(
+  data: ComputedRef<T[]>,
+  isStatusFinished: (item: T) => boolean,
+) {
+  const sortedQueryStatus = useSorted<T>(data, (a, b) => (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0));
 
-  const queryingLength: ComputedRef<number> = computed(
+  const queryingLength = computed<number>(
     () => get(data).filter(item => !isStatusFinished(item)).length,
   );
 

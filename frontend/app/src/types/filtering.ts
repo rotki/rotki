@@ -25,8 +25,7 @@ interface BaseMatcher<K, KV = void> {
   readonly multiple?: boolean;
 }
 
-export interface StringSuggestionMatcher<K, KV = void>
-  extends BaseMatcher<K, KV> {
+export interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
   readonly string: true;
   readonly suggestions: StringSuggestion;
   readonly validate: (value: string) => boolean;
@@ -56,11 +55,7 @@ export type MatchedKeyword<T extends string> = {
 };
 
 export type MatchedKeywordWithBehaviour<T extends string> = {
-  [key in T]?:
-    | string
-    | string[]
-    | boolean
-    | FilterObjectWithBehaviour<string | string[] | boolean>;
+  [key in T]?: string | string[] | boolean | FilterObjectWithBehaviour<string | string[] | boolean>;
 };
 
 export const BaseSuggestion = z.object({
@@ -87,8 +82,7 @@ export enum SavedFilterLocation {
 }
 
 export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>) {
-  return async (value: string) =>
-    await assetSearch(value, 5);
+  return async (value: string) => await assetSearch(value, 5);
 }
 
 export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>) {
@@ -105,16 +99,13 @@ export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef
 }
 
 export function dateValidator(dateInputFormat: Ref<DateFormat>) {
-  return (value: string) =>
-    value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
+  return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
 }
 
 export function dateSerializer(dateInputFormat: Ref<DateFormat>) {
-  return (date: string) =>
-    convertToTimestamp(date, get(dateInputFormat)).toString();
+  return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
 }
 
 export function dateDeserializer(dateInputFormat: Ref<DateFormat>) {
-  return (timestamp: string) =>
-    convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
+  return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }

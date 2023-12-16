@@ -1,7 +1,4 @@
-import {
-  type EvmTransactionQueryData,
-  EvmTransactionsQueryStatus,
-} from '@/types/websocket-messages';
+import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { MaybeRef } from '@vueuse/core';
 
@@ -12,19 +9,16 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
   const { queryStatus, isAllFinished } = storeToRefs(store);
   const { getChain } = useSupportedChains();
 
-  const filtered: ComputedRef<EvmTransactionQueryData[]> = computed(() => {
+  const filtered = computed<EvmTransactionQueryData[]>(() => {
     const statuses = Object.values(get(queryStatus));
     const chains = get(onlyChains);
     if (chains.length === 0)
       return statuses;
 
-    return statuses.filter(({ evmChain }) =>
-      chains.includes(getChain(evmChain)),
-    );
+    return statuses.filter(({ evmChain }) => chains.includes(getChain(evmChain)));
   });
 
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
-    = useQueryStatus(filtered, isStatusFinished);
+  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } = useQueryStatus(filtered, isStatusFinished);
 
   const statusesData = computed(() => ({
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
@@ -39,23 +33,18 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
     },
     [EvmTransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: {
       index: 2,
-      label: t(
-        'transactions.query_status.statuses.querying_internal_transactions',
-      ),
+      label: t('transactions.query_status.statuses.querying_internal_transactions'),
     },
     [EvmTransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: {
       index: 3,
-      label: t(
-        'transactions.query_status.statuses.querying_evm_tokens_transactions',
-      ),
+      label: t('transactions.query_status.statuses.querying_evm_tokens_transactions'),
     },
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: {
       index: 4,
     },
   }));
 
-  const getStatusData = (data: EvmTransactionQueryData) =>
-    get(statusesData)[data.status];
+  const getStatusData = (data: EvmTransactionQueryData) => get(statusesData)[data.status];
 
   const getLabel = (data: EvmTransactionQueryData) => {
     const statusData = getStatusData(data);
@@ -68,22 +57,15 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
   const getItemTranslationKey = (item: EvmTransactionQueryData) => {
     const isRange = isQueryStatusRange(item);
 
-    if (isStatusFinished(item)) {
-      return isRange
-        ? 'transactions.query_status.done_date_range'
-        : 'transactions.query_status.done_end_date';
-    }
+    if (isStatusFinished(item))
+      return isRange ? 'transactions.query_status.done_date_range' : 'transactions.query_status.done_end_date';
 
-    return isRange
-      ? 'transactions.query_status.date_range'
-      : 'transactions.query_status.end_date';
+    return isRange ? 'transactions.query_status.date_range' : 'transactions.query_status.end_date';
   };
 
-  const getKey = (item: EvmTransactionQueryData) =>
-    item.address + item.evmChain;
+  const getKey = (item: EvmTransactionQueryData) => item.address + item.evmChain;
 
-  const isQueryFinished = (item: EvmTransactionQueryData) =>
-    isStatusFinished(item);
+  const isQueryFinished = (item: EvmTransactionQueryData) => isStatusFinished(item);
 
   return {
     getLabel,

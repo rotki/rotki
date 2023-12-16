@@ -14,124 +14,62 @@ import {
   type RoundingMode,
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
-import {
-  CURRENT_DEFAULT_THEME_VERSION,
-  DARK_COLORS,
-  DEFAULT_THEME_HISTORIES,
-  LIGHT_COLORS,
-} from '@/plugins/theme';
-import type {
-  TimeFramePeriod,
-  TimeFrameSetting,
-} from '@rotki/common/lib/settings/graphs';
+import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
+import type { TimeFramePeriod, TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 import type { CurrencyLocation } from '@/types/currency-location';
 import type { DateFormat } from '@/types/date-format';
 import type { ActionStatus } from '@/types/action';
-import type {
-  BaseSuggestion,
-  SavedFilterLocation,
-} from '@/types/filtering';
+import type { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = reactive(FrontendSettings.parse({}));
-  const defiSetupDone: ComputedRef<boolean> = computed(
-    () => settings.defiSetupDone,
-  );
-  const language: ComputedRef<SupportedLanguage> = computed(
-    () => settings.language,
-  );
-  const timeframeSetting: ComputedRef<TimeFrameSetting> = computed(
-    () => settings.timeframeSetting,
-  );
-  const visibleTimeframes: ComputedRef<TimeFrameSetting[]> = computed(
-    () => settings.visibleTimeframes,
-  );
-  const lastKnownTimeframe: ComputedRef<TimeFramePeriod> = computed(
-    () => settings.lastKnownTimeframe,
-  );
-  const queryPeriod: ComputedRef<number> = computed(() => settings.queryPeriod);
-  const profitLossReportPeriod: ComputedRef<ProfitLossTimeframe> = computed(
-    () => settings.profitLossReportPeriod,
-  );
-  const thousandSeparator: ComputedRef<string> = computed(
-    () => settings.thousandSeparator,
-  );
-  const decimalSeparator: ComputedRef<string> = computed(
-    () => settings.decimalSeparator,
-  );
-  const currencyLocation: ComputedRef<CurrencyLocation> = computed(
-    () => settings.currencyLocation,
-  );
-  const abbreviateNumber: ComputedRef<boolean> = computed(
-    () => settings.abbreviateNumber,
-  );
-  const minimumDigitToBeAbbreviated: ComputedRef<number> = computed(
-    () => settings.minimumDigitToBeAbbreviated,
-  );
-  const refreshPeriod: ComputedRef<RefreshPeriod> = computed(
-    () => settings.refreshPeriod,
-  );
-  const explorers: ComputedRef<ExplorersSettings> = computed(
-    () => settings.explorers,
-  );
-  const itemsPerPage: WritableComputedRef<number> = computed({
+  const defiSetupDone = computed<boolean>(() => settings.defiSetupDone);
+  const language = computed<SupportedLanguage>(() => settings.language);
+  const timeframeSetting = computed<TimeFrameSetting>(() => settings.timeframeSetting);
+  const visibleTimeframes = computed<TimeFrameSetting[]>(() => settings.visibleTimeframes);
+  const lastKnownTimeframe = computed<TimeFramePeriod>(() => settings.lastKnownTimeframe);
+  const queryPeriod = computed<number>(() => settings.queryPeriod);
+  const profitLossReportPeriod = computed<ProfitLossTimeframe>(() => settings.profitLossReportPeriod);
+  const thousandSeparator = computed<string>(() => settings.thousandSeparator);
+  const decimalSeparator = computed<string>(() => settings.decimalSeparator);
+  const currencyLocation = computed<CurrencyLocation>(() => settings.currencyLocation);
+  const abbreviateNumber = computed<boolean>(() => settings.abbreviateNumber);
+  const minimumDigitToBeAbbreviated = computed<number>(() => settings.minimumDigitToBeAbbreviated);
+  const refreshPeriod = computed<RefreshPeriod>(() => settings.refreshPeriod);
+  const explorers = computed<ExplorersSettings>(() => settings.explorers);
+  const itemsPerPage = computed<number>({
     get: () => settings.itemsPerPage,
     set: (value: number) => {
       settings.itemsPerPage = value;
     },
   });
-  const amountRoundingMode: ComputedRef<RoundingMode> = computed(
-    () => settings.amountRoundingMode,
+  const amountRoundingMode = computed<RoundingMode>(() => settings.amountRoundingMode);
+  const valueRoundingMode = computed<RoundingMode>(() => settings.valueRoundingMode);
+  const selectedTheme = computed<Theme>(() => settings.selectedTheme);
+  const lightTheme = computed<ThemeColors>(() => settings.lightTheme);
+  const darkTheme = computed<ThemeColors>(() => settings.darkTheme);
+  const defaultThemeVersion = computed<number>(() => settings.defaultThemeVersion);
+  const graphZeroBased = computed<boolean>(() => settings.graphZeroBased);
+  const showGraphRangeSelector = computed<boolean>(() => settings.showGraphRangeSelector);
+  const nftsInNetValue = computed<boolean>(() => settings.nftsInNetValue);
+  const renderAllNftImages = computed<boolean>(() => settings.renderAllNftImages);
+  const whitelistedDomainsForNftImages = computed<string[]>(() => settings.whitelistedDomainsForNftImages);
+  const dashboardTablesVisibleColumns = computed<DashboardTablesVisibleColumns>(
+    () => settings.dashboardTablesVisibleColumns,
   );
-  const valueRoundingMode: ComputedRef<RoundingMode> = computed(
-    () => settings.valueRoundingMode,
+  const dateInputFormat = computed<DateFormat>(() => settings.dateInputFormat);
+  const versionUpdateCheckFrequency = computed<number>(() => settings.versionUpdateCheckFrequency);
+  const enableAliasNames = computed<boolean>(() => settings.enableAliasNames);
+  const blockchainRefreshButtonBehaviour = computed<BlockchainRefreshButtonBehaviour>(
+    () => settings.blockchainRefreshButtonBehaviour,
   );
-  const selectedTheme: ComputedRef<Theme> = computed(
-    () => settings.selectedTheme,
+  const shouldRefreshValidatorDailyStats = computed<boolean>(
+    () => settings.shouldRefreshValidatorDailyStats,
   );
-  const lightTheme: ComputedRef<ThemeColors> = computed(
-    () => settings.lightTheme,
-  );
-  const darkTheme: ComputedRef<ThemeColors> = computed(
-    () => settings.darkTheme,
-  );
-  const defaultThemeVersion: ComputedRef<number> = computed(
-    () => settings.defaultThemeVersion,
-  );
-  const graphZeroBased: ComputedRef<boolean> = computed(
-    () => settings.graphZeroBased,
-  );
-  const showGraphRangeSelector: ComputedRef<boolean> = computed(
-    () => settings.showGraphRangeSelector,
-  );
-  const nftsInNetValue: ComputedRef<boolean> = computed(
-    () => settings.nftsInNetValue,
-  );
-  const renderAllNftImages: ComputedRef<boolean> = computed(
-    () => settings.renderAllNftImages,
-  );
-  const whitelistedDomainsForNftImages: ComputedRef<string[]> = computed(
-    () => settings.whitelistedDomainsForNftImages,
-  );
-  const dashboardTablesVisibleColumns: ComputedRef<DashboardTablesVisibleColumns>
-    = computed(() => settings.dashboardTablesVisibleColumns);
-  const dateInputFormat: ComputedRef<DateFormat> = computed(
-    () => settings.dateInputFormat,
-  );
-  const versionUpdateCheckFrequency: ComputedRef<number> = computed(
-    () => settings.versionUpdateCheckFrequency,
-  );
-  const enableAliasNames: ComputedRef<boolean> = computed(
-    () => settings.enableAliasNames,
-  );
-  const blockchainRefreshButtonBehaviour: ComputedRef<BlockchainRefreshButtonBehaviour>
-    = computed(() => settings.blockchainRefreshButtonBehaviour);
-  const shouldRefreshValidatorDailyStats: ComputedRef<boolean>
-      = computed(() => settings.shouldRefreshValidatorDailyStats);
 
-  const savedFilters: ComputedRef<{
+  const savedFilters = computed<{
     [key in SavedFilterLocation]?: BaseSuggestion[][];
-  }> = computed(() => settings.savedFilters);
+  }>(() => settings.savedFilters);
 
   const api = useSettingsApi();
 
@@ -140,8 +78,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const checkMachineLanguage = (): void => {
     if (get(forceUpdateMachineLanguage) === 'true')
       set(lastLanguage, get(language));
-    else
-      set(lastLanguage, SupportedLanguage.EN);
+    else set(lastLanguage, SupportedLanguage.EN);
   };
 
   const update = (update: FrontendSettings): void => {
@@ -149,9 +86,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     checkMachineLanguage();
   };
 
-  async function updateSetting(
-    payload: FrontendSettingsPayload,
-  ): Promise<ActionStatus> {
+  async function updateSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     const props = Object.keys(payload);
     assert(props.length > 0, 'Payload must be not-empty');
     try {
@@ -164,10 +99,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
       if (payload.thousandSeparator || payload.decimalSeparator) {
         BigNumber.config({
-          FORMAT: getBnFormat(
-            other.frontendSettings.thousandSeparator,
-            other.frontendSettings.decimalSeparator,
-          ),
+          FORMAT: getBnFormat(other.frontendSettings.thousandSeparator, other.frontendSettings.decimalSeparator),
         });
       }
 
@@ -213,8 +145,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
         const accentColors = Object.keys(ThemeColors.shape);
 
-        const isKeyOfThemeColors = (key: string): key is keyof ThemeColors =>
-          accentColors.includes(key);
+        const isKeyOfThemeColors = (key: string): key is keyof ThemeColors => accentColors.includes(key);
 
         accentColors.forEach((key) => {
           if (!isKeyOfThemeColors(key))
@@ -281,8 +212,5 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useFrontendSettingsStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useFrontendSettingsStore, import.meta.hot));

@@ -11,14 +11,12 @@ const { t } = useI18n();
 
 const assets = computed(() => {
   const { assets } = get(summary);
-  return assets.sort(
-    ({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
-      if (usdValue.eq(otherUsdValue))
-        return 0;
+  return assets.sort(({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
+    if (usdValue.eq(otherUsdValue))
+      return 0;
 
-      return usdValue.gt(otherUsdValue) ? -1 : 1;
-    },
-  );
+    return usdValue.gt(otherUsdValue) ? -1 : 1;
+  });
 });
 
 const { getDefiName, getDefiImage, loading } = useDefiMetadata();
@@ -72,9 +70,7 @@ const imageUrl = getDefiImage(protocol);
       <RuiDivider class="my-4" />
     </div>
     <div v-if="summary.deposits">
-      <div
-        class="pb-2 flex flex-row justify-between text-subtitle-1 font-medium"
-      >
+      <div class="pb-2 flex flex-row justify-between text-subtitle-1 font-medium">
         {{ t('common.deposits') }}
         <RouterLink
           v-if="summary.depositsUrl"
@@ -128,12 +124,12 @@ const imageUrl = getDefiImage(protocol);
         v-model="details"
         max-width="450px"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiButton
             size="sm"
             variant="text"
             color="primary"
-            v-on="on"
+            v-bind="attrs"
           >
             {{ t('common.details') }}
             <template #append>

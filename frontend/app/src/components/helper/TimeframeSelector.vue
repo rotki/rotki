@@ -1,29 +1,23 @@
 <script setup lang="ts">
-import {
-  TimeFramePeriod,
-  TimeFramePersist,
-  type TimeFrameSetting,
-} from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 
 const props = defineProps<{
-  value: TimeFrameSetting;
+  modelValue: TimeFrameSetting;
   visibleTimeframes: TimeFrameSetting[];
   disabled?: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'input', value: TimeFrameSetting): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: TimeFrameSetting): void }>();
 
 const premium = usePremium();
 
 const internalValue = computed({
   get() {
-    return props.value;
+    return props.modelValue;
   },
   set(value: string) {
-    assert(
-      isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value),
-    );
-    emit('input', value);
+    assert(isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value));
+    emit('update:model-value', value);
   },
 });
 
@@ -48,17 +42,15 @@ const { t } = useI18n();
       active-color="primary"
       required
     >
-      <template #default>
-        <RuiButton
-          v-for="(timeframe, i) in visibleTimeframes"
-          :key="i"
-          class="px-4"
-          :disabled="!premium && !worksWithoutPremium(timeframe)"
-          :value="timeframe"
-        >
-          {{ timeframe }}
-        </RuiButton>
-      </template>
+      <RuiButton
+        v-for="(timeframe, i) in visibleTimeframes"
+        :key="i"
+        class="px-4"
+        :disabled="!premium && !worksWithoutPremium(timeframe)"
+        :model-value="timeframe"
+      >
+        {{ timeframe }}
+      </RuiButton>
     </RuiButtonGroup>
   </div>
 </template>

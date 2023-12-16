@@ -5,9 +5,7 @@ import { toMessages } from '@/utils/validation';
 
 const oraclePenaltyDuration = ref<string>('0');
 
-const { oraclePenaltyDuration: frequency } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { oraclePenaltyDuration: frequency } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
 
@@ -55,10 +53,8 @@ onMounted(() => {
       :hint="t('oracle_cache_management.penalty.hints.oracle_penalty_duration')"
       type="number"
       :success-messages="success"
-      :error-messages="
-        error || toMessages(v$.oraclePenaltyDuration)
-      "
-      @input="callIfValid($event, update)"
+      :error-messages="error || toMessages(v$.oraclePenaltyDuration)"
+      @update:model-value="callIfValid($event, update)"
     />
   </SettingsOption>
 </template>

@@ -18,9 +18,7 @@ describe('assets', () => {
       url: '/api/1/assets/ignored',
     }).as('getIgnoredAsset');
 
-    cy.wait('@getIgnoredAsset', { timeout: 15000 })
-      .its('response.statusCode')
-      .should('equal', 200);
+    cy.wait('@getIgnoredAsset', { timeout: 15000 }).its('response.statusCode').should('equal', 200);
   });
 
   describe('ignored asset settings', () => {

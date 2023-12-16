@@ -2,12 +2,11 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
-  const ignoredAssets: Ref<string[]> = ref([]);
+  const ignoredAssets = ref<string[]>([]);
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets }
-    = useAssetIgnoreApi();
+  const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -27,13 +26,9 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
   };
 
-  const ignoreAsset = async (
-    assets: string[] | string,
-  ): Promise<ActionStatus> => {
+  const ignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await addIgnoredAssets(
-        Array.isArray(assets) ? assets : [assets],
-      );
+      const { successful, noAction } = await addIgnoredAssets(Array.isArray(assets) ? assets : [assets]);
       set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
       return { success: true };
     }
@@ -50,14 +45,13 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
   };
 
-  const unignoreAsset = async (
-    assets: string[] | string,
-  ): Promise<ActionStatus> => {
+  const unignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await removeIgnoredAssets(
-        Array.isArray(assets) ? assets : [assets],
+      const { successful, noAction } = await removeIgnoredAssets(Array.isArray(assets) ? assets : [assets]);
+      set(
+        ignoredAssets,
+        get(ignoredAssets).filter(asset => ![...successful, ...noAction].includes(asset)),
       );
-      set(ignoredAssets, get(ignoredAssets).filter(asset => ![...successful, ...noAction].includes(asset)));
       return { success: true };
     }
     catch (error: any) {
@@ -95,8 +89,5 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useIgnoredAssetsStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useIgnoredAssetsStore, import.meta.hot));

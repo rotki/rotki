@@ -12,20 +12,16 @@ import type { OnError } from '@/types/fetch';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
   const defaultBalances = () => ({ balances: {}, totalCollateralRatio: null });
-  const balances: Ref<LiquityBalancesWithCollateralInfo> = ref(defaultBalances());
-  const staking: Ref<LiquityStakingDetails> = ref({});
-  const stakingPools: Ref<LiquityPoolDetails> = ref({});
-  const statistics: Ref<LiquityStatistics | null> = ref(null);
+  const balances = ref<LiquityBalancesWithCollateralInfo>(defaultBalances());
+  const staking = ref<LiquityStakingDetails>({});
+  const stakingPools = ref<LiquityPoolDetails>({});
+  const statistics = ref<LiquityStatistics | null>(null);
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
   const { t } = useI18n();
-  const {
-    fetchLiquityStakingPools,
-    fetchLiquityBalances,
-    fetchLiquityStaking,
-    fetchLiquityStatistics,
-  } = useLiquityApi();
+  const { fetchLiquityStakingPools, fetchLiquityBalances, fetchLiquityStaking, fetchLiquityStatistics }
+    = useLiquityApi();
 
   const fetchPools = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {

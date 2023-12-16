@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common/lib/blockchain';
-
 const props = withDefaults(
   defineProps<{
-    chain: Blockchain;
+    chain: string;
     dense?: boolean;
   }>(),
   {

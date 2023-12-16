@@ -25,10 +25,7 @@ const tagPreview = ref();
 
 const rules = {
   name: {
-    required: helpers.withMessage(
-      t('tag_creator.validation.empty_name'),
-      required,
-    ),
+    required: helpers.withMessage(t('tag_creator.validation.empty_name'), required),
   },
   description: {
     optional: () => true,
@@ -130,8 +127,8 @@ watchImmediate(editMode, (edit) => {
         <RuiColorPicker
           class="w-full"
           data-cy="tag-creator__color-picker__foreground"
-          :value="tag.foregroundColor"
-          @input="changed({ foregroundColor: $event })"
+          :model-value="tag.foregroundColor"
+          @update:model-value="changed({ foregroundColor: $event })"
         />
       </RuiCard>
       <RuiCard class="flex flex-col items-center">
@@ -141,8 +138,8 @@ watchImmediate(editMode, (edit) => {
         <RuiColorPicker
           class="w-full"
           data-cy="tag-creator__color-picker__background"
-          :value="tag.backgroundColor"
-          @input="changed({ backgroundColor: $event })"
+          :model-value="tag.backgroundColor"
+          @update:model-value="changed({ backgroundColor: $event })"
         />
       </RuiCard>
     </div>

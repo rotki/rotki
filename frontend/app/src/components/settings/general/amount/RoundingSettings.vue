@@ -3,9 +3,7 @@ import type { BigNumber } from '@rotki/common';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const frontendSettingsStore = useFrontendSettingsStore();
-const { amountRoundingMode, valueRoundingMode } = storeToRefs(
-  frontendSettingsStore,
-);
+const { amountRoundingMode, valueRoundingMode } = storeToRefs(frontendSettingsStore);
 
 const numberExample: BigNumber = bigNumberify(0.0815);
 
@@ -36,10 +34,10 @@ const { t } = useI18n();
     </RuiCardHeader>
     <div class="grid md:grid-cols-2 gap-6 mt-4">
       <RoundingSelector
-        :value="amountRoundingMode"
+        :model-value="amountRoundingMode"
         :label="t('rounding_settings.amount_rounding')"
         :hint="t('rounding_settings.amount_rounding_hint')"
-        @input="setAmountRoundingMode($event)"
+        @update:model-value="setAmountRoundingMode($event)"
       >
         <AmountDisplay
           class="ml-2 mt-4"
@@ -47,10 +45,10 @@ const { t } = useI18n();
         />
       </RoundingSelector>
       <RoundingSelector
-        :value="valueRoundingMode"
+        :model-value="valueRoundingMode"
         :label="t('rounding_settings.value_rounding')"
         :hint="t('rounding_settings.value_rounding_hint')"
-        @input="setValueRoundingMode($event)"
+        @update:model-value="setValueRoundingMode($event)"
       >
         <AmountDisplay
           class="ml-2 mt-4"

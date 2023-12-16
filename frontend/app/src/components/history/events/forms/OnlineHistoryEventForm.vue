@@ -7,10 +7,7 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
-import type {
-  NewOnlineHistoryEventPayload,
-  OnlineHistoryEvent,
-} from '@/types/history/events';
+import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -31,26 +28,21 @@ const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const lastLocation = useLocalStorage(
-  'rotki.history_event.location',
-  TRADE_LOCATION_EXTERNAL,
-);
+const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const assetPriceForm: Ref<InstanceType<
-  typeof HistoryEventAssetPriceForm
-> | null> = ref(null);
+const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
-const eventIdentifier: Ref<string> = ref('');
-const sequenceIndex: Ref<string> = ref('');
-const datetime: Ref<string> = ref('');
-const location: Ref<string> = ref('');
-const eventType: Ref<string> = ref('');
-const eventSubtype: Ref<string> = ref('');
-const asset: Ref<string> = ref('');
-const amount: Ref<string> = ref('');
-const usdValue: Ref<string> = ref('');
-const locationLabel: Ref<string> = ref('');
-const notes: Ref<string> = ref('');
+const eventIdentifier = ref<string>('');
+const sequenceIndex = ref<string>('');
+const datetime = ref<string>('');
+const location = ref<string>('');
+const eventType = ref<string>('');
+const eventSubtype = ref<string>('');
+const asset = ref<string>('');
+const amount = ref<string>('');
+const usdValue = ref<string>('');
+const locationLabel = ref<string>('');
+const notes = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -61,30 +53,16 @@ const rules = {
   locationLabel: { externalServerValidation },
   notes: { externalServerValidation },
   eventIdentifier: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.event_identifier.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.event_identifier.validation.non_empty'), required),
   },
   location: {
-    required: helpers.withMessage(
-      t('transactions.events.form.location.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
   },
   asset: {
-    required: helpers.withMessage(
-      t('transactions.events.form.asset.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
   },
   amount: {
-    required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   usdValue: {
     required: helpers.withMessage(
@@ -95,26 +73,13 @@ const rules = {
     ),
   },
   sequenceIndex: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.sequence_index.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
   },
   eventType: {
-    required: helpers.withMessage(
-      t('transactions.events.form.event_type.validation.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
   },
   eventSubtype: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.event_subtype.validation.non_empty',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
   },
 };
 
@@ -147,14 +112,7 @@ const v$ = setValidation(
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, '');
-  set(
-    datetime,
-    convertFromTimestamp(
-      dayjs().valueOf(),
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, '');
@@ -171,14 +129,7 @@ function reset() {
 function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -194,14 +145,7 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(
-    datetime,
-    convertFromTimestamp(
-      entry.timestamp,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      true,
-    ),
-  );
+  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(usdValue, '0');
 }
 
@@ -211,11 +155,7 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    true,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
@@ -318,18 +258,18 @@ const locationLabelSuggestions = computed(() =>
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
+      v-model:asset="asset"
+      v-model:amount="amount"
+      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
-      :asset.sync="asset"
-      :amount.sync="amount"
-      :usd-value.sync="usdValue"
     />
 
     <RuiDivider class="my-10" />
 
     <HistoryEventTypeForm
-      :event-type.sync="eventType"
-      :event-subtype.sync="eventSubtype"
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
       :v$="v$"
     />
 

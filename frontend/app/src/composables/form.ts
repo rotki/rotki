@@ -1,5 +1,4 @@
-import useVuelidate, { type GlobalConfig, type Validation, type ValidationArgs,
-} from '@vuelidate/core';
+import useVuelidate, { type GlobalConfig, type Validation, type ValidationArgs } from '@vuelidate/core';
 import type { MaybeRef } from '@vueuse/core';
 
 /**
@@ -7,12 +6,12 @@ import type { MaybeRef } from '@vueuse/core';
  * @template T - T is type of data that return from the submit function.
  */
 export function useForm<T = void>() {
-  const openDialog: Ref<boolean> = ref(false);
-  const valid: Ref<boolean> = ref(true);
+  const openDialog = ref<boolean>(false);
+  const valid = ref<boolean>(true);
   let v$: Ref<Validation> | undefined;
-  const submitFunc: Ref<() => Promise<T> | void> = ref(() => {});
-  const postSubmitFunc: Ref<(result: T | void) => void> = ref(() => {});
-  const submitting: Ref<boolean> = ref(false);
+  const submitFunc = ref<() => Promise<T> | void>(() => {});
+  const postSubmitFunc = ref<(result: T | void) => void>(() => {});
+  const submitting = ref<boolean>(false);
 
   const setValidation = (
     validationsArgs: ValidationArgs,

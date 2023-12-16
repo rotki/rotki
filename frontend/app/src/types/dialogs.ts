@@ -1,4 +1,4 @@
-import type { ContextColorsType } from '@rotki/ui-library-compat';
+import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 
 export const DialogType = {
   SUCCESS: 'success',
@@ -9,7 +9,7 @@ export const DialogType = {
 export type DialogType = (typeof DialogType)[keyof typeof DialogType];
 
 export interface DialogTheme {
-  readonly icon: string;
+  readonly icon: RuiIcons;
   readonly color: ContextColorsType;
 }
 

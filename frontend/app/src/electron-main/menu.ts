@@ -2,11 +2,7 @@ import process from 'node:process';
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import { externalLinks } from '@/data/external-links';
-import {
-  IPC_ABOUT,
-  IPC_DEBUG_SETTINGS,
-  IPC_REQUEST_RESTART,
-} from '@/electron-main/ipc-commands';
+import { IPC_ABOUT, IPC_DEBUG_SETTINGS, IPC_REQUEST_RESTART } from '@/electron-main/ipc-commands';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
@@ -118,9 +114,7 @@ const editMenu = {
     { role: 'copy' },
     { role: 'paste' },
     // Macs have special copy/paste and speech functionality
-    ...(isMac
-      ? macEditOptions
-      : [{ role: 'delete' }, separator, { role: 'selectAll' }]),
+    ...(isMac ? macEditOptions : [{ role: 'delete' }, separator, { role: 'selectAll' }]),
   ],
 };
 const fileMenu = {
@@ -128,12 +122,7 @@ const fileMenu = {
   submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
 };
 
-const developmentViewMenu = [
-  { role: 'reload' },
-  { role: 'forceReload' },
-  { role: 'toggleDevTools' },
-  separator,
-];
+const developmentViewMenu = [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, separator];
 
 const minimize = {
   id: 'MINIMIZE_TO_TRAY',
@@ -159,9 +148,7 @@ const displayTrayIcon = {
 const viewMenu = {
   label: '&View',
   submenu: [
-    ...(isDevelopment
-      ? developmentViewMenu
-      : [{ role: 'toggleDevTools', visible: false }]),
+    ...(isDevelopment ? developmentViewMenu : [{ role: 'toggleDevTools', visible: false }]),
     { role: 'resetZoom' },
     { role: 'zoomIn' },
     { role: 'zoomOut' },
@@ -178,13 +165,7 @@ const defaultMenuTemplate: any[] = [
     ? [
         {
           label: app.name,
-          submenu: [
-            { role: 'hide' },
-            { role: 'hideOthers' },
-            { role: 'unhide' },
-            separator,
-            { role: 'quit' },
-          ],
+          submenu: [{ role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, separator, { role: 'quit' }],
         },
       ]
     : []),
@@ -228,7 +209,5 @@ export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
   // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
   // process we can make this a lot cleaner.
 
-  return showPremium
-    ? defaultMenuTemplate.concat(getRotkiPremiumButton)
-    : defaultMenuTemplate;
+  return showPremium ? defaultMenuTemplate.concat(getRotkiPremiumButton) : defaultMenuTemplate;
 }

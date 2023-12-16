@@ -1,9 +1,5 @@
 <script lang="ts" setup>
-import type {
-  SavedFilterLocation,
-  SearchMatcher,
-  Suggestion,
-} from '@/types/filtering';
+import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
   matchers: SearchMatcher<any>[];
@@ -21,14 +17,14 @@ const css = useCssModule();
 
 const { selection, location, matchers } = toRefs(props);
 
-const open: Ref<boolean> = ref(false);
+const open = ref<boolean>(false);
 
 function applyFilter(filter: Suggestion[]) {
   emit('update:matches', filter);
   set(open, false);
 }
 
-const added: Ref<boolean> = ref(false);
+const added = ref<boolean>(false);
 const { start, stop, isPending } = useTimeoutFn(
   () => {
     set(added, false);
@@ -51,10 +47,7 @@ function isAsset(searchKey: string): boolean {
   return !!found && 'asset' in found;
 }
 
-const { savedFilters, addFilter, deleteFilter } = useSavedFilter(
-  location,
-  isAsset,
-);
+const { savedFilters, addFilter, deleteFilter } = useSavedFilter(location, isAsset);
 
 const { setMessage } = useMessageStore();
 
@@ -121,7 +114,7 @@ async function addToSavedFilter() {
       :popper="{ placement: 'bottom-end' }"
       menu-class="max-w-[25rem] max-h-[32rem]"
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <RuiTooltip
           :popper="{ placement: 'top' }"
           :open-delay="400"
@@ -133,7 +126,7 @@ async function addToSavedFilter() {
               color="primary"
               variant="text"
               icon
-              v-on="on"
+              v-bind="attrs"
             >
               <RuiIcon
                 size="20"
@@ -227,7 +220,7 @@ async function addToSavedFilter() {
         v-else
         class="p-4"
       >
-        <i18n path="table_filter.saved_filters.empty">
+        <i18n-t keypath="table_filter.saved_filters.empty">
           <template #button>
             <RuiButton
               color="secondary"
@@ -242,7 +235,7 @@ async function addToSavedFilter() {
               />
             </RuiButton>
           </template>
-        </i18n>
+        </i18n-t>
       </div>
     </RuiMenu>
   </div>

@@ -4,11 +4,7 @@ export function wait(duration: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, duration));
 }
 
-export async function backoff<T>(
-  retries: number,
-  call: BackoffCall<T>,
-  delay = 5000,
-): Promise<T> {
+export async function backoff<T>(retries: number, call: BackoffCall<T>, delay = 5000): Promise<T> {
   let result: T;
   try {
     result = await call();

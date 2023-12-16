@@ -1,12 +1,11 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const understand: Ref<boolean> = ref(false);
+const understand = ref<boolean>(false);
 
 const name = 'monerium';
 
-const { loading, credential, actionStatus, save, confirmDelete }
-  = useExternalApiKeys(t);
+const { loading, credential, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
 
 const credentialData = credential(name);
 const status = actionStatus(name);

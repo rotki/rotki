@@ -12,8 +12,8 @@ const props = defineProps<{
 }>();
 
 const { modules } = toRefs(props);
-const manageModule: Ref<Nullable<Module>> = ref(null);
-const confirmEnable: Ref<Nullable<Module>> = ref(null);
+const manageModule = ref<Nullable<Module>>(null);
+const confirmEnable = ref<Nullable<Module>>(null);
 
 const supportedModules = SUPPORTED_MODULES;
 
@@ -78,10 +78,7 @@ function showConfirmation() {
   show(
     {
       title: t('active_modules.enable.title'),
-      message: t(
-        'active_modules.enable.description',
-        getName(get(confirmEnable)),
-      ),
+      message: t('active_modules.enable.description', getName(get(confirmEnable))),
       type: 'info',
     },
     enableModule,
@@ -122,9 +119,7 @@ function showConfirmation() {
               </RuiButton>
             </template>
             <span v-if="module.enabled">
-              {{
-                t('active_modules.view_addresses', getName(module.identifier))
-              }}
+              {{ t('active_modules.view_addresses', getName(module.identifier)) }}
             </span>
             <span v-else>
               {{ t('active_modules.activate', getName(module.identifier)) }}

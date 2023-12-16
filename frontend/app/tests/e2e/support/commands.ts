@@ -39,9 +39,7 @@ function logout() {
       if (!result)
         return;
 
-      const loggedUsers = Object.keys(result).filter(
-        user => result[user] === 'loggedin',
-      );
+      const loggedUsers = Object.keys(result).filter(user => result[user] === 'loggedin');
 
       if (loggedUsers.length !== 1)
         return;

@@ -18,9 +18,7 @@ const selectedLinkableSetting = computed(() => {
   const itemVal = get(item);
   const linkedProperty = itemVal.linkedSetting;
   if (linkedProperty) {
-    const foundItem = get(linkableSettingOptions).find(
-      item => item.identifier === linkedProperty,
-    );
+    const foundItem = get(linkableSettingOptions).find(item => item.identifier === linkedProperty);
 
     if (foundItem)
       return foundItem;
@@ -29,7 +27,7 @@ const selectedLinkableSetting = computed(() => {
   return null;
 });
 
-const value: ComputedRef<boolean> = computed(() => {
+const value = computed<boolean>(() => {
   const selectedLinkableSettingVal = get(selectedLinkableSetting);
   if (selectedLinkableSettingVal)
     return get(selectedLinkableSettingVal).state;
@@ -44,7 +42,7 @@ const value: ComputedRef<boolean> = computed(() => {
     size="sm"
     color="secondary"
     class="[&_span]:!px-0"
-    :value="!!selectedLinkableSetting"
+    :model-value="!!selectedLinkableSetting"
   >
     <template #icon>
       <RuiTooltip

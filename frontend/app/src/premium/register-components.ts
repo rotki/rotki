@@ -1,6 +1,4 @@
 /* eslint-disable import/max-dependencies */
-
-import Vue from 'vue';
 import {
   RuiAlert,
   RuiButton,
@@ -16,7 +14,7 @@ import {
   RuiSlider,
   RuiTextField,
   RuiTooltip,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
@@ -49,81 +47,82 @@ import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import type { App } from 'vue';
 
-function ruiRegister(): void {
-  Vue.component('RuiAlert', RuiAlert);
-  Vue.component('RuiIcon', RuiIcon);
-  Vue.component('RuiButton', RuiButton);
-  Vue.component('RuiTooltip', RuiTooltip);
-  Vue.component('RuiTextField', RuiTextField);
-  Vue.component('RuiButtonGroup', RuiButtonGroup);
-  Vue.component('RuiCard', RuiCard);
-  Vue.component('RuiDataTable', RuiDataTable);
-  Vue.component('RuiDivider', RuiDivider);
-  Vue.component('RuiChip', RuiChip);
-  Vue.component('RuiMenu', RuiMenu);
-  Vue.component('RuiSlider', RuiSlider);
-  Vue.component('RuiDialog', RuiDialog);
-  Vue.component('RuiColorPicker', RuiColorPicker);
+function ruiRegister(app: App): void {
+  app.component('RuiAlert', RuiAlert);
+  app.component('RuiIcon', RuiIcon);
+  app.component('RuiButton', RuiButton);
+  app.component('RuiTooltip', RuiTooltip);
+  app.component('RuiTextField', RuiTextField);
+  app.component('RuiButtonGroup', RuiButtonGroup);
+  app.component('RuiCard', RuiCard);
+  app.component('RuiDataTable', RuiDataTable);
+  app.component('RuiDivider', RuiDivider);
+  app.component('RuiChip', RuiChip);
+  app.component('RuiMenu', RuiMenu);
+  app.component('RuiSlider', RuiSlider);
+  app.component('RuiDialog', RuiDialog);
+  app.component('RuiColorPicker', RuiColorPicker);
 }
 
-export function registerComponents(): void {
+export function registerComponents(app: App): void {
   // Globally registered components are also provided to the premium components.
-  Vue.component('AmountDisplay', AmountDisplay);
+  app.component('AmountDisplay', AmountDisplay);
   // version: 1
-  Vue.component('HashLink', HashLink);
-  Vue.component('AssetDetails', AssetDetails);
-  Vue.component('DefiProtocolIcon', DefiProtocolIcon);
+  app.component('HashLink', HashLink);
+  app.component('AssetDetails', AssetDetails);
+  app.component('DefiProtocolIcon', DefiProtocolIcon);
   // version: 2
   //  CryptoIcon was replaced with AssetIcon on v11
-  Vue.component('BalanceDisplay', BalanceDisplay);
+  app.component('BalanceDisplay', BalanceDisplay);
   // version: 3
-  Vue.component('PercentageDisplay', PercentageDisplay);
+  app.component('PercentageDisplay', PercentageDisplay);
   // version: 4
-  Vue.component('BlockchainAccountSelector', BlockchainAccountSelector);
-  Vue.component('DateDisplay', DateDisplay);
-  Vue.component('LocationDisplay', LocationDisplay);
+  app.component('BlockchainAccountSelector', BlockchainAccountSelector);
+  app.component('DateDisplay', DateDisplay);
+  app.component('LocationDisplay', LocationDisplay);
   // version 5
-  Vue.component('AssetSelect', AssetSelect);
+  app.component('AssetSelect', AssetSelect);
   // version 6
-  Vue.component('DateTimePicker', DateTimePicker);
+  app.component('DateTimePicker', DateTimePicker);
   // version 8
-  Vue.component('CardTitle', CardTitle);
+  app.component('CardTitle', CardTitle);
   // version 9
-  Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
-  Vue.component('TableFilter', TableFilter);
+  app.component('LiquidityPoolSelector', LiquidityPoolSelector);
+  app.component('TableFilter', TableFilter);
   // version 11
-  Vue.component('AssetIcon', AssetIcon);
+  app.component('AssetIcon', AssetIcon);
   // version 12 - 1.19
-  Vue.component('RangeSelector', RangeSelector);
-  Vue.component('ConfirmDialog', ConfirmDialog);
+  app.component('RangeSelector', RangeSelector);
+  app.component('ConfirmDialog', ConfirmDialog);
   // Version 13 - 1.20
-  Vue.component('UniswapPoolDetails', UniswapPoolDetails);
+  app.component('UniswapPoolDetails', UniswapPoolDetails);
   // Version 14 - 1.21
-  Vue.component('PaginatedCards', PaginatedCards);
-  Vue.component('AssetLink', AssetLink);
+  app.component('PaginatedCards', PaginatedCards);
+  app.component('AssetLink', AssetLink);
   // Version 15 - 1.21.2
-  Vue.component('StatisticsGraphSettings', StatisticsGraphSettings);
+  app.component('StatisticsGraphSettings', StatisticsGraphSettings);
   // Version 16 - 1.23
-  Vue.component('AmountInput', AmountInput);
+  app.component('AmountInput', AmountInput);
   // Version 17 - 1.24
-  Vue.component('ExportSnapshotDialog', ExportSnapshotDialog);
+  app.component('ExportSnapshotDialog', ExportSnapshotDialog);
   // Version 18 - 1.25
-  Vue.component('MenuTooltipButton', MenuTooltipButton);
-  Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
+  app.component('MenuTooltipButton', MenuTooltipButton);
+  app.component('GraphTooltipWrapper', GraphTooltipWrapper);
   // Version 19 - 1.26
-  Vue.component('LpPoolIcon', LpPoolIcon);
+  app.component('LpPoolIcon', LpPoolIcon);
   // Version 20 - 1.27
-  Vue.component('BadgeDisplay', BadgeDisplay);
+  app.component('BadgeDisplay', BadgeDisplay);
   // Version 21 - 1.28
-  Vue.component('HistoryEventsView', HistoryEventsView);
+  app.component('HistoryEventsView', HistoryEventsView);
   // Version 24 - 1.31
-  Vue.component('LpPoolHeader', LpPoolHeader);
-  Vue.component('RowAppend', RowAppend);
+  app.component('LpPoolHeader', LpPoolHeader);
+  app.component('RowAppend', RowAppend);
   // Version 25 - 1.32
-  Vue.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
+  app.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
   // Version 26 - 1.34
-  Vue.component('RefreshButton', RefreshButton);
-  ruiRegister();
+  app.component('RefreshButton', RefreshButton);
+  ruiRegister(app);
   logger.info('Components registered');
 }

@@ -18,10 +18,7 @@ export function useSessionPurge() {
     resetStatus(Section.HISTORY_EVENT);
   };
 
-  const purgeCache = (
-    purgeable: Purgeable,
-    value: string,
-  ): void => {
+  const purgeCache = (purgeable: Purgeable, value: string): void => {
     if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
       if (!value)
         purgeExchange();

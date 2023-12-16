@@ -7,9 +7,7 @@ const props = defineProps<{
 
 const { asset } = toRefs(props);
 
-const evmIdentifier: ComputedRef<string> = computed(() =>
-  createEvmIdentifierFromAddress(get(asset).tokenAddress),
-);
+const evmIdentifier = computed<string>(() => createEvmIdentifierFromAddress(get(asset).tokenAddress));
 </script>
 
 <template>

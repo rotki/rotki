@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
-import Fragment from '@/components/helper/Fragment';
+import { useBreakpoint } from '@rotki/ui-library';
 import type BigNumber from 'bignumber.js';
 import type { BlockchainAccountWithBalance, XpubData } from '@/types/blockchain/accounts';
 
@@ -26,8 +25,10 @@ const { items } = toRefs(props);
 const { name: breakpoint, isXs } = useBreakpoint();
 const { scrambleAddress, shouldShowAmount } = useScramble();
 
-const xpub: ComputedRef<BlockchainAccountWithBalance<XpubData>> = computed(() => {
-  const account = get(items).filter(isAccountWithBalanceXpub).find(item => item.groupHeader);
+const xpub = computed<BlockchainAccountWithBalance<XpubData>>(() => {
+  const account = get(items)
+    .filter(isAccountWithBalanceXpub)
+    .find(item => item.groupHeader);
   assert(account);
   return account;
 });
@@ -40,9 +41,7 @@ const displayXpub = computed<string>(() =>
   scrambleAddress(truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4)),
 );
 
-const amountSum = computed<BigNumber>(() =>
-  bigNumberSum(get(items).map(({ amount }) => amount)),
-);
+const amountSum = computed<BigNumber>(() => bigNumberSum(get(items).map(({ amount }) => amount)));
 
 const totalAddresses = computed(() => get(items).filter(item => !item.groupHeader).length);
 
@@ -57,7 +56,7 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
   >
     {{ t('account_group_header.standalone') }}
   </td>
-  <Fragment v-else>
+  <template v-else>
     <td
       colspan="2"
       class="!p-2"
@@ -68,7 +67,7 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
           variant="text"
           size="sm"
           icon
-          @click="emit('expand', xpub);"
+          @click="emit('expand', xpub)"
         >
           <RuiIcon
             v-if="expanded"
@@ -120,9 +119,7 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
             class="text-sm"
             :class="{ blur: !shouldShowAmount }"
           >
-            <span class="font-medium">
-              {{ t('account_group_header.derivation_path') }}:
-            </span>
+            <span class="font-medium"> {{ t('account_group_header.derivation_path') }}: </span>
             <span class="font-mono">
               {{ xpub.data.derivationPath }}
             </span>
@@ -155,9 +152,9 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
       <RowActions
         :edit-tooltip="t('account_group_header.edit_tooltip')"
         :delete-tooltip="t('account_group_header.delete_tooltip')"
-        @edit-click="emit('edit', xpub);"
-        @delete-click="emit('delete', xpub);"
+        @edit-click="emit('edit', xpub)"
+        @delete-click="emit('delete', xpub)"
       />
     </td>
-  </Fragment>
+  </template>
 </template>

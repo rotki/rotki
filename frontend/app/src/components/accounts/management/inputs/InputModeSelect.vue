@@ -69,51 +69,49 @@ onUnmounted(() => {
       required
       color="primary"
     >
-      <template #default>
-        <RuiButton
-          type="button"
-          :value="InputMode.MANUAL_ADD"
-          data-cy="input-mode-manual"
-          :disabled="loading"
-        >
-          <template #prepend>
-            <RuiIcon name="pencil-line" />
-          </template>
-          <span class="hidden md:block">
-            {{ t('input_mode_select.manual_add.label') }}
-          </span>
-        </RuiButton>
-        <RuiButton
-          v-if="isSupportedEvmChain"
-          type="button"
-          :value="InputMode.METAMASK_IMPORT"
-          :disabled="!isMetaMaskSupported() || loading"
-        >
-          <template #prepend>
-            <AppImage
-              contain
-              max-width="24px"
-              src="./assets/images/metamask-fox.svg"
-            />
-          </template>
-          <span class="hidden md:block">
-            {{ t('input_mode_select.metamask_import.label') }}
-          </span>
-        </RuiButton>
-        <RuiButton
-          v-if="isBitcoin"
-          type="button"
-          :value="InputMode.XPUB_ADD"
-          :disabled="loading"
-        >
-          <template #prepend>
-            <RuiIcon name="key-line" />
-          </template>
-          <span class="hidden md:block">
-            {{ t('input_mode_select.xpub_add.label') }}
-          </span>
-        </RuiButton>
-      </template>
+      <RuiButton
+        type="button"
+        :model-value="InputMode.MANUAL_ADD"
+        data-cy="input-mode-manual"
+        :disabled="loading"
+      >
+        <template #prepend>
+          <RuiIcon name="pencil-line" />
+        </template>
+        <span class="hidden md:block">
+          {{ t('input_mode_select.manual_add.label') }}
+        </span>
+      </RuiButton>
+      <RuiButton
+        v-if="isSupportedEvmChain"
+        type="button"
+        :model-value="InputMode.METAMASK_IMPORT"
+        :disabled="!isMetaMaskSupported() || loading"
+      >
+        <template #prepend>
+          <AppImage
+            contain
+            max-width="24px"
+            src="./assets/images/metamask-fox.svg"
+          />
+        </template>
+        <span class="hidden md:block">
+          {{ t('input_mode_select.metamask_import.label') }}
+        </span>
+      </RuiButton>
+      <RuiButton
+        v-if="isBitcoin"
+        type="button"
+        :model-value="InputMode.XPUB_ADD"
+        :disabled="loading"
+      >
+        <template #prepend>
+          <RuiIcon name="key-line" />
+        </template>
+        <span class="hidden md:block">
+          {{ t('input_mode_select.xpub_add.label') }}
+        </span>
+      </RuiButton>
     </RuiButtonGroup>
     <div
       v-if="isSupportedEvmChain && isMetaMask"
@@ -132,13 +130,13 @@ onUnmounted(() => {
         menu-class="max-w-[20rem]"
         :popper="{ placement: 'right-start' }"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiButton
             size="sm"
             variant="text"
             icon
             color="warning"
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon
               class="px-1"
@@ -152,9 +150,7 @@ onUnmounted(() => {
           </div>
           <ol class="list-disc [&_li]:ml-3">
             <li>
-              <i18n
-                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
-              >
+              <i18n-t keypath="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed">
                 <template #link>
                   <ExternalLink
                     :url="metamaskDownload"
@@ -163,19 +159,13 @@ onUnmounted(() => {
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
-              </i18n>
+              </i18n-t>
             </li>
             <li>
-              {{
-                t(
-                  'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled',
-                )
-              }}
+              {{ t('input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled') }}
             </li>
             <li>
-              <i18n
-                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
-              >
+              <i18n-t keypath="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser">
                 <template #link>
                   <ExternalLink
                     :url="metamaskDownload"
@@ -192,14 +182,10 @@ onUnmounted(() => {
                     class="inline-flex text-[1em] !p-0 !px-1 -mx-1"
                     @click="copyPageUrl()"
                   >
-                    {{
-                      t(
-                        'input_mode_select.metamask_import.missing_tooltip.copy_url',
-                      )
-                    }}
+                    {{ t('input_mode_select.metamask_import.missing_tooltip.copy_url') }}
                   </RuiButton>
                 </template>
-              </i18n>
+              </i18n-t>
             </li>
           </ol>
         </div>

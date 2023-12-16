@@ -1,11 +1,7 @@
 import { omit } from 'lodash-es';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validStatus,
-  validWithSessionAndExternalService,
-} from '@/services/utils';
+import { handleResponse, validStatus, validWithSessionAndExternalService } from '@/services/utils';
 import {
   AddressBookCollectionResponse,
   type AddressBookEntries,
@@ -20,10 +16,7 @@ import type { PendingTask } from '@/types/task';
 import type { Collection, CollectionResponse } from '@/types/collection';
 
 export function useAddressesNamesApi() {
-  const internalEnsNames = async <T>(
-    ethereumAddresses: string[],
-    asyncQuery = false,
-  ): Promise<T> => {
+  const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/names/ens/reverse',
       snakeCaseTransformer({
@@ -39,9 +32,7 @@ export function useAddressesNamesApi() {
     return handleResponse(response);
   };
 
-  const getEnsNamesTask = async (
-    ethAddresses: string[],
-  ): Promise<PendingTask> =>
+  const getEnsNamesTask = async (ethAddresses: string[]): Promise<PendingTask> =>
     await internalEnsNames<PendingTask>(ethAddresses, true);
 
   const getEnsNames = async (ethAddresses: string[]): Promise<EthNames> => {
@@ -56,9 +47,7 @@ export function useAddressesNamesApi() {
   ): Promise<Collection<AddressBookEntry>> => {
     const payloadVal = get(payload);
     const filteredPayload = omit(payloadVal, ['address']);
-    const response = await api.instance.post<
-      ActionResult<CollectionResponse<AddressBookEntry>>
-    >(
+    const response = await api.instance.post<ActionResult<CollectionResponse<AddressBookEntry>>>(
       `/names/addressbook/${location}`,
       snakeCaseTransformer({
         ...filteredPayload,
@@ -69,15 +58,10 @@ export function useAddressesNamesApi() {
       },
     );
 
-    return mapCollectionResponse(
-      AddressBookCollectionResponse.parse(handleResponse(response)),
-    );
+    return mapCollectionResponse(AddressBookCollectionResponse.parse(handleResponse(response)));
   };
 
-  const addAddressBook = async (
-    location: AddressBookLocation,
-    entries: AddressBookEntries,
-  ): Promise<boolean> => {
+  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
       { entries },
@@ -89,10 +73,7 @@ export function useAddressesNamesApi() {
     return handleResponse(response);
   };
 
-  const updateAddressBook = async (
-    location: AddressBookLocation,
-    entries: AddressBookEntries,
-  ): Promise<boolean> => {
+  const updateAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
       { entries },
@@ -108,20 +89,15 @@ export function useAddressesNamesApi() {
     location: AddressBookLocation,
     addresses: AddressBookSimplePayload[],
   ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      `/names/addressbook/${location}`,
-      {
-        data: snakeCaseTransformer({ addresses }),
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>(`/names/addressbook/${location}`, {
+      data: snakeCaseTransformer({ addresses }),
+      validateStatus: validWithSessionAndExternalService,
+    });
 
     return handleResponse(response);
   };
 
-  const getAddressesNames = async (
-    addresses: AddressBookSimplePayload[],
-  ): Promise<AddressBookEntries> => {
+  const getAddressesNames = async (addresses: AddressBookSimplePayload[]): Promise<AddressBookEntries> => {
     const response = await api.instance.post<ActionResult<AddressBookEntries>>(
       '/names',
       { addresses },
@@ -142,9 +118,7 @@ export function useAddressesNamesApi() {
     return url;
   };
 
-  const clearEnsAvatarCache = async (
-    listEns: string[] | null,
-  ): Promise<boolean> => {
+  const clearEnsAvatarCache = async (listEns: string[] | null): Promise<boolean> => {
     const response = await api.instance.post<ActionResult<boolean>>(
       '/cache/avatars/clear',
       { entries: listEns },

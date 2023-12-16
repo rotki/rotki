@@ -15,11 +15,9 @@ const css = useCssModule();
 
 const { snapshot } = toRefs(props);
 
-const display: ComputedRef<boolean> = computed(() => !!get(snapshot));
+const display = computed<boolean>(() => !!get(snapshot));
 
-const asset: ComputedRef<string> = computed(
-  () => get(snapshot)?.assetIdentifier ?? '',
-);
+const asset = computed<string>(() => get(snapshot)?.assetIdentifier ?? '');
 </script>
 
 <template>
@@ -32,9 +30,7 @@ const asset: ComputedRef<string> = computed(
     @cancel="emit('cancel')"
     @confirm="emit('confirm')"
   >
-    <div
-      class="flex justify-center items-center gap-4 mt-4 border border-default rounded px-4"
-    >
+    <div class="flex justify-center items-center gap-4 mt-4 border border-default rounded px-4">
       <BalanceDisplay
         :asset="asset"
         :value="snapshot"

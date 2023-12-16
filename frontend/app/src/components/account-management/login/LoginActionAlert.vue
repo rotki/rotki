@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
+
 defineProps<{
-  icon: string;
+  icon: RuiIcons;
 }>();
 const emit = defineEmits<{
   (e: 'confirm'): void;

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@/data/external-links';
-import type {
-  DataTableColumn,
-  DataTableSortColumn,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Writeable } from '@/types';
 import type { Exchange, ExchangePayload } from '@/types/exchanges';
 
@@ -28,7 +25,7 @@ const { connectedExchanges } = storeToRefs(store);
 
 const exchange = ref<ExchangePayload>(placeholder());
 const editMode = ref<boolean>(false);
-const sort = ref<DataTableSortColumn>({
+const sort = ref<DataTableSortColumn<Exchange>>({
   column: 'name',
   direction: 'asc',
 });
@@ -40,8 +37,7 @@ const { t } = useI18n();
 
 function findNonSyncExchangeIndex(exchange: Exchange) {
   return get(nonSyncingExchanges).findIndex(
-    (item: Exchange) =>
-      item.name === exchange.name && item.location === exchange.location,
+    (item: Exchange) => item.name === exchange.name && item.location === exchange.location,
   );
 }
 
@@ -77,9 +73,7 @@ async function toggleSync(exchange: Exchange) {
     notify({
       title: t('exchange_settings.sync.messages.title'),
       message: t('exchange_settings.sync.messages.description', {
-        action: enable
-          ? t('exchange_settings.sync.messages.enable')
-          : t('exchange_settings.sync.messages.disable'),
+        action: enable ? t('exchange_settings.sync.messages.enable') : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,
         name: exchange.name,
         message: status.message,
@@ -93,8 +87,7 @@ async function toggleSync(exchange: Exchange) {
 
 const { exchangeName } = useLocations();
 
-const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc }
-  = useExchangeApiKeysForm();
+const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc } = useExchangeApiKeysForm();
 
 function addExchange() {
   set(editMode, false);
@@ -146,13 +139,13 @@ onBeforeMount(() => {
 const router = useRouter();
 onMounted(async () => {
   const { currentRoute } = router;
-  if (currentRoute.query.add) {
+  if (get(currentRoute).query.add) {
     addExchange();
     await router.replace({ query: {} });
   }
 });
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<Exchange>[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
@@ -196,10 +189,7 @@ function showRemoveConfirmation(item: Exchange) {
   <TablePageLayout
     class="exchange-settings"
     data-cy="exchanges"
-    :title="[
-      t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.exchanges'),
-    ]"
+    :title="[t('navigation_menu.api_keys'), t('navigation_menu.api_keys_sub.exchanges')]"
   >
     <template #buttons>
       <RuiButton
@@ -217,15 +207,15 @@ function showRemoveConfirmation(item: Exchange) {
     <RuiCard>
       <div class="flex flex-row-reverse mb-2">
         <HintMenuIcon>
-          <i18n
-            path="exchange_settings.subtitle"
+          <i18n-t
+            keypath="exchange_settings.subtitle"
             tag="div"
           >
             <ExternalLink
               :text="t('exchange_settings.usage_guide')"
               :url="externalLinks.usageGuideSection.addingAnExchange"
             />
-          </i18n>
+          </i18n-t>
         </HintMenuIcon>
       </div>
 
@@ -243,9 +233,9 @@ function showRemoveConfirmation(item: Exchange) {
         <template #item.syncEnabled="{ row }">
           <RuiSwitch
             color="primary"
-            :value="!isNonSyncExchange(row)"
+            :model-value="!isNonSyncExchange(row)"
             hide-details
-            @input="toggleSync(row)"
+            @update:model-value="toggleSync(row)"
           />
         </template>
         <template #item.actions="{ row }">

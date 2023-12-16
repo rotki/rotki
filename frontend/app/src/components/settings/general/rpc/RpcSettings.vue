@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { AsyncComponent } from 'vue';
+import type { Component } from 'vue';
 
 const { t } = useI18n();
 
 interface ChainRpcSettingTab {
   chain: Blockchain;
-  component: AsyncComponent;
+  component: Component;
 }
 
 interface CustomRpcSettingTab {
   id: string;
   name: string;
   image: string;
-  component: AsyncComponent;
+  component: Component;
 }
 
 type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
@@ -22,16 +22,14 @@ function isChain(item: RpcSettingTab): item is ChainRpcSettingTab {
   return 'chain' in item;
 }
 
-const rpcSettingTab: Ref<number> = ref(0);
+const rpcSettingTab = ref<number>(0);
 
 const { txEvmChains } = useSupportedChains();
 const evmChainTabs = useArrayMap(txEvmChains, (chain) => {
   assert(isOfEnum(Blockchain)(chain.id));
   return {
     chain: chain.id,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue'),
-    ),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')),
   } satisfies RpcSettingTab;
 });
 
@@ -39,23 +37,17 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   ...get(evmChainTabs),
   {
     chain: Blockchain.KSM,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/KsmRpcSetting.vue'),
-    ),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/KsmRpcSetting.vue')),
   },
   {
     chain: Blockchain.DOT,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/DotRpcSetting.vue'),
-    ),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/DotRpcSetting.vue')),
   },
   {
     id: 'eth_consensus_layer',
     name: 'ETH Beacon Node',
     image: './assets/images/protocols/ethereum.svg',
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/BeaconchainRpcSetting.vue'),
-    ),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/BeaconchainRpcSetting.vue')),
   },
 ]);
 </script>
@@ -101,27 +93,20 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
       </RuiTabs>
       <RuiDivider class="mb-4" />
       <RuiTabItems v-model="rpcSettingTab">
-        <template #default>
-          <template
-            v-for="tab in rpcSettingTabs"
-          >
-            <RuiTabItem
-              :key="isChain(tab) ? tab.chain : tab.id"
-            >
-              <template #default>
-                <Component
-                  :is="tab.component"
-                  v-if="isChain(tab)"
-                  :chain="tab.chain"
-                />
-                <Component
-                  :is="tab.component"
-                  v-else
-                />
-              </template>
-            </RuiTabItem>
-          </template>
-        </template>
+        <RuiTabItem
+          v-for="tab in rpcSettingTabs"
+          :key="isChain(tab) ? tab.chain : tab.id"
+        >
+          <Component
+            :is="tab.component"
+            v-if="isChain(tab)"
+            :chain="tab.chain"
+          />
+          <Component
+            :is="tab.component"
+            v-else
+          />
+        </RuiTabItem>
       </RuiTabItems>
     </div>
   </RuiCard>

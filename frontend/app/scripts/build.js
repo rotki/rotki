@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-const fs = require('node:fs');
-const path = require('node:path');
-const process = require('node:process');
-const { ArgumentParser } = require('argparse');
-const { build } = require('vite');
-const { sharedConfig } = require('./setup');
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import { ArgumentParser } from 'argparse';
+import { build } from 'vite';
+import { config } from 'dotenv';
+import { sharedConfig } from './setup.js';
 
 const OUTPUT_DIR = 'dist';
+const __dirname = import.meta.dirname;
 
 const parser = new ArgumentParser({
   description: 'Rotki frontend build',
@@ -19,7 +21,7 @@ function injectEnv(envName = '.env') {
   const envPath = path.resolve(__dirname, `../${envName}`);
   const envExists = fs.existsSync(envPath);
   if (envExists)
-    require('dotenv').config({ path: envPath, override: true });
+    config({ path: envPath, override: true });
 }
 
 /**

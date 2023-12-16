@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LogoProps } from '@rotki/ui-library-compat';
+import type { LogoProps } from '@rotki/ui-library';
 
 withDefaults(
   defineProps<{

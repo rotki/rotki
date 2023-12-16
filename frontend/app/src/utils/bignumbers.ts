@@ -10,9 +10,7 @@ export function bigNumberify(value: string | number): BigNumber {
   return new BigNumber(value);
 }
 
-export function bigNumberifyFromRef(
-  value: Ref<string | number>,
-): ComputedRef<BigNumber> {
+export function bigNumberifyFromRef(value: Ref<string | number>): ComputedRef<BigNumber> {
   return computed(() => {
     const val = get(value);
     if (val === '')

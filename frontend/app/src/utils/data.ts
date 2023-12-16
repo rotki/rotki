@@ -4,8 +4,7 @@ import { isString, isUndefined } from 'lodash-es';
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];
 
-  while (myArray.length > 0)
-    results.push(myArray.splice(0, size));
+  while (myArray.length > 0) results.push(myArray.splice(0, size));
 
   return results;
 }
@@ -66,8 +65,7 @@ export function nonEmptyProperties<T extends object>(object: T, removeEmptyStrin
 export function size(bytes: number): string {
   let i = 0;
 
-  for (i; bytes > 1024; i++)
-    bytes /= 1024;
+  for (i; bytes > 1024; i++) bytes /= 1024;
 
   const symbol = 'KMGTPEZY'[i - 1] || '';
   return `${bytes.toFixed(2)}  ${symbol}B`;

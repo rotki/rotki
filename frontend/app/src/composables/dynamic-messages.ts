@@ -1,10 +1,6 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  DashboardSchema,
-  type VisibilityPeriod,
-  WelcomeSchema,
-} from '@/types/dynamic-messages';
+import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 
 export const serializer = {
@@ -14,20 +10,12 @@ export const serializer = {
 
 export const useDynamicMessages = createSharedComposable(() => {
   const branch = checkIfDevelopment() ? 'develop' : 'main';
-  const welcomeMessages = useSessionStorage<WelcomeSchema>(
-    'rotki.messages.welcome',
-    null,
-    {
-      serializer,
-    },
-  );
-  const dashboardMessages = useSessionStorage<DashboardSchema>(
-    'rotki.messages.dashboard',
-    null,
-    {
-      serializer,
-    },
-  );
+  const welcomeMessages = useSessionStorage<WelcomeSchema>('rotki.messages.welcome', null, {
+    serializer,
+  });
+  const dashboardMessages = useSessionStorage<DashboardSchema>('rotki.messages.dashboard', null, {
+    serializer,
+  });
 
   const welcomeHeader = computed(() => {
     if (!isDefined(welcomeMessages))
@@ -41,17 +29,14 @@ export const useDynamicMessages = createSharedComposable(() => {
     };
   });
 
-  const getValidMessages = <T extends { period: VisibilityPeriod }>(
-    messages: T[],
-  ): T[] => {
+  const getValidMessages = <T extends { period: VisibilityPeriod }>(messages: T[]): T[] => {
     const now = Date.now() / 1000;
 
     return messages.filter(x => x.period.start <= now && x.period.end > now);
   };
 
-  const getFirstValidMessage = <T extends { period: VisibilityPeriod }>(
-    messages: T[],
-  ): T | null => getValidMessages(messages)[0] ?? null;
+  const getFirstValidMessage = <T extends { period: VisibilityPeriod }>(messages: T[]): T | null =>
+    getValidMessages(messages)[0] ?? null;
 
   const welcomeMessage = computed(() => {
     if (!isDefined(welcomeMessages))

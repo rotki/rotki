@@ -14,9 +14,7 @@ export const AddressNameRequestPayload = z.object({
   blockchain: BlockchainEnum,
 });
 
-export type AddressNameRequestPayload = z.infer<
-  typeof AddressNameRequestPayload
->;
+export type AddressNameRequestPayload = z.infer<typeof AddressNameRequestPayload>;
 
 export const AddressBookSimplePayload = AddressNameRequestPayload.extend({
   blockchain: z.string().nullable(),
@@ -38,9 +36,7 @@ export const AddressBookCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(AddressBookEntry),
 });
 
-export type AddressBookCollectionResponse = z.infer<
-  typeof AddressBookCollectionResponse
->;
+export type AddressBookCollectionResponse = z.infer<typeof AddressBookCollectionResponse>;
 
 export const AddressBookLocation = z.enum(['global', 'private']);
 
@@ -52,8 +48,7 @@ export type AddressBookPayload = z.infer<typeof AddressBookPayload>;
 
 export type AddressBookLocation = z.infer<typeof AddressBookLocation>;
 
-export interface AddressBookRequestPayload
-  extends PaginationRequestPayload<AddressBookEntry> {
+export interface AddressBookRequestPayload extends PaginationRequestPayload<AddressBookEntry> {
   nameSubstring?: string;
   address?: string[];
   blockchain?: Blockchain;

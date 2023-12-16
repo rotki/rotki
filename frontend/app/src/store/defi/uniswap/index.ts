@@ -1,9 +1,4 @@
-import {
-  type XswapBalance,
-  XswapBalances,
-  XswapEvents,
-  type XswapPoolProfit,
-} from '@rotki/common/lib/defi/xswap';
+import { type XswapBalance, XswapBalances, XswapEvents, type XswapPoolProfit } from '@rotki/common/lib/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -11,46 +6,35 @@ import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
-  const v2Balances: Ref<XswapBalances> = ref<XswapBalances>({});
-  const v3Balances: Ref<XswapBalances> = ref<XswapBalances>({});
-  const events: Ref<XswapEvents> = ref<XswapEvents>({});
+  const v2Balances = ref<XswapBalances>({});
+  const v3Balances = ref<XswapBalances>({});
+  const events = ref<XswapEvents>({});
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();
   const { t } = useI18n();
 
-  const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents }
-    = useUniswapApi();
+  const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents } = useUniswapApi();
 
-  const uniswapV2Balances = (
-    addresses: string[],
-  ): ComputedRef<XswapBalance[]> =>
+  const uniswapV2Balances = (addresses: string[]): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(v2Balances), addresses));
 
-  const uniswapV3Balances = (
-    addresses: string[],
-  ): ComputedRef<XswapBalance[]> =>
+  const uniswapV3Balances = (addresses: string[]): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(v3Balances), addresses, false));
 
-  const uniswapPoolProfit = (
-    addresses: string[],
-  ): ComputedRef<XswapPoolProfit[]> =>
+  const uniswapPoolProfit = (addresses: string[]): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events), addresses));
 
   const uniswapV2Addresses = computed(() => {
     const uniswapBalances = get(v2Balances);
     const uniswapEvents = get(events);
-    return Object.keys(uniswapBalances)
-      .concat(Object.keys(uniswapEvents))
-      .filter(uniqueStrings);
+    return Object.keys(uniswapBalances).concat(Object.keys(uniswapEvents)).filter(uniqueStrings);
   });
 
   const uniswapV3Addresses = computed(() => {
     const uniswapBalances = get(v3Balances);
     const uniswapEvents = get(events);
-    return Object.keys(uniswapBalances)
-      .concat(Object.keys(uniswapEvents))
-      .filter(uniqueStrings);
+    return Object.keys(uniswapBalances).concat(Object.keys(uniswapEvents)).filter(uniqueStrings);
   });
 
   const uniswapV2PoolAssets = computed(() => {

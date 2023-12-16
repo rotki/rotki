@@ -16,8 +16,7 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit }
-  = useManagedAssetForm();
+const { openDialog, submitting, closeDialog, trySubmit } = useManagedAssetForm();
 </script>
 
 <template>

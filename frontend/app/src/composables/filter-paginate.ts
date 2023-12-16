@@ -3,7 +3,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { isEmpty, isEqual } from 'lodash-es';
 import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library-compat';
+import type { DataTableSortColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ZodSchema } from 'zod';
@@ -16,6 +16,8 @@ export interface FilterSchema<F, M> {
   matchers: ComputedRef<M[]>;
   RouteFilterSchema?: ZodSchema;
 }
+
+export type TableRowKey<T> = keyof T extends string ? keyof T : never;
 
 /**
  * Creates a universal pagination and filter structure
@@ -35,32 +37,36 @@ export function usePaginationFilters<
   S extends Collection<V> = Collection<V>,
   W extends MatchedKeywordWithBehaviour<string> | void = undefined,
   X extends SearchMatcher<string, string> | void = undefined,
->(locationOverview: MaybeRef<string | null>, mainPage: MaybeRef<boolean>, filterSchema: () => FilterSchema<W, X>, fetchAssetData: (payload: MaybeRef<U>) => Promise<S>, options: {
-  onUpdateFilters?: (query: LocationQuery) => void;
-  extraParams?: ComputedRef<LocationQuery>;
-  customPageParams?: ComputedRef<Partial<U>>;
-  defaultParams?: ComputedRef<Partial<U> | undefined>;
-  defaultCollection?: () => S;
-  defaultSortBy?: {
-    // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
-    key?: keyof V | (keyof V)[];
-    ascending?: boolean[];
-  };
-} = {}) {
+>(
+  locationOverview: MaybeRef<string | null>,
+  mainPage: MaybeRef<boolean>,
+  filterSchema: () => FilterSchema<W, X>,
+  fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
+  options: {
+    onUpdateFilters?: (query: LocationQuery) => void;
+    extraParams?: ComputedRef<RawLocationQuery>;
+    customPageParams?: ComputedRef<Partial<U>>;
+    defaultParams?: ComputedRef<Partial<U> | undefined>;
+    defaultCollection?: () => S;
+    defaultSortBy?: {
+      // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
+      key?: keyof V | (keyof V)[];
+      ascending?: boolean[];
+    };
+  } = {},
+) {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
-  const paginationOptions: Ref<TablePagination<V>> = ref(
-    defaultOptions<V>(options.defaultSortBy),
-  );
-  const selected: Ref<V[]> = ref([]);
-  const openDialog: Ref<boolean> = ref(false);
-  const editableItem: Ref<V | undefined> = ref();
-  const itemsToDelete: Ref<V[]> = ref([]);
-  const confirmationMessage: Ref<string> = ref('');
-  const expanded: Ref<V[]> = ref([]);
-  const userAction: Ref<boolean> = ref(false);
+  const paginationOptions = ref(markRaw(defaultOptions<V>(options.defaultSortBy)));
+  const selected = ref<V[]>([]);
+  const openDialog = ref<boolean>(false);
+  const editableItem = ref<V | undefined>();
+  const itemsToDelete = ref<V[]>([]);
+  const confirmationMessage = ref<string>('');
+  const expanded = ref<V[]>([]);
+  const userAction = ref<boolean>(false);
 
   const {
     onUpdateFilters,
@@ -74,7 +80,7 @@ export function usePaginationFilters<
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
 
-  const sort = computed<DataTableSortData>({
+  const sort = computed<DataTableSortData<V>>({
     get() {
       const opts = get(paginationOptions);
       if (opts.singleSort) {
@@ -82,15 +88,18 @@ export function usePaginationFilters<
           return [];
 
         return {
-          column: opts.sortBy[0],
+          column: opts.sortBy[0] as TableRowKey<V>,
           direction: opts.sortDesc?.[0] ? 'desc' : 'asc',
-        };
+        } satisfies DataTableSortColumn<V>;
       }
 
-      return opts.sortBy.map(((sort, index) => ({
-        column: sort,
-        direction: opts.sortDesc?.[index] ? 'desc' : 'asc',
-      })));
+      return opts.sortBy.map(
+        (sort, index) =>
+          ({
+            column: sort as TableRowKey<V>,
+            direction: opts.sortDesc?.[index] ? 'desc' : 'asc',
+          }) satisfies DataTableSortColumn<V>,
+      );
     },
     set(sort) {
       set(userAction, true);
@@ -120,11 +129,7 @@ export function usePaginationFilters<
     const newFilters = { ...filters };
 
     matchersVal.forEach((matcher) => {
-      if (
-        typeof matcher !== 'object'
-        || !('string' in matcher)
-        || !matcher.behaviourRequired
-      )
+      if (typeof matcher !== 'object' || !('string' in matcher) || !matcher.behaviourRequired)
         return;
 
       const keyValue = matcher.keyValue;
@@ -155,22 +160,14 @@ export function usePaginationFilters<
             exclude = true;
             formattedData = data.substring(1);
           }
-          else if (
-            Array.isArray(data)
-            && data.length > 0
-            && data[0].startsWith('!')
-          ) {
+          else if (Array.isArray(data) && data.length > 0 && data[0].startsWith('!')) {
             exclude = true;
-            formattedData = data.map(item =>
-              item.startsWith('!') ? item.substring(1) : item,
-            );
+            formattedData = data.map(item => (item.startsWith('!') ? item.substring(1) : item));
           }
         }
 
         newFilters[usedKey] = {
-          behaviour: exclude
-            ? FilterBehaviour.EXCLUDE
-            : FilterBehaviour.INCLUDE,
+          behaviour: exclude ? FilterBehaviour.EXCLUDE : FilterBehaviour.INCLUDE,
           values: formattedData,
         };
       }
@@ -179,17 +176,13 @@ export function usePaginationFilters<
     return newFilters;
   };
 
-  const pageParams: ComputedRef<U> = computed<U>(() => {
+  const pageParams = computed<U>(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
     const selectedFilters = get(filters);
     const location = get(locationOverview);
-    if (
-      location
-      && typeof selectedFilters === 'object'
-      && 'location' in selectedFilters
-    )
+    if (location && typeof selectedFilters === 'object' && 'location' in selectedFilters)
       selectedFilters.location = location;
 
     const transformedFilters = {
@@ -199,20 +192,15 @@ export function usePaginationFilters<
       ...nonEmptyProperties(get(customPageParams) ?? {}),
     };
 
-    const orderByAttributes
-      = sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
+    const orderByAttributes = sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       ...transformFilters(transformedFilters),
       limit: itemsPerPage,
       offset,
-      orderByAttributes: orderByAttributes.map(item =>
-        typeof item === 'string' ? transformCase(item) : item,
-      ),
-      ascending: sortBy?.length > 0
-        ? sortDesc.map(bool => !bool)
-        : defaultSortBy?.ascending ?? [false],
+      orderByAttributes: orderByAttributes.map(item => (typeof item === 'string' ? transformCase(item) : item)),
+      ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : defaultSortBy?.ascending ?? [false],
     } as U; // todo: figure out a way to not typecast
   });
 
@@ -223,35 +211,31 @@ export function usePaginationFilters<
     return defaultCollectionState<V>() as S;
   };
 
-  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(
-    fetchAssetData,
-    getCollectionDefault(),
-    {
-      immediate: false,
-      resetOnExecute: false,
-      delay: 0,
-      onError(e) {
-        const error = e as AxiosError<{ message: string }>;
-        const path = error.config?.url;
-        let { message, code } = error;
+  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(fetchAssetData, getCollectionDefault(), {
+    immediate: false,
+    resetOnExecute: false,
+    delay: 0,
+    onError(e) {
+      const error = e as AxiosError<{ message: string }>;
+      const path = error.config?.url;
+      let { message, code } = error;
 
-        if (error.response) {
-          message = error.response.data.message;
-          code = error.response.status.toString();
-        }
+      if (error.response) {
+        message = error.response.data.message;
+        code = error.response.status.toString();
+      }
 
-        logger.error(error);
-        if (Number(code) >= 400) {
-          notify({
-            title: t('error.generic.title'),
-            message: t('error.generic.message', { code, message, path }),
-            severity: Severity.ERROR,
-            display: true,
-          });
-        }
-      },
+      logger.error(error);
+      if (Number(code) >= 400) {
+        notify({
+          title: t('error.generic.title'),
+          message: t('error.generic.message', { code, message, path }),
+          severity: Severity.ERROR,
+          display: true,
+        });
+      }
     },
-  );
+  });
 
   const pagination = computed<TablePaginationData>({
     get() {
@@ -326,7 +310,7 @@ export function usePaginationFilters<
    * Returns the parsed pagination and filter query params
    * @returns {LocationQuery}
    */
-  const getQuery = (): RawLocationQuery => {
+  const getQuery = (): LocationQuery => {
     const opts = get(paginationOptions);
     assert(opts);
     const { itemsPerPage, page, sortBy, sortDesc } = opts;
@@ -334,18 +318,11 @@ export function usePaginationFilters<
     const selectedFilters = get(filters);
 
     const location = get(locationOverview);
-    if (
-      location
-      && typeof selectedFilters === 'object'
-      && 'location' in selectedFilters
-    )
+    if (location && typeof selectedFilters === 'object' && 'location' in selectedFilters)
       selectedFilters.location = location;
 
     const extraParamsConverted = Object.fromEntries(
-      Object.entries(get(extraParams)).map(([key, value]) => [
-        key,
-        value?.toString(),
-      ]),
+      Object.entries(get(extraParams)).map(([key, value]) => [key, value?.toString()]),
     );
 
     return {

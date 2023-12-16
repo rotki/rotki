@@ -20,7 +20,7 @@ const css = useCssModule();
 <template>
   <RuiBadge
     :text="count.toString()"
-    :value="count > 0"
+    :model-value="count > 0"
     color="primary"
     placement="top"
     offset-y="14"

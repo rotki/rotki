@@ -1,15 +1,8 @@
 import { cloneDeep } from 'lodash-es';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  AccountAssetBalances,
-  AssetBalances,
-} from '@/types/balances';
-import type {
-  Balances,
-  BlockchainAssetBalances,
-  BtcBalances,
-} from '@/types/blockchain/balances';
+import type { AccountAssetBalances, AssetBalances } from '@/types/balances';
+import type { Balances, BlockchainAssetBalances, BtcBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
 export function updateTotalsPrices(
@@ -68,7 +61,10 @@ export function updateBlockchainAssetBalances(
   return state;
 }
 
-export function updateAssetBalances(balances: MaybeRef<AccountAssetBalances>, prices: MaybeRef<AssetPrices>): AccountAssetBalances {
+export function updateAssetBalances(
+  balances: MaybeRef<AccountAssetBalances>,
+  prices: MaybeRef<AssetPrices>,
+): AccountAssetBalances {
   const state = cloneDeep(get(balances));
   for (const address in state) {
     const addressAssets = state[address];
@@ -87,9 +83,10 @@ export function updateAssetBalances(balances: MaybeRef<AccountAssetBalances>, pr
   return state;
 }
 
-export function updateBtcPrices(state: MaybeRef<
-    Record<typeof Blockchain.BTC | typeof Blockchain.BCH, BtcBalances>
-  >, prices: MaybeRef<AssetPrices>): Record<typeof Blockchain.BTC | typeof Blockchain.BCH, BtcBalances> {
+export function updateBtcPrices(
+  state: MaybeRef<Record<typeof Blockchain.BTC | typeof Blockchain.BCH, BtcBalances>>,
+  prices: MaybeRef<AssetPrices>,
+): Record<typeof Blockchain.BTC | typeof Blockchain.BCH, BtcBalances> {
   const balances = cloneDeep(get(state));
 
   for (const [chain, balance] of Object.entries(balances)) {

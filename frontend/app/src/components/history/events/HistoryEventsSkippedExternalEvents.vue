@@ -1,27 +1,31 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common/lib/messages';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 
+interface Location {
+  location: string;
+  number: number;
+}
+
 const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
-const { state: skippedEvents, execute: refreshSkippedEvents }
-  = useAsyncState<SkippedHistoryEventsSummary>(
-    getSkippedEventsSummary,
-    {
-      locations: {},
-      total: 0,
-    },
-    {
-      immediate: true,
-      resetOnExecute: false,
-      delay: 0,
-    },
-  );
+const { state: skippedEvents, execute: refreshSkippedEvents } = useAsyncState<SkippedHistoryEventsSummary>(
+  getSkippedEventsSummary,
+  {
+    locations: {},
+    total: 0,
+  },
+  {
+    immediate: true,
+    resetOnExecute: false,
+    delay: 0,
+  },
+);
 
 const { t } = useI18n();
 
-const headers: DataTableColumn[] = [
+const headers: DataTableColumn<Location>[] = [
   {
     label: t('common.location'),
     key: 'location',
@@ -37,7 +41,7 @@ const headers: DataTableColumn[] = [
   },
 ];
 
-const locationsData = computed(() =>
+const locationsData = computed<Location[]>(() =>
   Object.entries(get(skippedEvents).locations).map(([location, number]) => ({
     location,
     number,
@@ -46,8 +50,7 @@ const locationsData = computed(() =>
 
 const { appSession, openDirectory } = useInterop();
 
-const { downloadSkippedEventsCSV, exportSkippedEventsCSV }
-  = useSkippedHistoryEventsApi();
+const { downloadSkippedEventsCSV, exportSkippedEventsCSV } = useSkippedHistoryEventsApi();
 
 const { setMessage } = useMessageStore();
 
@@ -66,12 +69,8 @@ async function createCsv(path: string): Promise<void> {
     message = {
       title: t('actions.online_events.skipped.csv_export.title').toString(),
       description: success
-        ? t(
-          'actions.online_events.skipped.csv_export.message.success',
-        ).toString()
-        : t(
-          'actions.online_events.skipped.csv_export.message.failure',
-        ).toString(),
+        ? t('actions.online_events.skipped.csv_export.message.success').toString()
+        : t('actions.online_events.skipped.csv_export.message.failure').toString(),
       success,
     };
   }
@@ -88,9 +87,7 @@ async function createCsv(path: string): Promise<void> {
 async function exportCSV() {
   try {
     if (appSession) {
-      const directory = await openDirectory(
-        t('common.select_directory').toString(),
-      );
+      const directory = await openDirectory(t('common.select_directory').toString());
       if (!directory)
         return;
 
@@ -98,12 +95,8 @@ async function exportCSV() {
     }
     else {
       const result = await downloadSkippedEventsCSV();
-      if (!result.success) {
-        showExportCSVError(
-          result.message
-          ?? t('transactions.events.skipped.download_failed').toString(),
-        );
-      }
+      if (!result.success)
+        showExportCSVError(result.message ?? t('transactions.events.skipped.download_failed').toString());
     }
   }
   catch (error: any) {
@@ -111,10 +104,9 @@ async function exportCSV() {
   }
 }
 
-const { reProcessSkippedEvents: reProcessSkippedEventsCaller }
-  = useSkippedHistoryEventsApi();
+const { reProcessSkippedEvents: reProcessSkippedEventsCaller } = useSkippedHistoryEventsApi();
 
-const loading: Ref<boolean> = ref(false);
+const loading = ref<boolean>(false);
 
 async function reProcessSkippedEvents() {
   set(loading, true);
@@ -124,9 +116,7 @@ async function reProcessSkippedEvents() {
     if (successful === 0) {
       message = {
         title: t('transactions.events.skipped.reprocess.failed.title'),
-        description: t(
-          'transactions.events.skipped.reprocess.failed.no_processed_events',
-        ),
+        description: t('transactions.events.skipped.reprocess.failed.no_processed_events'),
         success: false,
       };
     }

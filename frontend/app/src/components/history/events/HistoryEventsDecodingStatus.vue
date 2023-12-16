@@ -2,7 +2,13 @@
 import { TaskType } from '@/types/task-type';
 import { toSentenceCase } from '@/utils/text';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
+
+interface LocationData {
+  evmChain: string;
+  processed: number;
+  total: number;
+}
 
 const props = defineProps<{
   refreshing: boolean;
@@ -40,7 +46,7 @@ function refresh() {
     emit('reset-undecoded-transactions');
 }
 
-const headers: DataTableColumn[] = [
+const headers: DataTableColumn<LocationData>[] = [
   {
     label: t('common.location'),
     key: 'chain',
@@ -131,15 +137,16 @@ onMounted(() => refresh());
             thickness="2"
             size="20"
             color="primary"
-            :value="
+            :model-value="
               data.protocolCacheRefreshStatus
                 ? (data.protocolCacheRefreshStatus.processed / (data.protocolCacheRefreshStatus.total || 1)) * 100
-                : (data.processed / (data.total || 1)) * 100"
+                : (data.processed / (data.total || 1)) * 100
+            "
           />
-          <i18n
+          <i18n-t
             v-if="!data.protocolCacheRefreshStatus"
             tag="span"
-            path="transactions.events_decoding.transactions_processed"
+            keypath="transactions.events_decoding.transactions_processed"
           >
             <template #processed>
               {{ data.processed }}
@@ -147,11 +154,11 @@ onMounted(() => refresh());
             <template #total>
               {{ data.total }}
             </template>
-          </i18n>
-          <i18n
+          </i18n-t>
+          <i18n-t
             v-else
             tag="span"
-            path="transactions.protocol_cache_updates.protocol_pools_refreshed"
+            keypath="transactions.protocol_cache_updates.protocol_pools_refreshed"
           >
             <template #protocol>
               {{ toSentenceCase(data.protocolCacheRefreshStatus.protocol) }}
@@ -162,7 +169,7 @@ onMounted(() => refresh());
             <template #total>
               {{ data.protocolCacheRefreshStatus.total }}
             </template>
-          </i18n>
+          </i18n-t>
         </div>
         <div v-else>
           -

@@ -19,15 +19,14 @@ import type stream from 'node:stream';
 
 const isDevelopment = checkIfDevelopment();
 
-function streamToString(ioStream: stream.Readable, log: (msg: string) => void, label = 'rotki-core'): (() => void) {
+function streamToString(ioStream: stream.Readable, log: (msg: string) => void, label = 'rotki-core'): () => void {
   const bufferChunks: Buffer[] = [];
   const stringChunks: string[] = [];
 
   const onData = (chunk: any): void => {
     if (typeof chunk === 'string')
       stringChunks.push(chunk);
-    else
-      bufferChunks.push(chunk);
+    else bufferChunks.push(chunk);
   };
 
   const onEnd = (): void => {
@@ -75,12 +74,9 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
   if (options.maxLogfilesNum)
     args.push('--max-logfiles-num', options.maxLogfilesNum.toString());
 
-  if (options.maxSizeInMbAllLogs) {
-    args.push(
-      '--max-size-in-mb-all-logs',
-      options.maxSizeInMbAllLogs.toString(),
-    );
-  }
+  if (options.maxSizeInMbAllLogs)
+    args.push('--max-size-in-mb-all-logs', options.maxSizeInMbAllLogs.toString());
+
   if (options.sqliteInstructions !== undefined)
     args.push('--sqlite-instructions', options.sqliteInstructions.toString());
 
@@ -192,8 +188,7 @@ export class SubprocessHandler {
   setCorsURL(url: string) {
     if (url.endsWith('/'))
       this._corsURL = url.slice(0, Math.max(0, url.length - 1));
-    else
-      this._corsURL = url;
+    else this._corsURL = url;
   }
 
   listenForMessages() {
@@ -201,8 +196,7 @@ export class SubprocessHandler {
     ipcMain.on('ack', (event, ...args) => {
       if (args[0] === 1)
         clearInterval(this.rpcFailureNotifier);
-      else
-        this.logToFile(`Warning: unknown ack code ${args[0]}`);
+      else this.logToFile(`Warning: unknown ack code ${args[0]}`);
     });
   }
 
@@ -215,9 +209,7 @@ export class SubprocessHandler {
   async checkForBackendProcess(): Promise<number[]> {
     const runningProcesses = await psList({ all: true });
     const matches = runningProcesses.filter(
-      process =>
-        process.cmd?.includes('-m rotkehlchen')
-        || process.cmd?.includes('rotki-core'),
+      process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
     );
     return matches.map(p => p.pid);
   }
@@ -235,11 +227,7 @@ export class SubprocessHandler {
     if (os.platform() === 'darwin') {
       const release = os.release().split('.');
       if (release.length > 0 && Number.parseInt(release[0]) < 17) {
-        this.setFailureNotification(
-          window,
-          'rotki requires at least macOS High Sierra',
-          BackendCode.MACOS_VERSION,
-        );
+        this.setFailureNotification(window, 'rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
         return;
       }
     }
@@ -274,9 +262,7 @@ export class SubprocessHandler {
 
     if (port !== DEFAULT_PORT && Number.parseInt(oldPort) !== port) {
       this._serverUrl = `${scheme}://${host}:${port}`;
-      this.logToFile(
-        `Default port ${oldPort} was in use. Starting rotki-core at ${port}`,
-      );
+      this.logToFile(`Default port ${oldPort} was in use. Starting rotki-core at ${port}`);
     }
 
     this._port = port;
@@ -284,28 +270,22 @@ export class SubprocessHandler {
 
     if (this.guessPackaged())
       this.startProcessPackaged(port, args, window);
-    else
-      this.startProcess(port, args);
+    else this.startProcess(port, args);
 
     const childProcess = this.childProcess;
     if (!childProcess)
       return;
 
-    if (childProcess.stdout) {
-      this.stdioListeners.outOff = streamToString(childProcess.stdout, msg =>
-        this.logBackendOutput(msg));
-    }
-    if (childProcess.stderr) {
-      this.stdioListeners.errOff = streamToString(childProcess.stderr, msg =>
-        this.logBackendOutput(msg));
-    }
+    if (childProcess.stdout)
+      this.stdioListeners.outOff = streamToString(childProcess.stdout, msg => this.logBackendOutput(msg));
+
+    if (childProcess.stderr)
+      this.stdioListeners.errOff = streamToString(childProcess.stderr, msg => this.logBackendOutput(msg));
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const handler = this;
     this.onChildError = (err: Error) => {
-      this.logToFile(
-        `Encountered an error while trying to start rotki-core\n\n${err.toString()}`,
-      );
+      this.logToFile(`Encountered an error while trying to start rotki-core\n\n${err.toString()}`);
       // Notify the main window every 2 seconds until it acks the notification
       handler.setFailureNotification(window, err, BackendCode.TERMINATED);
       this.childProcess = undefined;
@@ -313,16 +293,10 @@ export class SubprocessHandler {
     };
 
     this.onChildExit = (code: number, signal: any) => {
-      this.logToFile(
-        `rotki-core exited with signal: ${signal} (Code: ${code})`,
-      );
+      this.logToFile(`rotki-core exited with signal: ${signal} (Code: ${code})`);
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
-        handler.setFailureNotification(
-          window,
-          this.backendOutput,
-          BackendCode.TERMINATED,
-        );
+        handler.setFailureNotification(window, this.backendOutput, BackendCode.TERMINATED);
       }
       this.childProcess = undefined;
       this._port = undefined;
@@ -332,9 +306,7 @@ export class SubprocessHandler {
     childProcess.once('exit', this.onChildExit);
 
     if (childProcess) {
-      this.logToFile(
-        `rotki-core started on port: ${port} (PID: ${childProcess.pid})`,
-      );
+      this.logToFile(`rotki-core started on port: ${port} (PID: ${childProcess.pid})`);
       return;
     }
     this.logToFile('rotki-core was not successfully started');
@@ -349,11 +321,7 @@ export class SubprocessHandler {
       return;
 
     this.exiting = true;
-    this.logToFile(
-      restart
-        ? 'Restarting rotki-core'
-        : `Terminating rotki-core: (PID ${client.pid})`,
-    );
+    this.logToFile(restart ? 'Restarting rotki-core' : `Terminating rotki-core: (PID ${client.pid})`);
     if (this.rpcFailureNotifier)
       clearInterval(this.rpcFailureNotifier);
 
@@ -384,9 +352,7 @@ export class SubprocessHandler {
   private terminateBackend = (client: ChildProcess) =>
     new Promise<void>((resolve, reject) => {
       if (!client.pid) {
-        this.logToFile(
-          'subprocess was already terminated (no process id pid found)',
-        );
+        this.logToFile('subprocess was already terminated (no process id pid found)');
         this.childProcess = undefined;
         this._port = undefined;
         resolve();
@@ -394,9 +360,7 @@ export class SubprocessHandler {
       }
 
       client.once('exit', () => {
-        this.logToFile(
-          `The Python sub-process was terminated successfully (${client.killed})`,
-        );
+        this.logToFile(`The Python sub-process was terminated successfully (${client.killed})`);
         resolve();
         this.childProcess = undefined;
         this._port = undefined;
@@ -409,9 +373,7 @@ export class SubprocessHandler {
 
   private guessPackaged() {
     const path = SubprocessHandler.packagedBackendPath();
-    this.logToFile(
-      `Determining if we are packaged by seeing if ${path} exists`,
-    );
+    this.logToFile(`Determining if we are packaged by seeing if ${path} exists`);
     return fs.existsSync(path);
   }
 
@@ -447,9 +409,7 @@ export class SubprocessHandler {
     defaultArgs.push('--logfile', this.backendLogFile);
 
     if (!process.env.VIRTUAL_ENV) {
-      this.logAndQuit(
-        'ERROR: Running in development mode and not inside a python virtual environment',
-      );
+      this.logAndQuit('ERROR: Running in development mode and not inside a python virtual environment');
       return;
     }
 
@@ -461,18 +421,12 @@ export class SubprocessHandler {
 
     if (!isDevelopment) {
       this.colibriProcess = spawn('colibri');
-      if (this.colibriProcess.stdout) {
-        streamToString(this.colibriProcess.stdout, msg =>
-          this.logToFile(`Colibri says: ${msg}`));
-      }
+      if (this.colibriProcess.stdout)
+        streamToString(this.colibriProcess.stdout, msg => this.logToFile(`Colibri says: ${msg}`));
     }
   }
 
-  private startProcessPackaged(
-    port: number,
-    args: string[],
-    window: Electron.CrossProcessExports.BrowserWindow,
-  ): void {
+  private startProcessPackaged(port: number, args: string[], window: Electron.CrossProcessExports.BrowserWindow): void {
     const distDir = SubprocessHandler.packagedBackendPath();
     const files = fs.readdirSync(distDir);
     if (files.length === 0) {
@@ -505,29 +459,20 @@ export class SubprocessHandler {
 
     args.push('--logfile', this.backendLogFile);
     args = ['--rest-api-port', port.toString()].concat(args);
-    this.logToFile(
-      `Starting packaged rotki-core: ${executable} ${args.join(' ')}`,
-    );
+    this.logToFile(`Starting packaged rotki-core: ${executable} ${args.join(' ')}`);
     this.childProcess = spawn(executable, args);
 
     if (!isDevelopment) {
       const colibriDir = SubprocessHandler.packagedColibriPath();
-      const colibriExe = fs
-        .readdirSync(colibriDir)
-        .find(file => file.startsWith('colibri'));
+      const colibriExe = fs.readdirSync(colibriDir).find(file => file.startsWith('colibri'));
 
       if (!colibriExe) {
         this.logAndQuit(`ERROR: colibri executable was not found`);
         return;
       }
       this.colibriProcess = spawn(path.join(colibriDir, colibriExe));
-      if (this.colibriProcess.stdout) {
-        streamToString(
-          this.colibriProcess.stdout,
-          msg => this.logToFile(`output: ${msg}`),
-          'colibri',
-        );
-      }
+      if (this.colibriProcess.stdout)
+        streamToString(this.colibriProcess.stdout, msg => this.logToFile(`output: ${msg}`), 'colibri');
     }
   }
 
@@ -551,23 +496,14 @@ export class SubprocessHandler {
     const tasks: Task[] = await tasklist();
     this.logToFile(`Currently running: ${tasks.length} tasks`);
 
-    const pids = tasks
-      .filter(task => task.imageName === executable)
-      .map(task => task.pid);
-    this.logToFile(
-      `Detected the following running rotki-core processes: ${pids.join(', ')}`,
-    );
+    const pids = tasks.filter(task => task.imageName === executable).map(task => task.pid);
+    this.logToFile(`Detected the following running rotki-core processes: ${pids.join(', ')}`);
 
     const args = ['/f', '/t'];
 
-    for (const pid of pids)
-      args.push('/PID', pid.toString());
+    for (const pid of pids) args.push('/PID', pid.toString());
 
-    this.logToFile(
-      `Preparing to call "taskill ${args.join(
-        ' ',
-      )}" on the rotki-core processes`,
-    );
+    this.logToFile(`Preparing to call "taskill ${args.join(' ')}" on the rotki-core processes`);
 
     try {
       spawnSync('taskkill', args);
@@ -595,9 +531,7 @@ export class SubprocessHandler {
     }
 
     for (let i = 0; i < 10; i++) {
-      this.logToFile(
-        `The ${running} processes are still running. Waiting for 2 seconds`,
-      );
+      this.logToFile(`The ${running} processes are still running. Waiting for 2 seconds`);
       await wait(2000);
       tasks = await tasklist();
       if (stillRunning(tasks) === 0) {

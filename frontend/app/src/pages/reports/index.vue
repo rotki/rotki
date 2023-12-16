@@ -4,17 +4,13 @@ import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
 import { displayDateFormatter } from '@/data/date-formatter';
 import FileUpload from '@/components/import/FileUpload.vue';
-import type {
-  ProfitLossReportDebugPayload,
-  ProfitLossReportPeriod,
-} from '@/types/reports';
+import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 
 const { isTaskRunning, awaitTask } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
-const { generateReport, clearError, exportReportData, fetchReports }
-  = reportsStore;
+const { generateReport, clearError, exportReportData, fetchReports } = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
@@ -56,10 +52,7 @@ async function generate(period: ProfitLossReportPeriod) {
     set(pinned, null);
 
   const formatDate = (timestamp: number) =>
-    displayDateFormatter.format(
-      new Date(timestamp * 1000),
-      get(dateDisplayFormat),
-    );
+    displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat));
 
   const reportId = await generateReport(period);
 
@@ -73,7 +66,7 @@ async function generate(period: ProfitLossReportPeriod) {
   };
 
   if (reportId > 0) {
-    if (router.currentRoute.path === Routes.PROFIT_LOSS_REPORTS) {
+    if (route.path === Routes.PROFIT_LOSS_REPORTS) {
       action();
       return;
     }
@@ -125,11 +118,7 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
       };
     }
     else {
-      downloadFileByTextContent(
-        JSON.stringify(result, null, 2),
-        'pnl_debug.json',
-        'application/json',
-      );
+      downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');
     }
   }
   catch (error: any) {

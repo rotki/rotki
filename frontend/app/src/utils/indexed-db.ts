@@ -14,11 +14,10 @@ export class IndexedDb {
       if (!window.indexedDB)
         reject(new Error('Unsupported indexedDB'));
 
-      const request = (
-        window.indexedDB
-        || (window as any).mozIndexedDB
-        || (window as any).webkitIndexedDB
-      ).open(this.dbName, this.dbVersion);
+      const request = (window.indexedDB || (window as any).mozIndexedDB || (window as any).webkitIndexedDB).open(
+        this.dbName,
+        this.dbVersion,
+      );
 
       request.onsuccess = (e): void => {
         resolve((e.target as any).result);
@@ -45,9 +44,7 @@ export class IndexedDb {
   async add(data: any, callback?: (e: any) => void): Promise<void> {
     try {
       const db = await this.db;
-      const objectStore = db
-        .transaction(this.store, 'readwrite')
-        .objectStore(this.store);
+      const objectStore = db.transaction(this.store, 'readwrite').objectStore(this.store);
 
       const request = objectStore.put(data);
 
@@ -62,11 +59,8 @@ export class IndexedDb {
             const firstId = cursor.value.id;
             const length = currentId - firstId + 1;
             const totalExceeded = length - ROWLIMIT;
-            if (totalExceeded > 0) {
-              objectStore.delete(
-                IDBKeyRange.bound(firstId, firstId + totalExceeded - 1),
-              );
-            }
+            if (totalExceeded > 0)
+              objectStore.delete(IDBKeyRange.bound(firstId, firstId + totalExceeded - 1));
           }
         };
       };
@@ -81,10 +75,7 @@ export class IndexedDb {
   async getAll(callback: (result: any[]) => void): Promise<void> {
     try {
       const db = await this.db;
-      const request = db
-        .transaction(this.store)
-        .objectStore(this.store)
-        .openCursor();
+      const request = db.transaction(this.store).objectStore(this.store).openCursor();
       const results: any[] = [];
       request.onsuccess = (e: any): void => {
         const cursor = e.target.result;

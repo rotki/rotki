@@ -1,24 +1,14 @@
-import {
-  NotificationCategory,
-  type NotificationPayload,
-  Severity,
-} from '@rotki/common/lib/messages';
-import type {
-  HistoricalPrice,
-  HistoricalPriceFormPayload,
-  ManualPricePayload,
-} from '@/types/prices';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 
-export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: string }>, t: ReturnType<typeof useI18n>['t']) {
+export function useHistoricPrices(
+  filter: Ref<{ fromAsset?: string; toAsset?: string }>,
+  t: ReturnType<typeof useI18n>['t'],
+) {
   const loading = ref(false);
-  const items: Ref<HistoricalPrice[]> = ref([]);
+  const items = ref<HistoricalPrice[]>([]);
 
-  const {
-    editHistoricalPrice,
-    addHistoricalPrice,
-    fetchHistoricalPrices,
-    deleteHistoricalPrice,
-  } = useAssetPricesApi();
+  const { editHistoricalPrice, addHistoricalPrice, fetchHistoricalPrices, deleteHistoricalPrice } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricCachePriceStore();
   const { setMessage } = useMessageStore();
   const { notify } = useNotificationsStore();
@@ -45,10 +35,7 @@ export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: st
     }
   };
 
-  const refresh = async (payload?: {
-    modified?: boolean;
-    additionalEntry?: HistoricalPrice;
-  }) => {
+  const refresh = async (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }) => {
     await fetchPrices(get(filter));
 
     if (payload?.modified) {
@@ -69,9 +56,7 @@ export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: st
     }
     catch (error: any) {
       const values = { message: error.message };
-      const title = update
-        ? t('price_management.edit.error.title')
-        : t('price_management.add.error.title');
+      const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
       const description = update
         ? t('price_management.edit.error.description', values)
         : t('price_management.add.error.description', values);

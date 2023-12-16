@@ -8,9 +8,7 @@ const { t } = useI18n();
 const updated = () => emit('updated');
 
 const inferZeroTimedBalances = ref<boolean>(false);
-const { inferZeroTimedBalances: enabled } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { inferZeroTimedBalances: enabled } = storeToRefs(useGeneralSettingsStore());
 
 function resetState() {
   set(inferZeroTimedBalances, get(enabled));
@@ -43,7 +41,7 @@ onMounted(() => {
         class="mt-4"
         :success-messages="success"
         :error-messages="error"
-        @input="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
   </div>

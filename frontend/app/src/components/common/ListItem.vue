@@ -41,10 +41,6 @@ const css = useCssModule();
         'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
       },
     ]"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
     <div
       v-if="slots.avatar"

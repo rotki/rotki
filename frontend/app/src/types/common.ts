@@ -19,10 +19,9 @@ export type ToSnakeCase<T> = T extends `${infer A}${infer B}${infer C}`
         ? { [K in keyof T as ToSnakeCase<K>]: ToSnakeCase<T[K]> }
         : T;
 
-export type CamelCase<S extends string> =
-  S extends `${infer P1}_${infer P2}${infer P3}`
-    ? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<P3>}`
-    : Lowercase<S>;
+export type CamelCase<S extends string> = S extends `${infer P1}_${infer P2}${infer P3}`
+  ? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<P3>}`
+  : Lowercase<S>;
 
 export const RESOLVE_REMOTE = 'remote';
 
@@ -32,6 +31,9 @@ export const CONFLICT_RESOLUTION = [RESOLVE_REMOTE, RESOLVE_LOCAL] as const;
 
 export type ConflictResolutionStrategy = (typeof CONFLICT_RESOLUTION)[number];
 
-export interface SelectOption { key: string; label?: string }
+export interface SelectOption<T = string> {
+  key: T;
+  label?: string;
+}
 
-export type SelectOptions = SelectOption[];
+export type SelectOptions<T = string> = SelectOption<T>[];

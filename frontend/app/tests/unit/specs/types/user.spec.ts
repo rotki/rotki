@@ -68,22 +68,15 @@ describe('types/user', () => {
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
-        [DashboardTableType.ASSETS]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
-        [DashboardTableType.LIABILITIES]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
+        [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+        [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-        [DashboardTableType.LIQUIDITY_POSITION]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
+        [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
-      blockchainRefreshButtonBehaviour:
-        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
     };

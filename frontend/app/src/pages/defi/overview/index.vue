@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library-compat';
+import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { Section } from '@/types/status';
 
 const page = ref(1);
@@ -32,7 +32,7 @@ const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isLoading(section);
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('decentralized_overview.title').toLocaleLowerCase(),
   }),
@@ -78,9 +78,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[t('navigation_menu.defi'), t('decentralized_overview.title')]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.defi'), t('decentralized_overview.title')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -119,9 +117,7 @@ onMounted(async () => {
         {{ t('decentralized_overview.deprecated_warning') }}
       </RuiAlert>
 
-      <div
-        class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-      >
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         <Overview
           v-for="summary in visibleData"
           :key="summary.protocol"

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { TableColumn } from '@/types/table-column';
-import type {
-  DashboardTableType,
-  FrontendSettingsPayload,
-} from '@/types/settings/frontend-settings';
+import type { DashboardTableType, FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{
@@ -20,9 +17,7 @@ const { group, groupLabel } = toRefs(props);
 const availableColumns = computed(() => [
   {
     value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-    text: t(
-      'dashboard_asset_table.headers.percentage_of_total_net_value',
-    ).toString(),
+    text: t('dashboard_asset_table.headers.percentage_of_total_net_value').toString(),
   },
   {
     value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
@@ -35,9 +30,7 @@ const availableColumns = computed(() => [
 const store = useFrontendSettingsStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(store);
 
-const currentVisibleColumns = computed(
-  () => get(dashboardTablesVisibleColumns)[get(group)],
-);
+const currentVisibleColumns = computed(() => get(dashboardTablesVisibleColumns)[get(group)]);
 
 async function onVisibleColumnsChange(visibleColumns: TableColumn[]) {
   const payload: FrontendSettingsPayload = {
@@ -59,8 +52,7 @@ function update(value: TableColumn) {
   const index = visible.indexOf(value);
   if (index === -1)
     visible.push(value);
-  else
-    visible.splice(index, 1);
+  else visible.splice(index, 1);
 
   onVisibleColumnsChange(visible);
 }
@@ -68,12 +60,14 @@ function update(value: TableColumn) {
 
 <template>
   <div class="py-2">
-    <template v-for="item in availableColumns">
+    <template
+      v-for="item in availableColumns"
+      :key="item.value"
+    >
       <RuiButton
-        :key="item.value"
         variant="list"
         size="sm"
-        :value="item.value"
+        :model-value="item.value"
         @click="update(item.value)"
       >
         <template #prepend>
@@ -81,8 +75,8 @@ function update(value: TableColumn) {
             class="-mr-2"
             color="primary"
             hide-details
-            :value="active(item.value)"
-            @input="update(item.value)"
+            :model-value="active(item.value)"
+            @update:model-value="update(item.value)"
           />
         </template>
         {{ item.text }}

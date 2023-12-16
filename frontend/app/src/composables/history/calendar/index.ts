@@ -16,13 +16,12 @@ export function useCalendarApi() {
   const fetchCalendarEvents = async (
     filter: MaybeRef<CalendarEventRequestPayload>,
   ): Promise<Collection<CalendarEvent>> => {
-    const response = await api.instance.post<
-        ActionResult<Collection<CalendarEvent>>
-    >('/calendar', snakeCaseTransformer(get(filter)));
-
-    return mapCollectionResponse(
-      CalendarEventCollectionResponse.parse(handleResponse(response)),
+    const response = await api.instance.post<ActionResult<Collection<CalendarEvent>>>(
+      '/calendar',
+      snakeCaseTransformer(get(filter)),
     );
+
+    return mapCollectionResponse(CalendarEventCollectionResponse.parse(handleResponse(response)));
   };
 
   const addCalendarEvent = async (payload: CalendarEventPayload): Promise<AddCalendarEventResponse> => {
@@ -44,12 +43,9 @@ export function useCalendarApi() {
   };
 
   const deleteCalendarEvent = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/calendar',
-      {
-        data: snakeCaseTransformer({ identifier }),
-      },
-    );
+    const response = await api.instance.delete<ActionResult<boolean>>('/calendar', {
+      data: snakeCaseTransformer({ identifier }),
+    });
 
     return handleResponse(response);
   };

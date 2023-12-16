@@ -4,14 +4,9 @@ import type { TabContent } from '@/types/tabs';
 
 const { appRoutes } = useAppRoutes();
 
-const tabs: ComputedRef<TabContent[]> = computed(() => {
+const tabs = computed<TabContent[]>(() => {
   const Routes = get(appRoutes);
-  return [
-    Routes.SETTINGS_GENERAL,
-    Routes.SETTINGS_ACCOUNTING,
-    Routes.SETTINGS_DATA_SECURITY,
-    Routes.SETTINGS_MODULES,
-  ];
+  return [Routes.SETTINGS_GENERAL, Routes.SETTINGS_ACCOUNTING, Routes.SETTINGS_DATA_SECURITY, Routes.SETTINGS_MODULES];
 });
 </script>
 

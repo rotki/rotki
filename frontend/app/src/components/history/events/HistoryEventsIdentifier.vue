@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 import { toSentenceCase } from '@/utils/text';
 import type { HistoryEventEntry } from '@/types/history/events';
 
@@ -10,15 +10,13 @@ const props = defineProps<{
 
 const { event } = toRefs(props);
 
-const translationKey: ComputedRef<string> = computed(
+const translationKey = computed<string>(
   () => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`,
 );
 
 const { getChain } = useSupportedChains();
 
-const evmOrDepositEvent = computed(
-  () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)),
-);
+const evmOrDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
@@ -27,8 +25,8 @@ const { is2xlAndUp } = useBreakpoint();
 </script>
 
 <template>
-  <i18n
-    :path="translationKey"
+  <i18n-t
+    :keypath="translationKey"
     tag="span"
     class="flex items-center gap-2"
   >
@@ -75,7 +73,7 @@ const { is2xlAndUp } = useBreakpoint();
         :full-address="is2xlAndUp"
       />
     </template>
-  </i18n>
+  </i18n-t>
 </template>
 
 <style lang="scss" module>

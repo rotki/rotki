@@ -15,18 +15,14 @@ const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]
     <SettingsOption
       #default="{ error, success, updateImmediate, loading }"
       setting="evmchainsToSkipDetection"
-      :error-message="
-        t('general_settings.validation.chains_to_skip_detection.error')
-      "
-      :success-message="
-        t('general_settings.validation.chains_to_skip_detection.success')
-      "
+      :error-message="t('general_settings.validation.chains_to_skip_detection.error')"
+      :success-message="t('general_settings.validation.chains_to_skip_detection.success')"
     >
       <RuiAutoComplete
         :disabled="loading"
         :options="chains"
         :label="t('account_form.labels.blockchain', 2)"
-        :value="evmchainsToSkipDetection"
+        :model-value="evmchainsToSkipDetection"
         :success-messages="success"
         :error-messages="error"
         class="general-settings__fields__account-chains-to-skip-detection"
@@ -37,7 +33,7 @@ const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]
         chips
         :item-height="56"
         auto-select-first
-        @input="updateImmediate($event)"
+        @update:model-value="updateImmediate($event)"
       >
         <template #selection="{ item }">
           <ChainDisplay

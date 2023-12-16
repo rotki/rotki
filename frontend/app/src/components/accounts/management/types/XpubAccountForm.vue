@@ -6,24 +6,24 @@ import type { XpubPayload } from '@/types/blockchain/accounts';
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 
 const props = defineProps<{
-  value: XpubManage;
+  modelValue: XpubManage;
   loading: boolean;
   errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: XpubManage): void;
+  (e: 'update:model-value', value: XpubManage): void;
   (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
-const { value: modelValue } = toRefs(props);
+const { modelValue } = toRefs(props);
 
 const input = ref<InstanceType<typeof XpubInput>>();
 
 const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function updateVModel(value: XpubManage) {
-  emit('input', value);
+  emit('update:model-value', value);
 }
 
 const xpub = computed<XpubPayload>({
@@ -90,14 +90,14 @@ defineExpose({
   <div class="flex flex-col gap-4">
     <XpubInput
       ref="input"
-      :disabled="loading || value.mode === 'edit'"
-      :error-messages.sync="errors"
-      :xpub.sync="xpub"
-      :blockchain="value.chain"
+      v-model:xpub="xpub"
+      v-model:error-messages="errors"
+      :disabled="loading || modelValue.mode === 'edit'"
+      :blockchain="modelValue.chain"
     />
     <AccountDataInput
-      :tags.sync="tags"
-      :label.sync="label"
+      v-model:tags="tags"
+      v-model:label="label"
       :disabled="loading"
     />
   </div>

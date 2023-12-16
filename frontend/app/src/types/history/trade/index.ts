@@ -5,12 +5,7 @@ import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 
-export const TradeType = z.enum([
-  'buy',
-  'sell',
-  'settlement buy',
-  'settlement sell',
-]);
+export const TradeType = z.enum(['buy', 'sell', 'settlement buy', 'settlement sell']);
 
 export type TradeType = z.infer<typeof TradeType>;
 

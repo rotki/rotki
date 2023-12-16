@@ -1,16 +1,18 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 describe('serviceKey.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof ServiceKey>>;
 
-  function createWrapper(): Wrapper<any> {
+  function createWrapper(): VueWrapper<InstanceType<typeof ServiceKey>> {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(ServiceKey, {
-      pinia,
-      propsData: {
+      global: {
+        plugins: [pinia],
+      },
+      props: {
         apiKey: '',
         name: 'etherscan',
       },
@@ -21,20 +23,26 @@ describe('serviceKey.vue', () => {
     wrapper = createWrapper();
   });
 
+  afterEach(() => {
+    wrapper.unmount();
+  });
+
   it('component leaves edit mode when updated with non-empty value', async () => {
     expect.assertions(2);
     await nextTick();
-    expect(
-      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled'),
-    ).toBeUndefined();
+    expect(wrapper.find('[data-cy=service-key__api-key] input').attributes()).toMatchObject(
+      expect.not.objectContaining({
+        disabled: '',
+      }),
+    );
     await wrapper.setProps({
       apiKey: '1234',
     });
     await nextTick();
-    expect(
-      wrapper
-        .find('[data-cy=service-key__api-key] input')
-        .attributes('disabled'),
-    ).toBe('disabled');
+    expect(wrapper.find('[data-cy=service-key__api-key] input').attributes()).toMatchObject(
+      expect.objectContaining({
+        disabled: '',
+      }),
+    );
   });
 });

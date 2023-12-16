@@ -8,10 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:selected', selected: string[]): void;
-  (
-    e: 'update:ignored-assets-handling',
-    ignoredAssetsHandling: IgnoredAssetsHandlingType
-  ): void;
+  (e: 'update:ignored-assets-handling', ignoredAssetsHandling: IgnoredAssetsHandlingType): void;
   (e: 'mass-ignore', ignored: boolean): void;
 }>();
 
@@ -26,10 +23,10 @@ const internalValue = computed({
 
 const disabledIgnoreActions = computed(() => {
   const ignoredAssetsHandling = get(internalValue);
-  return ({
+  return {
     ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
     unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
-  });
+  };
 });
 
 function massIgnore(ignored: boolean) {
@@ -52,9 +49,7 @@ const { t } = useI18n();
         class="flex flex-row items-center gap-2"
       >
         <span class="text-body-2 text-rui-text-secondary">
-          {{
-            t('asset_table.selected', { count: selected.length })
-          }}
+          {{ t('asset_table.selected', { count: selected.length }) }}
         </span>
         <RuiButton
           size="sm"
@@ -67,10 +62,10 @@ const { t } = useI18n();
     </div>
     <div>
       <RuiMenu :popper="{ placement: 'bottom-end' }">
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiButton
             variant="outlined"
-            v-on="on"
+            v-bind="attrs"
           >
             <template #append>
               <RuiIcon name="arrow-down-s-line" />
@@ -91,15 +86,15 @@ const { t } = useI18n();
               color="primary"
             >
               <RuiRadio
-                internal-value="none"
+                value="none"
                 :label="t('asset_table.show_all')"
               />
               <RuiRadio
-                internal-value="exclude"
+                value="exclude"
                 :label="t('asset_table.only_show_unignored')"
               />
               <RuiRadio
-                internal-value="show_only"
+                value="show_only"
                 :label="t('asset_table.only_show_ignored', 2)"
               />
             </RuiRadioGroup>

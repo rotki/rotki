@@ -17,8 +17,7 @@ function openUpdatePopup() {
 function update() {
   if (isPackaged)
     openUpdatePopup();
-  else
-    openLink();
+  else openLink();
 }
 
 const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;

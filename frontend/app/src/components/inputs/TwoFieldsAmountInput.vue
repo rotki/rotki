@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import AmountInput from '@/components/inputs/AmountInput.vue';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     primaryValue: string;
@@ -11,11 +15,13 @@ const props = withDefaults(
       secondary?: string | string[];
     };
     loading?: boolean;
+    disabled?: boolean;
   }>(),
   {
     label: () => ({}),
     errorMessages: () => ({}),
     loading: false,
+    disabled: false,
   },
 );
 
@@ -27,12 +33,10 @@ const emit = defineEmits<{
 
 const { errorMessages } = toRefs(props);
 
-const primaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
-const secondaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
+const primaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
+const secondaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
 
-const reversed: Ref<boolean> = ref(false);
-
-const rootAttrs = useAttrs();
+const reversed = ref<boolean>(false);
 
 function reverse() {
   const newReversed = !get(reversed);
@@ -42,8 +46,7 @@ function reverse() {
   nextTick(() => {
     if (!newReversed)
       get(primaryInput)?.focus();
-    else
-      get(secondaryInput)?.focus();
+    else get(secondaryInput)?.focus();
   });
 }
 
@@ -60,13 +63,10 @@ const aggregatedErrorMessages = computed(() => {
   const primary = val?.primary || [];
   const secondary = val?.secondary || [];
 
-  return [
-    ...(Array.isArray(primary) ? primary : [primary]),
-    ...(Array.isArray(secondary) ? secondary : [secondary]),
-  ];
+  return [...(Array.isArray(primary) ? primary : [primary]), ...(Array.isArray(secondary) ? secondary : [secondary])];
 });
 
-const focused: Ref<boolean> = ref(false);
+const focused = ref<boolean>(false);
 </script>
 
 <template>
@@ -77,20 +77,20 @@ const focused: Ref<boolean> = ref(false);
       'flex-col-reverse': reversed,
       'focused': focused,
     }"
+    v-bind="$attrs"
   >
     <AmountInput
       ref="primaryInput"
-      :value="primaryValue"
-      :disabled="reversed || rootAttrs.disabled"
+      :model-value="primaryValue"
+      :disabled="reversed || disabled"
       :hide-details="!reversed"
       variant="filled"
       persistent-hint
       data-cy="primary"
       :class="`${!reversed ? 'input__enabled' : ''}`"
-      v-bind="rootAttrs"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
-      @input="updatePrimaryValue($event)"
+      @update:model-value="updatePrimaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />
@@ -105,17 +105,16 @@ const focused: Ref<boolean> = ref(false);
 
     <AmountInput
       ref="secondaryInput"
-      :value="secondaryValue"
-      :disabled="!reversed || rootAttrs.disabled"
+      :model-value="secondaryValue"
+      :disabled="!reversed || disabled"
       :hide-details="reversed"
       variant="filled"
       persistent-hint
       data-cy="secondary"
       :class="`${reversed ? 'input__enabled' : ''}`"
-      v-bind="rootAttrs"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
-      @input="updateSecondaryValue($event)"
+      @update:model-value="updateSecondaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />
@@ -168,7 +167,7 @@ const focused: Ref<boolean> = ref(false);
     }
   }
 
-  :deep([class*="with-error"]) {
+  :deep([class*='with-error']) {
     label {
       @apply border-rui-error #{!important};
       @apply border-2;

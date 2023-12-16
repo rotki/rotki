@@ -7,13 +7,10 @@ import { type DefiAccount, ProtocolVersion } from '@/types/defi';
 import { Purgeable } from '@/types/session/purge';
 import type { TaskMeta } from '@/types/task';
 
-type ResetStateParams =
-  | Module
-  | typeof Purgeable.DEFI_MODULES
-  | typeof Purgeable.DECENTRALIZED_EXCHANGES;
+type ResetStateParams = Module | typeof Purgeable.DEFI_MODULES | typeof Purgeable.DECENTRALIZED_EXCHANGES;
 
 export const useDefiStore = defineStore('defi', () => {
-  const allProtocols: Ref<AllDefiProtocols> = ref({});
+  const allProtocols = ref<AllDefiProtocols>({});
 
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -41,55 +38,56 @@ export const useDefiStore = defineStore('defi', () => {
     DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP | DefiProtocol.LIQUITY
   >;
 
-  const defiAccounts = (protocols: DefiProtocol[]) => computed<DefiAccount[]>(() => {
-    const addresses: {
-      [key in DefiProtocols]: string[];
-    } = {
-      [DefiProtocol.MAKERDAO_DSR]: [],
-      [DefiProtocol.AAVE]: [],
-      [DefiProtocol.COMPOUND]: [],
-      [DefiProtocol.YEARN_VAULTS]: [],
-      [DefiProtocol.YEARN_VAULTS_V2]: [],
-    };
+  const defiAccounts = (protocols: DefiProtocol[]) =>
+    computed<DefiAccount[]>(() => {
+      const addresses: {
+        [key in DefiProtocols]: string[];
+      } = {
+        [DefiProtocol.MAKERDAO_DSR]: [],
+        [DefiProtocol.AAVE]: [],
+        [DefiProtocol.COMPOUND]: [],
+        [DefiProtocol.YEARN_VAULTS]: [],
+        [DefiProtocol.YEARN_VAULTS_V2]: [],
+      };
 
-    const noProtocolsSelected = protocols.length === 0;
+      const noProtocolsSelected = protocols.length === 0;
 
-    if (noProtocolsSelected || protocols.includes(DefiProtocol.MAKERDAO_DSR))
-      addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.MAKERDAO_DSR))
+        addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
 
-    if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
-      addresses[DefiProtocol.AAVE] = get(aaveAddresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
+        addresses[DefiProtocol.AAVE] = get(aaveAddresses);
 
-    if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
-      addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
+        addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
 
-    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS))
-      addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS))
+        addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
 
-    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
-      addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
+        addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
 
-    const accounts: Record<string, DefiAccount> = {};
-    for (const protocol in addresses) {
-      const selectedProtocol = protocol as DefiProtocols;
-      const perProtocolAddresses = addresses[selectedProtocol];
-      for (const address of perProtocolAddresses) {
-        if (accounts[address]) {
-          accounts[address].protocols.push(selectedProtocol);
-        }
-        else {
-          accounts[address] = {
-            data: { address },
-            chain: Blockchain.ETH,
-            protocols: [selectedProtocol],
-            nativeAsset: Blockchain.ETH.toUpperCase(),
-          };
+      const accounts: Record<string, DefiAccount> = {};
+      for (const protocol in addresses) {
+        const selectedProtocol = protocol as DefiProtocols;
+        const perProtocolAddresses = addresses[selectedProtocol];
+        for (const address of perProtocolAddresses) {
+          if (accounts[address]) {
+            accounts[address].protocols.push(selectedProtocol);
+          }
+          else {
+            accounts[address] = {
+              data: { address },
+              chain: Blockchain.ETH,
+              protocols: [selectedProtocol],
+              nativeAsset: Blockchain.ETH.toUpperCase(),
+            };
+          }
         }
       }
-    }
 
-    return Object.values(accounts);
-  });
+      return Object.values(accounts);
+    });
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_BALANCES);
 
@@ -101,13 +99,9 @@ export const useDefiStore = defineStore('defi', () => {
     try {
       const taskType = TaskType.DEFI_BALANCES;
       const { taskId } = await fetchAllDefiCaller();
-      const { result } = await awaitTask<AllDefiProtocols, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.defi.balances.task.title'),
-        },
-      );
+      const { result } = await awaitTask<AllDefiProtocols, TaskMeta>(taskId, taskType, {
+        title: t('actions.defi.balances.task.title'),
+      });
 
       set(allProtocols, AllDefiProtocols.parse(result));
     }
@@ -175,16 +169,14 @@ export const useDefiStore = defineStore('defi', () => {
       DECENTRALIZED_EXCHANGES.map(mod => modules[mod]());
     }
     else if (module === Purgeable.DEFI_MODULES) {
-      for (const mod in modules)
-        modules[mod as Module]();
+      for (const mod in modules) modules[mod as Module]();
     }
     else {
       const reset = modules[module];
 
       if (!reset)
         logger.warn(`Missing reset function for ${module}`);
-      else
-        reset();
+      else reset();
     }
   };
 

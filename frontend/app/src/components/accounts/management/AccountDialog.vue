@@ -2,27 +2,21 @@
 import type AccountForm from '@/components/accounts/management/AccountForm.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
-const props = defineProps<{
-  value: AccountManageState | undefined;
-}>();
-
-const emit = defineEmits<{
-  (e: 'input', value: AccountManageState | undefined): void;
-}>();
-
 const { t } = useI18n();
 
 const form = ref<InstanceType<typeof AccountForm>>();
 
-const model = useSimpleVModel(props, emit);
+const model = defineModel<AccountManageState | undefined>({ required: true });
 
-const title = computed<string>(() => props.value?.mode === 'edit'
-  ? t('blockchain_balances.form_dialog.edit_title')
-  : t('blockchain_balances.form_dialog.add_title'));
+const title = computed<string>(() =>
+  get(model)?.mode === 'edit'
+    ? t('blockchain_balances.form_dialog.edit_title')
+    : t('blockchain_balances.form_dialog.add_title'),
+);
 
-const subtitle = computed<string>(() => props.value?.mode === 'edit'
-  ? t('blockchain_balances.form_dialog.edit_subtitle')
-  : '');
+const subtitle = computed<string>(() =>
+  get(model)?.mode === 'edit' ? t('blockchain_balances.form_dialog.edit_subtitle') : '',
+);
 
 const { save, pending, errorMessages } = useAccountManage();
 const { loading } = useAccountLoading();
@@ -67,7 +61,7 @@ async function confirm() {
       v-if="model"
       ref="form"
       v-model="model"
-      :error-messages.sync="errorMessages"
+      v-model:error-messages="errorMessages"
       :loading="loading"
     />
   </BigDialog>

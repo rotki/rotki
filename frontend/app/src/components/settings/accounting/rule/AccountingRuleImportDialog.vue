@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import FileUpload from '@/components/import/FileUpload.vue';
 
-const props = defineProps<{
+defineProps<{
   loading: boolean;
-  value: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'refresh'): void;
-  (e: 'input', value: boolean): void;
 }>();
 
 const { t } = useI18n();
@@ -16,7 +14,7 @@ const { t } = useI18n();
 const importFileUploader = ref<InstanceType<typeof FileUpload>>();
 const importFile = ref<File>();
 
-const model = useSimpleVModel(props, emit);
+const model = defineModel<boolean>({ required: true });
 
 const { importJSON } = useAccountingSettings();
 const { setMessage } = useMessageStore();

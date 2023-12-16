@@ -1,16 +1,17 @@
 import { builtinModules } from 'node:module';
-import { join, resolve } from 'node:path';
+import path, { join, resolve } from 'node:path';
 import process from 'node:process';
-import vue from '@vitejs/plugin-vue2';
+import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
-import DefineOptions from 'unplugin-vue-define-options/vite';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
 import { splitVendorChunkPlugin } from 'vite';
-import { checker } from 'vite-plugin-checker';
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import Layouts from 'vite-plugin-vue-layouts';
+import vueDevTools from 'vite-plugin-vue-devtools';
+import checker from 'vite-plugin-checker';
 import { RuiComponentResolver } from './src/plugins/rui/component-resolver';
 
 const PACKAGE_ROOT = __dirname;
@@ -42,7 +43,7 @@ export default defineConfig({
     environment: 'jsdom',
     server: {
       deps: {
-        inline: ['@rotki/ui-library-compat'],
+        inline: ['@rotki/ui-library'],
       },
     },
     setupFiles: ['tests/unit/setup-files/setup.ts'],
@@ -76,28 +77,17 @@ export default defineConfig({
       ],
       imports: [
         'vue',
-        'vue/macros',
         '@vueuse/core',
         '@vueuse/math',
         'pinia',
         { '@vueuse/shared': ['get', 'set'] },
+        'vue-router',
         {
-          'vue-router/composables': [
-            'useRoute',
-            'useRouter',
-            'useLink',
-            'onBeforeRouteUpdate',
-            'onBeforeRouteLeave',
-          ],
+          'vue-i18n': ['useI18n'],
         },
       ],
       dts: 'src/auto-imports.d.ts',
-      dirs: [
-        'src/composables/**',
-        'src/api/**',
-        'src/store/**',
-        'src/utils/**',
-      ],
+      dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**'],
       vueTemplate: true,
       injectAtEnd: true,
     }),
@@ -112,11 +102,14 @@ export default defineConfig({
         },
       ],
     }),
-    DefineOptions(),
     Layouts({
       layoutsDirs: ['src/layouts'],
       defaultLayout: 'default',
     }),
+    VueI18nPlugin({
+      include: [path.resolve(__dirname, './src/locales/**')],
+    }),
+    ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
     ...(isTest
       ? [
           istanbul({
@@ -146,11 +139,7 @@ export default defineConfig({
     assetsDir: '.',
     minify: true,
     rollupOptions: {
-      external: [
-        'electron',
-        'electron-devtools-installer',
-        ...builtinModules.flatMap(p => [p, `node:${p}`]),
-      ],
+      external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       input: join(PACKAGE_ROOT, 'index.html'),
     },
     emptyOutDir: false,

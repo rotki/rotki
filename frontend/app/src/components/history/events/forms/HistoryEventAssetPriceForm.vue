@@ -66,22 +66,20 @@ const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
-  () => get(currencySymbol) === CURRENCY_USD,
-);
+const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
 
-const fiatValue: Ref<string> = ref('');
-const assetToUsdPrice: Ref<string> = ref('');
-const assetToFiatPrice: Ref<string> = ref('');
+const fiatValue = ref<string>('');
+const assetToUsdPrice = ref<string>('');
+const assetToFiatPrice = ref<string>('');
 
 const { isTaskRunning } = useTaskStore();
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
-const fiatValueFocused: Ref<boolean> = ref(false);
+const fiatValueFocused = ref<boolean>(false);
 
-const fetchedAssetToUsdPrice: Ref<string> = ref('');
-const fetchedAssetToFiatPrice: Ref<string> = ref('');
+const fetchedAssetToUsdPrice = ref<string>('');
+const fetchedAssetToFiatPrice = ref<string>('');
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 
@@ -101,47 +99,23 @@ const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 function onAssetToUsdPriceChange(forceUpdate = false) {
-  if (
-    get(amount)
-    && get(assetToUsdPrice)
-    && (!get(fiatValueFocused) || forceUpdate)
-  ) {
-    set(
-      usdValueModel,
-      get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed(),
-    );
-  }
+  if (get(amount) && get(assetToUsdPrice) && (!get(fiatValueFocused) || forceUpdate))
+    set(usdValueModel, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
 }
 
 function onAssetToFiatPriceChanged(forceUpdate = false) {
-  if (
-    get(amount)
-    && get(assetToFiatPrice)
-    && (!get(fiatValueFocused) || forceUpdate)
-  ) {
-    set(
-      fiatValue,
-      get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed(),
-    );
-  }
+  if (get(amount) && get(assetToFiatPrice) && (!get(fiatValueFocused) || forceUpdate))
+    set(fiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
 }
 
 function onUsdValueChange() {
-  if (get(amount) && get(fiatValueFocused)) {
-    set(
-      assetToUsdPrice,
-      get(numericUsdValue).div(get(numericAmount)).toFixed(),
-    );
-  }
+  if (get(amount) && get(fiatValueFocused))
+    set(assetToUsdPrice, get(numericUsdValue).div(get(numericAmount)).toFixed());
 }
 
 function onFiatValueChange() {
-  if (get(amount) && get(fiatValueFocused)) {
-    set(
-      assetToFiatPrice,
-      get(numericFiatValue).div(get(numericAmount)).toFixed(),
-    );
-  }
+  if (get(amount) && get(fiatValueFocused))
+    set(assetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
 }
 
 async function fetchHistoricPrices() {
@@ -150,10 +124,7 @@ async function fetchHistoricPrices() {
   if (!datetimeVal || !assetVal)
     return;
 
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   if (assetVal === CURRENCY_USD) {
     set(fetchedAssetToUsdPrice, '1');
@@ -231,10 +202,7 @@ watch(amount, () => {
 
 async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
   const assetVal = get(asset);
-  const timestamp = convertToTimestamp(
-    get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond,
-  );
+  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   try {
     if (get(isCurrentCurrencyUsd)) {
@@ -304,9 +272,9 @@ defineExpose({
 
     <TwoFieldsAmountInput
       v-if="isCurrentCurrencyUsd"
+      v-model:primary-value="assetToUsdPrice"
+      v-model:secondary-value="usdValueModel"
       class="mb-5"
-      :primary-value.sync="assetToUsdPrice"
-      :secondary-value.sync="usdValueModel"
       :loading="fetching"
       :disabled="fetching"
       :label="{
@@ -327,9 +295,9 @@ defineExpose({
 
     <TwoFieldsAmountInput
       v-else
+      v-model:primary-value="assetToFiatPrice"
+      v-model:secondary-value="fiatValue"
       class="mb-5"
-      :primary-value.sync="assetToFiatPrice"
-      :secondary-value.sync="fiatValue"
       :loading="fetching"
       :disabled="fetching"
       :label="{

@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  TimeFramePeriod,
-  type TimeFrameSetting,
-} from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);
@@ -11,9 +8,7 @@ const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 const { t } = useI18n();
 
 const { timeframe } = useSessionSettingsStore();
-const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(useFrontendSettingsStore());
 
 function resetTimeframeSetting() {
   set(defaultGraphTimeframe, get(timeframeSetting));

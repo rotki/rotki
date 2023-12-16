@@ -4,6 +4,10 @@ import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     items?: string[];
@@ -12,7 +16,6 @@ const props = withDefaults(
     successMessages?: string;
     errorMessages?: string[];
     label?: string;
-    value?: string;
     disabled?: boolean;
     outlined?: boolean;
     clearable?: boolean;
@@ -29,7 +32,6 @@ const props = withDefaults(
     successMessages: '',
     errorMessages: () => [],
     label: 'Asset',
-    value: '',
     disabled: false,
     outlined: false,
     clearable: false,
@@ -41,14 +43,15 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string): void; (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
+const emit = defineEmits<{ (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
 
-const { items, showIgnored, excludes, errorMessages, value, includeNfts }
-  = toRefs(props);
+const { items, showIgnored, excludes, errorMessages, includeNfts } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
+const modelValue = defineModel<string>({ required: true });
+
 const search = ref<string>('');
-const assets: Ref<(AssetInfoWithId | NftAsset)[]> = ref([]);
+const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);
 const error = ref('');
 const loading = ref(false);
 let pending: AbortController | null = null;
@@ -74,10 +77,7 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
     const unIgnored = includeIgnored || !get(isAssetIgnored(identifier));
 
-    const included
-      = itemsVal && itemsVal.length > 0
-        ? itemsVal.includes(identifier)
-        : true;
+    const included = itemsVal && itemsVal.length > 0 ? itemsVal.includes(identifier) : true;
 
     const excluded
       = excludesVal && excludesVal.length > 0
@@ -94,10 +94,9 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   set(loading, true);
   try {
     const fetchedAssets = await assetSearch(keyword, 50, get(includeNfts), signal);
-    if (get(value))
+    if (get(modelValue))
       await retainSelectedValueInOptions(fetchedAssets);
-    else
-      set(assets, fetchedAssets);
+    else set(assets, fetchedAssets);
 
     pending = null;
     set(loading, false);
@@ -114,8 +113,8 @@ function getVisibleAsset(identifier: string) {
   return get(visibleAssets)?.find(asset => asset.identifier === identifier);
 }
 
-function input(value: string) {
-  emit('input', value || '');
+function onUpdateModelValue(value: string) {
+  set(modelValue, value);
   emit('update:asset', getVisibleAsset(value));
 }
 
@@ -147,12 +146,15 @@ watchDebounced(
 
 async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAsset)[]) {
   try {
-    const val = get(value);
+    const val = get(modelValue);
     const mapping = await assetMapping([val]);
-    set(assets, [...newAssets, {
-      identifier: val,
-      ...mapping.assets[transformCase(val, true)],
-    }]);
+    set(assets, [
+      ...newAssets,
+      {
+        identifier: val,
+        ...mapping.assets[transformCase(val, true)],
+      },
+    ]);
   }
   catch (error_: any) {
     set(loading, false);
@@ -161,7 +163,7 @@ async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAss
 }
 
 async function checkValue() {
-  if (!get(value))
+  if (!get(modelValue))
     return;
 
   await retainSelectedValueInOptions(get(assets));
@@ -171,20 +173,21 @@ onMounted(async () => {
   await checkValue();
 });
 
-watch(value, async () => {
+watch(modelValue, async () => {
   await checkValue();
 });
 
 watch(visibleAssets, () => {
-  const identifier = get(value);
+  const identifier = get(modelValue);
   if (identifier && !getVisibleAsset(identifier))
-    input('');
+    onUpdateModelValue('');
 });
 </script>
 
 <template>
   <RuiAutoComplete
-    :value="value"
+    v-model="modelValue"
+    v-model:search-input="search"
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
@@ -197,19 +200,14 @@ watch(visibleAssets, () => {
     :error-messages="errors"
     key-attr="identifier"
     text-attr="identifier"
-    :search-input.sync="search"
     :hide-details="hideDetails"
     :hide-no-data="loading || !search || !!error"
     auto-select-first
     :loading="loading"
     :variant="outlined ? 'outlined' : 'default'"
     :item-height="60"
+    v-bind="$attrs"
     no-filter
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
-    @input="input($event)"
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">
@@ -235,9 +233,7 @@ watch(visibleAssets, () => {
       />
       <AssetDetailsBase
         v-else
-        :id="`asset-${getValidSelectorFromEvmAddress(
-          item.identifier.toLocaleLowerCase(),
-        )}`"
+        :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
         class="py-0 -my-1"
         :asset="item"
       />

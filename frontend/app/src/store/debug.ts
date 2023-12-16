@@ -24,11 +24,13 @@ function convert(data: any): any {
 }
 
 function isObject(data: any): boolean {
-  return typeof data === 'object'
+  return (
+    typeof data === 'object'
     && data !== null
     && !(data instanceof RegExp)
     && !(data instanceof Error)
-    && !(data instanceof Date);
+    && !(data instanceof Date)
+  );
 }
 
 const storage = sessionStorage;

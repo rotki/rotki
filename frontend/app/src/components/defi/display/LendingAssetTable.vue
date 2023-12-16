@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BaseDefiBalance } from '@/types/defi/lending';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 withDefaults(
   defineProps<{
@@ -15,12 +15,12 @@ withDefaults(
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<BaseDefiBalance>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<BaseDefiBalance>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -44,10 +44,10 @@ const headers = computed<DataTableColumn[]>(() => [
 
 <template>
   <RuiDataTable
+    v-model:sort="sort"
     :rows="assets"
     :cols="headers"
     :loading="loading"
-    :sort.sync="sort"
     row-attr="asset"
     dense
     outlined

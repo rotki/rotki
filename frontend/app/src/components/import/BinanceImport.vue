@@ -6,16 +6,19 @@ const { t } = useI18n();
 
 <template>
   <ImportSource source="binance">
-    <i18n
+    <i18n-t
       tag="span"
-      path="import_data.note"
+      keypath="import_data.note"
     >
       <strong>{{ t('import_data.binance.name') }}</strong>
-    </i18n>
+    </i18n-t>
     <ul class="list-disc">
       <li>{{ t('import_data.binance.line_one') }}</li>
       <li>
-        <i18n path="import_data.binance.line_two">
+        <i18n-t
+          keypath="import_data.binance.line_two"
+          tag="span"
+        >
           <template #link>
             <ExternalLink
               :text="t('import_data.binance.name')"
@@ -23,7 +26,7 @@ const { t } = useI18n();
               color="primary"
             />
           </template>
-        </i18n>
+        </i18n-t>
       </li>
       <li>{{ t('import_data.binance.line_three') }}</li>
     </ul>

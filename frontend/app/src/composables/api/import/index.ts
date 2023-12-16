@@ -5,11 +5,7 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useImportDataApi() {
-  const importDataFrom = async (
-    source: string,
-    file: string,
-    timestampFormat: string | null,
-  ): Promise<PendingTask> => {
+  const importDataFrom = async (source: string, file: string, timestampFormat: string | null): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/import',
       snakeCaseTransformer({
@@ -27,16 +23,12 @@ export function useImportDataApi() {
   };
 
   const importFile = async (data: FormData): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
-      '/import',
-      data,
-      {
-        validateStatus: validStatus,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    const response = await api.instance.post<ActionResult<PendingTask>>('/import', data, {
+      validateStatus: validStatus,
+      headers: {
+        'Content-Type': 'multipart/form-data',
       },
-    );
+    });
 
     return handleResponse(response);
   };

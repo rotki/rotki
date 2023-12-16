@@ -85,7 +85,7 @@ describe('composables::history/events/tx', () => {
     const event = events[0];
     assert(isOfEventType<EvmHistoryEvent>(event, 'evm event'));
 
-    const editEvent: EditEvmHistoryEventPayload = { ...(event), identifier: 1 };
+    const editEvent: EditEvmHistoryEventPayload = { ...event, identifier: 1 };
 
     const { addTransactionHash, refreshTransactions } = useHistoryTransactions();
     const { redecodeTransactions } = useHistoryTransactionDecoding();

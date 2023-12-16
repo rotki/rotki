@@ -1,46 +1,35 @@
-import {
-  type ThisTypedMountOptions,
-  type Wrapper,
-  type WrapperArray,
-  mount,
-} from '@vue/test-utils';
-import { PiniaVuePlugin } from 'pinia';
+import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { expect } from 'vitest';
-import Vue from 'vue';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
 import '../../../i18n';
 
-Vue.use(PiniaVuePlugin);
-
 describe('prioritizedList.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof PrioritizedList>>;
 
-  const emittedInputEventItems = (): string[] => {
-    expect(wrapper.emitted()?.input?.length).toBe(1);
-    const emitted = wrapper.emitted()?.input?.[0];
-    return emitted?.[0] ?? [];
-  };
-
-  const entryOrderOf = (
-    entries: WrapperArray<PrioritizedListEntry>,
-  ): string[] => {
+  const entryOrderOf = (entries: VueWrapper<InstanceType<typeof PrioritizedListEntry>>[]): string[] => {
     const entryIds: string[] = [];
-    entries.wrappers.forEach(
-      (wrapper: Wrapper<PrioritizedListEntry, Element>) => {
-        entryIds.push(wrapper.props().data.identifier);
-      },
-    );
+    entries.forEach((wrapper: VueWrapper<InstanceType<typeof PrioritizedListEntry>>) => {
+      entryIds.push(wrapper.props().data.identifier);
+    });
     return entryIds;
   };
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => {
+  const emittedInputEventItems = (): string[] => {
+    expect(wrapper.emitted()['update:model-value'].length).toBe(1);
+    const emitted = wrapper.emitted()['update:model-value'][0];
+    return emitted[0];
+  };
+
+  const createWrapper = (options: ComponentMountingOptions<typeof PrioritizedList>) => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PrioritizedList, {
-      pinia,
-      stubs: ['action-status-indicator'],
+      global: {
+        plugins: [pinia],
+        stubs: ['action-status-indicator'],
+      },
       ...options,
     });
   };
@@ -53,8 +42,8 @@ describe('prioritizedList.vue', () => {
       { identifier: 'value4' },
     ]);
     wrapper = createWrapper({
-      propsData: {
-        value: ['value1', 'value2', 'value3'],
+      props: {
+        modelValue: ['value1', 'value2', 'value3'],
         allItems,
         itemDataName: 'item data',
         disableAdd: false,
@@ -67,14 +56,14 @@ describe('prioritizedList.vue', () => {
     });
   });
 
+  afterEach(() => {
+    wrapper.unmount();
+  });
+
   it('show all three items in correct order', () => {
     const elements = wrapper.findAllComponents(PrioritizedListEntry);
     expect(elements.length).toBe(3);
-    expect(entryOrderOf(elements)).toStrictEqual([
-      'value1',
-      'value2',
-      'value3',
-    ]);
+    expect(entryOrderOf(elements)).toStrictEqual(['value1', 'value2', 'value3']);
   });
 
   it('show "first up" and "last down" buttons disabled', () => {
@@ -88,22 +77,14 @@ describe('prioritizedList.vue', () => {
     const button = wrapper.find('#move-up-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual([
-      'value2',
-      'value1',
-      'value3',
-    ]);
+    expect(emittedInputEventItems()).toStrictEqual(['value2', 'value1', 'value3']);
   });
 
   it('move entry down', async () => {
     const button = wrapper.find('#move-down-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual([
-      'value1',
-      'value3',
-      'value2',
-    ]);
+    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3', 'value2']);
   });
 
   it('delete entry', async () => {

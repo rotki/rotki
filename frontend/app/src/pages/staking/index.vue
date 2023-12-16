@@ -1,40 +1,40 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 
+type NavType = 'eth2' | 'liquity' | 'kraken';
+
 interface StakingInfo {
-  id: string;
+  id: NavType;
   image: string;
   name: string;
 }
 
-const props = withDefaults(
-  defineProps<{
-    location?: 'eth2' | 'liquity' | 'kraken' | null;
-  }>(),
-  {
-    location: null,
-  },
-);
+const props = defineProps<{
+  location: [NavType] | '';
+}>();
 
 const imageSize = '64px';
 
 const pages = {
-  eth2: defineAsyncComponent(
-    () => import('@/components/staking/eth/EthStakingPage.vue'),
-  ),
-  liquity: defineAsyncComponent(
-    () => import('@/components/staking/liquity/LiquityPage.vue'),
-  ),
-  kraken: defineAsyncComponent(
-    () => import('@/components/staking/kraken/KrakenPage.vue'),
-  ),
+  eth2: defineAsyncComponent(() => import('@/components/staking/eth/EthStakingPage.vue')),
+  liquity: defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
+  kraken: defineAsyncComponent(() => import('@/components/staking/kraken/KrakenPage.vue')),
 };
-
-const { location } = toRefs(props);
 
 const { t } = useI18n();
 
-const staking: ComputedRef<StakingInfo[]> = computed(() => [
+const lastLocation = useLocalStorage('rotki.staking.last_location', '');
+
+const location = computed({
+  get() {
+    return Array.isArray(props.location) ? props.location[0] : undefined;
+  },
+  set(value?: NavType) {
+    set(lastLocation, value);
+  },
+});
+
+const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
     image: './assets/images/protocols/ethereum.svg',
@@ -55,23 +55,18 @@ const staking: ComputedRef<StakingInfo[]> = computed(() => [
 const router = useRouter();
 const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
-const lastLocation = useLocalStorage('rotki.staking.last_location', '');
-
 const page = computed(() => {
   const selectedLocation = get(location);
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-async function updateLocation(location: string) {
-  if (location)
-    set(lastLocation, location);
+watchImmediate(lastLocation, async (location) => {
+  if (!location)
+    return;
 
-  await router.push(Routes.STAKING.replace(':location*', location));
-}
-
-onBeforeMount(async () => {
-  if (get(lastLocation))
-    await updateLocation(get(lastLocation));
+  await nextTick(() => {
+    router.push(Routes.STAKING.replace(':location*', location));
+  });
 });
 </script>
 
@@ -92,14 +87,13 @@ onBeforeMount(async () => {
         </AdaptiveWrapper>
       </DefineIcon>
       <RuiMenuSelect
-        :value="location"
+        v-model="location"
         :options="staking"
         :label="t('staking_page.dropdown_label')"
         key-attr="id"
         text-attr="name"
         hide-details
         variant="outlined"
-        @input="updateLocation($event)"
       >
         <template #selection="{ item: { image, name } }">
           <div class="flex items-center gap-3">
@@ -120,9 +114,7 @@ onBeforeMount(async () => {
       <Component :is="page" />
     </div>
     <div v-else>
-      <div
-        class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
-      >
+      <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
         <RuiIcon
           class="shrink-0"
           name="corner-left-up-line"
@@ -143,9 +135,7 @@ onBeforeMount(async () => {
               :open-delay="400"
             >
               <template #activator>
-                <InternalLink
-                  :to="Routes.STAKING.replace(':location*', item.id)"
-                >
+                <InternalLink :to="Routes.STAKING.replace(':location*', item.id)">
                   <AppImage
                     :size="imageSize"
                     contain
@@ -157,9 +147,7 @@ onBeforeMount(async () => {
             </RuiTooltip>
           </div>
 
-          <div
-            class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]"
-          >
+          <div class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]">
             {{ t('staking_page.page.description') }}
           </div>
         </div>

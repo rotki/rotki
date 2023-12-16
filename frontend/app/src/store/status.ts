@@ -9,23 +9,18 @@ type StatusState = Partial<Record<Section, SectionStatus>>;
 const defaultSection = 'default';
 
 function isInitialLoadingStatus(status: Status) {
-  return status !== Status.LOADED
-    && status !== Status.PARTIALLY_LOADED
-    && status !== Status.REFRESHING;
+  return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED && status !== Status.REFRESHING;
 }
 
 function isLoadingStatus(status: Status) {
-  return status === Status.LOADING
-    || status === Status.PARTIALLY_LOADED
-    || status === Status.REFRESHING;
+  return status === Status.LOADING || status === Status.PARTIALLY_LOADED || status === Status.REFRESHING;
 }
 
 function matchesStatus(statuses: SectionStatus, subsection: string, fn: (status: Status) => boolean) {
   const subsectionStatus = statuses[subsection];
   if (subsection === defaultSection)
     return !subsectionStatus && !isEmpty(statuses) ? Object.values(statuses).some(fn) : fn(subsectionStatus);
-  else
-    return subsectionStatus ? fn(subsectionStatus) : false;
+  else return subsectionStatus ? fn(subsectionStatus) : false;
 }
 
 export const useStatusStore = defineStore('status', () => {
@@ -71,26 +66,26 @@ export const useStatusStore = defineStore('status', () => {
     }
   };
 
-  const getStatus = (
-    section: Section,
-    subsection: string = defaultSection,
-  ): Status => get(status)[section]?.[subsection] ?? Status.NONE;
+  const getStatus = (section: Section, subsection: string = defaultSection): Status =>
+    get(status)[section]?.[subsection] ?? Status.NONE;
 
-  const isLoading = (section: Section, subsection: string = defaultSection) => computed<boolean>(() => {
-    const statuses = get(status)[section];
-    if (!statuses)
-      return false;
+  const isLoading = (section: Section, subsection: string = defaultSection) =>
+    computed<boolean>(() => {
+      const statuses = get(status)[section];
+      if (!statuses)
+        return false;
 
-    return matchesStatus(statuses, subsection, isLoadingStatus);
-  });
+      return matchesStatus(statuses, subsection, isLoadingStatus);
+    });
 
-  const shouldShowLoadingScreen = (section: Section, subsection: string = defaultSection) => computed<boolean>(() => {
-    const statuses = get(status)[section];
-    if (!statuses)
-      return false;
+  const shouldShowLoadingScreen = (section: Section, subsection: string = defaultSection) =>
+    computed<boolean>(() => {
+      const statuses = get(status)[section];
+      if (!statuses)
+        return false;
 
-    return matchesStatus(statuses, subsection, isInitialLoadingStatus);
-  });
+      return matchesStatus(statuses, subsection, isInitialLoadingStatus);
+    });
 
   const detailsLoading = logicOr(
     isLoading(Section.BLOCKCHAIN),

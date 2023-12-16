@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/utils/data';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const props = withDefaults(
@@ -26,7 +23,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const sort = ref<DataTableSortData>({
+const sort = ref<DataTableSortData<UserDbBackupWithId>>({
   column: 'size',
   direction: 'desc',
 });
@@ -44,9 +41,9 @@ const selection = computed({
       props.items.filter(x => value.includes(x.id)),
     );
   },
-}) as unknown as WritableComputedRef<string[]>; // TODO: remove after upgrading to vue 3
+});
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<UserDbBackupWithId>[]>(() => [
   {
     key: 'version',
     label: t('database_backups.column.version'),
@@ -74,9 +71,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const { items, directory } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
-const totalSize = computed(() =>
-  size(get(items).reduce((sum, db) => sum + db.size, 0)),
-);
+const totalSize = computed(() => size(get(items).reduce((sum, db) => sum + db.size, 0)));
 
 const { fileUrl } = useBackupApi();
 const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
@@ -88,10 +83,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
     if (item) {
       return {
         size: size(item.size),
-        date: displayDateFormatter.format(
-          new Date(item.time * 1000),
-          get(dateDisplayFormat),
-        ),
+        date: displayDateFormatter.format(new Date(item.time * 1000), get(dateDisplayFormat)),
       };
     }
 
@@ -114,11 +106,11 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
 <template>
   <RuiDataTable
     v-model="selection"
+    v-model:sort="sort"
     :rows="items"
     row-attr="id"
     outlined
     dense
-    :sort.sync="sort"
     :cols="tableHeaders"
     :loading="loading"
   >

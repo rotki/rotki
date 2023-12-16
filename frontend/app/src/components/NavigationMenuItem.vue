@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import type { VueConstructor } from 'vue';
+import type { RuiIcons } from '@rotki/ui-library';
+import type { Component } from 'vue';
 
 withDefaults(
   defineProps<{
     mini?: boolean;
-    icon?: string;
+    icon?: RuiIcons;
     text: string;
     image?: string;
-    iconComponent?: VueConstructor | null;
+    iconComponent?: Component;
     active?: boolean;
     subMenu?: boolean;
     parent?: boolean;
   }>(),
   {
     mini: false,
-    icon: '',
+    icon: undefined,
     image: '',
-    iconComponent: null,
+    iconComponent: undefined,
     active: false,
     subMenu: false,
     parent: false,
@@ -28,7 +29,7 @@ const [DefineImage, ReuseImage] = createReusableTemplate();
 const outer = ref<HTMLDivElement>();
 const inner = ref<HTMLDivElement>();
 const { height: innerHeight } = useElementSize(inner);
-const subMenuExpanded: Ref<boolean> = ref(false);
+const subMenuExpanded = ref<boolean>(false);
 
 function expandParent() {
   if (!get(parent))
@@ -81,7 +82,7 @@ const css = useCssModule();
             :active="active"
           />
           <RuiIcon
-            v-else
+            v-else-if="icon"
             :name="icon"
           />
         </div>
@@ -160,7 +161,8 @@ const css = useCssModule();
     &__parent {
       @apply font-medium bg-transparent text-rui-primary hover:bg-rui-grey-100;
 
-      .icon, .toggle {
+      .icon,
+      .toggle {
         @apply text-rui-primary;
       }
     }

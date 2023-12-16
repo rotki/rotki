@@ -6,12 +6,16 @@ import {
   type AirdropDetail,
   Airdrops,
   type PoapDelivery,
+  type PoapDeliveryDetails,
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
+import type { BigNumber } from '@rotki/common';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';
+
+type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
@@ -22,7 +26,7 @@ const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
 const airdrops = ref<Airdrops>({});
-const expanded = ref<Airdrop[]>([]);
+const expanded = ref<AirdropWithIndex[]>([]);
 const loading = ref<boolean>(false);
 const status = ref<Statuses>('');
 const pagination = ref<TablePaginationData>();
@@ -35,37 +39,48 @@ const statusFilters = ref<{ text: string; value: Statuses }[]>([
   { text: t('common.missed'), value: 'missed' },
 ]);
 
-const refreshTooltip = computed<string>(() => t('helpers.refresh_header.tooltip', {
-  title: t('airdrops.title').toLocaleLowerCase(),
-}));
+const refreshTooltip = computed<string>(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t('airdrops.title').toLocaleLowerCase(),
+  }),
+);
 
 const airdropAddresses = computed<string[]>(() => Object.keys(get(airdrops)));
 
-const rows = computed<(Airdrop & { index: number })[]>(() => {
+const rows = computed<AirdropWithIndex[]>(() => {
   const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
   const data = filterByAddress(get(airdrops), addresses);
-  return data.filter((airdrop) => {
-    const currentStatus = get(status);
-    const currentTime = Date.now() / 1000;
-    switch (currentStatus) {
-      case 'unknown':
-        return !airdrop.hasDecoder;
-      case 'missed':
-        return airdrop.hasDecoder && !airdrop.claimed && typeof airdrop.cutoffTime !== 'undefined' && airdrop.cutoffTime !== null && airdrop.cutoffTime < currentTime;
-      case 'unclaimed':
-        return airdrop.hasDecoder && !airdrop.claimed;
-      case 'claimed':
-        return airdrop.claimed;
-      default:
-        return true;
-    }
-  }).map((value, index) => ({
-    ...value,
-    index,
-  }));
+  return data
+    .filter((airdrop) => {
+      const currentStatus = get(status);
+      const currentTime = Date.now() / 1000;
+      switch (currentStatus) {
+        case 'unknown':
+          return !airdrop.hasDecoder;
+        case 'missed':
+          return (
+            airdrop.hasDecoder
+            && !airdrop.claimed
+            && typeof airdrop.cutoffTime !== 'undefined'
+            && airdrop.cutoffTime !== null
+            && airdrop.cutoffTime < currentTime
+          );
+        case 'unclaimed':
+          return airdrop.hasDecoder && !airdrop.claimed;
+        case 'claimed':
+          return airdrop.claimed;
+        default:
+          return true;
+      }
+    })
+    .map((value, index) => ({
+      ...value,
+      amount: value.amount ?? Zero,
+      index,
+    }));
 });
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<AirdropWithIndex>[]>(() => [
   {
     label: t('airdrops.headers.source'),
     key: 'source',
@@ -131,13 +146,9 @@ async function fetchAirdrops() {
   set(loading, true);
   try {
     const { taskId } = await fetchAirdropsCaller();
-    const { result } = await awaitTask<Airdrops, TaskMeta>(
-      taskId,
-      TaskType.DEFI_AIRDROPS,
-      {
-        title: t('actions.defi.airdrops.task.title'),
-      },
-    );
+    const { result } = await awaitTask<Airdrops, TaskMeta>(taskId, TaskType.DEFI_AIRDROPS, {
+      title: t('actions.defi.airdrops.task.title'),
+    });
     set(airdrops, Airdrops.parse(result));
   }
   catch (error: any) {
@@ -157,9 +168,11 @@ async function fetchAirdrops() {
   }
 }
 
-const hasDetails = (source: string): boolean => [AIRDROP_POAP].includes(source);
+function hasDetails(details?: PoapDeliveryDetails[]): details is PoapDeliveryDetails[] {
+  return !!details && details.length > 0;
+}
 
-function expand(item: Airdrop) {
+function expand(item: AirdropWithIndex) {
   set(expanded, get(expanded).includes(item) ? [] : [item]);
 }
 
@@ -173,12 +186,7 @@ watch([status, selectedAccounts], () => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.defi'),
-      t('navigation_menu.defi_sub.airdrops'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.defi'), t('navigation_menu.defi_sub.airdrops')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -232,13 +240,13 @@ watch([status, selectedAccounts], () => {
       </RuiAlert>
 
       <RuiDataTable
+        v-model:pagination="pagination"
+        v-model:expanded="expanded"
         outlined
         :rows="rows"
         :cols="cols"
         :loading="loading"
-        :pagination.sync="pagination"
         single-expand
-        :expanded.sync="expanded"
         row-attr="index"
       >
         <template #item.address="{ row }">
@@ -246,7 +254,7 @@ watch([status, selectedAccounts], () => {
         </template>
         <template #item.amount="{ row }">
           <AmountDisplay
-            v-if="!hasDetails(row.source)"
+            v-if="!hasDetails(row.details)"
             :value="row.amount"
             :asset="row.asset"
           />
@@ -275,11 +283,13 @@ watch([status, selectedAccounts], () => {
             :color="claimed ? 'success' : 'grey'"
             size="sm"
           >
-            {{ claimed
-              ? t('common.claimed')
-              : cutoffTime !== 'undefined' && cutoffTime !== null && cutoffTime < Date.now() / 1000
-                ? t('common.missed')
-                : t('common.unclaimed') }}
+            {{
+              claimed
+                ? t('common.claimed')
+                : cutoffTime && cutoffTime < Date.now() / 1000
+                  ? t('common.missed')
+                  : t('common.unclaimed')
+            }}
           </RuiChip>
         </template>
         <template #item.source="{ row }">
@@ -290,7 +300,7 @@ watch([status, selectedAccounts], () => {
         </template>
         <template #item.expand="{ row }">
           <ExternalLink
-            v-if="!hasDetails(row.source)"
+            v-if="!hasDetails(row.details)"
             :url="row.link"
             custom
           >
@@ -313,7 +323,7 @@ watch([status, selectedAccounts], () => {
         </template>
         <template #expanded-item="{ row }">
           <PoapDeliveryAirdrops
-            v-if="hasDetails(row.source)"
+            v-if="hasDetails(row.details)"
             :items="row.details"
           />
         </template>

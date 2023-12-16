@@ -6,7 +6,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 import type { AssetRequestPayload } from '@/types/asset';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockReturnValue(
     reactive({
       query: {},
@@ -30,11 +30,9 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::assets/filter-paginate', () => {
-  let fetchAssets: (
-    payload: MaybeRef<AssetRequestPayload>
-  ) => Promise<Collection<SupportedAsset>>;
-  const locationOverview: MaybeRef<string | null> = ref('');
-  const mainPage: Ref<boolean> = ref(false);
+  let fetchAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
+  const locationOverview = ref<string | null>('');
+  const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
 
@@ -55,33 +53,19 @@ describe('composables::assets/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const {
-        userAction,
-        filters,
-        sort,
-        state,
-        fetchData,
-        applyRouteFilter,
-        isLoading,
-      } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
         SupportedAsset,
         AssetRequestPayload,
         SupportedAsset,
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetFilter,
-        fetchAssets,
-        {
-          defaultSortBy: {
-            key: 'symbol',
-            ascending: [true],
-          },
+      >(locationOverview, mainPage, useAssetFilter, fetchAssets, {
+        defaultSortBy: {
+          key: 'symbol',
+          ascending: [true],
         },
-      );
+      });
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
@@ -110,12 +94,7 @@ describe('composables::assets/filter-paginate', () => {
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetFilter,
-        fetchAssets,
-      );
+      >(locationOverview, mainPage, useAssetFilter, fetchAssets);
 
       expect(get(isLoading)).toBe(false);
 
@@ -137,12 +116,7 @@ describe('composables::assets/filter-paginate', () => {
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetFilter,
-        fetchAssets,
-      );
+      >(locationOverview, mainPage, useAssetFilter, fetchAssets);
 
       await router.push({
         query,

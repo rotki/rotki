@@ -1,7 +1,4 @@
-import {
-  type FixtureManualBalance,
-  ManualBalancesPage,
-} from '../../pages/account-balances-page/manual-balances-page';
+import { type FixtureManualBalance, ManualBalancesPage } from '../../pages/account-balances-page/manual-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
@@ -106,9 +103,7 @@ describe('balances', () => {
   it('test scramble mode from top nav', () => {
     manualBalancesPage.visit();
     app.togglePrivacyMenu(true);
-    cy.get(
-      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]',
-    ).should('not.be.checked');
+    cy.get('[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]').should('not.be.checked');
     manualBalancesPage.balanceShouldMatch(manualBalances);
 
     app.toggleScrambler(true);

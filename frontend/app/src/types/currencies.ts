@@ -63,7 +63,7 @@ export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const useCurrencies = createSharedComposable(() => {
   const { t } = useI18n();
-  const currencies: ComputedRef<Currency[]> = computed(() => [
+  const currencies = computed<Currency[]>(() => [
     new Currency(t('currencies.usd'), CURRENCY_USD, '$'),
     new Currency(t('currencies.eur'), CURRENCY_EUR, '€'),
     new Currency(t('currencies.gbp'), CURRENCY_GBP, '£'),
@@ -90,14 +90,10 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency('Ether', CURRENCY_ETH, 'Ξ', true),
   ]);
 
-  const defaultCurrency: ComputedRef<Currency> = computed(
-    () => get(currencies)[0],
-  );
+  const defaultCurrency = computed<Currency>(() => get(currencies)[0]);
 
   const findCurrency = (currencySymbol: string): Currency => {
-    const currency: Currency | undefined = get(currencies).find(
-      currency => currency.tickerSymbol === currencySymbol,
-    );
+    const currency: Currency | undefined = get(currencies).find(currency => currency.tickerSymbol === currencySymbol);
     if (!currency)
       throw new Error(`Could not find ${currencySymbol}`);
 

@@ -26,11 +26,9 @@ onMounted(async () => {
   await refresh();
 });
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap',
-    ).toLocaleLowerCase(),
+    title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap').toLocaleLowerCase(),
   }),
 );
 </script>

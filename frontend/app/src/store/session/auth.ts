@@ -1,27 +1,17 @@
-import type {
-  DataMigrationStatusData,
-  DbUpgradeStatusData,
-} from '@/types/websocket-messages';
-import type {
-  IncompleteUpgradeConflict,
-  SyncConflict,
-} from '@/types/login';
+import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/types/websocket-messages';
+import type { IncompleteUpgradeConflict, SyncConflict } from '@/types/login';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
-  const logged: Ref<boolean> = ref(false);
-  const canRequestData: Ref<boolean> = ref(false);
-  const shouldFetchData: Ref<boolean> = ref(false);
-  const username: Ref<string> = ref('');
-  const syncConflict: Ref<SyncConflict | undefined> = ref();
-  const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined>
-    = ref();
-  const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
-  const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
+  const logged = ref<boolean>(false);
+  const canRequestData = ref<boolean>(false);
+  const shouldFetchData = ref<boolean>(false);
+  const username = ref<string>('');
+  const syncConflict = ref<SyncConflict | undefined>();
+  const incompleteUpgradeConflict = ref<IncompleteUpgradeConflict | undefined>();
+  const dbUpgradeStatus = ref<DbUpgradeStatusData | null>(null);
+  const dataMigrationStatus = ref<DataMigrationStatusData | null>(null);
 
-  const upgradeVisible: ComputedRef<boolean> = logicOr(
-    dbUpgradeStatus,
-    dataMigrationStatus,
-  );
+  const upgradeVisible: ComputedRef<boolean> = logicOr(dbUpgradeStatus, dataMigrationStatus);
 
   const resetSyncConflict = (): void => {
     set(syncConflict, undefined);
@@ -44,9 +34,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     set(dbUpgradeStatus, null);
   };
 
-  const conflictExist: ComputedRef<boolean> = computed(
-    () => !!(get(syncConflict) || get(incompleteUpgradeConflict)),
-  );
+  const conflictExist = computed<boolean>(() => !!(get(syncConflict) || get(incompleteUpgradeConflict)));
 
   return {
     logged,

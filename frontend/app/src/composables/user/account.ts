@@ -1,13 +1,10 @@
-import type {
-  CreateAccountPayload,
-  LoginCredentials,
-} from '@/types/login';
+import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
 export function useAccountManagement() {
   const { t } = useI18n();
-  const loading: Ref<boolean> = ref(false);
-  const error: Ref<string> = ref('');
-  const errors: Ref<string[]> = ref([]);
+  const loading = ref<boolean>(false);
+  const error = ref<string>('');
+  const errors = ref<string[]>([]);
 
   const { showGetPremiumButton } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
@@ -52,12 +49,7 @@ export function useAccountManagement() {
     set(loading, false);
   };
 
-  const userLogin = async ({
-    username,
-    password,
-    syncApproval,
-    resumeFromBackup,
-  }: LoginCredentials): Promise<void> => {
+  const userLogin = async ({ username, password, syncApproval, resumeFromBackup }: LoginCredentials): Promise<void> => {
     set(loading, true);
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
     setupCache(userIdentifier);
@@ -93,7 +85,7 @@ export function useAccountManagement() {
 }
 
 export function useAutoLogin() {
-  const autolog: Ref<boolean> = ref(false);
+  const autolog = ref<boolean>(false);
 
   const sessionStore = useSessionStore();
   const { checkForAssetUpdate } = storeToRefs(sessionStore);
@@ -128,7 +120,7 @@ export function useAutoLogin() {
 }
 
 export const useRestartingStatus = createSharedComposable(() => {
-  const restarting: Ref<boolean> = ref(false);
+  const restarting = ref<boolean>(false);
 
   return { restarting };
 });

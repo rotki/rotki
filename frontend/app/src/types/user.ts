@@ -29,11 +29,7 @@ const GeneralSettings = z.object({
   dotRpcEndpoint: z.string(),
   beaconRpcEndpoint: z.string(),
   balanceSaveFrequency: z.preprocess(
-    balanceSaveFrequency =>
-      Math.min(
-        Number.parseInt(balanceSaveFrequency as string),
-        Constraints.MAX_HOURS_DELAY,
-      ),
+    balanceSaveFrequency => Math.min(Number.parseInt(balanceSaveFrequency as string), Constraints.MAX_HOURS_DELAY),
     z.number().int().max(Constraints.MAX_HOURS_DELAY),
   ),
   dateDisplayFormat: z.string(),
@@ -133,8 +129,7 @@ function getAccountingSettings(settings: UserSettings): AccountingSettings {
     calculatePastCostBasis: settings.calculatePastCostBasis,
     includeFeesInCostBasis: settings.includeFeesInCostBasis,
     costBasisMethod: settings.costBasisMethod,
-    ethStakingTaxableAfterWithdrawalEnabled:
-    settings.ethStakingTaxableAfterWithdrawalEnabled,
+    ethStakingTaxableAfterWithdrawalEnabled: settings.ethStakingTaxableAfterWithdrawalEnabled,
   };
 }
 

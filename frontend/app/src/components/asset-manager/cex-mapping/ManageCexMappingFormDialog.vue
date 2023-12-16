@@ -18,8 +18,7 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit }
-  = useCexMappingForm();
+const { openDialog, submitting, closeDialog, trySubmit } = useCexMappingForm();
 </script>
 
 <template>

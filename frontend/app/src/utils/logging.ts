@@ -1,7 +1,7 @@
-import logger, { type LogLevelNames, type LogLevelNumbers, type LoggingMethod,
-} from 'loglevel';
+import logger, { type LogLevelNames, type LogLevelNumbers, type LoggingMethod } from 'loglevel';
 import { IndexedDb } from '@/utils/indexed-db';
 import { LogLevel } from '@/utils/log-level';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -49,18 +49,13 @@ if (!isDevelopment) {
     return (...message: any[]): void => {
       rawMethod(...message);
 
-      if (
-        loggerName !== 'console-only'
-        && Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel
-      ) {
+      if (loggerName !== 'console-only' && Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel) {
         if (isPackaged) {
           logToFile(`(${methodName}): ${message.join('')}`);
         }
         else {
           loggerDb.add({
-            message: `${new Date(Date.now()).toISOString()}: ${message.join(
-              '',
-            )}`,
+            message: `${new Date(Date.now()).toISOString()}: ${message.join('')}`,
           });
         }
       }

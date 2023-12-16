@@ -2,37 +2,26 @@
 import { isEqual } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Routes } from '@/router/routes';
-import {
-  DashboardTableType,
-  type DashboardTablesVisibleColumns,
-} from '@/types/settings/frontend-settings';
+import { DashboardTableType, type DashboardTablesVisibleColumns } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
-import type {
-  XswapAsset,
-  XswapBalance,
-} from '@rotki/common/lib/defi/xswap';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { XSwapLiquidityBalance, XswapAsset } from '@rotki/common/lib/defi/xswap';
 import type { BigNumber } from '@rotki/common';
 
 const { t } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<XSwapLiquidityBalance>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
 function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>) {
-  return computed<DataTableColumn[]>(() => {
-    const visibleColumns = get(dashboardTablesVisibleColumns)[
-      LIQUIDITY_POSITION
-    ];
+  return computed<DataTableColumn<XSwapLiquidityBalance>[]>(() => {
+    const visibleColumns = get(dashboardTablesVisibleColumns)[LIQUIDITY_POSITION];
 
-    const headers: DataTableColumn[] = [
+    const headers: DataTableColumn<XSwapLiquidityBalance>[] = [
       {
         label: t('common.name'),
         key: 'name',
@@ -57,16 +46,11 @@ function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns
       });
     }
 
-    if (
-      visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
-    ) {
+    if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
       headers.push({
-        label: t(
-          'dashboard_asset_table.headers.percentage_of_total_current_group',
-          {
-            group: t('dashboard.liquidity_position.title'),
-          },
-        ),
+        label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
+          group: t('dashboard.liquidity_position.title'),
+        }),
         key: 'percentageOfTotalCurrentGroup',
         align: 'end',
         class: 'text-no-wrap',
@@ -78,12 +62,9 @@ function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns
 }
 
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY;
-const expanded = ref<XswapBalance[]>([]);
+const expanded = ref<XSwapLiquidityBalance[]>([]);
 
-const {
-  fetchV2Balances: fetchUniswapV2Balances,
-  fetchV3Balances: fetchUniswapV3Balances,
-} = useUniswapStore();
+const { fetchV2Balances: fetchUniswapV2Balances, fetchV3Balances: fetchUniswapV3Balances } = useUniswapStore();
 
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
 const { fetchBalances: fetchBalancerBalances } = useBalancerStore();
@@ -93,14 +74,9 @@ const balances = lpAggregatedBalances(true);
 const totalInUsd = lpTotal(true);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
-const tableHeaders = createTableHeaders(
-  currencySymbol,
-  dashboardTablesVisibleColumns,
-);
+const tableHeaders = createTableHeaders(currencySymbol, dashboardTablesVisibleColumns);
 
 const { isLoading } = useStatusStore();
 
@@ -183,12 +159,12 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         menu-class="max-w-[15rem]"
         :popper="{ placement: 'bottom-end' }"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="liquidity-provider-balance-table__column-filter__button"
             custom-color
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
@@ -208,6 +184,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       />
     </template>
     <RuiDataTable
+      v-model:expanded="expanded"
       outlined
       dense
       :cols="tableHeaders"
@@ -216,7 +193,6 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       :loading="loading"
       row-attr="id"
       single-expand
-      :expanded.sync="expanded"
     >
       <template #item.name="{ row }">
         <div v-if="row.type === 'nft'">

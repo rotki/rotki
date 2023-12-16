@@ -1,8 +1,4 @@
-import {
-  TRADE_LOCATION_BANKS,
-  TRADE_LOCATION_BLOCKCHAIN,
-  TRADE_LOCATION_EXTERNAL,
-} from '@/data/defaults';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
@@ -109,11 +105,7 @@ describe('store::balances/manual', () => {
 
     it('manualLabels', () => {
       const { manualLabels } = storeToRefs(store);
-      expect(get(manualLabels)).toMatchObject([
-        'My monero wallet',
-        'My another wallet',
-        'My Bank Account',
-      ]);
+      expect(get(manualLabels)).toMatchObject(['My monero wallet', 'My another wallet', 'My Bank Account']);
     });
 
     it('manualBalanceByLocation', () => {
@@ -190,9 +182,7 @@ describe('store::balances/manual', () => {
         treatEth2AsEth: false,
       });
 
-      const locationBreakdown = store.getLocationBreakdown(
-        TRADE_LOCATION_EXTERNAL,
-      );
+      const locationBreakdown = store.getLocationBreakdown(TRADE_LOCATION_EXTERNAL);
 
       expect(get(locationBreakdown)).toMatchObject({
         ETH: ethAndEth2Balances[0],
@@ -277,17 +267,11 @@ describe('store::balances/manual', () => {
 
       store.updatePrices(prices);
       const { manualBalancesData } = storeToRefs(store);
-      expect(get(manualBalancesData)[0].usdValue).toEqual(
-        bigNumberify(50).multipliedBy(2),
-      );
+      expect(get(manualBalancesData)[0].usdValue).toEqual(bigNumberify(50).multipliedBy(2));
 
-      expect(get(manualBalancesData)[1].usdValue).toEqual(
-        bigNumberify(30).multipliedBy(3),
-      );
+      expect(get(manualBalancesData)[1].usdValue).toEqual(bigNumberify(30).multipliedBy(3));
 
-      expect(get(manualBalancesData)[2].usdValue).toEqual(
-        bigNumberify(50).multipliedBy(1),
-      );
+      expect(get(manualBalancesData)[2].usdValue).toEqual(bigNumberify(50).multipliedBy(1));
     });
   });
 
@@ -295,9 +279,7 @@ describe('store::balances/manual', () => {
     it('default', async () => {
       await store.addManualBalance(balances[0]);
 
-      expect(useManualBalancesApi().addManualBalances).toHaveBeenCalledWith([
-        balances[0],
-      ]);
+      expect(useManualBalancesApi().addManualBalances).toHaveBeenCalledWith([balances[0]]);
     });
   });
 
@@ -305,9 +287,7 @@ describe('store::balances/manual', () => {
     it('default', async () => {
       await store.editManualBalance(balances[0]);
 
-      expect(useManualBalancesApi().editManualBalances).toHaveBeenCalledWith([
-        balances[0],
-      ]);
+      expect(useManualBalancesApi().editManualBalances).toHaveBeenCalledWith([balances[0]]);
     });
   });
 
@@ -315,9 +295,7 @@ describe('store::balances/manual', () => {
     it('default', async () => {
       await store.deleteManualBalance(1);
 
-      expect(useManualBalancesApi().deleteManualBalances).toHaveBeenCalledWith([
-        1,
-      ]);
+      expect(useManualBalancesApi().deleteManualBalances).toHaveBeenCalledWith([1]);
     });
   });
 });

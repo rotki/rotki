@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import {
-  DefiProtocol,
-  SUPPORTED_MODULES,
-  isDefiProtocol,
-} from '@/types/modules';
+import { DefiProtocol, SUPPORTED_MODULES, isDefiProtocol } from '@/types/modules';
+
+defineOptions({
+  inheritAttrs: false,
+});
 
 const props = withDefaults(
   defineProps<{
-    value?: DefiProtocol | null;
+    modelValue?: DefiProtocol | null;
     liabilities?: boolean;
   }>(),
   {
@@ -17,25 +17,19 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', protocol: DefiProtocol | null): void;
+  (e: 'update:model-value', protocol: DefiProtocol | null): void;
 }>();
+
+const model = useSimpleVModel(props, emit);
 
 const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
 const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
-const lending = [
-  DefiProtocol.MAKERDAO_DSR,
-  DefiProtocol.YEARN_VAULTS,
-  DefiProtocol.YEARN_VAULTS_V2,
-];
+const lending = [DefiProtocol.MAKERDAO_DSR, DefiProtocol.YEARN_VAULTS, DefiProtocol.YEARN_VAULTS_V2];
 
 const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
 const { t } = useI18n();
-
-function input(_selectedProtocol: DefiProtocol | null) {
-  emit('input', _selectedProtocol);
-}
 
 const protocols = computed<DefiProtocol[]>(() => {
   if (get(liabilities))
@@ -57,8 +51,8 @@ const protocolsData = computed(() =>
 <template>
   <RuiCard>
     <RuiAutoComplete
-      :value="value"
-      :search-input.sync="search"
+      v-model="model"
+      v-model:search-input="search"
       :options="protocolsData"
       hide-details
       hide-selected
@@ -72,7 +66,6 @@ const protocolsData = computed(() =>
       text-attr="name"
       key-attr="identifier"
       class="defi-protocol-selector"
-      @input="input($event)"
     >
       <template #selection="{ item }">
         <DefiIcon
@@ -88,11 +81,7 @@ const protocolsData = computed(() =>
       </template>
     </RuiAutoComplete>
     <div class="p-2 text-body-2 text-rui-text-secondary">
-      {{
-        value
-          ? t('defi_protocol_selector.filter_specific')
-          : t('defi_protocol_selector.filter_all')
-      }}
+      {{ model ? t('defi_protocol_selector.filter_specific') : t('defi_protocol_selector.filter_all') }}
     </div>
   </RuiCard>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const zip = ref<File | null>(null);
+const zip = ref<File>();
 const importError = ref('');
 const exportError = ref('');
 const downloading = ref(false);
@@ -18,8 +18,7 @@ async function importZip() {
   const result = await importCustomAssets(file);
   if (result.success)
     set(uploaded, true);
-  else
-    set(importError, result.message);
+  else set(importError, result.message);
 
   set(uploading, false);
   set(zip, null);

@@ -15,9 +15,9 @@ const { event, currency } = toRefs(props);
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
 
-const fetchingPrice: Ref<boolean> = ref(false);
-const showDialog: Ref<boolean> = ref(false);
-const price: Ref<string> = ref('');
+const fetchingPrice = ref<boolean>(false);
+const showDialog = ref<boolean>(false);
+const price = ref<string>('');
 
 async function openEditHistoricPriceDialog() {
   set(showDialog, true);
@@ -32,18 +32,13 @@ async function openEditHistoricPriceDialog() {
   set(fetchingPrice, false);
 }
 
-const datetime: ComputedRef<string> = computed(() =>
-  convertFromTimestamp(get(event).timestamp),
-);
+const datetime = computed<string>(() => convertFromTimestamp(get(event).timestamp));
 
 const { t } = useI18n();
 
 const rules = {
   price: {
-    required: helpers.withMessage(
-      t('price_form.price_non_empty').toString(),
-      required,
-    ),
+    required: helpers.withMessage(t('price_form.price_non_empty').toString(), required),
   },
 };
 
@@ -84,15 +79,13 @@ async function updatePrice() {
 
 <template>
   <div class="flex justify-end">
-    <RuiMenu
-      :popper="{ placement: 'bottom-end' }"
-    >
-      <template #activator="{ on }">
+    <RuiMenu :popper="{ placement: 'bottom-end' }">
+      <template #activator="{ attrs }">
         <RuiButton
           variant="text"
           class="!p-2"
           icon
-          v-on="on"
+          v-bind="attrs"
         >
           <RuiIcon name="more-2-fill" />
         </RuiButton>
@@ -121,21 +114,21 @@ async function updatePrice() {
 
         <form class="flex flex-col gap-4">
           <AssetSelect
-            :value="event.assetIdentifier"
+            :model-value="event.assetIdentifier"
             :label="t('price_form.from_asset')"
             hide-details
             disabled
             outlined
           />
           <AssetSelect
-            :value="currency"
+            :model-value="currency"
             :label="t('price_form.to_asset')"
             hide-details
             disabled
             outlined
           />
           <DateTimePicker
-            :value="datetime"
+            :model-value="datetime"
             disabled
             hide-details
             :label="t('common.datetime')"

@@ -7,7 +7,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const tags = computed(() => Object.values(get(allTags)));
 
-  const availableTags: ComputedRef<Record<string, Tag>> = computed(() => ({
+  const availableTags = computed<Record<string, Tag>>(() => ({
     ...get(allTags),
     ...READ_ONLY_TAGS,
   }));

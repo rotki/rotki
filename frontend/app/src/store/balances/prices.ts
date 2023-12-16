@@ -38,11 +38,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     const taskType = TaskType.UPDATE_PRICES;
 
     const fetch = async (assets: string[]): Promise<void> => {
-      const { taskId } = await queryPrices(
-        assets,
-        CURRENCY_USD,
-        payload.ignoreCache,
-      );
+      const { taskId } = await queryPrices(assets, CURRENCY_USD, payload.ignoreCache);
 
       const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
         taskId,
@@ -63,9 +59,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
     try {
       setStatus(Status.LOADING);
-      await Promise.all(
-        chunkArray<string>(payload.selectedAssets, 100).map(fetch),
-      );
+      await Promise.all(chunkArray<string>(payload.selectedAssets, 100).map(fetch));
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
@@ -102,19 +96,13 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   const fetchExchangeRates = async (): Promise<void> => {
     try {
-      const { taskId } = await queryFiatExchangeRates(
-        get(currencies).map(value => value.tickerSymbol),
-      );
+      const { taskId } = await queryFiatExchangeRates(get(currencies).map(value => value.tickerSymbol));
 
       const meta: TaskMeta = {
         title: t('actions.balances.exchange_rates.task.title').toString(),
       };
 
-      const { result } = await awaitTask<ExchangeRates, TaskMeta>(
-        taskId,
-        TaskType.EXCHANGE_RATES,
-        meta,
-      );
+      const { result } = await awaitTask<ExchangeRates, TaskMeta>(taskId, TaskType.EXCHANGE_RATES, meta);
 
       set(exchangeRates, ExchangeRates.parse(result));
     }
@@ -134,27 +122,17 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const exchangeRate = (currency: string): ComputedRef<BigNumber | undefined> =>
     computed(() => get(exchangeRates)[currency] as BigNumber);
 
-  const getHistoricPrice = async ({
-    fromAsset,
-    timestamp,
-    toAsset,
-  }: HistoricPricePayload): Promise<BigNumber> => {
+  const getHistoricPrice = async ({ fromAsset, timestamp, toAsset }: HistoricPricePayload): Promise<BigNumber> => {
     assert(fromAsset !== toAsset);
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
 
     try {
-      const { taskId } = await queryHistoricalRate(
-        fromAsset,
-        toAsset,
-        timestamp,
-      );
+      const { taskId } = await queryHistoricalRate(fromAsset, toAsset, timestamp);
       const { result } = await awaitTask<HistoricPrices, TaskMeta>(
         taskId,
         taskType,
         {
-          title: t(
-            'actions.balances.historic_fetch_price.task.title',
-          ).toString(),
+          title: t('actions.balances.historic_fetch_price.task.title').toString(),
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
@@ -189,18 +167,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     if (get(isTaskRunning(taskType))) {
       return {
         success: false,
-        message: t(
-          'actions.balances.create_oracle_cache.already_running',
-        ).toString(),
+        message: t('actions.balances.create_oracle_cache.already_running').toString(),
       };
     }
     try {
-      const { taskId } = await createPriceCache(
-        source,
-        fromAsset,
-        toAsset,
-        purgeOld,
-      );
+      const { taskId } = await createPriceCache(source, fromAsset, toAsset, purgeOld);
       const { result } = await awaitTask<true, TaskMeta>(
         taskId,
         taskType,
@@ -240,9 +211,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
-  const toSelectedCurrency = (
-    value: MaybeRef<BigNumber>,
-  ): ComputedRef<BigNumber> =>
+  const toSelectedCurrency = (value: MaybeRef<BigNumber>): ComputedRef<BigNumber> =>
     computed(() => {
       const mainCurrency = get(currencySymbol);
       const currentExchangeRate = get(exchangeRate(mainCurrency));
@@ -250,17 +219,13 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return currentExchangeRate ? val.multipliedBy(currentExchangeRate) : val;
     });
 
-  const assetPrice = (
-    asset: MaybeRef<string>,
-  ): ComputedRef<BigNumber | undefined> =>
+  const assetPrice = (asset: MaybeRef<string>): ComputedRef<BigNumber | undefined> =>
     computed(() => get(prices)[get(asset)]?.value);
 
   const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
     computed(() => get(prices)[get(asset)]?.isManualPrice || false);
 
-  const isAssetPriceInCurrentCurrency = (
-    asset: MaybeRef<string>,
-  ): ComputedRef<boolean> =>
+  const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
     computed(() => get(prices)[get(asset)]?.isCurrentCurrency || false);
 
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
@@ -294,8 +259,5 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useBalancePricesStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useBalancePricesStore, import.meta.hot));

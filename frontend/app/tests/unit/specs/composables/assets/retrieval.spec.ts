@@ -40,9 +40,7 @@ describe('store::assets/retrieval', () => {
         treatEth2AsEth: true,
       });
 
-      const result = get(
-        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'),
-      );
+      const result = get(assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'));
 
       expect(result).toEqual('ETH');
     });
@@ -52,9 +50,7 @@ describe('store::assets/retrieval', () => {
         treatEth2AsEth: false,
       });
 
-      const result = get(
-        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'),
-      );
+      const result = get(assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'));
 
       expect(result).toEqual('ETH2');
     });
@@ -88,9 +84,7 @@ describe('store::assets/retrieval', () => {
     });
 
     it('failed', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed'),
-      );
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
@@ -132,12 +126,8 @@ describe('store::assets/retrieval', () => {
           isCustomAsset: true,
         });
 
-        expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-          assetName,
-        );
-        expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-          assetName,
-        );
+        expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(assetName);
+        expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(assetName);
       });
 
       it('isCustomAsset = true', () => {
@@ -193,18 +183,12 @@ describe('store::assets/retrieval', () => {
           symbol: assetSymbol,
         });
 
-        expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-          collectionName,
-        );
-        expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-          assetSymbol,
-        );
+        expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(collectionName);
+        expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(assetSymbol);
       });
 
       it('isCollectionParent = false', () => {
-        const result = get(
-          assetInfoRetrieval.assetInfo(identifier, true, false),
-        );
+        const result = get(assetInfoRetrieval.assetInfo(identifier, true, false));
 
         expect(result).toMatchObject({
           name: assetName,
@@ -226,12 +210,8 @@ describe('store::assets/retrieval', () => {
         symbol: fallbackName,
       });
 
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-        fallbackName,
-      );
-      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-        fallbackName,
-      );
+      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(fallbackName);
+      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(fallbackName);
     });
   });
 });

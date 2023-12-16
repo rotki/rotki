@@ -17,11 +17,10 @@ type Event = MaybeRef<{
 }>;
 
 export const useHistoryEventMappings = createSharedComposable(() => {
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const { t, te } = useI18n();
 
-  const {
-    getTransactionTypeMappings,
-  } = useHistoryEventsApi();
+  const { getTransactionTypeMappings } = useHistoryEventsApi();
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
@@ -74,19 +73,14 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     },
   );
 
-  const historyEventTypeGlobalMapping = useRefMap(
-    historyEventTypeData,
-    ({ globalMappings }) => globalMappings,
-  );
+  const historyEventTypeGlobalMapping = useRefMap(historyEventTypeData, ({ globalMappings }) => globalMappings);
 
   const historyEventTypeByEntryTypeMapping = useRefMap(
     historyEventTypeData,
     ({ entryTypeMappings }) => entryTypeMappings,
   );
 
-  const historyEventTypes: ComputedRef<string[]> = computed(() =>
-    Object.keys(get(historyEventTypeGlobalMapping)),
-  );
+  const historyEventTypes = computed<string[]>(() => Object.keys(get(historyEventTypeGlobalMapping)));
 
   const historyEventTypesData = useArrayMap(historyEventTypes, (identifier) => {
     const translationId = identifier.split('_').join(' ');
@@ -98,61 +92,51 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   });
 
-  const historyEventSubTypes: ComputedRef<string[]> = computed(() =>
+  const historyEventSubTypes = computed<string[]>(() =>
     Object.values(get(historyEventTypeGlobalMapping))
       .flatMap(item => Object.keys(item))
       .filter(uniqueStrings),
   );
 
-  const historyEventSubTypesData = useArrayMap(
-    historyEventSubTypes,
-    (identifier) => {
-      const translationId = toSnakeCase(identifier);
-      const translationKey = `backend_mappings.events.history_event_subtype.${translationId}`;
-      return {
-        identifier,
-        label: te(translationKey)
-          ? t(translationKey)
-          : toSentenceCase(identifier),
-      };
+  const historyEventSubTypesData = useArrayMap(historyEventSubTypes, (identifier) => {
+    const translationId = toSnakeCase(identifier);
+    const translationKey = `backend_mappings.events.history_event_subtype.${translationId}`;
+    return {
+      identifier,
+      label: te(translationKey) ? t(translationKey) : toSentenceCase(identifier),
+    };
+  });
+
+  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> = useRefMap(
+    historyEventTypeData,
+    ({ eventCategoryDetails }) => {
+      const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
+      for (const eventCategory in newEventCategoryDetails) {
+        const counterpartyMappings = newEventCategoryDetails[eventCategory].counterpartyMappings;
+        for (const counterparty in counterpartyMappings) {
+          const label = counterpartyMappings[counterparty].label;
+          const translationId = toSnakeCase(label);
+          const translationKey = `backend_mappings.events.type.${translationId}`;
+          counterpartyMappings[counterparty].label = te(translationKey) ? t(translationKey) : toSentenceCase(label);
+        }
+      }
+      return newEventCategoryDetails;
     },
   );
 
-  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> = useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
-    const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
-    for (const eventCategory in newEventCategoryDetails) {
-      const counterpartyMappings
-          = newEventCategoryDetails[eventCategory].counterpartyMappings;
-      for (const counterparty in counterpartyMappings) {
-        const label = counterpartyMappings[counterparty].label;
-        const translationId = toSnakeCase(label);
-        const translationKey = `backend_mappings.events.type.${translationId}`;
-        counterpartyMappings[counterparty].label = te(translationKey)
-          ? t(translationKey)
-          : toSentenceCase(label);
+  const getEventType = (event: Event): ComputedRef<string | undefined> =>
+    computed(() => {
+      const { eventType, eventSubtype, entryType, isExit } = get(event);
+
+      let byEntryType;
+      if (entryType && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
+        byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[eventType]?.[eventSubtype]?.[
+          isExit ? 'isExit' : 'notExit'
+        ];
       }
-    }
-    return newEventCategoryDetails;
-  });
 
-  const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
-    const { eventType, eventSubtype, entryType, isExit } = get(event);
-
-    let byEntryType;
-    if (
-      entryType
-      && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT
-    ) {
-      byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[
-        eventType
-      ]?.[eventSubtype]?.[isExit ? 'isExit' : 'notExit'];
-    }
-
-    return (
-      byEntryType
-      || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype]
-    );
-  });
+      return byEntryType || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
+    });
 
   function getFallbackData(
     showFallbackLabel: boolean,
@@ -160,9 +144,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     eventType: string,
   ): HistoryEventCategoryDetailWithId {
     const unknownLabel = t('backend_mappings.events.type.unknown');
-    const label = showFallbackLabel
-      ? eventSubtype || eventType || unknownLabel
-      : unknownLabel;
+    const label = showFallbackLabel ? eventSubtype || eventType || unknownLabel : unknownLabel;
 
     return {
       identifier: '',
@@ -173,32 +155,28 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   }
 
-  const getEventTypeData = (
-    event: Event,
-    showFallbackLabel = true,
-  ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() => {
-    const defaultKey = 'default';
-    const type = get(getEventType(event));
-    const { counterparty, eventType, eventSubtype } = get(event);
-    const counterpartyVal = counterparty || defaultKey;
-    const data = type && get(transactionEventTypesData)[type];
+  const getEventTypeData = (event: Event, showFallbackLabel = true): ComputedRef<HistoryEventCategoryDetailWithId> =>
+    computed(() => {
+      const defaultKey = 'default';
+      const type = get(getEventType(event));
+      const { counterparty, eventType, eventSubtype } = get(event);
+      const counterpartyVal = counterparty || defaultKey;
+      const data = type && get(transactionEventTypesData)[type];
 
-    if (type && data) {
-      const categoryDetail
-          = data.counterpartyMappings[counterpartyVal]
-          || data.counterpartyMappings[defaultKey];
+      if (type && data) {
+        const categoryDetail = data.counterpartyMappings[counterpartyVal] || data.counterpartyMappings[defaultKey];
 
-      if (categoryDetail) {
-        return {
-          ...categoryDetail,
-          identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
-          direction: data.direction,
-        };
+        if (categoryDetail) {
+          return {
+            ...categoryDetail,
+            identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
+            direction: data.direction,
+          };
+        }
       }
-    }
 
-    return getFallbackData(showFallbackLabel, eventSubtype, eventType);
-  });
+      return getFallbackData(showFallbackLabel, eventSubtype, eventType);
+    });
 
   const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
     historyEventTypeData,
@@ -210,27 +188,22 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         return {
           identifier,
           icon,
-          label: te(translationKey)
-            ? t(translationKey)
-            : toCapitalCase(identifier),
+          label: te(translationKey) ? t(translationKey) : toCapitalCase(identifier),
         };
       }),
   );
 
-  const getAccountingEventTypeData = (
-    type: MaybeRef<string>,
-  ): ComputedRef<ActionDataEntry> => computed(() => {
-    const typeVal = get(type);
-    return (
-      get(accountingEventsTypeData).find(
-        ({ identifier }) => identifier === typeVal,
-      ) || {
-        identifier: typeVal,
-        icon: 'question-line',
-        label: toCapitalCase(typeVal),
-      }
-    );
-  });
+  const getAccountingEventTypeData = (type: MaybeRef<string>): ComputedRef<ActionDataEntry> =>
+    computed(() => {
+      const typeVal = get(type);
+      return (
+        get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
+          identifier: typeVal,
+          icon: 'question-line',
+          label: toCapitalCase(typeVal),
+        }
+      );
+    });
 
   return {
     historyEventTypeData,

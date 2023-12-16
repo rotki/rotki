@@ -2,14 +2,10 @@
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'lodash-es';
 import { Section } from '@/types/status';
+import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { Filters, Matcher } from '@/composables/filters/manual-balances';
 import type { Collection } from '@/types/collection';
-import type {
-  ManualBalance,
-  ManualBalanceRequestPayload,
-  ManualBalanceWithPrice,
-} from '@/types/manual-balances';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = defineProps<{
   title: string;
@@ -29,20 +25,16 @@ const refreshing = ref(false);
 const store = useManualBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { manualBalances, manualLiabilities } = storeToRefs(store);
-const {
-  fetchLiabilities,
-  fetchBalances,
-  fetchManualBalances,
-  deleteManualBalance,
-} = store;
+const { fetchLiabilities, fetchBalances, fetchManualBalances, deleteManualBalance } = store;
 const { isLoading } = useStatusStore();
 
-const dataSource = computed(() => props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances));
+const dataSource = computed(() => (props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
 
-const locations = computed(() => [
-  ...get(manualBalances).map(item => item.location),
-  ...get(manualLiabilities).map(item => item.location),
-].filter(uniqueStrings));
+const locations = computed(() =>
+  [...get(manualBalances).map(item => item.location), ...get(manualLiabilities).map(item => item.location)].filter(
+    uniqueStrings,
+  ),
+);
 
 const {
   isLoading: loading,
@@ -53,17 +45,17 @@ const {
   pagination,
   sort,
 } = usePaginationFilters<
-    ManualBalanceWithPrice,
-    ManualBalanceRequestPayload,
-    ManualBalanceWithPrice,
-    Collection<ManualBalanceWithPrice>,
-    Filters,
-    Matcher
+  ManualBalanceWithPrice,
+  ManualBalanceRequestPayload,
+  ManualBalanceWithPrice,
+  Collection<ManualBalanceWithPrice>,
+  Filters,
+  Matcher
 >(
   null,
   false,
   () => useManualBalanceFilter(locations),
-  payload => props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload),
+  payload => (props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload)),
   {
     extraParams: computed(() => ({
       tags: get(tags),
@@ -88,7 +80,7 @@ function getRowClass(item: ManualBalance) {
   return `manual-balance__location__${item.location}`;
 }
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
@@ -156,10 +148,14 @@ watchImmediate(dataSource, async (newBalances, oldBalances) => {
   await fetchData();
 });
 
-watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading)
-    await fetchData();
-}, { debounce: 800, maxWait: 1000 });
+watchDebounced(
+  isLoading(Section.PRICES),
+  async (isLoading, wasLoading) => {
+    if (!isLoading && wasLoading)
+      await fetchData();
+  },
+  { debounce: 800, maxWait: 1000 },
+);
 </script>
 
 <template>
@@ -183,23 +179,23 @@ watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
               hide-details
             />
             <TableFilter
+              v-model:matches="filters"
               class="w-full flex-1"
               :matchers="matchers"
-              :matches.sync="filters"
             />
           </div>
         </div>
       </div>
     </template>
     <RuiDataTable
+      v-model:sort="sort"
+      v-model:pagination="pagination"
       outlined
       dense
       :loading="loading"
       :cols="cols"
-      row-attr="id"
+      row-attr="label"
       :rows="state.data"
-      :sort.sync="sort"
-      :pagination.sync="pagination"
       :item-class="getRowClass"
       class="manual-balances-list"
     >
@@ -213,7 +209,7 @@ watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
         >
           {{ row.label }}
         </div>
-        <div>
+        <div v-if="row.tags">
           <TagDisplay
             :tags="row.tags"
             :small="true"

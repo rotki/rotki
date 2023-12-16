@@ -1,38 +1,21 @@
-import {
-  setupTransformer,
-  snakeCaseTransformer,
-} from '@/services/axios-tranformers';
+import { setupTransformer, snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validAccountOperationStatus,
-  validAuthorizedStatus,
-  validStatus,
-} from '@/services/utils';
-import {
-  AccountSession,
-  type CreateAccountPayload,
-  type LoginCredentials,
-} from '@/types/login';
+import { handleResponse, validAccountOperationStatus, validAuthorizedStatus, validStatus } from '@/services/utils';
+import { AccountSession, type CreateAccountPayload, type LoginCredentials } from '@/types/login';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useUsersApi() {
   const getUsers = async (): Promise<AccountSession> => {
-    const response = await api.instance.get<ActionResult<AccountSession>>(
-      `/users`,
-      {
-        transformResponse: setupTransformer(true),
-      },
-    );
+    const response = await api.instance.get<ActionResult<AccountSession>>(`/users`, {
+      transformResponse: setupTransformer(true),
+    });
     return AccountSession.parse(handleResponse(response));
   };
 
-  const getUserProfiles = async (): Promise<string[]> =>
-    Object.keys(await getUsers());
+  const getUserProfiles = async (): Promise<string[]> => Object.keys(await getUsers());
 
-  const checkIfLogged = async (username: string): Promise<boolean> =>
-    (await getUsers())[username] === 'loggedin';
+  const checkIfLogged = async (username: string): Promise<boolean> => (await getUsers())[username] === 'loggedin';
 
   const loggedUsers = async (): Promise<string[]> => {
     const result: AccountSession = await getUsers();
@@ -60,9 +43,7 @@ export function useUsersApi() {
     return success;
   };
 
-  const createAccount = async (
-    payload: CreateAccountPayload,
-  ): Promise<PendingTask> => {
+  const createAccount = async (payload: CreateAccountPayload): Promise<PendingTask> => {
     const { credentials, premiumSetup, initialSettings } = payload;
     const { username, password } = credentials;
 
@@ -100,11 +81,7 @@ export function useUsersApi() {
     return handleResponse(response);
   };
 
-  const changeUserPassword = async (
-    username: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<true> => {
+  const changeUserPassword = async (username: string, currentPassword: string, newPassword: string): Promise<true> => {
     const response = await api.instance.patch<ActionResult<true>>(
       `/users/${username}/password`,
       {

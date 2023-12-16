@@ -25,12 +25,12 @@ function updateSetting(value: boolean, update: (newValue: any) => void) {
   >
     <RuiSwitch
       color="primary"
-      :value="!animationsEnabled"
+      :model-value="!animationsEnabled"
       class="general-settings__fields__animation-enabled"
       :label="t('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
-      @input="updateSetting($event, update)"
+      @update:model-value="updateSetting($event, update)"
     />
   </SettingsOption>
 </template>

@@ -5,14 +5,8 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { getAccountAddress } from '@/utils/blockchain/accounts';
-import type {
-  BlockchainAccountWithBalance,
-  XpubData,
-} from '@/types/blockchain/accounts';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { BlockchainAccountWithBalance, XpubData } from '@/types/blockchain/accounts';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { Balance } from '@rotki/common';
 
 const props = withDefaults(
@@ -20,7 +14,6 @@ const props = withDefaults(
     balances: BlockchainAccountWithBalance[];
     blockchain: string;
     visibleTags: string[];
-    selected: string[];
     loopring?: boolean;
   }>(),
   {
@@ -31,8 +24,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'edit-click', account: BlockchainAccountWithBalance): void;
   (e: 'delete-xpub', payload: BlockchainAccountWithBalance<XpubData>): void;
-  (e: 'update:selected', selected: string[]): void;
 }>();
+
+const selected = defineModel<string[]>('selected', { required: true });
 
 const { t } = useI18n();
 
@@ -40,7 +34,7 @@ type Account = BlockchainAccountWithBalance & {
   identifier: string;
 };
 
-const { balances, blockchain, visibleTags, selected, loopring } = toRefs(props);
+const { balances, blockchain, visibleTags, loopring } = toRefs(props);
 
 const rootAttrs = useAttrs();
 
@@ -58,9 +52,9 @@ const loading = computed<boolean>(() => {
   return get(isLoading(Section.BLOCKCHAIN, section));
 });
 
-const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
+const expanded = ref<Account[]>([]);
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<Account>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
@@ -69,64 +63,71 @@ const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 const isBtcNetwork = computed<boolean>(() => isBtcChain(get(blockchain)));
 
-const hasTokenDetection: ComputedRef<boolean> = computed(() =>
-  supportsTransactions(get(blockchain)),
+const hasTokenDetection = computed<boolean>(() => supportsTransactions(get(blockchain)));
+
+const rows = computed<Account[]>(() =>
+  get(balances)
+    .filter(({ groupHeader, tags }) => {
+      const selectedTags = get(visibleTags);
+      return !groupHeader && selectedTags.every(tag => tags?.includes(tag));
+    })
+    .map((item) => {
+      const address = getAccountAddress(item);
+      const display = get(addressNameSelector(address, item.chain)) || item.label || '';
+
+      const group = item.groupId === address ? '' : item.groupId;
+
+      const row = {
+        ...item,
+        display,
+        groupId: group,
+        identifier: getAccountId(item),
+      };
+
+      if (!get(hasTokenDetection))
+        return row;
+
+      const { amount, usdValue } = row;
+
+      const { total } = get(getEthDetectedTokensInfo(blockchain, address));
+
+      const rowWithTokens = {
+        ...row,
+        numOfDetectedTokens: total,
+      };
+
+      if (!get(isEth) || get(loopring))
+        return rowWithTokens;
+
+      const loopringBalances = getAddressBalances('loopring', address);
+
+      if (isEmpty(loopringBalances.assets))
+        return rowWithTokens;
+
+      const loopringEth = loopringBalances.assets[Blockchain.ETH.toUpperCase()]?.amount ?? Zero;
+
+      const loopringValue = bigNumberSum(Object.values(loopringBalances.assets).map(x => x.usdValue));
+
+      return {
+        ...rowWithTokens,
+        usdValue: usdValue.plus(loopringValue),
+        amount: amount.plus(loopringEth),
+      };
+    }),
 );
-
-const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags }) => {
-  const selectedTags = get(visibleTags);
-  return !groupHeader && selectedTags.every(tag => tags?.includes(tag));
-}).map((item) => {
-  const address = getAccountAddress(item);
-  const display = get(addressNameSelector(address, item.chain)) || item.label || '';
-
-  const group = item.groupId === address ? '' : item.groupId;
-
-  const row = {
-    ...item,
-    display,
-    groupId: group,
-    identifier: getAccountId(item),
-  };
-
-  if (!get(hasTokenDetection))
-    return row;
-
-  const { amount, usdValue } = row;
-
-  const { total } = get(getEthDetectedTokensInfo(blockchain, address));
-
-  const rowWithTokens = {
-    ...row,
-    numOfDetectedTokens: total,
-  };
-
-  if (!get(isEth) || get(loopring))
-    return rowWithTokens;
-
-  const loopringBalances = getAddressBalances('loopring', address);
-
-  if (isEmpty(loopringBalances.assets))
-    return rowWithTokens;
-
-  const loopringEth = loopringBalances.assets[Blockchain.ETH.toUpperCase()]?.amount ?? Zero;
-
-  const loopringValue = bigNumberSum(Object.values(loopringBalances.assets).map(x => x.usdValue));
-
-  return {
-    ...rowWithTokens,
-    usdValue: usdValue.plus(loopringValue),
-    amount: amount.plus(loopringEth),
-  };
-}));
 
 const emptyGroups = computed<Account[]>(() => {
   const data = get(balances);
-  const groupIds = data.filter(item => !item.groupHeader).map(item => item.groupId).filter(uniqueStrings);
-  return data.filter(item => item.groupHeader && !groupIds.includes(item.groupId)).map(item => ({
-    ...item,
-    identifier: getAccountId(item),
-  }));
+  const groupIds = data
+    .filter(item => !item.groupHeader)
+    .map(item => item.groupId)
+    .filter(uniqueStrings);
+  return data
+    .filter(item => item.groupHeader && !groupIds.includes(item.groupId))
+    .map(item => ({
+      ...item,
+      identifier: getAccountId(item),
+    }));
 });
 
 const total = computed<Balance>(() => {
@@ -140,7 +141,7 @@ const total = computed<Balance>(() => {
   };
 });
 
-const asset: ComputedRef<string> = computed(() => {
+const asset = computed<string>(() => {
   const chain = get(blockchain);
   const nativeAsset = getNativeAsset(chain);
   if (get(isEth2))
@@ -152,18 +153,16 @@ const asset: ComputedRef<string> = computed(() => {
   return get(assetSymbol(nativeAsset));
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<Account>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
   const currencyHeader = get(hasTokenDetection)
     ? t('account_balances.headers.usd_value_eth', currency)
     : t('account_balances.headers.usd_value', currency);
 
-  const accountHeader = get(isEth2)
-    ? t('account_balances.headers.validator')
-    : t('common.account');
+  const accountHeader = get(isEth2) ? t('account_balances.headers.validator') : t('common.account');
 
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<Account>[] = [
     {
       label: accountHeader,
       key: 'display',
@@ -218,11 +217,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
   return headers;
 });
 
-const accountOperation = logicOr(
-  isTaskRunning(TaskType.ADD_ACCOUNT),
-  isTaskRunning(TaskType.REMOVE_ACCOUNT),
-  loading,
-);
+const accountOperation = logicOr(isTaskRunning(TaskType.ADD_ACCOUNT), isTaskRunning(TaskType.REMOVE_ACCOUNT), loading);
 
 const isAnyLoading = logicOr(accountOperation, detectingTokens);
 
@@ -230,11 +225,7 @@ function editClick(account: BlockchainAccountWithBalance) {
   emit('edit-click', account);
 }
 
-function addressesSelected(selected: string[]) {
-  emit('update:selected', selected);
-}
-
-function getItems(groupId: string) {
+function getItems(groupId?: string) {
   return get(balances).filter(account => account.groupId === groupId);
 }
 
@@ -249,14 +240,14 @@ function expand(row: Account) {
 
 <template>
   <RuiDataTable
-    :value="selected"
+    v-model="selected"
     v-bind="rootAttrs"
+    v-model:expanded="expanded"
+    v-model:sort="sort"
     :cols="tableHeaders"
     :rows="rows"
     :loading="isAnyLoading"
     row-attr="identifier"
-    :expanded.sync="expanded"
-    :sort.sync="sort"
     :empty="{ description: t('data_table.no_data') }"
     :loading-text="t('account_balances.data_table.loading')"
     class="account-balances-list"
@@ -267,11 +258,6 @@ function expand(row: Account) {
     outlined
     dense
     sticky-header
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
-    @input="addressesSelected($event ?? [])"
   >
     <template #item.display="{ row }">
       <div class="py-2 account-balance-table__account">
@@ -300,7 +286,10 @@ function expand(row: Account) {
       v-if="isEth2"
       #item.ownershipPercentage="{ row }"
     >
-      <PercentageDisplay :value="row.data.ownershipPercentage ?? '100'" />
+      <PercentageDisplay
+        v-if="'ownershipPercentage' in row.data"
+        :value="row.data.ownershipPercentage ?? '100'"
+      />
     </template>
     <template
       v-if="hasTokenDetection && !loopring"
@@ -370,7 +359,7 @@ function expand(row: Account) {
       #item.expand="{ row }"
     >
       <RuiTableRowExpander
-        v-if="(row.expandable || loopring)"
+        v-if="row.expandable || loopring"
         :expanded="isExpanded(row)"
         @click="expand(row)"
       />
@@ -378,7 +367,7 @@ function expand(row: Account) {
     <template #group.header="{ header, isOpen, toggle }">
       <AccountGroupHeader
         :group="header.identifier"
-        :items="getItems(header.group.groupId)"
+        :items="getItems(header.group?.groupId)"
         :expanded="isOpen"
         :loading="loading"
         @expand="toggle()"

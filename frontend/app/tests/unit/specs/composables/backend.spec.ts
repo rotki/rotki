@@ -1,4 +1,6 @@
 import { mount } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { createTestingPinia } from '@pinia/testing';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
@@ -18,19 +20,11 @@ vi.mock('@/utils/account-management', () => ({
   deleteBackendUrl: vi.fn(),
 }));
 
-vi.mock('@/store/main', () => ({
-  useMainStore: vi.fn().mockReturnValue({
-    connected: false,
-    setConnected: vi.fn(),
-    connect: vi.fn(),
-  }),
-}));
-
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
 describe('composables::backend', () => {
   beforeAll(() => {
-    const pinia = createPinia();
+    const pinia = createTestingPinia();
     setActivePinia(pinia);
   });
 
@@ -43,13 +37,14 @@ describe('composables::backend', () => {
     let backendManagement: ReturnType<typeof useBackendManagement> | null = null;
 
     mount({
+      template: '<div/>',
       setup() {
         backendManagement = useBackendManagement(loaded);
       },
     });
 
     await nextTick();
-    await nextTick();
+    await flushPromises();
 
     expect(backendManagement).not.toBeNull();
     const { options, defaultLogDirectory, fileConfig } = backendManagement!;
@@ -76,17 +71,17 @@ describe('composables::backend', () => {
     };
     localStorage.setItem(BACKEND_OPTIONS, JSON.stringify(savedOptions));
 
-    let backendManagement: ReturnType<typeof useBackendManagement> | null
-      = null;
+    let backendManagement: ReturnType<typeof useBackendManagement> | null = null;
 
     mount({
+      template: '<div/>',
       setup() {
         backendManagement = useBackendManagement(loaded);
       },
     });
 
     await nextTick();
-    await nextTick();
+    await flushPromises();
 
     expect(backendManagement).not.toBeNull();
     const { options } = backendManagement!;
@@ -111,9 +106,7 @@ describe('composables::backend', () => {
 
     await saveOptions(newOptions);
 
-    expect(
-      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || ''),
-    ).toStrictEqual(newOptions);
+    expect(JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || '')).toStrictEqual(newOptions);
 
     expect(useInterop().restartBackend).toBeCalledWith(newOptions);
   });
@@ -123,9 +116,7 @@ describe('composables::backend', () => {
 
     await resetOptions();
 
-    expect(
-      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || ''),
-    ).toStrictEqual({});
+    expect(JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || '')).toStrictEqual({});
 
     expect(useInterop().restartBackend).toBeCalledWith({});
   });
@@ -173,8 +164,8 @@ describe('composables::backend', () => {
   });
 
   it('should not do anything on setupBackend, if connected=true', async () => {
-    const { connected } = storeToRefs(useMainStore());
-    set(connected, true);
+    const store = useMainStore();
+    store.connected = true;
 
     const { setupBackend } = useBackendManagement();
 
@@ -185,23 +176,18 @@ describe('composables::backend', () => {
 
   it('should restart backend, if connected=false and url is not set', async () => {
     const store = useMainStore();
-    const { connected } = storeToRefs(store);
-    const { connect } = store;
-    set(connected, false);
-
+    store.connected = false;
     const { setupBackend } = useBackendManagement();
 
     await setupBackend();
 
     expect(useInterop().restartBackend).toBeCalled();
-    expect(connect).toHaveBeenCalledWith();
+    expect(store.connect).toHaveBeenCalledWith();
   });
 
   it('should not restart backend, if connected=false and url is set', async () => {
     const store = useMainStore();
-    const { connected } = storeToRefs(store);
-    const { connect } = store;
-    set(connected, false);
+    store.connected = false;
 
     const url = 'test_backend_url';
 
@@ -215,6 +201,6 @@ describe('composables::backend', () => {
     await setupBackend();
 
     expect(useInterop().restartBackend).not.toBeCalled();
-    expect(connect).toHaveBeenCalledWith(url);
+    expect(store.connect).toHaveBeenCalledWith(url);
   });
 });

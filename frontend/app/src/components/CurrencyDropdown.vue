@@ -63,7 +63,7 @@ function calculateFontSize(symbol: string) {
     menu-class="w-[22rem]"
     :popper="{ placement: 'bottom' }"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="
           t('currency_drop_down.profit_currency', {
@@ -71,7 +71,7 @@ function calculateFontSize(symbol: string) {
           })
         "
         class-name="currency-dropdown text-[1.375rem] font-bold"
-        v-on="on"
+        v-bind="attrs"
       >
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>

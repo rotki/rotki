@@ -1,11 +1,7 @@
 import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
-import {
-  type ChainAndTxHash,
-  type EvmChainAndTxHash,
-  TransactionChainType,
-} from '@/types/history/events';
+import { type ChainAndTxHash, type EvmChainAndTxHash, TransactionChainType } from '@/types/history/events';
 import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import type { TaskMeta } from '@/types/task';
 
@@ -13,26 +9,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
-  const {
-    decodeTransactions,
-    getUndecodedTransactionsBreakdown,
-    pullAndRecodeTransactionRequest,
-  } = useHistoryEventsApi();
+  const { decodeTransactions, getUndecodedTransactionsBreakdown, pullAndRecodeTransactionRequest }
+    = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const {
-    updateUndecodedTransactionsStatus,
-    getUndecodedTransactionStatus,
-    resetUndecodedTransactionsStatus,
-  } = useHistoryStore();
+  const { updateUndecodedTransactionsStatus, getUndecodedTransactionStatus, resetUndecodedTransactionsStatus }
+    = useHistoryStore();
 
-  const {
-    txChains,
-    getChain,
-    isEvmLikeChains,
-    getChainName,
-    getEvmChainName,
-  } = useSupportedChains();
+  const { txChains, getChain, isEvmLikeChains, getChainName, getEvmChainName } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
 
@@ -53,32 +37,30 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
     try {
       const { taskId } = await getUndecodedTransactionsBreakdown(type);
-      const { result } = await awaitTask<EvmUndecodedTransactionResponse, TaskMeta>(
-        taskId,
-        taskType,
-        taskMeta,
-      );
+      const { result } = await awaitTask<EvmUndecodedTransactionResponse, TaskMeta>(taskId, taskType, taskMeta);
 
       const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(result));
 
       updateUndecodedTransactionsStatus(
-        Object.fromEntries(Object.entries(breakdown).map(([chain, entry]) => [chain, {
-          chain,
-          total: entry.total,
-          processed: entry.total - entry.undecoded,
-        }])),
+        Object.fromEntries(
+          Object.entries(breakdown).map(([chain, entry]) => [
+            chain,
+            {
+              chain,
+              total: entry.total,
+              processed: entry.total - entry.undecoded,
+            },
+          ]),
+        ),
       );
     }
     catch (error: any) {
       if (isTaskCancelled(error))
         return;
 
-      const description = t(
-        'actions.history.fetch_undecoded_transactions.error.message',
-        {
-          message: error.message,
-        },
-      );
+      const description = t('actions.history.fetch_undecoded_transactions.error.message', {
+        message: error.message,
+      });
       notify({
         title,
         message: description,
@@ -113,10 +95,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
       const taskMeta = {
         title: t('actions.transactions_redecode_by_chain.task.title'),
-        description: t(
-          'actions.transactions_redecode_by_chain.task.description',
-          { chain: get(getChainName(chain)) },
-        ),
+        description: t('actions.transactions_redecode_by_chain.task.description', { chain: get(getChainName(chain)) }),
         chain,
         all: false,
       };
@@ -129,13 +108,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         logger.error(error);
         notify({
           title: t('actions.transactions_redecode_by_chain.error.title'),
-          message: t(
-            'actions.transactions_redecode_by_chain.error.description',
-            {
-              error,
-              chain: get(getChainName(chain)),
-            },
-          ),
+          message: t('actions.transactions_redecode_by_chain.error.description', {
+            error,
+            chain: get(getChainName(chain)),
+          }),
           display: true,
         });
       }
@@ -148,7 +124,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       .filter(({ total, processed, chain }) => {
         const blockchain = getChain(chain);
         const isEvmLike = isEvmLikeChains(blockchain);
-        return processed < total && (isEvmType === !isEvmLike);
+        return processed < total && isEvmType === !isEvmLike;
       })
       .map(({ chain }) => chain);
     await awaitParallelExecution(
@@ -171,19 +147,21 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
     const decodeChains = chains.length > 0 ? chains : get(txChains).map(chain => chain.id);
 
-    const chainInfo = decodeChains.map((chain) => {
-      if (isEvmLikeChains(chain)) {
-        return {
-          type: TransactionChainType.EVMLIKE,
-          chain,
-        };
-      }
+    const chainInfo = decodeChains
+      .map((chain) => {
+        if (isEvmLikeChains(chain)) {
+          return {
+            type: TransactionChainType.EVMLIKE,
+            chain,
+          };
+        }
 
-      return {
-        type: TransactionChainType.EVM,
-        chain: getEvmChainName(chain) || '',
-      };
-    }).filter(item => item.chain);
+        return {
+          type: TransactionChainType.EVM,
+          chain: getEvmChainName(chain) || '',
+        };
+      })
+      .filter(item => item.chain);
 
     await awaitParallelExecution(
       chainInfo,
@@ -224,12 +202,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         tx: transaction,
       };
 
-      const { result } = await awaitTask<boolean, TaskMeta>(
-        taskId,
-        taskType,
-        taskMeta,
-        true,
-      );
+      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
 
       if (result)
         clearDependedSection();

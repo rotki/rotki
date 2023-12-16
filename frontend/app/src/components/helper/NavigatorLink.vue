@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { RawLocation } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 
 const props = withDefaults(
   defineProps<{
     tag?: string;
     enabled?: boolean;
-    to: RawLocation;
+    to: RouteLocationRaw;
   }>(),
   {
     tag: 'span',

@@ -1,6 +1,5 @@
 import fs from 'node:fs';
-import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse,
-} from 'node:http';
+import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
@@ -33,31 +32,19 @@ function error(message: string) {
   });
 }
 
-function invalidRequest(
-  res: ServerResponse,
-  message: string,
-  status: number = STATUS_BAD_REQUEST,
-) {
+function invalidRequest(res: ServerResponse, message: string, status: number = STATUS_BAD_REQUEST) {
   res.writeHead(status, headerJson);
   res.write(error(message));
   res.end();
 }
 
-function okResponse(
-  res: ServerResponse,
-  body: Buffer | string,
-  headers?: OutgoingHttpHeaders,
-) {
+function okResponse(res: ServerResponse, body: Buffer | string, headers?: OutgoingHttpHeaders) {
   res.writeHead(STATUS_OK, headers);
   res.write(body);
   res.end();
 }
 
-function handleAddresses(
-  req: IncomingMessage,
-  res: ServerResponse,
-  cb: Callback,
-) {
+function handleAddresses(req: IncomingMessage, res: ServerResponse, cb: Callback) {
   if (req.headers['content-type'] !== applicationJson) {
     invalidRequest(res, `Invalid content type: ${req.headers['content-type']}`);
     return;
@@ -97,11 +84,7 @@ function serveFile(res: ServerResponse, paths: string, url: string) {
   else if (extension.includes('ico'))
     contentType = 'image/vnd.microsoft.icon';
 
-  okResponse(
-    res,
-    fs.readFileSync(filePath),
-    contentType ? { 'Content-Type': contentType } : undefined,
-  );
+  okResponse(res, fs.readFileSync(filePath), contentType ? { 'Content-Type': contentType } : undefined);
 }
 
 function sanitize(requestedPath: string): string {
@@ -121,43 +104,25 @@ function isAllowed(basePath: string, servePath: string): boolean {
   return fs.existsSync(filePath);
 }
 
-function handleRequests(
-  req: IncomingMessage,
-  res: ServerResponse,
-  cb: Callback,
-) {
+function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback) {
   const contentLengthHeader = req.headers['content-length'];
   if (contentLengthHeader) {
     try {
       const contentLength = Number.parseInt(contentLengthHeader);
       if (contentLength > 524288) {
-        invalidRequest(
-          res,
-          'Only requests up to 0.5MB are allowed',
-          STATUS_BAD_REQUEST,
-        );
+        invalidRequest(res, 'Only requests up to 0.5MB are allowed', STATUS_BAD_REQUEST);
         return;
       }
     }
     catch {
-      invalidRequest(
-        res,
-        'No valid content length',
-        STATUS_CONTENT_LENGTH_REQUIRED,
-      );
+      invalidRequest(res, 'No valid content length', STATUS_CONTENT_LENGTH_REQUIRED);
       return;
     }
   }
-  const basePath = checkIfDevelopment()
-    ? path.join(__dirname, '..', 'public')
-    : __dirname;
+  const basePath = checkIfDevelopment() ? path.join(__dirname, '..', 'public') : __dirname;
   const url = req.url ?? '';
   if (url === '/') {
-    okResponse(
-      res,
-      fs.readFileSync(path.join(basePath, 'metamask/import.html')),
-      headersHtml,
-    );
+    okResponse(res, fs.readFileSync(path.join(basePath, 'metamask/import.html')), headersHtml);
   }
   else if (url === '/import' && req.method === 'POST') {
     handleAddresses(req, res, cb);
@@ -174,9 +139,7 @@ function handleRequests(
 export function startHttp(cb: Callback, port = 43432): number {
   if (!(server && server.listening)) {
     // eslint-disable-next-line no-console
-    console.log(
-      `Metamask Import Server: Listening at: http://localhost:${port}`,
-    );
+    console.log(`Metamask Import Server: Listening at: http://localhost:${port}`);
     server = http.createServer((req, resp) => handleRequests(req, resp, cb));
     server.listen(port);
   }

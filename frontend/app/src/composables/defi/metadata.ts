@@ -9,30 +9,22 @@ export const useDefiMetadata = createSharedComposable(() => {
 
   const loading = ref<boolean>(false);
 
-  const metadata: Ref<ProtocolMetadata[]> = asyncComputed<
-    ProtocolMetadata[]
-  >(() => {
-    if (get(connected))
-      return fetchDefiMetadata();
+  const metadata: Ref<ProtocolMetadata[]> = asyncComputed<ProtocolMetadata[]>(
+    () => {
+      if (get(connected))
+        return fetchDefiMetadata();
 
-    return [];
-  }, [], { evaluating: loading });
+      return [];
+    },
+    [],
+    { evaluating: loading },
+  );
 
-  const getDefiData = (
-    identifier: MaybeRef<string>,
-  ): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind(
-      metadata,
-      item => camelCase(item.identifier) === camelCase(get(identifier)),
-    );
+  const getDefiData = (identifier: MaybeRef<string>): ComputedRef<ProtocolMetadata | undefined> =>
+    useArrayFind(metadata, item => camelCase(item.identifier) === camelCase(get(identifier)));
 
-  const getDefiDataByName = (
-    name: MaybeRef<string>,
-  ): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind<ProtocolMetadata>(
-      metadata,
-      item => decodeHtmlEntities(item.name) === decodeHtmlEntities(get(name)),
-    );
+  const getDefiDataByName = (name: MaybeRef<string>): ComputedRef<ProtocolMetadata | undefined> =>
+    useArrayFind<ProtocolMetadata>(metadata, item => decodeHtmlEntities(item.name) === decodeHtmlEntities(get(name)));
 
   const getDefiName = (identifier: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
@@ -40,14 +32,13 @@ export const useDefiMetadata = createSharedComposable(() => {
       identifier,
     );
 
-  const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> => computed(() => {
-    const imageName = get(getDefiData(identifier))?.icon || `${get(identifier)}.svg`;
-    return `./assets/images/protocols/${imageName}`;
-  });
+  const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> =>
+    computed(() => {
+      const imageName = get(getDefiData(identifier))?.icon || `${get(identifier)}.svg`;
+      return `./assets/images/protocols/${imageName}`;
+    });
 
-  const getDefiIdentifierByName = (
-    name: MaybeRef<string>,
-  ): ComputedRef<string> =>
+  const getDefiIdentifierByName = (name: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
       useRefMap(getDefiDataByName(name), i => i?.identifier),
       name,

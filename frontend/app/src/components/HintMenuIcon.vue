@@ -2,27 +2,23 @@
 defineOptions({
   inheritAttrs: false,
 });
-
-const attrs = useAttrs();
 </script>
 
 <template>
   <RuiMenu
     menu-class="max-w-[25rem]"
-    v-bind="attrs"
+    v-bind="$attrs"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         variant="text"
         icon
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon name="question-line" />
       </RuiButton>
     </template>
-    <div
-      class="p-4 py-3"
-    >
+    <div class="p-4 py-3">
       <slot />
     </div>
   </RuiMenu>

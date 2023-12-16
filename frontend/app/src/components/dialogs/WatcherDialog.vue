@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
-import {
-  type Watcher,
-  type WatcherOpTypes,
-  WatcherType,
-} from '@/types/session';
+import { type Watcher, type WatcherOpTypes, WatcherType } from '@/types/session';
+import type { RuiIcons } from '@rotki/ui-library';
+
+interface WatcherOperation {
+  op: WatcherOpTypes;
+  value: WatcherOpTypes;
+  text: string;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -26,14 +29,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'cancel'): void }>();
 
-const { display, preselectWatcherType, existingWatchers, watcherContentId }
-  = toRefs(props);
-const watcherType: Ref<typeof WatcherType | null> = ref(null);
-const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
-const watcherValue: Ref<string | undefined> = ref();
-const validationMessage: Ref<string> = ref('');
-const validationStatus: Ref<'success' | 'error' | ''> = ref('');
-const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
+const { display, preselectWatcherType, existingWatchers, watcherContentId } = toRefs(props);
+const watcherType = ref<typeof WatcherType>();
+const watcherOperation = ref<WatcherOpTypes>();
+const watcherValue = ref<string>();
+const validationMessage = ref<string>('');
+const validationStatus = ref<'success' | 'error' | ''>('');
+const existingWatchersEdit = ref<Record<string, boolean>>({});
 
 const { t } = useI18n();
 
@@ -41,11 +43,9 @@ const store = useWatchersStore();
 const { watchers } = storeToRefs(store);
 const { addWatchers, editWatchers, deleteWatchers } = store;
 
-const loadedWatchers: ComputedRef<Watcher[]> = computed(() => {
+const loadedWatchers = computed<Watcher[]>(() => {
   const id = get(watcherContentId)?.toString();
-  return cloneDeep(get(watchers)).filter(
-    watcher => watcher.args.vaultId === id,
-  );
+  return cloneDeep(get(watchers)).filter(watcher => watcher.args.vaultId === id);
 });
 
 const watcherTypes = computed(() => [
@@ -56,7 +56,7 @@ const watcherTypes = computed(() => [
   },
 ]);
 
-const watcherOperations = computed(() => ({
+const watcherOperations = computed<{ [WatcherType]: WatcherOperation[] }>(() => ({
   makervault_collateralization_ratio: [
     {
       op: 'gt',
@@ -81,7 +81,7 @@ const watcherOperations = computed(() => ({
   ],
 }));
 
-const operations = computed(() => {
+const operations = computed<WatcherOperation[]>(() => {
   const operations = get(watcherOperations);
   const type = get(watcherType);
   if (!type)
@@ -90,7 +90,7 @@ const operations = computed(() => {
   return operations[type] ?? [];
 });
 
-function existingWatchersIcon(identifier: string): string {
+function existingWatchersIcon(identifier: string): RuiIcons {
   const edit = get(existingWatchersEdit);
   return edit[identifier] ? 'check-line' : 'pencil-line';
 }
@@ -139,10 +139,7 @@ async function addWatcher() {
     clear();
   }
   catch (error: any) {
-    validateSettingChange(
-      'error',
-      t('watcher_dialog.add_error', { message: error.message }),
-    );
+    validateSettingChange('error', t('watcher_dialog.add_error', { message: error.message }));
   }
 }
 
@@ -160,10 +157,7 @@ async function editWatcher(watcher: Watcher) {
     )!.args;
     const modifiedWatcherArgs = watcher.args;
 
-    if (
-      existingWatcherArgs.op !== modifiedWatcherArgs.op
-      || existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
-    ) {
+    if (existingWatcherArgs.op !== modifiedWatcherArgs.op || existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio) {
       try {
         await editWatchers([watcher]);
         validateSettingChange('success', t('watcher_dialog.edit_success'));
@@ -238,7 +232,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
 
 <template>
   <RuiDialog
-    :value="display"
+    :model-value="display"
     persistent
     max-width="650"
     class="watcher-dialog"
@@ -266,8 +260,6 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         v-model="watcherType"
         :options="watcherTypes"
         :label="t('watcher_dialog.labels.type')"
-        key-attr="value"
-        text-attr="text"
         dense
         variant="outlined"
         required

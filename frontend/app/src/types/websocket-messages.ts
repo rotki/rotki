@@ -29,10 +29,12 @@ export const EvmTransactionsQueryStatus = {
 
 export type EvmTransactionsQueryStatus = (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
 
-export const EvmTransactionQueryData = z.object({
-  status: z.nativeEnum(EvmTransactionsQueryStatus),
-  period: z.tuple([z.number(), z.number()]),
-}).merge(EvmChainAddress);
+export const EvmTransactionQueryData = z
+  .object({
+    status: z.nativeEnum(EvmTransactionsQueryStatus),
+    period: z.tuple([z.number(), z.number()]),
+  })
+  .merge(EvmChainAddress);
 
 export const EvmUnDecodedTransactionsData = z.object({
   chain: z.string(),
@@ -40,9 +42,7 @@ export const EvmUnDecodedTransactionsData = z.object({
   total: z.number(),
 });
 
-export type EvmUnDecodedTransactionsData = z.infer<
-  typeof EvmUnDecodedTransactionsData
->;
+export type EvmUnDecodedTransactionsData = z.infer<typeof EvmUnDecodedTransactionsData>;
 
 export const EvmUndecodedTransactionBreakdown = z.object({
   total: z.number(),
@@ -59,8 +59,7 @@ export const HistoryEventsQueryStatus = {
   QUERYING_EVENTS_FINISHED: 'querying_events_finished',
 } as const;
 
-export type HistoryEventsQueryStatus =
-  (typeof HistoryEventsQueryStatus)[keyof typeof HistoryEventsQueryStatus];
+export type HistoryEventsQueryStatus = (typeof HistoryEventsQueryStatus)[keyof typeof HistoryEventsQueryStatus];
 
 export const HistoryEventsQueryData = z.object({
   status: z.nativeEnum(HistoryEventsQueryStatus),
@@ -149,17 +148,13 @@ export const AccountingRuleConflictData = z.object({
   numOfConflicts: z.number(),
 });
 
-export type AccountingRuleConflictData = z.infer<
-  typeof AccountingRuleConflictData
->;
+export type AccountingRuleConflictData = z.infer<typeof AccountingRuleConflictData>;
 
 export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
   protocol: z.string(),
 });
 
-export type ProtocolCacheUpdatesData = z.infer<
-    typeof ProtocolCacheUpdatesData
->;
+export type ProtocolCacheUpdatesData = z.infer<typeof ProtocolCacheUpdatesData>;
 
 export const SocketMessageType = {
   LEGACY: 'legacy',
@@ -180,8 +175,7 @@ export const SocketMessageType = {
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
 } as const;
 
-export type SocketMessageType =
-  (typeof SocketMessageType)[keyof typeof SocketMessageType];
+export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
 
 const UnknownWebsocketMessage = z.object({
   type: z.string(),

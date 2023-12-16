@@ -11,7 +11,7 @@ const props = defineProps<{
 const { premium } = storeToRefs(usePremiumStore());
 const { t } = useI18n();
 
-const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
+const totalInterestOwed = computed<BigNumber>(() => {
   const makerVault = props.vault;
   if ('totalInterestOwed' in makerVault)
     return makerVault.totalInterestOwed;

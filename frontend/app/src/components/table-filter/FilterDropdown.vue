@@ -1,22 +1,12 @@
 <script setup lang="ts">
-import type {
-  BaseSuggestion,
-  SearchMatcher,
-  Suggestion,
-} from '@/types/filtering';
+import type { BaseSuggestion, SearchMatcher, Suggestion } from '@/types/filtering';
 
-const props = withDefaults(
-  defineProps<{
-    matchers: SearchMatcher<any>[];
-    selectedMatcher?: SearchMatcher<any> | null;
-    keyword?: string;
-    selectedSuggestion: number;
-  }>(),
-  {
-    selectedMatcher: null,
-    keyword: '',
-  },
-);
+const props = defineProps<{
+  matchers: SearchMatcher<any>[];
+  selectedMatcher?: SearchMatcher<any>;
+  keyword: string;
+  selectedSuggestion: number;
+}>();
 
 const emit = defineEmits<{
   (e: 'click', item: SearchMatcher<any>): void;
@@ -28,8 +18,8 @@ const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
 
 const keywordSplited = computed(() => splitSearch(get(keyword)));
 
-const lastSuggestion: Ref<Suggestion | null> = ref(null);
-const suggested: Ref<Suggestion[]> = ref([]);
+const lastSuggestion = ref<Suggestion | null>(null);
+const suggested = ref<Suggestion[]>([]);
 
 function updateSuggestion(value: Suggestion[], index: number) {
   set(lastSuggestion, value[index]);
@@ -65,91 +55,83 @@ watch(suggested, (value) => {
   }
 });
 
-watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
-  if (!keyword || !selectedMatcher)
-    return [];
+watch(
+  [keyword, selectedMatcher],
+  async ([keyword, selectedMatcher]) => {
+    if (!keyword || !selectedMatcher)
+      return [];
 
-  const search = splitSearch(keyword);
-  const exclude
-    = 'string' in selectedMatcher
-    && !!selectedMatcher.allowExclusion
-    && !!search.exclude;
+    const search = splitSearch(keyword);
+    const exclude = 'string' in selectedMatcher && !!selectedMatcher.allowExclusion && !!search.exclude;
 
-  const suggestedFilter = selectedMatcher.key;
+    const suggestedFilter = selectedMatcher.key;
 
-  const searchString = search.value ?? '';
+    const searchString = search.value ?? '';
 
-  let suggestedItems: BaseSuggestion[] = [];
+    let suggestedItems: BaseSuggestion[] = [];
 
-  if ('string' in selectedMatcher) {
-    suggestedItems = selectedMatcher.suggestions().map(item => ({
-      key: suggestedFilter,
-      value: item,
-      exclude,
-    }));
-  }
-  else if ('asset' in selectedMatcher) {
-    if (searchString) {
-      suggestedItems = (await selectedMatcher.suggestions(searchString)).map(
-        asset => ({
+    if ('string' in selectedMatcher) {
+      suggestedItems = selectedMatcher.suggestions().map(item => ({
+        key: suggestedFilter,
+        value: item,
+        exclude,
+      }));
+    }
+    else if ('asset' in selectedMatcher) {
+      if (searchString) {
+        suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
           key: suggestedFilter,
           value: asset,
           exclude,
-        }),
-      );
+        }));
+      }
     }
-  }
-  else if ('boolean' in selectedMatcher) {
-    suggestedItems = [
-      {
-        key: suggestedFilter,
-        value: true,
-        exclude: false,
-      },
-    ];
-  }
-  else {
-    logger.debug(
-      'Matcher doesn\'t have asset=true, string=true, or boolean=true.',
-      selectedMatcher,
+    else if ('boolean' in selectedMatcher) {
+      suggestedItems = [
+        {
+          key: suggestedFilter,
+          value: true,
+          exclude: false,
+        },
+      ];
+    }
+    else {
+      logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
+    }
+
+    const getItemText = (item: BaseSuggestion) =>
+      typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
+
+    set(
+      suggested,
+      suggestedItems
+        .sort((a, b) => {
+          const aText = getItemText(a);
+          const bText = getItemText(b);
+          return compareTextByKeyword(aText, bText, searchString);
+        })
+        .slice(0, 5)
+        .map((a, index) => ({
+          index,
+          key: a.key,
+          value: a.value,
+          asset: typeof a.value !== 'string',
+          total: suggestedItems.length,
+          exclude,
+        })),
     );
-  }
-
-  const getItemText = (item: BaseSuggestion) =>
-    typeof item.value === 'string'
-      ? item.value
-      : `${item.value.symbol} ${item.value.evmChain}`;
-
-  set(
-    suggested,
-    suggestedItems
-      .sort((a, b) => {
-        const aText = getItemText(a);
-        const bText = getItemText(b);
-        return compareTextByKeyword(aText, bText, searchString);
-      })
-      .slice(0, 5)
-      .map((a, index) => ({
-        index,
-        key: a.key,
-        value: a.value,
-        asset: typeof a.value !== 'string',
-        total: suggestedItems.length,
-        exclude,
-      })),
-  );
-});
+  },
+  { immediate: true },
+);
 
 const { t } = useI18n();
 
-watch(selectedSuggestion, () => {
+watch(selectedSuggestion, async () => {
   if (get(selectedMatcher))
     return;
 
-  nextTick(() => {
-    document
-      .getElementsByClassName('highlightedMatcher')[0]
-      ?.scrollIntoView?.({ block: 'nearest' });
+  await nextTick(() => {
+    document.getElementsByClassName('highlightedMatcher')[0]?.scrollIntoView?.({ block: 'nearest' });
   });
 });
 
@@ -165,6 +147,7 @@ const css = useCssModule();
         v-if="suggested.length > 0"
         class="mb-2"
         :class="css.suggestions"
+        data-cy="suggestions"
       >
         <RuiButton
           v-for="(item, index) in suggested"
@@ -185,16 +168,17 @@ const css = useCssModule();
         class="pb-0"
       >
         <div class="text-rui-text-secondary">
-          <i18n
+          <i18n-t
             v-if="!('asset' in selectedMatcher)"
-            path="table_filter.no_suggestions"
+            keypath="table_filter.no_suggestions"
+            tag="span"
           >
             <template #search>
               <span class="font-medium text-rui-primary">
                 {{ keywordSplited.key }}
               </span>
             </template>
-          </i18n>
+          </i18n-t>
           <template v-else>
             {{ t('table_filter.asset_suggestion') }}
           </template>
@@ -235,7 +219,10 @@ const css = useCssModule();
         {{ t('table_filter.title') }}
       </div>
       <RuiDivider class="my-2" />
-      <div :class="css.suggestions">
+      <div
+        :class="css.suggestions"
+        data-cy="suggestions"
+      >
         <FilterEntry
           v-for="(matcher, index) in matchers"
           :key="matcher.key"

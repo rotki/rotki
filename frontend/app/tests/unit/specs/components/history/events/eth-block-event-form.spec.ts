@@ -1,8 +1,4 @@
-import {
-  type ThisTypedMountOptions,
-  type Wrapper,
-  mount,
-} from '@vue/test-utils';
+import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
@@ -17,7 +13,7 @@ vi.mock('@/store/balances/prices', () => ({
 
 describe('ethBlockEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<EthBlockEventForm>;
+  let wrapper: VueWrapper<InstanceType<typeof EthBlockEventForm>>;
   let pinia: Pinia;
 
   const asset = {
@@ -61,82 +57,52 @@ describe('ethBlockEventForm.vue', () => {
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => mount(EthBlockEventForm, {
-    pinia,
-    ...options,
+  afterEach(() => {
+    wrapper.unmount();
   });
+
+  const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {}) =>
+    mount(EthBlockEventForm, {
+      global: {
+        plugins: [pinia],
+      },
+      ...options,
+    });
 
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, nor `editableItem` are passed', async () => {
       wrapper = createWrapper();
       await nextTick();
 
-      expect(
-        (
-          wrapper.find('[data-cy=blockNumber] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe('');
+      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe('');
 
-      expect(
-        (
-          wrapper.find('[data-cy=validatorIndex] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe('');
+      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe('');
 
-      expect(
-        (
-          wrapper.find('[data-cy=feeRecipient] .input-value')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe('');
+      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe('');
 
-      expect(
-        (
-          wrapper.find('[data-cy=isMevReward] input')
-            .element as HTMLInputElement
-        ).checked,
-      ).toBeFalsy();
+      expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('`groupHeader` passed', async () => {
+    it('`groupHeader` are passed', async () => {
       wrapper = createWrapper();
       await nextTick();
       await wrapper.setProps({ groupHeader });
 
-      expect(
-        (
-          wrapper.find('[data-cy=blockNumber] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.blockNumber.toString());
+      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
+        groupHeader.blockNumber.toString(),
+      );
 
-      expect(
-        (
-          wrapper.find('[data-cy=validatorIndex] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.validatorIndex.toString());
+      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
+        groupHeader.validatorIndex.toString(),
+      );
 
-      expect(
-        (
-          wrapper.find('[data-cy=feeRecipient] .input-value')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.locationLabel);
+      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
+        groupHeader.locationLabel,
+      );
 
-      expect(
-        (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value,
-      ).toBe('');
+      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
 
-      expect(
-        (
-          wrapper.find('[data-cy=isMevReward] input')
-            .element as HTMLInputElement
-        ).checked,
-      ).toBeFalsy();
+      expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
     it('`groupHeader` and `editableItem` are passed', async () => {
@@ -144,38 +110,23 @@ describe('ethBlockEventForm.vue', () => {
       await nextTick();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
-      expect(
-        (
-          wrapper.find('[data-cy=blockNumber] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.blockNumber.toString());
+      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
+        groupHeader.blockNumber.toString(),
+      );
 
-      expect(
-        (
-          wrapper.find('[data-cy=validatorIndex] input')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.validatorIndex.toString());
+      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
+        groupHeader.validatorIndex.toString(),
+      );
 
-      expect(
-        (
-          wrapper.find('[data-cy=feeRecipient] .input-value')
-            .element as HTMLInputElement
-        ).value,
-      ).toBe(groupHeader.locationLabel);
+      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
+        groupHeader.locationLabel,
+      );
 
-      expect(
-        (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value,
-      ).toBe(groupHeader.balance.amount.toString());
+      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
+        groupHeader.balance.amount.toString(),
+      );
 
-      expect(
-        (
-          wrapper.find('[data-cy=isMevReward] input')
-            .element as HTMLInputElement
-        ).checked,
-      ).toBeTruthy();
+      expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeTruthy();
     });
   });
 });

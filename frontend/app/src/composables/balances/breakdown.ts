@@ -6,10 +6,7 @@ import type { AssetBreakdown } from '@/types/blockchain/accounts';
 export function useBalancesBreakdown() {
   const manualStore = useManualBalancesStore();
   const { manualBalanceByLocation } = storeToRefs(manualStore);
-  const {
-    getBreakdown: getManualBreakdown,
-    getLocationBreakdown: getManualLocationBreakdown,
-  } = manualStore;
+  const { getBreakdown: getManualBreakdown, getLocationBreakdown: getManualLocationBreakdown } = manualStore;
   const {
     getBreakdown: getExchangeBreakdown,
     getLocationBreakdown: getExchangesLocationBreakdown,
@@ -21,38 +18,26 @@ export function useBalancesBreakdown() {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
-  const assetBreakdown = (asset: string) => computed<AssetBreakdown[]>(() =>
-    groupAssetBreakdown(
-      get(getBreakdown(asset))
-        .concat(get(getManualBreakdown(asset)))
-        .concat(get(getExchangeBreakdown(asset)))
-        .filter(item => !!item.amount && !item.amount.isZero()),
-    ),
-  );
-
-  const locationBreakdown = (
-    identifier: MaybeRef<string>,
-  ) => computed<AssetBalanceWithPrice[]>(() => {
-    const id = get(identifier);
-    let balances = mergeAssetBalances(
-      get(getManualLocationBreakdown(id)),
-      get(getExchangesLocationBreakdown(id)),
+  const assetBreakdown = (asset: string) =>
+    computed<AssetBreakdown[]>(() =>
+      groupAssetBreakdown(
+        get(getBreakdown(asset))
+          .concat(get(getManualBreakdown(asset)))
+          .concat(get(getExchangeBreakdown(asset)))
+          .filter(item => !!item.amount && !item.amount.isZero()),
+      ),
     );
 
-    if (id === TRADE_LOCATION_BLOCKCHAIN) {
-      balances = mergeAssetBalances(
-        balances,
-        get(blockchainLocationBreakdown),
-      );
-    }
+  const locationBreakdown = (identifier: MaybeRef<string>) =>
+    computed<AssetBalanceWithPrice[]>(() => {
+      const id = get(identifier);
+      let balances = mergeAssetBalances(get(getManualLocationBreakdown(id)), get(getExchangesLocationBreakdown(id)));
 
-    return toSortedAssetBalanceWithPrice(
-      balances,
-      asset => get(isAssetIgnored(asset)),
-      assetPrice,
-      true,
-    );
-  });
+      if (id === TRADE_LOCATION_BLOCKCHAIN)
+        balances = mergeAssetBalances(balances, get(blockchainLocationBreakdown));
+
+      return toSortedAssetBalanceWithPrice(balances, asset => get(isAssetIgnored(asset)), assetPrice, true);
+    });
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => {
     const map: Record<string, BigNumber> = {

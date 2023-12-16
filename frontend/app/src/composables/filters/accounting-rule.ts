@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import type { FilterSchema } from '@/composables/filter-paginate';
-import type {
-  MatchedKeywordWithBehaviour,
-  SearchMatcher,
-} from '@/types/filtering';
+import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 
 enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',
@@ -17,13 +14,9 @@ enum AccountingRuleFilterValueKeys {
   COUNTERPARTY = 'counterparties',
 }
 
-export type Matcher = SearchMatcher<
-  AccountingRuleFilterKeys,
-  AccountingRuleFilterValueKeys
->;
+export type Matcher = SearchMatcher<AccountingRuleFilterKeys, AccountingRuleFilterValueKeys>;
 
-export type Filters =
-  MatchedKeywordWithBehaviour<AccountingRuleFilterValueKeys>;
+export type Filters = MatchedKeywordWithBehaviour<AccountingRuleFilterValueKeys>;
 
 export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
@@ -32,7 +25,7 @@ export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => [
+  const matchers = computed<Matcher[]>(() => [
     {
       key: AccountingRuleFilterKeys.EVENT_TYPE,
       keyValue: AccountingRuleFilterValueKeys.EVENT_TYPE,

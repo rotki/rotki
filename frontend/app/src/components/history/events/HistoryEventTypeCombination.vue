@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventCategoryDetailWithId } from '@/types/history/events/event-type';
 
 const props = withDefaults(
@@ -13,14 +14,16 @@ const props = withDefaults(
 
 const { type } = toRefs(props);
 
-const directionIcon = computed(
-  () =>
-    ({
-      in: 'arrow-down-line',
-      out: 'arrow-up-line',
-      neutral: 'arrow-up-down-line',
-    })[get(type).direction],
-);
+const directionIcon = computed<RuiIcons>(() => {
+  switch (get(type).direction) {
+    case 'in':
+      return 'arrow-down-line';
+    case 'out':
+      return 'arrow-up-line';
+    default:
+      return 'arrow-up-down-line';
+  }
+});
 
 const { t } = useI18n();
 </script>
@@ -48,30 +51,24 @@ const { t } = useI18n();
         :open-delay="400"
       >
         <template #activator>
-          <div
-            class="cursor-pointer rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 p-1"
-          >
+          <div class="cursor-pointer rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 p-1">
             <RuiIcon
               size="14"
               :name="directionIcon"
             />
           </div>
         </template>
-        <i18n
+        <i18n-t
           tag="span"
-          path="backend_mappings.events.type_direction.title"
+          keypath="backend_mappings.events.type_direction.title"
           class="whitespace-break-spaces"
         >
           <template #direction>
             <span class="whitespace-nowrap font-bold">
-              {{
-                t(
-                  `backend_mappings.events.type_direction.directions.${type.direction}`,
-                )
-              }}
+              {{ t(`backend_mappings.events.type_direction.directions.${type.direction}`) }}
             </span>
           </template>
-        </i18n>
+        </i18n-t>
       </RuiTooltip>
     </div>
   </div>

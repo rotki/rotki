@@ -132,13 +132,15 @@ onMounted(async () => {
       class="overflow-hidden"
     >
       <div class="overflow-auto max-h-[300px]">
-        <template v-for="(item, index) in nodes">
+        <template
+          v-for="(item, index) in nodes"
+          :key="index + item.name"
+        >
           <RuiDivider
             v-if="index !== 0"
             :key="index"
           />
           <div
-            :key="index + item.name"
             data-cy="ethereum-node"
             class="px-2 flex items-center"
           >
@@ -233,9 +235,9 @@ onMounted(async () => {
               color="primary"
               hide-details
               class="mr-4"
-              :value="item.active"
+              :model-value="item.active"
               :disabled="isEtherscan(item)"
-              @input="onActiveChange($event, item)"
+              @update:model-value="onActiveChange($event, item)"
             />
             <RowActions
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"

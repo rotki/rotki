@@ -15,19 +15,15 @@ export function useAssetInfoRetrieval() {
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
 
-  const assetAssociationMap: ComputedRef<Record<string, string>> = computed(
-    () => {
-      const associationMap: Record<string, string> = {};
-      if (get(treatEth2AsEth))
-        associationMap.ETH2 = 'ETH';
+  const assetAssociationMap = computed<Record<string, string>>(() => {
+    const associationMap: Record<string, string> = {};
+    if (get(treatEth2AsEth))
+      associationMap.ETH2 = 'ETH';
 
-      return associationMap;
-    },
-  );
+    return associationMap;
+  });
 
-  const getAssociatedAssetIdentifier = (
-    identifier: string,
-  ): ComputedRef<string> =>
+  const getAssociatedAssetIdentifier = (identifier: string): ComputedRef<string> =>
     computed(() => get(assetAssociationMap)[identifier] ?? identifier);
 
   const getAssetNameFallback = (id: string) => {
@@ -48,14 +44,11 @@ export function useAssetInfoRetrieval() {
       if (!id)
         return null;
 
-      const key = get(enableAssociation)
-        ? get(getAssociatedAssetIdentifier(id))
-        : id;
+      const key = get(enableAssociation) ? get(getAssociatedAssetIdentifier(id)) : id;
 
       const data = get(retrieve(key));
 
-      const isCustomAsset
-        = data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
+      const isCustomAsset = data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
 
       if (isCustomAsset) {
         return {
@@ -66,14 +59,10 @@ export function useAssetInfoRetrieval() {
       }
       const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
       const collectionData
-        = get(isCollectionParent) && data?.collectionId
-          ? get(fetchedAssetCollections)[data.collectionId]
-          : null;
+        = get(isCollectionParent) && data?.collectionId ? get(fetchedAssetCollections)[data.collectionId] : null;
 
-      const name
-        = collectionData?.name || data?.name || getAssetNameFallback(id);
-      const symbol
-        = collectionData?.symbol || data?.symbol || getAssetNameFallback(id);
+      const name = collectionData?.name || data?.name || getAssetNameFallback(id);
+      const symbol = collectionData?.symbol || data?.symbol || getAssetNameFallback(id);
 
       return {
         ...data,
@@ -124,25 +113,17 @@ export function useAssetInfoRetrieval() {
       if (!id)
         return '';
 
-      const key = get(enableAssociation)
-        ? get(getAssociatedAssetIdentifier(id))
-        : id;
+      const key = get(enableAssociation) ? get(getAssociatedAssetIdentifier(id)) : id;
       return getAddressFromEvmIdentifier(key);
     });
 
-  const fetchTokenDetails = async (
-    payload: EvmChainAddress,
-  ): Promise<ERC20Token> => {
+  const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
     try {
       const taskType = TaskType.ERC20_DETAILS;
       const { taskId } = await erc20details(payload);
-      const { result } = await awaitTask<ERC20Token, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.assets.erc20.task.title', payload),
-        },
-      );
+      const { result } = await awaitTask<ERC20Token, TaskMeta>(taskId, taskType, {
+        title: t('actions.assets.erc20.task.title', payload),
+      });
       return result;
     }
     catch (error: any) {

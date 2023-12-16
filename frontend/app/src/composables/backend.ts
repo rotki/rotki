@@ -13,8 +13,7 @@ export const loadUserOptions: () => Partial<BackendOptions> = () => {
     let options: Writeable<Partial<BackendOptions>>;
     if (opts)
       options = BackendOptions.parse(JSON.parse(opts));
-    else
-      options = defaultConfig;
+    else options = defaultConfig;
 
     return options;
   }
@@ -44,9 +43,7 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     ...get(fileConfig),
   }));
 
-  const restartBackendWithOptions = async (
-    options: Partial<BackendOptions>,
-  ) => {
+  const restartBackendWithOptions = async (options: Partial<BackendOptions>) => {
     setConnected(false);
     await interop.restartBackend(options);
     connect();
@@ -115,15 +112,16 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     const { sessionOnly, url } = getBackendUrl();
     if (!!url && !sessionOnly)
       await backendChanged(url);
-    else
-      await restartBackend();
+    else await restartBackend();
   };
 
   onMounted(() => {
-    load().then(() => {
-      loaded();
-      setLevel(get(options).loglevel);
-    }).catch(error => logger.error(error));
+    load()
+      .then(() => {
+        loaded();
+        setLevel(get(options).loglevel);
+      })
+      .catch(error => logger.error(error));
   });
 
   return {

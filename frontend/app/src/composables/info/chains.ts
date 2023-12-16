@@ -41,35 +41,26 @@ export const useSupportedChains = createSharedComposable(() => {
     return [];
   }, []);
 
-  const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() =>
+  const evmChainsData = computed<EvmChainInfo[]>(() =>
     // isEvmChain guard does not work the same with useArrayFilter
     get(supportedChains).filter(isEvmChain),
   );
 
-  const substrateChainsData: ComputedRef<SubstrateChainInfo[]> = computed(() =>
+  const substrateChainsData = computed<SubstrateChainInfo[]>(() =>
     get(supportedChains).filter(isSubstrateChain),
   );
 
-  const evmLikeChainsData: ComputedRef<EvmLikeChainInfo[]> = computed(() =>
+  const evmLikeChainsData = computed<EvmLikeChainInfo[]>(() =>
     get(supportedChains).filter(isEvmLikeChain),
   );
 
-  const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(
-    evmChainsData,
-    x => x.id !== Blockchain.AVAX,
-  );
+  const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(evmChainsData, x => x.id !== Blockchain.AVAX);
 
-  const txChains: ComputedRef<ChainInfo[]> = computed(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
+  const txChains = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
 
-  const evmChains: ComputedRef<string[]> = useArrayMap(
-    evmChainsData,
-    x => x.id,
-  );
+  const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
 
-  const evmChainNames: ComputedRef<string[]> = useArrayMap(
-    evmChainsData,
-    x => x.evmChainName,
-  );
+  const evmChainNames: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.evmChainName);
 
   const isEvm = (chain: MaybeRef<string>) => useArrayInclude(evmChains, chain);
 
@@ -91,9 +82,7 @@ export const useSupportedChains = createSharedComposable(() => {
   const getChainInfoByName = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
     computed(() => get(supportedChains).find(({ name }) => name.toLowerCase() === get(chain).toLowerCase()) || null);
 
-  const getChainInfoById = (
-    chain: MaybeRef<string>,
-  ): ComputedRef<ChainInfo | null> =>
+  const getChainInfoById = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
     computed(() => get(supportedChains).find(x => x.id === get(chain)) || null);
 
   const getNativeAsset = (chain: MaybeRef<string>) => {
@@ -149,12 +138,13 @@ export const useSupportedChains = createSharedComposable(() => {
       return get(getChainInfoById(chain))?.name || locationVal;
     });
 
-  const getChainImageUrl = (chain: MaybeRef<string>) => computed<string>(() => {
-    const chainVal = get(chain);
-    const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
+  const getChainImageUrl = (chain: MaybeRef<string>) =>
+    computed<string>(() => {
+      const chainVal = get(chain);
+      const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
 
-    return `./assets/images/protocols/${image}`;
-  });
+      return `./assets/images/protocols/${image}`;
+    });
 
   const txChainsToLocation = useArrayMap(txChains, (item) => {
     if ('evmChainName' in item)

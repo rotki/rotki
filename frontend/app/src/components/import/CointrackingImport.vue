@@ -9,20 +9,23 @@ const { t } = useI18n();
     <template #hint>
       {{ t('import_data.cointracking.preferred') }}
     </template>
-    <i18n
+    <i18n-t
       tag="span"
-      path="import_data.note"
+      keypath="import_data.note"
     >
       <strong>{{ t('import_data.cointracking.name') }}</strong>
-    </i18n>
+    </i18n-t>
     <ul class="list-disc">
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
-      <i18n path="import_data.cointracking.line_three">
+      <i18n-t
+        keypath="import_data.cointracking.line_three"
+        tag="span"
+      >
         <InternalLink :to="Routes.ACCOUNTS_BALANCES">
           {{ t('import_data.cointracking.link') }}
         </InternalLink>
-      </i18n>
+      </i18n-t>
     </ul>
   </ImportSource>
 </template>

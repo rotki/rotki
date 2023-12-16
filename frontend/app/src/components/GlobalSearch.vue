@@ -28,10 +28,10 @@ const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
 
 const input = ref<any>(null);
-const selected = ref<number | string>('');
+const selected = ref<number>();
 const search = ref<string>('');
 const loading = ref(false);
-const visibleItems: Ref<SearchItem[]> = ref([]);
+const visibleItems = ref<SearchItem[]>([]);
 
 const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
 const key = '/';
@@ -57,20 +57,19 @@ function getItemText(item: SearchItemWithoutValue): string {
 
 function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
   const splittedKeyword = keyword.split(' ');
-  return items
-    .filter((item) => {
-      let matchedPoints = 0;
-      for (const word of splittedKeyword) {
-        const indexOf = getItemText(item).toLowerCase().indexOf(word);
-        if (indexOf > -1) {
-          matchedPoints++;
-          if (indexOf === 0)
-            matchedPoints += 0.5;
-        }
+  return items.filter((item) => {
+    let matchedPoints = 0;
+    for (const word of splittedKeyword) {
+      const indexOf = getItemText(item).toLowerCase().indexOf(word);
+      if (indexOf > -1) {
+        matchedPoints++;
+        if (indexOf === 0)
+          matchedPoints += 0.5;
       }
-      item.matchedPoints = matchedPoints;
-      return matchedPoints > 0;
-    });
+    }
+    item.matchedPoints = matchedPoints;
+    return matchedPoints > 0;
+  });
 }
 
 function getRoutes(keyword: string): SearchItemWithoutValue[] {
@@ -78,31 +77,19 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     { ...Routes.DASHBOARD },
     {
       ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-      texts: [
-        Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text,
-      ],
+      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
-      texts: [
-        Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
-      ],
+      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_EXCHANGE.text],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_MANUAL,
-      texts: [
-        Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_MANUAL.text,
-      ],
+      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_MANUAL.text],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
-      texts: [
-        Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text,
-      ],
+      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text],
     },
     { ...Routes.NFTS },
     {
@@ -123,19 +110,11 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     },
     {
       ...Routes.DEFI_DEPOSITS_PROTOCOLS,
-      texts: [
-        Routes.DEFI.text,
-        Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_PROTOCOLS.text,
-      ],
+      texts: [Routes.DEFI.text, Routes.DEFI_DEPOSITS.text, Routes.DEFI_DEPOSITS_PROTOCOLS.text],
     },
     {
       ...Routes.DEFI_DEPOSITS_LIQUIDITY,
-      texts: [
-        Routes.DEFI.text,
-        Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-      ],
+      texts: [Routes.DEFI.text, Routes.DEFI_DEPOSITS.text, Routes.DEFI_DEPOSITS_LIQUIDITY.text],
     },
     {
       ...Routes.DEFI_LIABILITIES,
@@ -158,10 +137,7 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     },
     {
       ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
-      texts: [
-        Routes.ASSET_MANAGER.text,
-        Routes.ASSET_MANAGER_NEWLY_DETECTED.text,
-      ],
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_NEWLY_DETECTED.text],
     },
     {
       ...Routes.PRICE_MANAGER_LATEST,
@@ -211,22 +187,16 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
 
 function getExchanges(keyword: string): SearchItemWithoutValue[] {
   const exchanges = get(connectedExchanges);
-  const exchangeItems: SearchItemWithoutValue[] = exchanges.map(
-    (exchange: Exchange) => {
-      const identifier = exchange.location;
-      const name = exchange.name;
+  const exchangeItems: SearchItemWithoutValue[] = exchanges.map((exchange: Exchange) => {
+    const identifier = exchange.location;
+    const name = exchange.name;
 
-      return {
-        location: getLocationData(identifier) ?? undefined,
-        route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
-        texts: [
-          Routes.ACCOUNTS_BALANCES.text,
-          Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
-          name,
-        ],
-      };
-    },
-  );
+    return {
+      location: getLocationData(identifier) ?? undefined,
+      route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
+      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_EXCHANGE.text, name],
+    };
+  });
 
   return filterItems(exchangeItems, keyword);
 }
@@ -270,8 +240,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
   const matches = await assetSearch(keyword, 5);
   const assetBalances = get(balances()) as AssetBalanceWithPrice[];
   const map: Record<string, string> = {};
-  for (const match of matches)
-    map[match.identifier] = match.symbol ?? match.name ?? '';
+  for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';
 
   const ids = matches.map(({ identifier }) => identifier);
 
@@ -282,10 +251,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
       const asset = balance.asset;
 
       return {
-        route: Routes.ASSETS.route.replace(
-          ':identifier',
-          encodeURIComponent(asset),
-        ),
+        route: Routes.ASSETS.route.replace(':identifier', encodeURIComponent(asset)),
         texts: [t('common.asset'), map[asset] ?? ''],
         price,
         asset,
@@ -334,10 +300,7 @@ watchDebounced(
 
     set(
       visibleItems,
-      [
-        ...staticData,
-        ...(await getAssets(search)),
-      ].map((item, index) => ({
+      [...staticData, ...(await getAssets(search))].map((item, index) => ({
         ...item,
         value: index,
         text: getItemText(item),
@@ -362,7 +325,7 @@ watch(open, (open) => {
         get(input)?.focus?.();
       }, 100);
     }
-    set(selected, '');
+    set(selected, undefined);
     set(search, '');
   });
 });
@@ -370,7 +333,7 @@ watch(open, (open) => {
 function change(index: number) {
   const item: SearchItem = get(visibleItems)[index];
   if (item) {
-    if (item.route && router.currentRoute.fullPath !== item.route)
+    if (item.route && get(router.currentRoute).fullPath !== item.route)
       startPromise(router.push(item.route));
 
     item?.action?.();
@@ -384,10 +347,7 @@ onBeforeMount(async () => {
 
   window.addEventListener('keydown', (event) => {
     // Mac use Command, Others use Control
-    if (
-      ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey))
-      && event.key === key
-    )
+    if (((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) && event.key === key)
       set(open, true);
   });
 });
@@ -399,7 +359,7 @@ onBeforeMount(async () => {
     max-width="800"
     content-class="mt-[16rem] !top-0 pb-2"
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="
           t('global_search.menu_tooltip', {
@@ -407,7 +367,7 @@ onBeforeMount(async () => {
             key,
           })
         "
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon name="search-line" />
       </MenuTooltipButton>
@@ -421,9 +381,9 @@ onBeforeMount(async () => {
       <RuiAutoComplete
         ref="input"
         v-model="selected"
+        v-model:search-input="search"
         no-filter
         :no-data-text="t('global_search.no_actions')"
-        :search-input.sync="search"
         hide-details
         :loading="loading"
         :item-height="50"
@@ -433,7 +393,7 @@ onBeforeMount(async () => {
         label=""
         auto-select-first
         :placeholder="t('global_search.search_placeholder')"
-        @input="change($event)"
+        @update:model-value="change($event)"
       >
         <template #selection>
           <span />

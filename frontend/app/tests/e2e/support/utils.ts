@@ -12,11 +12,9 @@ export function setCheckBox(selector: string, enabled = false) {
 }
 
 export function selectAsset(element: string, value: string, id?: string) {
-  cy.get(`${element} [data-id=activator] > span:last-child`).click();
+  cy.get(`${element} [data-id="activator"]`).click();
   cy.get(`${element} input`).type(value);
-  const identifier = getValidSelectorFromEvmAddress(
-    (id ?? value).toLocaleLowerCase(),
-  );
+  const identifier = getValidSelectorFromEvmAddress((id ?? value).toLocaleLowerCase());
   cy.get(`#asset-${identifier}`).click();
 }
 
@@ -28,7 +26,10 @@ export function selectLocation(element: string, value: string) {
 
 let counter = 0;
 
-interface QueryTarget { method: 'POST' | 'GET'; url: string }
+interface QueryTarget {
+  method: 'POST' | 'GET';
+  url: string;
+}
 
 /**
  * Used to wait for an async query to complete.
@@ -57,9 +58,7 @@ export function waitForAsyncQuery({ url, method }: QueryTarget, timeout = 120000
         method: 'GET',
         url: `/api/1/tasks/${body.result.task_id}`,
       }).as(taskIdentifier);
-      cy.wait(`@${taskIdentifier}`, { timeout })
-        .its('response.statusCode')
-        .should('equal', 200);
+      cy.wait(`@${taskIdentifier}`, { timeout }).its('response.statusCode').should('equal', 200);
     });
 }
 

@@ -1,26 +1,27 @@
 <script setup lang="ts">
 import type { CexMapping } from '@/types/asset';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 
-const props = withDefaults(defineProps<{
-  collection: Collection<CexMapping>;
-  location: string;
-  symbol?: string;
-  loading: boolean;
-  pagination: TablePaginationData;
-}>(), { symbol: undefined });
+withDefaults(
+  defineProps<{
+    collection: Collection<CexMapping>;
+    symbol?: string;
+    loading: boolean;
+  }>(),
+  {
+    symbol: undefined,
+  },
+);
 
 const emit = defineEmits<{
-  (e: 'update:location', location: string): void;
   (e: 'update:symbol', symbol?: string): void;
-  (e: 'update:pagination', pagination: TablePaginationData): void;
   (e: 'edit', mapping: CexMapping): void;
   (e: 'delete', mapping: CexMapping): void;
 }>();
 
 const { t } = useI18n();
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<CexMapping>[]>(() => [
   {
     label: t('asset_management.cex_mapping.exchange'),
     key: 'location',
@@ -45,8 +46,8 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const locationModel = useVModel(props, 'location', emit);
-const paginationModel = useVModel(props, 'pagination', emit);
+const locationModel = defineModel<string>('location', { required: true });
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
 const edit = (mapping: CexMapping) => emit('edit', mapping);
 const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
@@ -84,7 +85,7 @@ function setPage(page: number) {
           clearable
           hide-details
           dense
-          @input="onSymbolChange($event)"
+          @update:model-value="onSymbolChange($event)"
         />
       </div>
     </div>
@@ -94,15 +95,14 @@ function setPage(page: number) {
     >
       <template #default="{ data }">
         <RuiDataTable
+          v-model:pagination.external="paginationModel"
           :rows="data"
           dense
           striped
           :loading="loading"
           :cols="tableHeaders"
-          :pagination.sync="paginationModel"
-          :pagination-modifiers="{ external: true }"
           :sticky-offset="64"
-          row-attr=""
+          row-attr="location"
           outlined
         >
           <template #item.location="{ row }">

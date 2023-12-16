@@ -1,4 +1,5 @@
 import { LpType } from '@rotki/common/lib/defi';
+import type { XSwapLiquidityBalance } from '@rotki/common/lib/defi/xswap';
 import type { BigNumber } from '@rotki/common';
 
 export function useLiquidityPosition() {
@@ -8,46 +9,61 @@ export function useLiquidityPosition() {
   const { assetSymbol } = useAssetInfoRetrieval();
 
   const lpAggregatedBalances = (includeNft = true) =>
-    computed(() => {
-      const mappedUniswapV3Balances = get(uniswapV3Balances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: item.nftId,
-        premiumOnly: true,
-        type: 'nft',
-        lpType: LpType.UNISWAP_V3,
-      }));
+    computed<XSwapLiquidityBalance[]>(() => {
+      const mappedUniswapV3Balances = get(uniswapV3Balances([])).map(
+        (item, index) =>
+          ({
+            id: index,
+            assets: item.assets,
+            usdValue: item.userBalance.usdValue,
+            asset: item.nftId || '',
+            premiumOnly: true,
+            type: 'nft',
+            lpType: LpType.UNISWAP_V3,
+          }) satisfies XSwapLiquidityBalance,
+      );
 
-      const mappedUniswapV2Balances = get(uniswapV2Balances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: false,
-        type: 'token',
-        lpType: LpType.UNISWAP_V2,
-      }));
+      const mappedUniswapV2Balances = get(uniswapV2Balances([])).map(
+        (item, index) =>
+          ({
+            id: index,
+            assets: item.assets,
+            usdValue: item.userBalance.usdValue,
+            asset: createEvmIdentifierFromAddress(item.address),
+            premiumOnly: false,
+            type: 'token',
+            lpType: LpType.UNISWAP_V2,
+          }) satisfies XSwapLiquidityBalance,
+      );
 
-      const mappedSushiswapBalances = get(sushiswapBalances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: true,
-        type: 'token',
-        lpType: LpType.SUSHISWAP,
-      }));
+      const mappedSushiswapBalances = get(sushiswapBalances([])).map(
+        (item, index) =>
+          ({
+            id: index,
+            assets: item.assets,
+            usdValue: item.userBalance.usdValue,
+            asset: createEvmIdentifierFromAddress(item.address),
+            premiumOnly: true,
+            type: 'token',
+            lpType: LpType.SUSHISWAP,
+          }) satisfies XSwapLiquidityBalance,
+      );
 
-      const mappedBalancerBalances = get(balancerBalances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: true,
-        assets: item.tokens.map(asset => ({
-          ...asset,
-          asset: asset.token,
-        })),
-        type: 'token',
-        lpType: LpType.BALANCER,
-      }));
+      const mappedBalancerBalances = get(balancerBalances([])).map(
+        (item, index) =>
+          ({
+            id: index,
+            usdValue: item.userBalance.usdValue,
+            asset: createEvmIdentifierFromAddress(item.address),
+            premiumOnly: true,
+            assets: item.tokens.map(asset => ({
+              ...asset,
+              asset: asset.token,
+            })),
+            type: 'token',
+            lpType: LpType.BALANCER,
+          }) satisfies XSwapLiquidityBalance,
+      );
 
       return [
         ...(includeNft ? mappedUniswapV3Balances : []),
@@ -60,15 +76,10 @@ export function useLiquidityPosition() {
     });
 
   const lpTotal = (includeNft = false) =>
-    computed<BigNumber>(() =>
-      bigNumberSum(
-        get(lpAggregatedBalances(includeNft)).map(item => item.usdValue),
-      ),
-    );
+    computed<BigNumber>(() => bigNumberSum(get(lpAggregatedBalances(includeNft)).map(item => item.usdValue)));
 
   const getPoolName = (type: LpType, assets: string[]) => {
-    const concatAssets = (assets: string[]) =>
-      assets.map(asset => get(assetSymbol(asset))).join('/');
+    const concatAssets = (assets: string[]) => assets.map(asset => get(assetSymbol(asset))).join('/');
 
     const data = [
       {

@@ -10,10 +10,10 @@ import type { Writeable } from '@/types';
 
 const { t } = useI18n();
 
-const selectedDate: Ref<Dayjs> = ref(dayjs());
-const visibleDate: Ref<Dayjs> = ref(dayjs());
+const selectedDate = ref<Dayjs>(dayjs());
+const visibleDate = ref<Dayjs>(dayjs());
 
-const today: Ref<Dayjs> = ref(dayjs());
+const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
 
 const { fetchCalendarEvents, deleteCalendarEvent } = useCalendarApi();
@@ -22,9 +22,7 @@ const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const extraParams = computed(() => {
   const rangeVal = get(range);
   return {
-    accounts: get(accounts).map(
-      account => `${getAccountAddress(account)}#${account.chain}`,
-    ),
+    accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
     fromTimestamp: rangeVal[0].toString(),
     toTimestamp: rangeVal[1].toString(),
   };
@@ -37,12 +35,7 @@ const {
   isLoading,
   fetchData,
   editableItem,
-} = usePaginationFilters<
-  CalendarEvent,
-  CalendarEventRequestPayload,
-  CalendarEvent,
-  Collection<CalendarEvent>
->(
+} = usePaginationFilters<CalendarEvent, CalendarEventRequestPayload, CalendarEvent, Collection<CalendarEvent>>(
   null,
   false,
   useEmptyFilter,
@@ -51,10 +44,15 @@ const {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
       const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0)
+      if (!accountsParsed || accountsParsed.length === 0) {
         set(accounts, []);
-      else
-        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+      }
+      else {
+        set(
+          accounts,
+          accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
+        );
+      }
     },
     defaultSortBy: {
       key: ['timestamp'],
@@ -86,10 +84,12 @@ onMounted(() => {
 
 const dateFormat = 'YYYY-MM-DD';
 
-const eventsWithDate = computed(() => get(events).data.map(item => ({
-  ...item,
-  date: dayjs(item.timestamp * 1000).format(dateFormat),
-})));
+const eventsWithDate = computed(() =>
+  get(events).data.map(item => ({
+    ...item,
+    date: dayjs(item.timestamp * 1000).format(dateFormat),
+  })),
+);
 
 function setSelectedDate(day: Dayjs) {
   set(selectedDate, day);
@@ -136,10 +136,13 @@ async function deleteClicked() {
 }
 
 function deleteEvent() {
-  show({
-    title: t('calendar.delete_event'),
-    message: t('calendar.dialog.delete.message'),
-  }, deleteClicked);
+  show(
+    {
+      title: t('calendar.delete_event'),
+      message: t('calendar.dialog.delete.message'),
+    },
+    deleteClicked,
+  );
 }
 
 setPostSubmitFunc(fetchData);
@@ -177,11 +180,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.calendar'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.calendar')]">
     <template #buttons>
       <CalendarSettingsMenu />
       <RuiButton
@@ -256,7 +255,7 @@ onMounted(async () => {
           <CalendarEventList
             v-for="event in selectedDateEvents"
             :key="event.identifier"
-            :selected-date.sync="selectedDate"
+            v-model:selected-date="selectedDate"
             :visible-date="visibleDate"
             :event="event"
             @edit="edit(event)"

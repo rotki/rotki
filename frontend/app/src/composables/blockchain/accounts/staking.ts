@@ -35,10 +35,15 @@ export function useEthStaking() {
 
     try {
       const validators = await getEth2Validators();
-      updateAccounts(Blockchain.ETH2, validators.entries.map(validator => createValidatorAccount(validator, {
-        chain: Blockchain.ETH2,
-        nativeAsset: getNativeAsset(Blockchain.ETH2),
-      })));
+      updateAccounts(
+        Blockchain.ETH2,
+        validators.entries.map(validator =>
+          createValidatorAccount(validator, {
+            chain: Blockchain.ETH2,
+            nativeAsset: getNativeAsset(Blockchain.ETH2),
+          }),
+        ),
+      );
       set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
     }
     catch (error: any) {
@@ -54,9 +59,7 @@ export function useEthStaking() {
     }
   };
 
-  const addEth2Validator = async (
-    payload: Eth2Validator,
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
+  const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled()) {
       return {
         success: false,
@@ -67,16 +70,12 @@ export function useEthStaking() {
     try {
       const taskType = TaskType.ADD_ETH2_VALIDATOR;
       const { taskId } = await addEth2ValidatorCaller(payload);
-      const { result } = await awaitTask<boolean, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.add_eth2_validator.task.title'),
-          description: t('actions.add_eth2_validator.task.description', {
-            id,
-          }),
-        },
-      );
+      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+        title: t('actions.add_eth2_validator.task.title'),
+        description: t('actions.add_eth2_validator.task.description', {
+          id,
+        }),
+      });
       if (result) {
         resetStatus();
         resetStatus({ section: Section.STAKING_ETH2_DEPOSITS });
@@ -103,9 +102,7 @@ export function useEthStaking() {
     }
   };
 
-  const editEth2Validator = async (
-    payload: Eth2Validator,
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
+  const editEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled())
       return { success: false, message: '' };
 
@@ -126,13 +123,11 @@ export function useEthStaking() {
     }
   };
 
-  const deleteEth2Validators = async (
-    validators: string[],
-  ): Promise<boolean> => {
+  const deleteEth2Validators = async (validators: string[]): Promise<boolean> => {
     try {
-      const pendingRemoval = get(ethStakingValidators).map(({ data }) => data).filter(account =>
-        validators.includes(account.publicKey),
-      );
+      const pendingRemoval = get(ethStakingValidators)
+        .map(({ data }) => data)
+        .filter(account => validators.includes(account.publicKey));
       const success = await deleteEth2ValidatorsCaller(pendingRemoval);
       if (success) {
         const remainingValidators = getAccounts(Blockchain.ETH2).filter(
@@ -161,10 +156,7 @@ export function useEthStaking() {
    * @param publicKey the validator's public key is used to identify the balance
    * @param newOwnershipPercentage the ownership percentage of the validator after the edit
    */
-  const updateEthStakingOwnership = (
-    publicKey: string,
-    newOwnershipPercentage: BigNumber,
-  ): void => {
+  const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
     const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => 'index' in x.data;
     const validators = [...getAccounts(Blockchain.ETH2).filter(isValidator)];
     const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
@@ -183,23 +175,12 @@ export function useEthStaking() {
     if (amount.isZero() && usdValue.isZero())
       return;
 
-    const calc = (
-      value: BigNumber,
-      oldPercentage: BigNumber,
-      newPercentage: BigNumber,
-    ): BigNumber => value.dividedBy(oldPercentage).multipliedBy(newPercentage);
+    const calc = (value: BigNumber, oldPercentage: BigNumber, newPercentage: BigNumber): BigNumber =>
+      value.dividedBy(oldPercentage).multipliedBy(newPercentage);
 
-    const newAmount = calc(
-      amount,
-      oldOwnershipPercentage,
-      newOwnershipPercentage,
-    );
+    const newAmount = calc(amount, oldOwnershipPercentage, newOwnershipPercentage);
 
-    const newValue = calc(
-      usdValue,
-      oldOwnershipPercentage,
-      newOwnershipPercentage,
-    );
+    const newValue = calc(usdValue, oldOwnershipPercentage, newOwnershipPercentage);
 
     const amountDiff = amount.minus(newAmount);
     const valueDiff = usdValue.minus(newValue);

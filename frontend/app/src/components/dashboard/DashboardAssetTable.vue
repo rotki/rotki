@@ -2,16 +2,8 @@
 import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
-import type {
-  AssetBalance,
-  AssetBalanceWithPrice,
-  BigNumber,
-} from '@rotki/common';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-  TablePaginationData,
-} from '@rotki/ui-library-compat';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Nullable } from '@/types';
 import type { DashboardTableType } from '@/types/settings/frontend-settings';
 
@@ -31,9 +23,9 @@ const css = useCssModule();
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
 
-const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
+const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
@@ -41,9 +33,7 @@ const sort: Ref<DataTableSortData> = ref({
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { exchangeRate } = useBalancePricesStore();
-const totalInUsd = computed(() =>
-  aggregateTotal(get(balances), CURRENCY_USD, One),
-);
+const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
@@ -74,29 +64,23 @@ function percentageOfCurrentGroup(value: BigNumber) {
   return calculatePercentage(value, get(totalInUsd));
 }
 
-const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
-const sortItems = getSortItems(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
 
-const filtered = computed(() => {
+const filtered = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = get(balances).filter(assetFilter);
-  if (!Array.isArray(sortBy) && sortBy?.column) {
-    return sortItems(
-      data,
-      [sortBy.column as keyof AssetBalance],
-      [sortBy.direction === 'desc'],
-    );
-  }
+  if (!Array.isArray(sortBy) && sortBy?.column)
+    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
+
   return data;
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
     {
       label: t('common.asset'),
       key: 'asset',
@@ -147,12 +131,9 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
-      label: t(
-        'dashboard_asset_table.headers.percentage_of_total_current_group',
-        {
-          group: get(title),
-        },
-      ),
+      label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
+        group: get(title),
+      }),
       key: 'percentageOfTotalCurrentGroup',
       align: 'end',
       cellClass: 'py-0',
@@ -212,12 +193,12 @@ watch(search, () => setPage(1));
         menu-class="max-w-[15rem]"
         :popper="{ placement: 'bottom-end' }"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="dashboard-asset-table__column-filter__button"
             custom-color
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
@@ -237,12 +218,11 @@ watch(search, () => setPage(1));
       />
     </template>
     <RuiDataTable
+      v-model:sort.external="sort"
       data-cy="dashboard-asset-table__balances"
       :cols="tableHeaders"
       :rows="filtered"
       :loading="loading"
-      :sort.sync="sort"
-      :sort-modifiers="{ external: true }"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
       :pagination="{
@@ -300,7 +280,7 @@ watch(search, () => setPage(1));
           :asset-padding="0.1"
         />
       </template>
-      <template #no-results>
+      <template #no-data>
         <span class="text-rui-text-secondary">
           {{
             t('dashboard_asset_table.no_search_result', {

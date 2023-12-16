@@ -9,24 +9,16 @@ export function useNfts() {
 
   const assetsApi = useAssetsApi();
 
-  const {
-    renderAllNftImages: renderAll,
-    whitelistedDomainsForNftImages: whitelist,
-  } = storeToRefs(useFrontendSettingsStore());
+  const { renderAllNftImages: renderAll, whitelistedDomainsForNftImages: whitelist }
+    = storeToRefs(useFrontendSettingsStore());
 
-  const fetchNfts = async (
-    ignoreCache: boolean,
-  ): Promise<ActionResult<NftResponse | null>> => {
+  const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
     try {
       const taskType = TaskType.FETCH_NFTS;
       const { taskId } = await assetsApi.fetchNfts(ignoreCache);
-      const { result } = await awaitTask<NftResponse, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.session.fetch_nfts.task.title').toString(),
-        },
-      );
+      const { result } = await awaitTask<NftResponse, TaskMeta>(taskId, taskType, {
+        title: t('actions.session.fetch_nfts.task.title').toString(),
+      });
       return {
         result: NftResponse.parse(result),
         message: '',

@@ -64,18 +64,14 @@ export const ExchangeSavingsCollectionResponse = CollectionCommonFields.extend({
   received: z.array(AssetBalance),
 });
 
-export type ExchangeSavingsCollectionResponse = z.infer<
-  typeof ExchangeSavingsCollectionResponse
->;
+export type ExchangeSavingsCollectionResponse = z.infer<typeof ExchangeSavingsCollectionResponse>;
 
-export interface ExchangeSavingsCollection
-  extends Collection<ExchangeSavingsEvent> {
+export interface ExchangeSavingsCollection extends Collection<ExchangeSavingsEvent> {
   assets: string[];
   received: AssetBalance[];
 }
 
-export interface ExchangeSavingsRequestPayload
-  extends PaginationRequestPayload<ExchangeSavingsEvent> {
+export interface ExchangeSavingsRequestPayload extends PaginationRequestPayload<ExchangeSavingsEvent> {
   readonly location: string;
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;

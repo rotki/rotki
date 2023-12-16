@@ -194,8 +194,8 @@ import {
   type RuiOptions,
   ThemeMode,
   createRui,
-} from '@rotki/ui-library-compat';
-import '@rotki/ui-library-compat/style.css';
+} from '@rotki/ui-library';
+import '@rotki/ui-library/style.css';
 
 export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
   return createRui({

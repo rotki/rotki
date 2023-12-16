@@ -13,27 +13,17 @@ export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)) {
     return EvmRpcNodeList.parse(handleResponse(response));
   };
 
-  const addEvmNode = async (
-    node: Omit<EvmRpcNode, 'identifier'>,
-  ): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      get(url),
-      snakeCaseTransformer(node),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addEvmNode = async (node: Omit<EvmRpcNode, 'identifier'>): Promise<boolean> => {
+    const response = await api.instance.put<ActionResult<boolean>>(get(url), snakeCaseTransformer(node), {
+      validateStatus: validStatus,
+    });
     return handleResponse(response);
   };
 
   const editEvmNode = async (node: EvmRpcNode): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      get(url),
-      snakeCaseTransformer(node),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.instance.patch<ActionResult<boolean>>(get(url), snakeCaseTransformer(node), {
+      validateStatus: validStatus,
+    });
     return handleResponse(response);
   };
 

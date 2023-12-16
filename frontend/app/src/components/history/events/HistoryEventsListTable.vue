@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { objectPick } from '@vueuse/shared';
-import {
-  isEventAccountingRuleProcessed,
-  isEventMissingAccountingRule,
-} from '@/utils/history/events';
+import { isEventAccountingRuleProcessed, isEventMissingAccountingRule } from '@/utils/history/events';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 interface DeleteEvent {
@@ -35,10 +32,12 @@ const { t } = useI18n();
 const { getChain } = useSupportedChains();
 
 function isNoTxHash(item: HistoryEventEntry) {
-  return item.entryType === HistoryEventEntryType.EVM_EVENT
+  return (
+    item.entryType === HistoryEventEntryType.EVM_EVENT
     && ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset')
     || (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply')
-    || item.counterparty === 'safe-multisig');
+    || item.counterparty === 'safe-multisig')
+  );
 }
 
 const editEvent = (item: HistoryEventEntry) => emit('edit-event', item);

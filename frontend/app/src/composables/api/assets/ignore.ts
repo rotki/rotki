@@ -1,21 +1,14 @@
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validStatus,
-  validWithoutSessionStatus,
-} from '@/services/utils';
+import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { IgnoredAssetResponse } from '@/types/asset';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useAssetIgnoreApi() {
   const getIgnoredAssets = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/assets/ignored',
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+    const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored', {
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };
@@ -35,15 +28,12 @@ export function useAssetIgnoreApi() {
   };
 
   const removeIgnoredAssets = async (assets: string[]): Promise<IgnoredAssetResponse> => {
-    const response = await api.instance.delete<ActionResult<IgnoredAssetResponse>>(
-      '/assets/ignored',
-      {
-        data: {
-          assets,
-        },
-        validateStatus: validStatus,
+    const response = await api.instance.delete<ActionResult<IgnoredAssetResponse>>('/assets/ignored', {
+      data: {
+        assets,
       },
-    );
+      validateStatus: validStatus,
+    });
 
     return IgnoredAssetResponse.parse(handleResponse(response));
   };

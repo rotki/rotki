@@ -6,15 +6,12 @@ import {
 } from '@rotki/common/lib/staking/eth2';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validWithSessionAndExternalService,
-} from '@/services/utils';
+import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useEth2Api() {
-  const stakingPerformanceQuery = async <T extends EthStakingPerformanceResponse | PendingTask> (
+  const stakingPerformanceQuery = async <T extends EthStakingPerformanceResponse | PendingTask>(
     payload: EthStakingPayload & { ignoreCache: boolean },
     asyncQuery: boolean = false,
   ): Promise<T> => {
@@ -31,30 +28,21 @@ export function useEth2Api() {
     return handleResponse(response);
   };
 
-  const fetchStakingPerformance = async (
-    payload: EthStakingPayload,
-  ): Promise<EthStakingPerformanceResponse> => {
+  const fetchStakingPerformance = async (payload: EthStakingPayload): Promise<EthStakingPerformanceResponse> => {
     const data = await stakingPerformanceQuery({ ...payload, ignoreCache: false });
     return EthStakingPerformanceResponse.parse(data);
   };
 
-  const refreshStakingPerformance = async (
-    payload: EthStakingPayload,
-  ): Promise<PendingTask> => await stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
+  const refreshStakingPerformance = async (payload: EthStakingPayload): Promise<PendingTask> =>
+    await stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
 
-  const stakingStatsQuery = async <T>(
-    payload: Eth2DailyStatsPayload,
-    asyncQuery: boolean,
-  ): Promise<T> => {
+  const stakingStatsQuery = async <T>(payload: Eth2DailyStatsPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/blockchains/eth2/stake/dailystats',
       snakeCaseTransformer({
         asyncQuery,
         ...payload,
-        orderByAttributes:
-          payload.orderByAttributes?.map((item: string) =>
-            transformCase(item),
-          ) ?? [],
+        orderByAttributes: payload.orderByAttributes?.map((item: string) => transformCase(item)) ?? [],
       }),
       {
         validateStatus: validWithSessionAndExternalService,
@@ -63,13 +51,10 @@ export function useEth2Api() {
     return handleResponse(response);
   };
 
-  const refreshStakingStats = (
-    payload: Eth2DailyStatsPayload,
-  ): Promise<PendingTask> => stakingStatsQuery(payload, true);
+  const refreshStakingStats = (payload: Eth2DailyStatsPayload): Promise<PendingTask> =>
+    stakingStatsQuery(payload, true);
 
-  const fetchStakingStats = async (
-    payload: Eth2DailyStatsPayload,
-  ): Promise<Eth2DailyStats> => {
+  const fetchStakingStats = async (payload: Eth2DailyStatsPayload): Promise<Eth2DailyStats> => {
     const stats = await stakingStatsQuery<Eth2DailyStats>(payload, false);
     return Eth2DailyStats.parse(stats);
   };

@@ -1,9 +1,9 @@
-const { spawn } = require('node:child_process');
-const process = require('node:process');
-const fs = require('node:fs');
-const { platform } = require('node:os');
-const path = require('node:path');
-const { exit } = require('node:process');
+import { spawn } from 'node:child_process';
+import process, { exit } from 'node:process';
+import fs from 'node:fs';
+import { platform } from 'node:os';
+import path from 'node:path';
+import { config } from 'dotenv';
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common';
@@ -49,7 +49,7 @@ if (!process.env.VIRTUAL_ENV) {
 let startDevProxy = false;
 const devEnvExists = fs.existsSync('app/.env.development.local');
 if (devEnvExists) {
-  require('dotenv').config({ path: 'app/.env.development.local' });
+  config({ path: 'app/.env.development.local' });
   startDevProxy = !!process.env.VITE_BACKEND_URL;
 }
 
@@ -111,20 +111,12 @@ process.on('SIGINT', () => {
 
 if (startDevProxy) {
   logger.info('Starting dev-proxy');
-  startProcess(
-    'pnpm run --filter @rotki/dev-proxy serve',
-    colors.green(PROXY),
-    PROXY,
-  );
+  startProcess('pnpm run --filter @rotki/dev-proxy serve', colors.green(PROXY), PROXY);
 }
 
 logger.info('Starting @rotki/common watch');
 
-startProcess(
-  'pnpm run --filter @rotki/common watch',
-  colors.blue(COMMON),
-  COMMON,
-);
+startProcess('pnpm run --filter @rotki/common watch', colors.blue(COMMON), COMMON);
 
 if (noElectron) {
   logger.info('Starting python backend');
@@ -157,9 +149,7 @@ function getDebuggerPort() {
     const debuggerPort = process.env.DEBUGGER_PORT;
     if (debuggerPort) {
       const portNum = Number.parseInt(debuggerPort);
-      return isFinite(portNum) && (portNum > 0 || portNum < 65535)
-        ? portNum
-        : null;
+      return isFinite(portNum) && (portNum > 0 || portNum < 65535) ? portNum : null;
     }
     return null;
   }
@@ -172,16 +162,10 @@ const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
 if (args)
   logger.info(`starting rotki with args: ${args}`);
 
-const serveCmd = noElectron
-  ? 'pnpm run --filter rotki serve'
-  : 'pnpm run --filter rotki electron:serve';
+const serveCmd = noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
 const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 
-const devRotkiProcess = startProcess(
-  `${cmd} ${args}`,
-  colors.magenta(ROTKI),
-  ROTKI,
-);
+const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI);
 
 devRotkiProcess.on('exit', () => {
   terminateSubprocesses();

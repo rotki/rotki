@@ -1,27 +1,24 @@
 import flushPromises from 'flush-promises';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
-import type {
-  AssetMovement,
-  AssetMovementEntry,
-  AssetMovementRequestPayload,
-} from '@/types/history/asset-movements';
+import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+vi.mock('vue-router', () => {
+  const route = ref({
+    query: {},
+  });
+  return {
+    useRoute: vi.fn().mockReturnValue(route),
+    useRouter: vi.fn().mockReturnValue({
+      push: vi.fn(({ query }) => {
+        set(route, { query });
+        return true;
+      }),
     }),
-  ),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(({ query }) => {
-      useRoute().query = query;
-      return true;
-    }),
-  }),
-}));
+  };
+});
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<Vue>('vue');
@@ -33,11 +30,9 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchAssetMovements: (
-    payload: MaybeRef<AssetMovementRequestPayload>
-  ) => Promise<Collection<AssetMovementEntry>>;
-  const locationOverview: MaybeRef<string | null> = ref('');
-  const mainPage: Ref<boolean> = ref(false);
+  let fetchAssetMovements: (payload: MaybeRef<AssetMovementRequestPayload>) => Promise<Collection<AssetMovementEntry>>;
+  const locationOverview = ref<string | null>('');
+  const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
 
@@ -58,27 +53,14 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const {
-        userAction,
-        filters,
-        sort,
-        state,
-        fetchData,
-        applyRouteFilter,
-        isLoading,
-      } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
-      );
+      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
@@ -104,12 +86,7 @@ describe('composables::history/filter-paginate', () => {
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
-      );
+      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
 
       expect(get(isLoading)).toBe(false);
 
@@ -131,12 +108,7 @@ describe('composables::history/filter-paginate', () => {
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
-      );
+      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
 
       await router.push({
         query,
@@ -144,7 +116,7 @@ describe('composables::history/filter-paginate', () => {
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(route.query).toEqual(query);
+      expect(get(route).query).toEqual(query);
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);

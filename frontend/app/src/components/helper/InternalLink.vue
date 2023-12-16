@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Location } from 'vue-router/types/router';
+import type { RouteLocationRaw } from 'vue-router';
 
 defineOptions({
   inheritAttrs: false,
@@ -7,7 +7,7 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    to: string | Location;
+    to: RouteLocationRaw;
     exact?: boolean;
     activeClass?: string;
     exactActiveClass?: string;

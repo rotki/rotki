@@ -16,12 +16,12 @@ const { t } = useI18n();
     :popper="{ placement: 'bottom-end' }"
     close-on-content-click
   >
-    <template #activator="{ on }">
+    <template #activator="{ attrs }">
       <RuiButton
         class="!p-2"
         icon
         variant="text"
-        v-on="on"
+        v-bind="attrs"
       >
         <RuiIcon
           name="more-2-fill"

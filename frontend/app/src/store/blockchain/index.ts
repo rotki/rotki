@@ -26,8 +26,7 @@ function aggregateTotals(totals: Totals): AssetBalances {
     for (const asset of Object.keys(value)) {
       if (!balances[asset])
         balances[asset] = value[asset];
-      else
-        balances[asset] = balanceSum(balances[asset], value[asset]);
+      else balances[asset] = balanceSum(balances[asset], value[asset]);
     }
   }
 
@@ -56,15 +55,12 @@ function getAccountBalance(account: BlockchainAccount, chainBalances: Blockchain
         usdValue: Zero,
       };
 
-  const expandable = hasTokens(nativeAsset, accountBalances.assets)
-    || hasTokens(nativeAsset, accountBalances.liabilities);
+  const expandable
+    = hasTokens(nativeAsset, accountBalances.assets) || hasTokens(nativeAsset, accountBalances.liabilities);
   return { balance, expandable };
 }
 
-function createAccountWithBalance(
-  account: BlockchainAccount,
-  chainBalances: BlockchainAssetBalances,
-) {
+function createAccountWithBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances) {
   const { balance, expandable } = getAccountBalance(account, chainBalances);
   const address = getAccountAddress(account);
 
@@ -109,10 +105,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
     const entries = Object.entries(accountData).map(([chain, accounts]) => {
       const chainBalances = balanceData[chain] ?? {};
-      return [
-        chain,
-        accounts.map(account => createAccountWithBalance(account, chainBalances)),
-      ];
+      return [chain, accounts.map(account => createAccountWithBalance(account, chainBalances))];
     });
 
     return Object.fromEntries(entries);
@@ -135,9 +128,11 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue)),
   );
 
-  const blockchainAccountList = computed<BlockchainAccountWithBalance[]>(
-    () => Object.values(get(blockchainAccounts))
-      .reduce((previousValue, currentValue) => [...previousValue, ...currentValue], []),
+  const blockchainAccountList = computed<BlockchainAccountWithBalance[]>(() =>
+    Object.values(get(blockchainAccounts)).reduce(
+      (previousValue, currentValue) => [...previousValue, ...currentValue],
+      [],
+    ),
   );
 
   const removeTag = (tag: string) => {
@@ -154,10 +149,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     set(accounts, { ...get(accounts), [chain]: data });
   };
 
-  const updateBalances = (
-    chain: string,
-    { perAccount, totals: updatedTotals }: BlockchainBalances,
-  ) => {
+  const updateBalances = (chain: string, { perAccount, totals: updatedTotals }: BlockchainBalances) => {
     set(balances, {
       ...get(balances),
       [chain]: perAccount[camelCase(chain)] ?? {},
@@ -182,7 +174,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const getAccounts = (chain: string): BlockchainAccount[] => get(accounts)[chain] ?? [];
 
-  const getAddressBalances = (chain: string, address: string) => get(balances)[chain]?.[address] ?? { assets: {}, liabilities: {} };
+  const getAddressBalances = (chain: string, address: string) =>
+    get(balances)[chain]?.[address] ?? { assets: {}, liabilities: {} };
 
   const getAccountByAddress = (address: string, chain?: string): BlockchainAccount | undefined => {
     const knownAccounts = get(accounts);
@@ -221,7 +214,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           address,
           location: chain,
           ...assetBalance,
-          tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)?.tags,
+          tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)
+            ?.tags,
         });
       }
     }
@@ -229,7 +223,10 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     return breakdown;
   };
 
-  const getAccountDetails = (chain: string, address: string): {
+  const getAccountDetails = (
+    chain: string,
+    address: string,
+  ): {
     assets: AssetBalance[];
     liabilities: AssetBalance[];
   } => {
@@ -277,8 +274,5 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useBlockchainStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useBlockchainStore, import.meta.hot));

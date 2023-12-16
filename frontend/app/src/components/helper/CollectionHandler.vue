@@ -1,8 +1,8 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends object">
 import type { Collection } from '@/types/collection';
 
 const props = defineProps<{
-  collection: Collection<any>;
+  collection: Collection<T>;
 }>();
 
 const emit = defineEmits<{
@@ -25,12 +25,7 @@ watch([data, found, itemsPerPage], ([data, found, itemsPerPage]) => {
   }
 });
 
-const { showUpgradeRow, itemLength } = setupEntryLimit(
-  limit,
-  found,
-  total,
-  entriesFoundTotal,
-);
+const { showUpgradeRow, itemLength } = setupEntryLimit(limit, found, total, entriesFoundTotal);
 </script>
 
 <template>

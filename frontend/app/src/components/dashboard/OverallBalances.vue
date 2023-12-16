@@ -10,9 +10,7 @@ import dayjs from 'dayjs';
 import { Section } from '@/types/status';
 
 const { t } = useI18n();
-const { currencySymbol, floatingPrecision } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;
 const { timeframe } = storeToRefs(sessionStore);
@@ -28,10 +26,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const isLoading = isSectionLoading(Section.BLOCKCHAIN);
 
 const adjustedTotalNetWorthFontSize = computed(() => {
-  const digits = get(totalNetWorth)
-    .toFormat(get(floatingPrecision))
-    .replace(/\./g, '')
-    .replace(/,/g, '').length;
+  const digits = get(totalNetWorth).toFormat(get(floatingPrecision)).replace(/\./g, '').replace(/,/g, '').length;
 
   // this number adjusted visually
   // when we use max floating precision (8), it won't overlap
@@ -39,9 +34,7 @@ const adjustedTotalNetWorthFontSize = computed(() => {
 });
 
 const allTimeframes = computed(() =>
-  timeframes((unit, amount) =>
-    dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix(),
-  ),
+  timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),
 );
 
 const timeframeData = computed(() => {
@@ -65,9 +58,7 @@ const startingValue = computed(() => {
   return start;
 });
 
-const balanceDelta = computed(() =>
-  get(totalNetWorth).minus(get(startingValue)),
-);
+const balanceDelta = computed(() => get(totalNetWorth).minus(get(startingValue)));
 
 const percentage = computed(() => {
   const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
@@ -170,14 +161,12 @@ const chartSectionHeight = computed<string>(() => {
         </div>
         <TimeframeSelector
           class="pt-6"
-          :value="timeframe"
+          :model-value="timeframe"
           :visible-timeframes="visibleTimeframes"
-          @input="setTimeframe($event)"
+          @update:model-value="setTimeframe($event)"
         />
       </div>
-      <div
-        class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart"
-      >
+      <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart">
         <NetWorthChart
           v-if="!isLoading"
           :chart-data="timeframeData"

@@ -42,17 +42,14 @@ export interface AccountExtraParams {
   readonly groupHeader?: boolean;
 }
 
-export interface BlockchainAccountWithBalance<
-    T extends BlockchainAccountData = BlockchainAccountData,
-> extends BlockchainAccount<T> {
+export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = BlockchainAccountData>
+  extends BlockchainAccount<T> {
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
   readonly expandable: boolean;
 }
 
-export interface BlockchainAccountGroupWithBalance<
-    T extends BlockchainAccountData = BlockchainAccountData,
-> {
+export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> {
   data: T;
   readonly tags?: string[];
   readonly label?: string;
@@ -142,9 +139,7 @@ export interface BasicBlockchainAccountPayload {
   readonly modules?: Module[];
 }
 
-export interface BlockchainAccountPayload
-  extends BasicBlockchainAccountPayload,
-  AccountPayload {}
+export interface BlockchainAccountPayload extends BasicBlockchainAccountPayload, AccountPayload {}
 
 export interface AccountPayload {
   readonly address: string;

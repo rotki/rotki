@@ -14,19 +14,19 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', pairs: string[]): void }>();
+const emit = defineEmits<{ (e: 'update:selection', pairs: string[]): void }>();
 const { name, location } = toRefs(props);
 
-const input = (value: string[]) => emit('input', value);
+const updateSelection = (value: string[]) => emit('update:selection', value);
 
 const queriedMarkets = ref<string[]>([]);
 const selection = ref<string[]>([]);
 const allMarkets = ref<string[]>([]);
 const loading = ref<boolean>(false);
 
-function handleInput(value: string[]) {
+function onSelectionChange(value: string[]) {
   set(selection, value);
-  input(value);
+  updateSelection(value);
 }
 
 const { t } = useI18n();
@@ -37,10 +37,7 @@ const { notify } = useNotificationsStore();
 onMounted(async () => {
   set(loading, true);
   try {
-    set(
-      queriedMarkets,
-      await api.queryBinanceUserMarkets(get(name), get(location)),
-    );
+    set(queriedMarkets, await api.queryBinanceUserMarkets(get(name), get(location)));
   }
   catch (error: any) {
     const title = t('binance_market_selector.query_user.title');
@@ -89,14 +86,12 @@ onMounted(async () => {
     variant="outlined"
     :label="label || t('binance_market_selector.default_label')"
     class="binance-market-selector"
-    :value="selection"
+    :model-value="selection"
     :item-height="54"
-    @input="handleInput($event)"
+    @update:model-value="onSelectionChange($event)"
   >
     <template #item="data">
-      <div
-        class="binance-market-selector__list__item flex justify-between grow"
-      >
+      <div class="binance-market-selector__list__item flex justify-between grow">
         <div class="binance-market-selector__list__item__address-label">
           <RuiChip size="sm">
             {{ data.item }}

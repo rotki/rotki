@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
-import type {
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload,
-} from '@/types/nfbalances';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 defineProps<{ modules: Module[] }>();
@@ -19,16 +16,16 @@ const { t } = useI18n();
 const { notify } = useNotificationsStore();
 const { deleteLatestPrice } = useAssetPricesApi();
 
-const customPrice: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
+const customPrice = ref<Partial<ManualPriceFormPayload> | null>(null);
 
-const selected: Ref<string[]> = ref([]);
+const selected = ref<string[]>([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 
 const extraParams = computed(() => ({
   ignoredAssetsHandling: get(ignoredAssetsHandling),
 }));
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
   {
     label: t('common.name'),
     key: 'name',
@@ -84,20 +81,22 @@ const {
   sort,
   setPage,
   pagination,
-} = usePaginationFilters<
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload,
-  NonFungibleBalance
->(null, true, useEmptyFilter, fetchNonFungibleBalances, {
-  onUpdateFilters(query) {
-    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+} = usePaginationFilters<NonFungibleBalance, NonFungibleBalancesRequestPayload, NonFungibleBalance>(
+  null,
+  true,
+  useEmptyFilter,
+  fetchNonFungibleBalances,
+  {
+    onUpdateFilters(query) {
+      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+    },
+    extraParams,
+    defaultSortBy: {
+      key: ['usdPrice'],
+      ascending: [false],
+    },
   },
-  extraParams,
-  defaultSortBy: {
-    key: ['usdPrice'],
-    ascending: [false],
-  },
-});
+);
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
@@ -141,8 +140,7 @@ async function massIgnore(ignored: boolean) {
 
   if (ignored)
     status = await ignoreAsset(ids);
-  else
-    status = await unignoreAsset(ids);
+  else status = await unignoreAsset(ids);
 
   if (status.success) {
     set(selected, []);
@@ -206,12 +204,7 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.accounts_balances'),
-      t('non_fungible_balances.title'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.accounts_balances'), t('non_fungible_balances.title')]">
     <template #buttons>
       <div class="flex flex-row items-center justify-end gap-2">
         <RuiTooltip>
@@ -251,15 +244,13 @@ watch(loading, async (isLoading, wasLoading) => {
         <template #default="{ data, totalUsdValue }">
           <RuiDataTable
             v-model="selected"
+            v-model:sort.external="sort"
+            v-model:pagination.external="pagination"
             row-attr="id"
             outlined
             dense
             :cols="tableHeaders"
             :rows="data"
-            :sort.sync="sort"
-            :sort-modifiers="{ external: true }"
-            :pagination.sync="pagination"
-            :pagination-modifiers="{ external: true }"
             :loading="isLoading"
             show-select
           >
@@ -271,8 +262,8 @@ watch(loading, async (isLoading, wasLoading) => {
                 <RuiSwitch
                   color="primary"
                   hide-details
-                  :value="isIgnored(row.id).value"
-                  @input="toggleIgnoreAsset(row.id)"
+                  :model-value="isIgnored(row.id).value"
+                  @update:model-value="toggleIgnoreAsset(row.id)"
                 />
               </div>
             </template>

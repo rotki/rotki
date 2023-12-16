@@ -105,9 +105,7 @@ const truncatedLabelDisplayed = computed(() => {
       <template #activator>
         <div
           data-cy="labeled-address-display"
-          :class="[
-            css['labeled-address-display__address'],
-          ]"
+          :class="[css['labeled-address-display__address']]"
         >
           <EnsAvatar
             :address="address"
@@ -131,14 +129,10 @@ const truncatedLabelDisplayed = computed(() => {
         </div>
       </template>
       <div class="[&_*]:font-mono">
-        <div
-          v-if="aliasName && aliasName !== address"
-        >
+        <div v-if="aliasName && aliasName !== address">
           {{ aliasName }}
         </div>
-        <div
-          v-if="ensName && aliasName !== ensName"
-        >
+        <div v-if="ensName && aliasName !== ensName">
           ({{ ensName }})
         </div>
         <div>

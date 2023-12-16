@@ -5,6 +5,8 @@ import { settingsManager } from '@/electron-main/app-settings';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import type { TrayUpdate } from '@/electron-main/ipc';
 
+const dirname = import.meta.dirname;
+
 type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
 
@@ -22,9 +24,7 @@ export class TrayManager {
   }
 
   private static get iconPath(): string {
-    return checkIfDevelopment()
-      ? path.join(__dirname, '..', 'public')
-      : __dirname;
+    return checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
   }
 
   private buildMenu(visible: boolean, info = '') {

@@ -13,13 +13,13 @@ function proceed() {
 <template>
   <div class="max-w-[27.5rem] mx-auto">
     <RuiAlert type="warning">
-      <i18n path="docker_warning.title">
+      <i18n-t keypath="docker_warning.title">
         <ExternalLink
           :text="t('docker_warning.documentation')"
           :url="usageGuideSection.dockerWarning"
           color="warning"
         />
-      </i18n>
+      </i18n-t>
 
       <RuiButton
         class="mt-4"

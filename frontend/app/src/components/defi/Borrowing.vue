@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  type DefiProtocol,
-  type Module,
-  isDefiProtocol,
-} from '@/types/modules';
+import { type DefiProtocol, type Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 
 defineProps<{
@@ -37,10 +33,7 @@ const summary = computed(() => {
   return get(defiLending.loanSummary(protocols));
 });
 
-const refreshing = logicOr(
-  isLoading(Section.DEFI_BORROWING),
-  isLoading(Section.DEFI_BORROWING_HISTORY),
-);
+const refreshing = logicOr(isLoading(Section.DEFI_BORROWING), isLoading(Section.DEFI_BORROWING_HISTORY));
 
 async function refresh() {
   await defiLending.fetchBorrowing(true);
@@ -55,7 +48,7 @@ onMounted(async () => {
   await defiLending.fetchBorrowing(false);
 });
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('borrowing.header').toLocaleLowerCase(),
   }),

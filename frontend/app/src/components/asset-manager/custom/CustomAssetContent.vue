@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import type { Nullable } from '@/types';
 import type { Collection } from '@/types/collection';
-import type {
-  Filters,
-  Matcher,
-} from '@/composables/filters/custom-assets';
-import type {
-  CustomAsset,
-  CustomAssetRequestPayload,
-} from '@/types/asset';
+import type { Filters, Matcher } from '@/composables/filters/custom-assets';
+import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
 
 const props = withDefaults(
   defineProps<{
@@ -75,9 +69,7 @@ const {
 });
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
+  get(editableItem) ? t('asset_management.edit_title') : t('asset_management.add_title'),
 );
 
 function add() {
@@ -137,12 +129,7 @@ watch(identifier, (assetId) => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[
-      t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.custom_assets'),
-    ]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.manage_assets'), t('navigation_menu.manage_assets_sub.custom_assets')]">
     <template #buttons>
       <RuiButton
         color="primary"
@@ -168,14 +155,14 @@ watch(identifier, (assetId) => {
       </RuiButton>
     </template>
     <CustomAssetTable
+      v-model:filters="filters"
+      v-model:expanded="expanded"
+      v-model:pagination="pagination"
+      v-model:sort="sort"
       :assets="state.data"
       :loading="loading"
       :server-item-length="state.found"
-      :filters.sync="filters"
       :matchers="matchers"
-      :expanded.sync="expanded"
-      :pagination.sync="pagination"
-      :sort.sync="sort"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
     />

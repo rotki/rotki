@@ -13,15 +13,11 @@ const updated = () => emit('updated');
 
 const multiplier = ref<string>('0');
 
-const { ssfGraphMultiplier: multiplierSetting, balanceSaveFrequency }
-  = storeToRefs(useGeneralSettingsStore());
+const { ssfGraphMultiplier: multiplierSetting, balanceSaveFrequency } = storeToRefs(useGeneralSettingsStore());
 
 const rules = {
   multiplier: {
-    min: helpers.withMessage(
-      t('statistics_graph_settings.multiplier.validations.positive_number'),
-      minValue(0),
-    ),
+    min: helpers.withMessage(t('statistics_graph_settings.multiplier.validations.positive_number'), minValue(0)),
   },
 };
 const v$ = useVuelidate(rules, { multiplier }, { $autoDirty: true });
@@ -79,9 +75,9 @@ onMounted(() => {
         min="0"
         :label="t('statistics_graph_settings.multiplier.label')"
         type="number"
-        :success-messages="success"
+        :messages="success"
         :error-messages="error || toMessages(v$.multiplier)"
-        @input="callIfValid($event, update)"
+        @update:model-value="callIfValid($event, update)"
       />
     </SettingsOption>
 

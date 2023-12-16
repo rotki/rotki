@@ -24,23 +24,23 @@ const { t } = useI18n();
   >
     <RuiCheckbox
       v-if="confirm"
-      :value="value"
+      :model-value="value"
       :label="t('sync_indicator.setting.ask_user_upon_size_discrepancy.confirm_label')"
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @input="updateImmediate(!$event)"
+      @update:model-value="updateImmediate(!$event)"
     />
     <RuiSwitch
       v-else
-      :value="value"
+      :model-value="value"
       :size="dialog ? 'sm' : undefined"
       :class="{ '[&_span]:text-sm [&_span]:mt-0.5': dialog }"
       :label="t('sync_indicator.setting.ask_user_upon_size_discrepancy.label')"
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @input="updateImmediate(!$event)"
+      @update:model-value="updateImmediate(!$event)"
     />
   </SettingsOption>
 </template>

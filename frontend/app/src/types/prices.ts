@@ -1,21 +1,9 @@
-import {
-  AssetEntry,
-  type Balance,
-  type BigNumber,
-  NumericString,
-} from '@rotki/common';
+import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'lodash-es';
 import { z } from 'zod';
-import {
-  type PriceOracle,
-  PriceOracleEnum,
-} from '@/types/settings/price-oracle';
+import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 
-export const AssetPriceInput = z.tuple([
-  NumericString,
-  z.number(),
-  z.boolean(),
-]);
+export const AssetPriceInput = z.tuple([NumericString, z.number(), z.boolean()]);
 
 export const AssetPrice = z.object({
   value: NumericString,
@@ -97,6 +85,11 @@ export const ManualPrice = AssetPair.extend({
 
 export type ManualPrice = z.infer<typeof ManualPrice>;
 
+export type ManualPriceWithUsd = ManualPrice & {
+  id: number;
+  usdPrice: BigNumber;
+};
+
 export const ManualPrices = z.array(ManualPrice);
 
 export type ManualPrices = z.infer<typeof ManualPrices>;
@@ -121,17 +114,13 @@ export const HistoricalPriceFormPayload = ManualPriceFormPayload.extend({
   timestamp: z.number(),
 });
 
-export type HistoricalPriceFormPayload = z.infer<
-  typeof HistoricalPriceFormPayload
->;
+export type HistoricalPriceFormPayload = z.infer<typeof HistoricalPriceFormPayload>;
 
 export const HistoricalPriceDeletePayload = AssetPair.extend({
   timestamp: z.number(),
 });
 
-export type HistoricalPriceDeletePayload = z.infer<
-  typeof HistoricalPriceDeletePayload
->;
+export type HistoricalPriceDeletePayload = z.infer<typeof HistoricalPriceDeletePayload>;
 
 export interface ManualPricePayload {
   readonly fromAsset: string | null;

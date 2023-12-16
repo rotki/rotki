@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type NotificationAction, type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
+import { type RuiIcons, isRuiIcon } from '@rotki/ui-library';
 
 const props = withDefaults(
   defineProps<{
@@ -18,7 +19,7 @@ const { copy: copyToClipboard } = useClipboard();
 
 const { notification } = toRefs(props);
 
-const actions: ComputedRef<NotificationAction[]> = computed(() => {
+const actions = computed<NotificationAction[]>(() => {
   const action = get(notification).action;
 
   if (!action)
@@ -33,7 +34,7 @@ function dismiss(id: number) {
   emit('dismiss', id);
 }
 
-const icon = computed(() => {
+const icon = computed<RuiIcons>(() => {
   switch (get(notification).severity) {
     case Severity.ERROR:
     case Severity.INFO:
@@ -42,8 +43,9 @@ const icon = computed(() => {
       return 'alarm-warning-line';
     case Severity.REMINDER:
       return 'alarm-line';
+    default:
+      return 'error-warning-line';
   }
-  return '';
 });
 
 const color = computed(() => {
@@ -107,7 +109,7 @@ const MAX_HEIGHT = 64;
 const { height } = useElementSize(message);
 
 const showExpandArrow = computed(() => get(height) > MAX_HEIGHT);
-const expanded: Ref<boolean> = ref(false);
+const expanded = ref<boolean>(false);
 
 const messageWrapperStyle = computed(() => {
   if (!get(showExpandArrow))
@@ -128,6 +130,10 @@ function messageClicked() {
 
 function buttonClicked() {
   set(expanded, !get(expanded));
+}
+
+function getIcon(action: NotificationAction): RuiIcons {
+  return isRuiIcon(action.icon) ? action.icon : 'arrow-right-line';
 }
 </script>
 
@@ -230,7 +236,7 @@ function buttonClicked() {
         {{ action.label }}
         <template #append>
           <RuiIcon
-            :name="action.icon ?? 'arrow-right-line'"
+            :name="getIcon(action)"
             size="16"
           />
         </template>
@@ -294,7 +300,7 @@ function buttonClicked() {
         @apply to-[#1E1E1E];
 
         &-button {
-          @apply to-[#1E1E1E]
+          @apply to-[#1E1E1E];
         }
       }
     }

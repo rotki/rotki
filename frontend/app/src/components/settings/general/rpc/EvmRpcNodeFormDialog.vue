@@ -7,16 +7,16 @@ import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const props = defineProps<{
-  value: EvmRpcNodeManageState | undefined;
+  modelValue: EvmRpcNodeManageState | undefined;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: EvmRpcNodeManageState | undefined): void;
+  (e: 'update:model-value', value: EvmRpcNodeManageState | undefined): void;
   (e: 'complete'): void;
 }>();
 
 function resetForm() {
-  emit('input', undefined);
+  emit('update:model-value', undefined);
 }
 
 const { t } = useI18n();
@@ -37,7 +37,7 @@ const chain = computed<Blockchain>(() => {
 });
 
 const chainName = computed(() => {
-  const chain = props.value?.node.blockchain;
+  const chain = props.modelValue?.node.blockchain;
   return chain ? get(getChainName(get(chain))) : '';
 });
 
@@ -55,7 +55,7 @@ const api = useEvmNodesApi(chain);
 const { setMessage } = useMessageStore();
 
 async function save() {
-  if (!await get(form)?.validate())
+  if (!(await get(form)?.validate()))
     return;
 
   const state = get(model);
@@ -68,8 +68,7 @@ async function save() {
   try {
     if (editing)
       await api.editEvmNode(node);
-    else
-      await api.addEvmNode(omit(node, 'identifier'));
+    else await api.addEvmNode(omit(node, 'identifier'));
     resetForm();
     emit('complete');
   }
@@ -91,9 +90,7 @@ async function save() {
       if (unknownKeys.length > 0) {
         setMessage({
           title: errorTitle,
-          description: unknownKeys
-            .map(key => `${key}: ${messages[key]}`)
-            .join(', '),
+          description: unknownKeys.map(key => `${key}: ${messages[key]}`).join(', '),
           success: false,
         });
       }
@@ -114,7 +111,7 @@ async function save() {
 
 <template>
   <BigDialog
-    :display="!!value"
+    :display="!!modelValue"
     :title="dialogTitle"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
@@ -127,7 +124,7 @@ async function save() {
       v-if="model"
       ref="form"
       v-model="model"
-      :error-messages.sync="errorMessages"
+      v-model:error-messages="errorMessages"
     />
   </BigDialog>
 </template>

@@ -2,33 +2,28 @@
 import { helpers, required } from '@vuelidate/validators';
 import { CURRENCY_USD } from '@/types/currencies';
 import { toMessages } from '@/utils/validation';
-import type {
-  BalanceSnapshot,
-  LocationDataSnapshot,
-} from '@/types/snapshots';
+import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
-  value: LocationDataSnapshot[];
+  modelValue: LocationDataSnapshot[];
   timestamp: number;
   balancesSnapshot: BalanceSnapshot[];
 }>();
 
 const emit = defineEmits<{
   (e: 'update:step', step: number): void;
-  (e: 'input', value: LocationDataSnapshot[]): void;
+  (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
-const { value, balancesSnapshot } = toRefs(props);
+const { balancesSnapshot } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const total = ref<string>('');
 const { t } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
-const fiatExchangeRate = computed<BigNumber>(
-  () => get(exchangeRate(get(currencySymbol))) ?? One,
-);
+const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);
 
 const assetTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
@@ -42,7 +37,7 @@ const assetTotal = computed<BigNumber>(() => {
 });
 
 const locationTotal = computed<BigNumber>(() => {
-  const numbers = get(value).map((item: LocationDataSnapshot) => {
+  const numbers = props.modelValue.map((item: LocationDataSnapshot) => {
     if (item.location === 'total')
       return Zero;
 
@@ -77,9 +72,7 @@ const numericTotal = computed<BigNumber>(() => {
     : bigNumberify(value).dividedBy(get(fiatExchangeRate));
 });
 
-const nftsExcludedTotal = computed<BigNumber>(() =>
-  get(numericTotal).minus(get(nftsTotal)),
-);
+const nftsExcludedTotal = computed<BigNumber>(() => get(numericTotal).minus(get(nftsTotal)));
 
 const suggestions = computed(() => {
   const assetTotalValue = get(assetTotal);
@@ -97,7 +90,7 @@ const suggestions = computed(() => {
 });
 
 onBeforeMount(() => {
-  const totalEntry = get(value).find(item => item.location === 'total');
+  const totalEntry = props.modelValue.find(item => item.location === 'total');
 
   if (totalEntry) {
     const convertedFiatValue
@@ -110,7 +103,7 @@ onBeforeMount(() => {
 });
 
 function input(value: LocationDataSnapshot[]) {
-  emit('input', value);
+  emit('update:model-value', value);
 }
 
 function updateStep(step: number) {
@@ -120,9 +113,7 @@ function updateStep(step: number) {
 function setTotal(number?: BigNumber) {
   assert(number);
   const convertedFiatValue
-    = get(currencySymbol) === CURRENCY_USD
-      ? number.toFixed()
-      : number.multipliedBy(get(fiatExchangeRate)).toFixed();
+    = get(currencySymbol) === CURRENCY_USD ? number.toFixed() : number.multipliedBy(get(fiatExchangeRate)).toFixed();
 
   set(total, convertedFiatValue);
 }
@@ -130,7 +121,7 @@ function setTotal(number?: BigNumber) {
 const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
 
 function save() {
-  const val = get(value);
+  const val = props.modelValue;
   const index = val.findIndex(item => item.location === 'total')!;
 
   const newValue = [...val];
@@ -144,10 +135,7 @@ setSubmitFunc(save);
 
 const rules = {
   total: {
-    required: helpers.withMessage(
-      t('dashboard.snapshot.edit.dialog.total.rules.total'),
-      required,
-    ),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.total.rules.total'), required),
   },
 };
 
@@ -165,7 +153,7 @@ const suggestionsLabel = computed(() => ({
     length: get(balancesSnapshot).length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
-    length: get(value).length,
+    length: props.modelValue.length,
   }),
 }));
 </script>
@@ -184,14 +172,14 @@ const suggestionsLabel = computed(() => ({
         />
 
         <div class="text-rui-text-secondary text-caption">
-          <i18n path="dashboard.snapshot.edit.dialog.total.warning">
+          <i18n-t keypath="dashboard.snapshot.edit.dialog.total.warning">
             <template #amount>
               <AmountDisplay
                 :value="nftsExcludedTotal"
                 fiat-currency="USD"
               />
             </template>
-          </i18n>
+          </i18n-t>
         </div>
       </div>
       <div>
@@ -227,9 +215,7 @@ const suggestionsLabel = computed(() => ({
       </div>
     </div>
 
-    <div
-      class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex justify-end p-2 gap-2"
-    >
+    <div class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex justify-end p-2 gap-2">
       <RuiButton
         variant="text"
         @click="updateStep(2)"

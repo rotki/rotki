@@ -1,14 +1,6 @@
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
-import {
-  type BrowserWindow,
-  Menu,
-  dialog,
-  ipcMain,
-  nativeTheme,
-  safeStorage,
-  shell,
-} from 'electron';
+import { type BrowserWindow, Menu, dialog, ipcMain, nativeTheme, safeStorage, shell } from 'electron';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@/electron-main/config';
@@ -38,20 +30,12 @@ import {
   IPC_TRAY_UPDATE,
   IPC_VERSION,
 } from '@/electron-main/ipc-commands';
-import {
-  type MenuActions,
-  debugSettings,
-  getUserMenu,
-} from '@/electron-main/menu';
+import { type MenuActions, debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { startPromise } from '@/utils';
 import type { TrayManager } from '@/electron-main/tray-manager';
-import type {
-  BackendOptions,
-  SystemVersion,
-  TrayUpdate,
-} from '@/electron-main/ipc';
+import type { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import type { ProgressInfo } from 'electron-builder';
 import type { SubprocessHandler } from '@/subprocess-handler';
 
@@ -105,10 +89,7 @@ function setupMetamaskImport() {
 let firstStart = true;
 let restarting = false;
 
-function setupBackendRestart(
-  getWindow: WindowProvider,
-  pyHandler: SubprocessHandler,
-) {
+function setupBackendRestart(getWindow: WindowProvider, pyHandler: SubprocessHandler) {
   async function restartBackend(event: Electron.IpcMainEvent, options: Partial<BackendOptions>) {
     if (firstStart) {
       firstStart = false;
@@ -156,7 +137,7 @@ function setupVersionInfo() {
   });
 
   ipcMain.on(IPC_IS_MAC, (event) => {
-    const isMac = (version)?.os === 'darwin';
+    const isMac = version?.os === 'darwin';
     event.sender.send(IPC_IS_MAC, isMac);
   });
 }
@@ -180,8 +161,7 @@ function setupPasswordStorage() {
 
   const encoding = 'latin1';
 
-  const getEncryptionAvailability = (): boolean =>
-    safeStorage.isEncryptionAvailable();
+  const getEncryptionAvailability = (): boolean => safeStorage.isEncryptionAvailable();
 
   const setPassword = (key: string, password: string) => {
     const buffer = safeStorage.encryptString(password);
@@ -200,17 +180,14 @@ function setupPasswordStorage() {
     return '';
   };
 
-  ipcMain.on(
-    IPC_STORE_PASSWORD,
-    (event, { username, password }: { username: string; password: string }) => {
-      let success = false;
-      if (getEncryptionAvailability()) {
-        setPassword(username, password);
-        success = true;
-      }
-      event.sender.send(IPC_STORE_PASSWORD, success);
-    },
-  );
+  ipcMain.on(IPC_STORE_PASSWORD, (event, { username, password }: { username: string; password: string }) => {
+    let success = false;
+    if (getEncryptionAvailability()) {
+      setPassword(username, password);
+      success = true;
+    }
+    event.sender.send(IPC_STORE_PASSWORD, success);
+  });
 
   ipcMain.on(IPC_GET_PASSWORD, (event, username: string) => {
     let password = '';
@@ -245,9 +222,7 @@ export function ipcSetup(
   });
 
   ipcMain.on(IPC_PREMIUM_LOGIN, (_event, args) => {
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate(getUserMenu(!args, menuActions)),
-    );
+    Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(!args, menuActions)));
   });
 
   ipcMain.on(IPC_CLOSE_APP, () => startPromise(closeApp()));
@@ -261,17 +236,17 @@ export function ipcSetup(
   });
 
   ipcMain.on(IPC_OPEN_DIRECTORY, (event, title: string, defaultPath?: string) => {
-    select(title, 'openDirectory', defaultPath).then((directory) => {
-      event.sender.send(IPC_OPEN_DIRECTORY, directory);
-    }).catch(error => console.error(error));
+    select(title, 'openDirectory', defaultPath)
+      .then((directory) => {
+        event.sender.send(IPC_OPEN_DIRECTORY, directory);
+      })
+      .catch(error => console.error(error));
   });
   ipcMain.on(IPC_OPEN_PATH, (_event, path) => {
     startPromise(shell.openPath(path));
   });
   ipcMain.on(IPC_CONFIG, (event, defaults: boolean) => {
-    const options: Partial<BackendOptions> = defaults
-      ? { logDirectory: pyHandler.defaultLogDirectory }
-      : loadConfig();
+    const options: Partial<BackendOptions> = defaults ? { logDirectory: pyHandler.defaultLogDirectory } : loadConfig();
     event.sender.send(IPC_CONFIG, options);
   });
 
@@ -288,10 +263,7 @@ export function ipcSetup(
   setupPasswordStorage();
 }
 
-function setupInstallUpdate(
-  pyHandler: SubprocessHandler,
-  ensureSafeUpdateRestart: () => void,
-) {
+function setupInstallUpdate(pyHandler: SubprocessHandler, ensureSafeUpdateRestart: () => void) {
   async function installUpdate(event: Electron.IpcMainEvent) {
     const quit = new Promise<void>((resolve, reject) => {
       const quitAndInstall = async () => {
@@ -323,10 +295,7 @@ function setupInstallUpdate(
   ipcMain.on(IPC_INSTALL_UPDATE, event => startPromise(installUpdate(event)));
 }
 
-function setupDownloadUpdate(
-  getWindow: WindowProvider,
-  pyHandler: SubprocessHandler,
-) {
+function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: SubprocessHandler) {
   async function downloadUpdate(event: Electron.IpcMainEvent) {
     const window = getWindow();
     const progress = (progress: ProgressInfo) => {

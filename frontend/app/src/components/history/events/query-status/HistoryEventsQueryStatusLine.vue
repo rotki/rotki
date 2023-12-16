@@ -7,8 +7,8 @@ const { getItemTranslationKey } = useEventsQueryStatus();
 </script>
 
 <template>
-  <i18n
-    :path="getItemTranslationKey(item)"
+  <i18n-t
+    :keypath="getItemTranslationKey(item)"
     tag="div"
     class="flex py-2 text-no-wrap flex-wrap text-body-2"
   >
@@ -39,5 +39,5 @@ const { getItemTranslationKey } = useEventsQueryStatus();
         <DateDisplay :timestamp="item.period[1]" />
       </div>
     </template>
-  </i18n>
+  </i18n-t>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library';
 import { TaskType } from '@/types/task-type';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
@@ -20,10 +20,12 @@ const stepList = computed(() => [
   t('transactions.query_status.statuses.querying_evm_tokens_transactions'),
 ]);
 
-const steps = computed(() => get(stepList).map((step, index) => ({
-  title: toSentenceCase(step),
-  loading: isStepInProgress(index),
-})));
+const steps = computed(() =>
+  get(stepList).map((step, index) => ({
+    title: toSentenceCase(step),
+    loading: isStepInProgress(index),
+  })),
+);
 
 const hasProgress = computed(() => get(steps).some(step => step.loading));
 

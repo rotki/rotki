@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { AssetBalance } from '@rotki/common';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { AssetBalance, BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+
+type AssetWithPrice = AssetBalance & {
+  price: BigNumber;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -24,31 +25,27 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<AssetWithPrice>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const assetsWithPrice = computed(() =>
+const assetsWithPrice = computed<AssetWithPrice[]>(() =>
   get(assets).map(row => ({ ...row, price: get(getPrice(row.asset)) })),
 );
 
-const sortItems = getSortItems(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetWithPrice>(asset => get(assetInfo(asset)));
 
-const sorted = computed(() => {
+const sorted = computed<AssetWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = [...get(assetsWithPrice)];
-  if (!Array.isArray(sortBy) && sortBy?.column) {
-    return sortItems(
-      data,
-      [sortBy.column as keyof AssetBalance],
-      [sortBy.direction === 'desc'],
-    );
-  }
+  if (!Array.isArray(sortBy) && sortBy?.column)
+    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
+
   return data;
 });
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
   {
     label: t('common.asset'),
     class: 'text-no-wrap w-full',
@@ -99,10 +96,9 @@ const headers = computed<DataTableColumn[]>(() => [
       {{ title }}
     </template>
     <RuiDataTable
+      v-model:sort.external="sort"
       :rows="sorted"
       :cols="headers"
-      :sort.sync="sort"
-      :sort-modifiers="{ external: true }"
       :empty="{ description: t('data_table.no_data') }"
       row-attr="asset"
       outlined

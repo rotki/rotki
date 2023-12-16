@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
+
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -23,14 +25,12 @@ watch(message, (message) => {
   set(visible, message.length > 0);
 });
 
-const icon = computed<string>(() =>
-  get(success) ? 'checkbox-circle-line' : 'error-warning-line',
-);
+const icon = computed<RuiIcons>(() => (get(success) ? 'checkbox-circle-line' : 'error-warning-line'));
 </script>
 
 <template>
   <RuiDialog
-    :value="visible"
+    :model-value="visible"
     max-width="500"
     persistent
     @close="emit('dismiss')"

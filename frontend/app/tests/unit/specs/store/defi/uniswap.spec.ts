@@ -1,7 +1,4 @@
-import type {
-  XswapBalance,
-  XswapPool,
-} from '@rotki/common/lib/defi/xswap';
+import type { XswapBalance, XswapPool } from '@rotki/common/lib/defi/xswap';
 
 export function setUniswapV2Balances() {
   const { v2Balances } = storeToRefs(useUniswapStore());
@@ -309,9 +306,7 @@ describe('uniswap:v2', () => {
       },
     ];
 
-    const actualResult = get(
-      uniswapV2Balances(['0xAEE99Df1f10f9525BcA4fE220029713b0EaCE215']),
-    );
+    const actualResult = get(uniswapV2Balances(['0xAEE99Df1f10f9525BcA4fE220029713b0EaCE215']));
 
     expect(actualResult).toMatchObject(expectedResult);
   });
@@ -530,9 +525,7 @@ describe('uniswap:v3', () => {
       },
     ];
 
-    const actualResult = get(
-      uniswapV3Balances(['0x42a49DcF7902C6B7938A00Cdbe62a112A2b539E8']),
-    );
+    const actualResult = get(uniswapV3Balances(['0x42a49DcF7902C6B7938A00Cdbe62a112A2b539E8']));
 
     expect(actualResult).toMatchObject(expectedResult);
   });

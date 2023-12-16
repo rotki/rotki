@@ -37,11 +37,7 @@ const { t } = useI18n();
 
       <PercentageDisplay
         justify="start"
-        :value="
-          effectiveInterestRate.isNaN()
-            ? undefined
-            : effectiveInterestRate.toString()
-        "
+        :value="effectiveInterestRate.isNaN() ? undefined : effectiveInterestRate.toString()"
       />
     </StatCardColumn>
     <StatCardColumn premium-only>

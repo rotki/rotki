@@ -12,7 +12,7 @@ const props = withDefaults(
     label?: string;
     hint?: string;
     persistentHint?: boolean;
-    value?: string;
+    modelValue: string;
     limitNow?: boolean;
     allowEmpty?: boolean;
     milliseconds?: boolean;
@@ -27,7 +27,6 @@ const props = withDefaults(
     label: '',
     hint: '',
     persistentHint: false,
-    value: '',
     limitNow: false,
     allowEmpty: false,
     milliseconds: false,
@@ -40,41 +39,34 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: string): void }>();
 
-const { value, allowEmpty, limitNow, errorMessages, milliseconds, dateOnly } = toRefs(props);
-
-const imask: Ref<InputMask<any> | null> = ref(null);
+const { allowEmpty, limitNow, errorMessages, milliseconds, dateOnly } = toRefs(props);
+const imask = ref<InputMask<any> | null>(null);
 
 const { t } = useI18n();
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const dateOnlyFormat: ComputedRef<string> = computed(() =>
-  getDateInputISOFormat(get(dateInputFormat)),
-);
+const dateOnlyFormat = computed<string>(() => getDateInputISOFormat(get(dateInputFormat)));
 
-const dateTimeFormat: ComputedRef<string> = computed(
-  () => `${get(dateOnlyFormat)} HH:mm`,
-);
+const dateTimeFormat = computed<string>(() => `${get(dateOnlyFormat)} HH:mm`);
 
-const dateTimeFormatWithSecond: ComputedRef<string> = computed(
-  () => `${get(dateTimeFormat)}:ss`,
-);
+const dateTimeFormatWithSecond = computed<string>(() => `${get(dateTimeFormat)}:ss`);
 
-const dateTimeFormatWithMilliseconds: ComputedRef<string> = computed(
-  () => `${get(dateTimeFormatWithSecond)}.SSS`,
-);
+const dateTimeFormatWithMilliseconds = computed<string>(() => `${get(dateTimeFormatWithSecond)}.SSS`);
 
-const currentValue: Ref<string> = ref('');
-const selectedTimezone: Ref<string> = ref('');
+const currentValue = ref<string>('');
+const selectedTimezone = ref<string>('');
 const inputField = ref();
 
 function isValidFormat(date: string): boolean {
-  return isValidDate(date, get(dateOnlyFormat))
+  return (
+    isValidDate(date, get(dateOnlyFormat))
     || isValidDate(date, get(dateTimeFormat))
     || isValidDate(date, get(dateTimeFormatWithSecond))
-    || (get(milliseconds) && isValidDate(date, get(dateTimeFormatWithMilliseconds)));
+    || (get(milliseconds) && isValidDate(date, get(dateTimeFormatWithMilliseconds)))
+  );
 }
 
 function isDateOnLimit(date: string): boolean {
@@ -100,21 +92,19 @@ function isValid(date: string): boolean {
   return isValidFormat(date) && isDateOnLimit(date);
 }
 
-const dateFormatErrorMessage: ComputedRef<string> = computed(() => {
+const dateFormatErrorMessage = computed<string>(() => {
   const dateFormat = get(dateOnlyFormat);
   return get(milliseconds)
     ? t('date_time_picker.milliseconds_format', {
       dateFormat,
     })
-    : (
-        get(dateOnly)
-          ? t('date_time_picker.date_only_format', {
-            dateFormat,
-          })
-          : t('date_time_picker.default_format', {
-            dateFormat,
-          })
-      );
+    : get(dateOnly)
+      ? t('date_time_picker.date_only_format', {
+        dateFormat,
+      })
+      : t('date_time_picker.default_format', {
+        dateFormat,
+      });
 });
 
 const rules = {
@@ -128,16 +118,10 @@ const rules = {
         return isValidFormat(v);
       },
     ),
-    isOnLimit: helpers.withMessage(
-      t('date_time_picker.limit_now'),
-      (v: string): boolean => isDateOnLimit(v),
-    ),
+    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
   },
   timezone: {
-    required: helpers.withMessage(
-      t('date_time_picker.timezone_field.non_empty'),
-      required,
-    ),
+    required: helpers.withMessage(t('date_time_picker.timezone_field.non_empty'), required),
   },
 };
 
@@ -182,11 +166,11 @@ function onValueChange(value: string) {
   }
 }
 
-watch(value, onValueChange);
-watch(selectedTimezone, () => onValueChange(get(value)));
+watch(() => props.modelValue, onValueChange);
+watch(selectedTimezone, () => onValueChange(props.modelValue));
 
 function input(dateTime: string) {
-  emit('input', dateTime);
+  emit('update:model-value', dateTime);
 }
 
 function emitIfValid(value: string) {
@@ -212,9 +196,7 @@ function emitIfValid(value: string) {
 
 function setNow() {
   const now = dayjs().tz(get(selectedTimezone));
-  const format = get(milliseconds)
-    ? get(dateTimeFormatWithMilliseconds)
-    : get(dateTimeFormatWithSecond);
+  const format = get(milliseconds) ? get(dateTimeFormatWithMilliseconds) : get(dateTimeFormatWithSecond);
   const nowInString = now.format(format);
   set(currentValue, nowInString);
   emitIfValid(nowInString);
@@ -251,8 +233,7 @@ function initImask() {
 
   // Find every character '/', ':', ' ', and adds '`' character after it.
   // It is used to prevent the character to shift back.
-  const convertPattern = (pattern: string) =>
-    pattern.replace(/[\s/:]/g, match => `${match}\``);
+  const convertPattern = (pattern: string) => pattern.replace(/[\s/:]/g, match => `${match}\``);
 
   const mask = [
     {
@@ -266,24 +247,27 @@ function initImask() {
   ];
 
   if (!get(dateOnly)) {
-    mask.push({
-      mask: convertPattern(get(dateTimeFormat)),
-      blocks: {
-        ...dateBlocks,
-        ...hourAndMinuteBlocks,
+    mask.push(
+      {
+        mask: convertPattern(get(dateTimeFormat)),
+        blocks: {
+          ...dateBlocks,
+          ...hourAndMinuteBlocks,
+        },
+        lazy: false,
+        overwrite: true,
       },
-      lazy: false,
-      overwrite: true,
-    }, {
-      mask: convertPattern(get(dateTimeFormatWithSecond)),
-      blocks: {
-        ...dateBlocks,
-        ...hourAndMinuteBlocks,
-        ...secondBlocks,
+      {
+        mask: convertPattern(get(dateTimeFormatWithSecond)),
+        blocks: {
+          ...dateBlocks,
+          ...hourAndMinuteBlocks,
+          ...secondBlocks,
+        },
+        lazy: false,
+        overwrite: true,
       },
-      lazy: false,
-      overwrite: true,
-    });
+    );
 
     if (get(milliseconds)) {
       mask.push({
@@ -304,18 +288,10 @@ function initImask() {
     mask,
   });
 
-  set(imask, newImask);
-}
-
-onMounted(() => {
-  set(selectedTimezone, guessTimezone());
-  initImask();
-});
-
-watch(
-  () => get(imask)?.value,
-  (value, prev) => {
+  newImask.on('accept', () => {
     const unmasked = get(imask)?.unmaskedValue;
+    const value = get(imask)?.value;
+    const prev = get(currentValue);
     set(currentValue, value);
     if (prev === undefined) {
       // Reset validation when imask just created
@@ -323,8 +299,15 @@ watch(
     }
     if (value && unmasked)
       emitIfValid(value);
-  },
-);
+  });
+
+  set(imask, newImask);
+}
+
+onMounted(() => {
+  set(selectedTimezone, guessTimezone());
+  initImask();
+});
 
 function focus() {
   const inputWrapper = get(inputField)!;
@@ -337,13 +320,6 @@ function focus() {
   });
 }
 
-function filteredListeners(listeners: any) {
-  return {
-    ...listeners,
-    input: () => {},
-  };
-}
-
 defineExpose({
   valid: computed(() => !get(v$).$invalid),
 });
@@ -352,7 +328,7 @@ defineExpose({
 <template>
   <RuiTextField
     ref="inputField"
-    :value="currentValue"
+    :model-value="currentValue"
     :label="label"
     :hint="hint"
     :disabled="disabled"
@@ -364,10 +340,6 @@ defineExpose({
     :error-messages="toMessages(v$.date)"
     :dense="dense"
     @focus="focus()"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      filteredListeners($listeners)
-    "
   >
     <template
       v-if="!inputOnly"
@@ -377,7 +349,7 @@ defineExpose({
         :popper="{ placement: 'bottom-end' }"
         menu-class="date-time-picker w-[20rem]"
       >
-        <template #activator="{ on }">
+        <template #activator="{ attrs }">
           <RuiButton
             variant="text"
             type="button"
@@ -385,7 +357,7 @@ defineExpose({
             icon
             size="sm"
             class="!p-1.5"
-            v-on="on"
+            v-bind="attrs"
           >
             <RuiIcon name="earth-line" />
           </RuiButton>

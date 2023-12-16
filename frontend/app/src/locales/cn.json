@@ -987,8 +987,8 @@
         "message": "您确定要删除 {location} 中符号 {asset} 的资产映射吗？",
         "title": "删除交易所资产映射"
       },
-      "delete_error": "无法删除映射： {message｝",
-      "edit_error": "无法编辑映射： {message｝",
+      "delete_error": "无法删除映射： {message}",
+      "edit_error": "无法编辑映射： {message}",
       "edit_title": "编辑映射",
       "exchange": "交换",
       "filter_by_exchange": "按交易所筛选",

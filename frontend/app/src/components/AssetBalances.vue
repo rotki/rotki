@@ -2,10 +2,7 @@
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
-import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 defineOptions({
   name: 'AssetBalances',
@@ -30,21 +27,19 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
-const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
+const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const total = computed(() =>
-  bigNumberSum(balances.value.map(({ usdValue }) => usdValue)),
-);
+const total = computed(() => bigNumberSum(balances.value.map(({ usdValue }) => usdValue)));
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -80,18 +75,14 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const sortItems = getSortItems(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
 
-const sorted = computed(() => {
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = [...get(balances)];
-  if (!Array.isArray(sortBy) && sortBy?.column) {
-    return sortItems(
-      data,
-      [sortBy.column as keyof AssetBalance],
-      [sortBy.direction === 'desc'],
-    );
-  }
+  if (!Array.isArray(sortBy) && sortBy?.column)
+    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
+
   return data;
 });
 
@@ -104,13 +95,12 @@ function expand(item: AssetBalanceWithPrice) {
 
 <template>
   <RuiDataTable
+    v-model:sort.external="sort"
     :cols="tableHeaders"
     :rows="sorted"
     :loading="loading"
     :expanded="expanded"
     :loading-text="t('asset_balances.loading')"
-    :sort.sync="sort"
-    :sort-modifiers="{ external: true }"
     :empty="{ description: t('data_table.no_data') }"
     :sticky-header="stickyHeader"
     row-attr="asset"

@@ -2,10 +2,7 @@
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type {
-  AddTransactionHashPayload,
-  EvmChainAndTxHash,
-} from '@/types/history/events';
+import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 
 const { t } = useI18n();
 
@@ -21,14 +18,8 @@ function reset() {
 
 const rules = {
   txHash: {
-    required: helpers.withMessage(
-      t('transactions.form.tx_hash.validation.non_empty').toString(),
-      required,
-    ),
-    isValidTxHash: helpers.withMessage(
-      t('transactions.form.tx_hash.validation.valid').toString(),
-      isValidTxHash,
-    ),
+    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty').toString(), required),
+    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid').toString(), isValidTxHash),
   },
   associatedAddress: {
     required: helpers.withMessage(

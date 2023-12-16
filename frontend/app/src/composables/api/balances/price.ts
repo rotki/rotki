@@ -10,10 +10,7 @@ import {
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
-import type {
-  HistoricPricesPayload,
-  OracleCacheMeta,
-} from '@/types/prices';
+import type { HistoricPricesPayload, OracleCacheMeta } from '@/types/prices';
 import type { PendingTask } from '@/types/task';
 
 export function usePriceApi() {
@@ -39,43 +36,27 @@ export function usePriceApi() {
     return handleResponse(response);
   };
 
-  const deletePriceCache = async (
-    source: PriceOracle,
-    fromAsset: string,
-    toAsset: string,
-  ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      `/oracles/${source}/cache`,
-      {
-        data: snakeCaseTransformer({
-          fromAsset,
-          toAsset,
-        }),
-        validateStatus: validStatus,
-      },
-    );
+  const deletePriceCache = async (source: PriceOracle, fromAsset: string, toAsset: string): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>(`/oracles/${source}/cache`, {
+      data: snakeCaseTransformer({
+        fromAsset,
+        toAsset,
+      }),
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
 
-  const getPriceCache = async (
-    source: PriceOracle,
-  ): Promise<OracleCacheMeta[]> => {
-    const response = await api.instance.get<ActionResult<OracleCacheMeta[]>>(
-      `/oracles/${source}/cache`,
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+  const getPriceCache = async (source: PriceOracle): Promise<OracleCacheMeta[]> => {
+    const response = await api.instance.get<ActionResult<OracleCacheMeta[]>>(`/oracles/${source}/cache`, {
+      validateStatus: validWithSessionAndExternalService,
+    });
 
     return handleResponse(response);
   };
 
-  const queryHistoricalRate = async (
-    fromAsset: string,
-    toAsset: string,
-    timestamp: number,
-  ): Promise<PendingTask> => {
+  const queryHistoricalRate = async (fromAsset: string, toAsset: string, timestamp: number): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/historical',
       snakeCaseTransformer({
@@ -91,9 +72,7 @@ export function usePriceApi() {
     return handleResponse(response);
   };
 
-  const queryHistoricalRates = async (
-    payload: HistoricPricesPayload,
-  ): Promise<PendingTask> => {
+  const queryHistoricalRates = async (payload: HistoricPricesPayload): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/historical',
       snakeCaseTransformer({
@@ -108,11 +87,7 @@ export function usePriceApi() {
     return handleResponse(response);
   };
 
-  const queryPrices = async (
-    assets: string[],
-    targetAsset: string,
-    ignoreCache: boolean,
-  ): Promise<PendingTask> => {
+  const queryPrices = async (assets: string[], targetAsset: string, ignoreCache: boolean): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/latest',
       snakeCaseTransformer({
@@ -129,20 +104,15 @@ export function usePriceApi() {
     return handleResponse(response);
   };
 
-  const queryFiatExchangeRates = async (
-    currencies: SupportedCurrency[],
-  ): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/exchange_rates',
-      {
-        params: {
-          async_query: true,
-          currencies,
-        },
-        paramsSerializer,
-        validateStatus: validWithoutSessionStatus,
+  const queryFiatExchangeRates = async (currencies: SupportedCurrency[]): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>('/exchange_rates', {
+      params: {
+        async_query: true,
+        currencies,
       },
-    );
+      paramsSerializer,
+      validateStatus: validWithoutSessionStatus,
+    });
 
     return handleResponse(response);
   };

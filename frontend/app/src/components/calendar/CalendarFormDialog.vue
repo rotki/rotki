@@ -24,10 +24,8 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCalendarEventForm(
 
 const { t } = useI18n();
 
-const title: ComputedRef<string> = computed(() =>
-  get(editableItem)
-    ? t('calendar.dialog.edit.title')
-    : t('calendar.dialog.add.title'),
+const title = computed<string>(() =>
+  get(editableItem) ? t('calendar.dialog.edit.title') : t('calendar.dialog.add.title'),
 );
 </script>
 

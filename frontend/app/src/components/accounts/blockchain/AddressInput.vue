@@ -20,9 +20,9 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { errorMessages, addresses, disabled } = toRefs(props);
 
-const address: Ref<string> = ref('');
-const userAddresses: Ref<string> = ref('');
-const multiple: Ref<boolean> = ref(false);
+const address = ref<string>('');
+const userAddresses = ref<string>('');
+const multiple = ref<boolean>(false);
 
 const entries = computed(() => {
   const allAddresses = get(userAddresses)

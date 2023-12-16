@@ -28,9 +28,7 @@ async function refresh() {
   await refreshPrices(true, get(assets()));
 }
 
-const disabled: ComputedRef<boolean> = computed(
-  () => get(refreshing) || get(loadingData),
-);
+const disabled = computed<boolean>(() => get(refreshing) || get(loadingData));
 </script>
 
 <template>

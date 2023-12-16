@@ -4,10 +4,7 @@ import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
-const isAnimationEnabledSetting = useSharedLocalStorage(
-  'rotki.animations_enabled',
-  true,
-);
+const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enabled', true);
 
 function defaultSessionSettings(): SessionSettings {
   return {
@@ -27,19 +24,15 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const scrambleMultiplier = computed(() => settings.scrambleMultiplier);
   const timeframe = computed(() => settings.timeframe);
   const animationsEnabled = computed(() => settings.animationsEnabled);
-  const connectedExchanges: Ref<Exchange[]> = ref([]);
+  const connectedExchanges = ref<Exchange[]>([]);
 
   const setConnectedExchanges = (exchanges: Exchange[]): void => {
     set(connectedExchanges, exchanges);
   };
 
-  const shouldShowAmount = computed(
-    () => settings.privacyMode < PrivacyMode.SEMI_PRIVATE,
-  );
+  const shouldShowAmount = computed(() => settings.privacyMode < PrivacyMode.SEMI_PRIVATE);
 
-  const shouldShowPercentage = computed(
-    () => settings.privacyMode < PrivacyMode.PRIVATE,
-  );
+  const shouldShowPercentage = computed(() => settings.privacyMode < PrivacyMode.PRIVATE);
 
   const setAnimationsEnabled = (enabled: boolean): void => {
     set(isAnimationEnabledSetting, enabled);
@@ -70,8 +63,5 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   };
 });
 
-if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useSessionSettingsStore, import.meta.hot),
-  );
-}
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useSessionSettingsStore, import.meta.hot));

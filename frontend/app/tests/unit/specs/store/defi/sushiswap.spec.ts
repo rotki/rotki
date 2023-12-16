@@ -1,7 +1,4 @@
-import type {
-  XswapBalance,
-  XswapPool,
-} from '@rotki/common/lib/defi/xswap';
+import type { XswapBalance, XswapPool } from '@rotki/common/lib/defi/xswap';
 
 export function setSushiswapBalances() {
   const { balances } = storeToRefs(useSushiswapStore());
@@ -146,9 +143,7 @@ describe('sushiswap', () => {
       },
     ];
 
-    const actualResult = get(
-      balanceList(['0xFEB7e72357116275a6960c5243f33D94B1c673fA']),
-    );
+    const actualResult = get(balanceList(['0xFEB7e72357116275a6960c5243f33D94B1c673fA']));
 
     expect(actualResult).toMatchObject(expectedResult);
   });

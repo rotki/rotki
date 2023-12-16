@@ -1,24 +1,31 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import type { RoundingMode } from '@/types/settings/frontend-settings';
 
-const rootAttrs = useAttrs();
+defineProps<{
+  label: string;
+  hint: string;
+}>();
+
 const { t } = useI18n();
+
+const modelValue = defineModel<RoundingMode>({ required: true });
 
 const selections = [
   {
     value: BigNumber.ROUND_UP,
-    text: t('rounding_settings.round.up').toString(),
-    description: t('rounding_settings.round.up_description').toString(),
+    text: t('rounding_settings.round.up'),
+    description: t('rounding_settings.round.up_description'),
   },
   {
     value: BigNumber.ROUND_DOWN,
-    text: t('rounding_settings.round.down').toString(),
-    description: t('rounding_settings.round.down_description').toString(),
+    text: t('rounding_settings.round.down'),
+    description: t('rounding_settings.round.down_description'),
   },
   {
     value: BigNumber.ROUND_HALF_EVEN,
-    text: t('rounding_settings.round.half_even').toString(),
-    description: t('rounding_settings.round.half_even_description').toString(),
+    text: t('rounding_settings.round.half_even'),
+    description: t('rounding_settings.round.half_even_description'),
   },
 ];
 </script>
@@ -26,16 +33,15 @@ const selections = [
 <template>
   <div class="flex gap-4 flex-start">
     <RuiMenuSelect
-      v-bind="rootAttrs"
+      v-bind="$attrs"
+      v-model="modelValue"
       :options="selections"
       key-attr="value"
       text-attr="text"
+      :hint="hint"
+      :label="label"
       :item-height="58"
       variant="outlined"
-      v-on="
-        // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-        $listeners
-      "
     >
       <template #item="{ item }">
         <ListItem

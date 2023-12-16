@@ -5,24 +5,27 @@ import {
   Severity,
 } from '@rotki/common/lib/messages';
 
-export function createNotification(id = 0, {
-  display,
-  duration,
-  message,
-  severity,
-  title,
-  action,
-  category,
-  group,
-  groupCount,
-  i18nParam,
-  priority,
-}: NotificationPayload = {
-  title: '',
-  message: '',
-  severity: Severity.INFO,
-  category: NotificationCategory.DEFAULT,
-}): NotificationData {
+export function createNotification(
+  id = 0,
+  {
+    display,
+    duration,
+    message,
+    severity,
+    title,
+    action,
+    category,
+    group,
+    groupCount,
+    i18nParam,
+    priority,
+  }: NotificationPayload = {
+    title: '',
+    message: '',
+    severity: Severity.INFO,
+    category: NotificationCategory.DEFAULT,
+  },
+): NotificationData {
   return {
     title,
     message,

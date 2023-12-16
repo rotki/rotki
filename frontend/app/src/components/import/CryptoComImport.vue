@@ -7,17 +7,17 @@ const { t } = useI18n();
 
 <template>
   <ImportSource source="cryptocom">
-    <i18n
+    <i18n-t
       tag="span"
-      path="import_data.note"
+      keypath="import_data.note"
     >
       <strong>{{ t('import_data.cryptocom.source_name') }}</strong>
-    </i18n>
+    </i18n-t>
     <ul class="list-disc">
       <li>
-        <i18n
+        <i18n-t
           tag="span"
-          path="import_data.cryptocom.line_one"
+          keypath="import_data.cryptocom.line_one"
         >
           <ExternalLink
             color="primary"
@@ -25,26 +25,26 @@ const { t } = useI18n();
           >
             {{ t('import_data.cryptocom.line_one_link') }}
           </ExternalLink>
-        </i18n>
+        </i18n-t>
       </li>
       <li>
-        <i18n
+        <i18n-t
           tag="span"
-          path="import_data.cryptocom.line_two"
+          keypath="import_data.cryptocom.line_two"
         >
           <strong>{{ t('import_data.cryptocom.line_two_warning') }}</strong>
-        </i18n>
+        </i18n-t>
       </li>
       <li>{{ t('import_data.cryptocom.line_three') }}</li>
       <li>
-        <i18n
-          path="import_data.cryptocom.line_four"
+        <i18n-t
+          keypath="import_data.cryptocom.line_four"
           tag="span"
         >
           <InternalLink :to="Routes.ACCOUNTS_BALANCES_MANUAL">
             {{ t('import_data.cryptocom.line_four_link') }}
           </InternalLink>
-        </i18n>
+        </i18n-t>
       </li>
     </ul>
   </ImportSource>

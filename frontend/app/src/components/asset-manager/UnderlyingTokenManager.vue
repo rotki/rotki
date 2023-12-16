@@ -5,14 +5,17 @@ import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { toMessages } from '@/utils/validation';
 
-const props = defineProps<{ value: UnderlyingToken[] }>();
+const props = defineProps<{
+  modelValue: UnderlyingToken[];
+}>();
 
-const emit = defineEmits<{ (e: 'input', value: UnderlyingToken[]): void }>();
+const emit = defineEmits<{
+  (e: 'update:model-value', value: UnderlyingToken[]): void;
+}>();
+
 const { t } = useI18n();
 
-const { value } = toRefs(props);
-
-const input = (value: UnderlyingToken[]) => emit('input', value);
+const model = useSimpleVModel(props, emit);
 
 const underlyingAddress = ref<string>('');
 const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
@@ -20,28 +23,13 @@ const underlyingWeight = ref<string>('');
 
 const rules = {
   address: {
-    required: helpers.withMessage(
-      t('underlying_token_manager.validation.address_non_empty'),
-      required,
-    ),
-    isValidEthAddress: helpers.withMessage(
-      t('underlying_token_manager.validation.valid'),
-      isValidEthAddress,
-    ),
+    required: helpers.withMessage(t('underlying_token_manager.validation.address_non_empty'), required),
+    isValidEthAddress: helpers.withMessage(t('underlying_token_manager.validation.valid'), isValidEthAddress),
   },
   weight: {
-    required: helpers.withMessage(
-      t('underlying_token_manager.validation.non_empty'),
-      required,
-    ),
-    notNaN: helpers.withMessage(
-      t('underlying_token_manager.validation.not_valid'),
-      numeric,
-    ),
-    minMax: helpers.withMessage(
-      t('underlying_token_manager.validation.out_of_range'),
-      between(1, 100),
-    ),
+    required: helpers.withMessage(t('underlying_token_manager.validation.non_empty'), required),
+    notNaN: helpers.withMessage(t('underlying_token_manager.validation.not_valid'), numeric),
+    minMax: helpers.withMessage(t('underlying_token_manager.validation.out_of_range'), between(1, 100)),
   },
 };
 
@@ -55,10 +43,8 @@ const v$ = useVuelidate(
 );
 
 function addToken() {
-  const underlyingTokens = [...get(value)];
-  const index = underlyingTokens.findIndex(
-    ({ address }) => address === get(underlyingAddress),
-  );
+  const underlyingTokens = [...get(model)];
+  const index = underlyingTokens.findIndex(({ address }) => address === get(underlyingAddress));
 
   const token = {
     address: get(underlyingAddress),
@@ -68,12 +54,11 @@ function addToken() {
 
   if (index >= 0)
     underlyingTokens[index] = token;
-  else
-    underlyingTokens.push(token);
+  else underlyingTokens.push(token);
 
   resetForm();
   get(v$).$reset();
-  input(underlyingTokens);
+  set(model, underlyingTokens);
 }
 
 function editToken(token: UnderlyingToken) {
@@ -84,11 +69,10 @@ function editToken(token: UnderlyingToken) {
 }
 
 function deleteToken(address: string) {
-  const underlyingTokens = [...get(value)];
-  input(
-    underlyingTokens.filter(
-      ({ address: tokenAddress }) => tokenAddress !== address,
-    ),
+  const underlyingTokens = [...get(model)];
+  set(
+    model,
+    underlyingTokens.filter(({ address: tokenAddress }) => tokenAddress !== address),
   );
 }
 
@@ -191,7 +175,7 @@ function resetForm() {
       </thead>
       <tbody>
         <tr
-          v-for="token in value"
+          v-for="token in model"
           :key="token.address"
         >
           <td class="grow">

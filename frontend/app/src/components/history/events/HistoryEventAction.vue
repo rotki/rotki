@@ -38,12 +38,12 @@ function onEditRule() {
       :popper="{ placement: 'bottom-end' }"
       close-on-content-click
     >
-      <template #activator="{ on }">
+      <template #activator="{ attrs }">
         <RuiButton
           icon
           variant="text"
           class="!p-2.5"
-          v-on="on"
+          v-bind="attrs"
         >
           <RuiIcon
             name="more-2-fill"

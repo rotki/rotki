@@ -2,7 +2,7 @@
 import { ThemeChecker } from '@/premium/premium';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
-const { showComponents } = storeToRefs(usePremiumStore());
+const { premium } = storeToRefs(usePremiumStore());
 const { isPackaged } = useInterop();
 const { updateDarkMode } = useDarkMode();
 const { load } = useDataLoader();
@@ -14,7 +14,7 @@ onMounted(load);
   <AppHost>
     <AppMessages>
       <ThemeChecker
-        v-if="showComponents"
+        v-if="premium"
         @update:dark-mode="updateDarkMode($event)"
       />
       <AppUpdatePopup />

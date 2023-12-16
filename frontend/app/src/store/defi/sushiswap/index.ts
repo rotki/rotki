@@ -1,9 +1,4 @@
-import {
-  type XswapBalance,
-  XswapBalances,
-  XswapEvents,
-  type XswapPoolProfit,
-} from '@rotki/common/lib/defi/xswap';
+import { type XswapBalance, XswapBalances, XswapEvents, type XswapPoolProfit } from '@rotki/common/lib/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -11,8 +6,8 @@ import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {
-  const balances: Ref<XswapBalances> = ref<XswapBalances>({});
-  const events: Ref<XswapEvents> = ref({});
+  const balances = ref<XswapBalances>({});
+  const events = ref<XswapEvents>({});
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
@@ -23,11 +18,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     computed(() => getBalances(get(balances), addresses));
   const poolProfit = (addresses: string[]): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events), addresses));
-  const addresses = computed(() =>
-    Object.keys(get(balances)).concat(
-      Object.keys(get(events)).filter(uniqueStrings),
-    ),
-  );
+  const addresses = computed(() => Object.keys(get(balances)).concat(Object.keys(get(events)).filter(uniqueStrings)));
   const pools = computed(() => getPools(get(balances), get(events)));
 
   const fetchBalances = async (refresh = false): Promise<void> => {

@@ -204,16 +204,22 @@ describe('store::balances/aggregated', () => {
       ],
     };
 
-    const totals: BlockchainTotals = { assets: {
-      [Blockchain.BTC.toUpperCase()]: {
-        usdValue: bigNumberify(20),
-        amount: bigNumberify(20),
+    const totals: BlockchainTotals = {
+      assets: {
+        [Blockchain.BTC.toUpperCase()]: {
+          usdValue: bigNumberify(20),
+          amount: bigNumberify(20),
+        },
       },
-    }, liabilities: {} };
+      liabilities: {},
+    };
 
     const { updateAccounts, updateBalances, getBlockchainAccounts, getAccounts } = useBlockchainStore();
 
-    updateAccounts(Blockchain.BTC, convertBtcAccounts(chain => get(chain).toUpperCase(), Blockchain.BTC, accounts));
+    updateAccounts(
+      Blockchain.BTC,
+      convertBtcAccounts(chain => get(chain).toUpperCase(), Blockchain.BTC, accounts),
+    );
     updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
     expect(getBlockchainAccounts(Blockchain.BTC)).toEqual([
@@ -257,9 +263,7 @@ describe('store::balances/aggregated', () => {
         groupId: 'xpub1234#btc',
         label: '123',
         nativeAsset: 'BTC',
-        tags: [
-          'a',
-        ],
+        tags: ['a'],
         usdValue: bigNumberify(0),
       },
       {
@@ -310,9 +314,7 @@ describe('store::balances/aggregated', () => {
         groupId: 'xpub1234#btc',
         label: '123',
         nativeAsset: 'BTC',
-        tags: [
-          'a',
-        ],
+        tags: ['a'],
       },
       {
         chain: Blockchain.BTC,

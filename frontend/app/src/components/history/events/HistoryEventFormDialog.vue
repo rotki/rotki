@@ -18,15 +18,12 @@ const props = withDefaults(
 
 const { editableItem, groupHeader } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, defaultNotes }
-  = useHistoryEventsForm();
+const { openDialog, submitting, closeDialog, trySubmit, defaultNotes } = useHistoryEventsForm();
 
 const { t } = useI18n();
 
-const title: ComputedRef<string> = computed(() =>
-  get(editableItem)
-    ? t('transactions.events.dialog.edit.title')
-    : t('transactions.events.dialog.add.title'),
+const title = computed<string>(() =>
+  get(editableItem) ? t('transactions.events.dialog.edit.title') : t('transactions.events.dialog.add.title'),
 );
 
 watchImmediate(editableItem, (editable) => {

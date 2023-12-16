@@ -5,8 +5,7 @@ const { t } = useI18n();
 
 const name = 'opensea';
 
-const { loading, apiKey, actionStatus, save, confirmDelete }
-  = useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
 
 const key = apiKey(name);
 const status = actionStatus(name);
@@ -33,10 +32,10 @@ const status = actionStatus(name);
       @save="save($event)"
       @delete-key="confirmDelete($event)"
     >
-      <i18n
+      <i18n-t
         tag="div"
         class="text-rui-text-secondary text-body-2"
-        path="external_services.get_api_key"
+        keypath="external_services.get_api_key"
       >
         <template #link>
           <ExternalLink
@@ -46,7 +45,7 @@ const status = actionStatus(name);
             {{ t('common.here') }}
           </ExternalLink>
         </template>
-      </i18n>
+      </i18n-t>
     </ServiceKey>
   </RuiCard>
 </template>

@@ -15,12 +15,7 @@ const selectedPools = ref<string[]>([]);
 
 const store = useUniswapStore();
 
-const {
-  fetchEvents,
-  fetchV2Balances: fetchBalances,
-  uniswapV2Balances: uniswapBalances,
-  uniswapPoolProfit,
-} = store;
+const { fetchEvents, fetchV2Balances: fetchBalances, uniswapV2Balances: uniswapBalances, uniswapPoolProfit } = store;
 
 const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } = storeToRefs(store);
 
@@ -37,22 +32,18 @@ const premium = usePremium();
 
 const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
 
-const balances: ComputedRef<XswapBalance[]> = computed(() => {
+const balances = computed<XswapBalance[]>(() => {
   const addresses = get(selectedAddresses);
   const pools = get(selectedPools);
   const balances = get(uniswapBalances(addresses));
-  return pools.length === 0
-    ? balances
-    : balances.filter(({ address }) => pools.includes(address));
+  return pools.length === 0 ? balances : balances.filter(({ address }) => pools.includes(address));
 });
 
 const poolProfit = computed(() => {
   const addresses = get(selectedAddresses);
   const pools = get(selectedPools);
   const profit = get(uniswapPoolProfit(addresses));
-  return pools.length === 0
-    ? profit
-    : profit.filter(({ poolAddress }) => pools.includes(poolAddress));
+  return pools.length === 0 ? profit : profit.filter(({ poolAddress }) => pools.includes(poolAddress));
 });
 
 const getIdentifier = (item: XswapBalance) => item.address;
@@ -67,11 +58,9 @@ onMounted(async () => {
   await refresh();
 });
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
+const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2',
-    ).toLocaleLowerCase(),
+    title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2').toLocaleLowerCase(),
   }),
 );
 </script>
@@ -89,15 +78,15 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       v-if="!premium"
       #default
     >
-      <i18n
+      <i18n-t
         tag="div"
-        path="uniswap.loading_non_premium"
+        keypath="uniswap.loading_non_premium"
       >
         <ExternalLink
           :text="t('uniswap.premium')"
           premium
         />
-      </i18n>
+      </i18n-t>
     </template>
   </ProgressScreen>
   <TablePageLayout

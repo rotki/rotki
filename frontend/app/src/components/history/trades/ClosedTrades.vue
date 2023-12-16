@@ -4,14 +4,10 @@ import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Writeable } from '@/types';
-import type {
-  Trade,
-  TradeEntry,
-  TradeRequestPayload,
-} from '@/types/history/trade';
+import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/trades';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = withDefaults(
   defineProps<{
@@ -26,17 +22,17 @@ const { t } = useI18n();
 
 const { locationOverview } = toRefs(props);
 
-const hideIgnoredTrades: Ref<boolean> = ref(false);
-const showIgnoredAssets: Ref<boolean> = ref(false);
+const hideIgnoredTrades = ref<boolean>(false);
+const showIgnoredAssets = ref<boolean>(false);
 
 const router = useRouter();
 const route = useRoute();
 
 const mainPage = computed(() => get(locationOverview) === '');
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
   const overview = !get(mainPage);
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<TradeEntry>[] = [
     {
       label: '',
       key: 'ignoredInAccounting',
@@ -130,29 +126,28 @@ const {
   pagination,
   sort,
   fetchData,
-} = usePaginationFilters<
-  Trade,
-  TradeRequestPayload,
-  TradeEntry,
-  Collection<TradeEntry>,
-  Filters,
-  Matcher
->(locationOverview, mainPage, useTradeFilters, fetchTrades, {
-  onUpdateFilters(query) {
-    set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
-    set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
+} = usePaginationFilters<Trade, TradeRequestPayload, TradeEntry, Collection<TradeEntry>, Filters, Matcher>(
+  locationOverview,
+  mainPage,
+  useTradeFilters,
+  fetchTrades,
+  {
+    onUpdateFilters(query) {
+      set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
+      set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
+    },
+    customPageParams: computed<Partial<TradeRequestPayload>>(() => {
+      const params: Writeable<Partial<TradeRequestPayload>> = {};
+      const location = get(locationOverview);
+
+      if (location)
+        params.location = toSnakeCase(location);
+
+      return params;
+    }),
+    extraParams,
   },
-  customPageParams: computed<Partial<TradeRequestPayload>>(() => {
-    const params: Writeable<Partial<TradeRequestPayload>> = {};
-    const location = get(locationOverview);
-
-    if (location)
-      params.location = toSnakeCase(location);
-
-    return params;
-  }),
-  extraParams,
-});
+);
 
 useHistoryAutoRefresh(fetchData);
 
@@ -174,9 +169,7 @@ const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
 function promptForDelete(trade: TradeEntry) {
   const prep = (
-    trade.tradeType === 'buy'
-      ? t('closed_trades.description.with')
-      : t('closed_trades.description.for')
+    trade.tradeType === 'buy' ? t('closed_trades.description.with') : t('closed_trades.description.for')
   ).toLocaleLowerCase();
 
   const base = get(assetSymbol(trade.baseAsset));
@@ -267,7 +260,10 @@ const value = computed({
     return get(selected).map(({ tradeId }: TradeEntry) => tradeId);
   },
   set: (values) => {
-    set(selected, get(trades).data.filter(({ tradeId }: TradeEntry) => values?.includes(tradeId)));
+    set(
+      selected,
+      get(trades).data.filter(({ tradeId }: TradeEntry) => values?.includes(tradeId)),
+    );
   },
 });
 
@@ -365,8 +361,8 @@ watch(loading, async (isLoading, wasLoading) => {
             </div>
           </TableStatusFilter>
           <TableFilter
+            v-model:matches="filters"
             class="min-w-full sm:min-w-[20rem]"
-            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_TRADES"
           />
@@ -406,15 +402,13 @@ watch(loading, async (isLoading, wasLoading) => {
         <template #default="{ data, limit, total, showUpgradeRow }">
           <RuiDataTable
             v-model="value"
-            :expanded.sync="expanded"
+            v-model:expanded="expanded"
+            v-model:sort.external="sort"
+            v-model:pagination.external="pagination"
             :cols="tableHeaders"
             :rows="data"
             :loading="isLoading || loading"
             :loading-text="t('trade_history.loading')"
-            :pagination.sync="pagination"
-            :pagination-modifiers="{ external: true }"
-            :sort.sync="sort"
-            :sort-modifiers="{ external: true }"
             data-cy="closed-trades"
             :item-class="getItemClass"
             row-attr="tradeId"
@@ -433,11 +427,7 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #item.type="{ row }">
-              <BadgeDisplay
-                :color="
-                  row.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'
-                "
-              >
+              <BadgeDisplay :color="row.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'">
                 {{ row.tradeType }}
               </BadgeDisplay>
             </template>
@@ -458,11 +448,7 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #item.description="{ row }">
-              {{
-                row.tradeType === 'buy'
-                  ? t('closed_trades.description.with')
-                  : t('closed_trades.description.for')
-              }}
+              {{ row.tradeType === 'buy' ? t('closed_trades.description.with') : t('closed_trades.description.for') }}
             </template>
             <template #item.rate="{ row }">
               <AmountDisplay

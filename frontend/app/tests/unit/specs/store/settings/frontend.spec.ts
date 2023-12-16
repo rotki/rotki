@@ -1,10 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Theme } from '@rotki/common/lib/settings';
-import {
-  TimeFramePeriod,
-  TimeFramePersist,
-} from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { type Pinia, createPinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -74,21 +71,15 @@ describe('settings:frontend', () => {
             renderAllNftImages: true,
             whitelistedDomainsForNftImages: [],
             dashboardTablesVisibleColumns: {
-              [DashboardTableType.ASSETS]:
-                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.LIABILITIES]:
-                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.NFT]:
-                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.LIQUIDITY_POSITION]:
-                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
             },
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
-            versionUpdateCheckFrequency:
-              Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+            versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
             enableAliasNames: true,
-            blockchainRefreshButtonBehaviour:
-              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+            blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
             shouldRefreshValidatorDailyStats: false,
             savedFilters: {},
           }),
@@ -155,22 +146,15 @@ describe('settings:frontend', () => {
       renderAllNftImages: false,
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
-        [DashboardTableType.ASSETS]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
-        [DashboardTableType.LIABILITIES]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
+        [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+        [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-        [DashboardTableType.LIQUIDITY_POSITION]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-        ],
+        [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
-      blockchainRefreshButtonBehaviour:
-        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
     };
@@ -226,22 +210,14 @@ describe('settings:frontend', () => {
     expect(store.whitelistedDomainsForNftImages).toStrictEqual([]);
     expect(store.dashboardTablesVisibleColumns).toStrictEqual({
       [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-      [DashboardTableType.LIABILITIES]: [
-        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-      ],
+      [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-      [DashboardTableType.LIQUIDITY_POSITION]: [
-        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-      ],
+      [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
     });
-    expect(store.dateInputFormat).toBe(
-      DateFormat.DateMonthYearHourMinuteSecond,
-    );
+    expect(store.dateInputFormat).toBe(DateFormat.DateMonthYearHourMinuteSecond);
     expect(store.versionUpdateCheckFrequency).toBe(24);
     expect(store.enableAliasNames).toBe(true);
-    expect(store.blockchainRefreshButtonBehaviour).toBe(
-      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-    );
+    expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
     expect(store.savedFilters).toMatchObject({});
   });
 });

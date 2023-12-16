@@ -36,38 +36,24 @@ const { t } = useI18n();
 
 const rules = {
   username: {
-    required: helpers.withMessage(
-      t('create_account.credentials.validation.non_empty_username'),
-      required,
-    ),
+    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_username'), required),
     isValidUsername: helpers.withMessage(
       t('create_account.credentials.validation.valid_username'),
       (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
     ),
   },
   password: {
-    required: helpers.withMessage(
-      t('create_account.credentials.validation.non_empty_password'),
-      required,
-    ),
+    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password'), required),
   },
   passwordConfirm: {
-    required: helpers.withMessage(
-      t(
-        'create_account.credentials.validation.non_empty_password_confirmation',
-      ),
-      required,
-    ),
+    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password_confirmation'), required),
     isMatch: helpers.withMessage(
       t('create_account.credentials.validation.password_confirmation_mismatch'),
       sameAs(computed(() => get(form).password)),
     ),
   },
   userPrompted: {
-    required: helpers.withMessage(
-      t('create_account.credentials.validation.check_prompt'),
-      sameAs(true),
-    ),
+    required: helpers.withMessage(t('create_account.credentials.validation.check_prompt'), sameAs(true)),
   },
 };
 

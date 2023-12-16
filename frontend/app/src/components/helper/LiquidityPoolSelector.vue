@@ -6,7 +6,6 @@ const props = withDefaults(
   defineProps<{
     pools: XswapPool[];
     type: LpType;
-    value: string[];
     dense?: boolean;
     noPadding?: boolean;
   }>(),
@@ -16,10 +15,9 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
+const model = defineModel<string[]>({ required: true });
 
-const { value, type } = toRefs(props);
-const input = (value: string[]) => emit('input', value);
+const { type } = toRefs(props);
 
 const { getPoolName } = useLiquidityPosition();
 
@@ -40,7 +38,7 @@ const { t } = useI18n();
     class="[&>div:last-child]:overflow-visible"
   >
     <RuiAutoComplete
-      :value="value"
+      v-model="model"
       :label="t('liquidity_pool_selector.label')"
       :options="pools"
       :dense="dense"
@@ -52,7 +50,6 @@ const { t } = useI18n();
       chips
       hide-selected
       :item-height="44"
-      @input="input($event)"
     >
       <template #selection="{ item }">
         {{ getPoolName(type, item.assets) }}

@@ -92,26 +92,25 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(taskId);
   };
 
-  const isTaskRunning = (
-    type: TaskType,
-    meta: Record<string, any> = {},
-  ) => computed<boolean>(() =>
-    !!find(get(tasks), (item) => {
-      const sameType = item.type === type;
-      const keys = Object.keys(meta);
-      if (keys.length === 0)
-        return sameType;
+  const isTaskRunning = (type: TaskType, meta: Record<string, any> = {}) =>
+    computed<boolean>(
+      () =>
+        !!find(get(tasks), (item) => {
+          const sameType = item.type === type;
+          const keys = Object.keys(meta);
+          if (keys.length === 0)
+            return sameType;
 
-      return (
-        sameType
-        && keys.every(
-          key =>
-          // @ts-expect-error meta key has any type
-            key in item.meta && item.meta[key] === meta[key],
-        )
-      );
-    }),
-  );
+          return (
+            sameType
+            && keys.every(
+              key =>
+                // @ts-expect-error meta key has any type
+                key in item.meta && item.meta[key] === meta[key],
+            )
+          );
+        }),
+    );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(get(tasks), item => item.type === type);
@@ -126,15 +125,8 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const taskList = computed(() => toArray(get(tasks)));
 
-  const addTask = <M extends TaskMeta>(
-    id: number,
-    type: TaskType,
-    meta: M,
-  ): void => {
-    assert(
-      !(id === null || id === undefined),
-      `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`,
-    );
+  const addTask = <M extends TaskMeta>(id: number, type: TaskType, meta: M): void => {
+    assert(!(id === null || id === undefined), `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`);
 
     add({
       id,
@@ -144,10 +136,7 @@ export const useTaskStore = defineStore('tasks', () => {
     });
   };
 
-  const handleResult = (
-    result: TaskActionResult<any>,
-    task: Task<TaskMeta>,
-  ): void => {
+  const handleResult = (result: TaskActionResult<any>, task: Task<TaskMeta>): void => {
     if (task.meta.ignoreResult) {
       remove(task.id);
       return;
@@ -157,9 +146,7 @@ export const useTaskStore = defineStore('tasks', () => {
 
     if (handler)
       handler(result, task.meta);
-      /* c8 ignore next 5 */
-    else
-      logger.warn(`missing handler for ${TaskType[task.type]} with id ${task.id}`);
+    /* c8 ignore next 5 */ else logger.warn(`missing handler for ${TaskType[task.type]} with id ${task.id}`);
 
     remove(task.id);
   };
@@ -204,37 +191,39 @@ export const useTaskStore = defineStore('tasks', () => {
     addTask(id, type, meta);
 
     return new Promise<TaskResponse<R, M>>((resolve, reject) => {
-      registerHandler<R, M>(type, (actionResult, meta) => {
-        unregisterHandler(type, id.toString());
-        const { result, message } = actionResult;
+      registerHandler<R, M>(
+        type,
+        (actionResult, meta) => {
+          unregisterHandler(type, id.toString());
+          const { result, message } = actionResult;
 
-        if (actionResult.error) {
-          reject(actionResult.error);
-        }
-        else if (result === null) {
-          let errorMessage: string;
-          if (message) {
-            if (message === USER_CANCELLED_TASK) {
-              const msg = 'Request cancelled';
-              if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
-                logger.debug(`${msg} -> task_id: ${id}, task_type: ${TaskType[type]}`);
+          if (actionResult.error) {
+            reject(actionResult.error);
+          }
+          else if (result === null) {
+            let errorMessage: string;
+            if (message) {
+              if (message === USER_CANCELLED_TASK) {
+                const msg = 'Request cancelled';
+                if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
+                  logger.debug(`${msg} -> task_id: ${id}, task_type: ${TaskType[type]}`);
 
-              reject(new UserCancelledTaskError(msg));
-              return;
+                reject(new UserCancelledTaskError(msg));
+                return;
+              }
+              errorMessage = message;
+              reject(new Error(errorMessage));
             }
-            errorMessage = message;
-            reject(new Error(errorMessage));
+            else {
+              reject(new BackendCancelledTaskError(`Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`));
+            }
           }
           else {
-            reject(
-              new BackendCancelledTaskError(`Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`),
-            );
+            resolve({ result, meta, message });
           }
-        }
-        else {
-          resolve({ result, meta, message });
-        }
-      }, nonUnique ? id.toString() : undefined);
+        },
+        nonUnique ? id.toString() : undefined,
+      );
     });
   };
 
@@ -242,9 +231,7 @@ export const useTaskStore = defineStore('tasks', () => {
     const lockedTasks = get(locked);
     const pendingTasks = get(tasks);
     return {
-      ready: taskIds.filter(
-        id => !lockedTasks.includes(id) && pendingTasks[id] && pendingTasks[id].id !== null,
-      ),
+      ready: taskIds.filter(id => !lockedTasks.includes(id) && pendingTasks[id] && pendingTasks[id].id !== null),
       unknown: taskIds.filter(id => !lockedTasks.includes(id) && !pendingTasks[id]),
     };
   };
@@ -292,9 +279,7 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(task.id);
   };
 
-  const handleTasks = (
-    ids: number[],
-  ): Promise<PromiseSettledResult<void>[]> => {
+  const handleTasks = (ids: number[]): Promise<PromiseSettledResult<void>[]> => {
     const taskMap = get(tasks);
     return Promise.allSettled(ids.map(id => processTask(taskMap[id])));
   };

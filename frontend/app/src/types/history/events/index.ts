@@ -135,15 +135,9 @@ export const HistoryEvent = EvmHistoryEvent.or(OnlineHistoryEvent)
   .or(EthBlockEvent)
   .or(EthDepositEvent);
 
-export type HistoryEvent =
-  | EvmHistoryEvent
-  | OnlineHistoryEvent
-  | EthWithdrawalEvent
-  | EthBlockEvent
-  | EthDepositEvent;
+export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
 
-export interface HistoryEventRequestPayload
-  extends PaginationRequestPayload<{ timestamp: number }> {
+export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly groupByEventIds: boolean;
@@ -169,20 +163,11 @@ export type EditEvmHistoryEventPayload = Omit<
   eventIdentifier: string | null;
 };
 
-export type NewEvmHistoryEventPayload = Omit<
-  EditEvmHistoryEventPayload,
-  'identifier'
->;
+export type NewEvmHistoryEventPayload = Omit<EditEvmHistoryEventPayload, 'identifier'>;
 
-export type EditOnlineHistoryEventPayload = Omit<
-  OnlineHistoryEvent,
-  'ignoredInAccounting' | 'customized'
->;
+export type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'customized'>;
 
-export type NewOnlineHistoryEventPayload = Omit<
-  EditOnlineHistoryEventPayload,
-  'identifier'
->;
+export type NewOnlineHistoryEventPayload = Omit<EditOnlineHistoryEventPayload, 'identifier'>;
 
 export interface EditEthBlockEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
@@ -196,10 +181,7 @@ export interface EditEthBlockEventPayload {
   eventIdentifier: string | null;
 }
 
-export type NewEthBlockEventPayload = Omit<
-  EditEthBlockEventPayload,
-  'identifier'
->;
+export type NewEthBlockEventPayload = Omit<EditEthBlockEventPayload, 'identifier'>;
 
 export interface EditEthDepositEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_DEPOSIT_EVENT;
@@ -214,10 +196,7 @@ export interface EditEthDepositEventPayload {
   extraData: object | null;
 }
 
-export type NewEthDepositEventPayload = Omit<
-  EditEthDepositEventPayload,
-  'identifier'
->;
+export type NewEthDepositEventPayload = Omit<EditEthDepositEventPayload, 'identifier'>;
 
 export interface EditEthWithdrawalEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
@@ -230,10 +209,7 @@ export interface EditEthWithdrawalEventPayload {
   eventIdentifier: string | null;
 }
 
-export type NewEthWithdrawalEventPayload = Omit<
-  EditEthWithdrawalEventPayload,
-  'identifier'
->;
+export type NewEthWithdrawalEventPayload = Omit<EditEthWithdrawalEventPayload, 'identifier'>;
 
 export type EditHistoryEventPayload =
   | EditEvmHistoryEventPayload
@@ -255,9 +231,7 @@ export enum HistoryEventAccountingRuleStatus {
   PROCESSED = 'processed',
 }
 
-export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(
-  HistoryEventAccountingRuleStatus,
-);
+export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(HistoryEventAccountingRuleStatus);
 
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({
@@ -278,17 +252,13 @@ const HistoryEventEntryWithMeta = z
   })
   .merge(HistoryEventMeta);
 
-export type HistoryEventEntryWithMeta = z.infer<
-  typeof HistoryEventEntryWithMeta
->;
+export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 
 export const HistoryEventsCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(HistoryEventEntryWithMeta),
 });
 
-export type HistoryEventsCollectionResponse = z.infer<
-  typeof HistoryEventsCollectionResponse
->;
+export type HistoryEventsCollectionResponse = z.infer<typeof HistoryEventsCollectionResponse>;
 
 export type HistoryEventEntry = HistoryEvent & HistoryEventMeta;
 
@@ -308,15 +278,11 @@ export const SkippedHistoryEventsSummary = z.object({
   total: z.number(),
 });
 
-export type SkippedHistoryEventsSummary = z.infer<
-  typeof SkippedHistoryEventsSummary
->;
+export type SkippedHistoryEventsSummary = z.infer<typeof SkippedHistoryEventsSummary>;
 
 export const ProcessSkippedHistoryEventsResponse = z.object({
   total: z.number(),
   successful: z.number(),
 });
 
-export type ProcessSkippedHistoryEventsResponse = z.infer<
-  typeof ProcessSkippedHistoryEventsResponse
->;
+export type ProcessSkippedHistoryEventsResponse = z.infer<typeof ProcessSkippedHistoryEventsResponse>;

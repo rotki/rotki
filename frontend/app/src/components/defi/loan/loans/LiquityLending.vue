@@ -11,16 +11,10 @@ const props = defineProps<{
 const { t } = useI18n();
 const { loan } = toRefs(props);
 
-const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
-const collateral: ComputedRef<AssetBalance> = computed(
-  () => get(loan).balance.collateral,
-);
-const ratio: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.collateralizationRatio,
-);
-const liquidationPrice: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.liquidationPrice,
-);
+const debt = computed<AssetBalance>(() => get(loan).balance.debt);
+const collateral = computed<AssetBalance>(() => get(loan).balance.collateral);
+const ratio = computed<BigNumber | null>(() => get(loan).balance.collateralizationRatio);
+const liquidationPrice = computed<BigNumber | null>(() => get(loan).balance.liquidationPrice);
 const premium = usePremium();
 
 const { scrambleIdentifier } = useScramble();

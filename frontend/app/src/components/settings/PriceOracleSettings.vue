@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  PrioritizedListData,
-  type PrioritizedListItemData,
-} from '@/types/settings/prioritized-list-data';
+import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
@@ -17,17 +14,13 @@ import {
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);
 
-const { currentPriceOracles, historicalPriceOracles } = storeToRefs(
-  useGeneralSettingsStore(),
-);
+const { currentPriceOracles, historicalPriceOracles } = storeToRefs(useGeneralSettingsStore());
 
 function resetCurrentPriceOracles() {
   set(currentOracles, get(currentPriceOracles));
 }
 
-const baseAvailableOraclesTyped: Array<
-  PrioritizedListItemData<PrioritizedListId>
-> = [
+const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
@@ -87,11 +80,11 @@ const { t } = useI18n();
         @finished="resetCurrentPriceOracles()"
       >
         <PrioritizedList
-          :value="currentOracles"
+          :model-value="currentOracles"
           :all-items="availableCurrentOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
-          @input="updateImmediate($event)"
+          @update:model-value="updateImmediate($event)"
         >
           <template #title>
             {{ t('price_oracle_settings.latest_prices') }}
@@ -105,11 +98,11 @@ const { t } = useI18n();
         @finished="resetHistoricalPriceOracles(true)"
       >
         <PrioritizedList
-          :value="historicOracles"
+          :model-value="historicOracles"
           :all-items="availableHistoricOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
-          @input="updateImmediate($event)"
+          @update:model-value="updateImmediate($event)"
         >
           <template #title>
             {{ t('price_oracle_settings.historic_prices') }}

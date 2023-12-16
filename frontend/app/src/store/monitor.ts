@@ -4,7 +4,7 @@ const WATCHER = 'watcher';
 const BALANCES = 'balances';
 
 export const useMonitorStore = defineStore('monitor', () => {
-  const monitors: Ref<Record<string, any>> = ref({});
+  const monitors = ref<Record<string, any>>({});
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
@@ -13,9 +13,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { monitor } = useTaskStore();
   const { autoRefresh } = useBalances();
 
-  const { queryPeriod, refreshPeriod } = storeToRefs(
-    useFrontendSettingsStore(),
-  );
+  const { queryPeriod, refreshPeriod } = storeToRefs(useFrontendSettingsStore());
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);

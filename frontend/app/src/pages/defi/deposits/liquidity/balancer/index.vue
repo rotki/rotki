@@ -15,9 +15,11 @@ const isEnabled = computed(() => isModuleEnabled(modules[0]));
 const loading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
 const refreshing = isLoading(Section.DEFI_BALANCER_BALANCES);
 
-const refreshTooltip = computed<string>(() => t('helpers.refresh_header.tooltip', {
-  title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer').toLocaleLowerCase(),
-}));
+const refreshTooltip = computed<string>(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer').toLocaleLowerCase(),
+  }),
+);
 
 async function refresh(ignoreCache: boolean = false) {
   await fetchBalances(ignoreCache);

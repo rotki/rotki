@@ -23,8 +23,7 @@ export class ApiValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ApiValidationError';
-    this.errors
-      = camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
+    this.errors = camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
   }
 
   getValidationErrors(payload: Record<string, any>): ValidationErrors | string {
