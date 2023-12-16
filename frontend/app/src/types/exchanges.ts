@@ -13,7 +13,6 @@ export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 export enum SupportedExchange {
   POLONIEX = 'poloniex',
   KRAKEN = 'kraken',
-  BITTREX = 'bittrex',
   BITMEX = 'bitmex',
   BITPANDA = 'bitpanda',
   BITFINEX = 'bitfinex',
@@ -25,8 +24,6 @@ export enum SupportedExchange {
   BITCOIN_DE = 'bitcoinde',
   ICONOMI = 'iconomi',
   KUCOIN = 'kucoin',
-  FTX = 'ftx',
-  FTXUS = 'ftxus',
   INDEPENDENTRESERVE = 'independentreserve',
   GEMINI = 'gemini',
   OKX = 'okx',
