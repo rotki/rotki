@@ -162,28 +162,28 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
         <div class="md:hidden mb-2">
           <VSelect
             v-model="selectedExchange"
-            outlined
+            variant="outlined"
             :items="usedExchanges"
             hide-details
             :label="t('exchange_balances.select_exchange')"
             class="exchange-balances__content__select"
-            @change="openExchangeDetails()"
+            @update:model-value="openExchangeDetails()"
           >
             <template #selection="{ item }">
               <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
+                :balance="exchangeBalance(item.raw)"
+                :exchange="item.raw"
               />
             </template>
             <template #item="{ item }">
               <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
+                :balance="exchangeBalance(item.raw)"
+                :exchange="item.raw"
               />
             </template>
           </VSelect>
         </div>
-        <div class="hidden md:block w-1/6 border-r border-default">
+        <div class="hidden md:block w-1/6 border-e border-default">
           <RuiTabs
             v-model="selectedTab"
             vertical
@@ -261,14 +261,17 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
         v-else
         class="p-2"
       >
-        <i18n path="exchange_balances.no_connected_exchanges">
+        <i18n-t
+          keypath="exchange_balances.no_connected_exchanges"
+          tag="span"
+        >
           <InternalLink
             :to="Routes.API_KEYS_EXCHANGES"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}
           </InternalLink>
-        </i18n>
+        </i18n-t>
       </div>
     </RuiCard>
   </TablePageLayout>

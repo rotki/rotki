@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import type { DataTableHeader } from 'vuetify';
 import type { Ref } from 'vue';
 import type {
   AccountingRuleConflict,
@@ -10,6 +9,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { ConflictResolution } from '@/types/asset';
 import type { ConflictResolutionStrategy } from '@/types/common';
+import type { DataTableHeader } from '@/types/vuetify';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -215,27 +215,25 @@ async function save() {
         variant="outlined"
         :disabled="!solveAllUsing"
       >
-        <template #default>
-          <RuiButton
-            value="local"
-            @click="solveAllUsing = 'local'"
-          >
-            {{ t('conflict_dialog.keep_local') }}
-          </RuiButton>
-          <RuiButton
-            value="remote"
-            @click="solveAllUsing = 'remote'"
-          >
-            {{ t('conflict_dialog.keep_remote') }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          value="local"
+          @click="solveAllUsing = 'local'"
+        >
+          {{ t('conflict_dialog.keep_local') }}
+        </RuiButton>
+        <RuiButton
+          value="remote"
+          @click="solveAllUsing = 'remote'"
+        >
+          {{ t('conflict_dialog.keep_remote') }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
 
     <div class="text-caption pt-4 pb-1">
-      <i18n
+      <i18n-t
         v-if="!solveAllUsing"
-        path="conflict_dialog.hint"
+        keypath="conflict_dialog.hint"
         tag="span"
       >
         <template #conflicts>
@@ -244,16 +242,16 @@ async function save() {
         <template #remaining>
           <span class="font-medium"> {{ remaining }} </span>
         </template>
-      </i18n>
-      <i18n
+      </i18n-t>
+      <i18n-t
         v-else
-        path="conflict_dialog.resolve_all_hint"
+        keypath="conflict_dialog.resolve_all_hint"
         tag="span"
       >
         <template #source>
           <span class="font-medium">{{ solveAllUsing }}</span>
         </template>
-      </i18n>
+      </i18n-t>
     </div>
 
     <CollectionHandler
@@ -375,7 +373,7 @@ async function save() {
                 </td>
                 <td
                   rowspan="2"
-                  class="border-r border-default"
+                  class="border-e border-default"
                 >
                   <HistoryEventTypeCounterparty
                     v-if="item.localData.counterparty"
@@ -445,14 +443,12 @@ async function save() {
                     class="w-full rounded-b-0"
                     required
                   >
-                    <template #default>
-                      <RuiButton
-                        value="local"
-                        class="w-full"
-                      >
-                        {{ t('conflict_dialog.action.local') }}
-                      </RuiButton>
-                    </template>
+                    <RuiButton
+                      value="local"
+                      class="w-full"
+                    >
+                      {{ t('conflict_dialog.action.local') }}
+                    </RuiButton>
                   </RuiButtonGroup>
                 </td>
               </tr>
@@ -518,14 +514,12 @@ async function save() {
                     class="w-full rounded-t-0"
                     required
                   >
-                    <template #default>
-                      <RuiButton
-                        value="remote"
-                        class="w-full"
-                      >
-                        {{ t('conflict_dialog.action.remote') }}
-                      </RuiButton>
-                    </template>
+                    <RuiButton
+                      value="remote"
+                      class="w-full"
+                    >
+                      {{ t('conflict_dialog.action.remote') }}
+                    </RuiButton>
                   </RuiButtonGroup>
                 </td>
               </tr>

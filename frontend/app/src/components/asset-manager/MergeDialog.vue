@@ -8,9 +8,9 @@ type Errors = Partial<
   Record<'targetIdentifier' | 'sourceIdentifier', string[]>
 >;
 
-const props = defineProps<{ value: boolean }>();
+const props = defineProps<{ modelValue: boolean }>();
 
-const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
 
 const display = useSimpleVModel(props, emit);
 
@@ -92,13 +92,13 @@ async function merge() {
 }
 
 function input(value: boolean) {
-  emit('input', value);
+  emit('update:model-value', value);
   setTimeout(() => reset(), 100);
 }
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     v-model="display"
     max-width="500"
   >
@@ -132,11 +132,11 @@ function input(value: boolean) {
         </div>
         <AssetSelect
           v-model="targetIdentifier"
+          v-model:asset="target"
           outlined
           :error-messages="toMessages(v$.targetIdentifier)"
           :label="t('merge_dialog.target.label')"
           :disabled="pending"
-          :asset.sync="target"
           :excludes="sourceIdentifier ? [sourceIdentifier] : []"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
           persistent-hint
@@ -170,5 +170,5 @@ function input(value: boolean) {
         </RuiButton>
       </template>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>

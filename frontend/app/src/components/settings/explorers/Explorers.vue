@@ -98,30 +98,30 @@ const { t } = useI18n();
       <VSelect
         v-model="selection"
         hide-details
-        outlined
+        variant="outlined"
         :items="supportedExplorers"
         :label="t('explorers.chain_selector')"
-        dense
-        @change="onChange()"
+        density="compact"
+        @update:model-value="onChange()"
       >
         <template #item="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
-            :chain="item"
+            v-if="item.raw !== 'ETC'"
+            :chain="item.raw"
           />
           <AssetDetails
             v-else
-            :asset="item"
+            :asset="item.raw"
           />
         </template>
         <template #selection="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
-            :chain="item"
+            v-if="item.raw !== 'ETC'"
+            :chain="item.raw"
           />
           <AssetDetails
             v-else
-            :asset="item"
+            :asset="item.raw"
           />
         </template>
       </VSelect>

@@ -259,11 +259,11 @@ const withdrawalAddressSuggestions = computed(() =>
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
+      v-model:amount="amount"
+      v-model:usd-value="usdValue"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"
-      :amount.sync="amount"
-      :usd-value.sync="usdValue"
       disable-asset
     />
 
@@ -290,15 +290,15 @@ const withdrawalAddressSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
+    <VExpansionPanels>
+      <VExpansionPanel elevation="0">
+        <VExpansionPanelTitle
           class="p-0"
           data-cy="eth-block-event-form__advance-toggle"
         >
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
+        </VExpansionPanelTitle>
+        <VExpansionPanelText
           class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
         >
           <RuiTextField
@@ -310,7 +310,7 @@ const withdrawalAddressSuggestions = computed(() =>
             :error-messages="toMessages(v$.eventIdentifier)"
             @blur="v$.eventIdentifier.$touch()"
           />
-        </VExpansionPanelContent>
+        </VExpansionPanelText>
       </VExpansionPanel>
     </VExpansionPanels>
   </div>

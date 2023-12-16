@@ -8,20 +8,20 @@ import type {
 } from '@/types/snapshots';
 
 const props = defineProps<{
-  value: LocationDataSnapshot[];
+  modelValue: LocationDataSnapshot[];
   timestamp: number;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:step', step: number): void;
-  (e: 'input', value: LocationDataSnapshot[]): void;
+  (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
 const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
-const { value, timestamp } = toRefs(props);
+const { timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editedIndex = ref<number | null>(null);
 const form = ref<LocationDataSnapshotPayload | null>(null);
@@ -58,13 +58,13 @@ const fiatExchangeRate = computed<BigNumber>(
 );
 
 const data = computed<IndexedLocationDataSnapshot[]>(() =>
-  get(value)
+  props.modelValue
     .map((item, index) => ({ ...item, index }))
     .filter(item => item.location !== 'total'),
 );
 
 function input(value: LocationDataSnapshot[]) {
-  emit('input', value);
+  emit('update:model-value', value);
 }
 
 function updateStep(step: number) {
@@ -86,7 +86,7 @@ function editClick(item: IndexedLocationDataSnapshot) {
 
   set(
     excludedLocations,
-    get(value)
+    props.modelValue
       .map(item => item.location)
       .filter(identifier => identifier !== item.location),
   );
@@ -103,7 +103,7 @@ function add() {
   });
   set(
     excludedLocations,
-    get(value).map(item => item.location),
+    props.modelValue.map(item => item.location),
   );
   setOpenDialog(true);
 }
@@ -124,7 +124,7 @@ async function save() {
     return;
 
   const index = get(editedIndex);
-  const val = get(value);
+  const val = props.modelValue;
   const timestampVal = get(timestamp);
 
   const convertedUsdValue
@@ -162,7 +162,7 @@ function updateForm(newForm: LocationDataSnapshotPayload) {
 }
 
 function confirmDelete(index: number) {
-  const val = get(value);
+  const val = props.modelValue;
 
   if (index === null)
     return;
@@ -174,7 +174,7 @@ function confirmDelete(index: number) {
 }
 
 const total = computed<BigNumber>(() => {
-  const totalEntry = get(value).find(item => item.location === 'total');
+  const totalEntry = props.modelValue.find(item => item.location === 'total');
 
   if (!totalEntry)
     return Zero;

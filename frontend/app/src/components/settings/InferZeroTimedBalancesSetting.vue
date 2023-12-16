@@ -40,9 +40,9 @@ onMounted(() => {
         v-model="inferZeroTimedBalances"
         :label="t('statistics_graph_settings.infer_zero_timed_balances.label')"
         persistent-hint
-        :success-messages="success"
+        :messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
   </div>

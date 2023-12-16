@@ -22,9 +22,9 @@ const { t } = useI18n();
         t('account_settings.csv_export_settings.labels.export_csv_formulas')
       "
       color="primary"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

@@ -4,7 +4,7 @@ import type {
   DataTableColumn,
   DataTableOptions,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { TablePagination } from '@/types/pagination';
 import type { CustomAsset } from '@/types/asset';
 import type {
@@ -28,19 +28,19 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:options', pagination: DataTableOptions): void;
+  (e: 'update:options', pagination: DataTableOptions<CustomAsset>): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<CustomAsset>> = ref({
   column: 'name',
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<CustomAsset>[]>(() => [
   {
     label: t('common.asset'),
     key: 'name',
@@ -65,7 +65,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 
-function updatePagination(options: DataTableOptions) {
+function updatePagination(options: DataTableOptions<CustomAsset>) {
   emit('update:options', options);
 }
 
@@ -111,6 +111,7 @@ function expand(item: CustomAsset) {
       </div>
     </template>
     <RuiDataTable
+      v-model:sort="sort"
       :rows="assets"
       :loading="loading"
       :cols="tableHeaders"
@@ -121,7 +122,6 @@ function expand(item: CustomAsset) {
         total: serverItemLength,
       }"
       :pagination-modifiers="{ external: true }"
-      :sort.sync="sort"
       :sort-modifiers="{ external: true }"
       :sticky-offset="64"
       row-attr="identifier"

@@ -7,7 +7,7 @@ import { ApiValidationError } from '@/types/api/errors';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
-  value: EvmRpcNode;
+  modelValue: EvmRpcNode;
   chain: Blockchain;
   chainName: string;
   isEtherscan: boolean;
@@ -15,12 +15,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: EvmRpcNode): void;
+  (e: 'update:model-value', value: EvmRpcNode): void;
 }>();
 
 const { t } = useI18n();
 
-const { chain, chainName, value, isEtherscan, editMode } = toRefs(props);
+const { chain, chainName, modelValue, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
 function getWeight(value?: string): number {
@@ -70,10 +70,10 @@ function updateState(selectedNode: EvmRpcNode): void {
 }
 
 onMounted(() => {
-  updateState(get(value));
+  updateState(get(modelValue));
 });
 
-watch(value, (node) => {
+watch(modelValue, (node) => {
   if (node === get(state))
     return;
 
@@ -81,7 +81,7 @@ watch(value, (node) => {
 });
 
 watch(state, (state) => {
-  emit('input', state);
+  emit('update:model-value', state);
 });
 
 const api = useEvmNodesApi(get(chain));
@@ -90,7 +90,7 @@ const { setMessage } = useMessageStore();
 async function save() {
   const editing = get(editMode);
   try {
-    const node = get(value);
+    const node = get(modelValue);
     if (editing)
       return await api.editEvmNode(node);
 
@@ -108,7 +108,7 @@ async function save() {
       set(errorMessages, messages);
 
       const keys = Object.keys(messages);
-      const knownKeys = Object.keys(get(value));
+      const knownKeys = Object.keys(get(modelValue));
       const unknownKeys = keys.filter(key => !knownKeys.includes(key));
 
       if (unknownKeys.length > 0) {
@@ -161,7 +161,7 @@ setSubmitFunc(save);
 
     <div class="flex items-center gap-4">
       <VSlider
-        :value="state.weight"
+        :model-value="state.weight"
         :disabled="state.owned"
         :error-messages="toMessages(v$.weight)"
         :label="t('rpc_node_form.weight')"
@@ -171,7 +171,7 @@ setSubmitFunc(save);
         :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
         step="1"
         thumb-label
-        @change="state.weight = $event"
+        @end="state.weight = $event"
         @blur="v$.weight.$touch()"
       />
       <AmountInput

@@ -9,17 +9,17 @@ import type {
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
-  value: LocationDataSnapshot[];
+  modelValue: LocationDataSnapshot[];
   timestamp: number;
   balancesSnapshot: BalanceSnapshot[];
 }>();
 
 const emit = defineEmits<{
   (e: 'update:step', step: number): void;
-  (e: 'input', value: LocationDataSnapshot[]): void;
+  (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
-const { value, balancesSnapshot } = toRefs(props);
+const { balancesSnapshot } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const total = ref<string>('');
@@ -42,7 +42,7 @@ const assetTotal = computed<BigNumber>(() => {
 });
 
 const locationTotal = computed<BigNumber>(() => {
-  const numbers = get(value).map((item: LocationDataSnapshot) => {
+  const numbers = props.modelValue.map((item: LocationDataSnapshot) => {
     if (item.location === 'total')
       return Zero;
 
@@ -97,7 +97,7 @@ const suggestions = computed(() => {
 });
 
 onBeforeMount(() => {
-  const totalEntry = get(value).find(item => item.location === 'total');
+  const totalEntry = props.modelValue.find(item => item.location === 'total');
 
   if (totalEntry) {
     const convertedFiatValue
@@ -110,7 +110,7 @@ onBeforeMount(() => {
 });
 
 function input(value: LocationDataSnapshot[]) {
-  emit('input', value);
+  emit('update:model-value', value);
 }
 
 function updateStep(step: number) {
@@ -130,7 +130,7 @@ function setTotal(number?: BigNumber) {
 const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
 
 async function save() {
-  const val = get(value);
+  const val = props.modelValue;
   const index = val.findIndex(item => item.location === 'total')!;
 
   const newValue = [...val];
@@ -165,7 +165,7 @@ const suggestionsLabel = computed(() => ({
     length: get(balancesSnapshot).length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
-    length: get(value).length,
+    length: props.modelValue.length,
   }),
 }));
 </script>
@@ -184,14 +184,14 @@ const suggestionsLabel = computed(() => ({
         />
 
         <div class="text-rui-text-secondary text-caption">
-          <i18n path="dashboard.snapshot.edit.dialog.total.warning">
+          <i18n-t keypath="dashboard.snapshot.edit.dialog.total.warning">
             <template #amount>
               <AmountDisplay
                 :value="nftsExcludedTotal"
                 fiat-currency="USD"
               />
             </template>
-          </i18n>
+          </i18n-t>
         </div>
       </div>
       <div>

@@ -1,6 +1,6 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import flushPromises from 'flush-promises';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
@@ -14,18 +14,23 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
 }));
 
 describe('moduleSelector.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof ModuleSelector>>;
   let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
   let pinia: Pinia;
   let api: ReturnType<typeof useSettingsApi>;
 
   const createWrapper = () => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     return mount(ModuleSelector, {
-      pinia,
-      vuetify,
-      stubs: ['card'],
-      provide: libraryDefaults,
+      global: {
+        stubs: ['card'],
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        provide: libraryDefaults,
+      },
+
     });
   };
 
@@ -43,7 +48,7 @@ describe('moduleSelector.vue', () => {
 
   it('displays active modules', async () => {
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes(),
+      wrapper.find('[data-cy=aave-module-switch] input').element.value,
     ).toHaveProperty('aria-checked', 'true');
   });
 
@@ -58,7 +63,7 @@ describe('moduleSelector.vue', () => {
       wrapper.find('[data-cy=aave-module-switch]').attributes(),
     ).toHaveProperty('aria-checked', 'true');
     await wrapper.find('[data-cy=aave-module-switch]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
     expect(
       wrapper.find('[data-cy=aave-module-switch]').attributes(),

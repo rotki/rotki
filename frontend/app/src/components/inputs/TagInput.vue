@@ -3,7 +3,7 @@ import type { Tag } from '@/types/tags';
 
 const props = withDefaults(
   defineProps<{
-    value: string[];
+    modelValue: string[];
     disabled?: boolean;
     label?: string;
     outlined?: boolean;
@@ -15,11 +15,10 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', tags: string[]): void;
+  (e: 'update:model-value', tags: string[]): void;
 }>();
 
 const { t } = useI18n();
-const { value } = toRefs(props);
 const store = useTagStore();
 const { tags } = storeToRefs(store);
 
@@ -55,7 +54,7 @@ async function createTag(name: string) {
 }
 
 function remove(tag: string) {
-  const tags = get(value);
+  const tags = props.modelValue;
   const index = tags.indexOf(tag);
   input([...tags.slice(0, index), ...tags.slice(index + 1)]);
 }
@@ -84,7 +83,7 @@ function input(_value: (string | Tag)[]) {
     }
   }
 
-  emit('input', tags);
+  emit('update:model-value', tags);
 }
 
 watch(search, (keyword: string | null, previous: string | null) => {
@@ -101,12 +100,12 @@ const newTagForeground = computed<string>(
 );
 
 const filteredValue = computed<Tag[]>(() =>
-  get(tags).filter(({ name }) => get(value).includes(name)),
+  get(tags).filter(({ name }) => props.modelValue.includes(name)),
 );
 
 watch(tags, () => {
   const filtered = get(filteredValue);
-  if (get(value).length > filtered.length)
+  if (props.modelValue.length > filtered.length)
     input(filtered);
 });
 </script>
@@ -114,7 +113,8 @@ watch(tags, () => {
 <template>
   <div>
     <VCombobox
-      :value="filteredValue"
+      v-model:search-input="search"
+      :model-value="filteredValue"
       :disabled="disabled"
       :items="tags"
       class="tag-input"
@@ -122,13 +122,12 @@ watch(tags, () => {
       :hide-no-data="!search"
       hide-selected
       :label="label"
-      :outlined="outlined"
-      :search-input.sync="search"
-      item-text="name"
+      variant="outlined"
+      item-title="name"
       :menu-props="{ closeOnContentClick: true }"
       item-value="name"
       multiple
-      @input="input($event)"
+      @update:model-value="input($event)"
     >
       <template #no-data>
         <ListItem class="p-2">
@@ -146,18 +145,18 @@ watch(tags, () => {
           </template>
         </ListItem>
       </template>
-      <template #selection="{ item, select }">
+      <template #selection="{ item }">
         <RuiChip
           tile
           class="font-medium m-0.5"
-          :bg-color="`#${item.backgroundColor}`"
-          :text-color="`#${item.foregroundColor}`"
+          :bg-color="`#${item.raw.backgroundColor}`"
+          :text-color="`#${item.raw.foregroundColor}`"
           closeable
           size="sm"
-          @click:close="remove(item.name)"
-          @click="select($event)"
+          @click:close="remove(item.raw.name)"
+          @click="input([...modelValue, item.raw.name])"
         >
-          {{ item.name }}
+          {{ item.raw.name }}
         </RuiChip>
       </template>
       <template #item="{ item }">
@@ -166,14 +165,14 @@ watch(tags, () => {
         </template>
         <template v-else>
           <div>
-            <TagIcon :tag="item" />
+            <TagIcon :tag="item.raw" />
             <span class="pl-4">
-              {{ item.description }}
+              {{ item.raw.description }}
             </span>
           </div>
         </template>
       </template>
-      <template #append-outer>
+      <template #append>
         <RuiButton
           class="tag-input__manage-tags -mt-4"
           icon
@@ -187,18 +186,17 @@ watch(tags, () => {
         </RuiButton>
       </template>
     </VCombobox>
-    <VDialog
-      :value="manageTags"
+    <RuiDialog
+      v-model="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
       content-class="h-full"
-      @input="manageTags = false"
     >
       <TagManager
         v-if="manageTags"
         dialog
         @close="manageTags = false"
       />
-    </VDialog>
+    </RuiDialog>
   </div>
 </template>

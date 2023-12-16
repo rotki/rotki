@@ -1,3 +1,3 @@
-import type { DataTableHeader } from 'vuetify';
+type DataTableHeader = Record<string, any>;
 
 export { type DataTableHeader };

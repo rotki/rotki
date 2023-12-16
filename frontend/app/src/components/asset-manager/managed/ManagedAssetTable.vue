@@ -11,7 +11,7 @@ import type {
   DataTableColumn,
   DataTableOptions,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { TablePagination } from '@/types/pagination';
 import type { SupportedAsset } from '@rotki/common/lib/data';
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:options', options: DataTableOptions): void;
+  (e: 'update:options', options: DataTableOptions<SupportedAsset>): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:selected', selectedAssets: string[]): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
@@ -58,12 +58,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<SupportedAsset>> = ref({
   column: 'symbol',
   direction: 'asc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
     label: t('common.asset'),
     key: 'symbol',
@@ -105,7 +105,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-function updatePagination(options: DataTableOptions) {
+function updatePagination(options: DataTableOptions<SupportedAsset>) {
   return emit('update:options', options);
 }
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
@@ -128,7 +128,7 @@ const disabledIgnoreActions = computed(() => {
   });
 });
 
-const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
+const formatType = (string?: string | null) => toSentenceCase(string ?? 'EVM token');
 
 function getAsset(item: SupportedAsset) {
   const name
@@ -274,6 +274,7 @@ function expand(item: SupportedAsset) {
     </div>
 
     <RuiDataTable
+      v-model:sort="sort"
       :value="selected"
       :rows="tokens"
       :loading="loading"
@@ -285,7 +286,6 @@ function expand(item: SupportedAsset) {
         total: serverItemLength,
       }"
       :pagination-modifiers="{ external: true }"
-      :sort.sync="sort"
       :sort-modifiers="{ external: true }"
       :sticky-offset="64"
       row-attr="identifier"
@@ -307,7 +307,7 @@ function expand(item: SupportedAsset) {
         <HashLink
           v-if="row.address"
           :text="row.address"
-          :chain="getChain(row.evmChain)"
+          :chain="row.evmChain ? getChain(row.evmChain) : undefined"
           hide-alias-name
         />
       </template>
@@ -336,8 +336,8 @@ function expand(item: SupportedAsset) {
                 :disabled="
                   isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
                 "
-                :input-value="isAssetIgnored(row.identifier)"
-                @change="toggleIgnoreAsset(row.identifier)"
+                :model-value="isAssetIgnored(row.identifier)"
+                @update:model-value="toggleIgnoreAsset(row.identifier)"
               />
             </template>
             {{

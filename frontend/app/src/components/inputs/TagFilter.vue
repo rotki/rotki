@@ -3,7 +3,7 @@ import type { Tag } from '@/types/tags';
 
 const props = withDefaults(
   defineProps<{
-    value: string[];
+    modelValue: string[];
     disabled?: boolean;
     hideDetails?: boolean;
   }>(),
@@ -13,8 +13,9 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', tags: string[]): void }>();
-const { value } = toRefs(props);
+const emit = defineEmits<{ (e: 'update:model-value', tags: string[]): void }>();
+
+const model = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
 
@@ -25,58 +26,53 @@ const availableTagsList = computed<Tag[]>(() => {
   return Object.values(tags);
 });
 
-function input(tags: string[]) {
-  emit('input', tags);
-}
-
 function remove(tag: string) {
-  const tags = get(value);
+  const tags = get(model);
   const index = tags.indexOf(tag);
-  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+  set(model, [...tags.slice(0, index), ...tags.slice(index + 1)]);
 }
 </script>
 
 <template>
   <VAutocomplete
-    :value="value"
+    v-model="model"
     :disabled="disabled"
     :items="availableTagsList"
     class="tag-filter"
     small-chips
     :label="t('tag_filter.label')"
     prepend-inner-icon="mdi-magnify"
-    item-text="name"
+    item-title="name"
     :menu-props="{ closeOnContentClick: true }"
-    outlined
-    dense
+    variant="outlined"
+    density="compact"
     item-value="name"
     multiple
     clearable
     :hide-details="hideDetails"
-    @input="input($event)"
-    @click:clear="input([])"
+    @click:clear="model = []"
   >
-    <template #selection="{ item, select }">
+    <template #selection="{ item }">
       <RuiChip
         tile
         size="sm"
         class="font-medium m-0.5"
-        :bg-color="`#${item.backgroundColor}`"
-        :text-color="`#${item.foregroundColor}`"
+        :bg-color="`#${item.raw.backgroundColor}`"
+        :text-color="`#${item.raw.foregroundColor}`"
         closeable
-        @click:close="remove(item.name)"
-        @click="select($event)"
+        @click:close="remove(item.raw.name)"
+        @click="model = [...model, item.raw.name]"
       >
-        {{ item.name }}
+        {{ item.raw.name }}
       </RuiChip>
     </template>
     <template #item="{ item }">
       <TagIcon
-        :tag="item"
+        :tag="item.raw"
         small
       />
       <span class="tag-input__tag__description ml-4">
-        {{ item.description }}
+        {{ item.raw.description }}
       </span>
     </template>
   </VAutocomplete>

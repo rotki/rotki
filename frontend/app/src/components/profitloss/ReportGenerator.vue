@@ -90,9 +90,9 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
         <div class="">
           <VMenu
             offset-y
-            left
+            location="left"
           >
-            <template #activator="{ on }">
+            <template #activator="{ props }">
               <RuiTooltip
                 :open-delay="400"
                 :popper="{ placement: 'top' }"
@@ -102,7 +102,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 <template #activator>
                   <RuiButton
                     size="lg"
-                    v-on="on"
+                    v-bind="props"
                   >
                     <template #prepend>
                       <RuiIcon name="bug-line" />

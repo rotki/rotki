@@ -7,7 +7,7 @@ import type { BigNumber } from '@rotki/common';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type {
@@ -30,7 +30,7 @@ const { fetchNonFungibleBalances, refreshNonFungibleBalances }
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<NonFungibleBalanceWithLastPrice>> = ref({
   column: 'lastPrice',
   direction: 'desc' as const,
 });
@@ -59,10 +59,12 @@ const {
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<
+  DataTableColumn<NonFungibleBalanceWithLastPrice>[]
+>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
 
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<NonFungibleBalanceWithLastPrice>[] = [
     {
       label: t('common.name'),
       key: 'name',
@@ -168,13 +170,13 @@ watch(loading, async (isLoading, wasLoading) => {
         max-width="250px"
         nudge-bottom="20"
         offset-y
-        left
+        location="left"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="nft_balance_table__column-filter__button"
-            v-on="on"
+            v-bind="props"
           >
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
@@ -198,10 +200,10 @@ watch(loading, async (isLoading, wasLoading) => {
     >
       <template #default="{ data, itemLength }">
         <RuiDataTable
+          v-model:sort="sort"
           :cols="tableHeaders"
           :rows="data"
           :loading="isLoading"
-          :sort.sync="sort"
           :pagination="{
             limit: options.itemsPerPage,
             page: options.page,

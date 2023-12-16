@@ -1,4 +1,4 @@
-import { ThemeMode, useRotkiTheme } from '@rotki/ui-library-compat';
+import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 import type { ThemeColors } from '@rotki/common/lib/settings';
 

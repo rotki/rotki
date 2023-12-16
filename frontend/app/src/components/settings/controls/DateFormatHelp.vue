@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 
-const props = defineProps<{ value: boolean }>();
+const props = defineProps<{ modelValue: boolean }>();
 
-const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
 
 const display = useSimpleVModel(props, emit);
 
@@ -50,8 +50,8 @@ function description(directive: string): string {
 </script>
 
 <template>
-  <VDialog
-    v-if="value"
+  <RuiDialog
+    v-if="modelValue"
     v-model="display"
     max-width="500"
   >
@@ -95,7 +95,7 @@ function description(directive: string): string {
         </RuiButton>
       </template>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>
 
 <style scoped lang="scss">

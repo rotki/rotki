@@ -3,21 +3,22 @@ import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounti
 
 const props = defineProps<{
   identifier: string;
-  value: AccountingRuleWithLinkedProperty;
+  modelValue: AccountingRuleWithLinkedProperty;
   label: string;
   hint: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: AccountingRuleWithLinkedProperty): void;
+  (e: 'update:model-value', value: AccountingRuleWithLinkedProperty): void;
 }>();
 
-const { identifier, value } = toRefs(props);
-
+const { identifier } = toRefs(props);
 const { t } = useI18n();
 
-function input(newValue: AccountingRuleWithLinkedProperty) {
-  emit('input', newValue);
+const value = useSimplePropVModel(props, 'value', emit);
+
+function updateModelValue(newValue: AccountingRuleWithLinkedProperty) {
+  emit('update:model-value', newValue);
 }
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
@@ -26,18 +27,18 @@ const linkableSettingOptions = accountingRuleLinkedMappingData(identifier);
 
 const linkedModel = computed({
   get() {
-    return !!get(value).linkedSetting;
+    return !!props.modelValue.linkedSetting;
   },
   set(newValue: boolean) {
     if (newValue) {
-      input({
-        value: get(value).value,
+      updateModelValue({
+        value: props.modelValue.value,
         linkedSetting: get(linkableSettingOptions)[0]?.identifier || '',
       });
     }
     else {
-      input({
-        value: get(value).value,
+      updateModelValue({
+        value: props.modelValue.value,
       });
     }
   },
@@ -45,18 +46,18 @@ const linkedModel = computed({
 
 const linkedSettingModel = computed({
   get() {
-    return get(value).linkedSetting;
+    return props.modelValue.linkedSetting;
   },
   set(newLinkedSetting: string | undefined) {
-    input({
-      value: get(value).value,
+    updateModelValue({
+      value: props.modelValue.value,
       ...(newLinkedSetting ? { linkedSetting: newLinkedSetting } : {}),
     });
   },
 });
 
 const linkedPropertyValue = computed(() => {
-  const property = get(value).linkedSetting;
+  const property = props.modelValue.linkedSetting;
   if (!property)
     return null;
 
@@ -77,7 +78,7 @@ const elemID = computed(() => `${get(identifier)}-switch`);
   <div class="flex gap-2 py-4">
     <VSwitch
       :id="elemID"
-      v-model="value.value"
+      v-model="value"
       :disabled="linkedModel"
     />
     <div class="w-full">
@@ -108,11 +109,11 @@ const elemID = computed(() => `${get(identifier)}-switch`);
       >
         <VAutocomplete
           v-model="linkedSettingModel"
-          outlined
+          variant="outlined"
           hide-details
-          dense
+          density="compact"
           item-value="identifier"
-          item-text="label"
+          item-title="label"
           :items="linkableSettingOptions"
         />
         <div

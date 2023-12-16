@@ -11,7 +11,7 @@ import type {
   DataTableColumn,
   DataTableSortData,
   TablePaginationData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { Nullable } from '@/types';
 import type { DashboardTableType } from '@/types/settings/frontend-settings';
@@ -34,7 +34,7 @@ const search = ref('');
 
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<AssetBalanceWithPrice>> = ref({
   column: 'usdValue',
   direction: 'desc' as const,
 });
@@ -79,9 +79,11 @@ const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore(),
 );
 
-const sortItems = getSortItems(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithPrice>(asset =>
+  get(assetInfo(asset)),
+);
 
-const filtered = computed(() => {
+const filtered = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = get(balances).filter(assetFilter);
   if (!Array.isArray(sortBy) && sortBy?.column) {
@@ -94,10 +96,10 @@ const filtered = computed(() => {
   return data;
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
     {
       label: t('common.asset'),
       key: 'asset',
@@ -214,13 +216,13 @@ watch(search, () => setPage(1));
         max-width="250px"
         nudge-bottom="20"
         offset-y
-        left
+        location="left"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="dashboard-asset-table__column-filter__button"
-            v-on="on"
+            v-bind="props"
           >
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
@@ -240,11 +242,11 @@ watch(search, () => setPage(1));
       />
     </template>
     <RuiDataTable
+      v-model:sort="sort"
       data-cy="dashboard-asset-table__balances"
       :cols="tableHeaders"
       :rows="filtered"
       :loading="loading"
-      :sort.sync="sort"
       :sort-modifiers="{ external: true }"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
@@ -303,7 +305,7 @@ watch(search, () => setPage(1));
           :asset-padding="0.1"
         />
       </template>
-      <template #no-results>
+      <template #no-data>
         <span class="text-rui-text-secondary">
           {{
             t('dashboard_asset_table.no_search_result', {

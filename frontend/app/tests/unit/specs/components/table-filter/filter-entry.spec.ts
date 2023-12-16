@@ -1,22 +1,20 @@
-import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { type VueWrapper, mount } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import type { SearchMatcher } from '@/types/filtering';
 
-vi.mocked(useCssModule).mockReturnValue({
-  selected: 'selected',
-});
-
 describe('table-filter/FilterEntry.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof FilterEntry>>;
   const createWrapper = (props: {
     matcher: SearchMatcher<any>;
     active: boolean;
   }) => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     return mount(FilterEntry, {
-      vuetify,
-      propsData: {
+      global: {
+        plugins: [vuetify],
+      },
+      props: {
         ...props,
       },
     });
@@ -33,13 +31,13 @@ describe('table-filter/FilterEntry.vue', () => {
   it('common case', () => {
     wrapper = createWrapper({ matcher, active: false });
     expect(wrapper.find('button').text()).toBe(
-      `${matcher.key}:  ${matcher.description}`,
+      `${matcher.key}: ${matcher.description}`,
     );
-    expect(wrapper.find('.selected').exists()).toBeFalsy();
+    expect(wrapper.classes()).not.toMatch(/_selected_/);
   });
 
   it('active = true', () => {
     wrapper = createWrapper({ matcher, active: true });
-    expect(wrapper.find('.selected').exists()).toBeTruthy();
+    expect(wrapper.classes()).toMatch(/_selected_/);
   });
 });

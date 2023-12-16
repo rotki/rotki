@@ -33,7 +33,7 @@ function getSuccessMessage(enabled: boolean) {
     <VSwitch
       v-model="ethStakingTaxableAfterWithdrawalEnabled"
       class="accounting-settings__eth-staking-taxable-after-withdrawal"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
       :label="
         t(
@@ -41,7 +41,7 @@ function getSuccessMessage(enabled: boolean) {
         )
       "
       color="primary"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

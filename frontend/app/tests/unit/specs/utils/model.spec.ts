@@ -4,7 +4,7 @@ describe('model utilities', () => {
   describe('useSimplePropVModel', () => {
     it('setting the value updates emits the proper event and updates the proper value property', () => {
       const props = {
-        value: {
+        modelValue: {
           counter: 1,
           name: 'test',
         },
@@ -14,7 +14,7 @@ describe('model utilities', () => {
       expect(get(model)).toBe(1);
       set(model, 12);
 
-      expect(emit).toHaveBeenCalledWith('input', {
+      expect(emit).toHaveBeenCalledWith('update:model-value', {
         counter: 12,
         name: 'test',
       });
@@ -61,7 +61,7 @@ describe('model utilities', () => {
 
   it('useVModel wrapper emits the proper event', () => {
     const props = {
-      value: 'name',
+      modelValue: 'name',
     };
 
     const emit = vi.fn();
@@ -69,7 +69,7 @@ describe('model utilities', () => {
     expect(get(model)).toBe('name');
     set(model, 'test');
 
-    expect(emit).toHaveBeenCalledWith('input', 'test');
+    expect(emit).toHaveBeenCalledWith('update:model-value', 'test');
   });
 
   it('useKebabVModel emits kebab-case events', () => {

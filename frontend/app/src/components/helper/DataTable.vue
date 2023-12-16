@@ -31,12 +31,12 @@ const props = withDefaults(
     items: any[];
     headers: DataTableHeader[];
     expanded?: any[];
-    itemClass?: string | (() => string);
+    itemClass?: string | ((...args: any) => string);
     hideDefaultFooter?: boolean;
     container?: HTMLDivElement | null;
     loading?: boolean;
     loadingText?: string;
-    options?: TablePagination<any> | null;
+    options?: TablePagination<any>;
     disableFloatingHeader?: boolean;
     disableHeaderPagination?: boolean;
     customGroup?:
@@ -58,7 +58,7 @@ const props = withDefaults(
     container: null,
     loading: false,
     loadingText: '',
-    options: () => null,
+    options: undefined,
     disableFloatingHeader: false,
     disableHeaderPagination: false,
     customGroup: undefined,
@@ -66,9 +66,6 @@ const props = withDefaults(
   },
 );
 
-const { t } = useI18n();
-
-const rootAttrs = useAttrs();
 const frontendSettingsStore = useFrontendSettingsStore();
 const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
   frontendSettingsStore,
@@ -124,24 +121,6 @@ function scrollToTop() {
   }, 10);
 }
 
-function pageSelectorData(props: {
-  pageStart: number;
-  pageStop: number;
-  itemsLength: number;
-}) {
-  const itemsLength = props.itemsLength;
-  const perPage = get(itemsPerPageUsed);
-  const totalPage = Math.ceil(itemsLength / perPage);
-
-  return new Array(totalPage).fill(0).map((item, index) => ({
-    value: index + 1,
-    text: `${index * perPage + 1} - ${Math.min(
-      (index + 1) * perPage,
-      itemsLength,
-    )}`,
-  }));
-}
-
 onMounted(() => {
   const optionsVal = get(options);
   if (!optionsVal)
@@ -179,116 +158,37 @@ const { dark } = useTheme();
   <div>
     <VDataTable
       ref="tableRef"
+      v-bind="$attrs"
+      v-model:page="currentPage"
       :class="{
         outlined: !flat,
       }"
-      v-bind="rootAttrs"
       :must-sort="mustSort"
       :multi-sort="multiSort"
-      :sort-desc="sortDesc"
       :items="items"
-      :item-class="itemClass"
+      :row-props="{
+        class: itemClass,
+      }"
       :headers="headers"
       :expanded="expanded"
       :footer-props="footerProps"
-      :page.sync="currentPage"
       :items-per-page="itemsPerPageUsed"
       :hide-default-footer="hideDefaultFooter"
       :loading="loading"
       :loading-text="loadingText"
       :options="options"
       :custom-group="customGroup"
-      v-on="
-        // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-        $listeners
-      "
       @update:items-per-page="onItemsPerPageChange($event)"
       @update:page="scrollToTop()"
     >
-      <!-- Pass on all scoped slots -->
       <template
-        v-for="slot in Object.keys($scopedSlots)"
-        :slot="slot"
-        slot-scope="scope"
+        v-for="(_, name) in $slots"
+        #[name]="slotData"
       >
         <slot
-          :name="slot"
-          v-bind="
-            // @ts-ignore
-            scope
-          "
+          v-bind="slotData"
+          :name="name"
         />
-      </template>
-
-      <!-- Pass on all named slots -->
-      <slot
-        v-for="slot in Object.keys($slots)"
-        :slot="slot"
-        :name="slot"
-      />
-
-      <template #footer.page-text="footerPageTextProps">
-        <div class="flex items-center items-page-select">
-          <span>{{ t('data_table.items_no') }}</span>
-          <VSelect
-            v-if="footerPageTextProps.itemsLength > 0"
-            v-model="currentPage"
-            auto
-            hide-details
-            :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
-            :items="pageSelectorData(footerPageTextProps)"
-            item-value="value"
-            item-text="text"
-          />
-          <span
-            v-else
-            class="mr-1"
-          >
-            {{ footerPageTextProps.itemsLength }}
-          </span>
-          <span>
-            {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
-          </span>
-        </div>
-      </template>
-
-      <template
-        v-if="!hideDefaultFooter && !disableHeaderPagination"
-        #top="{ pagination, options: opt, updateOptions }"
-      >
-        <VDataFooter
-          class="!border-t-0 border-b"
-          v-bind="footerProps"
-          :pagination="pagination"
-          :options="opt"
-          @update:options="updateOptions($event)"
-        >
-          <template #page-text="footerPageTextProps">
-            <div class="flex items-center items-page-select">
-              <span>{{ t('data_table.items_no') }}</span>
-              <VSelect
-                v-if="footerPageTextProps.itemsLength > 0"
-                v-model="currentPage"
-                auto
-                hide-details
-                :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
-                :items="pageSelectorData(footerPageTextProps)"
-                item-value="value"
-                item-text="text"
-              />
-              <span
-                v-else
-                class="mr-1"
-              >
-                {{ footerPageTextProps.itemsLength }}
-              </span>
-              <span>
-                {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
-              </span>
-            </div>
-          </template>
-        </VDataFooter>
-        <RuiDivider />
       </template>
     </VDataTable>
     <div

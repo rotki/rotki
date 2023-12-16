@@ -52,10 +52,11 @@ watch([enabled, multiplier], setData);
       :close-on-content-click="false"
       content-class="privacy-mode-dropdown__menu"
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
+          v-bind="props"
           @click="togglePrivacyMode()"
         >
           <RuiBadge
@@ -76,7 +77,6 @@ watch([enabled, multiplier], setData);
           icon
           variant="text"
           size="sm"
-          v-on="on"
         >
           <RuiIcon
             size="16"
@@ -90,17 +90,17 @@ watch([enabled, multiplier], setData);
           :style="sliderWrapperStyle"
         >
           <VSlider
-            :value="privacyMode"
+            :model-value="privacyMode"
             data-cy="privacy-mode-dropdown__input"
             :class="`selected-${privacyMode}`"
-            :tick-labels="tickLabels"
+            :ticks="tickLabels"
             :step="1"
             :max="2"
             :min="0"
-            ticks="always"
+            show-ticks
             :tick-size="4"
-            vertical
-            @change="changePrivacyMode($event)"
+            direction="vertical"
+            @end="changePrivacyMode($event)"
           />
         </div>
         <div class="scrambler flex items-center border-t border-default pt-4">

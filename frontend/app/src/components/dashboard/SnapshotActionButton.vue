@@ -90,17 +90,17 @@ async function importSnapshot() {
   <VMenu
     id="snapshot-action-menu"
     v-model="visible"
-    left
+    location="left"
     transition="slide-y-transition"
     :close-on-content-click="false"
     z-index="215"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <MenuTooltipButton
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
         :variant="!dark ? 'default' : 'text'"
         size="sm"
-        v-on="on"
+        v-bind="props"
       >
         <slot name="button-icon">
           <RuiIcon name="screenshot-2-line" />

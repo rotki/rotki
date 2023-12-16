@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
-
 withDefaults(
   defineProps<{
     visible: boolean;
@@ -18,38 +16,36 @@ withDefaults(
 </script>
 
 <template>
-  <Fragment>
-    <td
-      v-if="offset > 0"
-      class="table-expand-container table-expand-container__offset"
-      :colspan="offset"
-      :class="offsetClassName"
-    >
-      <slot name="offset" />
-    </td>
-    <td
-      v-if="visible"
-      class="table-expand-container"
-      :colspan="colspan"
-    >
-      <div class="py-4">
-        <div
-          v-if="$scopedSlots.title"
-          class="text-h6 mb-4"
-        >
-          <slot name="title" />
-        </div>
-        <template v-if="$scopedSlots.default">
-          <RuiCard :no-padding="noPadding">
-            <slot />
-          </RuiCard>
-        </template>
-        <div>
-          <slot name="append" />
-        </div>
+  <td
+    v-if="offset > 0"
+    class="table-expand-container table-expand-container__offset"
+    :colspan="offset"
+    :class="offsetClassName"
+  >
+    <slot name="offset" />
+  </td>
+  <td
+    v-if="visible"
+    class="table-expand-container"
+    :colspan="colspan"
+  >
+    <div class="py-4">
+      <div
+        v-if="$slots.title"
+        class="text-h6 mb-4"
+      >
+        <slot name="title" />
       </div>
-    </td>
-  </Fragment>
+      <template v-if="$slots.default">
+        <RuiCard :no-padding="noPadding">
+          <slot />
+        </RuiCard>
+      </template>
+      <div>
+        <slot name="append" />
+      </div>
+    </div>
+  </td>
 </template>
 
 <style scoped lang="scss">

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
-
 const { autolog } = useAutoLogin();
 const { isPackaged } = useInterop();
 const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
@@ -20,20 +18,18 @@ const css = useCssModule();
 </script>
 
 <template>
-  <Fragment>
-    <ConnectionLoading
-      v-if="!connectionFailure"
-      :connected="connected && !autolog"
-    />
-    <ConnectionFailureMessage v-else />
-    <div
-      v-if="displayRouter"
-      data-cy="account-management-forms"
-      :class="css.router"
-    >
-      <slot />
-    </div>
-  </Fragment>
+  <ConnectionLoading
+    v-if="!connectionFailure"
+    :connected="connected && !autolog"
+  />
+  <ConnectionFailureMessage v-else />
+  <div
+    v-if="displayRouter"
+    data-cy="account-management-forms"
+    :class="css.router"
+  >
+    <slot />
+  </div>
 </template>
 
 <style lang="scss" module>

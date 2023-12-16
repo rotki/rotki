@@ -2,7 +2,7 @@ const VAutocompleteStub = {
   template: `
     <div>
       <div>
-        <input :value="value" class="input-value" type="text" @input="$emit('input', $event.value)">
+        <input :value="modelValue" class="input-value" type="text" @input="$emit('update:model-value', $event.value)">
       </div>
       <div class="selections">
         <span v-for="item in items">
@@ -12,7 +12,7 @@ const VAutocompleteStub = {
     </div>
   `,
   props: {
-    value: { type: String },
+    modelValue: { type: String },
     items: { type: Array<any> },
     itemValue: { type: String },
   },

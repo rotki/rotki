@@ -110,7 +110,6 @@ export function useBlockchains() {
 
       if (supportsTransactions(chain))
         await fetchDetected(chain, [address]);
-
       await refreshAccounts(chain);
     };
 

@@ -53,8 +53,7 @@ const { t } = useI18n();
       >
         <span class="text-body-2 text-rui-text-secondary">
           {{
-            t('asset_table.selected', { count: selected.length })
-          }}
+            t('asset_table.selected', { count: selected.length }) }}
         </span>
         <RuiButton
           size="sm"
@@ -68,13 +67,13 @@ const { t } = useI18n();
     <div>
       <VMenu
         offset-y
-        left
+        location="left"
         :close-on-content-click="false"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <RuiButton
             variant="outlined"
-            v-on="on"
+            v-bind="props"
           >
             <template #append>
               <RuiIcon name="arrow-down-s-line" />
@@ -95,15 +94,15 @@ const { t } = useI18n();
               color="primary"
             >
               <RuiRadio
-                internal-value="none"
+                value="none"
                 :label="t('asset_table.show_all')"
               />
               <RuiRadio
-                internal-value="exclude"
+                value="exclude"
                 :label="t('asset_table.only_show_unignored')"
               />
               <RuiRadio
-                internal-value="show_only"
+                value="show_only"
                 :label="t('asset_table.only_show_ignored', 2)"
               />
             </RuiRadioGroup>

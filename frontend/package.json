@@ -41,13 +41,13 @@
     "dotenv": "14.3.2",
     "eslint": "8.56.0",
     "eslint-plugin-cypress": "2.15.1",
-    "eslint-plugin-vuetify": "1.1.0",
-    "husky": "8.0.3",
-    "jsdom": "23.2.0",
-    "lint-staged": "15.2.0",
+    "eslint-plugin-vuetify": "2.1.1",
+    "husky": "9.0.7",
+    "jsdom": "24.0.0",
+    "lint-staged": "15.2.1",
     "rimraf": "5.0.5",
     "semver": "7.5.4",
-    "typescript": "5.2.2"
+    "typescript": "5.3.3"
   },
   "engines": {
     "node": ">=18 <19",
@@ -60,8 +60,7 @@
   ],
   "pnpm": {
     "patchedDependencies": {
-      "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch",
-      "vuetify@2.7.1": "patches/vuetify@2.7.1.patch"
+      "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch"
     }
   },
   "lint-staged": {

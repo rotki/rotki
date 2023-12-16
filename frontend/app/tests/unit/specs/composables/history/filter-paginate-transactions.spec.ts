@@ -13,9 +13,9 @@ import type { GeneralAccount } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockReturnValue(
-    reactive({
+    ref({
       query: {},
     }),
   ),

@@ -22,16 +22,16 @@ export function usePropVModel<
 
 export function useSimplePropVModel<
   T,
-  P extends { value: T },
-  S extends P['value'] extends object ? keyof P['value'] : never,
+  P extends { modelValue: T },
+  S extends P['modelValue'] extends object ? keyof P['modelValue'] : never,
   Name extends string,
->(props: P, subKey: S, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P['value'][S]> {
-  return usePropVModel(props, 'value', subKey, emit);
+>(props: P, subKey: S, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P['modelValue'][S]> {
+  return usePropVModel(props, 'modelValue', subKey, emit);
 }
 
-export function useSimpleVModel<T, P extends { value: T }, Name extends string>(props: P, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P['value']> {
-  return useVModel(props, 'value', emit, {
-    eventName: 'input',
+export function useSimpleVModel<T, P extends { modelValue: T }, Name extends string>(props: P, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P['modelValue']> {
+  return useVModel(props, 'modelValue', emit, {
+    eventName: 'update:model-value',
   });
 }
 
@@ -52,7 +52,7 @@ export function useKebabVModel<
 }
 
 export function useRefPropVModel<P extends object, K extends keyof P>(obj: Ref<P>, key: K): WritableComputedRef<P[K]> {
-  return computed({
+  return computed<P[K]>({
     get() {
       return get(obj)[key];
     },

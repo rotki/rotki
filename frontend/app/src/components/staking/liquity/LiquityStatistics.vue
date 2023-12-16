@@ -196,14 +196,12 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
           variant="outlined"
           color="primary"
         >
-          <template #default>
-            <RuiButton value="current">
-              {{ t('liquity_statistic.switch.current') }}
-            </RuiButton>
-            <RuiButton value="historical">
-              {{ t('liquity_statistic.switch.historical') }}
-            </RuiButton>
-          </template>
+          <RuiButton value="current">
+            {{ t('liquity_statistic.switch.current') }}
+          </RuiButton>
+          <RuiButton value="historical">
+            {{ t('liquity_statistic.switch.historical') }}
+          </RuiButton>
         </RuiButtonGroup>
       </div>
     </template>
@@ -238,7 +236,7 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
         class="pt-4"
       >
         <VExpansionPanel elevation="0">
-          <VExpansionPanelContent>
+          <VExpansionPanelText>
             <div class="grid md:grid-cols-2 md:gap-12">
               <div>
                 <div>
@@ -363,19 +361,19 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                 </div>
               </div>
             </div>
-          </VExpansionPanelContent>
+          </VExpansionPanelText>
           <RuiDivider />
-          <VExpansionPanelHeader class="flex justify-center w-full">
-            <template #default="{ open }">
+          <VExpansionPanelTitle class="flex justify-center w-full">
+            <template #default="{ expanded }">
               <div class="text-rui-text-secondary mr-4 grow-0">
                 {{
-                  open
+                  expanded
                     ? t('liquity_statistic.view.hide')
                     : t('liquity_statistic.view.show')
                 }}
               </div>
             </template>
-          </VExpansionPanelHeader>
+          </VExpansionPanelTitle>
         </VExpansionPanel>
       </VExpansionPanels>
     </template>

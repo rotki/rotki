@@ -3,16 +3,21 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
-    value?: string;
+    modelValue?: string;
     items?: string[];
     excludes?: string[];
     attach?: string;
   }>(),
-  { value: '', items: () => [], excludes: () => [], attach: undefined },
+  {
+    value: '',
+    items: () => [],
+    excludes: () => [],
+    attach: undefined,
+  },
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: string): void;
+  (e: 'update:model-value', value: string): void;
 }>();
 
 const model = useSimpleVModel(props, emit);
@@ -48,29 +53,24 @@ const locations = computed<TradeLocationData[]>(() => {
     v-model="model"
     data-cy="location-input"
     :items="locations"
-    :attach="attach"
     item-value="identifier"
-    item-text="name"
+    item-title="name"
     auto-select-first
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #item="{ item, attrs }">
+    <template #item="{ item, props }">
       <LocationIcon
-        :id="`balance-location__${item.identifier}`"
-        v-bind="attrs"
+        :id="`balance-location__${item.raw.identifier}`"
+        v-bind="props"
         horizontal
-        :item="item.identifier"
+        :item="item.raw.identifier"
       />
     </template>
-    <template #selection="{ item, attrs }">
+    <template #selection="{ item, props }">
       <LocationIcon
         class="pr-2"
-        v-bind="attrs"
+        v-bind="props"
         horizontal
-        :item="item.identifier"
+        :item="item.raw.identifier"
       />
     </template>
   </VAutocomplete>

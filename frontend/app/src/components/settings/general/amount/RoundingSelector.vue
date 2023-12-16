@@ -26,27 +26,22 @@ const selections = [
 <template>
   <VSelect
     v-bind="rootAttrs"
-    item-text="text"
+    item-title="text"
     item-value="value"
-    outlined
+    variant="outlined"
     persistent-hint
     :items="selections"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #item="{ item, attrs, on }">
+    <template #item="{ item, props }">
       <ListItem
         no-hover
         no-padding
-        v-bind="attrs"
-        :title="item.text"
-        :subtitle="item.description"
-        v-on="on"
+        v-bind="props"
+        :title="item.raw.text"
+        :subtitle="item.raw.description"
       />
     </template>
-    <template #append-outer>
+    <template #append>
       <slot />
     </template>
   </VSelect>

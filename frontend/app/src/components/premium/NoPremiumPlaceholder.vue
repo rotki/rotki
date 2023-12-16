@@ -26,8 +26,8 @@ const { t } = useI18n();
     <div class="text-subtitle-2 text-rui-text-secondary">
       {{ t('no_premium_placeholder.premium_only', { text }) }}
     </div>
-    <i18n
-      path="no_premium_placeholder.get_premium"
+    <i18n-t
+      keypath="no_premium_placeholder.get_premium"
       class="text-rui-text-secondary"
     >
       <ExternalLink
@@ -35,6 +35,6 @@ const { t } = useI18n();
         color="primary"
         premium
       />
-    </i18n>
+    </i18n-t>
   </FullSizeContent>
 </template>

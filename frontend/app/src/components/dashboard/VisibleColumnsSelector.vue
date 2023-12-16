@@ -68,9 +68,11 @@ function update(value: TableColumn) {
 
 <template>
   <div class="py-2">
-    <template v-for="item in availableColumns">
+    <template
+      v-for="item in availableColumns"
+      :key="item.value"
+    >
       <RuiButton
-        :key="item.value"
         variant="list"
         size="sm"
         :value="item.value"

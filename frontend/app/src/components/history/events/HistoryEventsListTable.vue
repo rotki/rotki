@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { objectPick } from '@vueuse/shared';
-import Fragment from '@/components/helper/Fragment';
 import {
   isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
@@ -75,76 +74,74 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 </script>
 
 <template>
-  <Fragment>
-    <template v-if="events.length > 0">
-      <div
-        v-for="(item, index) in events"
-        :key="index"
-        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-4 items-center"
-        :class="{
-          'border-b border-default': index < events.length - 1,
-        }"
+  <template v-if="events.length > 0">
+    <div
+      v-for="(item, index) in events"
+      :key="index"
+      class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-4 items-center"
+      :class="{
+        'border-b border-default': index < events.length - 1,
+      }"
+    >
+      <HistoryEventType
+        :event="item"
+        :chain="getChain(item.location)"
+        class="md:col-span-2 lg:col-span-6"
+      />
+      <HistoryEventAsset
+        :event="item"
+        class="md:col-span-2 lg:col-span-4"
+      />
+      <HistoryEventNote
+        v-bind="getEventNoteAttrs(item)"
+        :amount="item.balance.amount"
+        :chain="getChain(item.location)"
+        :no-tx-hash="isNoTxHash(item)"
+        :block-number="blockNumber"
+        class="break-words leading-6 md:col-span-3 lg:col-span-7"
+      />
+      <RowActions
+        class="lg:col-span-3"
+        align="end"
+        :delete-tooltip="t('transactions.events.actions.delete')"
+        :edit-tooltip="t('transactions.events.actions.edit')"
+        @edit-click="editEvent(item)"
+        @delete-click="deleteEvent(item)"
       >
-        <HistoryEventType
-          :event="item"
-          :chain="getChain(item.location)"
-          class="md:col-span-2 lg:col-span-6"
-        />
-        <HistoryEventAsset
-          :event="item"
-          class="md:col-span-2 lg:col-span-4"
-        />
-        <HistoryEventNote
-          v-bind="getEventNoteAttrs(item)"
-          :amount="item.balance.amount"
-          :chain="getChain(item.location)"
-          :no-tx-hash="isNoTxHash(item)"
-          :block-number="blockNumber"
-          class="break-words leading-6 md:col-span-3 lg:col-span-7"
-        />
-        <RowActions
-          class="lg:col-span-3"
-          align="end"
-          :delete-tooltip="t('transactions.events.actions.delete')"
-          :edit-tooltip="t('transactions.events.actions.edit')"
-          @edit-click="editEvent(item)"
-          @delete-click="deleteEvent(item)"
+        <RuiTooltip
+          v-if="isEventMissingAccountingRule(item)"
+          :popper="{ placement: 'top', offsetDistance: 0 }"
+          :open-delay="400"
         >
-          <RuiTooltip
-            v-if="isEventMissingAccountingRule(item)"
-            :popper="{ placement: 'top', offsetDistance: 0 }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                color="warning"
-                icon
-                @click="emit('show:missing-rule-action', item)"
-              >
-                <RuiIcon
-                  size="16"
-                  name="information-line"
-                />
-              </RuiButton>
-            </template>
-            {{ t('actions.history_events.missing_rule.title') }}
-          </RuiTooltip>
-          <HistoryEventAction
-            v-else-if="!isEventAccountingRuleProcessed(item)"
-            :event="item"
-          />
-        </RowActions>
-      </div>
-    </template>
+          <template #activator>
+            <RuiButton
+              variant="text"
+              color="warning"
+              icon
+              @click="emit('show:missing-rule-action', item)"
+            >
+              <RuiIcon
+                size="16"
+                name="information-line"
+              />
+            </RuiButton>
+          </template>
+          {{ t('actions.history_events.missing_rule.title') }}
+        </RuiTooltip>
+        <HistoryEventAction
+          v-else-if="!isEventAccountingRuleProcessed(item)"
+          :event="item"
+        />
+      </RowActions>
+    </div>
+  </template>
 
-    <template v-else>
-      <div v-if="loading">
-        {{ t('transactions.events.loading') }}
-      </div>
-      <div v-else>
-        {{ t('transactions.events.no_data') }}
-      </div>
-    </template>
-  </Fragment>
+  <template v-else>
+    <div v-if="loading">
+      {{ t('transactions.events.loading') }}
+    </div>
+    <div v-else>
+      {{ t('transactions.events.no_data') }}
+    </div>
+  </template>
 </template>

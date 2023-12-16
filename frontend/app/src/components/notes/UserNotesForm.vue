@@ -4,15 +4,14 @@ import { toMessages } from '@/utils/validation';
 import type { UserNote } from '@/types/notes';
 
 const props = defineProps<{
-  value: Partial<UserNote>;
+  modelValue: Partial<UserNote>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', newInput: Partial<UserNote>): void;
+  (e: 'update:model-value', newInput: Partial<UserNote>): void;
 }>();
 
 const { t } = useI18n();
-const { value } = toRefs(props);
 
 const title = useSimplePropVModel(props, 'title', emit);
 const content = useSimplePropVModel(props, 'content', emit);
@@ -30,7 +29,7 @@ const rules = {
 
 const v$ = setValidation(
   rules,
-  { content: computed(() => get(value).content) },
+  { content },
   { $autoDirty: true },
 );
 </script>

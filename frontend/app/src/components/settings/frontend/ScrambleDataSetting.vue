@@ -36,9 +36,9 @@ const css = useCssModule();
         v-model="scrambleData"
         class="general-settings__fields__scramble-data"
         :label="t('frontend_settings.label.scramble')"
-        :success-messages="success"
+        :messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
     <SettingsOption

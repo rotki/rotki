@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VueConstructor } from 'vue';
+import type { Component } from 'vue';
 
 withDefaults(
   defineProps<{
@@ -7,7 +7,7 @@ withDefaults(
     icon?: string;
     text: string;
     image?: string;
-    iconComponent?: VueConstructor | null;
+    iconComponent?: Component;
     active?: boolean;
     subMenu?: boolean;
     parent?: boolean;
@@ -16,7 +16,7 @@ withDefaults(
     mini: false,
     icon: '',
     image: '',
-    iconComponent: null,
+    iconComponent: undefined,
     active: false,
     subMenu: false,
     parent: false,

@@ -66,15 +66,15 @@ function calculateFontSize(symbol: string) {
     offset-y
     :close-on-content-click="false"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <MenuTooltipButton
+        v-bind="props"
         :tooltip="
           t('currency_drop_down.profit_currency', {
             currency: currency.tickerSymbol,
           })
         "
         class-name="secondary--text text--lighten-4 currency-dropdown text-[1.375rem] font-bold"
-        v-on="on"
       >
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>

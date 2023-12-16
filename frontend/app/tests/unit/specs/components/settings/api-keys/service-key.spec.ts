@@ -1,19 +1,23 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 describe('serviceKey.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof ServiceKey>>;
 
-  function createWrapper(): Wrapper<any> {
-    const vuetify = new Vuetify();
+  function createWrapper(): VueWrapper<InstanceType<typeof ServiceKey>> {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(ServiceKey, {
-      pinia,
-      vuetify,
-      propsData: {
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+      },
+      props: {
         apiKey: '',
         name: 'etherscan',
       },
@@ -26,18 +30,21 @@ describe('serviceKey.vue', () => {
 
   it('component leaves edit mode when updated with non-empty value', async () => {
     expect.assertions(2);
-    await wrapper.vm.$nextTick();
+    await nextTick();
+
     expect(
-      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled'),
-    ).toBeUndefined();
+      wrapper.find('[data-cy=service-key__api-key] input').attributes(),
+    ).toMatchObject(expect.not.objectContaining({
+      disabled: '',
+    }));
     await wrapper.setProps({
       apiKey: '1234',
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(
-      wrapper
-        .find('[data-cy=service-key__api-key] input')
-        .attributes('disabled'),
-    ).toBe('disabled');
+      wrapper.find('[data-cy=service-key__api-key] input').attributes(),
+    ).toMatchObject(expect.objectContaining({
+      disabled: '',
+    }));
   });
 });

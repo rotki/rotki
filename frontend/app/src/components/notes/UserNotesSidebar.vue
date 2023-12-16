@@ -23,12 +23,12 @@ const location = computed<string>(() => {
   const meta = get(route).meta;
 
   if (meta && meta.noteLocation)
-    return meta.noteLocation;
+    return meta.noteLocation.toString();
 
   let noteLocation = '';
   get(route).matched.forEach((matched) => {
     if (matched.meta.noteLocation)
-      noteLocation = matched.meta.noteLocation;
+      noteLocation = matched.meta.noteLocation.toString();
   });
 
   return noteLocation;
@@ -77,10 +77,9 @@ const { smAndDown } = useDisplay();
     class="user-notes-sidebar"
     :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
     absolute
-    clipped
-    right
+    location="right"
     temporary
-    hide-overlay
+    :scrim="false"
   >
     <div
       class="flex items-center justify-between gap-2 w-full border-b border-default"

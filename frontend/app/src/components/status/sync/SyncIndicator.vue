@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { TaskType } from '@/types/task-type';
 import {
   SYNC_DOWNLOAD,
@@ -94,153 +93,150 @@ watch(isSyncing, (current, prev) => {
 </script>
 
 <template>
-  <Fragment>
-    <template v-if="premium">
-      <VMenu
-        id="balances-saved-dropdown"
-        v-model="visible"
-        transition="slide-y-transition"
-        offset-y
-        :close-on-content-click="false"
-        z-index="215"
-      >
-        <template #activator="{ on }">
-          <MenuTooltipButton
-            :tooltip="tooltip"
-            class-name="secondary--text text--lighten-4"
-            v-on="on"
-          >
-            <RuiBadge
-              :value="showAutoUploadOffWarning"
-              color="warning"
-              dot
-              placement="top"
-              offset-y="4"
-              size="lg"
-              class="flex items-center"
-            >
-              <RuiIcon
-                v-if="showAutoUploadOffWarning"
-                name="cloud-off-line"
-                color="warning"
-              />
-              <RuiIcon
-                v-else-if="!premiumSync"
-                name="cloud-off-line"
-              />
-              <RuiIcon
-                v-else-if="isSyncing"
-                :name="icon"
-                color="primary"
-              />
-              <RuiIcon
-                v-else
-                name="cloud-line"
-              />
-            </RuiBadge>
-          </MenuTooltipButton>
-        </template>
-        <div class="p-4 md:w-[250px] w-full">
-          <div class="font-medium">
-            {{ t('sync_indicator.last_data_upload') }}
-          </div>
-          <div class="py-2 text-rui-text-secondary">
-            <DateDisplay
-              v-if="lastDataUpload"
-              :timestamp="lastDataUpload"
-            />
-            <span v-else>
-              {{ t('common.never') }}
-            </span>
-          </div>
-          <div
-            v-if="uploadStatus"
-            class="flex flex-col my-2 p-2 gap-2 border border-rui-warning rounded-[0.25rem]"
-          >
-            <div class="flex gap-1">
-              <div class="font-medium">
-                {{ t('sync_indicator.db_upload_result.title') }}
-              </div>
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                @click="clearUploadStatus()"
-              >
-                <RuiIcon name="close-line" />
-              </RuiButton>
-            </div>
-
-            <div class="text-rui-text-secondary text-sm">
-              <i18n path="sync_indicator.db_upload_result.message">
-                <template #reason>
-                  <b>
-                    {{ uploadStatus.message }}
-                  </b>
-                </template>
-              </i18n>
-            </div>
-          </div>
-          <SyncButtons
-            :pending="pending"
-            @action="showConfirmation($event)"
-          />
-        </div>
-      </VMenu>
-    </template>
-    <template v-else>
-      <RuiBadge
-        placement="top"
-        offset-y="12"
-        offset-x="-10"
-        size="sm"
-        color="default"
-      >
-        <template #icon>
-          <RuiIcon
-            name="lock-line"
-            color="primary"
-            size="14"
-          />
-        </template>
-        <MenuTooltipButton
-          :tooltip="t('sync_indicator.menu_tooltip')"
-          class-name="secondary--text text--lighten-4"
-          :href="href"
-          @click="onLinkClick()"
-        >
-          <RuiIcon name="cloud-line" />
-        </MenuTooltipButton>
-      </RuiBadge>
-    </template>
-
-    <ConfirmDialog
-      confirm-type="warning"
-      :display="displaySyncConfirmation"
-      :title="t('sync_indicator.upload_confirmation.title', textChoice)"
-      :message="message"
-      :disabled="!confirmChecked"
-      :primary-action="
-        t('sync_indicator.upload_confirmation.action', textChoice)
-      "
-      :loading="isSyncing"
-      :secondary-action="t('common.actions.cancel')"
-      @cancel="cancelSync()"
-      @confirm="performSync()"
+  <template v-if="premium">
+    <VMenu
+      id="balances-saved-dropdown"
+      v-model="visible"
+      transition="slide-y-transition"
+      offset-y
+      :close-on-content-click="false"
+      z-index="215"
     >
-      <div
-        v-if="isDownload"
-        class="font-medium mt-3"
-        v-text="
-          t('sync_indicator.upload_confirmation.message_download_relogin')
-        "
-      />
-      <RuiCheckbox
-        v-model="confirmChecked"
-        color="primary"
+      <template #activator="{ props }">
+        <MenuTooltipButton
+          :tooltip="tooltip"
+          class-name="secondary--text text--lighten-4"
+          v-bind="props"
+        >
+          <RuiBadge
+            :value="showAutoUploadOffWarning"
+            color="warning"
+            dot
+            placement="top"
+            offset-y="4"
+            size="lg"
+            class="flex items-center"
+          >
+            <RuiIcon
+              v-if="showAutoUploadOffWarning"
+              name="cloud-off-line"
+              color="warning"
+            />
+            <RuiIcon
+              v-else-if="!premiumSync"
+              name="cloud-off-line"
+            />
+            <RuiIcon
+              v-else-if="isSyncing"
+              :name="icon"
+              color="primary"
+            />
+            <RuiIcon
+              v-else
+              name="cloud-line"
+            />
+          </RuiBadge>
+        </MenuTooltipButton>
+      </template>
+      <div class="p-4 md:w-[250px] w-full">
+        <div class="font-medium">
+          {{ t('sync_indicator.last_data_upload') }}
+        </div>
+        <div class="py-2 text-rui-text-secondary">
+          <DateDisplay
+            v-if="lastDataUpload"
+            :timestamp="lastDataUpload"
+          />
+          <span v-else>
+            {{ t('common.never') }}
+          </span>
+        </div>
+        <div
+          v-if="uploadStatus"
+          class="flex flex-col my-2 p-2 gap-2 border border-rui-warning rounded-[0.25rem]"
+        >
+          <div class="flex gap-1">
+            <div class="font-medium">
+              {{ t('sync_indicator.db_upload_result.title') }}
+            </div>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              @click="clearUploadStatus()"
+            >
+              <RuiIcon name="close-line" />
+            </RuiButton>
+          </div>
+
+          <div class="text-rui-text-secondary text-sm">
+            <i18n-t
+              keypath="sync_indicator.db_upload_result.message"
+              tag="span"
+            >
+              <template #reason>
+                <b>
+                  {{ uploadStatus.message }}
+                </b>
+              </template>
+            </i18n-t>
+          </div>
+        </div>
+        <SyncButtons
+          :pending="pending"
+          @action="showConfirmation($event)"
+        />
+      </div>
+    </VMenu>
+  </template>
+  <template v-else>
+    <RuiBadge
+      placement="top"
+      offset-y="12"
+      offset-x="-10"
+      size="sm"
+      color="default"
+    >
+      <template #icon>
+        <RuiIcon
+          name="lock-line"
+          color="primary"
+          size="14"
+        />
+      </template>
+      <MenuTooltipButton
+        :tooltip="t('sync_indicator.menu_tooltip')"
+        class-name="secondary--text text--lighten-4"
+        :href="href"
+        @click="onLinkClick()"
       >
-        {{ t('sync_indicator.upload_confirmation.confirm_check') }}
-      </RuiCheckbox>
-    </ConfirmDialog>
-  </Fragment>
+        <RuiIcon name="cloud-line" />
+      </MenuTooltipButton>
+    </RuiBadge>
+  </template>
+
+  <ConfirmDialog
+    confirm-type="warning"
+    :display="displaySyncConfirmation"
+    :title="t('sync_indicator.upload_confirmation.title', textChoice)"
+    :message="message"
+    :disabled="!confirmChecked"
+    :primary-action="t('sync_indicator.upload_confirmation.action', textChoice)"
+    :loading="isSyncing"
+    :secondary-action="t('common.actions.cancel')"
+    @cancel="cancelSync()"
+    @confirm="performSync()"
+  >
+    <div
+      v-if="isDownload"
+      class="font-medium mt-3"
+      v-text="t('sync_indicator.upload_confirmation.message_download_relogin')"
+    />
+    <RuiCheckbox
+      v-model="confirmChecked"
+      color="primary"
+    >
+      {{ t('sync_indicator.upload_confirmation.confirm_check') }}
+    </RuiCheckbox>
+  </ConfirmDialog>
 </template>

@@ -156,7 +156,7 @@ const slots = useSlots();
       <VSwitch
         v-if="!isRotkiCustomImport"
         :value="dateInputFormat !== null"
-        @change="changeShouldCustomDateFormat()"
+        @update:model-value="changeShouldCustomDateFormat()"
       >
         <template #label>
           {{ t('file_upload.date_input_format.switch_label') }}

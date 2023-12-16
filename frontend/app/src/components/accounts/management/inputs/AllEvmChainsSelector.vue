@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    value: boolean;
+    modelValue: boolean;
     disabled?: boolean;
   }>(),
   {
@@ -10,7 +10,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: boolean): void;
+  (e: 'update:model-value', value: boolean): void;
 }>();
 
 const { t } = useI18n();

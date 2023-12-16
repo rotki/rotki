@@ -20,9 +20,9 @@ const { t } = useI18n();
       class="general-settings__fields__anonymous-usage-statistics mb-4 mt-0"
       color="primary"
       :label="t('general_settings.labels.anonymous_analytics')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

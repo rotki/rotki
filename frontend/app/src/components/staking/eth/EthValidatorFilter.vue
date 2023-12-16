@@ -6,20 +6,22 @@ import type {
 } from '@rotki/common/lib/staking/eth2';
 
 const props = defineProps<{
-  value: EthStakingFilter;
+  modelValue: EthStakingFilter;
   filter: EthStakingCombinedFilter | undefined;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: EthStakingFilter): void;
+  (e: 'update:model-value', value: EthStakingFilter): void;
   (e: 'update:filter', value?: EthStakingCombinedFilter): void;
 }>();
 
 const filterType = ref<EthStakingFilterType>('validator');
 const filterModel = useVModel(props, 'filter', emit);
 
+const model = useSimpleVModel(props, emit);
+
 watch(filterType, type =>
-  emit('input', type === 'validator' ? { validators: [] } : { accounts: [] }));
+  emit('update:model-value', type === 'validator' ? { validators: [] } : { accounts: [] }));
 
 const { t } = useI18n();
 </script>
@@ -38,31 +40,28 @@ const { t } = useI18n();
           variant="outlined"
           color="primary"
         >
-          <template #default>
-            <RuiButton
-              value="validator"
-              class="!py-2"
-            >
-              {{ t('eth2_page.toggle.key') }}
-            </RuiButton>
-            <RuiButton
-              value="address"
-              class="!py-2"
-            >
-              {{ t('eth2_page.toggle.withdrawal') }}
-            </RuiButton>
-          </template>
+          <RuiButton
+            value="validator"
+            class="!py-2"
+          >
+            {{ t('eth2_page.toggle.key') }}
+          </RuiButton>
+          <RuiButton
+            value="address"
+            class="!py-2"
+          >
+            {{ t('eth2_page.toggle.withdrawal') }}
+          </RuiButton>
         </RuiButtonGroup>
       </template>
       <span>{{ t('eth2_page.toggle.hint') }}</span>
     </RuiTooltip>
     <div class="grid sm:grid-cols-2 flex-1 gap-4">
       <Eth2ValidatorFilter
-        :value="value"
+        v-model="model"
         :filter-type="filterType"
-        @input="emit('input', $event)"
       />
-      <EthValidatorCombinedFilter :filter.sync="filterModel" />
+      <EthValidatorCombinedFilter v-model:filter="filterModel" />
     </div>
   </div>
 </template>

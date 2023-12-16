@@ -146,8 +146,8 @@ onMounted(() => {
 
     <div class="flex flex-col gap-4">
       <AddressInput
-        :addresses.sync="addresses"
-        :error-messages.sync="errorMessages"
+        v-model:addresses="addresses"
+        v-model:error-messages="errorMessages"
         :disabled="loading || !!accountToEdit"
         :multi="!accountToEdit"
       />

@@ -40,7 +40,6 @@ export const useExternalApiKeys = createSharedComposable(
 
         if (service === 'etherscan') {
           const itemService = items[service];
-
           const chainId = get(chain);
           assert(chainId, 'missing chain for etherscan');
 

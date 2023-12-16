@@ -173,21 +173,21 @@ onMounted(async () => {
       </template>
 
       <EthStaking
+        v-model:performance-pagination="performancePagination"
+        v-model:stats-pagination="pagination"
+        v-model:filter="filter"
         :refreshing="performanceRefreshing"
         :total="total"
         :accounts="selection"
-        :filter.sync="filter"
         :performance="performance"
         :performance-loading="performanceLoading"
-        :performance-pagination.sync="performancePagination"
         :stats="dailyStats"
         :stats-loading="dailyStatsLoading"
-        :stats-pagination.sync="pagination"
       >
         <template #selection>
           <EthValidatorFilter
             v-model="selection"
-            :filter.sync="filter"
+            v-model:filter="filter"
           />
         </template>
       </EthStaking>

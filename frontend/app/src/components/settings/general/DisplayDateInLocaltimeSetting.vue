@@ -24,9 +24,9 @@ const { t } = useI18n();
       class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
       color="primary"
       :label="t('general_settings.labels.display_date_in_localtime')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

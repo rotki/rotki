@@ -101,20 +101,20 @@ function confirm() {
                 </RuiTabItem>
                 <RuiTabItem>
                   <CreateAccountPremium
+                    v-model:premium-enabled="premiumEnabled"
+                    v-model:form="premiumSetupForm"
                     :loading="loading"
-                    :premium-enabled.sync="premiumEnabled"
-                    :form.sync="premiumSetupForm"
                     @back="prevStep()"
                     @next="nextStep()"
                   />
                 </RuiTabItem>
                 <RuiTabItem>
                   <CreateAccountCredentials
+                    v-model:form="credentialsForm"
+                    v-model:password-confirm="passwordConfirm"
+                    v-model:user-prompted="userPrompted"
                     :loading="loading"
                     :sync-database="premiumSetupForm.syncDatabase"
-                    :form.sync="credentialsForm"
-                    :password-confirm.sync="passwordConfirm"
-                    :user-prompted.sync="userPrompted"
                     @back="prevStep()"
                     @next="nextStep()"
                   />
@@ -122,8 +122,8 @@ function confirm() {
                 <RuiTabItem>
                   <div class="space-y-8">
                     <CreateAccountSubmitAnalytics
+                      v-model:submit-usage-analytics="submitUsageAnalytics"
                       :loading="loading"
-                      :submit-usage-analytics.sync="submitUsageAnalytics"
                     />
                     <RuiAlert
                       v-if="error"

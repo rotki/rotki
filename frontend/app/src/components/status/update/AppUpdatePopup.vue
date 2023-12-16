@@ -63,14 +63,13 @@ onMounted(async () => {
 <template>
   <VSnackbar
     v-if="isPackaged"
-    :value="showUpdatePopup"
+    :model-value="showUpdatePopup"
     class="update-popup m-4"
     :timeout="-1"
-    light
-    top
+    theme="light"
+    location="top right"
     multi-line
     vertical
-    right
     app
     rounded
     width="380px"
@@ -108,9 +107,9 @@ onMounted(async () => {
           {{ t('update_popup.download_progress') }}
         </span>
         <div v-else-if="!downloadReady">
-          <i18n
+          <i18n-t
             tag="div"
-            path="update_popup.messages"
+            keypath="update_popup.messages"
           >
             <template #releaseNotes>
               <ExternalLink
@@ -118,7 +117,7 @@ onMounted(async () => {
                 :url="externalLinks.releases"
               />
             </template>
-          </i18n>
+          </i18n-t>
           <div>{{ t('update_popup.download_nudge') }}</div>
         </div>
         <span v-else>{{ t('update_popup.downloaded') }}</span>
@@ -147,12 +146,11 @@ onMounted(async () => {
       show-label
     />
 
-    <template #action="{ attrs }">
+    <template #actions>
       <RuiButton
         v-if="error"
         variant="text"
         color="primary"
-        v-bind="attrs"
         @click="dismiss()"
       >
         {{ t('common.actions.dismiss') }}
@@ -164,7 +162,6 @@ onMounted(async () => {
         <RuiButton
           variant="text"
           color="primary"
-          v-bind="attrs"
           @click="dismiss()"
         >
           {{ t('common.actions.cancel') }}
@@ -172,7 +169,6 @@ onMounted(async () => {
         <RuiButton
           v-if="!downloadReady"
           color="primary"
-          v-bind="attrs"
           @click="update()"
         >
           {{ t('common.actions.update') }}
@@ -180,7 +176,6 @@ onMounted(async () => {
         <RuiButton
           v-else
           color="primary"
-          v-bind="attrs"
           @click="install()"
         >
           {{ t('common.actions.install') }}

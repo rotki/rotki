@@ -1,4 +1,5 @@
 import flushPromises from 'flush-promises';
+import type Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
@@ -6,11 +7,10 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 import type { LocationQuery } from '@/types/route';
-import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockReturnValue(
-    reactive({
+    ref({
       query: {},
     }),
   ),
@@ -42,8 +42,7 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchNonFungibleBalances
-      = useNonFungibleBalancesStore().fetchNonFungibleBalances;
+    fetchNonFungibleBalances = useNonFungibleBalancesStore().fetchNonFungibleBalances;
   });
 
   afterEach(() => {
@@ -108,21 +107,25 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('check the return types', async () => {
-      const { isLoading, state, filters, matchers }
-        = usePaginationFilters<NonFungibleBalance>(
-          locationOverview,
-          mainPage,
-          useEmptyFilter,
-          fetchNonFungibleBalances,
-          {
-            onUpdateFilters,
-            extraParams,
-            defaultSortBy: {
-              key: 'name',
-              ascending: [true],
-            },
+      const {
+        isLoading,
+        state,
+        filters,
+        matchers,
+      } = usePaginationFilters<NonFungibleBalance>(
+        locationOverview,
+        mainPage,
+        useEmptyFilter,
+        fetchNonFungibleBalances,
+        {
+          onUpdateFilters,
+          extraParams,
+          defaultSortBy: {
+            key: 'name',
+            ascending: [true],
           },
-        );
+        },
+      );
 
       expect(get(isLoading)).toBe(false);
 

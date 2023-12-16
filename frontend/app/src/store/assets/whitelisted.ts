@@ -1,3 +1,4 @@
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 

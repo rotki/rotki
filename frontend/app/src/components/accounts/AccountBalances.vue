@@ -228,12 +228,12 @@ async function refreshClick() {
 
     <AccountBalanceTable
       ref="balanceTable"
+      v-model:selected="selectedAddresses"
       class="mt-4"
       :loopring="loopring"
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
-      :selected.sync="selectedAddresses"
       @edit-click="editAccount($event)"
       @delete-xpub="showConfirmation($event)"
     />

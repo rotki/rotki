@@ -87,7 +87,7 @@ function close() {
 
 <template>
   <VDialog
-    :value="true"
+    :model-value="true"
     max-width="450px"
     @click:outside="close()"
     @close="close()"

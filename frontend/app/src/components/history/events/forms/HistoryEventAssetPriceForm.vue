@@ -305,9 +305,9 @@ defineExpose({
 
     <TwoFieldsAmountInput
       v-if="isCurrentCurrencyUsd"
+      v-model:primary-value="assetToUsdPrice"
+      v-model:secondary-value="usdValueModel"
       class="mb-5"
-      :primary-value.sync="assetToUsdPrice"
-      :secondary-value.sync="usdValueModel"
       :loading="fetching"
       :disabled="fetching"
       :label="{
@@ -328,9 +328,9 @@ defineExpose({
 
     <TwoFieldsAmountInput
       v-else
+      v-model:primary-value="assetToFiatPrice"
+      v-model:secondary-value="fiatValue"
       class="mb-5"
-      :primary-value.sync="assetToFiatPrice"
-      :secondary-value.sync="fiatValue"
       :loading="fetching"
       :disabled="fetching"
       :label="{

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { externalAssets } from '@/data/external-links';
 
 const isDocker = import.meta.env.VITE_DOCKER;
@@ -33,83 +32,81 @@ const steps = [
 </script>
 
 <template>
-  <Fragment>
-    <section :class="css.section">
-      <div :class="css.container">
-        <div :class="css.wrapper">
-          <div
-            class="pb-4"
-            data-cy="account-management"
-          >
-            <UserHost>
-              <UpgradeProgressDisplay v-if="upgradeVisible" />
-              <CreateAccountWizard
-                v-else
-                :step.sync="step"
-                :loading="loading"
-                :error="error"
-                @clear-error="error = ''"
-                @cancel="navigateToUserLogin(true)"
-                @confirm="createNewAccount($event)"
-              />
-            </UserHost>
-          </div>
+  <section :class="css.section">
+    <div :class="css.container">
+      <div :class="css.wrapper">
+        <div
+          class="pb-4"
+          data-cy="account-management"
+        >
+          <UserHost>
+            <UpgradeProgressDisplay v-if="upgradeVisible" />
+            <CreateAccountWizard
+              v-else
+              v-model:step="step"
+              :loading="loading"
+              :error="error"
+              @clear-error="error = ''"
+              @cancel="navigateToUserLogin(true)"
+              @confirm="createNewAccount($event)"
+            />
+          </UserHost>
         </div>
-        <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
-          <RuiFooterStepper
-            :value="step"
-            :pages="steps.length"
-            variant="pill"
-          />
-        </div>
-        <footer :class="css.container__footer">
-          <AccountManagementFooterText
-            #default="{ copyright }"
-            class="lg:hidden"
-          >
-            {{ copyright }}
-          </AccountManagementFooterText>
-          <div class="ml-4">
-            <AdaptiveFooterButton />
-          </div>
-        </footer>
       </div>
-    </section>
-    <AccountManagementAside class="hidden lg:flex justify-between">
-      <div class="p-12">
-        <div class="mb-10">
-          <RuiLogo
-            class="!h-8"
-            text
-            :custom-src="externalAssets.logo.drawer"
-          />
-        </div>
-        <div>
-          <RuiStepper
-            custom
-            orientation="vertical"
-            :step="step"
-            :steps="steps"
-          />
-        </div>
-        <DockerWarning
-          v-if="!dockerRiskAccepted && isDocker"
-          class="mt-8"
+      <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
+        <RuiFooterStepper
+          :value="step"
+          :pages="steps.length"
+          variant="pill"
         />
       </div>
-      <AccountManagementFooterText
-        #default="{ copyright }"
-        class="flex items-center justify-between flex-wrap p-10"
-      >
-        <span>
-          {{ appVersion }}
-        </span>
-        <span>
+      <footer :class="css.container__footer">
+        <AccountManagementFooterText
+          #default="{ copyright }"
+          class="lg:hidden"
+        >
           {{ copyright }}
-        </span>
-      </AccountManagementFooterText>
-    </AccountManagementAside>
-  </Fragment>
+        </AccountManagementFooterText>
+        <div class="ml-4">
+          <AdaptiveFooterButton />
+        </div>
+      </footer>
+    </div>
+  </section>
+  <AccountManagementAside class="hidden lg:flex justify-between">
+    <div class="p-12">
+      <div class="mb-10">
+        <RuiLogo
+          class="!h-8"
+          text
+          :custom-src="externalAssets.logo.drawer"
+        />
+      </div>
+      <div>
+        <RuiStepper
+          custom
+          orientation="vertical"
+          :step="step"
+          :steps="steps"
+        />
+      </div>
+      <DockerWarning
+        v-if="!dockerRiskAccepted && isDocker"
+        class="mt-8"
+      />
+    </div>
+    <AccountManagementFooterText
+      #default="{ copyright }"
+      class="flex items-center justify-between flex-wrap p-10"
+    >
+      <span>
+        {{ appVersion }}
+      </span>
+      <span>
+        {{ copyright }}
+      </span>
+    </AccountManagementFooterText>
+  </AccountManagementAside>
 </template>
 
 <style module lang="scss">

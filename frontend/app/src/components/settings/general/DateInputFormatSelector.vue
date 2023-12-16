@@ -26,28 +26,23 @@ const { t } = useI18n();
 <template>
   <VSelect
     v-bind="rootAttrs"
-    item-text="value"
+    item-title="value"
     item-value="value"
-    outlined
+    variant="outlined"
     persistent-hint
     :items="selections"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #item="{ item, attrs, on }">
+    <template #item="{ item, props }">
       <ListItem
         no-hover
         no-padding
-        v-bind="attrs"
+        v-bind="props"
         :title="item.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {
             format: dateInputFormatExample(item.value),
           })
         "
-        v-on="on"
       />
     </template>
   </VSelect>

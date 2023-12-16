@@ -143,15 +143,15 @@ const css = useCssModule();
       <div class="flex flex-col gap-2">
         <div class="flex flex-row-reverse">
           <HintMenuIcon>
-            <i18n
+            <i18n-t
               tag="div"
-              path="premium_settings.subtitle"
+              keypath="premium_settings.subtitle"
             >
               <ExternalLink
                 :text="t('premium_settings.title')"
                 premium
               />
-            </i18n>
+            </i18n-t>
           </HintMenuIcon>
         </div>
 
@@ -194,7 +194,7 @@ const css = useCssModule();
         :disabled="!premium || edit"
         hide-details
         :label="t('premium_settings.actions.sync')"
-        @change="onSyncChange()"
+        @update:model-value="onSyncChange()"
       />
 
       <template #footer>

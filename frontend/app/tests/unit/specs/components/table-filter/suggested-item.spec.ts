@@ -1,5 +1,5 @@
-import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { type VueWrapper, mount } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { Suggestion } from '@/types/filtering';
 
@@ -15,20 +15,18 @@ vi.mock('@/composables/assets/retrieval', () => ({
   }),
 }));
 
-vi.mocked(useCssModule).mockReturnValue({
-  comparator: 'comparator',
-});
-
 describe('table-filter/SuggestedItem.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof SuggestedItem>>;
   const createWrapper = (props: {
     suggestion?: Suggestion;
     chip?: boolean;
   }) => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     return mount(SuggestedItem, {
-      vuetify,
-      propsData: {
+      global: {
+        plugins: [vuetify],
+      },
+      props: {
         ...props,
       },
     });

@@ -1,23 +1,27 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 describe('assetBalances.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof AssetBalances>>;
   beforeEach(() => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(AssetBalances, {
-      vuetify,
-      pinia,
-      propsData: {
+      global: {
+        plugins: [
+          vuetify,
+          pinia,
+        ],
+        provide: libraryDefaults,
+      },
+      props: {
         balances: [],
       },
-      provide: libraryDefaults,
     });
   });
 
@@ -27,12 +31,12 @@ describe('assetBalances.vue', () => {
 
   it('table enters into loading state when balances load', async () => {
     await wrapper.setProps({ loading: true });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
 
     await wrapper.setProps({ loading: false });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');

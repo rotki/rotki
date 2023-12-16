@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
+import type { AssetBalance } from '@rotki/common';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type {
   ExchangeSavingsCollection,
@@ -71,12 +72,12 @@ onMounted(async () => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const receivedTableSort: Ref<DataTableSortData> = ref({
+const receivedTableSort: Ref<DataTableSortData<AssetBalance>> = ref({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const receivedTableHeaders = computed<DataTableColumn[]>(() => [
+const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -98,14 +99,14 @@ const receivedTableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const sort: Ref<DataTableSortData> = ref([
+const sort: Ref<DataTableSortData<ExchangeSavingsEvent>> = ref([
   {
     column: 'usdValue',
     direction: 'desc' as const,
   },
 ]);
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
   {
     label: t('common.datetime'),
     key: 'timestamp',
@@ -141,13 +142,13 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       </template>
 
       <RuiDataTable
+        v-model:sort="receivedTableSort"
         outlined
         dense
         :cols="receivedTableHeaders"
         :rows="collection.received"
         :loading="isLoading"
-        :sort.sync="receivedTableSort"
-        row-attr=""
+        row-attr="asset"
       >
         <template #item.asset="{ row }">
           <AssetDetails
@@ -189,17 +190,17 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       <CollectionHandler :collection="collection">
         <template #default="{ data, itemLength }">
           <RuiDataTable
+            v-model:sort="sort"
             outlined
             dense
             :cols="tableHeaders"
             :rows="data"
-            :sort.sync="sort"
             :pagination="{
               limit: options.itemsPerPage,
               page: options.page,
               total: itemLength,
             }"
-            row-attr=""
+            row-attr="asset"
             :pagination-modifiers="{ external: true }"
             :loading="isLoading"
             @update:options="setTableOptions($event)"

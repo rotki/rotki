@@ -123,10 +123,10 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
         <VAutocomplete
           v-model="source"
           class="flex-1"
-          outlined
+          variant="outlined"
           :label="t('purge_selector.label')"
           :items="purgable"
-          item-text="text"
+          item-title="text"
           item-value="id"
           :disabled="pending"
         />

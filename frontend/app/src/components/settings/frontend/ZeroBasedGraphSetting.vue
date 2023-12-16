@@ -21,9 +21,9 @@ const { t } = useI18n();
       :label="t('frontend_settings.label.zero_based')"
       :hint="t('frontend_settings.label.zero_based_hint')"
       persistent-hint
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

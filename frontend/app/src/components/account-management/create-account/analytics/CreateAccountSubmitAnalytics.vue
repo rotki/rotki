@@ -15,8 +15,8 @@ const usageAnalytics = useKebabVModel(props, 'submitUsageAnalytics', emit);
 
 <template>
   <div class="space-y-8">
-    <i18n
-      path="create_account.usage_analytics.description"
+    <i18n-t
+      keypath="create_account.usage_analytics.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
       tag="div"
     />

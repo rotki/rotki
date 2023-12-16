@@ -30,22 +30,22 @@ const { t } = useI18n();
 
 <template>
   <div class="space-y-6">
-    <i18n
-      path="create_account.credentials.description"
+    <i18n-t
+      keypath="create_account.credentials.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
       tag="div"
     >
       <template #highlight>
         <strong>{{ t('create_account.credentials.highlight') }}</strong>
       </template>
-    </i18n>
+    </i18n-t>
     <CreateAccountCredentialsForm
+      v-model:valid="valid"
       class="mt-8"
       :form="form"
       :password-confirm="passwordConfirm"
       :user-prompted="userPrompted"
       :loading="loading"
-      :valid.sync="valid"
       @update:form="emit('update:form', $event)"
       @update:password-confirm="emit('update:password-confirm', $event)"
       @update:user-prompted="emit('update:user-prompted', $event)"

@@ -91,13 +91,13 @@ function showDoneConfirmation() {
   <VMenu
     v-if="dropdown"
     offset-x
-    left
+    location="left"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         id="reset-asset-activator"
         variant="list"
-        v-on="on"
+        v-bind="props"
       >
         <template #prepend>
           <RuiIcon name="restart-line" />

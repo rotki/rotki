@@ -15,14 +15,14 @@ const showMenu: Ref<boolean> = ref(false);
     v-model="showMenu"
     max-width="500px"
     min-width="280px"
-    left
+    location="left"
     :close-on-content-click="false"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <MenuTooltipButton
         :tooltip="t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
-        v-on="on"
+        v-bind="props"
       >
         <RuiIcon name="settings-4-line" />
       </MenuTooltipButton>

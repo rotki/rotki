@@ -11,61 +11,25 @@ interface Model {
 }
 
 const props = defineProps<{
-  value: Model;
+  modelValue: Model;
   count: number;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: Model): void;
+  (e: 'update:model-value', value: Model): void;
   (e: 'refresh:ignored'): void;
 }>();
 
 const { t } = useI18n();
 const showMenu = ref(false);
 
-function isHandlingType(t: any): t is IgnoredAssetsHandlingType {
-  return Object.values(IgnoredAssetHandlingType).includes(t);
-}
+const handlingSelection = useSimplePropVModel(props, 'ignoredAssetsHandling', emit);
+const onlyShowOwned = useSimplePropVModel(props, 'onlyShowOwned', emit);
+const onlyShowWhitelisted = useSimplePropVModel(props, 'onlyShowWhitelisted', emit);
 
-const handlingSelection = computed({
-  get() {
-    return props.value.ignoredAssetsHandling;
-  },
-  set(value: string) {
-    if (isHandlingType(value)) {
-      emit('input', {
-        ...props.value,
-        ignoredAssetsHandling: value,
-      });
-
-      if (value === IgnoredAssetHandlingType.SHOW_ONLY)
-        emit('refresh:ignored');
-    }
-  },
-});
-
-const onlyShowOwned = computed({
-  get() {
-    return props.value.onlyShowOwned;
-  },
-  set(value: boolean) {
-    emit('input', {
-      ...props.value,
-      onlyShowOwned: value,
-    });
-  },
-});
-
-const onlyShowWhitelisted = computed({
-  get() {
-    return props.value.onlyShowWhitelisted;
-  },
-  set(value: boolean) {
-    emit('input', {
-      ...props.value,
-      onlyShowWhitelisted: value,
-    });
-  },
+watch(handlingSelection, (value) => {
+  if (value === IgnoredAssetHandlingType.SHOW_ONLY)
+    emit('refresh:ignored');
 });
 </script>
 
@@ -104,26 +68,25 @@ const onlyShowWhitelisted = computed({
           data-cy="asset-filter-ignored"
         >
           <RuiRadio
-            internal-value="none"
+            value="none"
             data-cy="asset-filter-none"
             :label="t('asset_table.show_all')"
           />
           <RuiRadio
-            internal-value="exclude"
+            value="exclude"
             data-cy="asset-filter-exclude"
             :label="t('asset_table.only_show_unignored')"
           />
           <RuiRadio
-            internal-value="show_only"
+            value="show_only"
             data-cy="asset-filter-show_only"
-            :label="
-              t(
-                'asset_table.only_show_ignored',
-                {
-                  length: count,
-                },
-                1,
-              )
+            :label="t(
+              'asset_table.only_show_ignored',
+              {
+                length: count,
+              },
+              1,
+            )
             "
           />
         </RuiRadioGroup>

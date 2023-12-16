@@ -27,12 +27,12 @@ const attrs = useAttrs();
     :max-width="maxWidth"
     v-bind="attrs"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         variant="text"
         icon
+        v-bind="props"
         @click="visible = true"
-        v-on="on"
       >
         <RuiIcon name="question-line" />
       </RuiButton>

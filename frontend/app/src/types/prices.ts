@@ -97,6 +97,11 @@ export const ManualPrice = AssetPair.extend({
 
 export type ManualPrice = z.infer<typeof ManualPrice>;
 
+export type ManualPriceWithUsd = ManualPrice & {
+  id: number;
+  usdPrice: BigNumber;
+};
+
 export const ManualPrices = z.array(ManualPrice);
 
 export type ManualPrices = z.infer<typeof ManualPrices>;
@@ -141,7 +146,7 @@ export interface ManualPricePayload {
 export const PriceInformation = z.object({
   usdPrice: NumericString,
   manuallyInput: z.boolean(),
-  priceAsset: z.string().nonempty(),
+  priceAsset: z.string().min(1),
   priceInAsset: NumericString,
 });
 

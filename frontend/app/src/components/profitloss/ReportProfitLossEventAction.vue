@@ -90,12 +90,12 @@ async function updatePrice() {
       max-width="250px"
       offset-y
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RuiButton
           variant="text"
           class="!p-2"
           icon
-          v-on="on"
+          v-bind="props"
         >
           <RuiIcon name="more-2-fill" />
         </RuiButton>
@@ -113,7 +113,7 @@ async function updatePrice() {
       </div>
     </VMenu>
 
-    <VDialog
+    <RuiDialog
       v-model="showDialog"
       max-width="450px"
     >
@@ -131,14 +131,14 @@ async function updatePrice() {
             outlined
           />
           <AssetSelect
-            :value="currency"
+            :model-value="currency"
             :label="t('price_form.to_asset')"
             hide-details
             disabled
             outlined
           />
           <DateTimePicker
-            :value="datetime"
+            :model-value="datetime"
             disabled
             hide-details
             :label="t('common.datetime')"
@@ -174,6 +174,6 @@ async function updatePrice() {
           </RuiButton>
         </template>
       </RuiCard>
-    </VDialog>
+    </RuiDialog>
   </div>
 </template>

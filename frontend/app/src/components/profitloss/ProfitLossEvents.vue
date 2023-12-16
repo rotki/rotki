@@ -2,6 +2,17 @@
 import { isTransactionEvent } from '@/utils/report';
 import type { DataTableHeader } from '@/types/vuetify';
 import type { ProfitLossEvents, SelectedReport } from '@/types/reports';
+import type { TablePagination } from '@/types/pagination';
+
+interface GroupLine {
+  top: boolean;
+  bottom: boolean;
+}
+
+interface Events extends ProfitLossEvents {
+  id: number;
+  groupLine: GroupLine;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -24,16 +35,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: any[];
-  sortDesc: boolean[];
-}
-
 const { report } = toRefs(props);
 
-const options = ref<PaginationOptions | null>(null);
+const options = ref<TablePagination<Events>>();
 
 const route = useRoute();
 const { getChain } = useSupportedChains();
@@ -137,7 +141,7 @@ const showUpgradeMessage = computed(
     !premium.value && report.value.totalActions > report.value.processedActions,
 );
 
-async function updatePagination(options: PaginationOptions | null) {
+async function updatePagination(options?: TablePagination<Events>) {
   if (!options)
     return;
 
@@ -174,13 +178,13 @@ const css = useCssModule();
       {{ t('common.events') }}
     </template>
     <DataTable
+      v-model:options="options"
       :headers="tableHeaders"
       :items="items"
       single-expand
       :loading="loading || refreshing"
       :expanded="items"
       :server-items-length="itemLength"
-      :options.sync="options"
       sort-by="time"
     >
       <template #item.group="{ item }">

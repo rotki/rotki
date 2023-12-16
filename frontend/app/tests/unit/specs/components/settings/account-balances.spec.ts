@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -9,21 +9,25 @@ import createCustomPinia from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 describe('accountBalances.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof AccountBalances>>;
 
   beforeEach(() => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
-      vuetify,
-      pinia,
-      propsData: {
+      props: {
         blockchain: Blockchain.ETH,
         balances: [],
         title: 'ETH balances',
       },
-      provide: libraryDefaults,
+      global: {
+        provide: libraryDefaults,
+        plugins: [
+          vuetify,
+          pinia,
+        ],
+      },
     });
   });
 
@@ -47,7 +51,7 @@ describe('accountBalances.vue', () => {
       status: Status.LOADING,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -63,7 +67,7 @@ describe('accountBalances.vue', () => {
       section: Section.BLOCKCHAIN_ETH,
       status: Status.LOADED,
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper

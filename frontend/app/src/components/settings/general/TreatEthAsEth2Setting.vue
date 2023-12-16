@@ -20,9 +20,9 @@ const { t } = useI18n();
       class="general-settings__fields__treat-eth2-as-eth mb-2 mt-0"
       color="primary"
       :label="t('general_settings.labels.treat_eth2_as_eth')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

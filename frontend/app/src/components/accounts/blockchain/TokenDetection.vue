@@ -56,11 +56,13 @@ const { t } = useI18n();
             {{ t('account_balances.detect_tokens.tooltip.redetect') }}
           </div>
           <div v-if="detectedTokens.timestamp">
-            <i18n path="account_balances.detect_tokens.tooltip.last_detected">
+            <i18n-t
+              keypath="account_balances.detect_tokens.tooltip.last_detected"
+            >
               <template #time>
                 <DateDisplay :timestamp="detectedTokens.timestamp" />
               </template>
-            </i18n>
+            </i18n-t>
           </div>
         </div>
       </RuiTooltip>

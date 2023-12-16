@@ -86,12 +86,12 @@ export function compareTextByKeyword(a: string, b: string, keyword: string): num
   return rankA - rankB;
 }
 
-export function getSortItems(getInfo: (identifier: string) => AssetInfo | null) {
+export function getSortItems<T extends AssetBalance>(getInfo: (identifier: string) => AssetInfo | null) {
   return (
-    items: AssetBalance[],
+    items: T[],
     sortBy: (keyof AssetBalance)[],
     sortDesc: boolean[],
-  ): AssetBalance[] => {
+  ): T[] => {
     const sortByElement = sortBy[0];
     const sortByDesc = sortDesc[0];
     return items.sort((a, b) => {

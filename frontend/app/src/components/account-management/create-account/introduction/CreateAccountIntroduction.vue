@@ -8,15 +8,15 @@ const { t } = useI18n();
 
 <template>
   <div class="space-y-8">
-    <i18n
-      path="create_account.introduction.description"
+    <i18n-t
+      keypath="create_account.introduction.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
       tag="div"
     >
       <template #highlight>
         <strong>{{ t('create_account.introduction.highlight') }}</strong>
       </template>
-    </i18n>
+    </i18n-t>
     <RuiButton
       size="lg"
       class="w-full"

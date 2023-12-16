@@ -85,10 +85,10 @@ const css = useCssModule();
         <VAutocomplete
           v-model="source"
           class="flex-1"
-          outlined
+          variant="outlined"
           :label="t('data_management.purge_images_cache.select_image_source')"
           :items="purgable"
-          item-text="text"
+          item-title="text"
           item-value="id"
           :disabled="pending"
         />
@@ -106,10 +106,10 @@ const css = useCssModule();
           v-model="ensToClear"
           class="flex-1"
           :items="ensNamesList"
-          outlined
+          variant="outlined"
           :class="css['ens-input']"
           chips
-          deletable-chips
+          closable-chips
           clearable
           :label="t('data_management.purge_images_cache.label.ens_to_clear')"
           :hint="t('data_management.purge_images_cache.hint')"

@@ -71,10 +71,10 @@ const { t } = useI18n();
     <template #header>
       {{ t('asset_update.title') }}
     </template>
-    <i18n
+    <i18n-t
       class="text-body-1"
       tag="div"
-      path="asset_update.description"
+      keypath="asset_update.description"
     >
       <template #remote>
         <span class="font-medium">{{ versions.remote }}</span>
@@ -82,7 +82,7 @@ const { t } = useI18n();
       <template #local>
         <span class="font-medium">{{ versions.local }}</span>
       </template>
-    </i18n>
+    </i18n-t>
     <div class="text-body-1 mt-4">
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>

@@ -246,7 +246,7 @@ onBeforeMount(async () => {
   set(savedUsernames, profiles);
   if (profiles.length === 0) {
     const { currentRoute } = router;
-    if (!currentRoute.query.disableNoUserRedirection)
+    if (!get(currentRoute).query.disableNoUserRedirection)
       newAccount();
     else
       await router.replace({ query: {} });
@@ -329,8 +329,8 @@ function abortLogin() {
           <p class="mb-3">
             {{ t('login.description.welcome') }}
           </p>
-          <i18n
-            path="login.description.more_details"
+          <i18n-t
+            keypath="login.description.more_details"
             tag="p"
           >
             <template #documentation>
@@ -339,7 +339,7 @@ function abortLogin() {
                 :url="externalLinks.usageGuide"
               />
             </template>
-          </i18n>
+          </i18n-t>
         </div>
 
         <div>
@@ -365,7 +365,7 @@ function abortLogin() {
               v-else
               ref="usernameRef"
               v-model="username"
-              :search-input.sync="usernameSearch"
+              v-model:search-input="usernameSearch"
               :label="t('login.label_username')"
               :items="orderedUsernamesList"
               :disabled="loading || conflictExist || customBackendDisplay"
@@ -373,15 +373,15 @@ function abortLogin() {
               data-cy="username-input"
               class="mb-2"
               auto-select-first
-              validate-on-blur
+              validate-on="blur"
               :hide-no-data="savedUsernames.length > 0"
               clearable
-              outlined
-              dense
+              variant="outlined"
+              density="compact"
             >
               <template #no-data>
                 <div class="px-4 py-2 text-body-2 font-medium">
-                  <i18n path="login.no_profiles_found">
+                  <i18n-t keypath="login.no_profiles_found">
                     <template #create_account>
                       <RuiButton
                         color="primary"
@@ -394,7 +394,7 @@ function abortLogin() {
                         {{ t('login.button_create_account') }}
                       </RuiButton>
                     </template>
-                  </i18n>
+                  </i18n-t>
                 </div>
               </template>
             </VAutocomplete>
@@ -596,7 +596,7 @@ function abortLogin() {
                 v-model="dynamicMessageDialog"
                 max-width="400"
               >
-                <template #activator="{ on }">
+                <template #activator="{ props }">
                   <RuiButton
                     color="primary"
                     class="lg:hidden"
@@ -605,7 +605,7 @@ function abortLogin() {
                     variant="outlined"
                     type="button"
                     data-cy="show-dynamic-messages"
-                    v-on="on"
+                    v-bind="props"
                   >
                     {{ welcomeMessage.action.text }}
                   </RuiButton>

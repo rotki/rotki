@@ -3,7 +3,7 @@ import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { EvmRpcNode } from '@/types/settings/rpc';
 
 const props = defineProps<{
-  value: EvmRpcNode;
+  modelValue: EvmRpcNode;
   chain: Blockchain;
   chainName: string;
   isEtherscan: boolean;
@@ -11,11 +11,13 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', newInput: Partial<EvmRpcNode>): void;
+  (e: 'update:model-value', newInput: Partial<EvmRpcNode>): void;
   (e: 'reset'): void;
 }>();
 
 const { editMode, chainName, chain } = toRefs(props);
+
+const model = useSimpleVModel(props, emit);
 
 function resetForm() {
   emit('reset');
@@ -47,12 +49,11 @@ const dialogTitle = computed(() => {
     @cancel="resetForm()"
   >
     <EvmRpcNodeForm
-      :value="value"
+      v-model="model"
       :chain="chain"
       :chain-name="chainName"
       :edit-mode="editMode"
       :is-etherscan="isEtherscan"
-      @input="emit('input', $event)"
     />
   </BigDialog>
 </template>

@@ -18,8 +18,8 @@
     "watch": "tsc -w -m es6"
   },
   "peerDependencies": {
-    "@vueuse/core": "9.6.0",
-    "vue": "2.7.16"
+    "@vueuse/core": ">=10.7.0",
+    "vue": ">=3.4.0"
   },
   "dependencies": {
     "bignumber.js": "9.1.2",
@@ -29,7 +29,7 @@
     "@vueuse/core": "10.7.2",
     "core-js": "3.35.1",
     "rimraf": "5.0.5",
-    "typescript": "5.2.2",
-    "vue": "2.7.16"
+    "typescript": "5.3.3",
+    "vue": "3.4.18"
   }
 }

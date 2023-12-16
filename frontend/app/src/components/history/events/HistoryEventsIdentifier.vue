@@ -27,8 +27,8 @@ const { xl } = useDisplay();
 </script>
 
 <template>
-  <i18n
-    :path="translationKey"
+  <i18n-t
+    :keypath="translationKey"
     tag="span"
     class="flex items-center gap-2"
   >
@@ -75,7 +75,7 @@ const { xl } = useDisplay();
         :full-address="xl"
       />
     </template>
-  </i18n>
+  </i18n-t>
 </template>
 
 <style lang="scss" module>

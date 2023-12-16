@@ -79,13 +79,13 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       v-if="!premium"
       #default
     >
-      <i18n path="uniswap.loading_non_premium">
+      <i18n-t keypath="uniswap.loading_non_premium">
         <ExternalLink
           :text="t('uniswap.premium')"
           color="primary"
           premium
         />
-      </i18n>
+      </i18n-t>
     </template>
   </ProgressScreen>
   <TablePageLayout

@@ -1,4 +1,5 @@
 import { LpType } from '@rotki/common/lib/defi';
+import type { XSwapLiquidityBalance } from '@rotki/common/lib/defi/xswap';
 import type { BigNumber } from '@rotki/common';
 
 export function useLiquidityPosition() {
@@ -7,57 +8,59 @@ export function useLiquidityPosition() {
   const { balancerBalances } = useBalancerStore();
   const { assetSymbol } = useAssetInfoRetrieval();
 
-  const lpAggregatedBalances = (includeNft = true) =>
-    computed(() => {
-      const mappedUniswapV3Balances = get(uniswapV3Balances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: item.nftId,
-        premiumOnly: true,
-        type: 'nft',
-        lpType: LpType.UNISWAP_V3,
-      }));
+  const lpAggregatedBalances = (includeNft = true) => computed<XSwapLiquidityBalance[]>(() => {
+    const mappedUniswapV3Balances = get(uniswapV3Balances([])).map((item, index) => ({
+      id: index,
+      assets: item.assets,
+      usdValue: item.userBalance.usdValue,
+      asset: item.nftId || '',
+      premiumOnly: true,
+      type: 'nft',
+      lpType: LpType.UNISWAP_V3,
+    }) satisfies XSwapLiquidityBalance);
 
-      const mappedUniswapV2Balances = get(uniswapV2Balances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: false,
-        type: 'token',
-        lpType: LpType.UNISWAP_V2,
-      }));
+    const mappedUniswapV2Balances = get(uniswapV2Balances([])).map((item, index) => ({
+      id: index,
+      assets: item.assets,
+      usdValue: item.userBalance.usdValue,
+      asset: createEvmIdentifierFromAddress(item.address),
+      premiumOnly: false,
+      type: 'token',
+      lpType: LpType.UNISWAP_V2,
+    }) satisfies XSwapLiquidityBalance);
 
-      const mappedSushiswapBalances = get(sushiswapBalances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: true,
-        type: 'token',
-        lpType: LpType.SUSHISWAP,
-      }));
+    const mappedSushiswapBalances = get(sushiswapBalances([])).map((item, index) => ({
+      id: index,
+      assets: item.assets,
+      usdValue: item.userBalance.usdValue,
+      asset: createEvmIdentifierFromAddress(item.address),
+      premiumOnly: true,
+      type: 'token',
+      lpType: LpType.SUSHISWAP,
+    }) satisfies XSwapLiquidityBalance);
 
-      const mappedBalancerBalances = get(balancerBalances([])).map(item => ({
-        ...item,
-        usdValue: item.userBalance.usdValue,
-        asset: createEvmIdentifierFromAddress(item.address),
-        premiumOnly: true,
-        assets: item.tokens.map(asset => ({
-          ...asset,
-          asset: asset.token,
-        })),
-        type: 'token',
-        lpType: LpType.BALANCER,
-      }));
+    const mappedBalancerBalances = get(balancerBalances([])).map((item, index) => ({
+      id: index,
+      usdValue: item.userBalance.usdValue,
+      asset: createEvmIdentifierFromAddress(item.address),
+      premiumOnly: true,
+      assets: item.tokens.map(asset => ({
+        ...asset,
+        asset: asset.token,
+      })),
+      type: 'token',
+      lpType: LpType.BALANCER,
+    }) satisfies XSwapLiquidityBalance);
 
-      return [
-        ...(includeNft ? mappedUniswapV3Balances : []),
-        ...mappedUniswapV2Balances,
-        ...mappedSushiswapBalances,
-        ...mappedBalancerBalances,
-      ]
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue))
-        .map((item, id) => ({ ...item, id }));
-    });
+    return [
+      ...(includeNft ? mappedUniswapV3Balances : []),
+      ...mappedUniswapV2Balances,
+      ...mappedSushiswapBalances,
+      ...mappedBalancerBalances,
+    ]
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue))
+      .map((item, id) => ({ ...item, id }));
+  });
 
   const lpTotal = (includeNft = false) =>
     computed<BigNumber>(() =>

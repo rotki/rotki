@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { BalanceType } from '@/types/balances';
 
-defineProps<{ value: BalanceType }>();
+defineOptions({
+  inheritAttrs: false,
+});
 
-const emit = defineEmits<{ (e: 'input', value: BalanceType): void }>();
+const props = defineProps<{
+  modelValue: BalanceType;
+}>();
+
+const emit = defineEmits<{
+  (e: 'update:model-value', value: BalanceType): void;
+}>();
+
+const model = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
 const balanceTypes = computed(() => [
@@ -16,18 +26,13 @@ const balanceTypes = computed(() => [
     text: t('manual_balances_form.type.liability'),
   },
 ]);
-
-function input(value: BalanceType) {
-  emit('input', value);
-}
 </script>
 
 <template>
   <VSelect
-    :value="value"
+    v-model="model"
     :items="balanceTypes"
     v-bind="$attrs"
-    outlined
-    @input="input($event)"
+    variant="outlined"
   />
 </template>

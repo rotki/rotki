@@ -5,19 +5,19 @@ const { t } = useI18n();
 <template>
   <ImportSource source="kucoin">
     <template #upload-title>
-      <i18n
+      <i18n-t
         tag="span"
-        path="import_data.kucoin.import"
+        keypath="import_data.kucoin.import"
       >
         <strong>{{ t('import_data.kucoin.import_types') }}</strong>
-      </i18n>
+      </i18n-t>
     </template>
-    <i18n
+    <i18n-t
       tag="span"
-      path="import_data.note"
+      keypath="import_data.note"
     >
       <strong>{{ t('import_data.kucoin.name') }}</strong>
-    </i18n>
+    </i18n-t>
     <ul class="list-disc">
       <li>{{ t('import_data.kucoin.line_one') }}</li>
     </ul>

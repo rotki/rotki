@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import type { Balance, BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
 import type { XpubAccountWithBalance } from '@/types/blockchain/accounts';
@@ -63,12 +62,12 @@ function editClicked(_payload: XpubAccountWithBalance) {
 <template>
   <td
     v-if="!group"
-    class="font-medium text-subtitle-2 px-4 py-2"
+    class="font-mediumtext-subtitle-2 px-4 py-2"
     colspan="5"
   >
     {{ t('account_group_header.standalone') }}
   </td>
-  <Fragment v-else>
+  <template v-else>
     <td
       colspan="2"
       :class="{
@@ -128,7 +127,9 @@ function editClicked(_payload: XpubAccountWithBalance) {
         :tags="xpubTags"
       />
     </td>
-    <td class="text-end px-4">
+    <td
+      class="text-endpx-4"
+    >
       <AmountDisplay
         :value="sum"
         :loading="loading"
@@ -136,7 +137,9 @@ function editClicked(_payload: XpubAccountWithBalance) {
         :asset-padding="0.1"
       />
     </td>
-    <td class="text-end px-4">
+    <td
+      class="text-endpx-4"
+    >
       <AmountDisplay
         fiat-currency="USD"
         show-currency="symbol"
@@ -145,7 +148,9 @@ function editClicked(_payload: XpubAccountWithBalance) {
         :asset-padding="0.1"
       />
     </td>
-    <td class="text-end">
+    <td
+      class="text-end"
+    >
       <RowActions
         :edit-tooltip="t('account_group_header.edit_tooltip')"
         :delete-tooltip="t('account_group_header.delete_tooltip')"
@@ -153,5 +158,5 @@ function editClicked(_payload: XpubAccountWithBalance) {
         @delete-click="deleteClicked(xpub)"
       />
     </td>
-  </Fragment>
+  </template>
 </template>

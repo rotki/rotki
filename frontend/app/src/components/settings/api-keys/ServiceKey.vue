@@ -129,6 +129,7 @@ const slots = useSlots();
     </div>
 
     <div
+
       class="pt-4 flex gap-2"
       data-cy="service-key__buttons"
     >

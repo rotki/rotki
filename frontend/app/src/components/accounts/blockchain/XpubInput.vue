@@ -143,10 +143,10 @@ watch(errorMessages, (errors) => {
     <div class="flex gap-4">
       <VSelect
         v-model="xpubKeyPrefix"
-        outlined
+        variant="outlined"
         class="account-form__xpub-key-type flex-1"
         item-value="value"
-        item-text="label"
+        item-title="label"
         :disabled="disabled"
         :items="keyTypeListData"
       />

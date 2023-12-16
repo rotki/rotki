@@ -3,6 +3,10 @@ import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
 import { externalLinks } from '@/data/external-links';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     dense?: boolean;
@@ -41,7 +45,6 @@ onMounted(() => {
 });
 
 const { t } = useI18n();
-const rootAttrs = useAttrs();
 </script>
 
 <template>
@@ -57,27 +60,27 @@ const rootAttrs = useAttrs();
         <VSelect
           v-model="language"
           :items="supportedLanguages"
-          item-text="label"
+          item-title="label"
           item-value="identifier"
-          outlined
+          variant="outlined"
           hide-details
           :label="t('general_settings.labels.language')"
           persistent-hint
-          :success-messages="success"
+          :messages="success"
           :error-messages="error"
-          v-bind="rootAttrs"
-          @change="updateSetting($event, update)"
+          v-bind="$attrs"
+          @update:model-value="updateSetting($event, update)"
         >
           <template #item="{ item }">
             <LanguageSelectorItem
-              :countries="item.countries ?? [item.identifier]"
-              :label="item.label"
+              :countries="item.raw.countries ?? [item.raw.identifier]"
+              :label="item.raw.label"
             />
           </template>
           <template #selection="{ item }">
             <LanguageSelectorItem
-              :countries="item.countries ?? [item.identifier]"
-              :label="item.label"
+              :countries="item.raw.countries ?? [item.raw.identifier]"
+              :label="item.raw.label"
             />
           </template>
         </VSelect>

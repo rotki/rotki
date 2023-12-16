@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import images from './poap.json';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
 
 defineProps<{
@@ -32,7 +32,7 @@ type EventType = (typeof events)[number];
 
 const { t } = useI18n();
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<PoapDeliveryDetails>[]>(() => [
   {
     label: t('common.name'),
     key: 'name',
@@ -45,9 +45,15 @@ const headers = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-function getImage(event: EventType): string {
-  const image = images[event];
-  return image ?? '';
+function isEventType(event: string): event is EventType {
+  return Array.prototype.includes.call(events, event);
+}
+
+function getImage(event: string): string {
+  if (isEventType(event))
+    return images[event];
+
+  return '';
 }
 </script>
 
@@ -63,7 +69,8 @@ function getImage(event: EventType): string {
 
     <RuiDataTable
       :rows="items"
-      :cols="headers"
+      :cols="
+        headers"
       row-attr="name"
     >
       <template #item.name="{ row }">

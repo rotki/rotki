@@ -91,9 +91,9 @@ const { smAndDown } = useDisplay();
     :class="smAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
-    right
+    location="right"
     temporary
-    hide-overlay
+    :scrim="false"
   >
     <div class="flex justify-between items-center p-4">
       <div class="text-h6">

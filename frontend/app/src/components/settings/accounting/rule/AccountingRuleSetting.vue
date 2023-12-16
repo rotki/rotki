@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type {
   Filters,
@@ -42,11 +42,11 @@ async function checkConflicts() {
   const { total } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
   set(conflictsNumber, total);
 
+  const { currentRoute } = router;
+
   const {
-    currentRoute: {
-      query: { resolveConflicts },
-    },
-  } = router;
+    query: { resolveConflicts },
+  } = get(currentRoute);
 
   if (resolveConflicts) {
     if (total > 0)
@@ -56,7 +56,7 @@ async function checkConflicts() {
   }
 }
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AccountingRuleEntry>[]>(() => [
   {
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
@@ -184,17 +184,17 @@ function getType(eventType: string, eventSubtype: string) {
 }
 
 onMounted(async () => {
+  const { currentRoute } = router;
+
   const {
-    currentRoute: {
-      query: {
-        'add-rule': addRule,
-        'edit-rule': editRule,
-        eventSubtype,
-        eventType,
-        counterparty,
-      },
+    query: {
+      'add-rule': addRule,
+      'edit-rule': editRule,
+      eventSubtype,
+      eventType,
+      counterparty,
     },
-  } = router;
+  } = get(currentRoute);
 
   const ruleData = {
     eventSubtype: eventSubtype?.toString() ?? '',

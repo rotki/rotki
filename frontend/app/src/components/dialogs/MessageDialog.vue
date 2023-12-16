@@ -30,7 +30,7 @@ const icon = computed<string>(() =>
 
 <template>
   <VDialog
-    :value="visible"
+    :model-value="visible"
     max-width="500"
     persistent
     @close="emit('dismiss')"

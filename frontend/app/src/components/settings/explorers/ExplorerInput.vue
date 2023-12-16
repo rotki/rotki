@@ -8,11 +8,11 @@ defineOptions({
 });
 
 const props = defineProps<{
-  value: string;
+  modelValue: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: string): void;
+  (e: 'update:model-value', value: string): void;
   (e: 'save-data', value?: string): void;
 }>();
 
@@ -55,10 +55,6 @@ const v$ = useVuelidate(
       clearable
       :error-messages="toMessages(v$.url)"
       v-bind="$attrs"
-      v-on="
-        // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-        $listeners
-      "
       @click:clear="saveData()"
     />
     <RuiButton
@@ -66,7 +62,7 @@ const v$ = useVuelidate(
       class="mt-1"
       icon
       :disabled="v$.$invalid"
-      @click="saveData(value)"
+      @click="saveData(modelValue)"
     >
       <RuiIcon name="save-line" />
     </RuiButton>

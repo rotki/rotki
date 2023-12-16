@@ -21,6 +21,7 @@ vi.mock('@/composables/info/chains', () => ({
         evmChainName: 'optimism',
         id: Blockchain.OPTIMISM,
         type: 'evm',
+        image: '',
         name: 'Optimism',
         nativeToken: 'ETH',
       } satisfies EvmChainInfo,

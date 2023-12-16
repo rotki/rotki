@@ -8,31 +8,32 @@ import type {
   SelectionChangedEvent,
 } from '@/types/reports';
 
-const props = defineProps<{ value: { start: string; end: string } }>();
+const props = defineProps<{ modelValue: { start: string; end: string } }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: { start: string; end: string }): void;
+  (e: 'update:model-value', value: { start: string; end: string }): void;
   (e: 'update:valid', valid: boolean): void;
 }>();
-
-const { value } = toRefs(props);
 
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
 const invalidRange = computed(
-  ({ value }) =>
-    !!value
-    && !!value.start
-    && !!value.end
-    && convertToTimestamp(value.start) > convertToTimestamp(value.end),
+  () =>
+    !!props.modelValue
+    && !!props.modelValue.start
+    && !!props.modelValue.end
+    && convertToTimestamp(props.modelValue.start) > convertToTimestamp(props.modelValue.end),
 );
 
 const year = computed(() => get(profitLossReportPeriod).year);
 const quarter = computed(() => get(profitLossReportPeriod).quarter);
 const custom = computed(() => get(year) === 'custom');
 
+const start = useSimplePropVModel(props, 'start', emit);
+const end = useSimplePropVModel(props, 'end', emit);
+
 function input(data: { start: string; end: string }) {
-  emit('input', data);
+  emit('update:model-value', data);
 }
 
 function updateValid(valid: boolean) {
@@ -82,8 +83,8 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    start: computed(() => get(value).start),
-    end: computed(() => get(value).end),
+    start,
+    end,
   },
   { $autoDirty: false },
 );
@@ -107,21 +108,19 @@ watch(v$, ({ $invalid }) => {
     >
       <div>
         <DateTimePicker
-          :value="value.start"
+          v-model="start"
           :label="t('generate.labels.start_date')"
           limit-now
           allow-empty
           :error-messages="toMessages(v$.start)"
-          @input="$emit('input', { start: $event, end: value.end })"
         />
       </div>
       <div>
         <DateTimePicker
-          :value="value.end"
+          v-model="end"
           :label="t('generate.labels.end_date')"
           limit-now
           :error-messages="toMessages(v$.end)"
-          @input="$emit('input', { start: value.start, end: $event })"
         />
       </div>
     </div>

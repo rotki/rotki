@@ -89,19 +89,19 @@ const matchedAcquisitions = computed(
         multiple
       >
         <VExpansionPanel>
-          <VExpansionPanelHeader>
-            <template #default="{ open }">
+          <VExpansionPanelTitle>
+            <template #default="{ expanded }">
               <div class="text-rui-primary font-bold">
                 {{
-                  open
+                  expanded
                     ? t('profit_loss_events.cost_basis.hide')
                     : t('profit_loss_events.cost_basis.show')
                 }}
               </div>
             </template>
-          </VExpansionPanelHeader>
+          </VExpansionPanelTitle>
 
-          <VExpansionPanelContent class="pt-4">
+          <VExpansionPanelText class="pt-4">
             <RuiCard>
               <template #custom-header>
                 <div class="flex p-4 items-center gap-4">
@@ -167,7 +167,7 @@ const matchedAcquisitions = computed(
                 </template>
               </DataTable>
             </RuiCard>
-          </VExpansionPanelContent>
+          </VExpansionPanelText>
         </VExpansionPanel>
       </VExpansionPanels>
     </template>

@@ -4,50 +4,50 @@ import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
-  exchange: ExchangePayload;
+  modelValue: ExchangePayload;
   editMode: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: ExchangePayload): void;
+  (e: 'update:model-value', value: ExchangePayload): void;
 }>();
 
-const { editMode, exchange } = toRefs(props);
+const { editMode, modelValue } = toRefs(props);
 const editKeys = ref(false);
 
 const name = computed({
   get() {
-    return props.exchange.name ?? undefined;
+    return props.modelValue.name ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, newName: value ?? null });
+    input({ ...props.modelValue, newName: value ?? null });
   },
 });
 
 const apiKey = computed({
   get() {
-    return props.exchange.apiKey ?? undefined;
+    return props.modelValue.apiKey ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, apiKey: value ?? null });
+    input({ ...props.modelValue, apiKey: value ?? null });
   },
 });
 
 const apiSecret = computed({
   get() {
-    return props.exchange.apiSecret ?? undefined;
+    return props.modelValue.apiSecret ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, apiSecret: value ?? null });
+    input({ ...props.modelValue, apiSecret: value ?? null });
   },
 });
 
 const passphrase = computed({
   get() {
-    return props.exchange.passphrase ?? undefined;
+    return props.modelValue.passphrase ?? undefined;
   },
   set(value?: string) {
-    input({ ...props.exchange, passphrase: value ?? null });
+    input({ ...props.modelValue, passphrase: value ?? null });
   },
 });
 
@@ -55,18 +55,18 @@ const { getExchangeNonce } = useExchangesStore();
 const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
 
   return !get(exchangesWithoutApiSecret).includes(location);
 });
 
 const requiresPassphrase = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
   return get(exchangesWithPassphrase).includes(location);
 });
 
 const isBinance = computed(() => {
-  const { location } = get(exchange);
+  const { location } = props.modelValue;
   return ['binance', 'binanceus'].includes(location);
 });
 
@@ -83,7 +83,7 @@ function toggleEdit() {
 
   if (!get(editKeys)) {
     input({
-      ...get(exchange),
+      ...props.modelValue,
       apiSecret: null,
       apiKey: null,
     });
@@ -108,7 +108,7 @@ function onExchangeChange(exchange: string) {
 }
 
 function input(payload: ExchangePayload) {
-  emit('input', payload);
+  emit('update:model-value', payload);
 }
 
 onMounted(() => {
@@ -116,8 +116,8 @@ onMounted(() => {
     return;
 
   input({
-    ...get(exchange),
-    name: suggestedName(get(exchange).location),
+    ...props.modelValue,
+    name: suggestedName(props.modelValue.location),
   });
 });
 
@@ -171,7 +171,7 @@ const rules = {
 
 const { setValidation } = useExchangeApiKeysForm();
 
-const v$ = setValidation(rules, exchange, { $autoDirty: true });
+const v$ = setValidation(rules, modelValue, { $autoDirty: true });
 </script>
 
 <template>
@@ -181,29 +181,26 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <VAutocomplete
-        outlined
-        :value="exchange.location"
+        variant="outlined"
+        :model-value="modelValue.location"
         :items="exchangesWithKey"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
         :disabled="editMode"
         auto-select-first
-        @change="onExchangeChange($event)"
+        @update:model-value="onExchangeChange($event)"
       >
-        <template #selection="{ item, attrs, on }">
+        <template #selection="{ item }">
           <ExchangeDisplay
-            :exchange="item"
-            :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
+            :exchange="item.raw"
+            :class="`exchange__${item.raw}`"
           />
         </template>
-        <template #item="{ item, attrs, on }">
+        <template #item="{ item, props }">
           <ExchangeDisplay
-            :exchange="item"
+            :exchange="item.raw"
             :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
           />
         </template>
       </VAutocomplete>
@@ -222,24 +219,24 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
         v-else
         variant="outlined"
         color="primary"
-        :value="exchange.name"
+        :value="modelValue.name"
         :error-messages="toMessages(v$.name)"
         data-cy="name"
         :label="t('common.name')"
-        @input="input({ ...exchange, name: $event })"
+        @input="input({ ...modelValue, name: $event })"
       />
     </div>
 
     <VSelect
-      v-if="exchange.location === 'kraken'"
-      outlined
-      :value="exchange.krakenAccountType"
+      v-if="modelValue.location === 'kraken'"
+      variant="outlined"
+      :model-value="modelValue.krakenAccountType"
       data-cy="account-type"
       :items="krakenAccountTypes"
       item-value="identifier"
-      item-text="label"
+      item-title="label"
       :label="t('exchange_settings.inputs.kraken_account')"
-      @change="input({ ...exchange, krakenAccountType: $event })"
+      @update:model-value="input({ ...modelValue, krakenAccountType: $event })"
     />
 
     <div
@@ -309,9 +306,9 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
     <BinancePairsSelector
       v-if="isBinance"
       outlined
-      :name="exchange.name"
-      :location="exchange.location"
-      @input="input({ ...exchange, binanceMarkets: $event })"
+      :name="modelValue.name"
+      :location="modelValue.location"
+      @update:selection="input({ ...modelValue, binanceMarkets: $event })"
     />
   </div>
 </template>

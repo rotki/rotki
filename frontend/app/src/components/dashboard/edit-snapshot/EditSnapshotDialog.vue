@@ -162,7 +162,7 @@ const steps = computed(() => [
 <template>
   <VDialog
     persistent
-    :value="true"
+    :model-value="true"
     max-width="1400"
   >
     <RuiCard
@@ -182,11 +182,11 @@ const steps = computed(() => [
         </RuiButton>
 
         <h5 class="pl-2 text-h5 flex items-center">
-          <i18n path="dashboard.snapshot.edit.dialog.title">
+          <i18n-t keypath="dashboard.snapshot.edit.dialog.title">
             <template #date>
               <DateDisplay :timestamp="timestamp" />
             </template>
-          </i18n>
+          </i18n-t>
         </h5>
       </div>
 
@@ -208,20 +208,20 @@ const steps = computed(() => [
             </RuiTabItem>
             <RuiTabItem :value="2">
               <EditLocationDataSnapshotTable
-                :value="locationDataSnapshot"
+                :model-value="locationDataSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="updateAndSave($event)"
+                @update:model-value="updateAndSave($event)"
               />
             </RuiTabItem>
             <RuiTabItem :value="3">
               <EditSnapshotTotal
                 v-if="step === 3"
-                :value="locationDataSnapshot"
+                :model-value="locationDataSnapshot"
                 :balances-snapshot="balancesSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="updateAndComplete($event)"
+                @update:model-value="updateAndComplete($event)"
               />
             </RuiTabItem>
           </template>

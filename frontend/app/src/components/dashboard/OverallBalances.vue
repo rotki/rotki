@@ -174,9 +174,9 @@ const chartSectionHeight = computed<string>(() => {
         </div>
         <TimeframeSelector
           class="pt-6"
-          :value="timeframe"
+          :model-value="timeframe"
           :visible-timeframes="visibleTimeframes"
-          @input="setTimeframe($event)"
+          @update:model-value="setTimeframe($event)"
         />
       </div>
       <div

@@ -1,16 +1,16 @@
 <template>
   <VMenu
     offset-x
-    left
+    location="left"
     min-width="500"
     :close-on-content-click="false"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         variant="text"
         icon
         class="!p-2"
-        v-on="on"
+        v-bind="props"
       >
         <RuiIcon name="file-settings-line" />
       </RuiButton>

@@ -2,7 +2,6 @@
 import { onlyIfTruthy } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
-import Fragment from '@/components/helper/Fragment';
 import { toSentenceCase } from '@/utils/text';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
@@ -332,258 +331,254 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <Fragment>
-    <div
-      v-if="editableItem"
-      class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
-    >
-      <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
-      <div class="flex items-center">
-        {{ editableItem.identifier }}
-        <CopyButton
-          class="ml-2"
-          size="sm"
-          :value="editableItem.identifier"
-          :tooltip="t('asset_form.identifier_copy')"
-        />
-      </div>
-    </div>
-    <div class="flex flex-col gap-2">
-      <div data-cy="type-select">
-        <VSelect
-          v-model="assetType"
-          outlined
-          :label="t('asset_form.labels.asset_type')"
-          :disabled="types.length === 1 || !!editableItem"
-          :items="types"
-        >
-          <template #item="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-          <template #selection="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-        </VSelect>
-      </div>
-
-      <div
-        v-if="isEvmToken"
-        class="grid md:grid-cols-2 gap-x-4 gap-y-2"
-      >
-        <div data-cy="chain-select">
-          <VSelect
-            v-model="evmChain"
-            outlined
-            :label="t('asset_form.labels.chain')"
-            :disabled="!!editableItem"
-            :items="allEvmChains"
-            item-value="name"
-            item-text="label"
-            :error-messages="toMessages(v$.evmChain)"
-          />
-        </div>
-
-        <div data-cy="token-select">
-          <VSelect
-            v-model="tokenKind"
-            outlined
-            :label="t('asset_form.labels.token_kind')"
-            :disabled="!!editableItem"
-            :items="evmTokenKindsData"
-            item-text="label"
-            item-value="identifier"
-            :error-messages="toMessages(v$.tokenKind)"
-          />
-        </div>
-      </div>
-      <div data-cy="address-input">
-        <RuiTextField
-          v-if="isEvmToken"
-          v-model="address"
-          variant="outlined"
-          color="primary"
-          :loading="fetching"
-          :error-messages="toMessages(v$.address)"
-          :label="t('common.address')"
-          :disabled="submitting || fetching || !!editableItem"
-          @keydown.space.prevent
-        />
-      </div>
-
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2">
-        <RuiTextField
-          v-model="name"
-          data-cy="name-input"
-          class="md:col-span-2"
-          variant="outlined"
-          color="primary"
-          :error-messages="toMessages(v$.name)"
-          :label="t('common.name')"
-          :disabled="submitting || fetching"
-        />
-
-        <RuiTextField
-          v-model="symbol"
-          :class="isEvmToken ? 'md:col-span-1' : 'md:col-span-2'"
-          data-cy="symbol-input"
-          variant="outlined"
-          color="primary"
-          :error-messages="toMessages(v$.symbol)"
-          :label="t('asset_form.labels.symbol')"
-          :disabled="submitting || fetching"
-        />
-        <div
-          v-if="isEvmToken"
-          data-cy="decimal-input"
-        >
-          <RuiTextField
-            v-model="decimals"
-            variant="outlined"
-            color="primary"
-            min="0"
-            max="18"
-            type="number"
-            :label="t('asset_form.labels.decimals')"
-            :error-messages="toMessages(v$.decimals)"
-            :disabled="submitting || fetching"
-          />
-        </div>
-        <div class="md:col-span-2 flex items-start gap-4">
-          <RuiTextField
-            v-model="coingecko"
-            variant="outlined"
-            color="primary"
-            clearable
-            class="flex-1"
-            :hint="t('asset_form.labels.coingecko_hint')"
-            :label="t('asset_form.labels.coingecko')"
-            :error-messages="toMessages(v$.coingecko)"
-            :disabled="submitting || !coingeckoEnabled"
-          >
-            <template #append>
-              <HelpLink
-                small
-                :url="externalLinks.contributeSection.coingecko"
-                :tooltip="t('asset_form.help_coingecko')"
-              />
-            </template>
-          </RuiTextField>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiCheckbox
-                v-model="coingeckoEnabled"
-                class="mt-2"
-                color="primary"
-              />
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </RuiTooltip>
-        </div>
-        <div class="md:col-span-2 flex items-start gap-4">
-          <RuiTextField
-            v-model="cryptocompare"
-            variant="outlined"
-            color="primary"
-            clearable
-            class="flex-1"
-            :label="t('asset_form.labels.cryptocompare')"
-            :hint="t('asset_form.labels.cryptocompare_hint')"
-            :error-messages="toMessages(v$.cryptocompare)"
-            :disabled="submitting || !cryptocompareEnabled"
-          >
-            <template #append>
-              <HelpLink
-                small
-                :url="externalLinks.contributeSection.cryptocompare"
-                :tooltip="t('asset_form.help_cryptocompare')"
-              />
-            </template>
-          </RuiTextField>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiCheckbox
-                v-model="cryptocompareEnabled"
-                class="mt-2"
-                color="primary"
-              />
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </RuiTooltip>
-        </div>
-      </div>
-
-      <RuiCard
-        no-padding
-        rounded="sm"
-        class="mt-2 mb-4 overflow-hidden"
-      >
-        <VExpansionPanels
-          flat
-          tile
-        >
-          <VExpansionPanel>
-            <VExpansionPanelHeader>
-              {{ t('asset_form.optional') }}
-            </VExpansionPanelHeader>
-            <VExpansionPanelContent>
-              <DateTimePicker
-                v-model="started"
-                :label="t('asset_form.labels.started')"
-                :error-messages="toMessages(v$.started)"
-                :disabled="submitting"
-              />
-              <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-                <RuiTextField
-                  v-if="isEvmToken"
-                  v-model="protocol"
-                  variant="outlined"
-                  color="primary"
-                  clearable
-                  class="asset-form__protocol"
-                  :label="t('common.protocol')"
-                  :error-messages="toMessages(v$.protocol)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-model="swappedFor"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="toMessages(v$.swappedFor)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-if="!isEvmToken && assetType"
-                  v-model="forked"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.forked')"
-                  :error-messages="toMessages(v$.forked)"
-                  :disabled="submitting"
-                />
-              </div>
-              <UnderlyingTokenManager
-                v-if="isEvmToken"
-                v-model="underlyingTokens"
-              />
-            </VExpansionPanelContent>
-          </VExpansionPanel>
-        </VExpansionPanels>
-      </RuiCard>
-
-      <AssetIconForm
-        ref="assetIconFormRef"
-        :identifier="identifier"
-        refreshable
+  <div
+    v-if="editableItem"
+    class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
+  >
+    <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
+    <div class="flex items-center">
+      {{ editableItem.identifier }}
+      <CopyButton
+        class="ml-2"
+        size="sm"
+        :value="editableItem.identifier"
+        :tooltip="t('asset_form.identifier_copy')"
       />
     </div>
-  </Fragment>
+  </div>
+  <div class="flex flex-col gap-2">
+    <div data-cy="type-select">
+      <VSelect
+        v-model="assetType"
+        variant="outlined"
+        :label="t('asset_form.labels.asset_type')"
+        :disabled="types.length === 1 || !!editableItem"
+        :items="types"
+      >
+        <template #item="{ item }">
+          {{ toSentenceCase(item.raw) }}
+        </template>
+        <template #selection="{ item }">
+          {{ toSentenceCase(item.raw) }}
+        </template>
+      </VSelect>
+    </div>
+
+    <div
+      v-if="isEvmToken"
+      class="grid md:grid-cols-2 gap-x-4 gap-y-2"
+    >
+      <div data-cy="chain-select">
+        <VSelect
+          v-model="evmChain"
+          variant="outlined"
+          :label="t('asset_form.labels.chain')"
+          :disabled="!!editableItem"
+          :items="allEvmChains"
+          item-value="name"
+          item-title="label"
+          :error-messages="toMessages(v$.evmChain)"
+        />
+      </div>
+
+      <div data-cy="token-select">
+        <VSelect
+          v-model="tokenKind"
+          variant="outlined"
+          :label="t('asset_form.labels.token_kind')"
+          :disabled="!!editableItem"
+          :items="evmTokenKindsData"
+          item-title="label"
+          item-value="identifier"
+          :error-messages="toMessages(v$.tokenKind)"
+        />
+      </div>
+    </div>
+    <div data-cy="address-input">
+      <RuiTextField
+        v-if="isEvmToken"
+        v-model="address"
+        variant="outlined"
+        color="primary"
+        :loading="fetching"
+        :error-messages="toMessages(v$.address)"
+        :label="t('common.address')"
+        :disabled="submitting || fetching || !!editableItem"
+        @keydown.space.prevent
+      />
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2">
+      <RuiTextField
+        v-model="name"
+        data-cy="name-input"
+        class="md:col-span-2"
+        variant="outlined"
+        color="primary"
+        :error-messages="toMessages(v$.name)"
+        :label="t('common.name')"
+        :disabled="submitting || fetching"
+      />
+
+      <RuiTextField
+        v-model="symbol"
+        :class="isEvmToken ? 'md:col-span-1' : 'md:col-span-2'"
+        data-cy="symbol-input"
+        variant="outlined"
+        color="primary"
+        :error-messages="toMessages(v$.symbol)"
+        :label="t('asset_form.labels.symbol')"
+        :disabled="submitting || fetching"
+      />
+      <div
+        v-if="isEvmToken"
+        data-cy="decimal-input"
+      >
+        <RuiTextField
+          v-model="decimals"
+          variant="outlined"
+          color="primary"
+          min="0"
+          max="18"
+          type="number"
+          :label="t('asset_form.labels.decimals')"
+          :error-messages="toMessages(v$.decimals)"
+          :disabled="submitting || fetching"
+        />
+      </div>
+      <div class="md:col-span-2 flex items-start gap-4">
+        <RuiTextField
+          v-model="coingecko"
+          variant="outlined"
+          color="primary"
+          clearable
+          class="flex-1"
+          :hint="t('asset_form.labels.coingecko_hint')"
+          :label="t('asset_form.labels.coingecko')"
+          :error-messages="toMessages(v$.coingecko)"
+          :disabled="submitting || !coingeckoEnabled"
+        >
+          <template #append>
+            <HelpLink
+              small
+              :url="externalLinks.contributeSection.coingecko"
+              :tooltip="t('asset_form.help_coingecko')"
+            />
+          </template>
+        </RuiTextField>
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiCheckbox
+              v-model="coingeckoEnabled"
+              class="mt-2"
+              color="primary"
+            />
+          </template>
+          <span> {{ t('asset_form.oracle_disable') }}</span>
+        </RuiTooltip>
+      </div>
+      <div class="md:col-span-2 flex items-start gap-4">
+        <RuiTextField
+          v-model="cryptocompare"
+          variant="outlined"
+          color="primary"
+          clearable
+          class="flex-1"
+          :label="t('asset_form.labels.cryptocompare')"
+          :hint="t('asset_form.labels.cryptocompare_hint')"
+          :error-messages="toMessages(v$.cryptocompare)"
+          :disabled="submitting || !cryptocompareEnabled"
+        >
+          <template #append>
+            <HelpLink
+              small
+              :url="externalLinks.contributeSection.cryptocompare"
+              :tooltip="t('asset_form.help_cryptocompare')"
+            />
+          </template>
+        </RuiTextField>
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiCheckbox
+              v-model="cryptocompareEnabled"
+              class="mt-2"
+              color="primary"
+            />
+          </template>
+          <span> {{ t('asset_form.oracle_disable') }}</span>
+        </RuiTooltip>
+      </div>
+    </div>
+
+    <RuiCard
+      no-padding
+      rounded="sm"
+      class="mt-2 mb-4 overflow-hidden"
+    >
+      <VExpansionPanels tile>
+        <VExpansionPanel elevation="0">
+          <VExpansionPanelTitle>
+            {{ t('asset_form.optional') }}
+          </VExpansionPanelTitle>
+          <VExpansionPanelText>
+            <DateTimePicker
+              v-model="started"
+
+              :label="t('asset_form.labels.started')"
+              :error-messages="toMessages(v$.started)"
+              :disabled="submitting"
+            />
+            <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+              <RuiTextField
+                v-if="isEvmToken"
+                v-model="protocol"
+                variant="outlined"
+                color="primary"
+                clearable
+                class="asset-form__protocol"
+                :label="t('common.protocol')"
+                :error-messages="toMessages(v$.protocol)"
+                :disabled="submitting"
+              />
+              <AssetSelect
+                v-model="swappedFor"
+                outlined
+                persistent-hint
+                clearable
+                :label="t('asset_form.labels.swapped_for')"
+                :error-messages="toMessages(v$.swappedFor)"
+                :disabled="submitting"
+              />
+              <AssetSelect
+                v-if="!isEvmToken && assetType"
+                v-model="forked"
+                outlined
+                persistent-hint
+                clearable
+                :label="t('asset_form.labels.forked')"
+                :error-messages="toMessages(v$.forked)"
+                :disabled="submitting"
+              />
+            </div>
+            <UnderlyingTokenManager
+              v-if="isEvmToken"
+              v-model="underlyingTokens"
+            />
+          </VExpansionPanelText>
+        </VExpansionPanel>
+      </VExpansionPanels>
+    </RuiCard>
+
+    <AssetIconForm
+      ref="assetIconFormRef"
+      :identifier="identifier"
+      refreshable
+    />
+  </div>
 </template>

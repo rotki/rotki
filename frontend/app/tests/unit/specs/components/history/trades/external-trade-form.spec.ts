@@ -1,11 +1,11 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
 import BigNumber from 'bignumber.js';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
@@ -13,7 +13,7 @@ import type { Trade } from '@/types/history/trade';
 
 describe('externalTradeForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<ExternalTradeForm>;
+  let wrapper: VueWrapper<InstanceType<typeof ExternalTradeForm>>;
 
   const editableItem: Trade = {
     timestamp: 1701252793,
@@ -30,16 +30,20 @@ describe('externalTradeForm.vue', () => {
     tradeId: '3f6ef0005e6ebf1605a611a02997311595e542c6118726f05f076b89732f0282',
   };
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
+  const createWrapper = (options: ComponentMountingOptions<typeof ExternalTradeForm> = {}) => {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(ExternalTradeForm, {
-      pinia,
-      vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          VAutocomplete: VAutocompleteStub,
+          VCombobox: VComboboxStub,
+        },
       },
       ...options,
     });
@@ -48,7 +52,7 @@ describe('externalTradeForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `editableItem` passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=date] input').element as HTMLInputElement).value,
@@ -105,8 +109,8 @@ describe('externalTradeForm.vue', () => {
     });
 
     it('`editableItem` passed', async () => {
-      wrapper = createWrapper({ propsData: { editableItem } });
-      await wrapper.vm.$nextTick();
+      wrapper = createWrapper({ props: { editableItem } });
+      await nextTick();
 
       const buyRadio = wrapper.find(
         '[data-cy=type] [data-cy=trade-input-buy] input',
@@ -127,7 +131,7 @@ describe('externalTradeForm.vue', () => {
         .find('[data-cy=type] [data-cy=trade-input-sell] input')
         .trigger('click');
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)

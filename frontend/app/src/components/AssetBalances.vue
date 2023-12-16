@@ -5,7 +5,7 @@ import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 
 defineOptions({
@@ -40,12 +40,12 @@ const total = computed(() =>
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<AssetBalanceWithPrice>> = ref({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -81,9 +81,9 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const sortItems = getSortItems(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
 
-const sorted = computed(() => {
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = [...get(balances)];
   if (!Array.isArray(sortBy) && sortBy?.column) {
@@ -105,12 +105,12 @@ function expand(item: AssetBalanceWithPrice) {
 
 <template>
   <RuiDataTable
+    v-model:sort="sort"
     :cols="tableHeaders"
     :rows="sorted"
     :loading="loading"
     :expanded="expanded"
     :loading-text="t('asset_balances.loading')"
-    :sort.sync="sort"
     :sort-modifiers="{ external: true }"
     :empty="{ description: t('data_table.no_data') }"
     :sticky-offset="64"

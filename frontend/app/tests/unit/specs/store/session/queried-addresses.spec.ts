@@ -18,7 +18,7 @@ describe('session:queried addresses store', () => {
     expect.assertions(2);
 
     const response: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
+      makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
 
     api.queriedAddresses = vi.fn().mockResolvedValue(response);
@@ -44,7 +44,7 @@ describe('session:queried addresses store', () => {
       address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     };
     const response: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
+      makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     api.addQueriedAddress = vi.fn().mockResolvedValue(response);
     await store.addQueriedAddress(payload);
@@ -71,7 +71,7 @@ describe('session:queried addresses store', () => {
     expect.assertions(2);
 
     const originalState: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
+      makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     Object.assign(store.queriedAddresses, originalState);
     const payload: QueriedAddressPayload = {
@@ -90,7 +90,7 @@ describe('session:queried addresses store', () => {
     const messageStore = useMessageStore();
 
     const originalState: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
+      makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     Object.assign(store.queriedAddresses, originalState);
     const payload: QueriedAddressPayload = {

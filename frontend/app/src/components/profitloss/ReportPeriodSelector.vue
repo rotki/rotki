@@ -153,24 +153,22 @@ const quarterModel = computed({
         class="flex-wrap justify-center"
         active-color="primary"
       >
-        <template #default>
-          <RuiButton
-            v-for="period in periods"
-            :key="period"
-            :color="year === period ? 'primary' : undefined"
-            class="px-4"
-            :value="period"
-          >
-            {{ period }}
-          </RuiButton>
-          <RuiButton
-            value="custom"
-            class="px-4"
-            :color="isCustom ? 'primary' : undefined"
-          >
-            {{ t('generate.custom_selection') }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          v-for="period in periods"
+          :key="period"
+          :color="year === period ? 'primary' : undefined"
+          class="px-4"
+          :value="period"
+        >
+          {{ period }}
+        </RuiButton>
+        <RuiButton
+          value="custom"
+          class="px-4"
+          :color="isCustom ? 'primary' : undefined"
+        >
+          {{ t('generate.custom_selection') }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
     <div
@@ -187,17 +185,15 @@ const quarterModel = computed({
         class="flex-wrap justify-center"
         active-color="primary"
       >
-        <template #default>
-          <RuiButton
-            v-for="subPeriod in subPeriods"
-            :key="subPeriod.id"
-            :color="quarter === subPeriod.id ? 'primary' : undefined"
-            :value="subPeriod.id"
-            :disabled="isStartAfterNow(subPeriod.id)"
-          >
-            {{ subPeriod.name }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          v-for="subPeriod in subPeriods"
+          :key="subPeriod.id"
+          :color="quarter === subPeriod.id ? 'primary' : undefined"
+          :value="subPeriod.id"
+          :disabled="isStartAfterNow(subPeriod.id)"
+        >
+          {{ subPeriod.name }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
   </div>

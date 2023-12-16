@@ -43,11 +43,11 @@ const css = useCssModule();
       min-width="180px"
       offset-y
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <MenuTooltipButton
           tooltip="Account"
           class-name="user-dropdown secondary--text text--lighten-4"
-          v-on="on"
+          v-bind="props"
         >
           <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>

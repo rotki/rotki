@@ -47,6 +47,7 @@ const globalDetails = computed(() => [
 const [DefineRow, ReuseRow] = createReusableTemplate<{
   label: string;
   value: string;
+  copiable?: boolean;
 }>();
 </script>
 

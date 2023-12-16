@@ -3,7 +3,7 @@ import { externalLinks } from '@/data/external-links';
 import type {
   DataTableColumn,
   DataTableSortColumn,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Writeable } from '@/types';
 import type { Exchange, ExchangePayload } from '@/types/exchanges';
 
@@ -28,7 +28,7 @@ const { connectedExchanges } = storeToRefs(store);
 
 const exchange = ref<ExchangePayload>(placeholder());
 const editMode = ref<boolean>(false);
-const sort = ref<DataTableSortColumn>({
+const sort = ref<DataTableSortColumn<Exchange>>({
   column: 'name',
   direction: 'asc',
 });
@@ -146,13 +146,13 @@ onBeforeMount(() => {
 const router = useRouter();
 onMounted(async () => {
   const { currentRoute } = router;
-  if (currentRoute.query.add) {
+  if (get(currentRoute).query.add) {
     addExchange();
     await router.replace({ query: {} });
   }
 });
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<Exchange>[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
@@ -217,15 +217,15 @@ function showRemoveConfirmation(item: Exchange) {
     <RuiCard>
       <div class="flex flex-row-reverse mb-2">
         <HintMenuIcon>
-          <i18n
-            path="exchange_settings.subtitle"
+          <i18n-t
+            keypath="exchange_settings.subtitle"
             tag="div"
           >
             <ExternalLink
               :text="t('exchange_settings.usage_guide')"
               :url="externalLinks.usageGuideSection.addingAnExchange"
             />
-          </i18n>
+          </i18n-t>
         </HintMenuIcon>
       </div>
 
@@ -242,10 +242,10 @@ function showRemoveConfirmation(item: Exchange) {
         </template>
         <template #item.syncEnabled="{ row }">
           <VSwitch
-            :input-value="!isNonSyncExchange(row)"
+            :model-value="!isNonSyncExchange(row)"
             hide-details
             class="mt-0"
-            @change="toggleSync(row)"
+            @update:model-value="toggleSync(row)"
           />
         </template>
         <template #item.actions="{ row }">

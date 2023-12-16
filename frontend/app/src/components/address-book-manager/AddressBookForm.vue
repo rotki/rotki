@@ -11,7 +11,7 @@ import type {
 
 const props = withDefaults(
   defineProps<{
-    value: AddressBookPayload;
+    modelValue: AddressBookPayload;
     edit: boolean;
     enableForAllChains?: boolean;
     isEvmChain?: boolean;
@@ -24,7 +24,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: AddressBookPayload): void;
+  (e: 'update:model-value', value: AddressBookPayload): void;
   (e: 'valid', valid: boolean): void;
   (e: 'update:enable-for-all-chains', enable: boolean): void;
 }>();
@@ -123,16 +123,16 @@ onMounted(fetchNames);
   <form>
     <VSelect
       v-model="location"
-      outlined
+      variant="outlined"
       :label="t('common.location')"
       :items="locations"
       :disabled="edit"
     >
       <template #item="{ item }">
-        {{ toSentenceCase(item) }}
+        {{ toSentenceCase(item.raw) }}
       </template>
       <template #selection="{ item }">
-        {{ toSentenceCase(item) }}
+        {{ toSentenceCase(item.raw) }}
       </template>
     </VSelect>
     <ChainSelect
@@ -167,8 +167,8 @@ onMounted(fetchNames);
             color="grey"
           >
             <AppImage
-              v-if="value.address && isValidEthAddress(value.address)"
-              :src="getBlockie(value.address)"
+              v-if="isValidEthAddress(modelValue.address)"
+              :src="getBlockie(modelValue.address)"
               size="1.5rem"
             />
           </VAvatar>

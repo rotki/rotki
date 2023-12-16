@@ -11,10 +11,6 @@ const { t } = useI18n();
     :popper="{ placement: 'top' }"
     :open-delay="200"
     class="text-no-wrap cursor-pointer"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
     <template #activator>
       <slot />

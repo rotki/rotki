@@ -5,19 +5,19 @@ const { t } = useI18n();
 <template>
   <ImportSource source="bitmex_wallet_history">
     <template #upload-title>
-      <i18n
+      <i18n-t
         tag="span"
-        path="import_data.bitmex.import"
+        keypath="import_data.bitmex.import"
       >
         <strong>{{ t('import_data.bitmex.import_types') }}</strong>
-      </i18n>
+      </i18n-t>
     </template>
-    <i18n
+    <i18n-t
       tag="span"
-      path="import_data.note"
+      keypath="import_data.note"
     >
       <strong>{{ t('import_data.bitmex.name') }}</strong>
-    </i18n>
+    </i18n-t>
     <ul class="list-disc">
       <li>{{ t('import_data.bitmex.line_one') }}</li>
       <li>{{ t('import_data.bitmex.line_two') }}</li>

@@ -97,12 +97,12 @@ const { t } = useI18n();
     <div class="grid md:grid-cols-3 gap-4">
       <VAutocomplete
         v-model="eventTypeModel"
-        outlined
+        variant="outlined"
         required
         :label="t('transactions.events.form.event_type.label')"
         :items="historyEventTypesData"
         item-value="identifier"
-        item-text="label"
+        item-title="label"
         data-cy="eventType"
         auto-select-first
         :error-messages="toMessages(v$.eventType)"
@@ -110,12 +110,12 @@ const { t } = useI18n();
       />
       <VAutocomplete
         v-model="eventSubtypeModel"
-        outlined
+        variant="outlined"
         required
         :label="t('transactions.events.form.event_subtype.label')"
         :items="historyEventSubTypeFilteredData"
         item-value="identifier"
-        item-text="label"
+        item-title="label"
         data-cy="eventSubtype"
         auto-select-first
         :error-messages="toMessages(v$.eventSubtype)"

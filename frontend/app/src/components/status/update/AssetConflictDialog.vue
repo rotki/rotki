@@ -141,26 +141,24 @@ function cancel() {
         variant="outlined"
         :value="isAllLocalOrRemote"
       >
-        <template #default>
-          <RuiButton
-            value="local"
-            @click="setResolution('local')"
-          >
-            {{ t('conflict_dialog.keep_local') }}
-          </RuiButton>
-          <RuiButton
-            value="remote"
-            @click="setResolution('remote')"
-          >
-            {{ t('conflict_dialog.keep_remote') }}
-          </RuiButton>
-        </template>
+        <RuiButton
+          value="local"
+          @click="setResolution('local')"
+        >
+          {{ t('conflict_dialog.keep_local') }}
+        </RuiButton>
+        <RuiButton
+          value="remote"
+          @click="setResolution('remote')"
+        >
+          {{ t('conflict_dialog.keep_remote') }}
+        </RuiButton>
       </RuiButtonGroup>
     </div>
 
     <div class="text-caption pt-4 pb-1">
-      <i18n
-        path="conflict_dialog.hint"
+      <i18n-t
+        keypath="conflict_dialog.hint"
         tag="span"
       >
         <template #conflicts>
@@ -169,7 +167,7 @@ function cancel() {
         <template #remaining>
           <span class="font-medium"> {{ remaining }} </span>
         </template>
-      </i18n>
+      </i18n-t>
     </div>
 
     <DataTable
@@ -205,14 +203,12 @@ function cancel() {
           variant="outlined"
           @input="onStrategyChange(resolution[conflict.identifier])"
         >
-          <template #default>
-            <RuiButton value="local">
-              {{ t('conflict_dialog.action.local') }}
-            </RuiButton>
-            <RuiButton value="remote">
-              {{ t('conflict_dialog.action.remote') }}
-            </RuiButton>
-          </template>
+          <RuiButton value="local">
+            {{ t('conflict_dialog.action.local') }}
+          </RuiButton>
+          <RuiButton value="remote">
+            {{ t('conflict_dialog.action.remote') }}
+          </RuiButton>
         </RuiButtonGroup>
       </template>
     </DataTable>

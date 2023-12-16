@@ -59,7 +59,7 @@ const { t } = useI18n();
 <template>
   <div v-if="needRefresh">
     <VDialog
-      :value="true"
+      :model-value="true"
       persistent
       max-width="500"
     >

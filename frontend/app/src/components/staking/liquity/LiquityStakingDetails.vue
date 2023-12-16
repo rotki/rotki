@@ -296,13 +296,12 @@ const slots = useSlots();
         nudge-right="8"
         min-width="410"
       >
-        <template #activator="{ on, attrs }">
+        <template #activator="{ props }">
           <RuiButton
             variant="text"
             class="!p-2"
             icon
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
           >
             <RuiIcon name="information-line" />
           </RuiButton>

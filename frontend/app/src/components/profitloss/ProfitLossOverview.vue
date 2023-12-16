@@ -2,12 +2,13 @@
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 import type {
   ProfitLossOverviewItem,
+  Report,
   SelectedReport,
 } from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
-    report: SelectedReport;
+    report: SelectedReport | Report;
     symbol?: string | null;
     flat?: boolean;
     loading?: boolean;

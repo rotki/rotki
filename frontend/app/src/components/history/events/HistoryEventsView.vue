@@ -659,7 +659,7 @@ watchImmediate(route, async (route) => {
         {{ t('transactions.actions.add_event') }}
       </RuiButton>
 
-      <VDialog
+      <RuiDialog
         v-model="decodingStatusDialogOpen"
         max-width="600"
         :persistent="decodingStatusDialogPersistent"
@@ -677,14 +677,14 @@ watchImmediate(route, async (route) => {
             <RuiIcon name="close-line" />
           </RuiButton>
         </HistoryEventsDecodingStatus>
-      </VDialog>
+      </RuiDialog>
 
       <VMenu
         offset-y
-        left
+        location="left"
         max-width="200"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <RuiBadge
             :value="eventTaskLoading"
             color="primary"
@@ -698,7 +698,7 @@ watchImmediate(route, async (route) => {
               icon
               size="sm"
               class="!p-2"
-              v-on="on"
+              v-bind="props"
             >
               <RuiIcon name="more-2-fill" />
             </RuiButton>
@@ -782,9 +782,9 @@ watchImmediate(route, async (route) => {
             @update:matches="setFilter($event)"
           >
             <template #tooltip>
-              <i18n
+              <i18n-t
                 tag="span"
-                path="transactions.filtering_premium_hint"
+                keypath="transactions.filtering_premium_hint"
               >
                 <ExternalLink
                   class="!font-bold !text-white"
@@ -792,7 +792,7 @@ watchImmediate(route, async (route) => {
                 >
                   {{ t('common.website') }}
                 </ExternalLink>
-              </i18n>
+              </i18n-t>
             </template>
           </TableFilter>
         </template>
@@ -800,7 +800,7 @@ watchImmediate(route, async (route) => {
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
-          :value="accounts"
+          :model-value="accounts"
           :chains="txChains"
           dense
           :label="t('transactions.filter.account')"
@@ -810,7 +810,7 @@ watchImmediate(route, async (route) => {
           hide-chain-icon
           unique
           flat
-          @input="onFilterAccountsChanged($event)"
+          @update:model-value="onFilterAccountsChanged($event)"
         />
       </HistoryTableActions>
 

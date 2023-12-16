@@ -27,15 +27,13 @@ const { t } = useI18n();
           @input="update($event)"
         >
           <RuiRadio
-            :internal-value="
-              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
-            "
+            :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"
             :label="
               t('dashboard.blockchain_balances.behaviour.only_refresh_balances')
             "
           />
           <RuiRadio
-            :internal-value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
+            :value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
             :label="
               t('dashboard.blockchain_balances.behaviour.redetect_tokens')
             "
