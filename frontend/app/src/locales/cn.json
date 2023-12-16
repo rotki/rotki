@@ -2048,7 +2048,6 @@
     "inputs": {
       "api_key": "API Key",
       "api_secret": "API Secret",
-      "ftx_subaccount": "[可选] FTX 子账户名称",
       "kraken_account": "选择您的 Kraken 账户类型",
       "passphrase": "Passphrase"
     },

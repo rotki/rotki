@@ -18,8 +18,7 @@ const placeholder: () => ExchangePayload = () => ({
   apiSecret: null,
   passphrase: null,
   krakenAccountType: 'starter',
-  binanceMarkets: null,
-  ftxSubaccount: null
+  binanceMarkets: null
 });
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
@@ -123,13 +122,6 @@ const setup = async (): Promise<boolean> => {
   const writeableExchange: Writeable<ExchangePayload> = { ...get(exchange) };
   if (writeableExchange.name === writeableExchange.newName) {
     writeableExchange.newName = null;
-  }
-
-  if (
-    !!writeableExchange.ftxSubaccount &&
-    writeableExchange.ftxSubaccount.trim().length === 0
-  ) {
-    writeableExchange.ftxSubaccount = null;
   }
 
   return await setupExchange({

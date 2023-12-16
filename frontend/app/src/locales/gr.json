@@ -2011,7 +2011,6 @@
     "inputs": {
       "api_key": "API Key",
       "api_secret": "API Secret",
-      "ftx_subaccount": "[Optional] FTX subaccount name",
       "kraken_account": "Select the type of your Kraken account",
       "passphrase": "Passphrase"
     },
