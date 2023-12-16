@@ -74,8 +74,7 @@ const onExchangeChange = (exchange: SupportedExchange) => {
     apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
     passphrase: null,
     krakenAccountType: exchange === SupportedExchange.KRAKEN ? 'starter' : null,
-    binanceMarkets: null,
-    ftxSubaccount: null
+    binanceMarkets: null
   });
 
   nextTick(() => {
@@ -284,27 +283,6 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       :label="t('exchange_settings.inputs.passphrase')"
       @input="input({ ...exchange, passphrase: $event })"
     />
-
-    <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
-      <RuiTextField
-        v-if="editMode"
-        variant="outlined"
-        color="primary"
-        :value="exchange.ftxSubaccount"
-        data-cy="ftxSubaccount"
-        :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="input({ ...exchange, ftxSubaccount: $event })"
-      />
-      <RuiTextField
-        v-else
-        variant="outlined"
-        color="primary"
-        :value="exchange.ftxSubaccount"
-        data-cy="ftxSubaccount"
-        :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="input({ ...exchange, ftxSubaccount: $event })"
-      />
-    </div>
 
     <BinancePairsSelector
       v-if="isBinance"
