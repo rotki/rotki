@@ -4,7 +4,6 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, NamedTuple, Optional, Union
 
-from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
@@ -284,9 +283,6 @@ class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
 
     def has_oracle(self) -> bool:
         return self.has_coingecko() or self.cryptocompare is not None
-
-    def to_bittrex(self) -> str:
-        return WORLD_TO_BITTREX.get(self.identifier, self.identifier)
 
     def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {
