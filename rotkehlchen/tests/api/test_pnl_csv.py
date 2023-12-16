@@ -75,13 +75,13 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
             count += 1
             rows.append(row)
 
-    assert count == 43
+    assert count == 37
 
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -228,7 +228,7 @@ def test_encoding(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
