@@ -2717,6 +2717,11 @@
       "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
       "name": "BitMEX"
     },
+    "bittrex": {
+      "import": "Import {0} from Bittrex",
+      "import_types": "trades, deposits, and withdrawals",
+      "name": "Bittrex"
+    },
     "bitstamp": {
       "import": "Import {0} from Bitstamp",
       "import_types": "trades, deposits, and withdrawals",
