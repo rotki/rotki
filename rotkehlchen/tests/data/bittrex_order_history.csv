@@ -1,0 +1,7 @@
+Name: JOHN DOE
+UserID: john@doe.com
+Date Generated: 2023-12-15T23:17:04
+
+TXID,Time (UTC),Transaction,Order Type,Market,Base,Quote,Price,Quantity (Base),Fees (Quote),Total (Quote),Approx Value (USD),Time In Force,Notes
+28445361-31c6-1ab1-91a9-e196d50ad1a5,2017-12-03T12:04:16,Bought,Limit,SWT/BTC,SWT,BTC,0.00034100,731.28354007,0.00062343,0.24999841,,Good til cancelled,"Bought 731.28354007 SWT for 0.24999841 BTC"
+a3a27e1a-2b6c-3b82-c275-d61e375d35a2,2017-08-13T21:32:03,Sold,Limit,EDGELESS/BTC,EDGELESS,BTC,0.00018098,857.78221905,0.00038812,0.15486188,,Good til cancelled,"Sold 857.78221905 EDGELESS for 0.15486188 BTC"
