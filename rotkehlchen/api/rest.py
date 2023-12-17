@@ -2027,7 +2027,7 @@ class RestAPI:
         )
         if success is False:
             return wrap_in_fail_result(
-                message=f'Invalid CSV format, missing required field: {msg}',
+                message=f'Invalid CSV format: {msg}',
                 status_code=HTTPStatus.BAD_REQUEST,
             )
 

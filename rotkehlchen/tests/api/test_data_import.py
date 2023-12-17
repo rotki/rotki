@@ -21,6 +21,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_bitcoin_tax_trades_import_results,
     assert_bitmex_import_wallet_history,
     assert_bitstamp_trades_import_results,
+    assert_bittrex_import_results,
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
     assert_cointracking_import_results,
@@ -623,3 +624,21 @@ def test_bitstamp_import(rotkehlchen_api_server):
     )
     assert assert_proper_response_with_result(response) is True
     assert_bitstamp_trades_import_results(rotki)
+
+
+def test_bittrex_history_import(rotkehlchen_api_server):
+    """Test that data import works both for bittrex csv files"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    for filename in ('bittrex_tx_history.csv', 'bittrex_order_history.csv'):
+        filepath = dir_path / 'data' / filename
+        json_data = {'source': 'bittrex', 'file': str(filepath)}
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dataimportresource',
+            ), json=json_data,
+        )
+        assert assert_proper_response_with_result(response) is True
+
+    assert_bittrex_import_results(rotki)

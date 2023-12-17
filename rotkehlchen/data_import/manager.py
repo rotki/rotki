@@ -6,6 +6,7 @@ from rotkehlchen.data_import.importers.bisq_trades import BisqTradesImporter
 from rotkehlchen.data_import.importers.bitcoin_tax import BitcoinTaxImporter
 from rotkehlchen.data_import.importers.bitmex import BitMEXImporter
 from rotkehlchen.data_import.importers.bitstamp import BitstampTransactionsImporter
+from rotkehlchen.data_import.importers.bittrex import BittrexImporter
 from rotkehlchen.data_import.importers.blockfi_trades import BlockfiTradesImporter
 from rotkehlchen.data_import.importers.blockfi_transactions import BlockfiTransactionsImporter
 from rotkehlchen.data_import.importers.cointracking import CointrackingImporter
@@ -35,6 +36,7 @@ class DataImportSource(SerializableEnumNameMixin):
     BITCOIN_TAX = 12
     BITMEX_WALLET_HISTORY = 13
     BITSTAMP = 14
+    BITTREX = 15
 
     def get_importer_type(self) -> type[BaseExchangeImporter]:
         if self == DataImportSource.COINTRACKING:
@@ -65,6 +67,8 @@ class DataImportSource(SerializableEnumNameMixin):
             return BitMEXImporter
         if self == DataImportSource.BITSTAMP:
             return BitstampTransactionsImporter
+        if self == DataImportSource.BITTREX:
+            return BittrexImporter
         raise AssertionError(f'Unknown DataImportSource value {self}')
 
 
