@@ -25,6 +25,7 @@ def should_run_periodic_task(
             'last_data_updates_ts',
             'last_evm_accounts_detect_ts',
             'last_spam_assets_detect_key',
+            'last_augmented_spam_assets_detect_key',
         ],
         refresh_period: int,
 ) -> bool:

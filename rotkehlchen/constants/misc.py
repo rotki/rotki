@@ -23,3 +23,4 @@ DEFAULT_MAX_LOG_BACKUP_FILES = 3
 DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
 
 LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
+LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'
