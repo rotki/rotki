@@ -75,7 +75,8 @@ export const useExchangesStore = defineStore('exchanges', () => {
         setConnectedExchanges(exchanges);
         set(exchangeBalances, balances);
 
-        if (exchanges.length > 0) {
+        // if multiple keys exist for the deleted exchange, re-fetch and update the balances for the location
+        if (exchanges.some(exch => exch.location === exchange.location)) {
           await fetchExchangeBalances({
             location: exchange.location,
             ignoreCache: false
