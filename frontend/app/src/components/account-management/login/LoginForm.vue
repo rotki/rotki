@@ -49,6 +49,7 @@ const customBackendDisplay: Ref<boolean> = ref(false);
 const customBackendUrl: Ref<string> = ref('');
 const customBackendSessionOnly: Ref<boolean> = ref(false);
 const customBackendSaved: Ref<boolean> = ref(false);
+const dynamicMessageDialog: Ref<boolean> = ref(false);
 
 const usernameRef: Ref = ref();
 const passwordRef: Ref = ref();
@@ -56,6 +57,7 @@ const passwordRef: Ref = ref();
 const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
 const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
 const savedUsername = useLocalStorage('rotki.username', '');
+const { welcomeMessage } = useDynamicMessages();
 
 const rules = {
   username: {
@@ -582,6 +584,45 @@ const abortLogin = () => {
               >
                 {{ t('common.actions.continue') }}
               </RuiButton>
+
+              <VDialog
+                v-if="welcomeMessage && welcomeMessage.action"
+                v-model="dynamicMessageDialog"
+                max-width="400"
+              >
+                <template #activator="{ on }">
+                  <RuiButton
+                    color="primary"
+                    class="lg:hidden"
+                    size="lg"
+                    :disabled="loading"
+                    variant="outlined"
+                    type="button"
+                    data-cy="show-dynamic-messages"
+                    v-on="on"
+                  >
+                    {{ welcomeMessage.action.text }}
+                  </RuiButton>
+                </template>
+
+                <RuiCard>
+                  <WelcomeMessageDisplay
+                    class="!bg-transparent !p-0"
+                    :message="welcomeMessage"
+                  />
+
+                  <template #footer>
+                    <div class="w-full" />
+                    <RuiButton
+                      color="primary"
+                      variant="text"
+                      @click="dynamicMessageDialog = false"
+                    >
+                      {{ t('common.actions.close') }}
+                    </RuiButton>
+                  </template>
+                </RuiCard>
+              </VDialog>
 
               <div :class="css.login__actions__footer">
                 <span>{{ t('login.button_no_account') }}</span>
