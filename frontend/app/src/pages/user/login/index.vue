@@ -122,16 +122,16 @@ onMounted(async () => fetchMessages());
 }
 
 .logo {
-  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
-
   &__mobile {
-    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto w-full;
-    @apply h-8 #{!important};
-
     @media screen and (max-width: 487px) {
       @apply px-4 max-w-full;
     }
+
+    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto w-full;
+    @apply h-8 #{!important};
   }
+
+  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
 }
 
 .footer {
