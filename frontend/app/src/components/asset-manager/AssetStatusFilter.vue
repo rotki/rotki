@@ -54,20 +54,7 @@ const onlyShowOwned = computed({
 </script>
 
 <template>
-  <VMenu v-model="showMenu" offset-y :close-on-content-click="false">
-    <template #activator="{ on }">
-      <RuiButton
-        variant="outlined"
-        data-cy="asset-filter"
-        color="secondary"
-        v-on="on"
-      >
-        <template #append>
-          <RuiIcon name="arrow-down-s-line" />
-        </template>
-        {{ t('common.actions.filter') }}
-      </RuiButton>
-    </template>
+  <TableStatusFilter>
     <VList data-cy="asset-filter-menu">
       <RuiCheckbox
         v-model="onlyShowOwned"
@@ -116,7 +103,7 @@ const onlyShowOwned = computed({
         </RuiRadioGroup>
       </VListItem>
     </VList>
-  </VMenu>
+  </TableStatusFilter>
 </template>
 
 <style module lang="scss">

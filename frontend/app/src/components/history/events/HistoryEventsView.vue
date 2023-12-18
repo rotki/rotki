@@ -60,6 +60,9 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
+const customizedEventsOnly: Ref<boolean> = ref(false);
+const showIgnoredAssets: Ref<boolean> = ref(false);
+
 const {
   location,
   protocols,
@@ -191,7 +194,9 @@ const {
     extraParams: computed(() => ({
       accounts: get(usedAccounts).map(
         account => `${account.address}#${account.chain}`
-      )
+      ),
+      customizedEventsOnly: get(customizedEventsOnly),
+      excludeIgnoredAssets: !get(showIgnoredAssets)
     })),
     defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(
       () => {
@@ -254,7 +259,8 @@ const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
       limit: -1,
       offset: 0,
       eventIdentifiers: eventsHeaderData.map(item => item.eventIdentifier),
-      groupByEventIds: false
+      groupByEventIds: false,
+      excludeIgnoredAssets: !get(showIgnoredAssets)
     });
 
     return response.data;
@@ -761,6 +767,23 @@ watchImmediate(route, async route => {
 
       <HistoryTableActions hide-divider>
         <template #filter>
+          <TableStatusFilter>
+            <div class="py-1 max-w-[16rem]">
+              <VSwitch
+                v-model="customizedEventsOnly"
+                class="mb-4 pt-0 px-4"
+                hide-details
+                :label="t('transactions.filter.customized_only')"
+              />
+              <RuiDivider />
+              <VSwitch
+                v-model="showIgnoredAssets"
+                class="mb-4 pt-0 px-4"
+                hide-details
+                :label="t('transactions.filter.show_ignored_assets')"
+              />
+            </div>
+          </TableStatusFilter>
           <TableFilter
             :matches="filters"
             :matchers="matchers"

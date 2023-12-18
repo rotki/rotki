@@ -58,6 +58,14 @@ const sources = [
     )
   },
   {
+    identifier: 'bittrex',
+    name: t('import_data.bittrex.name'),
+    logo: './assets/images/protocols/bittrex.svg',
+    form: defineAsyncComponent(
+      () => import('@/components/import/BittrexImport.vue')
+    )
+  },
+  {
     identifier: 'bisq',
     name: t('import_data.bisq.name'),
     logo: './assets/images/protocols/bisq.svg',

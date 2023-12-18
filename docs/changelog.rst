@@ -5,6 +5,7 @@ Changelog
 * :feature:`7092` Users of metamask swaps will now see them properly decoded in the history view and have them taken into account during accounting.
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
+* :bug:`7119` Removed bittrex as an exchanged added via api key since it has shut down. But users can now import bittrex CSVs in order to get their history into rotki.
 * :bug:`-` Bitmex history queries should now work properly again after Bitmex changed their API without versioning.
 * :bug:`1863` Bitstamp deposit/withdrawals should now also show the address and transaction id.
 * :bug:`7075` Coinbase api should now be usable again. Additionally history retrieval speed has improved by orders of magnitude.

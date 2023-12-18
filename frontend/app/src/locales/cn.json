@@ -2552,6 +2552,11 @@
       "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
       "name": "BitMEX"
     },
+    "bittrex": {
+      "import": "从 Bittrex 导入 {0}",
+      "import_types": "交易、存款和取款",
+      "name": "Bittrex"
+    },
     "bitstamp": {
       "import": "从 Bitstamp 导入 {0}",
       "import_types": "交易、存款和取款",

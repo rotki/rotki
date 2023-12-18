@@ -29,6 +29,7 @@ const { t } = useI18n();
 const { locationOverview, mainPage } = toRefs(props);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
+const showIgnoredAssets: Ref<boolean> = ref(false);
 
 const router = useRouter();
 const route = useRoute();
@@ -105,12 +106,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 });
 
 const extraParams = computed(() => ({
-  includeIgnoredTrades: (!get(hideIgnoredTrades)).toString()
+  includeIgnoredTrades: !get(hideIgnoredTrades),
+  excludeIgnoredAssets: !get(showIgnoredAssets)
 }));
-
-watch(hideIgnoredTrades, () => {
-  setPage(1);
-});
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
@@ -142,6 +140,7 @@ const {
 >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
   onUpdateFilters(query) {
     set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
+    set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
   extraParams
 });
@@ -321,12 +320,27 @@ watch(loading, async (isLoading, wasLoading) => {
         </CardTitle>
       </template>
 
-      <HistoryTableActions
-        v-if="!locationOverview"
-        class="flex flex-row items-center flex-wrap gap-2 mb-4"
-      >
+      <HistoryTableActions v-if="!locationOverview">
         <template #filter>
+          <TableStatusFilter>
+            <div class="py-1 max-w-[16rem]">
+              <VSwitch
+                v-model="hideIgnoredTrades"
+                class="mb-4 pt-0 px-4"
+                hide-details
+                :label="t('closed_trades.hide_ignored_trades')"
+              />
+              <RuiDivider />
+              <VSwitch
+                v-model="showIgnoredAssets"
+                class="mb-4 pt-0 px-4"
+                hide-details
+                :label="t('transactions.filter.show_ignored_assets')"
+              />
+            </div>
+          </TableStatusFilter>
           <TableFilter
+            class="min-w-full sm:min-w-[20rem]"
             :matches="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_TRADES"
@@ -357,14 +371,6 @@ watch(loading, async (isLoading, wasLoading) => {
           </RuiButton>
         </div>
       </HistoryTableActions>
-
-      <VSwitch
-        v-if="mainPage"
-        v-model="hideIgnoredTrades"
-        class="mb-4 max-w-max"
-        hide-details
-        :label="t('closed_trades.hide_ignored_trades')"
-      />
 
       <CollectionHandler :collection="trades" @set-page="setPage($event)">
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">

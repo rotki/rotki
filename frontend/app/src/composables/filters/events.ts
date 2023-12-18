@@ -23,8 +23,7 @@ enum HistoryEventFilterKeys {
   ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
-  ADDRESSES = 'address',
-  CUSTOMIZED_EVENTS = 'customized_only'
+  ADDRESSES = 'address'
 }
 
 enum HistoryEventFilterValueKeys {
@@ -39,8 +38,7 @@ enum HistoryEventFilterValueKeys {
   ENTRY_TYPE = 'entryTypes',
   TX_HASHES = 'txHashes',
   VALIDATOR_INDICES = 'validatorIndices',
-  ADDRESSES = 'addresses',
-  CUSTOMIZED_EVENTS = 'customizedEventsOnly'
+  ADDRESSES = 'addresses'
 }
 
 export type Matcher = SearchMatcher<
@@ -266,13 +264,6 @@ export const useHistoryEventFilter = (
       });
     }
 
-    data.push({
-      key: HistoryEventFilterKeys.CUSTOMIZED_EVENTS,
-      keyValue: HistoryEventFilterValueKeys.CUSTOMIZED_EVENTS,
-      description: t('transactions.filter.customized_only'),
-      boolean: true
-    });
-
     return data;
   });
 
@@ -289,11 +280,6 @@ export const useHistoryEventFilter = (
     .transform(val => (Array.isArray(val) ? val : [val]))
     .optional();
 
-  const OptionalBoolean = z
-    .string()
-    .transform(val => !!val)
-    .optional();
-
   const RouteFilterSchema = z.object({
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.END]: OptionalString,
@@ -306,8 +292,7 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.CUSTOMIZED_EVENTS]: OptionalBoolean
+    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
   return {

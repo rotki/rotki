@@ -59,6 +59,7 @@ import {
   RiEarthLine,
   RiEditLine,
   RiEqualLine,
+  RiEqualizerLine,
   RiErrorWarningLine,
   RiExchangeBoxLine,
   RiExchangeLine,
@@ -369,6 +370,7 @@ Vue.use(RuiPlugin, {
     RiAdminLine,
     RiLayoutGridLine,
     RiSettings2Line,
-    RiWaterPercentLine
+    RiWaterPercentLine,
+    RiEqualizerLine
   ]
 });

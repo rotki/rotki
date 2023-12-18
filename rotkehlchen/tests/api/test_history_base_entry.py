@@ -16,6 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -476,6 +477,37 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
+
+    # test pagination and exclude_ignored_assets and group by event ids works
+    toggle_ignore_an_asset(rotkehlchen_api_server, A_ETH)
+    for exclude_ignored_assets, found in ((True, 2), (False, 6)):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyeventresource',
+            ),
+            json={'group_by_event_ids': True, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': exclude_ignored_assets},  # noqa: E501
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == min(found, 5)
+        assert result['entries_found'] == found
+        assert result['entries_limit'] == 100
+        assert result['entries_total'] == 6
+
+    # test pagination and exclude_ignored_assets without group by event ids works
+    for exclude_ignored_assets, found in ((True, 3), (False, 9)):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyeventresource',
+            ),
+            json={'group_by_event_ids': False, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': exclude_ignored_assets},  # noqa: E501
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == min(found, 5)
+        assert result['entries_found'] == found
+        assert result['entries_limit'] == 100
+        assert result['entries_total'] == 9
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

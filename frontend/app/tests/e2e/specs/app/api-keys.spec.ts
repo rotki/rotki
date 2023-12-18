@@ -15,10 +15,10 @@ describe('API keys', () => {
   });
 
   it('add exchange key', () => {
-    const apiKey = Cypress.env('BITTREX_API_KEY');
-    const apiSecret = Cypress.env('BITTREX_API_SECRET');
+    const apiKey = Cypress.env('KRAKEN_API_KEY');
+    const apiSecret = Cypress.env('KRAKEN_API_SECRET');
     page.visit('api-keys-exchanges');
-    page.addExchange(apiKey, apiSecret, 'bittrex', 'BitRex');
-    page.exchangeIsAdded('Bittrex', 'BitRex');
+    page.addExchange(apiKey, apiSecret, 'kraken', 'My Kraken');
+    page.exchangeIsAdded('Kraken', 'My Kraken');
   });
 });

@@ -1,13 +1,14 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import { type AxiosError } from 'axios';
-import { isEmpty, isEqual, keys, pick } from 'lodash-es';
+import { isEmpty, isEqual } from 'lodash-es';
 import { type ZodSchema } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
 import {
   type LocationQuery,
+  type RawLocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import {
@@ -264,7 +265,7 @@ export const usePaginationFilters = <
    * Returns the parsed pagination and filter query params
    * @returns {LocationQuery}
    */
-  const getQuery = (): LocationQuery => {
+  const getQuery = (): RawLocationQuery => {
     const opts = get(paginationOptions);
     assert(opts);
     const { itemsPerPage, page, sortBy, sortDesc } = opts;
@@ -280,13 +281,20 @@ export const usePaginationFilters = <
       selectedFilters.location = location;
     }
 
+    const extraParamsConverted = Object.fromEntries(
+      Object.entries(get(extraParams) || {}).map(([key, value]) => [
+        key,
+        value?.toString()
+      ])
+    );
+
     return {
       itemsPerPage: itemsPerPage.toString(),
       page: page.toString(),
       sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
-      ...pick(selectedFilters, keys(selectedFilters)),
-      ...get(extraParams)
+      ...selectedFilters,
+      ...extraParamsConverted
     };
   };
 
@@ -336,21 +344,26 @@ export const usePaginationFilters = <
     applyRouteFilter();
   });
 
-  watch(filters, async (filters, oldFilters) => {
-    if (isEqual(filters, oldFilters)) {
-      return;
-    }
+  watch(
+    [filters, extraParams],
+    async ([filters, extraParams], [oldFilters, oldExtraParams]) => {
+      if (
+        isEqual(filters, oldFilters) &&
+        isEqual(extraParams, oldExtraParams)
+      ) {
+        return;
+      }
 
-    set(paginationOptions, { ...get(paginationOptions), page: 1 });
-  });
+      set(paginationOptions, { ...get(paginationOptions), page: 1 });
+    }
+  );
 
   watch(pageParams, async (params, op) => {
     if (isEqual(params, op)) {
       return;
     }
     if (get(userAction) && get(mainPage)) {
-      // Route should only be updated on user action otherwise it messes with
-      // forward navigation.
+      // Route should only be updated on user action otherwise it messes with forward navigation.
       const query = getQuery();
       if (isEqual(route.query, query)) {
         // prevent pushing same route

@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -118,7 +118,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert settings['include_fees_in_cost_basis'] == fees_in_cost_basis
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
-    entries_length = 43 if start_ts == 0 else 40
+    entries_length = 37 if start_ts == 0 else 34
     assert events_result['entries_found'] == entries_length
     assert isinstance(events_result['entries'], list)
     # TODO: These events are not actually checked anywhere for correctness
@@ -130,21 +130,18 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     # the unsupported/unknown assets
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 8
+    assert len(warnings) == 6
     assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[0]
     assert 'poloniex trade with unsupported asset BALLS' in warnings[1]
     assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[2]
     assert 'withdrawal of unsupported poloniex asset DIS' in warnings[3]
     assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[4]
     assert 'deposit of unsupported poloniex asset EBT' in warnings[5]
-    assert 'bittrex trade with unsupported asset PTON' in warnings[6]
-    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[7]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 3
-    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
-    assert 'Failed to read ledger event from kraken' in errors[1]
-    assert 'Failed to read ledger event from kraken ' in errors[2]
+    assert len(errors) == 2
+    assert 'Failed to read ledger event from kraken' in errors[0]
+    assert 'Failed to read ledger event from kraken ' in errors[1]
 
     response = requests.get(
         api_url_for(
@@ -161,7 +158,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -276,7 +273,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -336,7 +333,7 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x in reverse_master
             reverse_master.remove(x)
 
-    assert len(events) == 43
+    assert len(events) == 37
     for idx, x in enumerate(events):
         if idx == len(events) - 1:
             break

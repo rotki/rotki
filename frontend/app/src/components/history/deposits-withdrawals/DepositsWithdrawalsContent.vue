@@ -26,6 +26,8 @@ const { t } = useI18n();
 
 const { locationOverview } = toRefs(props);
 
+const showIgnoredAssets: Ref<boolean> = ref(false);
+
 const mainPage = computed(() => get(locationOverview) === '');
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
@@ -80,6 +82,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
+const extraParams = computed(() => ({
+  excludeIgnoredAssets: !get(showIgnoredAssets)
+}));
+
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
 
 const {
@@ -101,7 +107,12 @@ const {
   Collection<AssetMovementEntry>,
   Filters,
   Matcher
->(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
+>(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements, {
+  onUpdateFilters(query) {
+    set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
+  },
+  extraParams
+});
 
 useHistoryAutoRefresh(fetchData);
 
@@ -170,7 +181,18 @@ watch(loading, async (isLoading, wasLoading) => {
 
       <HistoryTableActions v-if="mainPage">
         <template #filter>
+          <TableStatusFilter>
+            <div class="py-1 max-w-[16rem]">
+              <VSwitch
+                v-model="showIgnoredAssets"
+                class="mb-4 pt-0 px-4"
+                hide-details
+                :label="t('transactions.filter.show_ignored_assets')"
+              />
+            </div>
+          </TableStatusFilter>
           <TableFilter
+            class="min-w-full sm:min-w-[20rem]"
             :matches="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"

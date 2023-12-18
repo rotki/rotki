@@ -1230,7 +1230,7 @@ def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
         link='',
     )
     movement3 = AssetMovement(
-        location=Location.BITTREX,
+        location=Location.KRAKEN,
         category=AssetMovementCategory.WITHDRAWAL,
         address='0xcoo',
         transaction_id='0xdoo',
@@ -1676,7 +1676,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     caplog.set_level(logging.INFO)
     with database.user_write() as cursor:
         database.add_asset_movements(cursor, [AssetMovement(
-            location=Location.BITTREX,
+            location=Location.KRAKEN,
             category=AssetMovementCategory.DEPOSIT,
             timestamp=177778,
             address='0xfoo',

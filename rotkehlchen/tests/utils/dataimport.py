@@ -1,7 +1,7 @@
 from typing import Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ONE, ZERO
@@ -1974,7 +1974,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
 
     expected_warnings = [
         'Deserialization error during rotki generic trades CSV import. Failed to deserialize Location value luno. Ignoring entry',  # noqa: E501
-        "During rotki generic trades import, csv row {'Location': 'bisq', 'Base Currency': 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', 'Quote Currency': 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', 'Type': 'Buy', 'Buy Amount': '0', 'Sell Amount': '4576.6400', 'Fee': '5.1345', 'Fee Currency': 'USD', 'Description': 'Trade USDT for DAI', 'Timestamp': '1659345600000'} has zero amount bought. Ignoring entry",  # noqa: E501
+        "During rotki generic trades import, csv row {'Location': 'bisq', 'Base Currency': 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', 'Quote Currency': 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', 'Type': ' BuY ', 'Buy Amount': '0', 'Sell Amount': '4576.6400', 'Fee': '5.1345', 'Fee Currency': 'USD', 'Description': 'Trade USDT for DAI', 'Timestamp': '1659345600000'} has zero amount bought. Ignoring entry",  # noqa: E501
     ]
     assert trades == expected_trades
     assert warnings == expected_warnings
@@ -2330,3 +2330,67 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
 
     for actual, expected in zip(history_events, expected_history_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)
+
+
+def assert_bittrex_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing data from bittrex"""
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    assert trades == [Trade(
+        timestamp=Timestamp(1502659923),
+        location=Location.BITTREX,
+        base_asset=EvmToken('eip155:1/erc20:0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'),
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('857.78221905')),
+        rate=Price(FVal('0.00018098')),
+        fee=Fee(FVal('0.00038812')),
+        fee_currency=A_BTC,
+        link='Imported bittrex trade a3a27e1a-2b6c-3b82-c275-d61e375d35a2 from csv',
+        notes='Sold 857.78221905 EDGELESS for 0.15486188 BTC',
+    ), Trade(
+        timestamp=Timestamp(1512302656),
+        location=Location.BITTREX,
+        base_asset=EvmToken('eip155:1/erc20:0xB9e7F8568e08d5659f5D29C4997173d84CdF2607'),
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('731.28354007')),
+        rate=Price(FVal('0.00034100')),
+        fee=Fee(FVal('0.00062343')),
+        fee_currency=A_BTC,
+        link='Imported bittrex trade 28445361-31c6-1ab1-91a9-e196d50ad1a5 from csv',
+        notes='Bought 731.28354007 SWT for 0.24999841 BTC',
+    )]
+    assert asset_movements == [AssetMovement(
+        location=Location.BITTREX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1632868521),
+        address=None,
+        transaction_id='1A313456CCEA5AF45B334881513CF472',
+        asset=Asset('BCHA'),
+        amount=AssetAmount(FVal('0.00000001')),
+        fee_asset=Asset('BCHA'),
+        fee=Fee(FVal(ZERO)),
+        link='Imported from bittrex CSV file',
+    ), AssetMovement(
+        location=Location.BITTREX,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1678175503),
+        address='0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5',
+        transaction_id='0xecac30357b613f6bcb5bc148fdd1d608bd94021e95a59233003948fde0c7c4d9',
+        asset=A_ETH,
+        amount=AssetAmount(FVal('0.20084931')),
+        fee_asset=A_ETH,
+        fee=Fee(FVal(ZERO)),
+        link='Imported from bittrex CSV file',
+    )]
