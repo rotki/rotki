@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
@@ -91,13 +92,19 @@ class EventsHistorian:
         location = filter_query.location
         from_ts = filter_query.from_ts
         to_ts = filter_query.to_ts
+        excluded_instances: dict[Location, set[str]] = defaultdict(set[str])
 
         with self.db.conn.read_ctx() as cursor:
-            excluded_locations = {exchange.location for exchange in self.db.get_settings(cursor).non_syncing_exchanges}  # noqa: E501
+            for exchange_id in self.db.get_settings(cursor).non_syncing_exchanges:
+                excluded_instances[exchange_id.location].add(exchange_id.name)
 
         if location is not None:
-            if location not in excluded_locations:
-                self.query_location_latest_trades(location=location, from_ts=from_ts, to_ts=to_ts)
+            self.query_location_latest_trades(
+                location=location,
+                excluded_instances=excluded_instances[location],
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
 
             return
 
@@ -144,10 +151,12 @@ class EventsHistorian:
     def query_location_latest_trades(
             self,
             location: Location,
+            excluded_instances: set[str],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> None:
         """Queries the service of a specific location for latest trades and saves them in the DB.
+        Services whose names are present in the excluded_instances set are not queried.
         May raise:
 
         - RemoteError if there is a problem with reaching the service
@@ -160,11 +169,12 @@ class EventsHistorian:
             return
 
         for exchange in exchanges_list:
-            exchange.query_trade_history(
-                start_ts=from_ts,
-                end_ts=to_ts,
-                only_cache=False,
-            )
+            if exchange.name not in excluded_instances:
+                exchange.query_trade_history(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=False,
+                )
 
     def _query_services_for_asset_movements(self, filter_query: AssetMovementsFilterQuery) -> None:
         """Queries all services requested for asset movements and writes them to the DB"""
