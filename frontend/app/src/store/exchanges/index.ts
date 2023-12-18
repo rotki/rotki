@@ -74,13 +74,6 @@ export const useExchangesStore = defineStore('exchanges', () => {
         delete balances[exchange.location];
         setConnectedExchanges(exchanges);
         set(exchangeBalances, balances);
-
-        if (exchanges.length > 0) {
-          await fetchExchangeBalances({
-            location: exchange.location,
-            ignoreCache: false
-          });
-        }
       }
 
       return success;
