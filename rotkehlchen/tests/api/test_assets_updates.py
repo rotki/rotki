@@ -199,7 +199,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
         assert new_token.decimals == 18
         assert new_token.protocol is None
 
-        new_asset = CryptoAsset('121-ada-FADS-as')  # type: ignore[unreachable]
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -499,7 +499,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert ctk.evm_address == '0x1B175474E89094C44Da98b954EedeAC495271d0F'
         assert ctk.decimals == 18
         assert ctk.protocol is None
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address="0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # type: ignore[unreachable]  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address="0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
 
 
@@ -664,7 +664,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
         assert gnt.decimals == 18
         assert gnt.protocol is None
 
-        new_asset = CryptoAsset('121-ada-FADS-as')  # type: ignore[unreachable]
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
 import gevent
@@ -8,7 +8,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
-from rotkehlchen.constants.misc import LAST_SPAM_ASSETS_DETECT_KEY
+from rotkehlchen.constants.misc import (
+    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+    LAST_SPAM_ASSETS_DETECT_KEY,
+)
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -23,12 +27,20 @@ from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
+    get_decoded_events_of_transaction,
     setup_ethereum_transactions_test,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind, Location, SupportedBlockchain
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    ChainID,
+    EvmTokenKind,
+    Location,
+    SupportedBlockchain,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -512,4 +524,45 @@ def test_maybe_detect_new_spam_tokens(
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
         cursor.execute('SELECT value FROM settings WHERE name=?', (LAST_SPAM_ASSETS_DETECT_KEY,))
+        assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xcC3Da35614E6CAEEA7947d7Cd58000C350E7FF84']])
+def test_maybe_augmented_detect_new_spam_tokens(
+        task_manager: TaskManager,
+        database: 'DBHandler',
+        globaldb: GlobalDBHandler,
+        gnosis_inquirer,
+) -> None:
+    """
+    Test the agumented spam detection schedule and behaviour. We use a token that is not detected
+    in the fast checks that we do and that is airdropped in a multisend transaction.
+    """
+    tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    token = EvmToken(evm_address_to_identifier(
+        address='0x456FEb37ca5F087f7B59F5F684437cf1dd6e968f',
+        chain_id=ChainID.GNOSIS,
+        token_type=EvmTokenKind.ERC20,
+    ))
+    assert token.protocol is None
+
+    task_manager.potential_tasks = [task_manager._maybe_augmented_detect_new_spam_tokens]
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_augmented_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
+
+    updated_token = cast(EvmToken, globaldb.resolve_asset(identifier=token.identifier))
+    assert updated_token.protocol == SPAM_PROTOCOL
+
+    with database.conn.read_ctx() as cursor:
+        assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
+        cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            (LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,),
+        )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501

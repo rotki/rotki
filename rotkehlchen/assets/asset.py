@@ -67,9 +67,7 @@ class Asset:
             )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            'identifier': self.identifier,
-        }
+        return {'identifier': self.identifier}
 
     def serialize(self) -> str:
         return self.identifier
@@ -470,7 +468,7 @@ class EvmToken(CryptoAsset):
     chain_id: ChainID = field(init=False)
     token_kind: EvmTokenKind = field(init=False)
     decimals: int = field(init=False)
-    protocol: str = field(init=False)
+    protocol: str | None = field(init=False)
     underlying_tokens: list[UnderlyingToken] = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:

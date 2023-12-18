@@ -51,6 +51,9 @@ def lp_price_from_uniswaplike_pool_contract(
     - Pooled amount of token 1
     - Total supply of pool token
     """
+    if token.protocol is None:
+        return None
+
     try:
         abi_name = LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME[token.protocol]  # the lp token's contract abi that will be used to query the info needed for lp token price calculation  # noqa: E501
     except KeyError:
