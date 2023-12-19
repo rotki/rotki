@@ -55,10 +55,12 @@ class EtherscanHasChainActivity(Enum):
     """
     Classify the type of transaction first found in etherscan. TRANSACTIONS means that the endpoint
     for transactions/internal transactions had entries, TOKENS means that the tokens endpoint had
-    entries and NONE means that no entry has been found in the different endpoints.
+    entries, BALANCE means that the address has a non-zero native asset balance and
+    NONE means that no activity was found.
     """
     TRANSACTIONS = auto()
     TOKENS = auto()
+    BALANCE = auto()
     NONE = auto()
 
 
@@ -532,8 +534,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         yield _hashes_tuple_to_list(hashes)
 
     def has_activity(self, account: ChecksumEvmAddress) -> EtherscanHasChainActivity:
-        """Queries transactions, internal_txs and tokentx for an address with limit=1
-        just to quickly determine if the account has had any activity in the chain.
+        """Queries native asset balance, transactions, internal_txs and tokentx for an address
+        with limit=1 just to quickly determine if the account has had any activity in the chain.
         We make a distinction between transactions and ERC20 transfers since ERC20
         are often spammed. If there was no activity at all we return the enum value
         NONE.
@@ -548,6 +550,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         result = self._query(module='account', action='tokentx', options=options)
         if len(result) != 0:
             return EtherscanHasChainActivity.TOKENS
+        if self.chain in {SupportedBlockchain.ETHEREUM, SupportedBlockchain.GNOSIS}:
+            balance = self._query(module='account', action='balance', options={'address': account})
+            if int(balance) != 0:
+                return EtherscanHasChainActivity.BALANCE
         return EtherscanHasChainActivity.NONE
 
     def get_latest_block_number(self) -> int:

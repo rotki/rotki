@@ -158,7 +158,6 @@ def test_query_trade_history_with_exchange_instance_excluded(events_historian):
     Test that when an exchange is ignored and more instances of the same location exist
     we only ignore the correct instance and not all.
     """
-
     coinbase_instances = [create_test_coinbase(
         name=name,
         database=events_historian,
