@@ -58,7 +58,7 @@ const remove = (tag: string) => {
   >
     <template #selection="{ item, select }">
       <RuiChip
-        label
+        tile
         size="sm"
         class="font-medium m-0.5"
         :bg-color="`#${item.backgroundColor}`"

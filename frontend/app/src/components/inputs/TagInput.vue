@@ -138,7 +138,7 @@ watch(tags, () => {
             class="ml-2"
             :bg-color="newTagBackground"
             :text-color="newTagForeground"
-            label
+            tile
             size="sm"
           >
             {{ search }}
@@ -147,7 +147,7 @@ watch(tags, () => {
       </template>
       <template #selection="{ item, select }">
         <RuiChip
-          label
+          tile
           class="font-medium m-0.5"
           :bg-color="`#${item.backgroundColor}`"
           :text-color="`#${item.foregroundColor}`"
