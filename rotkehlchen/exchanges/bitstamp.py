@@ -96,6 +96,13 @@ KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS = {
     'fee',
 }
 
+# We need to query two APIs and then match transactions to get full event history
+# There's a problem with matching withdrawals, because one API returns timestamp
+# from Activity History, one from Transaction History.
+# This is why we added the tolerance to match any transaction that occurred within
+# an hour of each other
+BITSTAMP_MATCHING_TOLERANCE = 3600
+
 
 class TradePairData(NamedTuple):
     pair: str
@@ -269,7 +276,7 @@ class Bitstamp(ExchangeInterface):
         indices_to_delete = []
         for asset_movement in asset_movements:
             for idx, crypto_movement in enumerate(crypto_asset_movements):
-                if crypto_movement.timestamp == asset_movement.timestamp and crypto_movement.category == asset_movement.category and crypto_movement.asset == asset_movement.asset:  # noqa: E501
+                if crypto_movement.category == asset_movement.category and crypto_movement.asset == asset_movement.asset and crypto_movement.amount == asset_movement.amount + asset_movement.fee and abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE:  # noqa: E501
                     asset_movement.address = crypto_movement.address
                     asset_movement.transaction_id = crypto_movement.transaction_id
                     indices_to_delete.append(idx)
@@ -299,7 +306,8 @@ class Bitstamp(ExchangeInterface):
         for idx in sorted(indices_to_delete, reverse=True):
             del crypto_asset_movements[idx]  # remove the crypto asset movements whose data we matched in the DB  # noqa: E501
 
-        return asset_movements + crypto_asset_movements
+        log.debug(f'Remaining Bitstamp unmatched {crypto_asset_movements=}')
+        return asset_movements
 
     def _query_crypto_transactions(self, offset: int) -> list[AssetMovement]:
         """Query crypto transactions to get address and transaction id.
@@ -319,14 +327,14 @@ class Bitstamp(ExchangeInterface):
 
         while True:
             response = self._api_query(
-                endpoint='crypto_transactions',
+                endpoint='crypto-transactions',
                 method='post',
                 options=options,
             )
             if response.status_code != HTTPStatus.OK:
                 return self._process_unsuccessful_response(
                     response=response,
-                    case='crypto_transactions',
+                    case='crypto-transactions',
                 )
 
             try:
@@ -423,7 +431,7 @@ class Bitstamp(ExchangeInterface):
 
     def _api_query(
             self,
-            endpoint: Literal['balance', 'user_transactions', 'crypto_transactions'],
+            endpoint: Literal['balance', 'user_transactions', 'crypto-transactions'],
             method: Literal['post'] = 'post',
             options: dict[str, Any] | None = None,
     ) -> Response:
@@ -676,8 +684,8 @@ class Bitstamp(ExchangeInterface):
             timestamp=timestamp,
             location=Location.BITSTAMP,
             category=category,
-            address=None,  # requires query "crypto_transactions" endpoint
-            transaction_id=None,  # requires query "crypto_transactions" endpoint
+            address=None,  # requires query "crypto-transactions" endpoint
+            transaction_id=None,  # requires query "crypto-transactions" endpoint
             asset=fee_asset,
             amount=abs(amount),
             fee_asset=fee_asset,
@@ -833,14 +841,14 @@ class Bitstamp(ExchangeInterface):
     def _process_unsuccessful_response(
             self,
             response: Response,
-            case: Literal['asset_movements', 'crypto_transactions'],
+            case: Literal['asset_movements', 'crypto-transactions'],
     ) -> list[AssetMovement]:
         ...
 
     def _process_unsuccessful_response(
             self,
             response: Response,
-            case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements', 'crypto_transactions'],  # noqa: E501
+            case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements', 'crypto-transactions'],  # noqa: E501
     ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
         """This function processes not successful responses for the following
         cases listed in `case`.
@@ -854,7 +862,7 @@ class Bitstamp(ExchangeInterface):
 
             if case in {'validate_api_key', 'balances'}:
                 return False, msg
-            if case in {'trades', 'asset_movements', 'crypto_transactions'}:
+            if case in {'trades', 'asset_movements', 'crypto-transactions'}:
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp {case_pretty}: {msg}',
                 )
@@ -875,7 +883,7 @@ class Bitstamp(ExchangeInterface):
 
         if case in {'validate_api_key', 'balances'}:
             return False, msg
-        if case in {'trades', 'asset_movements', 'crypto_transactions'}:
+        if case in {'trades', 'asset_movements', 'crypto-transactions'}:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Bistamp {case_pretty}: {msg}',
             )
