@@ -1,5 +1,11 @@
+<script setup lang="ts">
+import { useListeners } from 'vue';
+
+const listeners = useListeners();
+</script>
+
 <template>
-  <VMenu offset-y :close-on-content-click="false">
+  <VMenu offset-y :close-on-content-click="false" v-on="listeners">
     <template #activator="{ on }">
       <RuiButton
         class="py-2.5 px-3 !outline-rui-grey-500 dark:!outline-rui-grey-700 !text-rui-text-secondary"
