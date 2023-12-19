@@ -20,8 +20,12 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.misc import LAST_SPAM_ASSETS_DETECT_KEY
+from rotkehlchen.constants.misc import (
+    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+    LAST_SPAM_ASSETS_DETECT_KEY,
+)
 from rotkehlchen.constants.timing import (
+    AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
     EVM_ACCOUNTS_DETECTION_REFRESH,
@@ -39,7 +43,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
+from rotkehlchen.tasks.assets import augmented_spam_detection, autodetect_spam_assets_in_db
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -156,6 +160,7 @@ class TaskManager:
             self._maybe_run_events_processing,
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
+            self._maybe_augmented_detect_new_spam_tokens,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -708,6 +713,23 @@ class TaskManager:
             task_name='Detect spam assets in globaldb',
             exception_is_error=True,
             method=autodetect_spam_assets_in_db,
+            user_db=self.database,
+        )]
+
+    def _maybe_augmented_detect_new_spam_tokens(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        This function runs the augmented token detection algorithm which is a heavier and more
+        time consuming analysis on user's asset that involves external calls in order to find and
+        detect potential spam tokens.
+        """
+        if should_run_periodic_task(self.database, LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Augmented detection of spam assets',
+            exception_is_error=True,
+            method=augmented_spam_detection,
             user_db=self.database,
         )]
 

@@ -48,8 +48,9 @@ onMounted(async () => fetchMessages());
   <Fragment>
     <section :class="css.section">
       <div :class="css.container">
+        <RuiLogo :class="css.logo__mobile" text />
         <div :class="css.wrapper">
-          <div class="pb-4" data-cy="account-management">
+          <div data-cy="account-management">
             <UserHost>
               <div v-if="checkForAssetUpdate">
                 <AssetUpdate
@@ -82,7 +83,7 @@ onMounted(async () => fetchMessages());
         </footer>
       </div>
     </section>
-    <AccountManagementAside class="p-6 lg:p-12">
+    <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
       <div>
         <span :class="css.logo">
           <RuiLogo class="w-8 !h-8" />
@@ -91,9 +92,6 @@ onMounted(async () => fetchMessages());
           {{ header.header }}
         </h2>
         <p class="text-body-2">{{ header.text }}</p>
-        <p v-if="false" class="text-body-2 text-rui-primary">
-          {{ t('login.welcome_update_message') }}
-        </p>
         <NewReleaseChangelog v-if="showReleaseNotes" class="mt-4" />
         <WelcomeMessageDisplay
           v-else-if="welcomeMessage"
@@ -124,6 +122,15 @@ onMounted(async () => fetchMessages());
 }
 
 .logo {
+  &__mobile {
+    @media screen and (max-width: 487px) {
+      @apply px-4 max-w-full;
+    }
+
+    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto w-full;
+    @apply h-8 #{!important};
+  }
+
   @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
 }
 

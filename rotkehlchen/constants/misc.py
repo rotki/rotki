@@ -35,3 +35,4 @@ MISCDIR_NAME: Final = 'misc'
 APPDIR_NAME: Final = 'app'
 
 LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
+LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'

@@ -646,6 +646,15 @@ class DBHandler:
             ('ignored_asset', asset.identifier),
         )
 
+    def ignore_multiple_assets(self, write_cursor: 'DBCursor', assets: list[str]) -> None:
+        """Add the provided identifiers to the list of ignored assets. If any asset was already
+        marked as ignored then we don't do anything.
+        """
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
+            [('ignored_asset', asset_identifier) for asset_identifier in assets],
+        )
+
     def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',

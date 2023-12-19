@@ -2773,8 +2773,7 @@
       "valid_username": "Un nombre de perfil debe contener solo caracteres alfanuméricos y no tener espacios"
     },
     "welcome_description": "Bienvenido al administrador de cartera de código abierto que protege su privacidad.",
-    "welcome_title": "Bienvenido a rotki",
-    "welcome_update_message": "Desbloquee su cuenta para explorar los cambios que hemos realizado."
+    "welcome_title": "Bienvenido a rotki"
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",

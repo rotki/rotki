@@ -2830,8 +2830,7 @@
       "valid_username": "設定檔名稱必須僅包含字母數字字元且不能包含空格"
     },
     "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
-    "welcome_title": "欢迎来到 rotki",
-    "welcome_update_message": "解锁您的帐户以探索我们所做的更改。"
+    "welcome_title": "欢迎来到 rotki"
   },
   "macos_unsupported": {
     "header": "不支持的 macOS 版本",

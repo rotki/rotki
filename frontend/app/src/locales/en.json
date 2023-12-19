@@ -3026,8 +3026,7 @@
       "valid_username": "A profile name must contain only alphanumeric characters and have no spaces"
     },
     "welcome_description": "Welcome to the open source portfolio manager that protects your privacy.",
-    "welcome_title": "Welcome to rotki",
-    "welcome_update_message": "Unlock your account to explore changes we’ve made."
+    "welcome_title": "Welcome to rotki"
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
