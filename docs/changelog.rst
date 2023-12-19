@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :bug:`7082` Now disabling sync for an exchange instance won't prevent other instances in the same exchange from querying new trades.
+* :bug:`7071` Fix the issue where users on mobile devices need to scroll to login.
+* :bug:`7120` Fix the issue where after removing an exchange key, an error notification is shown.
 * :bug:`7115` Fix the issue with decimal point for amount input.
 * :bug:`7119` Removed bittrex as an exchanged added via api key since it has shut down. But users can now import bittrex CSVs in order to get their history into rotki.
 * :bug:`-` Bitmex history queries should now work properly again after Bitmex changed their API without versioning.
