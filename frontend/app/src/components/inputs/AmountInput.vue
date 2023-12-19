@@ -76,7 +76,6 @@ watch(
   () => get(imask)?.value,
   value => {
     set(currentValue, value);
-    get(imask)?.updateValue();
   }
 );
 
