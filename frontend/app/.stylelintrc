@@ -26,6 +26,12 @@
     ],
     "scss/selector-nest-combinators": "always",
     "scss/selector-no-redundant-nesting-selector": true,
+    "scss/at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "apply", "variants", "responsive", "screen", "each", "for"]
+      }
+    ],
     "rule-empty-line-before": [
       "always", {
         "except": ["first-nested"]

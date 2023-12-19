@@ -4,11 +4,12 @@ import { type ManualPriceFormPayload } from '@/types/prices';
 const props = withDefaults(
   defineProps<{
     editMode: boolean;
-    value: Partial<ManualPriceFormPayload> | null;
+    value?: Partial<ManualPriceFormPayload> | null;
     disableFromAsset?: boolean;
   }>(),
   {
-    disableFromAsset: false
+    disableFromAsset: false,
+    value: null
   }
 );
 

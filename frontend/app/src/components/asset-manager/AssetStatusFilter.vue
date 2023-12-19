@@ -54,7 +54,7 @@ const onlyShowOwned = computed({
 </script>
 
 <template>
-  <TableStatusFilter>
+  <TableStatusFilter v-model="showMenu">
     <VList data-cy="asset-filter-menu">
       <RuiCheckbox
         v-model="onlyShowOwned"

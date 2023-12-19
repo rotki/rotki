@@ -59,8 +59,14 @@ const click = () => emit('click');
     <slot name="icon" :class="css.icon" />
     <span v-if="showDetails" :class="css.details">
       <template v-if="loading">
-        <VSkeletonLoader width="30" height="21" type="text" class="pt-1" />
-        <VSkeletonLoader width="70" type="text" height="18" />
+        <RuiSkeletonLoader
+          class="mb-1.5 mt-0.5 w-[1.875rem] h-4"
+          rounded="full"
+        />
+        <RuiSkeletonLoader
+          class="mb-[0.1875rem] w-[4.375rem] h-3"
+          rounded="full"
+        />
       </template>
 
       <template v-else>
