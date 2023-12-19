@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import check_if_spam_token
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.constants.assets import A_USD
@@ -130,16 +131,18 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
     chains_with_spam: set[ChainID] = set()
 
     spam_assets: set[str] = set()
-    with user_db.conn.read_ctx() as cursor:
+    with (
+        user_db.conn.read_ctx() as cursor,
+        globaldb.conn.read_ctx() as globaldb_cursor,
+    ):
         cursor.execute('SELECT DISTINCT asset FROM history_events')
-        for (asset_id,) in cursor:
+        assets = [row[0] for row in cursor]
+        globaldb_cursor.execute(
+            f'SELECT identifier FROM assets WHERE identifier IN ({", ".join(["?"] * len(assets))}) AND type=?',  # noqa: E501
+            [*assets, AssetType.EVM_TOKEN.serialize_for_db()],
+        )
+        for (asset_id,) in globaldb_cursor:
             asset = Asset(asset_id)
-            if (
-                not asset.is_evm_token() or
-                asset.identifier in spam_assets
-            ):
-                continue
-
             events: list['EvmEvent'] = history_db.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
