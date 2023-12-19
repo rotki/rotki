@@ -47,3 +47,6 @@ typing-extensions==4.5.0 # used for typing.ParamSpec and typing.Concatenate (in 
 
 #constraints
 pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
+
+multiformats==0.2.1  # used in rotki-content-hash but is not pinned in a sub-dependency. the latest version is 0.3.1 which breaks the app for us
+multiformats-config==0.2.0.post4
