@@ -3536,6 +3536,7 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
+      "asset_amount_and_value_detail": "Asset amount and value detail",
       "max_visible": "Maximum assets to show",
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",

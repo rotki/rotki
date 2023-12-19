@@ -1,0 +1,35 @@
+diff --git a/dist/chart.js b/dist/chart.js
+index 3a021319e291092dc5650321efe66ae9612210e9..46c42a9837078908fd694e5432f6efa19eafb6a3 100644
+--- a/dist/chart.js
++++ b/dist/chart.js
+@@ -6,6 +6,7 @@
+  */
+ import { r as requestAnimFrame, a as resolve, e as effects, c as color, i as isObject, d as defaults, b as isArray, v as valueOrDefault, u as unlistenArrayEvents, l as listenArrayEvents, f as resolveObjectKey, g as isNumberFinite, h as defined, s as sign, j as createContext, k as isNullOrUndef, _ as _arrayUnique, t as toRadians, m as toPercentage, n as toDimension, T as TAU, o as formatNumber, p as _angleBetween, H as HALF_PI, P as PI, q as _getStartAndCountOfVisiblePoints, w as _scaleRangesChanged, x as isNumber, y as _parseObjectDataRadialScale, z as getRelativePosition, A as _rlookupByKey, B as _lookupByKey, C as _isPointInArea, D as getAngleFromPoint, E as toPadding, F as each, G as getMaximumSize, I as _getParentNode, J as readUsedSize, K as supportsEventListenerOptions, L as throttled, M as _isDomSupported, N as _factorize, O as finiteOrDefault, Q as callback, R as _addGrace, S as _limitValue, U as toDegrees, V as _measureText, W as _int16Range, X as _alignPixel, Y as clipArea, Z as renderText, $ as unclipArea, a0 as toFont, a1 as _toLeftRightCenter, a2 as _alignStartEnd, a3 as overrides, a4 as merge, a5 as _capitalize, a6 as descriptors, a7 as isFunction, a8 as _attachContext, a9 as _createResolver, aa as _descriptors, ab as mergeIf, ac as uid, ad as debounce, ae as retinaScale, af as clearCanvas, ag as setsEqual, ah as _elementsEqual, ai as _isClickEvent, aj as _isBetween, ak as _readValueToProps, al as _updateBezierControlPoints, am as _computeSegments, an as _boundSegments, ao as _steppedInterpolation, ap as _bezierInterpolation, aq as _pointInLine, ar as _steppedLineTo, as as _bezierCurveTo, at as drawPoint, au as addRoundedRectPath, av as toTRBL, aw as toTRBLCorners, ax as _boundSegment, ay as _normalizeAngle, az as getRtlAdapter, aA as overrideTextDirection, aB as _textX, aC as restoreTextDirection, aD as drawPointLegend, aE as distanceBetweenPoints, aF as noop, aG as _setMinAndMaxByKey, aH as niceNum, aI as almostWhole, aJ as almostEquals, aK as _decimalPlaces, aL as Ticks, aM as log10, aN as _longestText, aO as _filterBetween, aP as _lookup } from './chunks/helpers.segment.js';
+ import '@kurkle/color';
++import { BigNumber } from "bignumber.js";
+ 
+ class Animator {
+     constructor(){
+@@ -10041,8 +10042,10 @@ function generateTicks$1(generationOptions, dataRange) {
+     }
+     const decimalPlaces = Math.max(_decimalPlaces(spacing), _decimalPlaces(niceMin));
+     factor = Math.pow(10, isNullOrUndef(precision) ? decimalPlaces : precision);
+-    niceMin = Math.round(niceMin * factor) / factor;
+-    niceMax = Math.round(niceMax * factor) / factor;
++    // niceMin = Math.round(niceMin * factor) / factor;
++    // niceMax = Math.round(niceMax * factor) / factor;
++    niceMin = new BigNumber(niceMin).multipliedBy(factor).integerValue().div(factor).toNumber();
++    niceMax = new BigNumber(niceMax).multipliedBy(factor).integerValue().div(factor).toNumber();
+     let j = 0;
+     if (minDefined) {
+         if (includeBounds && niceMin !== min) {
+@@ -10060,7 +10063,8 @@ function generateTicks$1(generationOptions, dataRange) {
+         }
+     }
+     for(; j < numSpaces; ++j){
+-        const tickValue = Math.round((niceMin + j * spacing) * factor) / factor;
++        // const tickValue = Math.round((niceMin + j * spacing) * factor) / factor;
++        const tickValue = new BigNumber(j).multipliedBy(spacing).plus(niceMin).multipliedBy(factor).integerValue().div(factor).toNumber();
+         if (maxDefined && tickValue > max) {
+             break;
+         }

@@ -10,6 +10,6 @@ module.exports = {
   theme: {
     extend: {}
   },
-  safelist: ['!leading-7', 'lg:grid-cols-2'],
+  safelist: ['!leading-7', 'lg:grid-cols-2', '-mt-3'],
   plugins: [require('@rotki/ui-library-compat/theme')]
 };

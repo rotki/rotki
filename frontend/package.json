@@ -56,6 +56,7 @@
   "pnpm": {
     "patchedDependencies": {
       "bignumber.js@9.1.1": "patches/bignumber.js@9.1.1.patch",
+      "chart.js@4.4.0": "patches/chart.js@4.4.0.patch",
       "vuetify@2.7.0": "patches/vuetify@2.7.0.patch"
     }
   },

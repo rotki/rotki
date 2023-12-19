@@ -8,6 +8,9 @@ patchedDependencies:
   bignumber.js@9.1.1:
     hash: mia2k5wehigboo5ep5nlxwffwa
     path: patches/bignumber.js@9.1.1.patch
+  chart.js@4.4.0:
+    hash: hu64bah4rqnzc6abw2s233hwga
+    path: patches/chart.js@4.4.0.patch
   vuetify@2.7.0:
     hash: zmxjwzl572dkixkomhybxiyeaq
     path: patches/vuetify@2.7.0.patch
@@ -84,7 +87,7 @@ importers:
         version: 9.1.1(patch_hash=mia2k5wehigboo5ep5nlxwffwa)
       chart.js:
         specifier: 4.4.0
-        version: 4.4.0
+        version: 4.4.0(patch_hash=hu64bah4rqnzc6abw2s233hwga)
       chartjs-plugin-zoom:
         specifier: 2.0.0
         version: 2.0.0(chart.js@4.4.0)
@@ -4146,19 +4149,20 @@ packages:
     resolution: {integrity: sha512-mT8iDcrh03qDGRRmoA2hmBJnxpllMR+0/0qlzjqZES6NdiWDcZkCNAk4rPFZ9Q85r27unkiNNg8ZOiwZXBHwcA==}
     dev: true
 
-  /chart.js@4.4.0:
+  /chart.js@4.4.0(patch_hash=hu64bah4rqnzc6abw2s233hwga):
     resolution: {integrity: sha512-vQEj6d+z0dcsKLlQvbKIMYFHd3t8W/7L2vfJIbYcfyPcRx92CsHqECpueN8qVGNlKyDcr5wBrYAYKnfu/9Q1hQ==}
     engines: {pnpm: '>=7'}
     dependencies:
       '@kurkle/color': 0.3.2
     dev: false
+    patched: true
 
   /chartjs-plugin-zoom@2.0.0(chart.js@4.4.0):
     resolution: {integrity: sha512-bqpi7DGy9a5hX7ThKl/xQaLzXvneSwhS0w/lNimZ8AJaoRVMKz5JfUoqwciJYV5ixKXJbgyvwC9HcJnyVsYmjg==}
     peerDependencies:
       chart.js: '>=3.2.0'
     dependencies:
-      chart.js: 4.4.0
+      chart.js: 4.4.0(patch_hash=hu64bah4rqnzc6abw2s233hwga)
       hammerjs: 2.0.8
     dev: false
 
@@ -5880,7 +5884,6 @@ packages:
   /extsprintf@1.4.1:
     resolution: {integrity: sha512-Wrk35e8ydCKDj/ArClo1VrPVmN8zph5V4AtHwIuHhvMXsKf73UT3BOD+azBIW+3wOJ4FhEH7zyaJCFvChjYvMA==}
     engines: {'0': node >=0.6.0}
-    dev: true
 
   /fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -10602,7 +10605,7 @@ packages:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   /verror@1.10.1:
     resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
