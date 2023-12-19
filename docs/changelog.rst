@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7115` Fix the issue with decimal point for amount input.
 * :bug:`7119` Removed bittrex as an exchanged added via api key since it has shut down. But users can now import bittrex CSVs in order to get their history into rotki.
 * :bug:`-` Bitmex history queries should now work properly again after Bitmex changed their API without versioning.
 * :bug:`1863` Bitstamp deposit/withdrawals should now also show the address and transaction id.
