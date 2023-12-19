@@ -63,7 +63,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
           rounded="full"
           type="paragraph"
         />
-        <div v-else-if="liquidated.amount.gt(0)">
+        <div v-if="liquidated?.amount.gt(0)">
           <div class="mb-2">
             <LoanRow :title="t('loan_liquidation.liquidated_collateral')">
               <AmountDisplay
