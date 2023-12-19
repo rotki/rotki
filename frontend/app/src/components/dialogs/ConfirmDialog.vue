@@ -44,6 +44,8 @@ const primaryText = computed(
 const secondaryText = computed(
   () => get(secondaryAction) || t('common.actions.cancel')
 );
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -66,7 +68,7 @@ const secondaryText = computed(
           <div>
             <RuiIcon :color="color" size="36" :name="icon" />
           </div>
-          <div class="text-body-1">
+          <div class="text-body-1" :class="css.message">
             {{ message }}
             <slot />
           </div>
@@ -97,3 +99,9 @@ const secondaryText = computed(
     </VDialog>
   </VDialogTransition>
 </template>
+
+<style lang="scss" module>
+.message {
+  word-break: break-word;
+}
+</style>
