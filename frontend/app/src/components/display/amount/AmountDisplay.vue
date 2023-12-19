@@ -411,12 +411,10 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 
 <style module lang="scss">
 .xl {
-  font-size: 3.5em;
-  line-height: 4rem;
+  @apply text-[2.4rem] leading-[3rem];
 
-  @media (max-width: 600px) {
-    font-size: 2.4em;
-    line-height: 3rem;
+  @screen sm {
+    @apply text-[3.5rem] leading-[4rem];
   }
 }
 
