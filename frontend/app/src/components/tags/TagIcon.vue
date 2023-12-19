@@ -15,7 +15,7 @@ withDefaults(
 <template>
   <RuiChip
     class="tag font-medium [&>span]:flex"
-    label
+    tile
     :size="small ? 'sm' : 'md'"
     :bg-color="`#${tag.backgroundColor}`"
     :text-color="`#${tag.foregroundColor}`"

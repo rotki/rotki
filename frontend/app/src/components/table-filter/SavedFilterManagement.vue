@@ -142,7 +142,7 @@ const css = useCssModule();
               <RuiChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
-                label
+                tile
                 size="sm"
                 class="font-medium !py-0"
               >

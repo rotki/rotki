@@ -383,7 +383,7 @@ const { t } = useI18n();
         >
           <template #selection="{ item }">
             <RuiChip
-              label
+              tile
               size="sm"
               class="font-medium !py-0 m-0.5"
               clickable
