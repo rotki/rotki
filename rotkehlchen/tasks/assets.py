@@ -1,7 +1,7 @@
 import logging
 from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import check_if_spam_token
@@ -18,13 +18,14 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CHAINID_TO_SUPPORTED_BLOCKCHAIN, SPAM_PROTOCOL, ChainID
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
 logger = logging.getLogger(__name__)
