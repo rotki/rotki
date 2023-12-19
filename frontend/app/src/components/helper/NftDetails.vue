@@ -168,8 +168,8 @@ const fallbackData = computed(() => {
 
       <div class="ml-3 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">
-          <VSkeletonLoader class="mt-1" width="120" type="text" />
-          <VSkeletonLoader class="mt-1" width="80" type="text" />
+          <RuiSkeletonLoader class="mt-1 mb-1.5 w-[7.5rem]" />
+          <RuiSkeletonLoader class="mt-1 w-[5rem]" />
         </template>
         <div v-else-if="name" :class="css['nft-details']">
           <div class="font-medium text-truncate">

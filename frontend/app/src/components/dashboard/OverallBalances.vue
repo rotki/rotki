@@ -148,10 +148,12 @@ const { dark } = useTheme();
             :value="totalNetWorth"
           />
         </div>
-        <div class="flex justify-center items-baseline">
-          <span v-if="isLoading" class="rounded-full overflow-hidden">
-            <VSkeletonLoader width="170" height="32" type="image" />
-          </span>
+        <div class="flex justify-center items-center">
+          <RuiSkeletonLoader
+            v-if="isLoading"
+            class="w-[10.625rem] h-8"
+            rounded="full"
+          />
           <span
             v-else
             :class="[balanceClass, !dark ? 'white--text' : 'black--text']"

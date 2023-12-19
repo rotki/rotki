@@ -56,14 +56,14 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
       <span :class="$style.header" class="text-rui-text">
         {{ t('loan_liquidation.liquidation_events') }}
       </span>
-      <VSkeletonLoader
-        v-if="premium"
-        :loading="!liquidated"
-        class="mx-auto pt-3"
-        max-width="450"
-        type="paragraph"
-      >
-        <div v-if="liquidated && liquidated.amount.gt(0)">
+      <template v-if="premium">
+        <RuiSkeletonLoader
+          v-if="!liquidated"
+          class="max-w-[28.125rem] pt-3"
+          rounded="full"
+          type="paragraph"
+        />
+        <div v-else-if="liquidated.amount.gt(0)">
           <div class="mb-2">
             <LoanRow :title="t('loan_liquidation.liquidated_collateral')">
               <AmountDisplay
@@ -99,7 +99,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
           </LoanRow>
         </div>
         <div v-else v-text="t('loan_liquidation.no_events')" />
-      </VSkeletonLoader>
+      </template>
       <div v-else class="text-right">
         <PremiumLock />
       </div>
