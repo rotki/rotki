@@ -265,7 +265,7 @@ export const useHistoryEventsApi = () => {
     filters: HistoryEventRequestPayload
   ): Promise<ActionStatus> => {
     try {
-      const response = await api.instance.patch(
+      const response = await api.instance.put(
         '/history/events/export',
         snakeCaseTransformer(omit(filters, ['accounts'])),
         {
