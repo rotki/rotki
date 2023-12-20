@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
+import { externalAssets } from '@/data/external-links';
 
 withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 
@@ -13,7 +13,7 @@ const slots = useSlots();
         class="w-[8rem] h-[8rem] md:w-[16rem] md:h-[16rem] bg-rui-grey-200 p-8 md:p-16 rounded-full mb-8"
       >
         <slot name="logo">
-          <RotkiLogo class="h-full w-full" :url="externalLinks.logo.noData" />
+          <RotkiLogo class="h-full w-full" :url="externalAssets.logo.noData" />
         </slot>
       </div>
     </div>

@@ -62,7 +62,7 @@ export const getEtherScanRegisterUrl = (location: string) => {
     // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
     case toSnakeCase(TRADE_LOCATION_POLYGON_POS):
       return {
-        external: etherscan.polygon_pos,
+        external: etherscan.polygonPos,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           hash: `#${TRADE_LOCATION_POLYGON_POS}`

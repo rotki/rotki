@@ -42,6 +42,10 @@ jobs:
     uses: ./.github/workflows/task_fe_unit_tests.yml
     if: ${{ always() }}
 
+  verify-link:
+    uses: ./.github/workflows/task_fe_external_links_verification.yml
+    if: ${{ always() }}
+
   notify:
     name: 'Success check'
     if: ${{ always() }}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type SystemVersion } from '@/electron-main/ipc';
 import { type WebVersion } from '@/types';
-import { externalLinks } from '@/data/external-links';
+import { externalAssets } from '@/data/external-links';
 
 const css = useCssModule();
 
@@ -93,7 +93,7 @@ const { copy } = useClipboard({ source: versionText });
   <RuiCard variant="flat">
     <template #custom-header>
       <div class="p-6 bg-rui-primary text-white">
-        <RuiLogo :custom-src="externalLinks.logo.about" />
+        <RuiLogo :custom-src="externalAssets.logo.about" />
         <h4 class="text-h4">{{ t('app.name') }}</h4>
         <span class="text-body-1">
           {{ t('app.moto') }}

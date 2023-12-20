@@ -1,11 +1,11 @@
-name: Frontend Unit Tests
+name: Frontend External Links Verification
 
 on:
   workflow_call:
 
 jobs:
   unit:
-    name: 'vitest'
+    name: 'verify:link'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,10 +42,6 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
-      - name: Run unit tests
+      - name: Verify External Links
         working-directory: ./frontend/app
-        run: pnpm run --filter rotki test:unit
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          flags: frontend_unit
+        run: pnpm run link:verify
