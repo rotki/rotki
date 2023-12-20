@@ -700,7 +700,7 @@ watchImmediate(route, async route => {
         </HistoryEventsDecodingStatus>
       </VDialog>
 
-      <VMenu offset-y left>
+      <VMenu offset-y left max-width="200">
         <template #activator="{ on }">
           <RuiBadge
             :value="eventTaskLoading"
@@ -717,11 +717,7 @@ watchImmediate(route, async route => {
         </template>
         <VList>
           <template v-if="includeEvmEvents">
-            <RuiButton
-              variant="text"
-              class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
-              @click="decodingStatusDialogOpen = true"
-            >
+            <RuiButton variant="list" @click="decodingStatusDialogOpen = true">
               <template #prepend>
                 <RuiBadge
                   :value="eventTaskLoading"
@@ -739,8 +735,7 @@ watchImmediate(route, async route => {
           </template>
 
           <RuiButton
-            variant="text"
-            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
+            variant="list"
             data-cy="history-events__add_by_tx_hash"
             @click="addTransactionHash()"
           >

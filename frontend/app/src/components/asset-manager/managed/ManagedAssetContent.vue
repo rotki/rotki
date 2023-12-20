@@ -215,11 +215,7 @@ watch(identifier, async assetId => {
             tooltip-class="max-w-[200px]"
           >
             <template #activator>
-              <RuiButton
-                class="w-full justify-start !p-3 rounded-none"
-                variant="text"
-                @click="mergeTool = true"
-              >
+              <RuiButton variant="list" @click="mergeTool = true">
                 <template #prepend>
                   <RuiIcon name="git-merge-line" />
                 </template>
