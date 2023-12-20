@@ -14,27 +14,26 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
 </script>
 
 <template>
-  <VListItem
-    :ripple="false"
-    data-cy="manual-balance__summary"
-    :data-location="name"
-    class="min-h-[2.25rem] group"
-    :to="manualBalancesRoute"
-  >
-    <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
-      <LocationDisplay :identifier="name" icon size="30px" />
-    </VListItemAvatar>
-    <VListItemContent>
-      <div class="flex flex-wrap justify-between gap-2">
-        <span>
-          {{ toSentenceCase(name) }}
-        </span>
+  <RouterLink :to="manualBalancesRoute">
+    <ListItem
+      data-cy="manual-balance__summary"
+      class="group py-1"
+      :data-location="name"
+    >
+      <template #avatar>
+        <div class="grayscale group-hover:grayscale-0">
+          <LocationDisplay :identifier="name" icon size="24px" />
+        </div>
+      </template>
+      <div class="flex flex-wrap justify-between gap-1 text-rui-text">
+        {{ toSentenceCase(name) }}
         <AmountDisplay
           show-currency="symbol"
           :fiat-currency="currencySymbol"
           :value="amount"
+          class="font-medium"
         />
       </div>
-    </VListItemContent>
-  </VListItem>
+    </ListItem>
+  </RouterLink>
 </template>

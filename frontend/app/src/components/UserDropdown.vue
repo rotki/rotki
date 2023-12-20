@@ -52,7 +52,7 @@ const css = useCssModule();
           <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>
       </template>
-      <VList data-cy="user-dropdown">
+      <div data-cy="user-dropdown">
         <div key="username" class="py-3 user-username font-bold text-center">
           {{ username }}
         </div>
@@ -103,7 +103,7 @@ const css = useCssModule();
           </template>
           {{ t('user_dropdown.logout') }}
         </RuiButton>
-      </VList>
+      </div>
     </VMenu>
   </div>
 </template>

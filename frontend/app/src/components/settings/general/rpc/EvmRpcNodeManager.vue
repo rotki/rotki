@@ -134,15 +134,15 @@ onUnmounted(() => {
 <template>
   <div>
     <RuiCard no-padding class="overflow-hidden">
-      <VList max-height="300px" three-line class="py-0 overflow-auto">
+      <div class="overflow-auto max-h-[300px]">
         <template v-for="(item, index) in nodes">
           <RuiDivider v-if="index !== 0" :key="index" />
-          <VListItem
+          <div
             :key="index + item.name"
             data-cy="ethereum-node"
-            class="px-2"
+            class="px-2 flex items-center"
           >
-            <div class="mr-2 pa-4 text-center flex flex-col items-center">
+            <div class="mr-2 p-4 text-center flex flex-col items-center">
               <div>
                 <RuiTooltip
                   v-if="!item.owned"
@@ -196,12 +196,11 @@ onUnmounted(() => {
                 </RuiTooltip>
               </div>
             </div>
-
-            <VListItemContent>
-              <VListItemTitle class="font-medium">
+            <div class="flex-1">
+              <div class="font-medium">
                 {{ item.name }}
-              </VListItemTitle>
-              <VListItemSubtitle>
+              </div>
+              <div class="text-rui-text-secondary">
                 <div v-if="!isEtherscan(item)">
                   {{ item.endpoint }}
                 </div>
@@ -220,8 +219,8 @@ onUnmounted(() => {
                     {{ t('evm_rpc_node_manager.private_node_hint') }}
                   </span>
                 </div>
-              </VListItemSubtitle>
-            </VListItemContent>
+              </div>
+            </div>
             <VSwitch
               value=""
               :input-value="item.active"
@@ -235,9 +234,9 @@ onUnmounted(() => {
               @edit-click="edit(item)"
               @delete-click="showDeleteConfirmation(item)"
             />
-          </VListItem>
+          </div>
         </template>
-      </VList>
+      </div>
 
       <EvmRpcNodeFormDialog
         v-model="selectedNode"

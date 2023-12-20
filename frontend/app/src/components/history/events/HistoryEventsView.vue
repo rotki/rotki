@@ -715,7 +715,7 @@ watchImmediate(route, async route => {
             </RuiButton>
           </RuiBadge>
         </template>
-        <VList>
+        <div class="py-2">
           <template v-if="includeEvmEvents">
             <RuiButton variant="list" @click="decodingStatusDialogOpen = true">
               <template #prepend>
@@ -744,7 +744,7 @@ watchImmediate(route, async route => {
             </template>
             {{ t('transactions.dialog.add_tx') }}
           </RuiButton>
-        </VList>
+        </div>
       </VMenu>
     </template>
 

@@ -89,14 +89,14 @@ const updatePrice = async () => {
           <RuiIcon name="more-2-fill" />
         </RuiButton>
       </template>
-      <VList>
+      <div class="py-2">
         <RuiButton variant="list" @click="openEditHistoricPriceDialog()">
           <template #prepend>
             <RuiIcon name="edit-line" />
           </template>
           {{ t('profit_loss_events.edit_historic_price') }}
         </RuiButton>
-      </VList>
+      </div>
     </VMenu>
 
     <VDialog v-model="showDialog" max-width="450px">

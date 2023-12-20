@@ -32,30 +32,32 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 
 <template>
   <Fragment>
-    <VListItem
-      data-cy="blockchain-balance__summary"
-      :data-location="total.chain"
-      class="min-h-[2.25rem] group"
+    <RouterLink
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
-      <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
-        <ChainIcon size="26px" :chain="chain" />
-      </VListItemAvatar>
-      <VListItemContent>
-        <div class="flex flex-wrap justify-between gap-2">
-          <span>
-            {{ toSentenceCase(name) }}
-          </span>
+      <ListItem
+        data-cy="blockchain-balance__summary"
+        :data-location="total.chain"
+        class="group py-1"
+      >
+        <template #avatar>
+          <div class="grayscale group-hover:grayscale-0">
+            <ChainIcon size="24px" :chain="chain" />
+          </div>
+        </template>
+        <div class="flex flex-wrap justify-between gap-1 text-rui-text">
+          {{ toSentenceCase(name) }}
           <AmountDisplay
             show-currency="symbol"
             fiat-currency="USD"
             :value="amount"
             :loading="loading"
+            class="font-medium"
           />
         </div>
-      </VListItemContent>
-    </VListItem>
-    <VList v-if="total.children.length > 0" class="pa-0">
+      </ListItem>
+    </RouterLink>
+    <div v-if="total.children.length > 0">
       <template v-for="child in total.children">
         <BlockchainBalanceCardDetails
           :key="child.protocol"
@@ -63,6 +65,6 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
           :details="childData(child.protocol)"
         />
       </template>
-    </VList>
+    </div>
   </Fragment>
 </template>

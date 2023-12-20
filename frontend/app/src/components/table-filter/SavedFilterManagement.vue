@@ -134,7 +134,7 @@ const css = useCssModule();
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
         </RuiTooltip>
       </template>
-      <VList v-if="savedFilters.length > 0" class="py-4">
+      <div v-if="savedFilters.length > 0" class="py-4">
         <div v-for="(filters, index) in savedFilters" :key="index">
           <RuiDivider v-if="index > 0" class="my-3" />
           <div class="flex px-4">
@@ -188,7 +188,7 @@ const css = useCssModule();
             </div>
           </div>
         </div>
-      </VList>
+      </div>
       <div v-else class="p-4">
         <i18n path="table_filter.saved_filters.empty">
           <template #button>

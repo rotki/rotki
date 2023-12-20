@@ -41,7 +41,7 @@ const slots = useSlots();
         >
           {{ t('summary_card.title', { name }) }}
         </NavigatorLink>
-        <div v-if="canRefresh" class="flex items-center">
+        <div v-if="canRefresh" class="flex items-center -my-1">
           <SummaryCardRefreshMenu
             data-cy="account-balances-refresh-menu"
             :tooltip="t('summary_card.refresh_tooltip', { name })"
@@ -55,8 +55,8 @@ const slots = useSlots();
         </div>
       </CardTitle>
     </template>
-    <VList class="py-0">
+    <div>
       <slot />
-    </VList>
+    </div>
   </RuiCard>
 </template>

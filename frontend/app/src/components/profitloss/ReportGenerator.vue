@@ -87,28 +87,20 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 {{ t('profit_loss_reports.debug.title') }}
               </RuiButton>
             </template>
-            <VList>
-              <VListItem link @click="exportReportData()">
-                <VListItemTitle>
-                  <div class="flex items-center">
-                    <RuiIcon class="mr-2" name="file-download-line" />
-                    <span>
-                      {{ t('profit_loss_reports.debug.export_data') }}
-                    </span>
-                  </div>
-                </VListItemTitle>
-              </VListItem>
-              <VListItem link @click="importReportData()">
-                <VListItemTitle>
-                  <div class="flex items-center">
-                    <RuiIcon class="mr-2" name="file-upload-line" />
-                    <span>
-                      {{ t('profit_loss_reports.debug.import_data') }}
-                    </span>
-                  </div>
-                </VListItemTitle>
-              </VListItem>
-            </VList>
+            <div class="py-2">
+              <RuiButton variant="list" @click="exportReportData()">
+                <template #prepend>
+                  <RuiIcon name="file-download-line" />
+                </template>
+                {{ t('profit_loss_reports.debug.export_data') }}
+              </RuiButton>
+              <RuiButton variant="list" @click="importReportData()">
+                <template #prepend>
+                  <RuiIcon name="file-upload-line" />
+                </template>
+                {{ t('profit_loss_reports.debug.import_data') }}
+              </RuiButton>
+            </div>
           </VMenu>
           <RuiButton v-else size="lg" @click="exportReportData()">
             <template #prepend>

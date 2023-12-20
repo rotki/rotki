@@ -19,6 +19,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
+
 const { value, type } = toRefs(props);
 const input = (value: string[]) => emit('input', value);
 
@@ -41,7 +42,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard variant="flat" :no-padding="noPadding">
+  <RuiCard
+    variant="flat"
+    :no-padding="noPadding"
+    rounded="sm"
+    class="[&>div:last-child]:overflow-hidden"
+  >
     <VAutocomplete
       :value="value"
       :label="t('liquidity_pool_selector.label')"
@@ -74,14 +80,12 @@ const { t } = useI18n();
         </RuiChip>
       </template>
       <template #item="{ item }">
-        <VListItemContent
+        <span
           :id="`ua-${item.address.toLocaleLowerCase()}`"
-          class="font-medium"
+          class="font-medium text-sm"
         >
-          <VListItemTitle>
-            {{ getPoolName(type, item.assets) }}
-          </VListItemTitle>
-        </VListItemContent>
+          {{ getPoolName(type, item.assets) }}
+        </span>
       </template>
     </VAutocomplete>
   </RuiCard>

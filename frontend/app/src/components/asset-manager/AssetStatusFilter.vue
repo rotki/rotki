@@ -19,8 +19,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const css = useCssModule();
-
 const showMenu = ref(false);
 
 const isHandlingType = (t: any): t is IgnoredAssetsHandlingType =>
@@ -55,26 +53,25 @@ const onlyShowOwned = computed({
 
 <template>
   <TableStatusFilter v-model="showMenu">
-    <VList data-cy="asset-filter-menu">
+    <div class="p-1" data-cy="asset-filter-menu">
       <RuiCheckbox
         v-model="onlyShowOwned"
+        color="primary"
         data-cy="asset-filter-only-show-owned"
         class="mt-0 px-4 py-2"
         :label="t('asset_table.only_show_owned')"
         hide-details
       />
-      <VListItem
-        :class="css['filter-heading']"
-        class="font-bold text-uppercase py-2"
-      >
+      <div class="font-bold text-uppercase p-2 text-sm">
         {{ t('asset_table.filter_by_ignored_status') }}
-      </VListItem>
-      <VListItem>
+      </div>
+      <div class="pb-2 px-3">
         <RuiRadioGroup
           v-if="showMenu"
           v-model="handlingSelection"
           color="primary"
           class="mt-0"
+          hide-details
           data-cy="asset-filter-ignored"
         >
           <RuiRadio
@@ -101,14 +98,7 @@ const onlyShowOwned = computed({
             "
           />
         </RuiRadioGroup>
-      </VListItem>
-    </VList>
+      </div>
+    </div>
   </TableStatusFilter>
 </template>
-
-<style module lang="scss">
-.filter-heading {
-  font-size: 0.875rem;
-  min-height: auto;
-}
-</style>

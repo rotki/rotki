@@ -34,8 +34,6 @@ const massIgnore = (ignored: boolean) => {
 };
 
 const { t } = useI18n();
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -64,14 +62,11 @@ const css = useCssModule();
             {{ t('common.actions.filter') }}
           </RuiButton>
         </template>
-        <VList>
-          <VListItem
-            :class="css['filter-heading']"
-            class="font-bold text-uppercase py-2"
-          >
+        <div class="p-2">
+          <div class="font-bold text-uppercase p-2 text-sm">
             {{ t('asset_table.filter_by_ignored_status') }}
-          </VListItem>
-          <VListItem class="pb-2">
+          </div>
+          <div class="pb-2 px-3">
             <RuiRadioGroup
               v-model="internalValue"
               class="mt-0"
@@ -92,16 +87,9 @@ const css = useCssModule();
                 :label="t('asset_table.only_show_ignored', 2)"
               />
             </RuiRadioGroup>
-          </VListItem>
-        </VList>
+          </div>
+        </div>
       </VMenu>
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.filter-heading {
-  font-size: 0.875rem;
-  min-height: auto;
-}
-</style>

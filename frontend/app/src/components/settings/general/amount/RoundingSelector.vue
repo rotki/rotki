@@ -36,16 +36,14 @@ const selections = [
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <VListItem v-bind="attrs" v-on="on">
-        <VListItemContent>
-          <VListItemTitle>
-            {{ item.text }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ item.description }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
+      <ListItem
+        no-hover
+        no-padding
+        v-bind="attrs"
+        :title="item.text"
+        :subtitle="item.description"
+        v-on="on"
+      />
     </template>
     <template #append-outer>
       <slot />

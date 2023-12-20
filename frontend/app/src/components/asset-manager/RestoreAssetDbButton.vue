@@ -99,28 +99,18 @@ const showDoneConfirmation = () => {
         </template>
       </RuiButton>
     </template>
-    <VList>
-      <VListItem two-line link @click="showRestoreConfirmation('soft')">
-        <VListItemContent>
-          <VListItemTitle>
-            {{ t('asset_update.restore.soft_reset') }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ t('asset_update.restore.soft_reset_hint') }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
-      <VListItem two-line link @click="showRestoreConfirmation('hard')">
-        <VListItemContent>
-          <VListItemTitle>
-            {{ t('asset_update.restore.hard_reset') }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ t('asset_update.restore.hard_reset_hint') }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
-    </VList>
+    <div class="py-2">
+      <ListItem
+        :title="t('asset_update.restore.soft_reset')"
+        :subtitle="t('asset_update.restore.soft_reset_hint')"
+        @click="showRestoreConfirmation('soft')"
+      />
+      <ListItem
+        :title="t('asset_update.restore.hard_reset')"
+        :subtitle="t('asset_update.restore.hard_reset_hint')"
+        @click="showRestoreConfirmation('hard')"
+      />
+    </div>
   </VMenu>
   <div v-else class="flex flex-row gap-2">
     <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
