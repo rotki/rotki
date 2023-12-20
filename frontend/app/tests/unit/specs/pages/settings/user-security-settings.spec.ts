@@ -26,7 +26,13 @@ describe('UserSecuritySettings.vue', () => {
         'confirm-dialog',
         'data-table',
         'card'
-      ]
+      ],
+      provide: {
+        [Symbol.for('rui:table')]: {
+          itemsPerPage: ref(10),
+          globalItemsPerPage: false
+        }
+      }
     });
   }
 
