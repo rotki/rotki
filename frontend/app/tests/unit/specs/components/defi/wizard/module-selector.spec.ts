@@ -23,7 +23,13 @@ describe('ModuleSelector.vue', () => {
     return mount(ModuleSelector, {
       pinia,
       vuetify,
-      stubs: ['card']
+      stubs: ['card'],
+      provide: {
+        [Symbol.for('rui:table')]: {
+          itemsPerPage: ref(10),
+          globalItemsPerPage: false
+        }
+      }
     });
   };
 
