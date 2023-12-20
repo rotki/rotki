@@ -44,6 +44,17 @@ const color = computed(() => {
   return '';
 });
 
+const circleBgClass = computed(() => {
+  switch (props.notification.severity) {
+    case Severity.ERROR:
+      return 'bg-rui-error';
+    case Severity.INFO:
+      return 'bg-rui-info';
+    case Severity.WARNING:
+      return 'bg-rui-warning';
+  }
+});
+
 const date = computed(() => dayjs(get(notification).date).format('LLL'));
 
 const copy = async () => {
@@ -82,21 +93,15 @@ const action = async (notification: NotificationData) => {
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
-    <VListItem :class="css.body" class="flex-col items-stretch p-0">
-      <div class="flex pa-1">
-        <VListItemAvatar class="mr-3 ml-1 my-0" :color="color">
-          <div>
-            <RuiIcon size="24" class="text-white" :name="icon" />
-          </div>
-        </VListItemAvatar>
-        <VListItemContent class="py-0">
-          <VListItemTitle :title="notification.title">
-            {{ notification.title }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ date }}
-          </VListItemSubtitle>
-        </VListItemContent>
+    <div :class="css.body" class="flex-col items-stretch p-0">
+      <div class="flex pb-1 items-center">
+        <div class="mr-3 ml-1 my-0 rounded-full p-2" :class="circleBgClass">
+          <RuiIcon size="24" class="text-white" :name="icon" />
+        </div>
+        <div class="grow">
+          <div class="font-medium">{{ notification.title }}</div>
+          <div class="text-caption text-rui-text-secondary">{{ date }}</div>
+        </div>
         <RuiTooltip
           :popper="{ placement: 'bottom', offsetDistance: 0 }"
           :open-delay="400"
@@ -118,7 +123,7 @@ const action = async (notification: NotificationData) => {
           v-if="notification.i18nParam"
           :params="notification.i18nParam"
         />
-        <div v-else :title="notification.message">
+        <div v-else :title="notification.message" class="h-full">
           {{ notification.message }}
         </div>
       </div>
@@ -153,7 +158,7 @@ const action = async (notification: NotificationData) => {
           <span> {{ t('notification.copy_tooltip') }}</span>
         </RuiTooltip>
       </div>
-    </VListItem>
+    </div>
   </RuiCard>
 </template>
 

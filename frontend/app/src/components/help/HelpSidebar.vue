@@ -102,57 +102,59 @@ const { smAndDown } = useDisplay();
         <RuiIcon name="close-line" />
       </RuiButton>
     </div>
-    <VList class="py-0">
-      <VListItem
+    <div class="py-0">
+      <a
         v-for="(item, index) in entries"
         :key="index"
-        :href="interop.isPackaged ? null : item.link"
+        :href="interop.isPackaged ? undefined : item.link"
         target="_blank"
-        class="gap-4 py-2"
+        class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
         :class="{ 'border-t border-default': index > 0 }"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
         <RuiIcon class="text-rui-text-secondary" :name="item.icon" />
-        <VListItemContent class="gap-1">
-          <VListItemTitle>
-            {{ item.title }}
-          </VListItemTitle>
-          <VListItemSubtitle>
+
+        <div class="gap-1">
+          <div class="text-rui-text font-medium">{{ item.title }}</div>
+          <div class="text-rui-text-secondary text-caption">
             {{ item.subtitle }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
+          </div>
+        </div>
+      </a>
       <template v-if="!interop.isPackaged">
-        <VListItem
-          class="gap-4 py-2 border-t border-default"
+        <div
+          class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
           @click="openAbout()"
         >
           <RuiIcon class="text-rui-text-secondary" name="information-line" />
-          <VListItemContent class="gap-1">
-            <VListItemTitle>
+
+          <div class="gap-1">
+            <div class="text-rui-text font-medium">
               {{ t('help_sidebar.about.title') }}
-            </VListItemTitle>
-            <VListItemSubtitle>
+            </div>
+            <div class="text-rui-text-secondary text-caption">
               {{ t('help_sidebar.about.subtitle') }}
-            </VListItemSubtitle>
-          </VListItemContent>
-        </VListItem>
-        <VListItem
-          class="gap-4 py-2 border-t border-default"
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
           @click="downloadBrowserLog()"
         >
           <RuiIcon class="text-rui-text-secondary" name="file-download-line" />
-          <VListItemContent>
-            <VListItemTitle>
+
+          <div class="gap-1">
+            <div class="text-rui-text font-medium">
               {{ t('help_sidebar.browser_log.title') }}
-            </VListItemTitle>
-            <VListItemSubtitle>
+            </div>
+            <div class="text-rui-text-secondary text-caption">
               {{ t('help_sidebar.browser_log.subtitle') }}
-            </VListItemSubtitle>
-          </VListItemContent>
-        </VListItem>
+            </div>
+          </div>
+        </div>
       </template>
-    </VList>
+    </div>
   </VNavigationDrawer>
 </template>
 
