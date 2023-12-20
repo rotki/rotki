@@ -1,6 +1,8 @@
+import { externalLinks } from '@/data/external-links';
+
 export const useLinks = (url?: Ref<string | undefined>) => {
-  const { isPackaged, premiumURL, openUrl } = useInterop();
-  const targetUrl = computed(() => get(url) ?? premiumURL);
+  const { isPackaged, openUrl } = useInterop();
+  const targetUrl = computed(() => get(url) ?? externalLinks.premium);
   const href = computed(() => (isPackaged ? undefined : get(targetUrl)));
 
   const linkTarget = computed(() => (isPackaged ? undefined : '_blank'));

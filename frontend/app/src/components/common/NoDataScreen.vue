@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
+
 withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 
 const slots = useSlots();
-const remoteEmptyScreenLogo =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
 
 <template>
@@ -13,7 +13,7 @@ const remoteEmptyScreenLogo =
         class="w-[8rem] h-[8rem] md:w-[16rem] md:h-[16rem] bg-rui-grey-200 p-8 md:p-16 rounded-full mb-8"
       >
         <slot name="logo">
-          <RotkiLogo class="h-full w-full" :url="remoteEmptyScreenLogo" />
+          <RotkiLogo class="h-full w-full" :url="externalLinks.logo.noData" />
         </slot>
       </div>
     </div>

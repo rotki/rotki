@@ -45,6 +45,9 @@ jobs:
       - name: Run unit tests
         working-directory: ./frontend/app
         run: pnpm run --filter rotki test:unit
+      - name: Verify External Links
+        working-directory: ./frontend/app
+        run: pnpm run link:verify
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:

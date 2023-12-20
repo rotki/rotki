@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
+
 const { t } = useI18n();
 
 const name = 'opensea';
@@ -35,7 +37,7 @@ const status = actionStatus(name);
         <template #link>
           <ExternalLink
             color="primary"
-            url="https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key"
+            :url="externalLinks.openSeaApiKeyReference"
           >
             {{ t('common.here') }}
           </ExternalLink>

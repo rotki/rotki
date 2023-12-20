@@ -3,6 +3,7 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
+import { externalLinks } from '@/data/external-links';
 
 const props = defineProps<{
   blockchain: Blockchain;
@@ -31,7 +32,7 @@ const isBitcoin = computed(() => isBtcChain(get(blockchain)));
 const isMetaMask = computed(() => get(inputMode) === InputMode.METAMASK_IMPORT);
 const isXpub = computed(() => get(inputMode) === InputMode.XPUB_ADD);
 
-const metamaskDownloadLink = 'https://metamask.io/download/';
+const { metamaskDownload } = externalLinks;
 
 const copyPageUrl = async () => {
   const pageUrl = window.location.href;
@@ -138,7 +139,7 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownloadLink" color="primary">
+                  <ExternalLink :url="metamaskDownload" color="primary">
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
@@ -156,7 +157,7 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownloadLink" color="primary">
+                  <ExternalLink :url="metamaskDownload" color="primary">
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>

@@ -15,6 +15,7 @@ import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
+import { externalLinks } from '@/data/external-links';
 
 const props = withDefaults(
   defineProps<{
@@ -333,8 +334,6 @@ const save = async () => {
 };
 
 setSubmitFunc(save);
-
-const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
 
 <template>
@@ -461,7 +460,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             <template #append>
               <HelpLink
                 small
-                :url="coingeckoContributeUrl"
+                :url="externalLinks.contributeSection.coingecko"
                 :tooltip="t('asset_form.help_coingecko')"
               />
             </template>
@@ -492,7 +491,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             <template #append>
               <HelpLink
                 small
-                :url="cryptocompareContributeUrl"
+                :url="externalLinks.contributeSection.cryptocompare"
                 :tooltip="t('asset_form.help_cryptocompare')"
               />
             </template>

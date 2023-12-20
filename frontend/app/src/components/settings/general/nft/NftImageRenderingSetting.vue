@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
 import { isEqual } from 'lodash-es';
+import { externalLinks } from '@/data/external-links';
 
 const renderAllNftImages: Ref<'all' | 'whitelisted'> = ref('all');
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
@@ -84,9 +85,6 @@ const updateRenderingSetting = (
 };
 
 const css = useCssModule();
-
-const warningUrl =
-  'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94';
 </script>
 
 <template>
@@ -106,7 +104,7 @@ const warningUrl =
             path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
           >
             <template #link>
-              <ExternalLink color="primary" :url="warningUrl">
+              <ExternalLink color="primary" :url="externalLinks.nftWarning">
                 {{ t('common.here') }}
               </ExternalLink>
             </template>

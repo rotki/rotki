@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { type LoginCredentials, type SyncApproval } from '@/types/login';
+import { externalLinks } from '@/data/external-links';
 
 const props = withDefaults(
   defineProps<{
@@ -37,7 +38,6 @@ const newAccount = () => emit('new-account');
 const backendChanged = (url: string | null) => emit('backend-changed', url);
 
 const { logoutRemoteSession } = useSessionStore();
-const { usageGuideUrl } = useInterop();
 const css = useCssModule();
 
 const username: Ref<string> = ref('');
@@ -342,7 +342,7 @@ const abortLogin = () => {
             <template #documentation>
               <ExternalLink
                 :text="t('login.description.our_docs')"
-                :url="usageGuideUrl"
+                :url="externalLinks.usageGuide"
               />
             </template>
           </i18n>

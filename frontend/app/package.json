@@ -18,6 +18,7 @@
     "electron:package": "electron-builder build --config .electron-builder.config.js --publish onTag",
     "electron:serve": "node scripts/serve.js",
     "i18n:report": "vue-i18n-extract report --vueFiles './src/**/*.?(ts|js|vue)' --languageFiles './src/locales/**/*.json'",
+    "link:verify": "tsc src/data/external-links.ts",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",
     "postinstall": "electron-builder install-app-deps",

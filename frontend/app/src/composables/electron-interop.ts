@@ -5,31 +5,11 @@ import {
   type TrayUpdate
 } from '@/electron-main/ipc';
 import { type WebVersion } from '@/types';
+import { externalLinks } from '@/data/external-links';
 
-const BASEURL = 'https://rotki.com/';
-const BASE_DOCS_URL = 'https://rotki.readthedocs.io';
-const premiumURL = `${BASEURL}products/`;
 const electronApp = !!window.interop;
 
 const interop = {
-  get premiumURL() {
-    return premiumURL;
-  },
-  get usageGuideUrl() {
-    return `${BASE_DOCS_URL}/en/stable/usage_guide.html`;
-  },
-  get contributeUrl() {
-    return `${BASE_DOCS_URL}/en/stable/contribute.html`;
-  },
-  get coingeckoContributeUrl() {
-    return `${this.contributeUrl}#get-coingecko-asset-identifier`;
-  },
-  get cryptocompareContributeUrl() {
-    return `${this.contributeUrl}#get-cryptocompare-asset-identifier`;
-  },
-  get languageContributeUrl() {
-    return `${this.contributeUrl}#add-a-new-language-or-translation`;
-  },
   get isPackaged(): boolean {
     return electronApp;
   },
@@ -48,7 +28,7 @@ const interop = {
   },
 
   navigateToPremium: () => {
-    window.interop?.openUrl(premiumURL);
+    window.interop?.openUrl(externalLinks.premium);
   },
 
   setupListeners: (listeners: Listeners) => {

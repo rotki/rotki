@@ -38,3 +38,5 @@ rotki_config.json
 package-lock.json
 components.d.ts
 .e2e
+
+src/data/external-links.js

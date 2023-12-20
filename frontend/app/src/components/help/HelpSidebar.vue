@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import IndexedDb from '@/utils/indexed-db';
+import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
 defineProps<{
   visible: boolean;
@@ -23,31 +24,31 @@ const entries: Entry[] = [
     icon: 'book-open-line',
     title: t('help_sidebar.user_guide.title').toString(),
     subtitle: t('help_sidebar.user_guide.subtitle').toString(),
-    link: 'https://rotki.readthedocs.io/en/latest/usage_guide.html'
+    link: externalLinks.usageGuide
   },
   {
     icon: 'questionnaire-line',
     title: t('help_sidebar.faq.title').toString(),
     subtitle: t('help_sidebar.faq.subtitle').toString(),
-    link: 'https://rotki.readthedocs.io/en/latest/faq.html'
+    link: externalLinks.faq
   },
   {
     icon: 'discord-line',
     title: t('help_sidebar.support.title').toString(),
     subtitle: t('help_sidebar.support.subtitle').toString(),
-    link: 'https://discord.rotki.com'
+    link: externalLinks.discord
   },
   {
     icon: 'github-line',
     title: t('help_sidebar.github.title').toString(),
     subtitle: t('help_sidebar.github.subtitle').toString(),
-    link: 'https://github.com/rotki/rotki'
+    link: externalLinks.github
   },
   {
     icon: 'twitter-x-line',
     title: t('help_sidebar.twitter.title').toString(),
     subtitle: t('help_sidebar.twitter.subtitle').toString(),
-    link: 'https://twitter.com/rotkiapp'
+    link: TWITTER_URL
   }
 ];
 

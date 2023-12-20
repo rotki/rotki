@@ -8,6 +8,7 @@ import {
 } from '@/data/defaults';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
+import { externalLinks } from '@/data/external-links';
 
 export const getDomain = (str: string): string => {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;
@@ -48,18 +49,18 @@ export const getEtherScanRegisterUrl = (location: string) => {
   switch (location) {
     case TRADE_LOCATION_OPTIMISM:
       return {
-        external: 'https://optimistic.etherscan.io/register',
+        external: externalLinks.etherscan.optimism,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     case TRADE_LOCATION_ETHEREUM:
       return {
-        external: 'https://etherscan.io/register',
+        external: externalLinks.etherscan.ethereum,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
     case toSnakeCase(TRADE_LOCATION_POLYGON_POS):
       return {
-        external: 'https://polygonscan.com/register',
+        external: externalLinks.etherscan.polygon_pos,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           hash: `#${TRADE_LOCATION_POLYGON_POS}`
@@ -67,7 +68,7 @@ export const getEtherScanRegisterUrl = (location: string) => {
       };
     case toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE):
       return {
-        external: 'https://arbiscan.io/register',
+        external: externalLinks.etherscan.arbitrum,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           hash: `#${TRADE_LOCATION_ARBITRUM_ONE}`
@@ -75,12 +76,12 @@ export const getEtherScanRegisterUrl = (location: string) => {
       };
     case TRADE_LOCATION_BASE:
       return {
-        external: 'https://basescan.org/register',
+        external: externalLinks.etherscan.base,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     case TRADE_LOCATION_GNOSIS:
       return {
-        external: 'https://gnosisscan.io/register',
+        external: externalLinks.etherscan.gnosis,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     default:
