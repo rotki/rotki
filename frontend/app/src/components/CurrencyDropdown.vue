@@ -93,28 +93,29 @@ const calculateFontSize = (symbol: string) => {
       @keypress.enter="selectFirst()"
     />
     <RuiDivider />
-    <VList class="max-h-[25rem]">
-      <VListItem
+    <div class="max-h-[25rem]">
+      <ListItem
         v-for="item in filteredCurrencies"
         :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
         :key="item.tickerSymbol"
+        size="lg"
         @click="onSelected(item)"
       >
-        <VListItemAvatar
-          class="font-bold text-rui-primary"
-          :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
-        >
-          {{ item.unicodeSymbol }}
-        </VListItemAvatar>
-        <VListItemContent>
-          <VListItemTitle>
-            {{ item.name }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ t('currency_drop_down.hint') }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
-    </VList>
+        <template #avatar>
+          <div
+            class="font-bold text-rui-primary"
+            :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+          >
+            {{ item.unicodeSymbol }}
+          </div>
+        </template>
+
+        <template #title>
+          {{ item.name }}
+        </template>
+
+        {{ t('currency_drop_down.hint') }}
+      </ListItem>
+    </div>
   </VMenu>
 </template>
