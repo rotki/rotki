@@ -40,6 +40,8 @@ export const getDomain = (str: string): string => {
   return domain;
 };
 
+const { etherscan } = externalLinks;
+
 /**
  * Returns the registration url of a specified Etherscan location and a path to the local page
  * @param {string} location
@@ -49,18 +51,18 @@ export const getEtherScanRegisterUrl = (location: string) => {
   switch (location) {
     case TRADE_LOCATION_OPTIMISM:
       return {
-        external: externalLinks.etherscan.optimism,
+        external: etherscan.optimism,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     case TRADE_LOCATION_ETHEREUM:
       return {
-        external: externalLinks.etherscan.ethereum,
+        external: etherscan.ethereum,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
     case toSnakeCase(TRADE_LOCATION_POLYGON_POS):
       return {
-        external: externalLinks.etherscan.polygon_pos,
+        external: etherscan.polygon_pos,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           hash: `#${TRADE_LOCATION_POLYGON_POS}`
@@ -68,7 +70,7 @@ export const getEtherScanRegisterUrl = (location: string) => {
       };
     case toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE):
       return {
-        external: externalLinks.etherscan.arbitrum,
+        external: etherscan.arbitrum,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           hash: `#${TRADE_LOCATION_ARBITRUM_ONE}`
@@ -76,12 +78,12 @@ export const getEtherScanRegisterUrl = (location: string) => {
       };
     case TRADE_LOCATION_BASE:
       return {
-        external: externalLinks.etherscan.base,
+        external: etherscan.base,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     case TRADE_LOCATION_GNOSIS:
       return {
-        external: externalLinks.etherscan.gnosis,
+        external: etherscan.gnosis,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     default:
