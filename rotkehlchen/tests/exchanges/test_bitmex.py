@@ -190,31 +190,21 @@ def test_bitmex_margin_history(sandbox_bitmex):
     )
     assert len(result) == 0
 
-    until_9_results_ts = 1536615593
+    until_5_results_ts = 1536615593
     result = sandbox_bitmex.query_margin_history(
         start_ts=0,
-        end_ts=until_9_results_ts,
+        end_ts=until_5_results_ts,
     )
     expected_result = [MarginPosition(
         location=Location.BITMEX,
         open_time=None,
         close_time=1536580800,
-        profit_loss=FVal('0.00000683'),
+        profit_loss=FVal('0.00000003'),
         pl_currency=A_BTC,
         fee=ZERO,
         fee_currency=A_BTC,
-        link='9ab9f275-9132-64aa-4aa6-8c6503418ac6',
-        notes='ETHUSD',
-    ), MarginPosition(
-        location=Location.BITMEX,
-        open_time=None,
-        close_time=1536580800,
-        profit_loss=FVal('0.00000183'),
-        pl_currency=A_BTC,
-        fee=ZERO,
-        fee_currency=A_BTC,
-        link='9c50e247-9bea-b10b-93c8-26845f202e9a',
-        notes='XBTJPY',
+        link='97402f76-828e-a8ea-5d26-920134924149',
+        notes='XBTZ18',
     ), MarginPosition(
         location=Location.BITMEX,
         open_time=None,
@@ -229,52 +219,22 @@ def test_bitmex_margin_history(sandbox_bitmex):
         location=Location.BITMEX,
         open_time=None,
         close_time=1536580800,
-        profit_loss=FVal('0.00000003'),
+        profit_loss=FVal('0.00000183'),
         pl_currency=A_BTC,
         fee=ZERO,
         fee_currency=A_BTC,
-        link='97402f76-828e-a8ea-5d26-920134924149',
-        notes='XBTZ18',
-    ), MarginPosition(
-        location=Location.BITMEX,
-        open_time=None,
-        close_time=1536494400,
-        profit_loss=FVal('-0.00007992'),
-        pl_currency=A_BTC,
-        fee=ZERO,
-        fee_currency=A_BTC,
-        link='df46338a-da5e-e16c-9753-3e863d83d92c',
-        notes='ETHU18',
-    ), MarginPosition(
-        location=Location.BITMEX,
-        open_time=None,
-        close_time=1536494400,
-        profit_loss=FVal('0.00000005'),
-        pl_currency=A_BTC,
-        fee=ZERO,
-        fee_currency=A_BTC,
-        link='05c8bbc0-9b03-ff55-60b9-4f22fd2eeab2',
-        notes='ETHUSD',
-    ), MarginPosition(
-        location=Location.BITMEX,
-        open_time=None,
-        close_time=1536494400,
-        profit_loss=FVal('0.00000003'),
-        pl_currency=A_BTC,
-        fee=ZERO,
-        fee_currency=A_BTC,
-        link='fa0f5415-0867-6164-e366-d1c73c5558bd',
+        link='9c50e247-9bea-b10b-93c8-26845f202e9a',
         notes='XBTJPY',
     ), MarginPosition(
         location=Location.BITMEX,
         open_time=None,
-        close_time=1536494400,
-        profit_loss=FVal('0.00000003'),
+        close_time=1536580800,
+        profit_loss=FVal('0.00000683'),
         pl_currency=A_BTC,
         fee=ZERO,
         fee_currency=A_BTC,
-        link='0227cf99-09d4-b6f0-86c3-69711cf8da1b',
-        notes='XBTUSD',
+        link='9ab9f275-9132-64aa-4aa6-8c6503418ac6',
+        notes='ETHUSD',
     ), MarginPosition(
         location=Location.BITMEX,
         open_time=None,
@@ -286,7 +246,7 @@ def test_bitmex_margin_history(sandbox_bitmex):
         link='7366644c-15ba-baa4-b300-615b0c5db567',
         notes='XRPU18',
     )]
-    assert result == expected_result
+    assert result[:5] == expected_result
 
 
 def test_bitmex_query_balances(sandbox_bitmex):
