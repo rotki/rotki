@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Importing timestamp in CSV in scientific format should now work without errors.
 * :bug:`7123` Adding an EVM EOA address that has only withdrawals/blocks activity will no longer fail.
 * :bug:`7082` Now disabling sync for an exchange instance won't prevent other instances in the same exchange from querying new trades.
 * :bug:`7071` Fix the issue where users on mobile devices need to scroll to login.

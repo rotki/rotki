@@ -210,7 +210,7 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"Failed to deserialize a timestamp entry. Unexpected type',
+        contained_in_msg='"Failed to deserialize a timestamp entry from string 53434.32',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
