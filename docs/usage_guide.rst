@@ -1456,7 +1456,7 @@ Inspecting list of assets
 =========================
 
 You can now manage the list of supported assets by your local rotki instance.
-You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; managed assets, custom assets, and newly detected assets.
+You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; assets, custom assets, and newly detected assets.
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
