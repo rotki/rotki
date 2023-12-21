@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import re
+import shutil
 import sys
 import tempfile
 import warnings as test_warnings
@@ -248,6 +249,9 @@ def fixture_vcr_base_dir() -> Path:
 
     # Clone repo if needed
     if (root_dir / '.git').exists() is False:
+        if root_dir.exists():  # test-caching dir exists but is not a git repo
+            shutil.rmtree(root_dir)  # that means accounting rules or other test-caching was pulled first. Delete and repull.  # noqa: E501
+
         cmd = f'git clone https://github.com/rotki/test-caching.git "{root_dir}"'
         log.debug(f'Cloning test caching repo to {root_dir}')
         os.popen(cmd).read()
