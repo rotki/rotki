@@ -22,6 +22,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.misc import (
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+    LAST_OWNED_ASSETS_UPDATE,
     LAST_SPAM_ASSETS_DETECT_KEY,
 )
 from rotkehlchen.constants.timing import (
@@ -30,6 +31,7 @@ from rotkehlchen.constants.timing import (
     DAY_IN_SECONDS,
     EVM_ACCOUNTS_DETECTION_REFRESH,
     HOUR_IN_SECONDS,
+    OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
 )
 from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
@@ -43,7 +45,11 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.tasks.assets import augmented_spam_detection, autodetect_spam_assets_in_db
+from rotkehlchen.tasks.assets import (
+    augmented_spam_detection,
+    autodetect_spam_assets_in_db,
+    update_owned_assets,
+)
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -730,6 +736,23 @@ class TaskManager:
             task_name='Augmented detection of spam assets',
             exception_is_error=True,
             method=augmented_spam_detection,
+            user_db=self.database,
+        )]
+
+    def _maybe_update_owned_assets(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        This function runs the logic to copy the owned assets from the user db to the globaldb.
+        This task is required to have a fresh status on the assets searches when the filter for
+        owned assets is used.
+        """
+        if should_run_periodic_task(self.database, LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Update owned assets in globaldb',
+            exception_is_error=True,
+            method=update_owned_assets,
             user_db=self.database,
         )]
 

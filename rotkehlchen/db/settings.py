@@ -8,6 +8,7 @@ from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import (
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+    LAST_OWNED_ASSETS_UPDATE,
     LAST_SPAM_ASSETS_DETECT_KEY,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -101,7 +102,13 @@ STRING_KEYS = (
     'frontend_settings',
 )
 TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
-IGNORED_KEYS = (LAST_EVM_ACCOUNTS_DETECT_KEY, LAST_DATA_UPDATES_KEY, LAST_SPAM_ASSETS_DETECT_KEY, LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY) + tuple(x.serialize() for x in UpdateType)  # noqa: E501
+IGNORED_KEYS = (
+    LAST_EVM_ACCOUNTS_DETECT_KEY,
+    LAST_DATA_UPDATES_KEY,
+    LAST_SPAM_ASSETS_DETECT_KEY,
+    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+    LAST_OWNED_ASSETS_UPDATE,
+) + tuple(x.serialize() for x in UpdateType)
 
 
 CachedDBSettingsFieldNames = Literal[
