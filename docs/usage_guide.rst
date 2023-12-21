@@ -1866,6 +1866,12 @@ This can happen for many reasons. The asset may have been acquired in a non-supp
 
 The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` to tell rotki how you acquired that asset or an acquisition history event.
 
+Error when importing CSV formulas to Google Docs
+-------------------------------------------------
+
+This is caused by the different Google Doc language configurations.
+Simply change the language on Google doc to United States. This can be done in File > Spreadsheet settings > General > Locale
+
 
 Timeout or price not found for timestamp
 -------------------------------------------------
