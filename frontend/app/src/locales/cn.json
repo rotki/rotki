@@ -3007,7 +3007,7 @@
     "manage_assets": "管理资产",
     "manage_assets_sub": {
       "custom_assets": "自定义资产",
-      "managed_assets": "托管资产",
+      "managed_assets": "资产",
       "newly_detected": "新检测到的令牌"
     },
     "manage_prices": "管理价格",

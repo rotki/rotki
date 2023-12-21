@@ -49,7 +49,7 @@ describe('assets', () => {
     });
   });
 
-  describe('add managed asset', () => {
+  describe('add asset', () => {
     before(() => {
       page.visit('asset-manager-managed');
     });
