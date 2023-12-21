@@ -56,7 +56,7 @@ def deserialize_fee(fee: str | None) -> Fee:
     return result
 
 
-def deserialize_timestamp(timestamp: int | (str | FVal)) -> Timestamp:
+def deserialize_timestamp(timestamp: float | (str | FVal)) -> Timestamp:
     """Deserializes a timestamp from a json entry. Given entry can either be a
     string or an int.
 
@@ -75,13 +75,13 @@ def deserialize_timestamp(timestamp: int | (str | FVal)) -> Timestamp:
             raise DeserializationError(
                 'Tried to deserialize a timestamp from a non-exact int FVal entry',
             ) from e
-    elif isinstance(timestamp, str):
+    elif isinstance(timestamp, (str | float)):
         try:
-            processed_timestamp = Timestamp(int(timestamp))
-        except ValueError as e:
+            processed_timestamp = Timestamp(FVal(timestamp).to_int(exact=True))
+        except (ValueError, ConversionError) as e:
             # String could not be turned to an int
             raise DeserializationError(
-                f'Failed to deserialize a timestamp entry from string {timestamp}',
+                f'Failed to deserialize a timestamp entry from string {timestamp} due to {e}',
             ) from e
     else:
         raise DeserializationError(
