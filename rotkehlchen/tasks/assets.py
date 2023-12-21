@@ -137,7 +137,7 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
     ):
         cursor.execute('SELECT DISTINCT asset FROM history_events')
         assets = [row[0] for row in cursor]
-        globaldb_cursor.execute(
+        globaldb_cursor.execute(  # take only assets that are in the global DB
             f'SELECT identifier FROM assets WHERE identifier IN ({", ".join(["?"] * len(assets))}) AND type=?',  # noqa: E501
             [*assets, AssetType.EVM_TOKEN.serialize_for_db()],
         )

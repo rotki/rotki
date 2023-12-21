@@ -539,7 +539,7 @@ def test_maybe_augmented_detect_new_spam_tokens(
         ethereum_inquirer,
 ) -> None:
     """
-    Test the augmented spam detection schedule and behavior. We use a token that is not detected
+    Test the augmented spam detection schedule and behaviour. We use a token that is not detected
     in the fast checks that we do and that is airdropped in a multisend transaction.
     """
     tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
@@ -556,7 +556,7 @@ def test_maybe_augmented_detect_new_spam_tokens(
     assert token.protocol is None
 
     # add a transaction for an asset that will get deleted from the
-    # globaldb but we will keep the events
+    # globaldb but we will keep the events. To see nothing breaks.
     tx_hex = deserialize_evm_tx_hash('0x5d7e7646e3749fcd575ea76e35763fa8eeb6dfb83c4c242a4448ee1495f695ba')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
