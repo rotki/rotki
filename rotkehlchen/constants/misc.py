@@ -24,3 +24,5 @@ DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
 
 LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
 LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'
+
+LAST_OWNED_ASSETS_UPDATE: Final = 'last_owned_assets_update'

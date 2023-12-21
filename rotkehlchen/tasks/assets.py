@@ -219,3 +219,9 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 'blockchain': chain.to_blockchain().serialize(),
             },
         )
+
+
+def update_owned_assets(user_db: DBHandler) -> None:
+    """Wrapper to be used in async task to update owned assets"""
+    with user_db.conn.read_ctx() as cursor:
+        user_db.update_owned_assets_in_globaldb(cursor=cursor)

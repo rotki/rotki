@@ -7,12 +7,17 @@ import pytest
 import requests
 from polyleven import levenshtein
 
-from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD, A_USDC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.custom_assets import DBCustomAssets
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -27,7 +32,7 @@ from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChainID, Location
+from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, Location, TimestampMS
 
 
 def assert_substring_in_search_result(
@@ -60,9 +65,9 @@ def assert_asset_at_top_position(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_owned_assets(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
+        rotkehlchen_api_server_with_exchanges: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
 ):
     """Test that using the query all owned assets endpoint works"""
     # Disable caching of query results
@@ -76,12 +81,28 @@ def test_query_owned_assets(
             id=-1,
             asset=A_EUR,
             label='My EUR bank',
-            amount=FVal('1550'),
+            amount=FVal(1550),
             location=Location.BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         )],
     )
+
+    db = DBHistoryEvents(rotki.data.db)
+    with db.db.user_write() as write_cursor:
+        db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                event_identifier='1',
+                sequence_index=1,
+                timestamp=TimestampMS(1),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USDC,
+                balance=Balance(ONE),
+            ),
+        )
 
     # Get all our mocked balances and save them in the DB
     with ExitStack() as stack:
@@ -104,7 +125,7 @@ def test_query_owned_assets(
             ),
         )
     result = assert_proper_response_with_result(response)
-    assert set(result) == {'ETH', 'BTC', 'EUR', A_RDN.identifier}
+    assert set(result) == {'ETH', 'BTC', 'EUR', A_RDN, A_USDC}
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
