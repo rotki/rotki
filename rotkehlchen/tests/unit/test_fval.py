@@ -12,6 +12,8 @@ def test_simple_arithmetic():
     c = FVal(-23.124)
     d = FVal(5006337207657766294397)
     e = ZERO
+    f = FVal('1.49298E+12')
+    g = FVal('5.23267356186572e+8')
     FVal(b'0')
 
     assert a + b == FVal('7.33')
@@ -26,6 +28,8 @@ def test_simple_arithmetic():
     assert abs(c) == FVal('23.124')
     assert d == FVal('5006337207657766294397')
     assert e == FVal('0.0')
+    assert f == FVal('1492980000000')
+    assert g == FVal('523267356.186572')
 
     a += b
     assert a == FVal('7.33')

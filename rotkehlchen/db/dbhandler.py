@@ -144,7 +144,7 @@ TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
 
 # Tuples that contain first the name of a table and then the columns that
-# reference assets ids. This is used to query all assets that a user owns.
+# reference assets ids. This is used to query all assets that a user has ever owned.
 TABLES_WITH_ASSETS = (
     ('yearn_vaults_events', 'from_asset', 'to_asset'),
     ('manually_tracked_balances', 'asset'),
@@ -153,6 +153,7 @@ TABLES_WITH_ASSETS = (
     ('asset_movements', 'asset', 'fee_asset'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
+    ('history_events', 'asset'),
 )
 
 

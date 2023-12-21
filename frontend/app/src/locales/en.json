@@ -3203,7 +3203,7 @@
     "manage_assets": "Manage Assets",
     "manage_assets_sub": {
       "custom_assets": "Custom Assets",
-      "managed_assets": "Managed Assets",
+      "assets": "Assets",
       "newly_detected": "Newly Detected Tokens"
     },
     "manage_prices": "Manage Prices",

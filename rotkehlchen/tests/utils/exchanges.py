@@ -557,9 +557,10 @@ def patch_poloniex_balances_query(poloniex: 'Poloniex'):
 def create_test_coinbase(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
+        name: str = 'coinbase',
 ) -> Coinbase:
     mock = Coinbase(
-        name='coinbase',
+        name=name,
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

@@ -2950,14 +2950,15 @@
       "trades": "Συναλλαγές Ανταλλακτηρίων"
     },
     "import_data": "Εισαγωγή δεδομένων",
-    "locations": "Locations",
-    "manage_address_book": "Manage Address Book",
-    "manage_assets": "Manage Assets",
+    "locations": "Τοποθεσίες",
+    "manage_address_book": "Διαχείριση βιβλίου διευθύνσεων",
+    "manage_assets": "Διαχείριση περιουσιακών στοιχείων",
     "manage_assets_sub": {
-      "custom_assets": "Custom Assets",
-      "managed_assets": "Managed Assets"
+      "custom_assets": "Προσαρμοσμένα περιουσιακά στοιχεία",
+      "assets": "Περιουσιακά στοιχεία",
+      "newly_detected": "Πρόσφατα εντοπισμένα Tokens"
     },
-    "manage_prices": "Manage Prices",
+    "manage_prices": "Διαχείριση τιμών",
     "manage_prices_sub": {
       "historic_prices": "Ιστορικές τιμές",
       "latest_prices": "Πρόσφατε τιμές"

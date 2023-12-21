@@ -5,11 +5,18 @@ Changelog
 * :feature:`7092` Users of metamask swaps will now see them properly decoded in the history view and have them taken into account during accounting.
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
+* :bug:`-` Importing timestamp in CSV in scientific format should now work without errors.
+* :bug:`7123` Adding an EVM EOA address that has only withdrawals/blocks activity will no longer fail.
+* :bug:`7082` Now disabling sync for an exchange instance won't prevent other instances in the same exchange from querying new trades.
+* :bug:`7071` Fix the issue where users on mobile devices need to scroll to login.
+* :bug:`7120` Fix the issue where after removing an exchange key, an error notification is shown.
+* :bug:`7115` Fix the issue with decimal point for amount input.
 * :bug:`7119` Removed bittrex as an exchanged added via api key since it has shut down. But users can now import bittrex CSVs in order to get their history into rotki.
 * :bug:`-` Bitmex history queries should now work properly again after Bitmex changed their API without versioning.
 * :bug:`1863` Bitstamp deposit/withdrawals should now also show the address and transaction id.
 * :bug:`7075` Coinbase api should now be usable again. Additionally history retrieval speed has improved by orders of magnitude.
 * :bug:`-` Fix the issue where user profiles on the login screen are empty after logging out.
+* :bug:`-` Now users will be able to see the most recent assets without restarting the app when filtering by owned assets in the assets view.
 * :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.
 * :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
 * :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.

@@ -630,9 +630,18 @@ def test_bittrex_history_import(rotkehlchen_api_server):
     """Test that data import works both for bittrex csv files"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
-    for filename in ('bittrex_tx_history.csv', 'bittrex_order_history.csv'):
+    for filename, time_format in (
+        ('bittrex_tx_history.csv', None),
+        ('bittrex_tx_history_deposits.csv', '%m/%d/%Y %I:%M:%S %p'),
+        ('bittrex_tx_history_deposits_old.csv', '%Y-%m-%d %H:%M:%S'),
+        ('bittrex_tx_history_withdrawals.csv', '%m/%d/%Y %I:%M:%S %p'),
+        ('bittrex_tx_history_withdrawals_old.csv', '%Y-%m-%d %H:%M:%S'),
+        ('bittrex_order_history.csv', None),
+        ('bittrex_order_history_old.csv', '%m/%d/%Y %I:%M:%S %p'),
+        ('bittrex_order_history_older.csv', '%m/%d/%Y %I:%M:%S %p'),
+    ):
         filepath = dir_path / 'data' / filename
-        json_data = {'source': 'bittrex', 'file': str(filepath)}
+        json_data = {'source': 'bittrex', 'file': str(filepath), 'timestamp_format': time_format}
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,

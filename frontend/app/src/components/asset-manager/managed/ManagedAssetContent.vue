@@ -178,7 +178,7 @@ watch(identifier, async assetId => {
   <TablePageLayout
     :title="[
       t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.managed_assets')
+      t('navigation_menu.manage_assets_sub.assets')
     ]"
   >
     <template #buttons>

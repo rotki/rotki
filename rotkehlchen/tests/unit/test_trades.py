@@ -8,6 +8,7 @@ from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade, deserialize_trade, trades_from_dictlist
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.exchanges import create_test_coinbase
 from rotkehlchen.types import ExchangeLocationID, Location, Timestamp, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -132,19 +133,46 @@ def test_serialize_deserialize_trade():
 
 @pytest.mark.parametrize('db_settings', [
     {'non_syncing_exchanges': [ExchangeLocationID(name='Binance', location=Location.BINANCE)]}])
-def test_query_trade_history_online_but_exchange_excluded(history_querying_manager):
-    """Test that if an online refresh of trades for an exchange is requested,
-    that exchange is not connected, but is also at the excluded exchanges we
-    don't end up querying trades of all exchanges"""
-
-    patch_latest_trades = patch.object(history_querying_manager, 'query_location_latest_trades')
-    patch_iterate_exchanges = patch.object(history_querying_manager.exchange_manager, 'iterate_exchanges')  # noqa: E501
-
-    with patch_latest_trades as latest_trades_mock, patch_iterate_exchanges as iterate_exchanges_mock:  # noqa: E501
-        history_querying_manager.query_trades(
+def test_query_trade_history_online_but_exchange_excluded(events_historian, function_scope_binance):  # noqa: E501
+    """
+    Test that if an online refresh of trades for an exchange is requested but is also at
+    the excluded exchanges we don't end up querying trades of all exchanges.
+    """
+    with (
+        patch.object(target=events_historian.exchange_manager, attribute='iterate_exchanges') as iterate_exchanges_mock,  # noqa: E501
+        patch.object(target=function_scope_binance, attribute='query_trade_history') as patch_query_trade_history,  # noqa: E501
+    ):
+        events_historian.query_trades(
             filter_query=TradesFilterQuery.make(location=Location.BINANCE),
             only_cache=False,
         )
 
-    assert latest_trades_mock.call_count == 0
+    assert patch_query_trade_history.call_count == 0
     assert iterate_exchanges_mock.call_count == 0
+
+
+@pytest.mark.parametrize('db_settings', [
+    {'non_syncing_exchanges': [ExchangeLocationID(name='Coinbase', location=Location.COINBASE)]}])
+def test_query_trade_history_with_exchange_instance_excluded(events_historian):
+    """
+    Test that when an exchange is ignored and more instances of the same location exist
+    we only ignore the correct instance and not all.
+    """
+    coinbase_instances = [create_test_coinbase(
+        name=name,
+        database=events_historian,
+        msg_aggregator=events_historian.msg_aggregator,
+    ) for name in ('Coinbase', 'Coinbase2')]
+
+    events_historian.exchange_manager.connected_exchanges[Location.COINBASE] = coinbase_instances
+    with (
+        patch.object(target=coinbase_instances[0], attribute='query_trade_history') as coinbase_mock,  # noqa: E501
+        patch.object(target=coinbase_instances[1], attribute='query_trade_history') as coinbase2_mock,  # noqa: E501
+    ):
+        events_historian.query_trades(
+            filter_query=TradesFilterQuery.make(location=Location.COINBASE),
+            only_cache=False,
+        )
+
+    assert coinbase_mock.call_count == 0
+    assert coinbase2_mock.call_count == 1

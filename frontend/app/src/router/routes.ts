@@ -221,7 +221,7 @@ export const useAppRoutes = createSharedComposable(() => {
     ASSET_MANAGER_MANAGED: {
       route: Routes.ASSET_MANAGER_MANAGED,
       icon: 'server-line',
-      text: t('navigation_menu.manage_assets_sub.managed_assets')
+      text: t('navigation_menu.manage_assets_sub.assets')
     },
     ASSET_MANAGER_CUSTOM: {
       route: Routes.ASSET_MANAGER_CUSTOM,

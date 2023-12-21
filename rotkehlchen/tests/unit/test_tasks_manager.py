@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
+from rotkehlchen.constants.assets import A_YFI
 from rotkehlchen.constants.misc import (
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
     LAST_SPAM_ASSETS_DETECT_KEY,
@@ -529,14 +530,16 @@ def test_maybe_detect_new_spam_tokens(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xcC3Da35614E6CAEEA7947d7Cd58000C350E7FF84']])
+@pytest.mark.parametrize('ethereum_accounts', [['0xb524c787669185E11d01C645D1910631e04Fa5Eb']])
 def test_maybe_augmented_detect_new_spam_tokens(
         task_manager: TaskManager,
         database: 'DBHandler',
         globaldb: GlobalDBHandler,
         gnosis_inquirer,
+        ethereum_inquirer,
 ) -> None:
     """
-    Test the agumented spam detection schedule and behaviour. We use a token that is not detected
+    Test the augmented spam detection schedule and behaviour. We use a token that is not detected
     in the fast checks that we do and that is airdropped in a multisend transaction.
     """
     tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
@@ -551,6 +554,16 @@ def test_maybe_augmented_detect_new_spam_tokens(
         token_type=EvmTokenKind.ERC20,
     ))
     assert token.protocol is None
+
+    # add a transaction for an asset that will get deleted from the
+    # globaldb but we will keep the events. To see nothing breaks.
+    tx_hex = deserialize_evm_tx_hash('0x5d7e7646e3749fcd575ea76e35763fa8eeb6dfb83c4c242a4448ee1495f695ba')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    globaldb.delete_asset_by_identifier(A_YFI.identifier)
 
     task_manager.potential_tasks = [task_manager._maybe_augmented_detect_new_spam_tokens]
     task_manager.schedule()
