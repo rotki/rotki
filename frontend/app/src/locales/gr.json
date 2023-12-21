@@ -2958,7 +2958,7 @@
     "manage_assets": "Διαχείριση περιουσιακών στοιχείων",
     "manage_assets_sub": {
       "custom_assets": "Προσαρμοσμένα περιουσιακά στοιχεία",
-      "managed_assets": "Περιουσιακά στοιχεία",
+      "assets": "Περιουσιακά στοιχεία",
       "newly_detected": "Πρόσφατα εντοπισμένα Tokens"
     },
     "manage_prices": "Διαχείριση τιμών",
