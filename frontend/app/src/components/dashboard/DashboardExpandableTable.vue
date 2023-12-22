@@ -7,7 +7,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 <template>
   <RuiCard :class="{ '[&>div:last-child]:!py-0': !expanded }">
     <template #custom-header>
-      <div class="flex justify-between items-center p-4">
+      <div class="flex justify-between items-center flex-wrap p-4 gap-2">
         <CardTitle>
           <RuiButton variant="text" icon @click="expanded = !expanded">
             <RuiIcon
@@ -17,7 +17,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
           <slot name="title" />
         </CardTitle>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 grow justify-end">
           <slot v-if="expanded" name="details" />
           <slot v-else name="shortDetails" />
         </div>
