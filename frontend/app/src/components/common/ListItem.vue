@@ -30,7 +30,7 @@ const avatarSizeClasses = computed(() => {
 
 <template>
   <div
-    class="w-full flex items-center py-2 gap-2 cursor-pointer"
+    class="flex items-center py-2 gap-2 cursor-pointer"
     :class="{
       'px-4': !noPadding,
       'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover
