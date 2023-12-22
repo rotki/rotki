@@ -18,7 +18,6 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
@@ -778,25 +777,6 @@ class Location(DBCharEnumMixIn):
 
 EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
-
-
-class LocationDetails(NamedTuple):
-    """Information about Location enum values to display them to the user"""
-    label: str | None = None
-    icon: str | None = None
-    image: str | None = None
-
-    def serialize(self) -> dict[str, str]:
-        data = {}
-        if self.label is not None:
-            data = {'label': self.label}
-
-        if self.icon is not None:
-            return data | {'icon': self.icon}
-        if self.image is not None:
-            return data | {'image': self.image}
-
-        raise InputError('Location details has neither an icon nor an image')
 
 
 class AssetMovementCategory(DBCharEnumMixIn):
