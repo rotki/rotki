@@ -1,12 +1,22 @@
 import process from 'node:process';
 import { externalLinks } from '../src/data/external-links';
 
-const processDynamicUrl = (url: string): string =>
-  // Format dynamic URL and replace with valid value.
-  url.replace('$version', '1.31.1');
+const processDynamicUrl = async (url: string): Promise<string> => {
+  if (url.includes('v$version')) {
+    const response = await fetch(
+      'https://api.github.com/repos/rotki/rotki/releases/latest'
+    );
+    const { tag_name } = await response.json();
+
+    // Format dynamic URL and replace with valid value.
+    return url.replace('v$version', tag_name);
+  }
+
+  return url;
+};
 
 const checkLink = async (rawUrl: string): Promise<void> => {
-  const url = processDynamicUrl(rawUrl);
+  const url = await processDynamicUrl(rawUrl);
   try {
     const response = await fetch(url);
     if (response.status === 200) {
