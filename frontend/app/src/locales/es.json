@@ -1730,7 +1730,8 @@
   },
   "data_table": {
     "items_no": "Artículos #",
-    "rows_per_page": "Filas por página"
+    "rows_per_page": "Filas por página",
+    "no_data": "No hay datos disponibles"
   },
   "database_backups": {
     "action": {

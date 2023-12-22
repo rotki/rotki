@@ -1735,7 +1735,8 @@
   },
   "data_table": {
     "items_no": "Αντικείμενα #",
-    "rows_per_page": "Γραμμές ανα σελίδα"
+    "rows_per_page": "Γραμμές ανα σελίδα",
+    "no_data": "Δεν υπάρχουν διαθέσιμα στοιχεία"
   },
   "database_backups": {
     "action": {
