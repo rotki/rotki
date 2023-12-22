@@ -283,6 +283,9 @@ class ExchangeManager:
         self.database = database
         # initialize exchanges for which we have keys and are not already initialized
         for location, credentials_list in exchange_credentials.items():
+            if location not in SUPPORTED_EXCHANGES:  # in case a no longer supported exchange key is in the DB  # noqa: E501
+                continue
+
             module = self._get_exchange_module(location)
             for credentials in credentials_list:
                 extras = database.get_exchange_credentials_extras(
