@@ -55,11 +55,11 @@ const style = computed<StyleValue | undefined>(() => {
   }
 
   &.outlined {
-    @apply border rounded-md border-rui-grey-200 dark:border-rui-grey-800;
+    @apply border rounded-md border-rui-grey-200;
   }
 
   thead {
-    @apply border-b w-full border-rui-grey-200 dark:border-rui-grey-800;
+    @apply border-b w-full border-rui-grey-200;
   }
 
   th {
@@ -69,6 +69,15 @@ const style = computed<StyleValue | undefined>(() => {
   th,
   td {
     @apply py-2 px-4;
+  }
+}
+
+:global(.dark) {
+  .table {
+    &.outlined,
+    thead {
+      @apply border-rui-grey-800;
+    }
   }
 }
 </style>

@@ -186,7 +186,7 @@ const css = useCssModule();
       />
 
       <template #footer>
-        <div class="flex flex-row gap-2 pa-3" :class="css.buttons">
+        <div class="flex flex-row gap-2 pt-4" :class="css.buttons">
           <template v-if="premium">
             <RuiButton
               v-if="edit"
