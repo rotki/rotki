@@ -12345,12 +12345,12 @@ Get all valid locations
           "locations": {
             "ethereum": {"image": "ethereum.svg"},
             "optimism": {"image": "optimism.svg"},
-            "kraken": {"image": "kraken.svg"},
+            "kraken": {"image": "kraken.svg", "is_exchange_with_key": true},
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. Can also contain an "is_exchange_with_key" key which would signify the location is an exchange with an api key.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

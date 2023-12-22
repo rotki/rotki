@@ -77,7 +77,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExchangeLocationID,
     Location,
-    LocationDetails,
     SupportedBlockchain,
     TradeType,
 )
@@ -135,7 +134,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             HistoryEventType |
             HistoryEventSubType |
             EventDirection |
-            LocationDetails |
             EvmProduct |
             DBSettings |
             TxAccountingTreatment |
