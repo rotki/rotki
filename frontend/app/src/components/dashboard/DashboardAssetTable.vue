@@ -4,8 +4,11 @@ import {
   type AssetBalanceWithPrice,
   type BigNumber
 } from '@rotki/common';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/settings/frontend-settings';
@@ -30,6 +33,11 @@ const search = ref('');
 
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
+const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const
+});
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { exchangeRate } = useBalancePricesStore();
@@ -43,15 +51,11 @@ const total = computed(() => {
 
 const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
 
-const assetFilter = (
-  _value: Nullable<string>,
-  search: Nullable<string>,
-  item: Nullable<AssetBalance>
-) => {
-  if (!search || !item) {
+const assetFilter = (item: Nullable<AssetBalance>) => {
+  const keyword = get(search).toLocaleLowerCase()?.trim() ?? '';
+  if (!keyword || !item) {
     return true;
   }
-  const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
   const name = get(assetName(item.asset))?.toLocaleLowerCase()?.trim();
   const symbol = get(assetSymbol(item.asset))?.toLocaleLowerCase()?.trim();
   return symbol.includes(keyword) || name.includes(keyword);
@@ -74,76 +78,85 @@ const { dashboardTablesVisibleColumns } = storeToRefs(
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
+const filtered = computed(() => {
+  const sortBy = get(sort);
+  const data = get(balances).filter(assetFilter);
+  if (sortBy && !Array.isArray(sortBy) && sortBy.column) {
+    return sortItems(
+      data,
+      [sortBy.column as keyof AssetBalance],
+      [sortBy.direction === 'desc']
+    );
+  }
+  return data;
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableHeader[] = [
+  const headers: DataTableColumn[] = [
     {
-      text: t('common.asset').toString(),
-      value: 'asset',
+      label: t('common.asset'),
+      key: 'asset',
+      class: 'text-no-wrap !w-[99%]',
+      cellClass: 'py-0',
+      sortable: true
+    },
+    {
+      label: t('common.price_in_symbol', {
+        symbol: get(currencySymbol)
+      }),
+      key: 'usdPrice',
+      align: 'end',
       class: 'text-no-wrap',
-      width: '99%'
+      cellClass: 'py-0',
+      sortable: true
     },
     {
-      text: t('common.price_in_symbol', {
-        symbol: get(currencySymbol)
-      }).toString(),
-      value: 'usdPrice',
+      label: t('common.amount'),
+      key: 'amount',
       align: 'end',
-      class: 'text-no-wrap'
+      cellClass: 'py-0',
+      sortable: true
     },
     {
-      text: t('common.amount').toString(),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: t('common.value_in_symbol', {
+      label: t('common.value_in_symbol', {
         symbol: get(currencySymbol)
-      }).toString(),
-      value: 'usdValue',
+      }),
+      key: 'usdValue',
       align: 'end',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      cellClass: 'py-0',
+      sortable: true
     }
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      text: get(totalNetWorthUsd).gt(0)
-        ? t(
-            'dashboard_asset_table.headers.percentage_of_total_net_value'
-          ).toString()
-        : t('dashboard_asset_table.headers.percentage_total').toString(),
-      value: 'percentageOfTotalNetValue',
+      label: get(totalNetWorthUsd).gt(0)
+        ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
+        : t('dashboard_asset_table.headers.percentage_total'),
+      key: 'percentageOfTotalNetValue',
       align: 'end',
-      cellClass: 'asset-percentage',
-      class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-0',
+      class: 'text-no-wrap'
     });
   }
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
-      text: t(
+      label: t(
         'dashboard_asset_table.headers.percentage_of_total_current_group',
         {
           group: get(title)
         }
-      ).toString(),
-      value: 'percentageOfTotalCurrentGroup',
+      ),
+      key: 'percentageOfTotalCurrentGroup',
       align: 'end',
-      cellClass: 'asset-percentage',
-      class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-0',
+      class: 'text-no-wrap'
     });
   }
-
-  headers.push({
-    text: '',
-    width: '48px',
-    value: 'expand',
-    sortable: false
-  });
 
   return headers;
 });
@@ -193,55 +206,62 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         class="text-h6 font-bold"
       />
     </template>
-    <DataTable
-      class="dashboard-asset-table__balances"
-      :headers="tableHeaders"
-      :items="balances"
-      :search.sync="search"
+    <RuiDataTable
+      data-cy="dashboard-asset-table__balances"
+      :cols="tableHeaders"
+      :rows="filtered"
       :loading="loading"
-      sort-by="usdValue"
-      item-key="asset"
-      single-expand
+      :sort.sync="sort"
+      :sort-modifiers="{ external: true }"
+      :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
-      :custom-sort="sortItems"
-      :custom-filter="assetFilter"
+      :sticky-offset="64"
+      row-attr="asset"
+      single-expand
+      outlined
     >
-      <template #item.asset="{ item }">
+      <template #item.asset="{ row }">
         <AssetDetails
           opens-details
-          :asset="item.asset"
-          :is-collection-parent="!!item.breakdown"
+          :asset="row.asset"
+          :is-collection-parent="!!row.breakdown"
         />
       </template>
-      <template #item.usdPrice="{ item }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
-          :loading="!item.usdPrice || item.usdPrice.lt(0)"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
+          :price-asset="row.asset"
+          :price-of-asset="row.usdPrice"
           fiat-currency="USD"
-          :value="item.usdPrice"
+          :value="row.usdPrice"
         />
       </template>
-      <template #item.amount="{ item }">
-        <AmountDisplay :value="item.amount" />
+      <template #item.amount="{ row }">
+        <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ item }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
-          :amount="item.amount"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
+          :amount="row.amount"
+          :price-asset="row.asset"
+          :price-of-asset="row.usdPrice"
           fiat-currency="USD"
-          :value="item.usdValue"
+          :value="row.usdValue"
         />
       </template>
-      <template #item.percentageOfTotalNetValue="{ item }">
-        <PercentageDisplay :value="percentageOfTotalNetValue(item.usdValue)" />
+      <template #item.percentageOfTotalNetValue="{ row }">
+        <PercentageDisplay
+          :value="percentageOfTotalNetValue(row.usdValue)"
+          :asset-padding="0.1"
+        />
       </template>
-      <template #item.percentageOfTotalCurrentGroup="{ item }">
-        <PercentageDisplay :value="percentageOfCurrentGroup(item.usdValue)" />
+      <template #item.percentageOfTotalCurrentGroup="{ row }">
+        <PercentageDisplay
+          :value="percentageOfCurrentGroup(row.usdValue)"
+          :asset-padding="0.1"
+        />
       </template>
       <template #no-results>
         <span class="text-rui-text-secondary">
@@ -254,13 +274,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       </template>
       <template
         v-if="balances.length > 0 && (!search || search.length === 0)"
-        #body.append="{ isMobile }"
+        #body.append
       >
         <RowAppend
           label-colspan="3"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
-          :is-mobile="isMobile"
+          :class-name="css['dashboard-asset-table__body-append']"
         >
           <AmountDisplay
             :fiat-currency="currencySymbol"
@@ -269,30 +289,30 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
           />
         </RowAppend>
       </template>
-      <template #expanded-item="{ item }">
-        <TableExpandContainer visible :colspan="tableHeaders.length">
+      <template #expanded-item="{ row }">
+        <RuiCard>
           <EvmNativeTokenBreakdown
-            v-if="isEvmNativeToken(item.asset)"
+            v-if="isEvmNativeToken(row.asset)"
             show-percentage
-            :total="item.usdValue"
-            :identifier="item.asset"
+            :total="row.usdValue"
+            :identifier="row.asset"
           />
           <AssetBalances
             v-else
             hide-total
             v-bind="props"
-            :balances="item.breakdown ?? []"
+            :balances="row.breakdown ?? []"
           />
-        </TableExpandContainer>
+        </RuiCard>
       </template>
-      <template #item.expand="{ item }">
-        <RowExpander
-          v-if="item.breakdown || isEvmNativeToken(item.asset)"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+      <template #item.expand="{ row }">
+        <RuiTableRowExpander
+          v-if="row.breakdown || isEvmNativeToken(row.asset)"
+          :expanded="expanded.includes(row)"
+          @click="expanded = expanded.includes(row) ? [] : [row]"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
   </DashboardExpandableTable>
 </template>
 
@@ -300,6 +320,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 .dashboard-asset-table {
   &__search {
     @apply max-w-[28rem] w-full;
+  }
+
+  &__body-append {
+    @apply text-sm;
+
+    td {
+      @apply p-4;
+    }
   }
 }
 </style>
