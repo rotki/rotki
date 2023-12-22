@@ -2721,7 +2721,8 @@
     "bittrex": {
       "import": "Import {0} from Bittrex",
       "import_types": "trades, deposits, and withdrawals",
-      "name": "Bittrex"
+      "name": "Bittrex",
+      "warning": "* There may be some issues with the CSV file from Bittrex if you got it via email after closing your account that could require manual intervention. The timestamp format can vary within the same CSV file, the columns may be shifted, and generally, all the data may have inconsistencies."
     },
     "bitstamp": {
       "import": "Import {0} from Bitstamp",

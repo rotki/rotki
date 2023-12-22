@@ -30,6 +30,7 @@ const showConfirmation = () =>
   );
 
 const { darkModeEnabled } = useDarkMode();
+const css = useCssModule();
 </script>
 
 <template>
@@ -83,7 +84,12 @@ const { darkModeEnabled } = useDarkMode();
           {{ t('user_dropdown.change_privacy_mode.label') }}
         </RuiButton>
 
-        <ThemeControl v-if="xs" :dark-mode-enabled="darkModeEnabled" menu>
+        <ThemeControl
+          v-if="xs"
+          :dark-mode-enabled="darkModeEnabled"
+          :class="css.theme_control"
+          menu
+        >
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
 
@@ -103,3 +109,19 @@ const { darkModeEnabled } = useDarkMode();
     </VMenu>
   </div>
 </template>
+
+<style module lang="scss">
+.theme_control {
+  :global(.v-list-item) {
+    @apply px-3;
+
+    :global(.v-avatar) {
+      @apply mr-2 #{!important};
+
+      + div {
+        @apply text-sm text-black/60 dark:text-white/60 font-medium;
+      }
+    }
+  }
+}
+</style>

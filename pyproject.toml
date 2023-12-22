@@ -35,7 +35,7 @@ rotkehlchen = "rotkehlchen.__main__:main"
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools_scm]
-fallback_version = "1.31.1"
+fallback_version = "1.31.2"
 
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]
