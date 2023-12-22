@@ -4,6 +4,7 @@
     "rootDir": ".",
     "baseUrl": ".",
     "types": [
+      "node",
       "vuetify",
       "vue-i18n",
       "vite/client",
@@ -22,6 +23,11 @@
     "components.d.ts"
   ],
   "exclude": ["node_modules/**", "**/.*"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
   "vueCompilerOptions": {
     "target": 2.7
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
+import { externalLinks } from '@/data/external-links';
 
 const downloadReady = ref(false);
 const downloading = ref(false);
@@ -96,7 +96,7 @@ onMounted(async () => {
             <template #releaseNotes>
               <ExternalLink
                 :text="t('update_popup.release_notes')"
-                :url="releaseNotesLink"
+                :url="externalLinks.releases"
               />
             </template>
           </i18n>

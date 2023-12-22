@@ -9,6 +9,7 @@ import {
   type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
+import { externalLinks } from '@/data/external-links';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,
@@ -38,7 +39,6 @@ const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 
 const { t } = useI18n();
-const { usageGuideUrl } = useInterop();
 
 const findNonSyncExchangeIndex = (exchange: Exchange) =>
   get(nonSyncingExchanges).findIndex(
@@ -217,7 +217,7 @@ const showRemoveConfirmation = (item: Exchange) => {
           <i18n path="exchange_settings.subtitle" tag="div">
             <ExternalLink
               :text="t('exchange_settings.usage_guide')"
-              :url="usageGuideUrl + '#adding-an-exchange'"
+              :url="externalLinks.usageGuideSection.addingAnExchange"
             />
           </i18n>
         </HintMenuIcon>

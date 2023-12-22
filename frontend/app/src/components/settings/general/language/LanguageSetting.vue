@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
+import { externalLinks } from '@/data/external-links';
 
 const props = withDefaults(
   defineProps<{
@@ -45,8 +46,6 @@ onMounted(() => {
 
 const { t } = useI18n();
 const rootAttrs = useAttrs();
-
-const { languageContributeUrl } = useInterop();
 </script>
 
 <template>
@@ -92,7 +91,7 @@ const { languageContributeUrl } = useInterop();
         tooltip-class="max-w-[25rem]"
       >
         <template #activator>
-          <ExternalLink :url="languageContributeUrl" custom>
+          <ExternalLink :url="externalLinks.contributeSection.language" custom>
             <RuiButton variant="text" icon>
               <RuiIcon name="file-edit-line" />
             </RuiButton>

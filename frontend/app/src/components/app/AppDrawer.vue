@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
+
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
 const { appBarColor } = useTheme();
-
-const remoteDrawerImage =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
 </script>
 
 <template>
@@ -19,7 +18,7 @@ const remoteDrawerImage =
     app
   >
     <div class="app__logo" :class="{ 'app__logo--mini': isMini }">
-      <RuiLogo :text="!isMini" :custom-src="remoteDrawerImage" />
+      <RuiLogo :text="!isMini" :custom-src="externalLinks.logo.drawer" />
     </div>
     <NavigationMenu :is-mini="isMini" />
     <div class="grow" />

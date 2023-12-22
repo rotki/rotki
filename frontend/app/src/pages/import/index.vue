@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
+
 const { t } = useI18n();
 </script>
 
@@ -17,10 +19,7 @@ const { t } = useI18n();
     >
       <i18n tag="span" path="import_data.notice">
         <template #link>
-          <ExternalLink
-            color="primary"
-            url="https://github.com/rotki/rotki/issues/new/choose"
-          >
+          <ExternalLink color="primary" :url="externalLinks.githubNewIssue">
             {{ t('import_data.notice_link') }}
           </ExternalLink>
         </template>

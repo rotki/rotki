@@ -1,5 +1,6 @@
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
+import { externalLinks } from '@/data/external-links';
 import {
   IPC_ABOUT,
   IPC_DEBUG_SETTINGS,
@@ -44,33 +45,27 @@ const helpMenu = {
     {
       label: 'Usage Guide',
       click: async () => {
-        await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/usage_guide.html'
-        );
+        await shell.openExternal(externalLinks.usageGuide);
       }
     },
     {
       label: 'Frequently Asked Questions',
       click: async () => {
-        await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/faq.html'
-        );
+        await shell.openExternal(externalLinks.faq);
       }
     },
     separator,
     {
       label: 'Release Notes',
       click: async () => {
-        await shell.openExternal(
-          'https://rotki.readthedocs.io/en/latest/changelog.html'
-        );
+        await shell.openExternal(externalLinks.changeLog);
       }
     },
     separator,
     {
       label: 'Issue / Feature Requests',
       click: async () => {
-        await shell.openExternal('https://github.com/rotki/rotki/issues');
+        await shell.openExternal(externalLinks.githubIssues);
       }
     },
     {
@@ -213,7 +208,7 @@ export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
               label: 'Get rotki Premium',
               id: 'premium-button',
               click: async () => {
-                await shell.openExternal('https://rotki.com/products/');
+                await shell.openExternal(externalLinks.premium);
               }
             }
           ]
@@ -221,7 +216,7 @@ export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
       : {
           id: 'premium-button',
           click: async () => {
-            await shell.openExternal('https://rotki.com/products/');
+            await shell.openExternal(externalLinks.premium);
           }
         })
   };

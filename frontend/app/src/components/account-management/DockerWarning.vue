@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
+
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { t } = useI18n();
-const { usageGuideUrl } = useInterop();
+const { usageGuideSection } = externalLinks;
 
 const proceed = () => {
   set(dockerRiskAccepted, true);
@@ -14,7 +16,7 @@ const proceed = () => {
       <i18n path="docker_warning.title">
         <ExternalLink
           :text="t('docker_warning.documentation')"
-          :url="usageGuideUrl + '#docker'"
+          :url="usageGuideSection.dockerWarning"
           color="warning"
         />
       </i18n>
