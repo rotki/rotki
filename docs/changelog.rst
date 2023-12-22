@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Failure to resolve etherscan api or hitting maximum backoff after too many retries will now no longer raise an exception.
 * :bug:`-` Some coinbase trades imported via the API should no longer show negative amounts. If you see negative amounts, purge and repull coinbase data.
+* :bug:`-` Removing exchanges will also remove them from the setting of non syncing exchanges.
 
 * :release:`1.31.2 <2023-12-22>`
 * :bug:`-` Importing timestamp in CSV in scientific format should now work without errors.

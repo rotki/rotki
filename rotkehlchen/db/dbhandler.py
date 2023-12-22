@@ -70,6 +70,7 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
+    serialize_db_setting,
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
@@ -277,6 +278,28 @@ class DBHandler:
         with open(self.user_data_dir / DBINFO_FILENAME, 'w', encoding='utf8') as f:
             f.write(rlk_jsondumps(dbinfo))
 
+    def _check_settings(self) -> None:
+        """Check that the non_syncing_exchanges setting only has active locations"""
+        with self.conn.read_ctx() as cursor:
+            settings: DBSettings = self.get_settings(cursor=cursor)
+
+        valid_locations = [
+            exchange_location_id
+            for exchange_location_id in settings.non_syncing_exchanges
+            if exchange_location_id.location in SUPPORTED_EXCHANGES
+        ]
+        if len(valid_locations) != len(settings.non_syncing_exchanges):
+            with self.user_write() as write_cursor:
+                self.set_setting(
+                    write_cursor=write_cursor,
+                    name='non_syncing_exchanges',
+                    value=serialize_db_setting(
+                        value=valid_locations,
+                        setting='non_syncing_exchanges',
+                        is_modifiable=True,
+                    ),
+                )
+
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
@@ -324,6 +347,7 @@ class DBHandler:
             self.conn_transient.commit()
 
         self.conn.schema_sanity_check()
+        self._check_settings()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -388,8 +412,9 @@ class DBHandler:
                 'premium_should_sync',
                 'ongoing_upgrade_from_version',
                 'main_currency',
+                'non_syncing_exchanges',
             ],
-            value: int | (Timestamp | Asset),
+            value: int | (Timestamp | Asset) | str,
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -1431,9 +1456,31 @@ class DBHandler:
             )
 
     def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
+        """
+        Removes the exchange location from user_credentials and from
+        `the non_syncing_exchanges`setting.
+        """
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE name=? AND location=?',
             (name, location.serialize_for_db()),
+        )
+
+        settings = self.get_settings(write_cursor)
+        if len(ignored_locations_settings := settings.non_syncing_exchanges) == 0:
+            return
+
+        ignored_exchanges = [
+            exchange for exchange in ignored_locations_settings
+            if not (exchange.location == location and exchange.name == name)
+        ]
+        self.set_setting(
+            write_cursor=write_cursor,
+            name='non_syncing_exchanges',
+            value=serialize_db_setting(
+                value=ignored_exchanges,
+                setting='non_syncing_exchanges',
+                is_modifiable=True,
+            ),
         )
 
     def get_exchange_credentials(
