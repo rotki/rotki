@@ -60,7 +60,7 @@ const { darkModeEnabled } = useDarkMode();
         <VDivider />
         <VListItem
           key="settings"
-          class="user-dropdown__settings px-6 py-1"
+          class="user-dropdown__settings px-4"
           to="/settings/general"
         >
           <VListItemAvatar size="24">
@@ -74,7 +74,7 @@ const { darkModeEnabled } = useDarkMode();
         <VListItem
           v-if="xs"
           key="privacy-mode"
-          class="px-6 py-1"
+          class="px-4"
           @click="togglePrivacyMode()"
         >
           <VListItemAvatar size="24">
@@ -92,7 +92,7 @@ const { darkModeEnabled } = useDarkMode();
         <RuiDivider />
         <VListItem
           key="logout"
-          class="user-dropdown__logout px-6 py-1"
+          class="user-dropdown__logout px-4"
           @click="showConfirmation()"
         >
           <VListItemAvatar size="24">
