@@ -76,4 +76,13 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x5fab9761d60419C9eeEbe3915A8FA1ed7e8d2E1B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DIMO',  # noqa: E501
     evm_address_to_identifier('0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LSETH',  # noqa: E501
     evm_address_to_identifier('0x65Ef703f5594D2573eb71Aaf55BC0CB548492df4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MULTI',  # noqa: E501
+    evm_address_to_identifier('0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ALCX',  # noqa: E501
+    evm_address_to_identifier('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SHIB',  # noqa: E501
+    evm_address_to_identifier('0xA4e8C3Ec456107eA67d3075bF9e3DF3A75823DB0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LOOM',  # noqa: E501
+    evm_address_to_identifier('0x27054b13b1B798B345b591a4d22e6562d47eA75a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AST',  # noqa: E501
+    evm_address_to_identifier('0x0d88eD6E74bbFD96B831231638b66C05571e824F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AVT',  # noqa: E501
+    evm_address_to_identifier('0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRO',  # noqa: E501
+    evm_address_to_identifier('0xBBc2AE13b23d715c30720F079fcd9B4a74093505', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ERN',  # noqa: E501
+    evm_address_to_identifier('0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FIS',  # noqa: E501
+    evm_address_to_identifier('0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', ChainID.AVALANCHE, EvmTokenKind.ERC20): 'QI',  # noqa: E501
 }
