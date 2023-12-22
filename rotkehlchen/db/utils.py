@@ -390,10 +390,14 @@ def combine_asset_balances(balances: list[SingleDBAssetBalance]) -> list[SingleD
     return new_balances
 
 
-def table_exists(cursor: 'DBCursor', name: str) -> bool:
-    return cursor.execute(
+def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bool:
+    exists: bool = cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
     ).fetchone()[0] == 1
+    if exists and schema is not None:
+        cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name=?', (name,))
+        return cursor.fetchone()[0] == schema
+    return exists
 
 
 DBTupleType = Literal[

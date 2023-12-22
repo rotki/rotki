@@ -149,6 +149,7 @@ TABLES_AT_INIT = [
     'accounting_rules',
     'linked_rules_properties',
     'unresolved_remote_conflicts',
+    'key_value_cache',
 ]
 
 

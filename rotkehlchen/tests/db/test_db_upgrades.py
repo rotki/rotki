@@ -1960,6 +1960,40 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ).fetchall() == [(bnb_velo_asset_id,)]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_40_to_41(user_data_dir):
+    """Test upgrading the DB from version 40 to version 41"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v40_rotkehlchen.db')
+    db_v40 = _init_db_with_target_version(
+        target_version=40,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v40.conn.write_ctx() as cursor:
+        assert table_exists(cursor, 'key_value_cache') is False
+    db_v40.logout()
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=41,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.write_ctx() as cursor:
+        assert table_exists(cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
+        name TEXT NOT NULL PRIMARY KEY,
+        value TEXT
+    )""") is True
+        cursor.execute('INSERT INTO key_value_cache VALUES (?, ?)', ('test', 'test'))
+        cursor.execute('SELECT * FROM key_value_cache')
+        assert cursor.fetchone() == ('test', 'test')
+        assert cursor.fetchall() == []
+    db.logout()
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -1970,10 +2004,10 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v39_rotkehlchen.db'
+    base_database = 'v40_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=39,
+        target_version=40,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -1988,7 +2022,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=40,
+        target_version=41,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2010,7 +2044,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = {'ledger_action_type', 'ledger_actions'}
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -2019,12 +2053,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'skipped_external_events',
-        'accounting_rules',
-        'linked_rules_properties',
-        'unresolved_remote_conflicts',
-    }
+    assert new_tables == {'key_value_cache'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 
