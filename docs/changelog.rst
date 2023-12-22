@@ -18,6 +18,7 @@ Changelog
 * :bug:`-` Withdrawal events for ethereum staking will now respect accounting rules.
 * :bug:`7059` Fix the issue where adding an account via MetaMask is not working.
 * :bug:`7057` Fix the issue where the app restarts when the file upload button is clicked.
+* :bug:`-` rotki should no longer try mainnet uniswap onchain price queries for other evm tokens and errors should be handled better
 
 * :release:`1.31.1 <2023-12-06>`
 * :bug:`-` Fix the bug that causes the error screen to appear strangely in dark mode.
