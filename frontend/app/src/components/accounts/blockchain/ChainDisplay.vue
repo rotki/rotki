@@ -5,11 +5,9 @@ const props = withDefaults(
   defineProps<{
     chain: Blockchain;
     dense?: boolean;
-    fullWidth?: boolean;
   }>(),
   {
-    dense: false,
-    fullWidth: true
+    dense: false
   }
 );
 
@@ -20,8 +18,8 @@ const name = getChainName(chain);
 </script>
 
 <template>
-  <ListItem :dense="dense" :title="name" :full-width="fullWidth">
-    <template #icon>
+  <ListItem :size="dense ? 'sm' : 'md'" :title="name" no-padding no-hover>
+    <template #avatar>
       <ChainIcon :chain="chain" />
     </template>
   </ListItem>

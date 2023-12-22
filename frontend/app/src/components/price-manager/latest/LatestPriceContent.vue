@@ -156,7 +156,7 @@ onMounted(async () => {
           />
           <AssetDetails
             v-else
-            class="max-w-[20rem] [&>span>div]:pl-2.5 [&>span>div]:pr-1.5"
+            class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
             :asset="item.fromAsset"
           />
         </template>

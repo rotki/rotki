@@ -235,7 +235,7 @@ export class AssetsManagerPage {
     // search the asset
     this.searchAssetByAddress(address);
 
-    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
       symbol
     );
@@ -269,7 +269,7 @@ export class AssetsManagerPage {
     // search the asset
     this.searchAssetBySymbol(symbol);
 
-    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
       symbol
     );
@@ -306,7 +306,7 @@ export class AssetsManagerPage {
     // dialog should not be visible
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
 
-    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
       symbol
     );

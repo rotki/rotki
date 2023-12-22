@@ -1,9 +1,9 @@
 ﻿<script setup lang="ts">
 import { type Ref, useListeners } from 'vue';
 import { type AssetInfoWithId } from '@/types/asset';
-import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import { transformCase } from '@/utils/text';
 import { type NftAsset } from '@/types/nfts';
+import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 
 const props = withDefaults(
   defineProps<{
@@ -202,14 +202,13 @@ const listeners = useListeners();
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">
-        <div v-if="item.assetType === 'nft'" class="overflow-hidden">
-          <NftDetails :identifier="item.identifier" size="40px" />
-        </div>
-        <AssetDetailsBase
-          v-else
-          class="asset-select__details ml-2"
-          :asset="item"
+        <NftDetails
+          v-if="item.assetType === 'nft'"
+          :identifier="item.identifier"
+          size="40px"
+          class="overflow-hidden"
         />
+        <AssetDetailsBase v-else class="asset-select__details" :asset="item" />
       </template>
     </template>
     <template #item="{ item }">
@@ -217,38 +216,16 @@ const listeners = useListeners();
         v-if="item.assetType === 'nft'"
         :identifier="item.identifier"
         size="40px"
+        class="overflow-hidden"
       />
-      <template v-else>
-        <div class="pr-4">
-          <AppImage
-            v-if="item.imageUrl"
-            :src="item.imageUrl"
-            size="2.5rem"
-            contain
-          />
-          <AssetIcon v-else size="40px" :identifier="item.identifier" />
-        </div>
-        <VListItemContent
-          :id="`asset-${getValidSelectorFromEvmAddress(
-            item.identifier.toLocaleLowerCase()
-          )}`"
-        >
-          <template v-if="!item.isCustomAsset">
-            <VListItemTitle class="font-medium">
-              {{ item.symbol }}
-            </VListItemTitle>
-            <VListItemSubtitle>{{ item.name }}</VListItemSubtitle>
-          </template>
-          <template v-else>
-            <VListItemTitle class="font-medium">
-              {{ item.name }}
-            </VListItemTitle>
-            <VListItemSubtitle>
-              {{ item.customAssetType }}
-            </VListItemSubtitle>
-          </template>
-        </VListItemContent>
-      </template>
+      <AssetDetailsBase
+        v-else
+        :id="`asset-${getValidSelectorFromEvmAddress(
+          item.identifier.toLocaleLowerCase()
+        )}`"
+        class="asset-select__details"
+        :asset="item"
+      />
     </template>
     <template #no-data>
       <div data-cy="no_assets" class="px-4 py-2">

@@ -428,7 +428,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       <template #item.assetIdentifier="{ item }">
         <AssetDetails
           v-if="!isNft(item.assetIdentifier)"
-          class="max-w-[20rem] [&>span>div]:pl-2.5 [&>span>div]:pr-1.5"
+          class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
           :asset="item.assetIdentifier"
           :opens-details="false"
           :enable-association="false"

@@ -60,15 +60,19 @@ const loading: ComputedRef<boolean> = computed(() =>
 
 <template>
   <ListItem
+    no-padding
+    no-hover
+    class="max-w-[20rem]"
     v-bind="rootAttrs"
     :class="opensDetails ? 'cursor-pointer' : null"
     :dense="dense"
+    :size="dense ? 'sm' : 'md'"
     :loading="loading"
     :title="asset.isCustomAsset ? name : symbol"
     :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
     @click="navigate()"
   >
-    <template #icon>
+    <template #avatar>
       <AppImage
         v-if="asset.imageUrl"
         contain

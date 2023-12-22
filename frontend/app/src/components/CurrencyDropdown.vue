@@ -99,6 +99,8 @@ const calculateFontSize = (symbol: string) => {
         :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
         :key="item.tickerSymbol"
         size="lg"
+        :title="item.name"
+        :subtitle="t('currency_drop_down.hint')"
         @click="onSelected(item)"
       >
         <template #avatar>
@@ -109,12 +111,6 @@ const calculateFontSize = (symbol: string) => {
             {{ item.unicodeSymbol }}
           </div>
         </template>
-
-        <template #title>
-          {{ item.name }}
-        </template>
-
-        {{ t('currency_drop_down.hint') }}
       </ListItem>
     </div>
   </VMenu>

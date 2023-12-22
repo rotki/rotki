@@ -96,7 +96,7 @@ export class ManualBalancesPage {
       .should('contain', toSentenceCase(balance.location));
 
     cy.get('@row')
-      .find('[data-cy=details-symbol]')
+      .find('[data-cy=list-title]')
       .should('contain.text', balance.asset);
 
     for (const tag of balance.tags) {
