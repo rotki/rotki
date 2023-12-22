@@ -133,16 +133,16 @@ def test_serialize_deserialize_trade():
 
 @pytest.mark.parametrize('db_settings', [
     {'non_syncing_exchanges': [ExchangeLocationID(name='Binance', location=Location.BINANCE)]}])
-def test_query_trade_history_online_but_exchange_excluded(events_historian, function_scope_binance):  # noqa: E501
+def test_query_trade_history_online_but_exchange_excluded(history_querying_manager, function_scope_binance, db_settings):  # pylint: disable=unused-argument  # noqa: E501
     """
     Test that if an online refresh of trades for an exchange is requested but is also at
     the excluded exchanges we don't end up querying trades of all exchanges.
     """
     with (
-        patch.object(target=events_historian.exchange_manager, attribute='iterate_exchanges') as iterate_exchanges_mock,  # noqa: E501
+        patch.object(target=history_querying_manager.exchange_manager, attribute='iterate_exchanges') as iterate_exchanges_mock,  # noqa: E501
         patch.object(target=function_scope_binance, attribute='query_trade_history') as patch_query_trade_history,  # noqa: E501
     ):
-        events_historian.query_trades(
+        history_querying_manager.query_trades(
             filter_query=TradesFilterQuery.make(location=Location.BINANCE),
             only_cache=False,
         )
@@ -153,23 +153,23 @@ def test_query_trade_history_online_but_exchange_excluded(events_historian, func
 
 @pytest.mark.parametrize('db_settings', [
     {'non_syncing_exchanges': [ExchangeLocationID(name='Coinbase', location=Location.COINBASE)]}])
-def test_query_trade_history_with_exchange_instance_excluded(events_historian):
+def test_query_trade_history_with_exchange_instance_excluded(history_querying_manager, db_settings):  # pylint: disable=unused-argument  # noqa: E501
     """
     Test that when an exchange is ignored and more instances of the same location exist
     we only ignore the correct instance and not all.
     """
     coinbase_instances = [create_test_coinbase(
         name=name,
-        database=events_historian,
-        msg_aggregator=events_historian.msg_aggregator,
+        database=history_querying_manager,
+        msg_aggregator=history_querying_manager.msg_aggregator,
     ) for name in ('Coinbase', 'Coinbase2')]
 
-    events_historian.exchange_manager.connected_exchanges[Location.COINBASE] = coinbase_instances
+    history_querying_manager.exchange_manager.connected_exchanges[Location.COINBASE] = coinbase_instances  # noqa: E501
     with (
         patch.object(target=coinbase_instances[0], attribute='query_trade_history') as coinbase_mock,  # noqa: E501
         patch.object(target=coinbase_instances[1], attribute='query_trade_history') as coinbase2_mock,  # noqa: E501
     ):
-        events_historian.query_trades(
+        history_querying_manager.query_trades(
             filter_query=TradesFilterQuery.make(location=Location.COINBASE),
             only_cache=False,
         )
