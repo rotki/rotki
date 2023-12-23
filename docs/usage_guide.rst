@@ -591,6 +591,8 @@ Purging data
 
 Rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
 
+For removing a specific Exchange, make sure to remove any active API key for that exchange.
+
 .. image:: images/sc_purge_data.png
    :alt: Purging user data
    :align: center
