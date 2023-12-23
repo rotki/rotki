@@ -511,6 +511,7 @@ class Coinbase(ExchangeInterface):
         trades = []
         asset_movements = []
         for transaction in transactions:
+            log.debug(f'Processing coinbase {transaction=}')
             tx_type = transaction.get('type')
             if tx_type == 'trade':  # Analyze conversions of coins. We address them as sells
                 try:
@@ -616,13 +617,12 @@ class Coinbase(ExchangeInterface):
 
             timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbase')
             trade_type = TradeType.deserialize(event['type'])
-            tx_amount = deserialize_asset_amount(event['amount']['amount'])
+            amount = AssetAmount(abs(deserialize_asset_amount(event['amount']['amount'])))
             tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
             native_amount = deserialize_asset_amount(event['native_amount']['amount'])
             native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
-            amount = tx_amount
             # rate is how much you get/give in quotecurrency if you buy/sell 1 unit of basecurrency
-            rate = Price(native_amount / tx_amount)
+            rate = Price(native_amount / amount)
 
             fee_amount = fee_asset = None
             if 'fee' in event:

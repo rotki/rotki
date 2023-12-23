@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Some coinbase trades imported via the API should no longer show negative amounts. If you see negative amounts, purge and repull coinbase data.
+
 * :release:`1.31.2 <2023-12-22>`
 * :bug:`-` Importing timestamp in CSV in scientific format should now work without errors.
 * :bug:`7123` Adding an EVM EOA address that has only withdrawals/blocks activity will no longer fail.
