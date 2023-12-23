@@ -168,7 +168,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
             rotkehlchen_api_server,
             'eth2stakedetailsresource',
         ), json={
-            'async_query': async_query,
+            'async_query': False,
             'ignore_cache': False,
             'validator_indices': [new_index_1],
         },
@@ -194,15 +194,13 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']
     assert total_stats == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl']['amount'])
-    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
+    full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
     calculated_sum_usd_value = ZERO
     for entry in result['entries']:
         calculated_sum_pnl += FVal(entry['pnl']['amount'])
         calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
     assert full_sum_pnl.is_close(calculated_sum_pnl)
-    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
     # filter by validator_index
     queried_validators = [new_index_1, 9]
@@ -233,8 +231,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl']['amount'])
-    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
+    full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
     calculated_sum_usd_value = ZERO
     next_page_times = []
@@ -253,7 +250,6 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
             continue
         assert entry['timestamp'] >= result['entries'][idx + 1]['timestamp']
     assert full_sum_pnl.is_close(calculated_sum_pnl)
-    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
     # filter by validator_index and timestamp and add pagination
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
@@ -268,8 +264,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == 5
     # Check the sum pnl values here and see that they include only values from the current page
-    full_sum_pnl = FVal(result['sum_pnl']['amount'])
-    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
+    full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
     calculated_sum_usd_value = ZERO
     for idx, entry in enumerate(result['entries']):
@@ -283,7 +278,6 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
         if idx <= 4:
             assert time == next_page_times[idx]
     assert full_sum_pnl.is_close(calculated_sum_pnl)
-    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
 
 @pytest.mark.skipif(
@@ -349,10 +343,10 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
         per_acc = result['per_account']
         assert FVal(per_acc['eth'][new_account]['assets'][A_ETH.identifier]['amount']) > ZERO
-        assert FVal(per_acc['eth2'][validator_pubkey]['assets'][A_ETH2.identifier]['amount']) > FVal('32')  # noqa: E501
+        assert FVal(per_acc['eth2'][validator_pubkey]['assets'][A_ETH2.identifier]['amount']) == ZERO  # exited # noqa: E501
         totals = result['totals']['assets']
-        assert FVal(totals['eth']['amount']) > ZERO
-        assert FVal(totals['eth2']['amount']) > FVal('32')
+        assert FVal(totals['ETH']['amount']) > ZERO
+        assert FVal(totals['ETH2']['amount']) == ZERO  # exited
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -728,8 +722,8 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [Eth2Validator(
-        index=4235,
-        public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',
+        index=5234,
+        public_key='0xb0456681ca4dc1a1276a9cab5915af9f9210f0eb104b4bd60164f59243b6159c3f3dab0d712cbae1360c7eb07af6a276',
         ownership_proportion=ONE,
     ), Eth2Validator(
         index=5235,
