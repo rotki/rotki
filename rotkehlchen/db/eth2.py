@@ -108,10 +108,10 @@ class DBEth2:
          - Sum of ETH gained/lost for the filter
         """
         stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
-        query, bindings = filter_query.prepare(with_pagination=False)
+        query, bindings = filter_query.prepare(with_pagination=True)
         # TODO: A weakness of this query is that it does not take into account the
         # ownership proportion of the validator in the PnL here
-        query = 'SELECT COUNT(*), SUM(pnl) from eth2_daily_staking_details ' + query
+        query = f'SELECT COUNT(*), SUM(pnl) FROM (SELECT * FROM  eth2_daily_staking_details {query})'  # noqa: E501
         count, eth_sum_str = cursor.execute(query, bindings).fetchone()
         return stats, count, FVal(eth_sum_str) if eth_sum_str is not None else ZERO
 
