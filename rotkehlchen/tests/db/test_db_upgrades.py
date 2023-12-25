@@ -1421,7 +1421,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert cursor.execute(
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
-    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}, {"name": "FTX 1", "location": "ftx"}]'  # noqa: E501
+    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}]'
     assert cursor.execute(
         'SELECT value FROM settings WHERE name="ssf_0graph_multiplier"',
     ).fetchone()[0] == '42'
