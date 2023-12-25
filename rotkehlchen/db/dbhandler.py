@@ -314,6 +314,7 @@ class DBHandler:
         is older than the one supported.
         - DBSchemaError if database schema is malformed.
         """
+        # This logic executes only for the user db
         # Run upgrades if needed
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
@@ -323,31 +324,33 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
-        # set up transient connection
-        self._connect(conn_attribute='conn_transient')
-        if self.conn_transient:
-            transient_version = 0
-            cursor = self.conn_transient.cursor()
-            with suppress(sqlcipher.DatabaseError):  # not created yet
-                result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
-                if result is not None:
-                    transient_version = int(result[0])
 
-            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-                # "upgrade" transient DB
-                tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
-                cursor.executescript('PRAGMA foreign_keys = OFF;')
-                cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
-                cursor.executescript('PRAGMA foreign_keys = ON;')
-            self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-            cursor.execute(
-                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-            )
-            self.conn_transient.commit()
-
+        # run checks on the database
         self.conn.schema_sanity_check()
         self._check_settings()
+
+        # This logic executes only for the transient db
+        # set up transient connection.
+        self._connect(conn_attribute='conn_transient')
+        transient_version = 0
+        cursor = self.conn_transient.cursor()
+        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+            result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
+            if result is not None:
+                transient_version = int(result[0])
+
+        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+            # "upgrade" transient DB
+            tables = list(cursor.execute('select name from sqlite_master where type is "table"'))
+            cursor.executescript('PRAGMA foreign_keys = OFF;')
+            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
+            cursor.executescript('PRAGMA foreign_keys = ON;')
+        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+        cursor.execute(
+            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+        )
+        self.conn_transient.commit()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
