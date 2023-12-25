@@ -121,6 +121,7 @@ from rotkehlchen.types import (
     ChainAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
+    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -196,6 +197,7 @@ class DBHandler:
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
             'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
             'ongoing_upgrade_from_version': (int, None),
+            'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -281,14 +283,17 @@ class DBHandler:
     def _check_settings(self) -> None:
         """Check that the non_syncing_exchanges setting only has active locations"""
         with self.conn.read_ctx() as cursor:
-            settings: DBSettings = self.get_settings(cursor=cursor)
+            non_syncing_exchanges = self.get_setting(
+                cursor=cursor,
+                name='non_syncing_exchanges',
+            )
 
         valid_locations = [
             exchange_location_id
-            for exchange_location_id in settings.non_syncing_exchanges
+            for exchange_location_id in non_syncing_exchanges
             if exchange_location_id.location in SUPPORTED_EXCHANGES
         ]
-        if len(valid_locations) != len(settings.non_syncing_exchanges):
+        if len(valid_locations) != len(non_syncing_exchanges):
             with self.user_write() as write_cursor:
                 self.set_setting(
                     write_cursor=write_cursor,
@@ -314,8 +319,7 @@ class DBHandler:
         is older than the one supported.
         - DBSchemaError if database schema is malformed.
         """
-        # This logic executes only for the user db
-        # Run upgrades if needed
+        # Run upgrades if needed -- only for user DB
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
@@ -330,7 +334,6 @@ class DBHandler:
         self._check_settings()
 
         # This logic executes only for the transient db
-        # set up transient connection.
         self._connect(conn_attribute='conn_transient')
         transient_version = 0
         cursor = self.conn_transient.cursor()
@@ -383,6 +386,10 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['ongoing_upgrade_from_version']) -> int | None:  # noqa: E501
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> list['ExchangeLocationID']:  # noqa: E501
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
@@ -393,8 +400,9 @@ class DBHandler:
                 'premium_should_sync',
                 'main_currency',
                 'ongoing_upgrade_from_version',
+                'non_syncing_exchanges',
             ],
-    ) -> int | None | (Timestamp | (bool | AssetWithOracles)):
+    ) -> int | None | (Timestamp | (bool | AssetWithOracles)) | list['ExchangeLocationID']:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
