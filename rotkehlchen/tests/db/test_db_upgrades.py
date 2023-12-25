@@ -577,7 +577,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
 
     manual_balance_ids = cursor.execute('SELECT id FROM manually_tracked_balances;').fetchall()
 
-    assert [1, 2, 3] == [x[0] for x in manual_balance_ids]
+    assert [x[0] for x in manual_balance_ids] == [1, 2, 3]
 
     # Check that trades with fee missing sets fee_currency to NULL and vice versa
     trades_expected = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ('foo1', 'foo2')).fetchall()  # noqa: E501
