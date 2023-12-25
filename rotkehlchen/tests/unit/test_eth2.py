@@ -757,7 +757,7 @@ def test_combine_block_with_tx_events(eth2, database):
 
     with database.conn.read_ctx() as cursor:
         hidden_ids = dbevents.get_hidden_event_ids(cursor)
-        assert [2] == hidden_ids
+        assert hidden_ids == [2]
 
 
 @pytest.mark.vcr()
