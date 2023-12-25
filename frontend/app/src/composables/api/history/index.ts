@@ -5,13 +5,8 @@ import {
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { ReportProgress } from '@/types/reports';
-import { type ActionDataEntry } from '@/types/action';
-
-interface AllLocationResponse {
-  locations: Record<string, Omit<ActionDataEntry, 'identifier'>>;
-}
+import { type AllLocationResponse } from '@/types/location';
 
 export const useHistoryApi = () => {
   const getProgress = async (): Promise<ReportProgress> => {
@@ -25,8 +20,8 @@ export const useHistoryApi = () => {
     return ReportProgress.parse(data);
   };
 
-  const fetchAssociatedLocations = async (): Promise<TradeLocation[]> => {
-    const response = await api.instance.get<ActionResult<TradeLocation[]>>(
+  const fetchAssociatedLocations = async (): Promise<string[]> => {
+    const response = await api.instance.get<ActionResult<string[]>>(
       '/locations/associated',
       {
         validateStatus: validStatus

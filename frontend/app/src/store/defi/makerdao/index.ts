@@ -1,4 +1,3 @@
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
@@ -16,7 +15,7 @@ const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
     ...vault,
     identifier: vault.identifier.toString(),
-    protocol: DefiProtocol.MAKERDAO_VAULTS,
+    protocol: Module.MAKERDAO_VAULTS,
     collateral: { ...vault.collateral, asset: vault.collateralAsset },
     collateralizationRatio: vault.collateralizationRatio ?? undefined,
     liquidationPrice: vault.liquidationPrice

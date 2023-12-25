@@ -1721,7 +1721,8 @@
   "data_management": {
     "purge_data": {
       "confirm": {
-        "message": "您确定要清除 {source} 的缓存数据吗？",
+        "message": "您确定要清除 {source} ({value}) 的缓存数据吗？({value}) 的缓存数据？",
+        "message_all": "您确定要清除所有 {source} 的缓存数据吗？",
         "title": "确认缓存数据清除"
       },
       "evm_transaction_purge_confirm": {
@@ -3609,17 +3610,27 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "all_decentralized_exchanges": "所有去中心化交易所",
-    "all_exchanges": "所有中心化交易所",
-    "all_modules": "所有模块",
-    "evm_transactions": "EVM交易",
-    "evm_chain_to_clear": {
-      "label": "EVM链清零",
-      "hint": "清空此字段将删除所有链的交易数据"
+    "centralized_exchanges": "中心化交易所",
+    "centralized_exchange_to_clear": {
+      "label": "集中交易所清零",
+      "hint": "清空该字段以删除所有中心化交易所的数据"
     },
-    "exchange": "交换：{name}",
+    "decentralized_exchanges": "去中心化交易所",
+    "decentralized_exchange_to_clear": {
+      "label": "去中心化交易所去清算",
+      "hint": "清空此字段以删除所有去中心化交易所的数据"
+    },
+    "defi_modules": "DeFi 模块",
+    "defi_module_to_clear": {
+      "label": "待清除的 DeFi 模块",
+      "hint": "清空此字段以删除所有 defi 模块的数据"
+    },
+    "evm_transactions": "EVM 交易",
+    "evm_chain_to_clear": {
+      "label": "EVM 链要清除",
+      "hint": "清空该字段以删除所有链的交易数据"
+    },
     "label": "选择数据源",
-    "module": "模块：{name}",
     "tooltip": "清除所选源的缓存数据"
   },
   "queried_address_dialog": {

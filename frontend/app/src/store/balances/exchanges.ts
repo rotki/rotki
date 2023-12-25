@@ -6,8 +6,7 @@ import {
   type ExchangeInfo,
   type ExchangeSavingsCollection,
   type ExchangeSavingsCollectionResponse,
-  type ExchangeSavingsRequestPayload,
-  SupportedExchange
+  type ExchangeSavingsRequestPayload
 } from '@/types/exchanges';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
@@ -110,7 +109,7 @@ export const useExchangeBalancesStore = defineStore(
       });
 
     const getBalances = (
-      exchange: SupportedExchange,
+      exchange: string,
       hideIgnored = true
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
@@ -290,11 +289,7 @@ export const useExchangeBalancesStore = defineStore(
         const locations = get(connectedExchanges)
           .map(({ location }) => location)
           .filter(uniqueStrings)
-          .filter(
-            location =>
-              location === SupportedExchange.BINANCE ||
-              location === SupportedExchange.BINANCEUS
-          );
+          .filter(location => ['binance', 'binanceus'].includes(location));
 
         if (locations.length > 0) {
           await Promise.all(locations.map(syncExchangeSavings));

@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { type SupportedExchange } from '@/types/exchanges';
-
 const props = defineProps<{
-  exchange: SupportedExchange;
+  exchange: string;
 }>();
 
 const { exchange } = toRefs(props);

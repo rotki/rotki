@@ -39,19 +39,18 @@ const css = useCssModule();
     @click="emit('click', item)"
   >
     <template v-if="location">
-      <img
+      <AppImage
         v-if="location.image"
-        :width="size"
-        :height="size"
-        class="object-contain dark:p-[0.1rem] icon-bg max-w-full max-h-full"
-        :class="css.icon"
         :src="location.image"
         :alt="location.name"
+        contain
+        :size="size"
+        class="icon-bg p-[0.1rem]"
       />
       <RuiIcon
         v-else
         color="secondary"
-        class="icon-bg dark:p-[0.1rem]"
+        class="icon-bg p-[0.1rem]"
         :size="size"
         :name="location.icon"
       />

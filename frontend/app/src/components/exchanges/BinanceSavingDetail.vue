@@ -4,13 +4,12 @@ import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ExchangeSavingsCollection,
   type ExchangeSavingsEvent,
-  type ExchangeSavingsRequestPayload,
-  type SupportedExchange
+  type ExchangeSavingsRequestPayload
 } from '@/types/exchanges';
 import { Section } from '@/types/status';
 
 const props = defineProps<{
-  exchange: SupportedExchange.BINANCE | SupportedExchange.BINANCEUS;
+  exchange: 'binance' | 'binanceus';
 }>();
 
 const { t } = useI18n();

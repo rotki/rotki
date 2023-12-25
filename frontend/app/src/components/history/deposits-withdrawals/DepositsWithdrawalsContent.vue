@@ -7,7 +7,6 @@ import {
   type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/asset-movements';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -15,7 +14,7 @@ import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 
 const props = withDefaults(
   defineProps<{
-    locationOverview?: TradeLocation;
+    locationOverview?: string;
   }>(),
   {
     locationOverview: ''

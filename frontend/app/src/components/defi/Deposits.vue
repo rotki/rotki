@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
-import { Module } from '@/types/modules';
+import { Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import {
@@ -28,7 +28,7 @@ const modules: Module[] = [
 const chains = [Blockchain.ETH];
 
 const selectedAccounts = ref<GeneralAccount[]>([]);
-const protocol = ref<DefiProtocol | null>(null);
+const protocol = ref<Module | null>(null);
 const premium = usePremium();
 const route = useRoute();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
@@ -40,7 +40,7 @@ const aaveStore = useAaveStore();
 
 const { t } = useI18n();
 
-const isProtocol = (protocol: DefiProtocol) =>
+const isProtocol = (protocol: Module) =>
   computed(() => {
     const protocols = get(selectedProtocols);
     return protocols.length > 0 && protocols.includes(protocol);
@@ -88,10 +88,10 @@ const totalUsdEarned = computed<BigNumber>(() => {
   return get(defiLending.totalUsdEarned(protocols, addresses));
 });
 
-const isCompound = isProtocol(DefiProtocol.COMPOUND);
-const isAave = isProtocol(DefiProtocol.AAVE);
-const isYearnVaults = isProtocol(DefiProtocol.YEARN_VAULTS);
-const isYearnVaultsV2 = isProtocol(DefiProtocol.YEARN_VAULTS_V2);
+const isCompound = isProtocol(Module.COMPOUND);
+const isAave = isProtocol(Module.AAVE);
+const isYearnVaults = isProtocol(Module.YEARN);
+const isYearnVaultsV2 = isProtocol(Module.YEARN_V2);
 const isYearn = logicOr(isYearnVaults, isYearnVaultsV2);
 const noProtocolSelection = computed(() => get(selectedProtocols).length === 0);
 
@@ -133,10 +133,8 @@ const refresh = async () => {
 onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
-  const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
-  if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex]);
+  if (isDefiProtocol(queryElement)) {
+    set(protocol, queryElement);
   }
   await defiLending.fetchLending();
 });
@@ -144,12 +142,12 @@ onMounted(async () => {
 const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   const selectedProtocol = get(protocol);
 
-  const mapping: { [key in DefiProtocol]?: string[] } = {
-    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2'],
-    [DefiProtocol.COMPOUND]: ['compound'],
-    [DefiProtocol.MAKERDAO_DSR]: ['makerdao dsr'],
-    [DefiProtocol.YEARN_VAULTS]: ['yearn-v1'],
-    [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2']
+  const mapping: { [key in Module]?: string[] } = {
+    [Module.AAVE]: ['aave-v1', 'aave-v2'],
+    [Module.COMPOUND]: ['compound'],
+    [Module.MAKERDAO_DSR]: ['makerdao dsr'],
+    [Module.YEARN]: ['yearn-v1'],
+    [Module.YEARN_V2]: ['yearn-v2']
   };
 
   if (selectedProtocol === null) {

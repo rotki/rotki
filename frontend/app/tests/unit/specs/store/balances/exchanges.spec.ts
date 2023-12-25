@@ -1,4 +1,3 @@
-import { SupportedExchange } from '@/types/exchanges';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 describe('store::balances/manual', () => {
@@ -41,12 +40,12 @@ describe('store::balances/manual', () => {
       const { exchanges } = storeToRefs(store);
       const expectedResult = [
         {
-          location: SupportedExchange.COINBASE,
+          location: 'coinbase',
           balances: mockBalances.coinbase,
           total: bigNumberify(4000)
         },
         {
-          location: SupportedExchange.KRAKEN,
+          location: 'kraken',
           balances: mockBalances.kraken,
           total: bigNumberify(2000)
         }
@@ -81,7 +80,7 @@ describe('store::balances/manual', () => {
       expect(get(breakdown)).toMatchObject([
         {
           address: '',
-          location: SupportedExchange.KRAKEN,
+          location: 'kraken',
           balance: {
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000)
@@ -89,7 +88,7 @@ describe('store::balances/manual', () => {
         },
         {
           address: '',
-          location: SupportedExchange.COINBASE,
+          location: 'coinbase',
           balance: {
             amount: bigNumberify(2000),
             usdValue: bigNumberify(2000)
@@ -104,7 +103,7 @@ describe('store::balances/manual', () => {
       expect(get(breakdown)).toMatchObject([
         {
           address: '',
-          location: SupportedExchange.KRAKEN,
+          location: 'kraken',
           balance: {
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000)
@@ -112,7 +111,7 @@ describe('store::balances/manual', () => {
         },
         {
           address: '',
-          location: SupportedExchange.KRAKEN,
+          location: 'kraken',
           balance: {
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000)
@@ -120,7 +119,7 @@ describe('store::balances/manual', () => {
         },
         {
           address: '',
-          location: SupportedExchange.COINBASE,
+          location: 'coinbase',
           balance: {
             amount: bigNumberify(2000),
             usdValue: bigNumberify(2000)
@@ -128,7 +127,7 @@ describe('store::balances/manual', () => {
         },
         {
           address: '',
-          location: SupportedExchange.COINBASE,
+          location: 'coinbase',
           balance: {
             amount: bigNumberify(2000),
             usdValue: bigNumberify(2000)
@@ -144,11 +143,11 @@ describe('store::balances/manual', () => {
       set(connectedExchanges, [
         {
           name: 'Kraken',
-          location: SupportedExchange.KRAKEN
+          location: 'kraken'
         },
         {
           name: 'Coinbase',
-          location: SupportedExchange.COINBASE
+          location: 'coinbase'
         }
       ]);
 
@@ -156,9 +155,7 @@ describe('store::balances/manual', () => {
         treatEth2AsEth: false
       });
 
-      const locationBreakdown = store.getLocationBreakdown(
-        SupportedExchange.KRAKEN
-      );
+      const locationBreakdown = store.getLocationBreakdown('kraken');
 
       expect(get(locationBreakdown)).toMatchObject({
         ETH: {
@@ -193,8 +190,8 @@ describe('store::balances/manual', () => {
       const byLocationBalances = store.getByLocationBalances(bn => bn);
 
       expect(get(byLocationBalances)).toMatchObject({
-        [SupportedExchange.COINBASE]: bigNumberify(4000),
-        [SupportedExchange.KRAKEN]: bigNumberify(2000)
+        ['coinbase']: bigNumberify(4000),
+        ['kraken']: bigNumberify(2000)
       });
     });
   });

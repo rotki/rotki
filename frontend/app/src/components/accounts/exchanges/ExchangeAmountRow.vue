@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type SupportedExchange } from '@/types/exchanges';
 
 const props = defineProps<{
   balance: BigNumber;
-  exchange: SupportedExchange;
+  exchange: string;
 }>();
 
 const { exchange } = toRefs(props);

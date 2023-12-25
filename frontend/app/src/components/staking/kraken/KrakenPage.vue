@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
 import { Routes } from '@/router/routes';
 
@@ -9,9 +8,7 @@ const { load, $reset } = useKrakenStakingStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 const isKrakenConnected = computed(() => {
   const exchanges = get(connectedExchanges);
-  return exchanges.some(
-    ({ location }) => location === SupportedExchange.KRAKEN
-  );
+  return exchanges.some(({ location }) => location === 'kraken');
 });
 
 onMounted(async () => {

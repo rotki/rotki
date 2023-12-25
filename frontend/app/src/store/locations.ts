@@ -1,15 +1,13 @@
-import { type ActionDataEntry } from '@/types/action';
 import { type TradeLocationData } from '@/types/history/trade/location';
+import { type AllLocation } from '@/types/location';
 
 export const useLocationStore = defineStore('locations', () => {
-  const tradeLocations: Ref<TradeLocationData[]> = ref([]);
+  const allLocations: Ref<AllLocation> = ref({});
 
   const { fetchAllLocations } = useHistoryApi();
   const { t, te } = useI18n();
 
-  const toTradeLocationData = (
-    locations: Record<string, Omit<ActionDataEntry, 'identifier'>>
-  ): TradeLocationData[] =>
+  const toTradeLocationData = (locations: AllLocation): TradeLocationData[] =>
     Object.entries(locations).map(([identifier, item]) => {
       let name: string;
 
@@ -37,14 +35,49 @@ export const useLocationStore = defineStore('locations', () => {
       return mapped;
     });
 
+  const tradeLocations = computed(() => toTradeLocationData(get(allLocations)));
+
   const fetchAllTradeLocations = async () => {
     const { locations } = await fetchAllLocations();
-    set(tradeLocations, toTradeLocationData(locations));
+    set(allLocations, locations);
   };
+
+  const allExchanges: ComputedRef<string[]> = computed(() => {
+    const locations = get(allLocations);
+    return Object.keys(locations).filter(key => {
+      const location = locations[key];
+      return location.isExchange || location.exchangeDetails;
+    });
+  });
+
+  const exchangesWithKey: ComputedRef<string[]> = computed(() => {
+    const locations = get(allLocations);
+    return get(allExchanges).filter(
+      key => locations[key].exchangeDetails?.isExchangeWithKey
+    );
+  });
+
+  const exchangesWithPassphrase: ComputedRef<string[]> = computed(() => {
+    const locations = get(allLocations);
+    return get(exchangesWithKey).filter(
+      key => locations[key].exchangeDetails?.isExchangeWithPassphrase
+    );
+  });
+
+  const exchangesWithoutApiSecret: ComputedRef<string[]> = computed(() => {
+    const locations = get(allLocations);
+    return get(exchangesWithKey).filter(
+      key => locations[key].exchangeDetails?.isExchangeWithoutApiSecret
+    );
+  });
 
   return {
     tradeLocations,
-    fetchAllTradeLocations
+    fetchAllTradeLocations,
+    allExchanges,
+    exchangesWithKey,
+    exchangesWithPassphrase,
+    exchangesWithoutApiSecret
   };
 });
 

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
-import {
-  type ExchangePayload,
-  KrakenAccountType,
-  SUPPORTED_EXCHANGES,
-  SupportedExchange
-} from '@/types/exchanges';
+import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
@@ -62,28 +57,22 @@ const { t, te } = useI18n();
 const requiresApiSecret = computed(() => {
   const { location } = get(exchange);
 
-  return ![SupportedExchange.BITPANDA].includes(location);
+  return !get(exchangesWithoutApiSecret).includes(location);
 });
 
 const requiresPassphrase = computed(() => {
   const { location } = get(exchange);
-  return [
-    SupportedExchange.COINBASEPRO,
-    SupportedExchange.KUCOIN,
-    SupportedExchange.OKX
-  ].includes(location);
+  return get(exchangesWithPassphrase).includes(location);
 });
 
 const isBinance = computed(() => {
   const { location } = get(exchange);
-  return [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(
-    location
-  );
+  return ['binance', 'binanceus'].includes(location);
 });
 
 const { getLocationData } = useLocations();
 
-const suggestedName = function (exchange: SupportedExchange): string {
+const suggestedName = function (exchange: string): string {
   const location = getLocationData(exchange);
   const nonce = get(getExchangeNonce(exchange));
   return location ? `${location.name} ${nonce}` : '';
@@ -101,15 +90,15 @@ const toggleEdit = () => {
   }
 };
 
-const onExchangeChange = (exchange: SupportedExchange) => {
+const onExchangeChange = (exchange: string) => {
   input({
     name: suggestedName(exchange),
     newName: null,
     location: exchange,
     apiKey: null,
-    apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
+    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
     passphrase: null,
-    krakenAccountType: exchange === SupportedExchange.KRAKEN ? 'starter' : null,
+    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
     binanceMarkets: null
   });
 
@@ -142,7 +131,8 @@ const krakenAccountTypes = KrakenAccountType.options.map(item => {
   };
 });
 
-const exchanges = SUPPORTED_EXCHANGES;
+const { exchangesWithKey, exchangesWithPassphrase, exchangesWithoutApiSecret } =
+  storeToRefs(useLocationStore());
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
@@ -190,7 +180,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       <VAutocomplete
         outlined
         :value="exchange.location"
-        :items="exchanges"
+        :items="exchangesWithKey"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
         :disabled="editMode"

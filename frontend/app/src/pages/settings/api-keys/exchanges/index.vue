@@ -4,15 +4,13 @@ import {
   type DataTableSortColumn
 } from '@rotki/ui-library-compat';
 import { type Writeable } from '@/types';
-import {
-  type Exchange,
-  type ExchangePayload,
-  SupportedExchange
-} from '@/types/exchanges';
+import { type Exchange, type ExchangePayload } from '@/types/exchanges';
 import { externalLinks } from '@/data/external-links';
 
+const { exchangesWithKey } = storeToRefs(useLocationStore());
+
 const placeholder: () => ExchangePayload = () => ({
-  location: SupportedExchange.KRAKEN,
+  location: get(exchangesWithKey)[0],
   name: '',
   newName: null,
   apiKey: null,

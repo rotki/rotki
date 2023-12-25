@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type Collection, type CollectionResponse } from '@/types/collection';
-import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type NewTrade,
@@ -30,9 +29,7 @@ export const useTrades = () => {
     deleteExternalTrade: deleteExternalTradeCaller
   } = useTradesApi();
 
-  const syncTradesTask = async (
-    location: SupportedExchange
-  ): Promise<boolean> => {
+  const syncTradesTask = async (location: string): Promise<boolean> => {
     const taskType = TaskType.TRADES;
 
     const defaults: TradeRequestPayload = {
@@ -82,7 +79,7 @@ export const useTrades = () => {
 
   const refreshTrades = async (
     userInitiated = false,
-    location?: SupportedExchange
+    location?: string
   ): Promise<void> => {
     const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
       useStatusUpdater(Section.TRADES);

@@ -14,8 +14,7 @@ import {
   type ExchangePayload,
   ExchangeSavingsCollectionResponse,
   type ExchangeSavingsRequestPayload,
-  Exchanges,
-  type SupportedExchange
+  Exchanges
 } from '@/types/exchanges';
 import { type PendingTask } from '@/types/task';
 
@@ -124,9 +123,7 @@ export const useExchangeApi = () => {
     return handleResponse(response);
   };
 
-  const deleteExchangeData = async (
-    name?: SupportedExchange
-  ): Promise<boolean> => {
+  const deleteExchangeData = async (name?: string): Promise<boolean> => {
     let url = `/exchanges/data`;
     if (name) {
       url += `/${name}`;

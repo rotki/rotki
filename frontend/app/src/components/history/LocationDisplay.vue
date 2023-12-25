@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import { type TradeLocation } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
-    identifier: TradeLocation;
+    identifier: string;
     icon?: boolean;
     size?: string;
     openDetails?: boolean;

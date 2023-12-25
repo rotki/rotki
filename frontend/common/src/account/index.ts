@@ -1,4 +1,4 @@
-import { type Blockchain, type DefiProtocol } from '../blockchain';
+import { type Blockchain } from '../blockchain';
 
 export interface AccountData {
   readonly address: string;
@@ -9,10 +9,6 @@ export interface AccountData {
 export interface Account<T = Blockchain> {
   readonly chain: T;
   readonly address: string;
-}
-
-export interface DefiAccount<T = Blockchain> extends Account<T> {
-  readonly protocols: DefiProtocol[];
 }
 
 export interface GeneralAccount<T = Blockchain>

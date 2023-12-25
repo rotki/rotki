@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { toSentenceCase } from '@/utils/text';
+import { Module } from '@/types/modules';
 
 const props = withDefaults(
   defineProps<{
-    protocol: DefiProtocol;
+    protocol: Module;
     mode?: 'icon' | 'label' | 'both';
   }>(),
   { mode: 'both' }
@@ -24,13 +24,13 @@ const icon = computed(() => {
 
 const name = computed(() => {
   const defiProtocol = get(protocol);
-  if (defiProtocol === DefiProtocol.MAKERDAO_DSR) {
+  if (defiProtocol === Module.MAKERDAO_DSR) {
     return 'MakerDAO DSR';
-  } else if (defiProtocol === DefiProtocol.MAKERDAO_VAULTS) {
+  } else if (defiProtocol === Module.MAKERDAO_VAULTS) {
     return 'MakerDAO Vaults';
-  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS) {
+  } else if (defiProtocol === Module.YEARN) {
     return 'yearn.finance Vaults';
-  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS_V2) {
+  } else if (defiProtocol === Module.YEARN_V2) {
     return 'yearn.finance Vaults v2';
   }
   return defiProtocol;

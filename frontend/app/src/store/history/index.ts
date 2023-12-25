@@ -1,10 +1,9 @@
-import { type TradeLocation } from '@/types/history/trade/location';
 import { type EvmUndecodedTransactionsData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
-  const associatedLocations: Ref<TradeLocation[]> = ref([]);
+  const associatedLocations: Ref<string[]> = ref([]);
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi } =
     useHistoryApi();
 

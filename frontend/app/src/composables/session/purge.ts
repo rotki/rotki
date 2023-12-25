@@ -1,16 +1,4 @@
-import {
-  ALL_CENTRALIZED_EXCHANGES,
-  ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES,
-  ALL_TRANSACTIONS,
-  type Purgeable
-} from '@/types/session/purge';
-import {
-  SUPPORTED_EXCHANGES,
-  type SupportedExchange,
-  type SupportedExternalExchanges
-} from '@/types/exchanges';
-import { EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { Purgeable } from '@/types/session/purge';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -22,15 +10,10 @@ export const useSessionPurge = () => {
 
   const { refreshGeneralCacheTask } = useSessionApi();
 
-  const purgeExchange = async (
-    exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
-  ): Promise<void> => {
+  const purgeExchange = async (): Promise<void> => {
     const { resetStatus } = useStatusUpdater(Section.TRADES);
-
-    if (exchange === ALL_CENTRALIZED_EXCHANGES) {
-      resetStatus();
-      resetStatus(Section.ASSET_MOVEMENT);
-    }
+    resetStatus();
+    resetStatus(Section.ASSET_MOVEMENT);
   };
 
   const purgeTransactions = async (): Promise<void> => {
@@ -38,27 +21,22 @@ export const useSessionPurge = () => {
     resetStatus();
   };
 
-  const purgeCache = async (purgeable: Purgeable): Promise<void> => {
-    if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
-      await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
-    } else if (purgeable === ALL_DECENTRALIZED_EXCHANGES) {
-      resetState(ALL_DECENTRALIZED_EXCHANGES);
-    } else if (purgeable === ALL_MODULES) {
-      reset();
-      resetState(ALL_MODULES);
-    } else if (
-      SUPPORTED_EXCHANGES.includes(purgeable as SupportedExchange) ||
-      EXTERNAL_EXCHANGES.includes(purgeable as SupportedExternalExchanges)
-    ) {
-      await purgeExchange(purgeable as SupportedExchange);
-    } else if (purgeable === ALL_TRANSACTIONS) {
-      await purgeTransactions();
-    } else if (Object.values(Module).includes(purgeable as Module)) {
-      if ([Module.ETH2].includes(purgeable as Module)) {
-        reset(purgeable as Module);
-      } else {
-        resetState(purgeable as Module);
+  const purgeCache = async (
+    purgeable: Purgeable,
+    value: string
+  ): Promise<void> => {
+    if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
+      if (!value) {
+        await purgeExchange();
       }
+    } else if (purgeable === Purgeable.DECENTRALIZED_EXCHANGES) {
+      resetState((value as Module) || Purgeable.DECENTRALIZED_EXCHANGES);
+    } else if (purgeable === Purgeable.DEFI_MODULES) {
+      const isEth2 = value === Module.ETH2;
+      reset(isEth2 ? value : undefined);
+      resetState((value as Module) || Purgeable.DEFI_MODULES);
+    } else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
+      await purgeTransactions();
     }
   };
 

@@ -1877,7 +1877,8 @@
   "data_management": {
     "purge_data": {
       "confirm": {
-        "message": "Are you sure you want to purge the cached data for {source}?",
+        "message": "Are you sure you want to purge the cached data for {source} ({value})?",
+        "message_all": "Are you sure you want to purge the cached data for all {source}?",
         "title": "Confirm cached data purge"
       },
       "evm_transaction_purge_confirm": {
@@ -3856,17 +3857,27 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "all_decentralized_exchanges": "All Decentralized Exchanges",
-    "all_exchanges": "All Centralized Exchanges",
-    "all_modules": "All Modules",
+    "centralized_exchanges": "Centralized Exchanges",
+    "centralized_exchange_to_clear": {
+      "label": "Centralized exchange to clear",
+      "hint": "Empty this field to remove the data for all centralized exchanges"
+    },
+    "decentralized_exchanges": "Decentralized Exchanges",
+    "decentralized_exchange_to_clear": {
+      "label": "Decentralized exchange to clear",
+      "hint": "Empty this field to remove the data for all decentralized exchanges"
+    },
+    "defi_modules": "DeFi Modules",
+    "defi_module_to_clear": {
+      "label": "DeFi module to clear",
+      "hint": "Empty this field to remove the data for all defi modules"
+    },
     "evm_transactions": "EVM Transactions",
     "evm_chain_to_clear": {
       "label": "EVM chain to clear",
       "hint": "Empty this field to remove the transaction data for all chains"
     },
-    "exchange": "Exchange: {name}",
     "label": "Select a data source",
-    "module": "Module: {name}",
     "tooltip": "Purge the cached data for the selected source"
   },
   "queried_address_dialog": {

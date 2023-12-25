@@ -1,10 +1,10 @@
 import { type BigNumber, type HasBalance } from '@rotki/common';
-import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   type AaveBorrowingRates,
   type AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
 import { type Collateral, type CollateralizedLoan } from '@/types/defi';
+import { type Module } from '@/types/modules';
 
 export interface LoanSummary {
   readonly totalCollateralUsd: BigNumber;
@@ -20,7 +20,7 @@ export interface AaveLoan
 
 export interface DefiBalance extends BaseDefiBalance {
   readonly address: string;
-  readonly protocol: DefiProtocol;
+  readonly protocol: Module;
 }
 
 export interface BaseDefiBalance extends HasBalance {

@@ -3,8 +3,7 @@ import flushPromises from 'flush-promises';
 import {
   type ExchangeSavingsCollection,
   type ExchangeSavingsEvent,
-  type ExchangeSavingsRequestPayload,
-  SupportedExchange
+  type ExchangeSavingsRequestPayload
 } from '@/types/exchanges';
 import type Vue from 'vue';
 
@@ -35,7 +34,7 @@ describe('composables::history/filter-paginate', () => {
   let fetchExchangeSavings: (
     payload: MaybeRef<ExchangeSavingsRequestPayload>
   ) => Promise<ExchangeSavingsCollection>;
-  const exchange: MaybeRef<SupportedExchange> = ref(SupportedExchange.BINANCE);
+  const exchange: MaybeRef<string> = ref('binance');
   const mainPage: Ref<boolean> = ref(false);
   const router = useRouter();
   const route = useRoute();
