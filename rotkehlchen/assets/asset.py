@@ -77,7 +77,7 @@ class Asset:
         if isinstance(self, AssetWithNameAndType):
             return self.asset_type
 
-        return AssetResolver().get_asset_type(self.identifier)
+        return AssetResolver.get_asset_type(self.identifier)
 
     def exists(self, query_packaged_db: bool = True) -> bool:
         """Returns True if this asset exists. False otherwise
@@ -101,7 +101,7 @@ class Asset:
         May raise:
         - UnknownAsset
         """
-        normalized_id = AssetResolver().check_existence(self.identifier, query_packaged_db=query_packaged_db)  # noqa: E501
+        normalized_id = AssetResolver.check_existence(self.identifier, query_packaged_db=query_packaged_db)  # noqa: E501
         object.__setattr__(self, 'identifier', normalized_id)
         return self
 
@@ -136,40 +136,40 @@ class Asset:
                 chain_id=ChainID.ETHEREUM,
             )
 
-        return AssetResolver().resolve_asset(identifier=self.identifier)
+        return AssetResolver.resolve_asset(identifier=self.identifier)
 
     def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithNameAndType,
         )
 
     def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithSymbol,
         )
 
     def resolve_to_crypto_asset(self) -> 'CryptoAsset':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
         )
 
     def resolve_to_evm_token(self) -> 'EvmToken':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
         )
 
     def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithOracles,
         )
 
     def resolve_to_fiat_asset(self) -> 'FiatAsset':
-        return AssetResolver().resolve_asset_to_class(
+        return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=FiatAsset,
         )

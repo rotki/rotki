@@ -71,42 +71,43 @@ def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_no_decimals(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
+def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
     original_getter = asset_resolver.resolve_asset
+    original_resolver_to_class = asset_resolver.resolve_asset_to_class
+    resolved_weth = A_WETH.resolve_to_evm_token()
 
-    def fake_weth_token():
-        """Make sure that the weth token has no decimals fields and any other token
-        is loaded properly
-        """
-        resolved_weth = A_WETH.resolve_to_evm_token()
+    def mocked_asset_getter(identifier, **kwargs):
+        if identifier == resolved_weth.identifier:
+            fake_weth = EvmToken.initialize(
+                address=resolved_weth.evm_address,
+                chain_id=resolved_weth.chain_id,
+                token_kind=resolved_weth.token_kind,
+                decimals=None,
+                name=resolved_weth.name,
+                symbol=resolved_weth.symbol,
+                started=resolved_weth.started,
+                forked=resolved_weth.forked.identifier if resolved_weth.forked is not None else None,  # noqa: E501
+                swapped_for=resolved_weth.swapped_for.identifier if resolved_weth.swapped_for is not None else None,  # noqa: E501
+                coingecko=resolved_weth.coingecko,
+                cryptocompare=resolved_weth.cryptocompare,
+                protocol=resolved_weth.protocol,
+            )
+            return fake_weth
 
-        def mocked_asset_getter(identifier):
-            if identifier == resolved_weth.identifier:
-                fake_weth = EvmToken.initialize(
-                    address=resolved_weth.evm_address,
-                    chain_id=resolved_weth.chain_id,
-                    token_kind=resolved_weth.token_kind,
-                    decimals=None,
-                    name=resolved_weth.name,
-                    symbol=resolved_weth.symbol,
-                    started=resolved_weth.started,
-                    forked=resolved_weth.forked.identifier if resolved_weth.forked is not None else None,  # noqa: E501
-                    swapped_for=resolved_weth.swapped_for.identifier if resolved_weth.swapped_for is not None else None,  # noqa: E501
-                    coingecko=resolved_weth.coingecko,
-                    cryptocompare=resolved_weth.cryptocompare,
-                    protocol=resolved_weth.protocol,
-                )
-                return fake_weth
-            return original_getter(identifier)
-        return patch.object(asset_resolver, 'resolve_asset', wraps=mocked_asset_getter)
+        if len(kwargs) == 0:
+            return original_getter(identifier, **kwargs)
+        return original_resolver_to_class(identifier, **kwargs)
 
-    with fake_weth_token():
+    with (
+        patch.object(asset_resolver, 'resolve_asset', wraps=mocked_asset_getter),
+        patch.object(asset_resolver, 'resolve_asset_to_class', wraps=mocked_asset_getter),
+    ):
         weth = EvmToken(A_WETH.identifier)
         assert weth.decimals is None
-        with pytest.raises(DefiPoolError):
+        with pytest.raises(DefiPoolError):  # type: ignore[unreachable]  # this is needed because decimals is not nullable in the dataclass but it is in the database and the previous line is always evaluated as False by mypy.
             inquirer_defi._uniswapv2.query_current_price(weth, A_USDC, False)
         with pytest.raises(DefiPoolError):
             inquirer_defi._uniswapv3.query_current_price(weth, A_USDC, False)
