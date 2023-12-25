@@ -1,4 +1,6 @@
+/* eslint-disable max-lines */
 import { Severity } from '@rotki/common/lib/messages';
+import { type DataTableOptions } from '@rotki/ui-library-compat';
 import { type MaybeRef } from '@vueuse/core';
 import { type AxiosError } from 'axios';
 import { isEmpty, isEqual } from 'lodash-es';
@@ -326,6 +328,31 @@ export const usePaginationFilters = <
   };
 
   /**
+   * This is for the new table from lib, when all is migrated, then we'll remove setOptions
+   * @param {DataTableOptions} data
+   */
+  const setTableOptions = (data: DataTableOptions) => {
+    const { pagination, sort } = data;
+    const { page, itemsPerPage } = get(paginationOptions);
+
+    if (Array.isArray(sort)) {
+      return setOptions({
+        page: pagination?.page ?? page,
+        itemsPerPage: pagination?.limit ?? itemsPerPage,
+        sortBy: sort.map(col => col.column as keyof V).filter(key => !!key),
+        sortDesc: sort.map(col => col.direction === 'desc')
+      });
+    }
+
+    setOptions({
+      page: pagination?.page ?? page,
+      itemsPerPage: pagination?.limit ?? itemsPerPage,
+      sortBy: sort?.column ? [sort.column as keyof V] : [],
+      sortDesc: sort?.column ? [sort.direction === 'desc'] : []
+    });
+  };
+
+  /**
    * Updates the filters
    * @template W
    * @param {W} newFilter
@@ -392,6 +419,7 @@ export const usePaginationFilters = <
     matchers,
     setPage,
     setOptions,
+    setTableOptions,
     setFilter,
     applyRouteFilter,
     updateFilter,

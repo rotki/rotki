@@ -20,7 +20,7 @@ export const Balance = z.object({
 export type Balance = z.infer<typeof Balance>;
 
 export const AssetEntry = z.object({
-  asset: z.string().nonempty()
+  asset: z.string().min(1)
 });
 
 export const AssetBalance = Balance.merge(AssetEntry);

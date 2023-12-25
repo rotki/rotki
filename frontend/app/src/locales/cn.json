@@ -1767,7 +1767,8 @@
   },
   "data_table": {
     "items_no": "项目 #",
-    "rows_per_page": "每页行数"
+    "rows_per_page": "每页行数",
+    "no_data": "无数据"
   },
   "database_backups": {
     "action": {

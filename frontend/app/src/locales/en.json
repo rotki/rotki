@@ -1907,7 +1907,8 @@
   },
   "data_table": {
     "items_no": "Items #",
-    "rows_per_page": "Rows per page"
+    "rows_per_page": "Rows per page",
+    "no_data": "No data available"
   },
   "database_backups": {
     "action": {
