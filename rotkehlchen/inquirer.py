@@ -339,8 +339,9 @@ class Inquirer:
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
 
-    def get_evm_manager(self, chain_id: ChainID) -> 'EvmManager':
-        evm_manager = self._evm_managers.get(chain_id)
+    @staticmethod
+    def get_evm_manager(chain_id: ChainID) -> 'EvmManager':
+        evm_manager = Inquirer._evm_managers.get(chain_id)
         assert evm_manager is not None, f'evm manager for chain id {chain_id} should have been injected'  # noqa: E501
         return evm_manager
 
@@ -638,7 +639,7 @@ class Inquirer:
 
         if isinstance(asset, FiatAsset):
             with suppress(RemoteError):
-                price, oracle = Inquirer._query_fiat_pair(base=asset, quote=instance.usd)
+                price, oracle = Inquirer._query_fiat_pair(base=asset, quote=Inquirer.usd)
                 return price, oracle, False
 
         # continue, asset isn't fiat or a price can be found by one of the oracles (CC for example)
@@ -653,7 +654,7 @@ class Inquirer:
 
             # Check if it is a special token
             if asset.identifier in Inquirer.special_tokens:
-                ethereum = Inquirer().get_evm_manager(chain_id=ChainID.ETHEREUM)
+                ethereum = Inquirer.get_evm_manager(chain_id=ChainID.ETHEREUM)
                 underlying_asset_price, oracle = get_underlying_asset_price(asset)
                 usd_price = handle_defi_price_query(
                     ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
