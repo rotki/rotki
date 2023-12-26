@@ -395,6 +395,13 @@ class Inquirer:
                 instance._oracle_instances_not_onchain.append(oracle_instance)
 
     @staticmethod
+    def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
+        """Save cached price for the key provided and all the assets in the same collection"""
+        related_assets = GlobalDBHandler().get_assets_in_same_collection(cache_key[0].identifier)
+        for related_asset in related_assets:
+            Inquirer._cached_current_price[(related_asset, cache_key[1])] = cached_price
+
+    @staticmethod
     def _query_oracle_instances(
             from_asset: Asset,
             to_asset: Asset,
@@ -479,11 +486,14 @@ class Inquirer:
                 )
                 break
 
-        Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
-            price=price,
-            time=ts_now(),
-            oracle=oracle_queried,
-            used_main_currency=used_main_currency,
+        Inquirer.set_cached_price(
+            cache_key=cache_key,
+            cached_price=CachedPriceEntry(
+                price=price,
+                time=ts_now(),
+                oracle=oracle_queried,
+                used_main_currency=used_main_currency,
+            ),
         )
         return price, oracle_queried, used_main_currency
 
@@ -664,18 +674,29 @@ class Inquirer:
                 )
                 price = ZERO_PRICE if usd_price is None else Price(usd_price)
 
-                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now(), oracle=CurrentPriceOracle.BLOCKCHAIN, used_main_currency=False)  # noqa: E501
+                Inquirer.set_cached_price(
+                    cache_key=cache_key,
+                    cached_price=CachedPriceEntry(
+                        price=price,
+                        time=ts_now(),
+                        oracle=CurrentPriceOracle.BLOCKCHAIN,
+                        used_main_currency=False,
+                    ),
+                )
                 return price, oracle, False
 
             if is_known_protocol is True or underlying_tokens is not None:
                 result, oracle = get_underlying_asset_price(asset)
                 if result is not None:
                     usd_price = Price(result)
-                    Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
-                        price=usd_price,
-                        time=ts_now(),
-                        oracle=oracle,
-                        used_main_currency=False,  # function is for usd only, so it doesn't matter
+                    Inquirer.set_cached_price(
+                        cache_key=cache_key,
+                        cached_price=CachedPriceEntry(
+                            price=usd_price,
+                            time=ts_now(),
+                            oracle=oracle,
+                            used_main_currency=False,  # function is for usd only, so it doesn't matter  # noqa: E501
+                        ),
                     )
                     return usd_price, oracle, False
                 # else known protocol on-chain query failed. Continue to external oracles
@@ -692,11 +713,14 @@ class Inquirer:
                 price_in_btc = get_bisq_market_price(bsq)
                 btc_price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_BTC)
                 usd_price = Price(price_in_btc * btc_price)
-                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
-                    price=usd_price,
-                    time=ts_now(),
-                    oracle=oracle,
-                    used_main_currency=False,  # this is for usd only, so it doesn't matter
+                Inquirer.set_cached_price(
+                    cache_key=cache_key,
+                    cached_price=CachedPriceEntry(
+                        price=usd_price,
+                        time=ts_now(),
+                        oracle=oracle,
+                        used_main_currency=False,  # this is for usd only, so it doesn't matter
+                    ),
                 )
             except (RemoteError, DeserializationError) as e:
                 msg = f'Could not find price for BSQ. {e!s}'
