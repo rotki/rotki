@@ -1936,3 +1936,23 @@ class GlobalDBHandler:
                     (abi_name, serialized_abi),
                 )
                 return cursor.lastrowid
+
+    @staticmethod
+    def get_assets_in_same_collection(identifier: str) -> tuple[Asset, ...]:
+        """
+        Query the assets that belong to the collection of the queried asset. If the
+        asset isn't in any collection we return a list with the asset queried.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT MM.asset FROM multiasset_mappings AS MM JOIN asset_collections AS AC '
+                'ON MM.collection_id = AC.id WHERE MM.collection_id = (SELECT collection_id '
+                'FROM multiasset_mappings WHERE asset=?)',
+                (identifier,),
+            )
+            collection_assets = tuple(Asset(row[0]) for row in cursor)
+
+        if len(collection_assets) == 0:
+            return (Asset(identifier),)
+
+        return collection_assets

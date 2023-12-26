@@ -5,6 +5,7 @@ Changelog
 * :feature:`7092` Users of metamask swaps will now see them properly decoded in the history view and have them taken into account during accounting.
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
+* :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
 
 * :release:`1.31.2 <2023-12-22>`
 * :bug:`-` Importing timestamp in CSV in scientific format should now work without errors.

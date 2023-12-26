@@ -1285,3 +1285,18 @@ def test_get_evm_tokens(globaldb):
     tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND, exceptions=(exception_address,))  # noqa: E501
     assert len(tokens) == tokens_without_exception - 1
     assert not any(token.evm_address == exception_address for token in tokens)
+
+
+def test_assets_in_same_collection(globaldb: GlobalDBHandler):
+    """Check that we get the expected related assets when querying assets in a collection"""
+    wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    realted_assets = globaldb.get_assets_in_same_collection(identifier=wsteth.identifier)
+
+    assert realted_assets == (
+        wsteth,
+        Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
+        Asset('eip155:42161/erc20:0x5979D7b546E38E414F7E9822514be443A4800529'),
+    )
+
+    # check an asset with no related assets
+    assert globaldb.get_assets_in_same_collection(identifier=A_ETH.identifier) == (A_ETH,)

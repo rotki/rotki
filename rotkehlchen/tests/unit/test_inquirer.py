@@ -1,6 +1,7 @@
 import datetime
 import os
 from http import HTTPStatus
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -611,3 +612,21 @@ def test_find_protocol_price_falllback_to_oracle(inquirer_defi):
     with yearn_patch:
         price = inquirer_defi.find_usd_price(yvusdc)
     assert price is not None and price != ZERO
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_cache_is_hit_for_collection(inquirer: Inquirer):
+    """Test that the price for a collection is saved to cache and not query for every asset"""
+    wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    wsteth_op = Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb')
+    with mock.patch.object(
+        Inquirer,
+        '_query_oracle_instances',
+        wraps=inquirer._query_oracle_instances,
+    ) as oracle_query:
+        inquirer.find_usd_price(wsteth)
+        assert (wsteth_op, A_USD) in inquirer._cached_current_price
+        inquirer.find_usd_price(wsteth_op)
+
+    assert oracle_query.call_count == 1
