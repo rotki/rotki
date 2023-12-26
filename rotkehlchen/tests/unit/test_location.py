@@ -16,12 +16,13 @@ def test_location_details_coverage():
         assert location in LOCATION_DETAILS
         if location in ALL_SUPPORTED_EXCHANGES:
             location_detail = LOCATION_DETAILS[location]
-            assert 'is_exchange' in location_detail
             if location in SUPPORTED_EXCHANGES:
-                assert 'exchange_data' in location_detail
-                exchange_data = location_detail['exchange_data']
-                assert 'is_exchange_with_key' in exchange_data
+                assert 'exchange_details' in location_detail
+                exchange_details = location_detail['exchange_details']
+                assert 'is_exchange_with_key' in exchange_details
                 if location in EXCHANGES_WITH_PASSPHRASE:
-                    assert 'is_exchange_with_passphrase' in exchange_data
+                    assert 'is_exchange_with_passphrase' in exchange_details
                 if location in EXCHANGES_WITHOUT_API_SECRET:
-                    assert 'is_exchange_without_api_secret' in exchange_data
+                    assert 'is_exchange_without_api_secret' in exchange_details
+                continue
+            assert 'is_exchange' in location_detail
