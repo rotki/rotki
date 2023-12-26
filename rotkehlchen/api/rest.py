@@ -511,6 +511,23 @@ class RestAPI:
         }
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
+    def delete_async_task(self, task_id: int) -> Response:
+        """Tries to find and cancel the async task with the given task id"""
+        with self.task_lock:
+            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):  # noqa: B007 # var used right after loop
+                if (
+                        greenlet.dead is False and
+                        getattr(greenlet, 'task_id', None) == task_id
+                ):
+                    log.debug(f'Killing api task greenlet with {task_id=}')
+                    greenlet.kill(exception=GreenletKilledError('Killed due to api request'))
+                    break
+            else:  # greenlet not found
+                return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+
+        self.rotkehlchen.api_task_greenlets.pop(idx)  # also pop from greenlets
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     @async_api_call()
     def get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> dict[str, Any]:
         currencies = given_currencies

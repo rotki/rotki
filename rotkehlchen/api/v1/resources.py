@@ -46,7 +46,7 @@ from rotkehlchen.api.v1.schemas import (
     AsyncHistoricalQuerySchema,
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
-    AsyncTasksQuerySchema,
+    AsyncTaskSchema,
     AvalancheTransactionQuerySchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
@@ -476,11 +476,16 @@ class SettingsResource(BaseMethodView):
 
 class AsyncTasksResource(BaseMethodView):
 
-    get_schema = AsyncTasksQuerySchema()
+    get_schema = AsyncTaskSchema(is_required=False)
+    delete_schema = AsyncTaskSchema(is_required=True)
 
     @use_kwargs(get_schema, location='view_args')
     def get(self, task_id: int | None) -> Response:
         return self.rest_api.query_tasks_outcome(task_id=task_id)
+
+    @use_kwargs(delete_schema, location='view_args')
+    def delete(self, task_id: int) -> Response:
+        return self.rest_api.delete_async_task(task_id=task_id)
 
 
 class ExchangeRatesResource(BaseMethodView):

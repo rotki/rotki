@@ -184,8 +184,24 @@ class BalanceSchema(Schema):
         return Balance(amount=data['amount'], usd_value=data['usd_value'])
 
 
-class AsyncTasksQuerySchema(Schema):
+class AsyncTaskSchema(Schema):
     task_id = fields.Integer(strict=True, load_default=None)
+
+    def __init__(self, is_required: bool = False) -> None:
+        super().__init__()
+        self.is_required = is_required
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.is_required and data['task_id'] is None:
+            raise ValidationError(
+                message='task_id is required for this endpoint',
+                field_name='task_id',
+            )
 
 
 class OnlyCacheQuerySchema(Schema):

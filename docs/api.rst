@@ -1048,10 +1048,44 @@ Query the result of an ongoing backend task
 
    :statuscode 200: The task's outcome is successfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 404: There is no task with the given task id
-   :statuscode 409: No user is currently logged in
-   :statuscode 500: Internal rotki error
-   :statuscode 502: Problem contacting a remote service
+      :statuscode 404: There is no task with the given task id
+      :statuscode 409: No user is currently logged in
+      :statuscode 500: Internal rotki error
+      :statuscode 502: Problem contacting a remote service
+
+
+Cancel ongoing async tasks
+=============================
+
+   .. http:delete:: /api/(version)/tasks/(task_id)
+
+      By calling this endpoint with a particular task identifier you can cancel the ongoing task with that identifier. Keep in mind that this may leave stuff half-finished since the canceled task may be stopped in the middle.
+
+      **Example Request**:
+
+      .. http:example:: curl wget httpie python-requests
+
+	 DELETE /api/1/tasks/42 HTTP/1.1
+	 Host: localhost:5042
+
+      **Example Response**:
+
+      The following is an example response of a succesfully canceled task
+
+      .. sourcecode:: http
+
+	 HTTP/1.1 200 OK
+	 Content-Type: application/json
+
+	 {
+	     "result": true, "message": ""
+	 }
+
+      :resjson bool result: True if the task was canceled and false otherwise.
+
+      :statuscode 200: The task was successfully canceled.
+      :statuscode 400: Provided JSON is in some way malformed.
+      :statuscode 404: There is no task with the given task id.
 
 Query the latest price of assets
 ===================================
