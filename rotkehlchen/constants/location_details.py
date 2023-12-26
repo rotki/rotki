@@ -66,10 +66,11 @@ LOCATION_DETAILS: dict = {
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:
-        value['is_exchange'] = True
         if key in SUPPORTED_EXCHANGES:
-            value['exchange_data'] = {'is_exchange_with_key': True}
+            value['exchange_details'] = {'is_exchange_with_key': True}
             if key in EXCHANGES_WITH_PASSPHRASE:
-                value['exchange_data']['is_exchange_with_passphrase'] = True
+                value['exchange_details']['is_exchange_with_passphrase'] = True
             if key in EXCHANGES_WITHOUT_API_SECRET:
-                value['exchange_data']['is_exchange_without_api_secret'] = True
+                value['exchange_details']['is_exchange_without_api_secret'] = True
+            continue
+        value['is_exchange'] = True

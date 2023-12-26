@@ -12382,7 +12382,6 @@ Get all valid locations
             "ftx": {"image": "ftx.svg", "is_exchange": true},
             "kraken": {
               "image": "kraken.svg",
-              "is_exchange": true,
               "exchange_detail": {
                 "is_exchange_with_key": true
               }
@@ -12405,7 +12404,7 @@ Get all valid locations
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. If the location is an exchange, it also contain `is_exchange` key. If it contains `is_exchange`, it maybe also contain `is_exchange_with_key` for exchange with an API key, `is_exchange_with_passphrase` for exchange with an API key and passphrase, and `is_exchange_without_api_secret` for exchange that doesn't need API secret key, inside `exchange_detail` object.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
