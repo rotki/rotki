@@ -238,7 +238,7 @@ Finally the backend provides more granular information to know what interval of 
             "location": "kraken",
             "event_type": "history_query",
             "name": "My kraken exchange",
-            'period': [0, 1682100570]
+            "period": [0, 1682100570]
         }
     }
 
@@ -280,7 +280,7 @@ Whenever the backend attempts to upload a premium user DB there can be various r
         "type": "database_upload_result",
         "data": {
             "uploaded": False,
-	    "actionable": True,
+            "actionable": True,
             "message": "Remote database bigger than the local one"
         }
     }

@@ -679,7 +679,7 @@ Getting or modifying settings
    :reqjson list active_module: A list of strings denoting the active modules with which rotki should run.
    :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
-   :reqjson list non_syncing_exchanges: A list of objects with the keys ``name`` and ``location`` of the exchange. These exchanges will be ignored when querying the trades. Example: ``[{"name": "my_exchange", "location": "binance"}]``. 
+   :reqjson list non_syncing_exchanges: A list of objects with the keys ``name`` and ``location`` of the exchange. These exchanges will be ignored when querying the trades. Example: ``[{"name": "my_exchange", "location": "binance"}]``.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
@@ -1975,7 +1975,7 @@ Decode transactions that haven't been decoded yet
           "evm_chains": ["ethereum", "optimism"]
       }
 
-   :reqjson list evm_chains: A list specifying the evm chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions. If the list is not provided all transactions from all the chains will be decoded. 
+   :reqjson list evm_chains: A list specifying the evm chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions. If the list is not provided all transactions from all the chains will be decoded.
 
    **Example Response**:
 
@@ -1993,7 +1993,7 @@ Decode transactions that haven't been decoded yet
 
 .. http:get:: /api/(version)/blockchains/evm/transactions/decode
 
-   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded. 
+   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -12379,12 +12379,33 @@ Get all valid locations
           "locations": {
             "ethereum": {"image": "ethereum.svg"},
             "optimism": {"image": "optimism.svg"},
-            "kraken": {"image": "kraken.svg", "is_exchange_with_key": true},
+            "ftx": {"image": "ftx.svg", "is_exchange": true},
+            "kraken": {
+              "image": "kraken.svg",
+              "is_exchange": true,
+              "exchange_detail": {
+                "is_exchange_with_key": true
+              }
+            },
+            "kucoin": {
+              "image": "kucoin.svg",
+              "exchange_detail": {
+                "is_exchange_with_key": true,
+                "is_exchange_with_passphrase": true
+              }
+            },
+            "bitpanda": {
+              "image": "bitpanda.svg",
+              "exchange_detail": {
+                "is_exchange_with_key": true,
+                "is_exchange_without_api_secret": true
+              }
+            },
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. Can also contain an "is_exchange_with_key" key which would signify the location is an exchange with an api key.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. If the location is an exchange, it also contain `is_exchange` key. If it contains `is_exchange`, it maybe also contain `is_exchange_with_key` for exchange with an API key, `is_exchange_with_passphrase` for exchange with an API key and passphrase, and `is_exchange_without_api_secret` for exchange that doesn't need API secret key, inside `exchange_detail` object.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
