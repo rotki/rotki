@@ -336,7 +336,7 @@ class Premium:
         if method == 'backup':
             # nest uses hex for generating the signature since digest returns a string with the \x
             # format in python.
-            message = urlpath.encode() + hashlib.sha256(hashable).digest().hex().encode()
+            message = urlpath.encode() + hashlib.sha256(hashable).hexdigest().encode()
         else:
             message = urlpath.encode() + hashlib.sha256(hashable).digest()
         signature = hmac.new(

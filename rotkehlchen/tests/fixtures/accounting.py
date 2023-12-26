@@ -171,11 +171,10 @@ def fixture_accountant(
     )
 
     if accountant_without_rules is False:
-        with open(latest_accounting_rules, encoding='utf-8') as f:
-            data_updater.update_accounting_rules(
-                data=json.loads(f.read())['accounting_rules'],
-                version=999999,  # only for logs
-            )
+        data_updater.update_accounting_rules(
+            data=json.loads(latest_accounting_rules.read_text(encoding='utf-8'))['accounting_rules'],
+            version=999999,  # only for logs
+        )
 
     with ExitStack() as stack:
         if use_dummy_pot:  # don't load ignored assets if dummy

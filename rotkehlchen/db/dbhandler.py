@@ -2262,7 +2262,7 @@ class DBHandler:
                 continue
 
             for result in cursor:
-                for _, asset_id in enumerate(result):
+                for asset_id in result:
                     try:
                         if asset_id is not None:
                             results.add(Asset(asset_id).check_existence())

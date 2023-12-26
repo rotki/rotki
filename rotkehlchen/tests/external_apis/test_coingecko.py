@@ -90,11 +90,9 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
         times_api_was_queried += 1
         test_data_folder = Path(__file__).resolve().parent.parent / 'data' / 'mocks' / 'test_coingecko'  # noqa: E501
         if 'https://api.coingecko.com/api/v3/coins/dai' in url:
-            with open(test_data_folder / 'coins' / 'dai.json', encoding='utf8') as f:
-                return MockResponse(HTTPStatus.OK, f.read())
+            return MockResponse(HTTPStatus.OK, (test_data_folder / 'coins' / 'dai.json').read_text(encoding='utf8'))  # noqa: E501
         elif 'https://api.coingecko.com/api/v3/coins/ethereum' in url:
-            with open(test_data_folder / 'coins' / 'ethereum.json', encoding='utf8') as f:
-                return MockResponse(HTTPStatus.OK, f.read())
+            return MockResponse(HTTPStatus.OK, (test_data_folder / 'coins' / 'ethereum.json').read_text(encoding='utf8'))  # noqa: E501
         elif url in {
             'https://assets.coingecko.com/coins/images/9956/small/4943.png?1636636734',
             'https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880',
@@ -102,12 +100,11 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
             icon_name = '4943.png'
             if '279' in url:
                 icon_name = '279.png'
-            with open(test_data_folder / 'icons' / icon_name, 'rb') as f:
-                return MockResponse(
-                    status_code=HTTPStatus.OK,
-                    text=str(f.read()),
-                    headers={'Content-Type': 'image/png'},
-                )
+            return MockResponse(
+                status_code=HTTPStatus.OK,
+                text=str((test_data_folder / 'icons' / icon_name).read_bytes()),
+                headers={'Content-Type': 'image/png'},
+            )
 
         raise AssertionError(f'Unexpected url {url} in asset collection icons test')
 

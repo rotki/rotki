@@ -237,8 +237,10 @@ def test_flaky_binding_parameter_zero(database, ethereum_accounts):
         if idx % 2 == 0:
             stuff.append((address, 1, 'last_queried_timestamp', 42))
         else:
-            stuff.append((address, 1, 'tokens', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'))  # noqa: E501
-            stuff.append((address, 1, 'tokens', 'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'))  # noqa: E501
+            stuff.extend((
+                (address, 1, 'tokens', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),  # noqa: E501
+                (address, 1, 'tokens', 'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'),  # noqa: E501
+            ))
 
     with database.user_write() as write_cursor:
         write_cursor.executemany(

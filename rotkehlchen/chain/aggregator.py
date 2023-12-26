@@ -3,6 +3,7 @@ import typing
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from importlib import import_module
+from itertools import starmap
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_args, overload
 
@@ -1526,10 +1527,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         with self.database.user_write() as write_cursor:
             self.database.add_blockchain_accounts(
                 write_cursor=write_cursor,
-                account_data=[
-                    BlockchainAccountData(chain, account)
-                    for chain, account in added_accounts
-                ],  # not duplicating label and tags as it's chain specific
+                account_data=list(starmap(BlockchainAccountData, added_accounts)),  # not duplicating label and tags as it's chain specific  # noqa: E501
             )
 
         self.msg_aggregator.add_message(

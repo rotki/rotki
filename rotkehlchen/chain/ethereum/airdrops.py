@@ -332,9 +332,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
         with open(filename, 'w', encoding='utf8') as outfile:
             outfile.write(rlk_jsondumps(json_data))
 
-    with open(filename, encoding='utf8') as infile:
-        data_dict = jsonloads_dict(infile.read())
-    return data_dict
+    return jsonloads_dict(Path(filename).read_text(encoding='utf8'))
 
 
 def calculate_claimed_airdrops(

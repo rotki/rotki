@@ -225,9 +225,11 @@ def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: list[EVMTx
         wraps=rotki.chains_aggregator.ethereum.transactions_decoder._get_or_decode_transaction_events,
     )
     with ExitStack() as stack:
-        function_call_counters = []
-        function_call_counters.append(stack.enter_context(get_or_decode_txn_events_patch))
-        function_call_counters.append(stack.enter_context(get_eth_txns_patch))
+        function_call_counters: list = []
+        function_call_counters.extend((
+            stack.enter_context(get_or_decode_txn_events_patch),
+            stack.enter_context(get_eth_txns_patch)),
+        )
 
         response = requests.put(
             api_url_for(
@@ -1223,7 +1225,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in event.items() if key not in ('event_identifier',)},
+        json={key: value for key, value in event.items() if key != 'event_identifier'},
     )
     assert_simple_ok_response(response)
 
@@ -1250,7 +1252,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('event_identifier',)},  # noqa: E501
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'event_identifier'},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']

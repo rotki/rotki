@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import operator
 import os
 import sys
 import tempfile
@@ -4277,7 +4278,7 @@ class RestAPI:
         removing duplicates.
         """
         counterparties: set[CounterpartyDetails] = reduce(
-            lambda x, y: x | y,
+            operator.or_,
             [
                 self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
                 for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
@@ -4293,7 +4294,7 @@ class RestAPI:
         Collect the mappings of counterparties to the products they list
         """
         products_mappings = reduce(
-            lambda x, y: x | y,
+            operator.or_,
             [
                 self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_products()
                 for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS

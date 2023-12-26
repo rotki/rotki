@@ -659,16 +659,16 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             ))
 
         if exclude_ignored_assets is True:
-            filters.append(DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key='base_asset',
-                operator='NOT IN',
-            ))
-            filters.append(DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key='quote_asset',
-                operator='NOT IN',
-            ))
+            filters.extend((
+                DBIgnoredAssetsFilter(
+                    and_op=True,
+                    asset_key='base_asset',
+                    operator='NOT IN',
+                ), DBIgnoredAssetsFilter(
+                    and_op=True,
+                    asset_key='quote_asset',
+                    operator='NOT IN',
+                )))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -769,8 +769,9 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts=from_ts,
             to_ts=to_ts,
         )
-        filters.append(filter_query.timestamp_filter)
-        filters.append(DBEth2ValidatorIndicesFilter(and_op=True, validators=validators))
+        filters.extend((
+            filter_query.timestamp_filter,
+            DBEth2ValidatorIndicesFilter(and_op=True, validators=validators)))
         filter_query.filters = filters
         return filter_query
 

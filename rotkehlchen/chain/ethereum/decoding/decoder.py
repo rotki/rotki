@@ -185,10 +185,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:
-        return address in (
-            # Cryptovoxels
-            string_to_evm_address('0x4243a8413A77Eb559c6f8eAFfA63F46019056d08'),
-        )
+        return address == string_to_evm_address('0x4243a8413A77Eb559c6f8eAFfA63F46019056d08')
 
     @staticmethod
     def _address_is_exchange(address: ChecksumEvmAddress) -> str | None:

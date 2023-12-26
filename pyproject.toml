@@ -134,7 +134,9 @@ select = [
     "TRY",
     "FLY",
     "PERF",
+    "FURB",
     "RSE",
+    "LOG",
     "RUF",
 ]
 extend-select = [

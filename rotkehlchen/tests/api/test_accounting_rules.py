@@ -31,11 +31,10 @@ from rotkehlchen.types import Location, TimestampMS
 def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: Path) -> None:
     """Pull remote accounting rules and save them"""
     data_updater = RotkiDataUpdater(msg_aggregator=rotki.msg_aggregator, user_db=rotki.data.db)
-    with open(latest_accounting_rules, encoding='utf-8') as f:
-        data_updater.update_accounting_rules(
-            data=json.loads(f.read())['accounting_rules'],
-            version=999999,
-        )
+    data_updater.update_accounting_rules(
+        data=json.loads(latest_accounting_rules.read_text(encoding='utf-8'))['accounting_rules'],
+        version=999999,
+    )
 
 
 def _setup_conflict_tests(
