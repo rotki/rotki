@@ -66,18 +66,18 @@ def test_pull_db(rotkehlchen_api_server):
         verb,
         return_value=MockResponse(200, '{}'),
     ) for verb in ('put', 'post')]
-    patches.append(create_patched_requests_get_for_premium(
-        session=rotki.premium.session,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=b'',
-        metadata_data_size=9999999999,
-        saved_data=b'foo',
-    ))
-    patches.append(patch.object(
-        rotki.premium_sync_manager.data,
-        'decompress_and_decrypt_db',
-        return_value=None,
-    ))
+    patches.extend((
+        create_patched_requests_get_for_premium(
+            session=rotki.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash=b'',
+            metadata_data_size=9999999999,
+            saved_data=b'foo',
+        ), patch.object(
+            rotki.premium_sync_manager.data,
+            'decompress_and_decrypt_db',
+            return_value=None,
+        )))
 
     with ExitStack() as stack:
         [stack.enter_context(patch) for patch in patches]  # pylint: disable=expression-not-assigned

@@ -355,15 +355,14 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler):
 
         # check that we have five nodes for each chain
         nodes_file_path = Path(__file__).resolve().parent.parent.parent.parent / 'data' / 'nodes.json'  # noqa: E501
-        with open(nodes_file_path, encoding='utf8') as f:
-            nodes_info = json.loads(f.read())
-            nodes_tuples_from_file = [
-                (idx, node['name'], node['endpoint'], int(False), int(True), str(node['weight']), node['blockchain'])  # noqa: E501
-                for idx, node in enumerate(nodes_info, start=1)
-            ]
+        nodes_info = json.loads(nodes_file_path.read_text(encoding='utf8'))
+        nodes_tuples_from_file = [
+            (idx, node['name'], node['endpoint'], int(False), int(True), str(node['weight']), node['blockchain'])  # noqa: E501
+            for idx, node in enumerate(nodes_info, start=1)
+        ]
 
-            nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
-            assert nodes_tuples_from_db == nodes_tuples_from_file
+        nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
+        assert nodes_tuples_from_db == nodes_tuples_from_file
 
         last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,

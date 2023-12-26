@@ -262,7 +262,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             csv_type = determine_csv_type(data)
-            for _, row in enumerate(data):
+            for row in data:
                 try:
                     self._consume_event(write_cursor, row, csv_type, **kwargs)
                 except UnknownAsset as e:

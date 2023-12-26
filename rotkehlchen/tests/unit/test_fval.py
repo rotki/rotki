@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from rotkehlchen.constants import ZERO
@@ -21,7 +23,7 @@ def test_simple_arithmetic():
     assert a * b == FVal('11.0452')
     assert a / b == FVal('2.457547169811320754716981132')
     assert a ** 3 == FVal('141.420761')
-    assert a.fma(b, FVal(3.14)) == FVal('14.1852')
+    assert a.fma(b, FVal('3.14')) == FVal('14.1852')
     assert c // b == FVal('-10')
     assert -a == FVal('-5.21')
     assert abs(a) == FVal('5.21')
@@ -114,13 +116,13 @@ def test_representation():
 
 
 def test_encoding():
-    data = {'a': 3.14, 'b': 5, 'c': 'foo', 'd': '5.42323143', 'e': {'u1': '3.221'},
+    data = {'a': math.pi, 'b': 5, 'c': 'foo', 'd': '5.42323143', 'e': {'u1': '3.221'},
             'f': [2.1, 'boo', 3, '4.2324']}
     strdata = rlk_jsondumps(data)
     # stupid test, as it will fail if different python version is used. Should just
     # have used decoding again to make sure they are the same but was lazy
     assert strdata == (
-        '{"a": 3.14, "b": 5, "c": "foo", "d": "5.42323143", '
+        '{"a": 3.141592653589793, "b": 5, "c": "foo", "d": "5.42323143", '
         '"e": {"u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}'
     )
 

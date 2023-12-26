@@ -495,9 +495,7 @@ class MockKraken(Kraken):
     @staticmethod
     def _load_results_from_file(filename: str) -> dict[str, Any]:
         dir_path = Path(__file__).resolve().parent.parent
-        filepath = dir_path / 'data' / filename
-        with open(filepath, encoding='utf8') as f:
-            return jsonloads_dict(f.read())
+        return jsonloads_dict((dir_path / 'data' / filename).read_text(encoding='utf8'))
 
     def online_api_query(self, method: str, req: dict | None = None) -> dict:
         return super().api_query(method, req)

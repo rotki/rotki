@@ -153,11 +153,7 @@ def mock_scrape_validator_daily_stats(network_mocking: bool):
         validator_index = int(match.group(1))
         root_path = Path(__file__).resolve().parent.parent.parent
         file_path = root_path / 'tests' / 'data' / 'mocks' / 'test_eth2' / 'validator_daily_stats' / f'{validator_index}.html'  # noqa: E501
-
-        with open(file_path, encoding='utf8') as f:
-            data = f.read()
-
-        return MockResponse(200, data)
+        return MockResponse(200, file_path.read_text(encoding='utf8'))
 
     return patch(
         'rotkehlchen.chain.ethereum.modules.eth2.utils.requests.get',

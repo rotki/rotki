@@ -16,10 +16,11 @@ def test_search_assets_levensthein_multiple(globaldb, database):  # pylint: disa
             search_nfts=False,
         )
 
-    greenlets = []
-    greenlets.append(gevent.spawn(do_search))
-    greenlets.append(gevent.spawn(do_search))
-    greenlets.append(gevent.spawn(do_search))
+    greenlets = [
+        gevent.spawn(do_search),
+        gevent.spawn(do_search),
+        gevent.spawn(do_search),
+    ]
 
     gevent.joinall(greenlets)
     assert all(x.exception is None for x in greenlets)

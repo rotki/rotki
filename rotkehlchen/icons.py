@@ -76,9 +76,7 @@ def create_image_response(image_path: Path) -> Response:
     May raise:
     - OSError if the file doesn't exists
     """
-    with open(image_path, 'rb') as f:
-        image_data = f.read()
-
+    image_data = image_path.read_bytes()
     response = make_response(
         (
             image_data,

@@ -34,9 +34,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
-    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin'
-    with open(remote_db_path, 'rb') as f:
-        return f.read()
+    return (Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin').read_bytes()  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -256,9 +254,6 @@ def test_try_premium_at_start_new_account_pull_old_data(
 
     For a new account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.bin', 'rb') as f:  # noqa: E501
-        remote_data = f.read()
-
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -267,7 +262,7 @@ def test_try_premium_at_start_new_account_pull_old_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=False,
-        remote_data=remote_data,
+        remote_data=(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.bin').read_bytes(),  # noqa: E501
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -303,9 +298,6 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 
     For an old account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin', 'rb') as f:  # noqa: E501
-        remote_data = f.read()
-
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -314,7 +306,7 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=True,
-        remote_data=remote_data,
+        remote_data=(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin').read_bytes(),  # noqa: E501
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -579,8 +571,9 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
     greenlets = []
     with patched_get, patched_put as put_mock:
-        greenlets.append(gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server))
-        greenlets.append(gevent.spawn(function_to_context_switch_to))
+        greenlets.extend((
+            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            gevent.spawn(function_to_context_switch_to)))
         gevent.joinall(greenlets)
         for g in greenlets:
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'

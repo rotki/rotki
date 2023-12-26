@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from rotkehlchen.errors.serialization import DeserializationError
@@ -18,6 +20,6 @@ def test_deserialize_timestamp():
     ts_from_normal_scientific = deserialize_timestamp(1.49298E+9)
     assert ts_from_normal_scientific == target_ts
 
-    for bad_argument in (-1, FVal('3.14'), 3.14, '3.14', '5.23267356186572e+8', ['lol']):
+    for bad_argument in (-1, FVal('3.14'), math.pi, '3.14', '5.23267356186572e+8', ['lol']):
         with pytest.raises(DeserializationError):
             deserialize_timestamp(bad_argument)

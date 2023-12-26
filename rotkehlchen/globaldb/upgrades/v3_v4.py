@@ -134,9 +134,7 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     log.debug('Enter _add_eth_abis_json')
 
     root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'eth_abi.json', encoding='utf8') as f:
-        abi_entries = json.loads(f.read())
-
+    abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
     abi_entries_tuples = []
     for name, value in abi_entries.items():
         abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
@@ -150,10 +148,8 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
 
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'eth_contracts.json', encoding='utf8') as f:
-        contract_entries = json.loads(f.read())
-    with open(root_dir / 'chain' / 'ethereum' / 'modules' / 'dxdaomesa' / 'data' / 'contracts.json', encoding='utf8') as f:  # noqa: E501
-        dxdao_contracts = json.loads(f.read())
+    contract_entries = json.loads((root_dir / 'data' / 'eth_contracts.json').read_text(encoding='utf8'))  # noqa: E501
+    dxdao_contracts = json.loads((root_dir / 'chain' / 'ethereum' / 'modules' / 'dxdaomesa' / 'data' / 'contracts.json').read_text(encoding='utf8'))  # noqa: E501
 
     contract_entries.update(dxdao_contracts)
     for contract_key, items in contract_entries.items():
@@ -304,8 +300,7 @@ def _copy_assets_from_packaged_db(
 def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
     """Insert into the collections table the information about known collections"""
     log.debug('Enter _populate_asset_collection')
-    with open(root_dir / 'data' / 'populate_asset_collections.sql', encoding='utf8') as f:
-        cursor.execute(f.read())
+    cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
     log.debug('Exit _populate_asset_collection')
 
 
@@ -317,31 +312,30 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
     """
     log.debug('Enter _populate_multiasset_mappings')
     asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
-    with open(root_dir / 'data' / 'populate_multiasset_mappings.sql', encoding='utf8') as f:
-        sql_sentences = f.read()
-        # check if we are adding the assets
-        # in this case we need to ensure that the assets exist locally and
-        # if not copy them from the packaged db
-        mapping_assets_identifiers = asset_regex.findall(sql_sentences)
-        cursor.execute(
-            f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
-            mapping_assets_identifiers,
-        )
-        all_evm_assets = {entry[0] for entry in cursor}
-        assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
+    sql_sentences = (root_dir / 'data' / 'populate_multiasset_mappings.sql').read_text(encoding='utf8')  # noqa: E501
+    # check if we are adding the assets
+    # in this case we need to ensure that the assets exist locally and
+    # if not copy them from the packaged db
+    mapping_assets_identifiers = asset_regex.findall(sql_sentences)
+    cursor.execute(
+        f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
+        mapping_assets_identifiers,
+    )
+    all_evm_assets = {entry[0] for entry in cursor}
+    assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
 
-        if len(assets_to_add) != 0:
-            try:
-                _copy_assets_from_packaged_db(
-                    cursor=cursor,
-                    assets_ids=list(assets_to_add),
-                    root_dir=root_dir,
-                )
-            except sqlite3.OperationalError as e:
-                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
-                return
+    if len(assets_to_add) != 0:
+        try:
+            _copy_assets_from_packaged_db(
+                cursor=cursor,
+                assets_ids=list(assets_to_add),
+                root_dir=root_dir,
+            )
+        except sqlite3.OperationalError as e:
+            log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
+            return
 
-        cursor.execute(sql_sentences)
+    cursor.execute(sql_sentences)
     log.debug('Exit _populate_multiasset_mappings')
 
 

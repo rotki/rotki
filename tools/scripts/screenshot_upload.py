@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 from base64 import b64encode
+from pathlib import Path
 
 import requests
 
@@ -22,13 +23,8 @@ def is_dir(dirname):
 
 def upload(path: str, headers: dict):
     print(f'Uploading {path}')
-    with open(path, 'rb') as image_file:
-        binary_data = image_file.read()
-        image = b64encode(binary_data)
-
-    data = {
-        'image': image,
-    }
+    image = b64encode(Path(path).read_bytes())
+    data = {'image': image}
     response = requests.post(
         url='https://api.imgur.com/3/upload',
         data=data,

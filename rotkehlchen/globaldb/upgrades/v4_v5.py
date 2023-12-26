@@ -37,9 +37,7 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
     log.debug('Enter _populate_rpc_nodes')
 
-    with open(root_dir / 'data' / 'nodes.json', encoding='utf8') as f:
-        nodes_info = json.loads(f.read())
-
+    nodes_info = json.loads((root_dir / 'data' / 'nodes.json').read_text(encoding='utf8'))
     nodes_tuples = [
         (node['name'], node['endpoint'], False, True, str(FVal(node['weight'])), node['blockchain'])  # noqa: E501
         for node in nodes_info

@@ -828,19 +828,18 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
             log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
-            with open(coinlist_cache_path, encoding='utf8') as f:
-                try:
-                    data = jsonloads_dict(f.read())
-                    now = ts_now()
-                    invalidate_cache = False
-
-                    # If we got a cache and its' over a month old then requery cryptocompare
-                    if data['time'] < now and now - data['time'] > 2629800:
-                        log.info('Cryptocompare coinlist cache is now invalidated')
-                        invalidate_cache = True
-                        data = data['data']
-                except JSONDecodeError:
+            invalidate_cache = False
+            try:
+                data = jsonloads_dict(Path(coinlist_cache_path).read_text(encoding='utf8'))
+            except JSONDecodeError:
+                invalidate_cache = True
+            else:
+                now = ts_now()
+                # If we got a cache and its over a month old then requery cryptocompare
+                if data['time'] < now and now - data['time'] > 2629800:
+                    log.info('Cryptocompare coinlist cache is now invalidated')
                     invalidate_cache = True
+                    data = data['data']
 
         if invalidate_cache:
             data = self._api_query('all/coinlist')
@@ -851,8 +850,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
                 log.info('Writing coinlist cache', timestamp=now)
                 write_data = {'time': now, 'data': data}
                 f.write(rlk_jsondumps(write_data))
-        else:
-            # in any case take the data
+        else:  # in any case take the data. Must exist due to else
             data = data['data']
 
         # As described in the docs

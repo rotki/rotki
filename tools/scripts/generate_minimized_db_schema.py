@@ -49,9 +49,10 @@ lines = [
 
 created_at = datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 rotki_version = get_system_spec()['rotkehlchen']
-lines.append(f'# Created at {created_at} UTC with rotki version {rotki_version} by {args.author}')
-
-lines.append(f'MINIMIZED_{db_name.upper()}_DB_SCHEMA = {{')
+lines.extend((
+    f'# Created at {created_at} UTC with rotki version {rotki_version} by {args.author}',
+    f'MINIMIZED_{db_name.upper()}_DB_SCHEMA = {{',
+))
 for name, properties in regexp_result:
     lines.append(f'    "{name}": "{properties}",')
 lines.append('}')

@@ -1,5 +1,6 @@
 import json
 import logging
+from itertools import starmap
 from typing import TYPE_CHECKING, Any
 
 from eth_utils import event_abi_to_log_topic
@@ -100,11 +101,7 @@ def decode_event_data_abi(
         log_data_types,
         decoded_log_data,
     )
-    decoded_topic_data = [
-        WEB3.codec.decode_single(topic_type, topic_data)
-        for topic_type, topic_data
-        in zip(log_topic_types, topics, strict=True)  # checked above
-    ]
+    decoded_topic_data = list(starmap(WEB3.codec.decode_single, zip(log_topic_types, topics, strict=True)))  # strict is checked above # noqa: E501
     normalized_topic_data = map_abi_data(
         BASE_RETURN_NORMALIZERS,
         log_topic_types,

@@ -201,9 +201,8 @@ def test_querying_rate_limit_exhaustion(kraken, database):
             return MockResponse(200, text)
         if 'AssetPairs' in url:
             dir_path = Path(__file__).resolve().parent.parent
-            filepath = dir_path / 'data' / 'assets_kraken.json'
-            with open(filepath, encoding='utf8') as f:
-                return MockResponse(200, f.read())
+            return MockResponse(200, (dir_path / 'data' / 'assets_kraken.json').read_text(encoding='utf8'))  # noqa: E501
+
         # else
         raise AssertionError(f'Unexpected url in kraken query: {url}')
 

@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -41,9 +42,8 @@ class DxdaomesaDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'data', 'contracts.json'), encoding='utf8') as f:
-            contracts = json.loads(f.read())
+        dir_path = Path(os.path.dirname(os.path.realpath(__file__)))
+        contracts = json.loads(Path(dir_path / 'data' / 'contracts.json').read_text(encoding='utf8'))  # noqa: E501
 
         self.contract = EvmContract(
             address=contracts['DXDAOMESA']['address'],

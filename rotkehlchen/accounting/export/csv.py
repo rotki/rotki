@@ -214,8 +214,7 @@ class CSVExporter(CustomizableDateMixin):
             'pnl_free': '',
             'cost_basis_free': '',
         }
-        events.append(template)  # separate with 2 new lines
-        events.append(template)
+        events.extend((template, template))  # separate with 2 new lines
 
         entry = template.copy()
         entry['taxable_amount'] = 'TAXABLE'
@@ -251,10 +250,7 @@ class CSVExporter(CustomizableDateMixin):
             entry['price'] = f'=SUM(H{start_sums_index}:H{start_sums_index + sums - 1})'
         else:
             entry['taxable_amount'] = entry['price'] = 0
-        events.append(entry)
-
-        events.append(template)  # separate with 2 new lines
-        events.append(template)
+        events.extend((entry, template, template))  # separate with 2 new lines
 
         version_result = get_current_version()
         entry = template.copy()
