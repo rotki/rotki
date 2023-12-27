@@ -7,7 +7,7 @@ import {
 } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ProtocolVersion } from '@/types/defi';
 
@@ -194,16 +194,20 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2Balances, balances);
       }
     } catch (e: any) {
-      notify({
-        title: t('actions.defi.yearn_vaults.error.title', {
-          version
-        }).toString(),
-        message: t('actions.defi.yearn_vaults.error.description', {
-          error: e.message,
-          version
-        }).toString(),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.defi.yearn_vaults.error.title', {
+            version
+          }).toString(),
+          message: t('actions.defi.yearn_vaults.error.description', {
+            error: e.message,
+            version
+          }).toString(),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   }
@@ -258,16 +262,20 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2History, data);
       }
     } catch (e: any) {
-      notify({
-        title: t('actions.defi.yearn_vaults_history.error.title', {
-          version: payload.version
-        }).toString(),
-        message: t('actions.defi.yearn_vaults_history.error.description', {
-          error: e.message,
-          version: payload.version
-        }).toString(),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.defi.yearn_vaults_history.error.title', {
+            version: payload.version
+          }).toString(),
+          message: t('actions.defi.yearn_vaults_history.error.description', {
+            error: e.message,
+            version: payload.version
+          }).toString(),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   }

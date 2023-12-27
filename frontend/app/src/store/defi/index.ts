@@ -4,7 +4,7 @@ import { type ComputedRef } from 'vue';
 import { AllDefiProtocols } from '@/types/defi/overview';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ProtocolVersion } from '@/types/defi';
 import {
@@ -133,15 +133,19 @@ export const useDefiStore = defineStore('defi', () => {
 
       set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
-      const title = t('actions.defi.balances.error.title');
-      const message = t('actions.defi.balances.error.description', {
-        error: e.message
-      });
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const title = t('actions.defi.balances.error.title');
+        const message = t('actions.defi.balances.error.description', {
+          error: e.message
+        });
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED);
   };

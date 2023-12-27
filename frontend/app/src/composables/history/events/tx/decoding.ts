@@ -1,6 +1,10 @@
 import { groupBy } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
-import { type PendingTask, type TaskMeta } from '@/types/task';
+import {
+  type PendingTask,
+  type TaskMeta,
+  UserCancelledTaskError
+} from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
 import {
@@ -48,18 +52,22 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       );
       set(unDecodedEventsBreakdown, snakeCaseTransformer(result));
     } catch (e: any) {
-      const description = t(
-        'actions.history.fetch_undecoded_events.error.message',
-        {
-          message: e.message
-        }
-      );
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const description = t(
+          'actions.history.fetch_undecoded_events.error.message',
+          {
+            message: e.message
+          }
+        );
 
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
     }
   };
 
@@ -101,15 +109,22 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       await awaitTask(taskId, taskType, taskMeta, true);
       clearDependedSection();
     } catch (e) {
-      logger.error(e);
-      notify({
-        title: t('actions.transactions_redecode_missing.error.title'),
-        message: t('actions.transactions_redecode_missing.error.description', {
-          error: e,
-          evmChain
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.transactions_redecode_missing.error.title'),
+          message: t(
+            'actions.transactions_redecode_missing.error.description',
+            {
+              error: e,
+              evmChain
+            }
+          ),
+          display: true
+        });
+      }
     }
   };
 
@@ -181,14 +196,18 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         clearDependedSection();
       }
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.transactions_redecode.error.title'),
-        message: t('actions.transactions_redecode.error.description', {
-          error: e
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.transactions_redecode.error.title'),
+          message: t('actions.transactions_redecode.error.description', {
+            error: e
+          }),
+          display: true
+        });
+      }
     }
   };
 

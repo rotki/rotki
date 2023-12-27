@@ -1,7 +1,7 @@
 import { type BigNumber } from '@rotki/common';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 
 export const useHistoricCachePriceStore = defineStore(
   'prices/historic-cache',
@@ -28,26 +28,35 @@ export const useHistoricCachePriceStore = defineStore(
         targetAsset
       });
 
-      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t(
-            'actions.balances.historic_fetch_price.task.title'
-          ).toString(),
-          description: t(
-            'actions.balances.historic_fetch_price.task.description',
-            {
-              count: assetsTimestamp.length,
-              toAsset: targetAsset
-            },
-            2
-          )
-        },
-        true
-      );
+      let data = { targetAsset: '', assets: {} };
 
-      const response = HistoricPrices.parse(result);
+      try {
+        const { result } = await awaitTask<HistoricPrices, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: t(
+              'actions.balances.historic_fetch_price.task.title'
+            ).toString(),
+            description: t(
+              'actions.balances.historic_fetch_price.task.description',
+              {
+                count: assetsTimestamp.length,
+                toAsset: targetAsset
+              },
+              2
+            )
+          },
+          true
+        );
+        data = result;
+      } catch (e: any) {
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        }
+      }
+
+      const response = HistoricPrices.parse(data);
 
       return function* () {
         for (const assetTimestamp of assetsTimestamp) {

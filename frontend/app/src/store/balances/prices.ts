@@ -10,7 +10,7 @@ import {
   type OracleCachePayload
 } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { type ActionStatus } from '@/types/action';
@@ -44,19 +44,25 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         payload.ignoreCache
       );
 
-      const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.session.fetch_prices.task.title').toString()
-        },
-        true
-      );
+      try {
+        const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: t('actions.session.fetch_prices.task.title').toString()
+          },
+          true
+        );
 
-      set(prices, {
-        ...get(prices),
-        ...AssetPriceResponse.parse(result)
-      });
+        set(prices, {
+          ...get(prices),
+          ...AssetPriceResponse.parse(result)
+        });
+      } catch (e: any) {
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        }
+      }
     };
 
     const { setStatus } = useStatusUpdater(Section.PRICES);
@@ -114,13 +120,17 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
       set(exchangeRates, ExchangeRates.parse(result));
     } catch (e: any) {
-      notify({
-        title: t('actions.balances.exchange_rates.error.title').toString(),
-        message: t('actions.balances.exchange_rates.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.balances.exchange_rates.error.title').toString(),
+          message: t('actions.balances.exchange_rates.error.message', {
+            message: e.message
+          }).toString(),
+          display: true
+        });
+      }
     }
   };
 
@@ -164,7 +174,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset][timestamp];
     } catch (e: any) {
-      logger.error(e);
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+      }
       return One.negated();
     }
   };
@@ -208,6 +222,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         success: result
       };
     } catch (e: any) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      }
       return {
         success: false,
         message: t('actions.balances.create_oracle_cache.failed', {

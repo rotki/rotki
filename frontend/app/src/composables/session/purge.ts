@@ -14,7 +14,7 @@ import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 
 export const useSessionPurge = () => {
   const { resetState } = useDefiStore();
@@ -68,9 +68,15 @@ export const useSessionPurge = () => {
   const refreshGeneralCache = async () => {
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();
-    await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: t('actions.session.refresh_general_cache.task.title')
-    });
+    try {
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+        title: t('actions.session.refresh_general_cache.task.title')
+      });
+    } catch (e: any) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      }
+    }
   };
 
   return {

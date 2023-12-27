@@ -8,7 +8,7 @@ import {
   type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useNonFungibleBalancesStore = defineStore(
@@ -63,6 +63,10 @@ export const useNonFungibleBalancesStore = defineStore(
         );
         return true;
       } catch (e: any) {
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+          return false;
+        }
         notify({
           title: t('actions.nft_balances.error.title'),
           message: t('actions.nft_balances.error.message', {

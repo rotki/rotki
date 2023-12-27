@@ -8,7 +8,11 @@ import {
   type TransactionRequestPayload
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
-import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
+import {
+  BackendCancelledTaskError,
+  type TaskMeta,
+  UserCancelledTaskError
+} from '@/types/task';
 import { Module } from '@/types/modules';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -61,7 +65,9 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (e instanceof BackendCancelledTaskError) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else if (e instanceof BackendCancelledTaskError) {
         logger.debug(e);
         removeQueryStatus(account);
       } else {
@@ -186,15 +192,19 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.online_events.error.title'),
-        message: t('actions.online_events.error.description', {
-          error: e,
-          queryType
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.online_events.error.title'),
+          message: t('actions.online_events.error.description', {
+            error: e,
+            queryType
+          }),
+          display: true
+        });
+      }
     }
   };
 

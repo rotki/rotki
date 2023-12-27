@@ -2,7 +2,7 @@ import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useAaveStore = defineStore('defi/aave', () => {
@@ -73,15 +73,19 @@ export const useAaveStore = defineStore('defi/aave', () => {
       );
       set(balances, AaveBalances.parse(result));
     } catch (e: any) {
-      const message = t('actions.defi.aave_balances.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.aave_balances.error.title');
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const message = t('actions.defi.aave_balances.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.aave_balances.error.title');
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED);
@@ -115,17 +119,21 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
       set(history, AaveHistory.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      const message = t('actions.defi.aave_history.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.aave_history.error.title');
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        const message = t('actions.defi.aave_history.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.aave_history.error.title');
 
-      notify({
-        title,
-        message,
-        display: true
-      });
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED, section);

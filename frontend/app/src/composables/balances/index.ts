@@ -1,4 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
+import { UserCancelledTaskError } from '@/types/task';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
@@ -100,13 +101,17 @@ export const useBalances = createSharedComposable(() => {
         title: t('actions.balances.all_balances.task.title')
       });
     } catch (e: any) {
-      notify({
-        title: t('actions.balances.all_balances.error.title'),
-        message: t('actions.balances.all_balances.error.message', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.balances.all_balances.error.title'),
+          message: t('actions.balances.all_balances.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
     }
   };
 

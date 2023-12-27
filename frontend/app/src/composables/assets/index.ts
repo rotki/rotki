@@ -6,7 +6,7 @@ import {
   type AssetUpdatePayload,
   type AssetUpdateResult
 } from '@/types/asset';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -43,15 +43,20 @@ export const useAssets = () => {
         versions: result
       };
     } catch (e: any) {
-      const title = t('actions.assets.versions.task.title').toString();
-      const description = t('actions.assets.versions.error.description', {
-        message: e.message
-      }).toString();
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const title = t('actions.assets.versions.task.title').toString();
+        const description = t('actions.assets.versions.error.description', {
+          message: e.message
+        }).toString();
+
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
       return {
         updateAvailable: false
       };
@@ -82,15 +87,19 @@ export const useAssets = () => {
         conflicts: result
       };
     } catch (e: any) {
-      const title = t('actions.assets.update.task.title').toString();
-      const description = t('actions.assets.update.error.description', {
-        message: e.message
-      }).toString();
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const title = t('actions.assets.update.task.title').toString();
+        const description = t('actions.assets.update.error.description', {
+          message: e.message
+        }).toString();
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
       return {
         done: false
       };
@@ -132,7 +141,11 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+      }
 
       return {
         success: false,
@@ -181,7 +194,11 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+      }
 
       return {
         success: false,

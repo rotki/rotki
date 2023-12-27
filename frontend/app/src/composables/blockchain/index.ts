@@ -9,7 +9,7 @@ import {
   type AddAccountsPayload,
   type BaseAddAccountsPayload
 } from '@/types/blockchain/accounts';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { Section } from '@/types/status';
 
 export const useBlockchains = () => {
@@ -304,14 +304,18 @@ export const useBlockchains = () => {
 
       return result;
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.detect_evm_accounts.error.title').toString(),
-        message: t('actions.detect_evm_accounts.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.detect_evm_accounts.error.title').toString(),
+          message: t('actions.detect_evm_accounts.error.message', {
+            message: e.message
+          }).toString(),
+          display: true
+        });
+      }
     }
   };
 

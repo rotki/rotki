@@ -64,8 +64,26 @@ export const useTaskApi = () => {
     throw new Error('No result');
   };
 
+  const cancelAsyncTask = async (id: number): Promise<boolean> => {
+    const config: Partial<AxiosRequestConfig> = {
+      validateStatus: validTaskStatus
+    };
+
+    const response = await api.instance.delete<ActionResult<boolean>>(
+      `/tasks/${id}`,
+      config
+    );
+
+    if (response.status === 404) {
+      throw new TaskNotFoundError(`Task with id ${id} not found`);
+    }
+
+    return handleResponse(response);
+  };
+
   return {
     queryTasks,
-    queryTaskResult
+    queryTaskResult,
+    cancelAsyncTask
   };
 };

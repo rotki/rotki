@@ -8,7 +8,7 @@ import {
 } from '@rotki/common/lib/staking/eth2';
 import { type MaybeRef } from '@vueuse/core';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useEth2StakingStore = defineStore('staking/eth2', () => {
@@ -53,14 +53,18 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       set(details, Eth2Details.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.staking.eth2.error.title'),
-        message: t('actions.staking.eth2.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.staking.eth2.error.title'),
+          message: t('actions.staking.eth2.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
     setStatus(Status.LOADED);
@@ -110,13 +114,18 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       return true;
     } catch (e: any) {
       setStatus(Status.NONE);
-      notify({
-        title: t('actions.eth2_staking_stats.error.title').toString(),
-        message: t('actions.eth2_staking_stats.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
+
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.eth2_staking_stats.error.title').toString(),
+          message: t('actions.eth2_staking_stats.error.message', {
+            message: e.message
+          }).toString(),
+          display: true
+        });
+      }
     }
 
     return false;

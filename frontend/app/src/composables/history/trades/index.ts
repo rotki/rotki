@@ -9,7 +9,7 @@ import {
   type TradeRequestPayload
 } from '@/types/history/trade';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -63,16 +63,20 @@ export const useTrades = () => {
       );
       return true;
     } catch (e: any) {
-      notify({
-        title: t('actions.trades.error.title', {
-          exchange
-        }),
-        message: t('actions.trades.error.description', {
-          exchange,
-          error: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.trades.error.title', {
+            exchange
+          }),
+          message: t('actions.trades.error.description', {
+            exchange,
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
 
     return false;

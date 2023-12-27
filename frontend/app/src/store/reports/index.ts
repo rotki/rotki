@@ -9,7 +9,7 @@ import {
   type Reports,
   type SelectedReport
 } from '@/types/reports';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AddressBookSimplePayload } from '@/types/eth-names';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -251,10 +251,14 @@ export const useReportsStore = defineStore('reports', () => {
       }
       return result;
     } catch (e: any) {
-      set(reportError, {
-        error: e.message,
-        message: t('actions.reports.generate.error.description').toString()
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        set(reportError, {
+          error: e.message,
+          message: t('actions.reports.generate.error.description').toString()
+        });
+      }
       return -1;
     } finally {
       clearInterval(intervalId);
@@ -303,10 +307,14 @@ export const useReportsStore = defineStore('reports', () => {
 
       return result;
     } catch (e: any) {
-      set(reportError, {
-        error: e.message,
-        message: t('actions.reports.generate.error.description').toString()
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        set(reportError, {
+          error: e.message,
+          message: t('actions.reports.generate.error.description').toString()
+        });
+      }
 
       return {};
     } finally {

@@ -10,7 +10,7 @@ import { type EthChains, isEthChain } from '@/types/blockchain/chains';
 import { Module } from '@/types/modules';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 type Totals = Record<EthChains, AssetBalances>;
@@ -97,13 +97,17 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       set(loopring, AccountAssetBalances.parse(result));
       setStatus(Status.LOADED);
     } catch (e: any) {
-      notify({
-        title: t('actions.balances.loopring.error.title'),
-        message: t('actions.balances.loopring.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.balances.loopring.error.title'),
+          message: t('actions.balances.loopring.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
   };

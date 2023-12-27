@@ -13,7 +13,7 @@ import {
 } from '@/types/manual-balances';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
@@ -170,14 +170,18 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       set(manualBalancesData, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.balances.manual_balances.error.title'),
-        message: t('actions.balances.manual_balances.error.message', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        notify({
+          title: t('actions.balances.manual_balances.error.title'),
+          message: t('actions.balances.manual_balances.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
   };
@@ -201,7 +205,11 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+      }
 
       let messages = e.message;
       if (e instanceof ApiValidationError) {
@@ -233,7 +241,11 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+      }
 
       let message = e.message;
       if (e instanceof ApiValidationError) {

@@ -3,7 +3,7 @@ import { type AssetInfo } from '@rotki/common/lib/data';
 import { CUSTOM_ASSET } from '@/types/asset';
 import { type ERC20Token } from '@/types/blockchain/accounts';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { type EvmChainAddress } from '@/types/history/events';
 
 export const useAssetInfoRetrieval = () => {
@@ -154,13 +154,17 @@ export const useAssetInfoRetrieval = () => {
       );
       return result;
     } catch (e: any) {
-      notify({
-        title: t('actions.assets.erc20.error.title', payload),
-        message: t('actions.assets.erc20.error.description', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.assets.erc20.error.title', payload),
+          message: t('actions.assets.erc20.error.description', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
       return {};
     }
   };

@@ -49,6 +49,13 @@ export class BackendCancelledTaskError extends Error {
   }
 }
 
+export class UserCancelledTaskError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = 'UserCancelledTaskError';
+  }
+}
+
 export interface PendingTask {
   readonly taskId: number;
 }

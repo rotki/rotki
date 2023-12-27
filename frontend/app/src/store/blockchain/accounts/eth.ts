@@ -6,7 +6,7 @@ import {
 import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type ActionStatus } from '@/types/action';
@@ -94,7 +94,11 @@ export const useEthAccountsStore = defineStore(
           message: ''
         };
       } catch (e: any) {
-        logger.error(e);
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        } else {
+          logger.error(e);
+        }
         let message = e.message;
         if (e instanceof ApiValidationError) {
           message = e.getValidationErrors(payload);

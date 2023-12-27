@@ -11,7 +11,11 @@ import {
 } from '@/types/exchanges';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type ExchangeMeta, type TaskMeta } from '@/types/task';
+import {
+  type ExchangeMeta,
+  type TaskMeta,
+  UserCancelledTaskError
+} from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   type AssetBreakdown,
@@ -172,19 +176,26 @@ export const useExchangeBalancesStore = defineStore(
         });
         setStatus(Status.LOADED);
       } catch (e: any) {
-        const message = t('actions.balances.exchange_balances.error.message', {
-          location,
-          error: e.message
-        }).toString();
-        const title = t('actions.balances.exchange_balances.error.title', {
-          location
-        }).toString();
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        } else {
+          const message = t(
+            'actions.balances.exchange_balances.error.message',
+            {
+              location,
+              error: e.message
+            }
+          ).toString();
+          const title = t('actions.balances.exchange_balances.error.title', {
+            location
+          }).toString();
 
-        notify({
-          title,
-          message,
-          display: true
-        });
+          notify({
+            title,
+            message,
+            display: true
+          });
+        }
         resetStatus();
       }
     };
@@ -249,17 +260,21 @@ export const useExchangeBalancesStore = defineStore(
           true
         );
         return true;
-      } catch {
-        notify({
-          title: t('actions.balances.exchange_savings_interest.error.title', {
-            location
-          }),
-          message: t(
-            'actions.balances.exchange_savings_interest.error.message',
-            { location }
-          ),
-          display: true
-        });
+      } catch (e: any) {
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        } else {
+          notify({
+            title: t('actions.balances.exchange_savings_interest.error.title', {
+              location
+            }),
+            message: t(
+              'actions.balances.exchange_savings_interest.error.message',
+              { location }
+            ),
+            display: true
+          });
+        }
       }
 
       return false;

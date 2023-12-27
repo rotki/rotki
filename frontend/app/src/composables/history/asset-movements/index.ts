@@ -8,7 +8,7 @@ import {
   type AssetMovementRequestPayload
 } from '@/types/history/asset-movements';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type TradeLocation } from '@/types/history/trade/location';
 
@@ -53,16 +53,20 @@ export const useAssetMovements = () => {
         TaskMeta
       >(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      notify({
-        title: t('actions.asset_movements.error.title', {
-          exchange
-        }),
-        message: t('actions.asset_movements.error.description', {
-          exchange,
-          error: e.message
-        }),
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        notify({
+          title: t('actions.asset_movements.error.title', {
+            exchange
+          }),
+          message: t('actions.asset_movements.error.description', {
+            exchange,
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
 
     return false;

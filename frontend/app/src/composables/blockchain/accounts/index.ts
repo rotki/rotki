@@ -6,7 +6,7 @@ import {
   isBtcChain,
   isRestChain
 } from '@/types/blockchain/chains';
-import { type BlockchainMetadata } from '@/types/task';
+import { type BlockchainMetadata, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   type AccountPayload,
@@ -55,23 +55,30 @@ export const useBlockchainAccounts = () => {
       tags
     });
 
-    const { result } = await awaitTask<string[], BlockchainMetadata>(
-      taskId,
-      taskType,
-      {
-        title: t('actions.balances.blockchain_accounts_add.task.title', {
+    try {
+      const { result } = await awaitTask<string[], BlockchainMetadata>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.balances.blockchain_accounts_add.task.title', {
+            blockchain
+          }),
+          description: t(
+            'actions.balances.blockchain_accounts_add.task.description',
+            { address }
+          ),
           blockchain
-        }),
-        description: t(
-          'actions.balances.blockchain_accounts_add.task.description',
-          { address }
-        ),
-        blockchain
-      },
-      true
-    );
+        },
+        true
+      );
 
-    return result.length > 0 ? result[0] : '';
+      return result.length > 0 ? result[0] : '';
+    } catch (e: any) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      }
+      return '';
+    }
   };
 
   const addEvmAccount = async ({
@@ -86,23 +93,30 @@ export const useBlockchainAccounts = () => {
       tags
     });
 
-    const blockchain = 'EVM';
-    const { result } = await awaitTask<EvmAccountsResult, BlockchainMetadata>(
-      taskId,
-      taskType,
-      {
-        title: t('actions.balances.blockchain_accounts_add.task.title', {
-          blockchain
-        }),
-        description: t(
-          'actions.balances.blockchain_accounts_add.task.description',
-          { address }
-        )
-      },
-      true
-    );
+    try {
+      const blockchain = 'EVM';
+      const { result } = await awaitTask<EvmAccountsResult, BlockchainMetadata>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.balances.blockchain_accounts_add.task.title', {
+            blockchain
+          }),
+          description: t(
+            'actions.balances.blockchain_accounts_add.task.description',
+            { address }
+          )
+        },
+        true
+      );
 
-    return snakeCaseTransformer(result);
+      return snakeCaseTransformer(result);
+    } catch (e: any) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      }
+      return {};
+    }
   };
 
   const editAccount = async (
@@ -139,25 +153,29 @@ export const useBlockchainAccounts = () => {
         }
       );
     } catch (e: any) {
-      logger.error(e);
-      const title = t(
-        'actions.balances.blockchain_account_removal.error.title',
-        {
-          count: accounts.length,
-          blockchain
-        }
-      );
-      const description = t(
-        'actions.balances.blockchain_account_removal.error.description',
-        {
-          error: e.message
-        }
-      );
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        const title = t(
+          'actions.balances.blockchain_account_removal.error.title',
+          {
+            count: accounts.length,
+            blockchain
+          }
+        );
+        const description = t(
+          'actions.balances.blockchain_account_removal.error.description',
+          {
+            error: e.message
+          }
+        );
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
     }
   };
 

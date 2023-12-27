@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type BtcChains } from '@/types/blockchain/chains';
-import { type BlockchainMetadata } from '@/types/task';
+import { type BlockchainMetadata, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   type BtcAccountData,
@@ -39,20 +39,24 @@ export const useBtcAccountsStore = defineStore(
           blockchain: payload.blockchain
         });
       } catch (e: any) {
-        logger.error(e);
-        const title = t('actions.balances.xpub_removal.error.title');
-        const description = t(
-          'actions.balances.xpub_removal.error.description',
-          {
-            xpub: payload.xpub,
-            error: e.message
-          }
-        );
-        notify({
-          title,
-          message: description,
-          display: true
-        });
+        if (e instanceof UserCancelledTaskError) {
+          logger.debug(e);
+        } else {
+          logger.error(e);
+          const title = t('actions.balances.xpub_removal.error.title');
+          const description = t(
+            'actions.balances.xpub_removal.error.description',
+            {
+              xpub: payload.xpub,
+              error: e.message
+            }
+          );
+          notify({
+            title,
+            message: description,
+            display: true
+          });
+        }
       }
     };
 

@@ -9,7 +9,7 @@ import {
 } from '@/types/defi/maker';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
@@ -78,16 +78,20 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       );
       set(dsrBalances, DSRBalances.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      const message = t('actions.defi.dsr_balances.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.dsr_balances.error.title');
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        const message = t('actions.defi.dsr_balances.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.dsr_balances.error.title');
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED);
@@ -119,15 +123,19 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(dsrHistory, DSRHistory.parse(result));
     } catch (e: any) {
-      const message = t('actions.defi.dsr_history.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.dsr_history.error.title');
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        const message = t('actions.defi.dsr_history.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.dsr_history.error.title');
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   };
@@ -161,17 +169,21 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         convertMakerDAOVaults(ApiMakerDAOVaults.parse(result))
       );
     } catch (e: any) {
-      logger.error(e);
-      const message = t('actions.defi.makerdao_vaults.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.makerdao_vaults.error.title');
-      const { notify } = useNotificationsStore();
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        const message = t('actions.defi.makerdao_vaults.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.makerdao_vaults.error.title');
+        const { notify } = useNotificationsStore();
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   };
@@ -201,17 +213,21 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      const message = t(
-        'actions.defi.makerdao_vault_details.error.description',
-        { error: e.message }
-      );
-      const title = t('actions.defi.makerdao_vault_details.error.title');
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      } else {
+        logger.error(e);
+        const message = t(
+          'actions.defi.makerdao_vault_details.error.description',
+          { error: e.message }
+        );
+        const title = t('actions.defi.makerdao_vault_details.error.title');
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED, section);

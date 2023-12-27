@@ -1,7 +1,7 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 
 export const useNfts = () => {
   const { awaitTask } = useTaskStore();
@@ -32,6 +32,10 @@ export const useNfts = () => {
         message: ''
       };
     } catch (e: any) {
+      if (e instanceof UserCancelledTaskError) {
+        logger.debug(e);
+      }
+
       return {
         result: null,
         message: e.message
