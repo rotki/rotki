@@ -98,12 +98,7 @@ const filter = (chain: Blockchain, queryText: string) => {
     @blur="clearSearch()"
   >
     <template #selection="{ item }">
-      <ChainDisplay
-        v-if="!search"
-        :chain="item"
-        :dense="dense"
-        :full-width="false"
-      />
+      <ChainDisplay v-if="!search" :chain="item" :dense="dense" />
     </template>
     <template #item="{ item }">
       <ChainDisplay :chain="item" />

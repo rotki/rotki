@@ -107,14 +107,14 @@ export class TradeHistoryPage {
       .find('td')
       .eq(5)
       .find('[data-cy=trade-base]')
-      .find('[data-cy=details-symbol]')
+      .find('[data-cy=list-title]')
       .should('contain', trade.base);
 
     cy.get('@row')
       .find('td')
       .eq(7)
       .find('[data-cy=trade-quote]')
-      .find('[data-cy=details-symbol]')
+      .find('[data-cy=list-title]')
       .should('contain', trade.quote);
   }
 

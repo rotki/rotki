@@ -53,11 +53,9 @@ const css = useCssModule();
         </MenuTooltipButton>
       </template>
       <VList data-cy="user-dropdown">
-        <VListItem key="username" class="user-username">
-          <VListItemTitle class="font-bold text-center">
-            {{ username }}
-          </VListItemTitle>
-        </VListItem>
+        <div key="username" class="py-3 user-username font-bold text-center">
+          {{ username }}
+        </div>
         <RuiDivider />
         <RouterLink to="/settings/general">
           <RuiButton
