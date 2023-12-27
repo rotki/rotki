@@ -140,12 +140,12 @@ def lp_price_from_uniswaplike_pool_contract(
 
     try:
         token0_supply = deserialize_fval(
-            value=decoded[3][0] * 10**-token0.decimals,
+            value=decoded[3][0] * 10**-token0.decimals_or_default(),
             name=FVAL_ERROR_NAME,
             location=FVAL_ERROR_LOCATION,
         )
         token1_supply = deserialize_fval(
-            value=decoded[3][1] * 10**-token1.decimals,
+            value=decoded[3][1] * 10**-token1.decimals_or_default(),
             name=FVAL_ERROR_NAME,
             location=FVAL_ERROR_LOCATION,
         )

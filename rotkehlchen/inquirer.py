@@ -871,7 +871,7 @@ class Inquirer:
         # Calculate weight of each asset as the proportion of tokens value
         weights = (data[x + 1] * prices[x] / total_assets_price for x in range(len(tokens)))
         assets_price = FVal(sum(map(operator.mul, weights, prices)))
-        return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals)
+        return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals_or_default())
 
     def find_yearn_price(
             self,
@@ -947,7 +947,8 @@ class Inquirer:
         except (RemoteError, BlockchainQueryError) as e:
             log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {e!s}')
         else:
-            return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
+            decimals = token.decimals if token.decimals is not None else 18
+            return Price(price_per_share * underlying_token_price / 10 ** decimals)
 
         return None
 

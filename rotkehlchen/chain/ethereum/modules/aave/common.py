@@ -111,7 +111,7 @@ def asset_to_atoken(asset: CryptoAsset, version: int) -> EvmToken | None:
         return None
 
 
-def _get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddress, int]:
+def get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddress, int]:
     """Get the reserve address and the number of decimals for symbol"""
     if asset == A_ETH:
         reserve_address = ETH_SPECIAL_ADDRESS
@@ -120,7 +120,7 @@ def _get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddres
         token = EvmToken(asset.identifier)
         assert token, 'should not be a non token asset at this point'
         reserve_address = token.evm_address
-        decimals = token.decimals
+        decimals = token.decimals_or_default()
 
     return reserve_address, decimals
 
