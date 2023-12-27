@@ -10036,6 +10036,77 @@ Dealing with ignored assets
    :statuscode 409: User is not logged in. One of the assets provided is not on the list.
    :statuscode 500: Internal rotki error
 
+
+False positive in spam assets
+==============================
+
+.. http:post:: /api/(version)/assets/ignored/whitelist
+
+   Doing a POST on this endpoint will mark the provided token as a false positive spam asset. This will remove it from the list of ignored assets, remove the spam value from the protocol field and add it to the list of false positives.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PATH /api/1/assets/ignored/whitelist HTTP/1.1
+      Host: localhost:5042
+
+      {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+
+
+  :reqjsonarr string token: The identifier of the evm token that will be marked as false positive
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Asset added to spam whitelist successfully.
+  :statuscode 409: No user is currently logged in.
+  :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/assets/ignored/whitelist
+
+   Doing a DEELTE on this endpoint will remove the provided token from the list of false positives.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/ignored/whitelist HTTP/1.1
+      Host: localhost:5042
+
+      {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+
+
+  :reqjsonarr string token: The identifier of the evm token that will be removed from the false positive whitelist
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Asset removed from spam whitelist successfully.
+  :statuscode 409: No user is currently logged in.
+  :statuscode 500: Internal rotki error.
+
+
 Dealing with ignored actions
 ==============================
 

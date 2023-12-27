@@ -978,6 +978,7 @@ class CacheType(Enum):
     ENS_LABELHASH = auto()  # map ENS labelhash -> ens name
     CONVEX_POOL_ADDRESS = auto()  # get convex pool addr
     CONVEX_POOL_NAME = auto()  # map convex pool rewards address -> pool name
+    SPAM_ASSET_FALSE_POSITIVE = auto()  # assets that shouldn't be marked as spam automatically
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1008,6 +1009,7 @@ GeneralCacheType = Literal[
     CacheType.VELODROME_POOL_ADDRESS,
     CacheType.VELODROME_GAUGE_ADDRESS,
     CacheType.CONVEX_POOL_ADDRESS,
+    CacheType.SPAM_ASSET_FALSE_POSITIVE,
 ]
 
 

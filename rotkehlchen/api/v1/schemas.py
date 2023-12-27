@@ -11,7 +11,7 @@ from marshmallow.exceptions import ValidationError
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -3235,3 +3235,7 @@ class AccountingRuleConflictsPagination(DBPaginationSchema):
             order_by_rules=[('accounting_rules.identifier', False)],
         )
         return {'filter_query': filter_query}
+
+
+class FalsePositveSpamTokenSchema(Schema):
+    token = AssetField(expected_type=EvmToken, required=True)

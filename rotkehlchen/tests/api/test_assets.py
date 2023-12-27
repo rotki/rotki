@@ -10,6 +10,7 @@ from polyleven import levenshtein
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD, A_USDC
@@ -18,6 +19,7 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -32,7 +34,15 @@ from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, Location, TimestampMS
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    BTCAddress,
+    CacheType,
+    ChainID,
+    ChecksumEvmAddress,
+    Location,
+    TimestampMS,
+)
 
 
 def assert_substring_in_search_result(
@@ -1055,3 +1065,56 @@ def test_only_ignored_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert {entry['identifier'] for entry in result['entries']} == set(ignored_assets)
+
+
+def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:
+    """Test the endpoint to add/remove an asset from the whitelist of spam assets"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+
+    # setup as if DAI was in the spam assets
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_DAI)
+
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+            (SPAM_PROTOCOL, A_DAI.identifier),
+        )
+    AssetResolver.clean_memory_cache(A_DAI.identifier)
+
+    dai = A_DAI.resolve_to_evm_token()
+    assert dai.protocol == SPAM_PROTOCOL
+
+    response = requests.post(  # mark it as false positive
+        api_url_for(
+            rotkehlchen_api_server,
+            'falsepositivespamtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    assert_proper_response(response)
+
+    # check that the asset is not ignored and has the right protocol value
+    dai = A_DAI.resolve_to_evm_token()
+    assert dai.protocol is None
+    with db.conn.read_ctx() as cursor:
+        assert A_DAI not in db.get_ignored_asset_ids(cursor=cursor)
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+        ) == [A_DAI.identifier]
+
+    # remove it from the list of false positives
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'falsepositivespamtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    with globaldb.conn.read_ctx() as cursor:
+        assert len(globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+        )) == 0
