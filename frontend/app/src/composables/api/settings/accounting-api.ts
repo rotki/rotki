@@ -17,23 +17,39 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useAccountingApi = () => {
   const fetchAccountingRule = async (
-    payload: AccountingRuleRequestPayload
-  ): Promise<AccountingRuleEntry> => {
+    payload: AccountingRuleRequestPayload,
+    counterparty: string | null
+  ): Promise<AccountingRuleEntry | null> => {
+    const newPayload = {
+      ...omit(payload, ['orderByAttributes', 'ascending']),
+      counterparties: counterparty ? [counterparty, null] : [null]
+    };
+
     const response = await api.instance.post<
       ActionResult<CollectionResponse<AccountingRuleEntry>>
-    >(
-      '/accounting/rules',
-      snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
-      {
-        validateStatus: validStatus
-      }
-    );
+    >('/accounting/rules', snakeCaseTransformer(newPayload), {
+      validateStatus: validStatus
+    });
 
     const data = AccountingRuleEntryCollectionResponse.parse(
       handleResponse(response)
     );
 
-    return data.entries[0];
+    if (data.entries.length === 0) {
+      return null;
+    }
+
+    if (data.entries.length === 1) {
+      return data.entries[0];
+    }
+
+    if (data.entries.length > 1) {
+      return (
+        data.entries.find(item => item.counterparty === counterparty) || null
+      );
+    }
+
+    return null;
   };
   const fetchAccountingRules = async (
     payload: AccountingRuleRequestPayload

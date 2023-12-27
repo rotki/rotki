@@ -2,7 +2,11 @@
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import Fragment from '@/components/helper/Fragment';
 import { type HistoryEventEntry } from '@/types/history/events';
-import { isEvmEvent } from '@/utils/history/events';
+import {
+  isEventAccountingRuleProcessed,
+  isEventMissingAccountingRule,
+  isEvmEvent
+} from '@/utils/history/events';
 
 type DeleteEvent = {
   canDelete: boolean;
@@ -77,7 +81,7 @@ const deleteEvent = (item: HistoryEventEntry) =>
           @delete-click="deleteEvent(item)"
         >
           <RuiTooltip
-            v-if="item.missingAccountingRule"
+            v-if="isEventMissingAccountingRule(item)"
             :popper="{ placement: 'top', offsetDistance: 0 }"
             :open-delay="400"
           >
@@ -94,7 +98,7 @@ const deleteEvent = (item: HistoryEventEntry) =>
             {{ t('actions.history_events.missing_rule.title') }}
           </RuiTooltip>
           <HistoryEventAction
-            v-else-if="item.eventType !== 'informational'"
+            v-else-if="isEventAccountingRuleProcessed(item)"
             :event="item"
           />
         </RowActions>

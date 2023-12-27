@@ -725,6 +725,11 @@
     "useDynamicMessages": true,
     "useUpdateMessage": true,
     "useHistoryTransactionDecoding": true,
-    "guessTimezone": true
+    "guessTimezone": true,
+    "isEventMissingAccountingRule": true,
+    "isEventMissingAccountingRuleType": true,
+    "isAccountingRuleProcessed": true,
+    "isEventAccountingRuleProcessed": true,
+    "isMissingAccountingRule": true
   }
 }
