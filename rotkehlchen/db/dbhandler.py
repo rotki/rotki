@@ -475,6 +475,8 @@ class DBHandler:
             # If this goes away at any point it needs to be replaced by something
             # that checks the password is correct at this same point in the code
             conn.execute('PRAGMA cache_size = -32768')
+            # switch to WAL mode: https://www.sqlite.org/wal.html
+            conn.execute('PRAGMA journal_mode=WAL;')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise AuthenticationError(
                 'Wrong password or invalid/corrupt database for user',

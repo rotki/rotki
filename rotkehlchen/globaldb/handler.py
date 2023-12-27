@@ -158,6 +158,8 @@ def initialize_globaldb(
         db_filename=db_filename,
     )
     connection.executescript('PRAGMA foreign_keys=on;')
+    # switch to WAL mode: https://www.sqlite.org/wal.html
+    connection.execute('PRAGMA journal_mode=WAL;')
     if is_fresh_db is True:
         connection.executescript(DB_SCRIPT_CREATE_TABLES)
         with connection.write_ctx() as cursor:
