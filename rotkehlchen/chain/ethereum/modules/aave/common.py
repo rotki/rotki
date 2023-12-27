@@ -120,7 +120,7 @@ def get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddress
         token = EvmToken(asset.identifier)
         assert token, 'should not be a non token asset at this point'
         reserve_address = token.evm_address
-        decimals = token.decimals_or_default()
+        decimals = token.get_decimals()
 
     return reserve_address, decimals
 

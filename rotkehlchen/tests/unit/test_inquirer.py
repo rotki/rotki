@@ -196,14 +196,15 @@ def test_parsing_forex_cache_works(
     assert inquirer._query_fiat_pair(A_EUR, A_JPY)[0] == price
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
+def test_fallback_to_coingecko(inquirer: Inquirer):
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
-    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARI # noqa: E501
+    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'), skip_onchain=True)  # RARI # noqa: E501
     assert price != ZERO_PRICE
-    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
+    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0x679131F591B4f369acB8cd8c51E68596806c3916'), skip_onchain=True)  # TLN # noqa: E501
     assert price != ZERO_PRICE
 
 
@@ -269,7 +270,7 @@ def test_set_oracles_order(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=unused-argument
+def test_find_usd_price_all_rate_limited_in_last(inquirer):
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
@@ -626,7 +627,7 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
         wraps=inquirer._query_oracle_instances,
     ) as oracle_query:
         inquirer.find_usd_price(wsteth)
-        assert (wsteth_op, A_USD) in inquirer._cached_current_price
+        assert (wsteth_op, A_USD) in inquirer._cached_current_price.cache
         inquirer.find_usd_price(wsteth_op)
 
     assert oracle_query.call_count == 1

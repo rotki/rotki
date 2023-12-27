@@ -33,6 +33,9 @@ class LRUCacheWithRemove(Generic[KT, VT]):
         """Delete all entries in the cache"""
         self.cache.clear()
 
+    def __contains__(self, key: KT) -> bool:
+        return key in self.cache
+
 
 class DefaultLRUCache(LRUCacheWithRemove[KT, VT]):
     """LRU cache that behaves like defaultdict when accessing objects"""

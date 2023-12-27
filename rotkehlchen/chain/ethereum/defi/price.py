@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -115,7 +116,7 @@ def handle_underlying_price_yearn_vault(
         asset_price: Price,
 ) -> FVal:
     price_per_full_share = contract.call(ethereum, 'getPricePerFullShare')
-    usd_value = FVal(asset_price * price_per_full_share) / 10 ** 18
+    usd_value = FVal(asset_price * price_per_full_share) / 10 ** DEFAULT_TOKEN_DECIMALS
     return usd_value
 
 
@@ -130,7 +131,7 @@ def handle_underlying_price_harvest_vault(
         method_name='getPricePerFullShare',
         arguments=[],
     )
-    usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** token.decimals_or_default()  # noqa: E501
+    usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** token.get_decimals()
     return usd_value
 
 
@@ -180,15 +181,15 @@ def handle_defi_price_query(
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token == A_CRVP_DAIUSDCTTUSD:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_CRV_YPAX:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x06364f10B501e868329afBc005b3492902d6C763')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x06364f10B501e868329afBc005b3492902d6C763')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_CRV_RENWBTC:
         assert underlying_asset_price
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
             contract=ethereum.contracts.contract(string_to_evm_address('0x93054188d876f558f4a66B2EF1d97d16eDf0895B')),
-            div_decimals=token.decimals_or_default(),
+            div_decimals=token.get_decimals(),
             asset_price=underlying_asset_price,
         )
     elif token == A_CRVP_RENWSBTC:
@@ -196,20 +197,20 @@ def handle_defi_price_query(
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
             contract=ethereum.contracts.contract(string_to_evm_address('0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714')),
-            div_decimals=token.decimals_or_default(),
+            div_decimals=token.get_decimals(),
             asset_price=underlying_asset_price,
         )
     elif token == A_CRV_3CRVSUSD:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xA5407eAE9Ba41422680e2e00537571bcC53efBfD')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xA5407eAE9Ba41422680e2e00537571bcC53efBfD')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_CRV_3CRV:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7')), token.get_decimals(), ONE)  # noqa: E501
     # a3CRV: Comparing address since constant won't be found if user has not updated their DB
     elif token.evm_address == '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900':
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_CRV_GUSD:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x4f062658EaAF2C1ccf8C8e36D6824CDf41167956')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x4f062658EaAF2C1ccf8C8e36D6824CDf41167956')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_CRVP_DAIUSDCTBUSD:
-        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27')), token.decimals_or_default(), ONE)  # noqa: E501
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract(string_to_evm_address('0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27')), token.get_decimals(), ONE)  # noqa: E501
     elif token == A_YV1_ALINK:
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
