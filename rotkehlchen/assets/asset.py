@@ -563,11 +563,8 @@ class EvmToken(CryptoAsset):
             'underlying_tokens': underlying_tokens,
         }
 
-    def decimals_or_default(self) -> int:
-        if self.decimals is None:
-            return 18
-
-        return self.decimals
+    def get_decimals(self) -> int:
+        return 18 if self.decimals is None else self.decimals
 
 
 class Nft(EvmToken):

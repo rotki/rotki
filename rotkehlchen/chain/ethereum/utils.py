@@ -101,7 +101,7 @@ def get_decimals(asset: CryptoAsset) -> int:
     except UnknownAsset as e:
         raise UnsupportedAsset(asset.identifier) from e
 
-    return token.decimals_or_default()
+    return token.get_decimals()
 
 
 def asset_normalized_value(amount: int, asset: CryptoAsset) -> FVal:

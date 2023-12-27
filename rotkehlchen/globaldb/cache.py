@@ -69,8 +69,8 @@ def globaldb_delete_general_cache_values(
         values: tuple[str] | None = None,
 ) -> None:
     """
-    Delete an entry from the general_cache. If any value is provided the rows fow which
-    the key matches the and the value is in the list of values are deleted.
+    Delete an entry from the general_cache. If a list of values is provided it deletes
+    the rows that contain any of the provided values and have the provided key.
     """
     query = 'DELETE FROM general_cache WHERE key=?'
     bindings = [compute_cache_key(key_parts)]

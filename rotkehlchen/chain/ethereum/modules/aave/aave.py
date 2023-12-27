@@ -284,7 +284,7 @@ class Aave(EthereumModule):
                 method_name=method,
                 arguments=[user_address],
             )
-            unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals_or_default())))  # noqa: E501
+            unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.get_decimals())))  # noqa: E501
             usd_price = Inquirer().find_usd_price(atoken)
             total_earned_atokens[atoken] += Balance(
                 amount=unpaid_interest,

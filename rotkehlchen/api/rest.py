@@ -4672,7 +4672,7 @@ class RestAPI:
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def remove_from_spam_assets_false_positives(self, token: EvmToken) -> Response:
-        """Delete a spam assets from the list of whitelisted assets"""
+        """Delete a spam asset from the list of whitelisted assets"""
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             globaldb_delete_general_cache_values(
                 write_cursor=write_cursor,

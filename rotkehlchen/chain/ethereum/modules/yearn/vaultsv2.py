@@ -128,7 +128,7 @@ class YearnVaultsV2(EthereumModule):
                             pps_cache[vault_address] = pps
 
                     underlying_balance = Balance(
-                        amount=balance.amount * FVal(pps * 10**-token.decimals_or_default()),
+                        amount=balance.amount * FVal(pps * 10**-token.get_decimals()),
                         usd_value=balance.usd_value,
                     )
                     result[token.evm_address] = YearnVaultBalance(

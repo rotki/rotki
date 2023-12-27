@@ -95,6 +95,7 @@ from rotkehlchen.types import (
     ProtocolsWithPriceLogic,
     Timestamp,
 )
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import request_get_dict
@@ -242,7 +243,7 @@ class CachedPriceEntry(NamedTuple):
 class Inquirer:
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: dict
-    _cached_current_price: dict[tuple[Asset, Asset], CachedPriceEntry]
+    _cached_current_price: LRUCacheWithRemove[tuple[Asset, Asset], CachedPriceEntry]
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
@@ -288,7 +289,7 @@ class Inquirer:
         Inquirer._coingecko = coingecko
         Inquirer._defillama = defillama
         Inquirer._manualcurrent = manualcurrent
-        Inquirer._cached_current_price = {}
+        Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
         Inquirer._evm_managers = {}
         Inquirer._msg_aggregator = msg_aggregator
         Inquirer.special_tokens = {
@@ -357,7 +358,7 @@ class Inquirer:
             cache_key: tuple[Asset, Asset],
             match_main_currency: bool,
     ) -> CachedPriceEntry | None:
-        cache = Inquirer()._cached_current_price.get(cache_key, None)
+        cache = Inquirer._cached_current_price.get(cache_key)
         if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS or cache.used_main_currency != match_main_currency:  # noqa: E501
             return None
 
@@ -371,13 +372,13 @@ class Inquirer:
             assets_to_invalidate.add(asset_a)
             assets_to_invalidate.add(asset_b)
 
-        for asset_pair in list(Inquirer()._cached_current_price):
+        for asset_pair in list(Inquirer._cached_current_price.cache):  # create a list to avoid mutating the map while iterating it  # noqa: E501
             if asset_pair[0] in assets_to_invalidate or asset_pair[1] in assets_to_invalidate:
-                Inquirer()._cached_current_price.pop(asset_pair, None)
+                Inquirer._cached_current_price.remove(asset_pair)
 
     @staticmethod
     def remove_cached_current_price_entry(cache_key: tuple[Asset, Asset]) -> None:
-        Inquirer()._cached_current_price.pop(cache_key, None)
+        Inquirer._cached_current_price.remove(cache_key)
 
     @staticmethod
     def set_oracles_order(oracles: Sequence[CurrentPriceOracle]) -> None:
@@ -399,7 +400,7 @@ class Inquirer:
         """Save cached price for the key provided and all the assets in the same collection"""
         related_assets = GlobalDBHandler().get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
-            Inquirer._cached_current_price[(related_asset, cache_key[1])] = cached_price
+            Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
     @staticmethod
     def _query_oracle_instances(
@@ -871,7 +872,7 @@ class Inquirer:
         # Calculate weight of each asset as the proportion of tokens value
         weights = (data[x + 1] * prices[x] / total_assets_price for x in range(len(tokens)))
         assets_price = FVal(sum(map(operator.mul, weights, prices)))
-        return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals_or_default())
+        return (assets_price * FVal(data[0])) / (10 ** lp_token.get_decimals())
 
     def find_yearn_price(
             self,
@@ -947,8 +948,7 @@ class Inquirer:
         except (RemoteError, BlockchainQueryError) as e:
             log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {e!s}')
         else:
-            decimals = token.decimals if token.decimals is not None else 18
-            return Price(price_per_share * underlying_token_price / 10 ** decimals)
+            return Price(price_per_share * underlying_token_price / 10 ** token.get_decimals())
 
         return None
 
