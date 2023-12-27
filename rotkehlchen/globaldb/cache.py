@@ -55,13 +55,31 @@ def globaldb_set_general_cache_values(
 ) -> None:
     """Function to update general cache in globaldb. Inserts the value paired with the cache key.
     If any entry exists, overwrites it. The timestamp is always the current time."""
-    timestamp = ts_now()
     globaldb_set_general_cache_values_at_ts(
         write_cursor=write_cursor,
         key_parts=key_parts,
         values=values,
-        timestamp=timestamp,
+        timestamp=ts_now(),
     )
+
+
+def globaldb_delete_general_cache_values(
+        write_cursor: DBCursor,
+        key_parts: Iterable[str | GeneralCacheType],
+        values: tuple[str] | None = None,
+) -> None:
+    """
+    Delete an entry from the general_cache. If any value is provided the rows fow which
+    the key matches the and the value is in the list of values are deleted.
+    """
+    query = 'DELETE FROM general_cache WHERE key=?'
+    bindings = [compute_cache_key(key_parts)]
+
+    if values is not None:
+        query += f' AND value IN ({",".join("?" * len(values))})'
+        bindings.extend(values)
+
+    write_cursor.execute(query, bindings)
 
 
 def globaldb_get_general_cache_values(
@@ -70,8 +88,7 @@ def globaldb_get_general_cache_values(
 ) -> list[str]:
     """Function that reads from the general cache table.
     It returns all the values that are paired with the given key."""
-    cache_key = compute_cache_key(key_parts)
-    cursor.execute('SELECT value FROM general_cache WHERE key=?', (cache_key,))
+    cursor.execute('SELECT value FROM general_cache WHERE key=?', (compute_cache_key(key_parts),))
     return [entry[0] for entry in cursor]
 
 

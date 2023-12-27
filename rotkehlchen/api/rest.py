@@ -178,6 +178,10 @@ from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
+from rotkehlchen.globaldb.cache import (
+    globaldb_delete_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.events.structures.base import (
@@ -210,6 +214,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_LOCATIONS,
+    SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -4635,3 +4640,44 @@ class RestAPI:
             'entries_limit': -1,
         }
         return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)
+
+    def add_to_spam_assets_false_positive(self, token: EvmToken) -> Response:
+        """
+        Add spam asset to the list of false positives. It also removes the SPAM value
+        in the protocol field of the token and removes the token from the ignore list.
+        We also clean the cache in AssetResolver.
+        """
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.write_ctx() as write_cursor:
+            globaldb_set_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=(token.identifier,),
+            )
+
+            if token.protocol == SPAM_PROTOCOL:  # remove the spam protocol if it was set
+                write_cursor.execute(
+                    'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+                    (None, token.identifier),
+                )
+                object.__setattr__(token, 'protocol', None)
+                AssetResolver.clean_memory_cache(identifier=token.identifier)
+
+        with self.rotkehlchen.data.db.user_write() as write_cursor:  # remove it from the ignored assets  # noqa: E501
+            self.rotkehlchen.data.db.remove_from_ignored_assets(
+                write_cursor=write_cursor,
+                asset=token,
+            )
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def remove_from_spam_assets_false_positives(self, token: EvmToken) -> Response:
+        """Delete a spam assets from the list of whitelisted assets"""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_delete_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=(token.identifier,),
+            )
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

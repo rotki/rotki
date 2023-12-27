@@ -18,11 +18,12 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CHAINID_TO_SUPPORTED_BLOCKCHAIN, SPAM_PROTOCOL, ChainID
+from rotkehlchen.types import CHAINID_TO_SUPPORTED_BLOCKCHAIN, SPAM_PROTOCOL, CacheType, ChainID
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -138,11 +139,21 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
     ):
         cursor.execute('SELECT DISTINCT asset FROM history_events')
         assets = [row[0] for row in cursor]
+        # query assets marked as false positive
+        false_positive_ids = set(globaldb_get_general_cache_values(
+            cursor=globaldb_cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+        ))
+
         globaldb_cursor.execute(  # take only assets that are in the global DB
             f'SELECT identifier FROM assets WHERE identifier IN ({", ".join(["?"] * len(assets))}) AND type=?',  # noqa: E501
             [*assets, AssetType.EVM_TOKEN.serialize_for_db()],
         )
+
         for (asset_id,) in globaldb_cursor:
+            if asset_id in false_positive_ids:
+                continue
+
             asset = Asset(asset_id)
             events: list['EvmEvent'] = history_db.get_history_events(
                 cursor=cursor,

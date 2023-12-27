@@ -94,6 +94,7 @@ from rotkehlchen.api.v1.schemas import (
     ExportHistoryEventSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    FalsePositveSpamTokenSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
     HistoryEventSchema,
@@ -163,7 +164,13 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CustomAsset
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CustomAsset,
+    EvmToken,
+)
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
@@ -3104,3 +3111,18 @@ class AccountingRulesConflictsResource(BaseMethodView):
             conflicts=conflicts,
             solve_all_using=solve_all_using,
         )
+
+
+class FalsePositiveSpamTokenResource(BaseMethodView):
+
+    post_delete_schema = FalsePositveSpamTokenSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_query')
+    def post(self, token: EvmToken) -> Response:
+        return self.rest_api.add_to_spam_assets_false_positive(token=token)
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_query')
+    def delete(self, token: EvmToken) -> Response:
+        return self.rest_api.remove_from_spam_assets_false_positives(token=token)
