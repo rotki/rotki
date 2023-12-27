@@ -5,9 +5,9 @@ from typing import Literal, get_args
 
 import pytest
 import requests
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
-
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
@@ -78,6 +78,25 @@ def _setup_conflict_tests(
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT local_id FROM unresolved_remote_conflicts')
         assert cursor.fetchall() == [(1,), (2,)]
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_query_rules(rotkehlchen_api_server):
+    """Test that querying accounting rules works fine"""
+    response = requests.post(
+        api_url_for(  # test matching counterparty None
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'event_types': ['deposit'],
+            'event_subtypes': ['deposit_asset'],
+            'counterparties': [None],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 1
+    assert result['entries_total'] != 0
 
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])

@@ -12611,7 +12611,7 @@ Managing custom accounting rules
 
   :reqjsonarr optional[array[string]] event_types: List of possible event types to use while filtering.
   :reqjsonarr optional[array[string]] event_subtypes: List of possible event subtypes to use while filtering.
-  :reqjsonarr optional[array[string]] counterparties: List of possible counterparties to use while filtering.
+  :reqjsonarr optional[array[string]] counterparties: List of possible counterparties to use while filtering. Instead of a string a null value can also be given to mean counterparty being None.
 
 
   **Example Response**

@@ -1743,7 +1743,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             offset: int | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
-            counterparties: list[str] | None = None,
+            counterparties: list[str | None] | None = None,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
@@ -1770,12 +1770,23 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                 operator='IN',
             ))
         if counterparties is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='counterparty',
-                values=counterparties,
-                operator='IN',
-            ))
+            non_null_counterparties = []
+            has_null = False
+            for counterparty in counterparties:
+                if counterparty is None:
+                    has_null = True
+                    continue
+                non_null_counterparties.append(counterparty)
+
+            if has_null:
+                non_null_counterparties.append('NONE')
+            if len(non_null_counterparties) != 0:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='counterparty',
+                    values=non_null_counterparties,
+                    operator='IN',
+                ))
 
         filter_query.filters = filters
         return filter_query
