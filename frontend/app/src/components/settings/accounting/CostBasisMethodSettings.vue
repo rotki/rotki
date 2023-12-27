@@ -17,26 +17,20 @@ const { costBasisMethodData } = useCostBasisMethod();
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <VListItem v-bind="attrs" v-on="on">
-        <VListItemContent>
-          <VListItemTitle :class="$style.title">
-            {{ item.identifier }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{ item.label }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
+      <ListItem
+        no-padding
+        no-hover
+        v-bind="attrs"
+        :subtitle="item.label"
+        v-on="on"
+      >
+        <template #title>
+          <span class="text-uppercase">{{ item.identifier }}</span>
+        </template>
+      </ListItem>
     </template>
     <template #selection="{ item }">
-      <span :class="$style.title">{{ item.identifier }}</span>
+      <span class="font-medium text-uppercase">{{ item.identifier }}</span>
     </template>
   </VSelect>
 </template>
-
-<style module lang="scss">
-.title {
-  text-transform: uppercase;
-  font-weight: 500;
-}
-</style>

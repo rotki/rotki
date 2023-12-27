@@ -41,26 +41,25 @@ const calculateFontSize = (symbol: string) => {
       @change="update($event ? $event.tickerSymbol : $event)"
     >
       <template #item="{ item, attrs, on }">
-        <VListItem
+        <ListItem
           :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
+          no-hover
+          no-padding
+          size="lg"
           v-bind="attrs"
+          :title="item.name"
+          :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
           v-on="on"
         >
-          <VListItemAvatar
-            class="general-settings__currency-list primary--text font-bold"
-            :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
-          >
-            {{ item.unicodeSymbol }}
-          </VListItemAvatar>
-          <VListItemContent>
-            <VListItemTitle>
-              {{ item.name }}
-            </VListItemTitle>
-            <VListItemSubtitle>
-              {{ t('general_settings.amount.labels.main_currency_subtitle') }}
-            </VListItemSubtitle>
-          </VListItemContent>
-        </VListItem>
+          <template #avatar>
+            <div
+              class="font-bold text-rui-primary"
+              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+            >
+              {{ item.unicodeSymbol }}
+            </div>
+          </template>
+        </ListItem>
       </template>
     </VSelect>
   </SettingsOption>

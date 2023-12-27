@@ -132,18 +132,20 @@ watch(tags, () => {
       @input="input($event)"
     >
       <template #no-data>
-        <VListItem>
-          <span class="subheading">{{ t('common.actions.create') }}</span>
-          <RuiChip
-            class="ml-2"
-            :bg-color="newTagBackground"
-            :text-color="newTagForeground"
-            tile
-            size="sm"
-          >
-            {{ search }}
-          </RuiChip>
-        </VListItem>
+        <ListItem class="p-2">
+          <template #title>
+            <span>{{ t('common.actions.create') }}</span>
+            <RuiChip
+              class="ml-3"
+              :bg-color="newTagBackground"
+              :text-color="newTagForeground"
+              tile
+              size="sm"
+            >
+              {{ search }}
+            </RuiChip>
+          </template>
+        </ListItem>
       </template>
       <template #selection="{ item, select }">
         <RuiChip
@@ -161,9 +163,7 @@ watch(tags, () => {
       </template>
       <template #item="{ item }">
         <template v-if="typeof item !== 'object'">
-          <VListItemContent>
-            {{ item }}
-          </VListItemContent>
+          {{ item }}
         </template>
         <template v-else>
           <div>

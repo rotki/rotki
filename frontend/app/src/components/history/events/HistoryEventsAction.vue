@@ -44,52 +44,49 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
           <RuiIcon name="more-2-fill" size="20" />
         </RuiButton>
       </template>
-      <VList>
-        <VListItem link class="gap-4" @click="addEvent(event)">
-          <RuiIcon class="text-rui-text-secondary" name="add-line" />
-          <VListItemContent>
-            {{ t('transactions.actions.add_event_here') }}
-          </VListItemContent>
-        </VListItem>
-        <VListItem link class="gap-4" @click="toggleIgnore(event)">
-          <RuiIcon
-            class="text-rui-text-secondary"
-            :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'"
-          />
-          <VListItemContent>
-            {{
-              event.ignoredInAccounting
-                ? t('transactions.unignore')
-                : t('transactions.ignore')
-            }}
-          </VListItemContent>
-        </VListItem>
+      <div class="py-2">
+        <RuiButton variant="list" @click="addEvent(event)">
+          <template #prepend>
+            <RuiIcon class="text-rui-text-secondary" name="add-line" />
+          </template>
+          {{ t('transactions.actions.add_event_here') }}
+        </RuiButton>
+        <RuiButton variant="list" @click="toggleIgnore(event)">
+          <template #prepend>
+            <RuiIcon
+              class="text-rui-text-secondary"
+              :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'"
+            />
+          </template>
+          {{
+            event.ignoredInAccounting
+              ? t('transactions.unignore')
+              : t('transactions.ignore')
+          }}
+        </RuiButton>
         <template v-if="evmEvent">
-          <VListItem
-            link
+          <RuiButton
+            variant="list"
             :disabled="loading"
-            class="gap-4"
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
-            <RuiIcon class="text-rui-text-secondary" name="restart-line" />
-            <VListItemContent>
-              {{ t('transactions.actions.redecode_events') }}
-            </VListItemContent>
-          </VListItem>
-          <VListItem
-            link
+            <template #prepend>
+              <RuiIcon class="text-rui-text-secondary" name="restart-line" />
+            </template>
+            {{ t('transactions.actions.redecode_events') }}
+          </RuiButton>
+          <RuiButton
+            variant="list"
             :disabled="loading"
-            class="gap-4"
             @click="resetEvent(evmEvent)"
           >
-            <RuiIcon class="text-rui-text-secondary" name="file-edit-line" />
-
-            <VListItemContent>
-              {{ t('transactions.actions.reset_customized_events') }}
-            </VListItemContent>
-          </VListItem>
+            <template #prepend>
+              <RuiIcon class="text-rui-text-secondary" name="file-edit-line" />
+            </template>
+            {{ t('transactions.actions.reset_customized_events') }}
+          </RuiButton>
         </template>
-      </VList>
+      </div>
     </VMenu>
   </div>
 </template>

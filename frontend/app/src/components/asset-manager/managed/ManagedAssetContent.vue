@@ -206,7 +206,7 @@ watch(identifier, async assetId => {
             <RuiIcon name="more-2-fill" />
           </RuiButton>
         </template>
-        <VList>
+        <div class="py-2">
           <RestoreAssetDbButton dropdown />
           <RuiTooltip
             :open-delay="400"
@@ -224,7 +224,7 @@ watch(identifier, async assetId => {
             </template>
             {{ t('asset_management.merge_assets_tooltip') }}
           </RuiTooltip>
-        </VList>
+        </div>
       </VMenu>
     </template>
 

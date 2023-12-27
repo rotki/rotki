@@ -35,20 +35,18 @@ const { t } = useI18n();
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <VListItem v-bind="attrs" v-on="on">
-        <VListItemContent>
-          <VListItemTitle>
-            {{ item.value }}
-          </VListItemTitle>
-          <VListItemSubtitle>
-            {{
-              t('general_settings.date_input_format_hint', {
-                format: dateInputFormatExample(item.value)
-              })
-            }}
-          </VListItemSubtitle>
-        </VListItemContent>
-      </VListItem>
+      <ListItem
+        no-hover
+        no-padding
+        v-bind="attrs"
+        :title="item.value"
+        :subtitle="
+          t('general_settings.date_input_format_hint', {
+            format: dateInputFormatExample(item.value)
+          })
+        "
+        v-on="on"
+      />
     </template>
   </VSelect>
 </template>

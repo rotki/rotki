@@ -136,7 +136,7 @@ const refreshClick = async () => {
 
 <template>
   <RuiCard
-    :id="`blockchain-balances-${blockchain}`"
+    :id="`blockchain-balances-${loopring ? 'LRC' : blockchain}`"
     data-cy="account-balances"
     :data-location="blockchain"
   >

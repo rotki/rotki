@@ -166,13 +166,14 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
                 <RuiIcon size="20" name="more-2-fill" />
               </RuiButton>
             </template>
-            <VList>
-              <VListItem link @click="ignoreAsset(item.asset)">
-                <VListItemTitle>
+            <div class="py-2">
+              <RuiButton variant="list" @click="ignoreAsset(item.asset)">
+                <template #prepend>
+                  <RuiIcon name="eye-off-line" />
                   {{ t('assets.ignore') }}
-                </VListItemTitle>
-              </VListItem>
-            </VList>
+                </template>
+              </RuiButton>
+            </div>
           </VMenu>
 
           <RuiTooltip v-if="isIgnored(item.asset)" :open-delay="400">

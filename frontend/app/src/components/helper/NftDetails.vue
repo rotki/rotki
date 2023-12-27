@@ -134,7 +134,7 @@ const fallbackData = computed(() => {
         >
           <template #activator>
             <div
-              class="my-2 bg-rui-grey-200 rounded"
+              class="my-2 bg-rui-grey-200 rounded flex items-center justify-center"
               :class="css.preview"
               :style="styled"
               @click="!renderImage ? showAllowDomainConfirmation() : null"
@@ -150,8 +150,7 @@ const fallbackData = computed(() => {
                   v-else
                   class="rounded overflow-hidden"
                   :src="imageUrl"
-                  width="100%"
-                  height="100%"
+                  :size="size"
                   contain
                 />
               </template>

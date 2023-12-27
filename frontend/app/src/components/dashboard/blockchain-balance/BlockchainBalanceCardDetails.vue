@@ -16,43 +16,43 @@ const css = useCssModule();
 </script>
 
 <template>
-  <VListItem
-    v-if="details"
-    :id="`${child.protocol}_box`"
-    :key="child.protocol"
-    class="blockchain-balance-box__item sub-item min-h-[2.25rem] group"
-    :to="details.detailPath"
-    :class="css['sub-item']"
-  >
-    <VListItemAvatar
-      tile
-      class="grayscale group-hover:grayscale-0 m-0 mr-1 ml-10"
+  <RouterLink v-if="details" :to="details.detailPath || ''">
+    <ListItem
+      :id="`${child.protocol}_box`"
+      :key="child.protocol"
+      class="blockchain-balance-box__item group py-1"
+      :class="css['sub-item']"
     >
-      <AdaptiveWrapper>
-        <AppImage :src="details.icon" width="24px" height="24px" />
-      </AdaptiveWrapper>
-    </VListItemAvatar>
-    <VListItemContent>
-      <div class="flex flex-wrap justify-between gap-2">
-        <span>
-          {{ details.label }}
-        </span>
+      <template #avatar>
+        <div class="grayscale group-hover:grayscale-0">
+          <AdaptiveWrapper>
+            <AppImage :src="details.icon" width="24px" height="24px" />
+          </AdaptiveWrapper>
+        </div>
+      </template>
+      <div class="flex flex-wrap justify-between gap-1 text-rui-text">
+        {{ details.label }}
         <AmountDisplay
           show-currency="symbol"
           fiat-currency="USD"
           :value="child.usdValue"
           :loading="child.loading"
+          class="font-medium"
         />
       </div>
-    </VListItemContent>
-  </VListItem>
+    </ListItem>
+  </RouterLink>
 </template>
 
 <style module lang="scss">
 .sub-item {
+  @apply relative;
+  @apply pl-14 #{!important};
+
   &:after {
     @apply absolute opacity-50 border-rui-text-secondary border-b border-l;
-    @apply w-4 min-h-[1rem] h-[40%] top-[10%] left-[2.2rem];
+    @apply w-4 min-h-[1rem] h-[40%] top-[15%] left-8;
+    content: '';
   }
 }
 </style>

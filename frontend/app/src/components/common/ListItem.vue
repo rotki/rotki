@@ -26,22 +26,28 @@ const avatarSizeClasses = computed(() => {
   }
   return 'w-8 h-8';
 });
+
+const slots = useSlots();
+
+const css = useCssModule();
 </script>
 
 <template>
   <div
-    class="flex items-center py-2 gap-2 cursor-pointer"
-    :class="{
-      'px-4': !noPadding,
-      'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover
-    }"
+    :class="[
+      css.wrapper,
+      {
+        [css['with-padding']]: !noPadding,
+        'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover
+      }
+    ]"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
     <div
-      v-if="$slots.avatar"
+      v-if="slots.avatar"
       :class="avatarSizeClasses"
       class="flex items-center justify-center avatar"
     >
@@ -53,25 +59,37 @@ const avatarSizeClasses = computed(() => {
         <RuiSkeletonLoader class="w-16 mb-1 h-3" />
       </template>
       <template v-else>
-        <div
-          class="font-medium text-truncate"
-          :title="title"
-          data-cy="list-title"
-        >
-          <slot name="title">
-            {{ title }}
-          </slot>
-        </div>
-        <div
-          class="text-rui-text-secondary text-caption whitespace-nowrap text-truncate"
-          :title="subtitle"
-          data-cy="subtitle"
-        >
-          <slot name="list-subtitle">
-            {{ subtitle }}
-          </slot>
-        </div>
+        <slot>
+          <div
+            class="font-medium text-truncate"
+            :title="title"
+            data-cy="list-title"
+          >
+            <slot name="title">
+              {{ title }}
+            </slot>
+          </div>
+          <div
+            class="text-rui-text-secondary text-caption whitespace-nowrap text-truncate"
+            :title="subtitle"
+            data-cy="list-subtitle"
+          >
+            <slot name="subtitle">
+              {{ subtitle }}
+            </slot>
+          </div>
+        </slot>
       </template>
     </div>
   </div>
 </template>
+
+<style lang="scss" module>
+.wrapper {
+  @apply flex items-center py-2 gap-2 cursor-pointer;
+
+  &.with-padding {
+    @apply px-4;
+  }
+}
+</style>

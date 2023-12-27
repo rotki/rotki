@@ -45,14 +45,14 @@ const onEditRule = () => {
           <RuiIcon name="more-2-fill" size="20" />
         </RuiButton>
       </template>
-      <VList>
-        <VListItem class="gap-4" link @click="onEditRule()">
-          <RuiIcon class="text-rui-text-secondary" name="pencil-line" />
-          <VListItemContent>
-            {{ t('accounting_settings.rule.edit') }}
-          </VListItemContent>
-        </VListItem>
-      </VList>
+      <div class="py-2">
+        <RuiButton variant="list" @click="onEditRule()">
+          <template #prepend>
+            <RuiIcon class="text-rui-text-secondary" name="pencil-line" />
+          </template>
+          {{ t('accounting_settings.rule.edit') }}
+        </RuiButton>
+      </div>
     </VMenu>
   </div>
 </template>
