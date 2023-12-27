@@ -17,6 +17,7 @@ const { t } = useI18n();
 <template>
   <RuiBadge
     :text="count.toString()"
+    :value="count > 0"
     color="primary"
     placement="top"
     offset-y="14"

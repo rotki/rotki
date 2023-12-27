@@ -11,7 +11,7 @@ import {
   type PoapDelivery
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 
 const ETH = Blockchain.ETH;
@@ -129,14 +129,18 @@ const fetchAirdrops = async () => {
     );
     set(airdrops, Airdrops.parse(result));
   } catch (e: any) {
-    logger.error(e);
-    notify({
-      title: t('actions.defi.airdrops.error.title').toString(),
-      message: t('actions.defi.airdrops.error.description', {
-        error: e.message
-      }).toString(),
-      display: true
-    });
+    if (e instanceof UserCancelledTaskError) {
+      logger.debug(e);
+    } else {
+      logger.error(e);
+      notify({
+        title: t('actions.defi.airdrops.error.title').toString(),
+        message: t('actions.defi.airdrops.error.description', {
+          error: e.message
+        }).toString(),
+        display: true
+      });
+    }
   } finally {
     set(loading, false);
   }
