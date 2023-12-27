@@ -1367,7 +1367,8 @@
     "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
-    "title": "{count} pending task | {count} pending tasks"
+    "title": "{count} εκκρεμής εργασία | {count} εκκρεμείς εργασίες",
+    "cancel_task": "ακύρωση εργασίας"
   },
   "common": {
     "account": "Account",

@@ -1362,7 +1362,8 @@
     "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
-    "title": "{count} pending task | {count} pending tasks"
+    "title": "{count} tarea pendiente | {count} tareas pendientes",
+    "cancel_task": "cancelar tarea"
   },
   "common": {
     "account": "Account",

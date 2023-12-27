@@ -1391,7 +1391,8 @@
     "title": "关闭订单"
   },
   "collapsed_pending_tasks": {
-    "title": "{count} 个待处理任务 | {count} 个待处理任务"
+    "title": "{count} 个待处理任务 | {count} 个待处理任务",
+    "cancel_task": "取消任务"
   },
   "common": {
     "account": "账户",
