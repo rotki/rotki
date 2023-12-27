@@ -467,7 +467,7 @@ class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
     token_kind: EvmTokenKind = field(init=False)
-    decimals: int = field(init=False)
+    decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
     underlying_tokens: list[UnderlyingToken] = field(init=False)
 
@@ -562,6 +562,12 @@ class EvmToken(CryptoAsset):
             'protocol': self.protocol,
             'underlying_tokens': underlying_tokens,
         }
+
+    def decimals_or_default(self) -> int:
+        if self.decimals is None:
+            return 18
+
+        return self.decimals
 
 
 class Nft(EvmToken):
