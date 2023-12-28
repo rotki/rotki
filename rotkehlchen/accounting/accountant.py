@@ -10,7 +10,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.accounting.types import MissingPrice
+from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
@@ -66,8 +66,10 @@ class Accountant:
         self.currently_processing_timestamp = Timestamp(-1)
         self.first_processed_timestamp = Timestamp(-1)
         self.premium = premium
-        self.processable_events_cache: LRUCacheWithRemove[int, bool] = LRUCacheWithRemove(maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
+        # cache to know what events will be processed or not during accounting
+        self.processable_events_cache: LRUCacheWithRemove[int, EventAccountingRuleStatus] = LRUCacheWithRemove(maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
         # map event rules signatures to a list of event identifiers affected by them
+        # used to know which events need to be invalidated when updating a rule
         self.processable_events_cache_signatures: DefaultLRUCache[int, list[int]] = DefaultLRUCache(default_factory=list, maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
 
     def activate_premium_status(self, premium: Premium) -> None:
