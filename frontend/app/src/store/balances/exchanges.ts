@@ -176,9 +176,7 @@ export const useExchangeBalancesStore = defineStore(
         });
         setStatus(Status.LOADED);
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
-        } else {
+        if (!(e instanceof UserCancelledTaskError)) {
           const message = t(
             'actions.balances.exchange_balances.error.message',
             {
@@ -261,9 +259,7 @@ export const useExchangeBalancesStore = defineStore(
         );
         return true;
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
-        } else {
+        if (!(e instanceof UserCancelledTaskError)) {
           notify({
             title: t('actions.balances.exchange_savings_interest.error.title', {
               location

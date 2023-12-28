@@ -59,9 +59,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       );
       set(balances, CompoundBalances.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.defi.compound.error.title'),
           message: t('actions.defi.compound.error.description', {
@@ -101,9 +99,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
 
       set(history, CompoundStats.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.defi.compound_history.error.title'),

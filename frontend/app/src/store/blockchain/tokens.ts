@@ -105,9 +105,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         setState(chain, result);
       }
     } catch (e) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
     }

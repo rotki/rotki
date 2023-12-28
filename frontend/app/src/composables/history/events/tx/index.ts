@@ -65,12 +65,10 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else if (e instanceof BackendCancelledTaskError) {
+      if (e instanceof BackendCancelledTaskError) {
         logger.debug(e);
         removeQueryStatus(account);
-      } else {
+      } else if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.transactions.error.title'),
           message: t('actions.transactions.error.description', {
@@ -192,9 +190,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.online_events.error.title'),

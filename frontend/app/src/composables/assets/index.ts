@@ -43,9 +43,7 @@ export const useAssets = () => {
         versions: result
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const title = t('actions.assets.versions.task.title').toString();
         const description = t('actions.assets.versions.error.description', {
           message: e.message
@@ -87,9 +85,7 @@ export const useAssets = () => {
         conflicts: result
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const title = t('actions.assets.update.task.title').toString();
         const description = t('actions.assets.update.error.description', {
           message: e.message
@@ -141,9 +137,7 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
 
@@ -194,9 +188,7 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
 

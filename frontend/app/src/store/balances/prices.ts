@@ -60,7 +60,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         });
       } catch (e: any) {
         if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
+          // pass
         }
       }
     };
@@ -120,9 +120,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
       set(exchangeRates, ExchangeRates.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.balances.exchange_rates.error.title').toString(),
           message: t('actions.balances.exchange_rates.error.message', {
@@ -174,9 +172,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset][timestamp];
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
       return One.negated();
@@ -223,7 +219,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       };
     } catch (e: any) {
       if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
+        // pass
       }
       return {
         success: false,

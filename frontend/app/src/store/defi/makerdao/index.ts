@@ -78,9 +78,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       );
       set(dsrBalances, DSRBalances.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         const message = t('actions.defi.dsr_balances.error.description', {
           error: e.message
@@ -123,9 +121,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(dsrHistory, DSRHistory.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const message = t('actions.defi.dsr_history.error.description', {
           error: e.message
         });
@@ -169,9 +165,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         convertMakerDAOVaults(ApiMakerDAOVaults.parse(result))
       );
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         const message = t('actions.defi.makerdao_vaults.error.description', {
           error: e.message
@@ -213,9 +207,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         const message = t(
           'actions.defi.makerdao_vault_details.error.description',

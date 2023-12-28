@@ -73,10 +73,7 @@ export const useBlockchainAccounts = () => {
       );
 
       return result.length > 0 ? result[0] : '';
-    } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      }
+    } catch {
       return '';
     }
   };
@@ -111,10 +108,7 @@ export const useBlockchainAccounts = () => {
       );
 
       return snakeCaseTransformer(result);
-    } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      }
+    } catch {
       return {};
     }
   };
@@ -153,9 +147,7 @@ export const useBlockchainAccounts = () => {
         }
       );
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         const title = t(
           'actions.balances.blockchain_account_removal.error.title',

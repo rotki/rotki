@@ -53,9 +53,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       set(details, Eth2Details.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.staking.eth2.error.title'),
@@ -115,9 +113,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     } catch (e: any) {
       setStatus(Status.NONE);
 
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.eth2_staking_stats.error.title').toString(),
           message: t('actions.eth2_staking_stats.error.message', {

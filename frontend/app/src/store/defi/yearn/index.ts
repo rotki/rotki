@@ -194,9 +194,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2Balances, balances);
       }
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.defi.yearn_vaults.error.title', {
             version
@@ -262,9 +260,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2History, data);
       }
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.defi.yearn_vaults_history.error.title', {
             version: payload.version

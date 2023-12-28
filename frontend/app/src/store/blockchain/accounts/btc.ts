@@ -39,9 +39,7 @@ export const useBtcAccountsStore = defineStore(
           blockchain: payload.blockchain
         });
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
-        } else {
+        if (!(e instanceof UserCancelledTaskError)) {
           logger.error(e);
           const title = t('actions.balances.xpub_removal.error.title');
           const description = t(

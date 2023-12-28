@@ -84,7 +84,7 @@ export const useAddressesNamesStore = defineStore(
           });
         } catch (e: any) {
           if (e instanceof UserCancelledTaskError) {
-            logger.debug(e);
+            // pass
           }
         }
         resetAddressNamesData(payload);

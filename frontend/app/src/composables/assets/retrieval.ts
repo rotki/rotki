@@ -154,9 +154,7 @@ export const useAssetInfoRetrieval = () => {
       );
       return result;
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.assets.erc20.error.title', payload),
           message: t('actions.assets.erc20.error.description', {

@@ -64,7 +64,6 @@ export const useNonFungibleBalancesStore = defineStore(
         return true;
       } catch (e: any) {
         if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
           return false;
         }
         notify({

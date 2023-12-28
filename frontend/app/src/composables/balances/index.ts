@@ -101,9 +101,7 @@ export const useBalances = createSharedComposable(() => {
         title: t('actions.balances.all_balances.task.title')
       });
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.balances.all_balances.error.title'),
           message: t('actions.balances.all_balances.error.message', {

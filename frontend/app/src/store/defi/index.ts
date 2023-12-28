@@ -133,9 +133,7 @@ export const useDefiStore = defineStore('defi', () => {
 
       set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const title = t('actions.defi.balances.error.title');
         const message = t('actions.defi.balances.error.description', {
           error: e.message

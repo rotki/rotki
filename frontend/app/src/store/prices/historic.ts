@@ -52,7 +52,7 @@ export const useHistoricCachePriceStore = defineStore(
         data = result;
       } catch (e: any) {
         if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
+          // pass
         }
       }
 

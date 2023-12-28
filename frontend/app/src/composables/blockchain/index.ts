@@ -304,9 +304,7 @@ export const useBlockchains = () => {
 
       return result;
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.detect_evm_accounts.error.title').toString(),

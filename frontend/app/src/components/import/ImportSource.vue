@@ -84,9 +84,7 @@ const uploadPackaged = async (file: string) => {
       set(uploaded, true);
     }
   } catch (e: any) {
-    if (e instanceof UserCancelledTaskError) {
-      logger.debug(e);
-    } else {
+    if (!(e instanceof UserCancelledTaskError)) {
       set(errorMessage, e.message);
     }
   }
@@ -122,9 +120,7 @@ const uploadFile = async () => {
           set(uploaded, true);
         }
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
-        } else {
+        if (!(e instanceof UserCancelledTaskError)) {
           set(errorMessage, e.message);
         }
       }

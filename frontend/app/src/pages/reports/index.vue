@@ -170,7 +170,6 @@ const importData = async () => {
     success = result;
   } catch (e: any) {
     if (e instanceof UserCancelledTaskError) {
-      logger.debug(e);
       return fetchReports();
     }
     message = e.message;

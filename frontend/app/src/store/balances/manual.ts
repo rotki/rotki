@@ -170,9 +170,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       set(manualBalancesData, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.balances.manual_balances.error.title'),
@@ -205,9 +203,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
 
@@ -241,9 +237,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
       }
 

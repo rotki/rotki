@@ -36,9 +36,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
     set(state, task.parser ? task.parser(result) : result);
   } catch (e: any) {
-    if (e instanceof UserCancelledTaskError) {
-      logger.debug(e);
-    } else {
+    if (!(e instanceof UserCancelledTaskError)) {
       logger.error(`action failure for task ${TaskType[task.type]}:`, e);
       const { notify } = useNotificationsStore();
       notify({

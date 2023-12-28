@@ -251,9 +251,7 @@ export const useReportsStore = defineStore('reports', () => {
       }
       return result;
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         set(reportError, {
           error: e.message,
           message: t('actions.reports.generate.error.description').toString()
@@ -307,9 +305,7 @@ export const useReportsStore = defineStore('reports', () => {
 
       return result;
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         set(reportError, {
           error: e.message,
           message: t('actions.reports.generate.error.description').toString()

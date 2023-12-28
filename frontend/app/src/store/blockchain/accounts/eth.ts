@@ -94,9 +94,7 @@ export const useEthAccountsStore = defineStore(
           message: ''
         };
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
-          logger.debug(e);
-        } else {
+        if (!(e instanceof UserCancelledTaskError)) {
           logger.error(e);
         }
         let message = e.message;

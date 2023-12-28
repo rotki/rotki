@@ -97,9 +97,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       set(loopring, AccountAssetBalances.parse(result));
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.balances.loopring.error.title'),
           message: t('actions.balances.loopring.error.description', {

@@ -191,15 +191,12 @@ export const useTaskStore = defineStore('tasks', () => {
             let errorMessage: string;
             if (message) {
               if (message === USER_CANCELLED_TASK) {
+                let msg = 'Request cancelled';
                 if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
-                  reject(
-                    new UserCancelledTaskError(
-                      `Request cancelled ::dev_only_msg_part:: task_id: ${id}, task_type: ${TaskType[type]}`
-                    )
-                  );
-                } else {
-                  reject(new UserCancelledTaskError('Request cancelled'));
+                  msg += ` ::dev_only_msg_part:: task_id: ${id}, task_type: ${TaskType[type]}`;
                 }
+                logger.debug(msg);
+                reject(new UserCancelledTaskError(msg));
                 return;
               }
               errorMessage = message;

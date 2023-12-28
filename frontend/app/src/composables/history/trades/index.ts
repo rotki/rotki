@@ -63,9 +63,7 @@ export const useTrades = () => {
       );
       return true;
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.trades.error.title', {
             exchange

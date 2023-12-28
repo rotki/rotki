@@ -52,9 +52,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       );
       set(unDecodedEventsBreakdown, snakeCaseTransformer(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const description = t(
           'actions.history.fetch_undecoded_events.error.message',
           {
@@ -109,9 +107,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       await awaitTask(taskId, taskType, taskMeta, true);
       clearDependedSection();
     } catch (e) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.transactions_redecode_missing.error.title'),
@@ -196,9 +192,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         clearDependedSection();
       }
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.transactions_redecode.error.title'),

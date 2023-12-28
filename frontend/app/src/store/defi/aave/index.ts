@@ -73,9 +73,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
       );
       set(balances, AaveBalances.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         const message = t('actions.defi.aave_balances.error.description', {
           error: e.message
         });
@@ -119,9 +117,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
       set(history, AaveHistory.parse(result));
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         const message = t('actions.defi.aave_history.error.description', {
           error: e.message

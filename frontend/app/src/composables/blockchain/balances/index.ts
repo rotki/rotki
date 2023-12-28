@@ -54,9 +54,7 @@ export const useBlockchainBalances = () => {
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         logger.error(e);
         notify({
           title: t('actions.balances.blockchain.error.title'),

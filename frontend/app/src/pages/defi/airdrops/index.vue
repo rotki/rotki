@@ -129,9 +129,7 @@ const fetchAirdrops = async () => {
     );
     set(airdrops, Airdrops.parse(result));
   } catch (e: any) {
-    if (e instanceof UserCancelledTaskError) {
-      logger.debug(e);
-    } else {
+    if (!(e instanceof UserCancelledTaskError)) {
       logger.error(e);
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),

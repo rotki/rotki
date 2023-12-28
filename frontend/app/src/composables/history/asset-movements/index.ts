@@ -53,9 +53,7 @@ export const useAssetMovements = () => {
         TaskMeta
       >(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
-        logger.debug(e);
-      } else {
+      if (!(e instanceof UserCancelledTaskError)) {
         notify({
           title: t('actions.asset_movements.error.title', {
             exchange
