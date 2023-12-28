@@ -1519,7 +1519,8 @@
   },
   "collapsed_pending_tasks": {
     "title": "{count} pending task | {count} pending tasks",
-    "cancel_task": "cancel task"
+    "cancel_task": "Cancel task",
+    "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?"
   },
   "common": {
     "account": "Account",

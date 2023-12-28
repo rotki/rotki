@@ -4,12 +4,12 @@ import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
+const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();
 
 const { task } = toRefs(props);
 const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
 
 const { progress: taskProgress } = storeToRefs(useReportsStore());
-const { cancelTask } = useTaskStore();
 const { t } = useI18n();
 
 const time = computed(() => dayjs(task.value.time).format('LLL'));
@@ -50,7 +50,7 @@ const progress = useToNumber(taskProgress);
           class="shrink-0"
           size="sm"
           icon
-          @click="cancelTask(task)"
+          @click="emit('cancel', task)"
         >
           <RuiIcon name="close-line" />
         </RuiButton>

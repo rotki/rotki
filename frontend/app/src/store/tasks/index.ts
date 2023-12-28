@@ -153,21 +153,30 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
-    const { id, type } = task;
-    const deleted = await api.cancelAsyncTask(id);
+    const { id, type, meta } = task;
 
-    if (deleted) {
-      const handler = handlers[type] ?? handlers[`${type}-${id}`];
-      if (!handler) {
-        remove(task.id);
-      } else {
-        lock(id);
-        handleResult({ result: null, message: USER_CANCELLED_TASK }, task);
-        unlock(id);
-      }
+    if (!get(isTaskRunning(type, meta))) {
+      return false;
     }
 
-    return deleted;
+    try {
+      const deleted = await api.cancelAsyncTask(id);
+
+      if (deleted) {
+        const handler = handlers[type] ?? handlers[`${type}-${id}`];
+        if (!handler) {
+          remove(task.id);
+        } else {
+          lock(id);
+          handleResult({ result: null, message: USER_CANCELLED_TASK }, task);
+          unlock(id);
+        }
+      }
+
+      return deleted;
+    } catch {
+      return false;
+    }
   };
 
   const awaitTask = async <R, M extends TaskMeta>(
