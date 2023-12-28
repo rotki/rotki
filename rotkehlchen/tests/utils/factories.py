@@ -8,6 +8,7 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
@@ -154,8 +155,16 @@ def make_ethereum_event(
 
 def generate_events_response(
         data: list['EvmEvent'],
+        accounting_status: EventAccountingRuleStatus = EventAccountingRuleStatus.PROCESSED,
 ) -> list:
-    return [{'entry': x.serialize()} for x in data]
+    return [
+        x.serialize_for_api(
+            customized_event_ids=[],
+            ignored_ids_mapping={},
+            hidden_event_ids=[],
+            event_accounting_rule_status=accounting_status,
+        ) for x in data
+    ]
 
 
 def make_addressbook_entries() -> list[AddressbookEntry]:

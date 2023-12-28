@@ -1,4 +1,5 @@
 import json
+from enum import auto
 from typing import Any, NamedTuple
 
 import jsonschema
@@ -7,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
@@ -134,3 +135,9 @@ class MissingPrice(NamedTuple):
             'time': self.time,
             'rate_limited': self.rate_limited,
         }
+
+
+class EventAccountingRuleStatus(SerializableEnumNameMixin):
+    HAS_RULE = auto()
+    PROCESSED = auto()
+    NOT_PROCESSED = auto()
