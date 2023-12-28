@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Nullable } from '@rotki/common';
-import { StepperState } from '@rotki/ui-library-compat';
 import {
   type EditableMissingPrice,
   type SelectedReport
@@ -118,12 +117,7 @@ const stepperContents = computed(() => {
     });
   }
 
-  const stepVal = get(step);
-
-  return contents.map((content, index) => ({
-    ...content,
-    state: stepVal > index ? StepperState.active : StepperState.inactive
-  }));
+  return contents;
 });
 
 const totalMissingPrices = ref<number>(0);
@@ -267,6 +261,7 @@ const close = () => {
 
     <RuiStepper
       :steps="stepperContents"
+      :step="step"
       class="border-b-2 border-default"
       :class="{ 'py-2': isPinned, 'py-4': !isPinned }"
     />

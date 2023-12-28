@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import { StepperState } from '@rotki/ui-library-compat';
 import {
   type BalanceSnapshot,
   type LocationDataSnapshot,
@@ -151,23 +150,17 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
   finish();
 };
 
-const steps = computed(() => {
-  const stepVal = get(step);
-  return [
-    {
-      title: t('dashboard.snapshot.edit.dialog.balances.title'),
-      state: stepVal > 0 ? StepperState.active : StepperState.inactive
-    },
-    {
-      title: t('dashboard.snapshot.edit.dialog.location_data.title'),
-      state: stepVal > 1 ? StepperState.active : StepperState.inactive
-    },
-    {
-      title: t('common.total'),
-      state: stepVal > 2 ? StepperState.active : StepperState.inactive
-    }
-  ];
-});
+const steps = computed(() => [
+  {
+    title: t('dashboard.snapshot.edit.dialog.balances.title')
+  },
+  {
+    title: t('dashboard.snapshot.edit.dialog.location_data.title')
+  },
+  {
+    title: t('common.total')
+  }
+]);
 </script>
 
 <template>
@@ -188,7 +181,11 @@ const steps = computed(() => {
       </div>
 
       <div v-if="snapshotData">
-        <RuiStepper :steps="steps" class="py-4 border-b-2 border-default" />
+        <RuiStepper
+          :steps="steps"
+          :step="step"
+          class="py-4 border-b-2 border-default"
+        />
         <RuiTabItems v-model="step">
           <template #default>
             <RuiTabItem :value="1">
