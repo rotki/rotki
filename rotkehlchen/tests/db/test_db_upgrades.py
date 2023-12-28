@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
@@ -23,6 +24,7 @@ from rotkehlchen.db.upgrade_manager import (
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
 from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
+from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
@@ -2108,51 +2110,82 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
     assert 'Your account was last opened by a very old version of rotki' in str(upgrade_exception)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_unfinished_upgrades(user_data_dir):
-    _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
     msg_aggregator = MessagesAggregator()
-    db = _init_db_with_target_version(
-        target_version=33,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-        resume_from_backup=False,
-    )
-    with db.user_write() as write_cursor:
-        db.set_setting(  # Pretend that an upgrade was started
-            write_cursor=write_cursor,
-            name='ongoing_upgrade_from_version',
-            value=33,
-        )
-    db.logout()
-    # There are no backups, so it is supposed to raise an error
-    with pytest.raises(DBUpgradeError):
-        _init_db_with_target_version(
-            target_version=34,
+    for backup_version in (33, 31):  # try both with correct and wrong backup
+        _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
+        db = _init_db_with_target_version(
+            target_version=33,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
-            resume_from_backup=True,
+            resume_from_backup=False,
         )
+        with db.user_write() as write_cursor:
+            db.set_setting(  # Pretend that an upgrade was started
+                write_cursor=write_cursor,
+                name='ongoing_upgrade_from_version',
+                value=33,
+            )
+        db.logout()
+        # Without resume_from_backup there is a permission error
+        with pytest.raises(RotkehlchenPermissionError) as exc_info:
+            _init_db_with_target_version(
+                target_version=34,
+                user_data_dir=user_data_dir,
+                msg_aggregator=msg_aggregator,
+                resume_from_backup=False,
+            )
+        assert 'The encrypted database is in a semi upgraded state' in str(exc_info.value)
 
-    # Add a backup
-    backup_path = user_data_dir / f'{ts_now()}_rotkehlchen_db_v33.backup'
-    shutil.copy(Path(__file__).parent.parent / 'data' / 'v33_rotkehlchen.db', backup_path)
-    backup_connection = DBConnection(
-        path=str(backup_path),
-        connection_type=DBConnectionType.USER,
-        sql_vm_instructions_cb=0,
-    )
-    backup_connection.executescript('PRAGMA key="123"')  # unlock
-    with backup_connection.write_ctx() as write_cursor:
-        write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')  # mark as a backup  # noqa: E501
+        # There are no backups, so it is supposed to raise an error
+        with pytest.raises(DBUpgradeError) as exc_info:
+            _init_db_with_target_version(
+                target_version=34,
+                user_data_dir=user_data_dir,
+                msg_aggregator=msg_aggregator,
+                resume_from_backup=True,
+            )
+        assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
 
-    db = _init_db_with_target_version(  # Now the backup should be used
-        target_version=34,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-        resume_from_backup=True,
-    )
-    # Check that there is no setting left
-    with db.conn.read_ctx() as cursor:
-        assert db.get_setting(cursor, 'ongoing_upgrade_from_version') is None
-        # Check that the backup was used
-        assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
+        # Add multiple backups
+        for write_version in (backup_version, backup_version - 1):
+            backup_path = user_data_dir / f'{ts_now()}_rotkehlchen_db_v{write_version}.backup'
+            shutil.copy(Path(__file__).parent.parent / 'data' / 'v33_rotkehlchen.db', backup_path)
+            backup_connection = DBConnection(
+                path=str(backup_path),
+                connection_type=DBConnectionType.USER,
+                sql_vm_instructions_cb=0,
+            )
+            backup_connection.executescript('PRAGMA key="123"')  # unlock
+            with backup_connection.write_ctx() as write_cursor:
+                write_cursor.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
+
+            if backup_version == 33:
+                db = _init_db_with_target_version(  # Now the backup should be used
+                    target_version=34,
+                    user_data_dir=user_data_dir,
+                    msg_aggregator=msg_aggregator,
+                    resume_from_backup=True,
+                )
+            else:  # backups exist, but not matching the DB
+                with pytest.raises(DBUpgradeError) as exc_info:
+                    _init_db_with_target_version(
+                        target_version=34,
+                        user_data_dir=user_data_dir,
+                        msg_aggregator=msg_aggregator,
+                        resume_from_backup=True,
+                    )
+                assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
+                break  # and end the test
+
+        else:  # Check that there is no setting left
+            with db.conn.read_ctx() as cursor:
+                assert db.get_setting(cursor, 'ongoing_upgrade_from_version') is None
+                # Check that the backup was used
+                assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == '33'  # noqa: E501
+
+            for f in os.listdir(user_data_dir):
+                if f.endswith('backup'):
+                    (Path(user_data_dir) / f).unlink()
+            db.logout()

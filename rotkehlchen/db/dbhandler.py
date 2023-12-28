@@ -249,7 +249,8 @@ class DBHandler:
         ))
         if len(found_backups) == 0:
             raise DBUpgradeError(
-                'Your encrypted database is in a half-upgraded state and there was no backup '
+                f'Your encrypted database is in a half-upgraded state at '
+                f'v{ongoing_upgrade_from_version} and there was no backup '
                 'found. Please open an issue on our github or contact us in our discord server.',
             )
 
