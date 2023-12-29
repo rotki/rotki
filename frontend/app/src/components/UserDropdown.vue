@@ -52,7 +52,7 @@ const css = useCssModule();
           <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>
       </template>
-      <div data-cy="user-dropdown">
+      <div data-cy="user-dropdown" class="py-2">
         <div key="username" class="py-3 user-username font-bold text-center">
           {{ username }}
         </div>

@@ -149,11 +149,23 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
   updateLocationDataSnapshot(event);
   finish();
 };
+
+const steps = computed(() => [
+  {
+    title: t('dashboard.snapshot.edit.dialog.balances.title')
+  },
+  {
+    title: t('dashboard.snapshot.edit.dialog.location_data.title')
+  },
+  {
+    title: t('common.total')
+  }
+]);
 </script>
 
 <template>
   <VDialog persistent :value="true" max-width="1400">
-    <div>
+    <RuiCard no-padding variant="flat">
       <div class="flex bg-rui-primary text-white p-2">
         <RuiButton variant="text" icon @click="close()">
           <RuiIcon class="text-white" name="close-line" />
@@ -169,38 +181,30 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
       </div>
 
       <div v-if="snapshotData">
-        <VStepper v-model="step" class="!rounded-none">
-          <VStepperHeader
-            class="border-b-2 border-rui-grey-300 dark:border-rui-grey-800 shadow-none"
-          >
-            <VStepperStep :step="1">
-              {{ t('dashboard.snapshot.edit.dialog.balances.title') }}
-            </VStepperStep>
-            <VStepperStep :step="2">
-              {{ t('dashboard.snapshot.edit.dialog.location_data.title') }}
-            </VStepperStep>
-            <VStepperStep :step="3">
-              {{ t('common.total') }}
-            </VStepperStep>
-          </VStepperHeader>
-          <VStepperItems>
-            <VStepperContent :step="1" class="p-0">
+        <RuiStepper
+          :steps="steps"
+          :step="step"
+          class="py-4 border-b-2 border-default"
+        />
+        <RuiTabItems v-model="step">
+          <template #default>
+            <RuiTabItem :value="1">
               <EditBalancesSnapshotTable
                 v-model="snapshotData"
                 :timestamp="timestamp"
                 @update:step="step = $event"
                 @input="save()"
               />
-            </VStepperContent>
-            <VStepperContent :step="2" class="p-0">
+            </RuiTabItem>
+            <RuiTabItem :value="2">
               <EditLocationDataSnapshotTable
                 :value="locationDataSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
                 @input="updateAndSave($event)"
               />
-            </VStepperContent>
-            <VStepperContent :step="3" class="p-0">
+            </RuiTabItem>
+            <RuiTabItem :value="3">
               <EditSnapshotTotal
                 v-if="step === 3"
                 :value="locationDataSnapshot"
@@ -209,9 +213,9 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
                 @update:step="step = $event"
                 @input="updateAndComplete($event)"
               />
-            </VStepperContent>
-          </VStepperItems>
-        </VStepper>
+            </RuiTabItem>
+          </template>
+        </RuiTabItems>
       </div>
       <div
         v-else
@@ -228,7 +232,7 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
           {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}
         </div>
       </div>
-    </div>
+    </RuiCard>
   </VDialog>
 </template>
 
