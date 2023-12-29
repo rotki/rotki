@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
-import { taskCancelledError } from '@/utils';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
 import { type TaskMeta } from '@/types/task';
@@ -85,7 +84,7 @@ const uploadPackaged = async (file: string) => {
       set(uploaded, true);
     }
   } catch (e: any) {
-    if (!taskCancelledError(e)) {
+    if (!isTaskCancelled(e)) {
       set(errorMessage, e.message);
     }
   }
@@ -121,7 +120,7 @@ const uploadFile = async () => {
           set(uploaded, true);
         }
       } catch (e: any) {
-        if (!taskCancelledError(e)) {
+        if (!isTaskCancelled(e)) {
           set(errorMessage, e.message);
         }
       }

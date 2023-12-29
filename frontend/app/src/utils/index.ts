@@ -9,5 +9,5 @@ export const isOfEnum =
   (token: any): token is T[keyof T] =>
     Object.values(e).includes(token as T[keyof T]);
 
-export const taskCancelledError = (error: any) =>
+export const isTaskCancelled = (error: any) =>
   error instanceof UserCancelledTaskError;

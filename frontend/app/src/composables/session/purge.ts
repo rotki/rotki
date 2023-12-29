@@ -15,7 +15,6 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
-import { taskCancelledError } from '@/utils';
 
 export const useSessionPurge = () => {
   const { resetState } = useDefiStore();
@@ -65,6 +64,7 @@ export const useSessionPurge = () => {
 
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
+  const { notify } = useNotificationsStore();
 
   const refreshGeneralCache = async () => {
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
@@ -74,8 +74,14 @@ export const useSessionPurge = () => {
         title: t('actions.session.refresh_general_cache.task.title')
       });
     } catch (e: any) {
-      if (taskCancelledError(e)) {
-        // pass
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.session.refresh_general_cache.task.title'),
+          message: t('actions.session.refresh_general_cache.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
       }
     }
   };

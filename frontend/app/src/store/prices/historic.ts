@@ -1,5 +1,4 @@
 import { type BigNumber } from '@rotki/common';
-import { taskCancelledError } from '@/utils';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
@@ -11,6 +10,7 @@ export const useHistoricCachePriceStore = defineStore(
     const { queryHistoricalRates } = usePriceApi();
     const { awaitTask } = useTaskStore();
     const { t } = useI18n();
+    const { notify } = useNotificationsStore();
 
     const createKey = (fromAsset: string, timestamp: number | string) =>
       `${fromAsset}#${timestamp}`;
@@ -36,9 +36,7 @@ export const useHistoricCachePriceStore = defineStore(
           taskId,
           taskType,
           {
-            title: t(
-              'actions.balances.historic_fetch_price.task.title'
-            ).toString(),
+            title: t('actions.balances.historic_fetch_price.task.title'),
             description: t(
               'actions.balances.historic_fetch_price.task.description',
               {
@@ -52,8 +50,14 @@ export const useHistoricCachePriceStore = defineStore(
         );
         data = result;
       } catch (e: any) {
-        if (taskCancelledError(e)) {
-          // pass
+        if (!isTaskCancelled(e)) {
+          notify({
+            title: t('actions.balances.historic_fetch_price.task.title'),
+            message: t('actions.balances.historic_fetch_price.error.message', {
+              message: e.message
+            }),
+            display: true
+          });
         }
       }
 

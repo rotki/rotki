@@ -1,5 +1,4 @@
 import { groupBy } from 'lodash-es';
-import { taskCancelledError } from '@/utils';
 import { TaskType } from '@/types/task-type';
 import { type PendingTask, type TaskMeta } from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
@@ -49,7 +48,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       );
       set(unDecodedEventsBreakdown, snakeCaseTransformer(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         const description = t(
           'actions.history.fetch_undecoded_events.error.message',
           {
@@ -104,7 +103,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       await awaitTask(taskId, taskType, taskMeta, true);
       clearDependedSection();
     } catch (e) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         notify({
           title: t('actions.transactions_redecode_missing.error.title'),
@@ -189,7 +188,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         clearDependedSection();
       }
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         notify({
           title: t('actions.transactions_redecode.error.title'),

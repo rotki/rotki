@@ -2,7 +2,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
-import { taskCancelledError } from '@/utils';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import {
@@ -305,7 +304,7 @@ export const useBlockchains = () => {
 
       return result;
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         notify({
           title: t('actions.detect_evm_accounts.error.title').toString(),

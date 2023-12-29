@@ -1,5 +1,4 @@
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
@@ -64,7 +63,7 @@ export const useTrades = () => {
       );
       return true;
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.trades.error.title', {
             exchange

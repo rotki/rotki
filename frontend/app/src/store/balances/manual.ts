@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import {
   type AssetBalances,
   type BalanceByLocation,
@@ -171,7 +170,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       set(manualBalancesData, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         notify({
           title: t('actions.balances.manual_balances.error.title'),
@@ -204,7 +203,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
       }
 
@@ -238,7 +237,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
       }
 

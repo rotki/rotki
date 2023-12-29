@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import { type Balances } from '@/types/blockchain/balances';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
@@ -45,25 +44,19 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         payload.ignoreCache
       );
 
-      try {
-        const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: t('actions.session.fetch_prices.task.title').toString()
-          },
-          true
-        );
+      const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.session.fetch_prices.task.title').toString()
+        },
+        true
+      );
 
-        set(prices, {
-          ...get(prices),
-          ...AssetPriceResponse.parse(result)
-        });
-      } catch (e: any) {
-        if (taskCancelledError(e)) {
-          // pass
-        }
-      }
+      set(prices, {
+        ...get(prices),
+        ...AssetPriceResponse.parse(result)
+      });
     };
 
     const { setStatus } = useStatusUpdater(Section.PRICES);
@@ -74,15 +67,17 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         chunkArray<string>(payload.selectedAssets, 100).map(fetch)
       );
     } catch (e: any) {
-      const title = t('actions.session.fetch_prices.error.title').toString();
-      const message = t('actions.session.fetch_prices.error.message', {
-        error: e.message
-      }).toString();
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        const title = t('actions.session.fetch_prices.error.title').toString();
+        const message = t('actions.session.fetch_prices.error.message', {
+          error: e.message
+        }).toString();
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     } finally {
       setStatus(Status.LOADED);
     }
@@ -121,7 +116,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
       set(exchangeRates, ExchangeRates.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.balances.exchange_rates.error.title').toString(),
           message: t('actions.balances.exchange_rates.error.message', {
@@ -173,7 +168,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset][timestamp];
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
       }
       return One.negated();
@@ -219,8 +214,14 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         success: result
       };
     } catch (e: any) {
-      if (taskCancelledError(e)) {
-        // pass
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.balances.create_oracle_cache.error.title'),
+          message: t('actions.balances.create_oracle_cache.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
       }
       return {
         success: false,

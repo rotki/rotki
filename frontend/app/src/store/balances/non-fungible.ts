@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import { type Collection } from '@/types/collection';
 import { Module } from '@/types/modules';
 import {
@@ -64,7 +63,7 @@ export const useNonFungibleBalancesStore = defineStore(
         );
         return true;
       } catch (e: any) {
-        if (taskCancelledError(e)) {
+        if (isTaskCancelled(e)) {
           return false;
         }
         notify({

@@ -1,6 +1,5 @@
 import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { taskCancelledError } from '@/utils';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
@@ -74,7 +73,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
       );
       set(balances, AaveBalances.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         const message = t('actions.defi.aave_balances.error.description', {
           error: e.message
         });
@@ -118,7 +117,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
       set(history, AaveHistory.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         const message = t('actions.defi.aave_history.error.description', {
           error: e.message

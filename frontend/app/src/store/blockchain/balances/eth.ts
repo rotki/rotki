@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type BigNumber } from '@rotki/common';
-import { taskCancelledError } from '@/utils';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -98,7 +97,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       set(loopring, AccountAssetBalances.parse(result));
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.balances.loopring.error.title'),
           message: t('actions.balances.loopring.error.description', {

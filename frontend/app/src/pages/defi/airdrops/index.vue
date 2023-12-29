@@ -2,7 +2,6 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { taskCancelledError } from '@/utils';
 import { type DataTableHeader } from '@/types/vuetify';
 import {
   AIRDROP_POAP,
@@ -130,7 +129,7 @@ const fetchAirdrops = async () => {
     );
     set(airdrops, Airdrops.parse(result));
   } catch (e: any) {
-    if (!taskCancelledError(e)) {
+    if (!isTaskCancelled(e)) {
       logger.error(e);
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),

@@ -3,7 +3,6 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { taskCancelledError } from '@/utils';
 
 const defaultCompoundStats = (): CompoundStats => ({
   debtLoss: {},
@@ -60,7 +59,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       );
       set(balances, CompoundBalances.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.defi.compound.error.title'),
           message: t('actions.defi.compound.error.description', {
@@ -100,7 +99,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
 
       set(history, CompoundStats.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         notify({
           title: t('actions.defi.compound_history.error.title'),

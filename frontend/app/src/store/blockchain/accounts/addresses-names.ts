@@ -1,6 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import {
   type AddressBookEntries,
   type AddressBookEntry,
@@ -84,8 +83,12 @@ export const useAddressesNamesStore = defineStore(
             ...result
           });
         } catch (e: any) {
-          if (taskCancelledError(e)) {
-            // pass
+          if (!isTaskCancelled(e)) {
+            notify({
+              title: t('ens_names.task.title'),
+              message: t('ens_names.error.message', { message: e.message }),
+              display: true
+            });
           }
         }
         resetAddressNamesData(payload);

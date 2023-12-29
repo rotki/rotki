@@ -321,6 +321,10 @@
       },
       "create_oracle_cache": {
         "already_running": "Task is already running",
+        "error": {
+          "message": "Failed to create oracle cache: {message}",
+          "title": "Create oracle cache"
+        },
         "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
         "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
       },
@@ -366,6 +370,9 @@
         "title": "Exchange setup"
       },
       "historic_fetch_price": {
+        "error": {
+          "message": "Failed to fetch historic prices: {message}"
+        },
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
           "title": "Fetching conversion rate"
@@ -852,6 +859,9 @@
         }
       },
       "refresh_general_cache": {
+        "error": {
+          "message": "Failed to refresh general cache: {message}"
+        },
         "task": {
           "title": "Refresh general cache (Curve, MakerDAO, Yearn)"
         }
@@ -2062,6 +2072,9 @@
     "title": "You are running rotki in docker. Make sure you have read our {0} and understand the potential risk that running rotki in this way entails."
   },
   "ens_names": {
+    "error": {
+      "message": "Failed to query ENS names: {message}"
+    },
     "task": {
       "title": "Querying ENS names"
     }

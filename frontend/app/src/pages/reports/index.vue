@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
-import { taskCancelledError } from '@/utils';
 import { Routes } from '@/router/routes';
 import {
   type ProfitLossReportDebugPayload,
@@ -170,7 +169,7 @@ const importData = async () => {
     });
     success = result;
   } catch (e: any) {
-    if (taskCancelledError(e)) {
+    if (isTaskCancelled(e)) {
       return fetchReports();
     }
     message = e.message;

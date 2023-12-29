@@ -1,7 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEqual } from 'lodash-es';
-import { taskCancelledError } from '@/utils';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
@@ -106,7 +105,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         setState(chain, result);
       }
     } catch (e) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
       }
     }

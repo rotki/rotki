@@ -1,6 +1,5 @@
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { taskCancelledError } from '@/utils';
 import { AssetBalances } from '@/types/balances';
 import {
   type ExchangeData,
@@ -173,7 +172,7 @@ export const useExchangeBalancesStore = defineStore(
         });
         setStatus(Status.LOADED);
       } catch (e: any) {
-        if (!taskCancelledError(e)) {
+        if (!isTaskCancelled(e)) {
           const message = t(
             'actions.balances.exchange_balances.error.message',
             {
@@ -256,7 +255,7 @@ export const useExchangeBalancesStore = defineStore(
         );
         return true;
       } catch (e: any) {
-        if (!taskCancelledError(e)) {
+        if (!isTaskCancelled(e)) {
           notify({
             title: t('actions.balances.exchange_savings_interest.error.title', {
               location

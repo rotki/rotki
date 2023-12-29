@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { taskCancelledError } from '@/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
@@ -148,7 +147,7 @@ export const useBlockchainAccounts = () => {
         }
       );
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         const title = t(
           'actions.balances.blockchain_account_removal.error.title',

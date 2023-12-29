@@ -10,7 +10,6 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ProtocolVersion } from '@/types/defi';
-import { taskCancelledError } from '@/utils';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});
@@ -195,7 +194,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2Balances, balances);
       }
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.defi.yearn_vaults.error.title', {
             version
@@ -261,7 +260,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2History, data);
       }
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.defi.yearn_vaults_history.error.title', {
             version: payload.version

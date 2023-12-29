@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { taskCancelledError } from '@/utils';
 import { CUSTOM_ASSET } from '@/types/asset';
 import { type ERC20Token } from '@/types/blockchain/accounts';
 import { TaskType } from '@/types/task-type';
@@ -155,7 +154,7 @@ export const useAssetInfoRetrieval = () => {
       );
       return result;
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         notify({
           title: t('actions.assets.erc20.error.title', payload),
           message: t('actions.assets.erc20.error.description', {

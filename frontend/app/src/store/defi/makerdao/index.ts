@@ -1,5 +1,4 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { taskCancelledError } from '@/utils';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
@@ -79,7 +78,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       );
       set(dsrBalances, DSRBalances.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         const message = t('actions.defi.dsr_balances.error.description', {
           error: e.message
@@ -122,7 +121,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(dsrHistory, DSRHistory.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         const message = t('actions.defi.dsr_history.error.description', {
           error: e.message
         });
@@ -166,7 +165,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         convertMakerDAOVaults(ApiMakerDAOVaults.parse(result))
       );
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         const message = t('actions.defi.makerdao_vaults.error.description', {
           error: e.message
@@ -208,7 +207,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
       set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     } catch (e: any) {
-      if (!taskCancelledError(e)) {
+      if (!isTaskCancelled(e)) {
         logger.error(e);
         const message = t(
           'actions.defi.makerdao_vault_details.error.description',

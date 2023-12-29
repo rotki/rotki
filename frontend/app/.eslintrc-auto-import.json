@@ -730,6 +730,6 @@
     "useClipboardItems": true,
     "isOfEnum": true,
     "isOfEventType": true,
-    "taskCancelledError": true
+    "isTaskCancelled": true
   }
 }
