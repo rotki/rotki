@@ -189,7 +189,7 @@ Choose whether local time or UTC should be shown in the CSV exports, user logs i
 BTC Derivation gap limit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://blog.blockonomics.co/bitcoin-what-is-this-gap-limit-4f098e52d7e1>`__.
+This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://insights.blockonomics.co/bitcoin-what-is-this-gap-limit/>`__.
 
 Treat staked ETH as ETH
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
