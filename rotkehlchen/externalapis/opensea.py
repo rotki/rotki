@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import gevent
 import requests
-from eth_utils import to_checksum_address
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -22,8 +21,13 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_optional_to_optional_fval
-from rotkehlchen.types import ChecksumEvmAddress, ExternalService
+from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
+    deserialize_fval,
+    deserialize_int,
+    deserialize_optional_to_optional_fval,
+)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -84,8 +88,14 @@ class NFT(NamedTuple):
 
 class Opensea(ExternalServiceWithApiKey):
     """https://docs.opensea.io/reference/api-overview"""
-    def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
+    def __init__(
+            self,
+            database: 'DBHandler',
+            msg_aggregator: MessagesAggregator,
+            ethereum_inquirer: EthereumInquirer,
+    ) -> None:
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
+        self.db: 'DBHandler'
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.session.headers.update({
@@ -97,7 +107,8 @@ class Opensea(ExternalServiceWithApiKey):
         })
         self.collections: dict[str, Collection] = {}
         self.backup_key: str | None = None
-        self.eth_asset = A_ETH.resolve_to_crypto_asset()
+        self.ethereum_inquirer = ethereum_inquirer
+        self.eth_asset = ethereum_inquirer.native_token
 
     @overload
     def _query(
@@ -210,14 +221,23 @@ class Opensea(ExternalServiceWithApiKey):
                 if last_sale['payment_token']['symbol'] in {'ETH', 'WETH'}:
                     payment_asset = self.eth_asset
                 else:
-                    payment_asset = Asset(
-                        ethaddress_to_identifier(
-                            to_checksum_address(last_sale['payment_token']['address']),
-                        ),
-                    ).resolve_to_evm_token()
+                    payment_asset = get_or_create_evm_token(
+                        userdb=self.db,
+                        evm_address=deserialize_evm_address(last_sale['payment_token']['address']),
+                        chain_id=ChainID.ETHEREUM,
+                        token_kind=EvmTokenKind.ERC20,
+                        evm_inquirer=self.ethereum_inquirer,
+                    )
 
-                amount = asset_normalized_value(int(last_sale['total_price']), payment_asset)
-                eth_price = FVal(last_sale['payment_token']['eth_price'])
+                amount = asset_normalized_value(
+                    amount=deserialize_int(last_sale['total_price']),
+                    asset=payment_asset,
+                )
+                eth_price = deserialize_fval(
+                    value=last_sale['payment_token']['eth_price'],
+                    name='payment_token - eth_price',
+                    location='opensea entry deserialization',
+                )
                 last_price_in_eth = amount * eth_price
             else:
                 last_price_in_eth = ZERO
@@ -323,6 +343,7 @@ class Opensea(ExternalServiceWithApiKey):
 
         nfts = []
         for entry in raw_result:
+            log.debug(f'Deserializing opensea nft data owned by {account=}: {entry}')
             try:
                 nfts.append(self._deserialize_nft(
                     entry=entry,

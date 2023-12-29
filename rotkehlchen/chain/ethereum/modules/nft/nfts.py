@@ -105,7 +105,11 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         self.db = database
         self.ethereum = ethereum_inquirer
         self.premium = premium
-        self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
+        self.opensea = Opensea(
+            database=database,
+            msg_aggregator=msg_aggregator,
+            ethereum_inquirer=ethereum_inquirer,
+        )
 
     @protect_with_lock()
     @cache_response_timewise_immutable()

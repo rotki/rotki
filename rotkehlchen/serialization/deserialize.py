@@ -481,6 +481,20 @@ def deserialize_int_from_hex_or_int(symbol: str | int, location: str) -> int:
     return result
 
 
+def deserialize_int(value: str | int) -> int:
+    """
+    Deserialize int from an entry that could be a string or an integer
+    May raise:
+    - DeserializationError if value is not a value that can be converted to integer
+    """
+    try:
+        result = int(value)
+    except ValueError as e:
+        raise DeserializationError(f'Could not transform to integer the {value=}') from e
+
+    return result
+
+
 X = TypeVar('X')
 Y = TypeVar('Y')
 
