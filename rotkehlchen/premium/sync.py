@@ -7,6 +7,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,7 +43,9 @@ class PremiumSyncManager:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
             # These 2 vars contain the timestamp of our side. When did this DB try to upload
-            self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
+            self.last_data_upload_ts = data.db.get_cache(
+                cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+            )
             self.last_upload_attempt_ts = self.last_data_upload_ts
         # This contains the last known succesful DB upload timestamp in the remote.
         self.last_remote_data_upload_ts = 0  # gets populated only after the first API call
@@ -247,7 +250,7 @@ class PremiumSyncManager:
         self.last_upload_attempt_ts = self.last_data_upload_ts
         self.last_remote_data_upload_ts = self.last_data_upload_ts
         with self.data.db.user_write() as cursor:
-            self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
+            self.data.db.set_cache(cursor, {DBCache.LAST_DATA_UPLOAD_TS: self.last_data_upload_ts})
 
         self.data.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_RESULT,

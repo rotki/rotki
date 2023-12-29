@@ -11,6 +11,7 @@ from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBCursor, DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
-from .constants import LAST_DATA_UPDATES_KEY, NO_ACCOUNTING_COUNTERPARTY, UpdateType
+from .constants import NO_ACCOUNTING_COUNTERPARTY, UpdateType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -109,7 +110,7 @@ class RotkiDataUpdater:
             self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
             with self.user_db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(  # this was the last update to be applied for this data type, so remember it  # noqa: E501
-                    'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
                     (update_type.serialize(), update_version),
                 )
 
@@ -363,15 +364,15 @@ class RotkiDataUpdater:
 
         with self.user_db.user_write() as cursor:
             cursor.execute(  # remember last time data updates were detected
-                'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
-                (LAST_DATA_UPDATES_KEY, str(ts_now())),
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                (DBCache.LAST_DATA_UPDATES_TS.value, str(ts_now())),
             )
 
     @staticmethod
     def _check_for_last_version(cursor: 'DBCursor', update_type: UpdateType) -> int:
         """This method checks the database for the last local version of `update_type`"""
         found_version = cursor.execute(
-            'SELECT value FROM settings WHERE name=?',
+            'SELECT value FROM key_value_cache WHERE name=?',
             (update_type.serialize(),),
         ).fetchone()
         return int(found_version[0]) if found_version is not None else 0

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Final, Literal
+from typing import Literal
 
 from rotkehlchen.errors.serialization import DeserializationError
 
@@ -15,8 +15,6 @@ HISTORY_MAPPING_STATE_CUSTOMIZED = 1
 
 EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS = 'last_queried_timestamp'
 EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
-
-LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
 
 NO_ACCOUNTING_COUNTERPARTY = 'NONE'
 LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[

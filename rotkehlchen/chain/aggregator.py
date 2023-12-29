@@ -44,6 +44,7 @@ from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -85,7 +86,6 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .balances import BlockchainBalances, BlockchainBalancesUpdate
-from .constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -1540,8 +1540,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         with self.database.user_write() as cursor:
             cursor.execute(  # remember last time evm addresses were detected
-                'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
-                (LAST_EVM_ACCOUNTS_DETECT_KEY, str(ts_now())),
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                (DBCache.LAST_EVM_ACCOUNTS_DETECT_TS.value, str(ts_now())),
             )
 
         return added_accounts

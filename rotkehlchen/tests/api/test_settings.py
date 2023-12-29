@@ -13,6 +13,7 @@ from rotkehlchen.db.settings import (
     ROTKEHLCHEN_DB_VERSION,
     CachedSettings,
     DBSettings,
+    ModifiableDBSettings,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -124,15 +125,17 @@ def test_set_settings(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
-    original_settings = json_data['result']
+    original_settings = {
+        name: value
+        for name, value in json_data['result'].items()
+        if name in ModifiableDBSettings._fields
+    }
     assert json_data['message'] == ''
     # Create new settings which modify all of the original ones
     new_settings = {}
     unmodifiable_settings = (
         'version',
         'last_write_ts',
-        'last_data_upload_ts',
-        'last_balance_save',
         'have_premium',
         'last_data_migration',
     )

@@ -302,7 +302,7 @@ def test_updates_run(data_updater: RotkiDataUpdater) -> None:
     assert all(patch.call_count == times for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # make sure latest DB value is also changed
-            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
+            f'SELECT value from key_value_cache WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == {'2'}
@@ -313,7 +313,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
     # set a higher last version applied
     with data_updater.user_db.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
             [
                 (UpdateType.SPAM_ASSETS.serialize(), 999),
                 (UpdateType.RPC_NODES.serialize(), 999),
@@ -334,7 +334,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
     assert all(patch.call_count == 0 for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # also make sure latest DB value is not changed
-            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
+            f'SELECT value from key_value_cache WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == {'999'}

@@ -111,6 +111,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.cache import serialize_cache_for_api
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -449,12 +450,15 @@ class RestAPI:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             new_settings = process_result(self.rotkehlchen.get_settings(cursor))
-        result_dict = {'result': new_settings, 'message': ''}
+            cache = process_result(self.rotkehlchen.get_cache(cursor))
+        result_dict = {'result': new_settings | serialize_cache_for_api(cache), 'message': ''}
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     def get_settings(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.get_settings(cursor)))
+            settings = process_result(self.rotkehlchen.get_settings(cursor))
+            cache = process_result(self.rotkehlchen.get_cache(cursor))
+        result_dict = _wrap_in_ok_result(settings | serialize_cache_for_api(cache))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     def query_tasks_outcome(self, task_id: int | None) -> Response:

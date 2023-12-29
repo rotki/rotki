@@ -178,7 +178,6 @@
     "last_write_ts": 1656344880,
     "premium_should_sync": false,
     "include_crypto2crypto": true,
-    "last_data_upload_ts": 0,
     "ui_floating_precision": 2,
     "taxfree_after_period": 31536000,
     "balance_save_frequency": 24,
@@ -187,7 +186,6 @@
     "dot_rpc_endpoint": "",
     "main_currency": "USD",
     "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
-    "last_balance_save": 0,
     "submit_usage_analytics": true,
     "active_modules": [
       "liquity",

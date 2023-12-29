@@ -9,7 +9,6 @@ import gevent
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     LAST_PRODUCED_BLOCKS_QUERY_TS,
     LAST_WITHDRAWALS_EXIT_QUERY_TS,
@@ -20,11 +19,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.misc import (
-    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-    LAST_OWNED_ASSETS_UPDATE,
-    LAST_SPAM_ASSETS_DETECT_KEY,
-)
 from rotkehlchen.constants.timing import (
     AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
@@ -34,7 +28,7 @@ from rotkehlchen.constants.timing import (
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
 )
-from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -667,7 +661,7 @@ class TaskManager:
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
         """
-        if should_run_periodic_task(self.database, LAST_DATA_UPDATES_KEY, DATA_UPDATES_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCache.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -682,7 +676,7 @@ class TaskManager:
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
         """
-        if should_run_periodic_task(self.database, LAST_EVM_ACCOUNTS_DETECT_KEY, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCache.LAST_EVM_ACCOUNTS_DETECT_TS, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -711,7 +705,7 @@ class TaskManager:
         This function queries the globaldb looking for assets that look like spam tokens
         and ignores them in addition to marking them as spam tokens
         """
-        if should_run_periodic_task(self.database, LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCache.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -728,7 +722,7 @@ class TaskManager:
         time consuming analysis on user's asset that involves external calls in order to find and
         detect potential spam tokens.
         """
-        if should_run_periodic_task(self.database, LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -745,7 +739,7 @@ class TaskManager:
         This task is required to have a fresh status on the assets searches when the filter for
         owned assets is used.
         """
-        if should_run_periodic_task(self.database, LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCache.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(

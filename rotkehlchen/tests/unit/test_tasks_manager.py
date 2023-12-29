@@ -9,13 +9,9 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
 from rotkehlchen.constants.assets import A_YFI
-from rotkehlchen.constants.misc import (
-    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-    LAST_SPAM_ASSETS_DETECT_KEY,
-)
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
-from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -395,37 +391,37 @@ def test_try_start_same_task(rotkehlchen_api_server):
 
 def test_should_run_periodic_task(database: 'DBHandler') -> None:
     """
-    Check that should_run_periodic_task correctly reads the settings when they have been
+    Check that should_run_periodic_task correctly reads the key_value_cache when they have been
     set and where the database doesn't have them yet.
     """
     assert should_run_periodic_task(
         database=database,
-        key_name=LAST_DATA_UPDATES_KEY,
+        key_name=DBCache.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is True
 
     with database.user_write() as write_cursor:
         write_cursor.execute(
-            'INSERT INTO settings(name, value) VALUES (?, ?)',
-            (LAST_DATA_UPDATES_KEY, str(ts_now())),
+            'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
+            (DBCache.LAST_DATA_UPDATES_TS.value, str(ts_now())),
         )
 
     assert should_run_periodic_task(
         database=database,
-        key_name=LAST_DATA_UPDATES_KEY,
+        key_name=DBCache.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is False
 
     # Trigger that the function returns true by having an old timestamp
     with database.user_write() as write_cursor:
         write_cursor.execute(
-            'UPDATE settings SET value=? WHERE NAME=?',
-            (str(ts_now() - DATA_UPDATES_REFRESH), LAST_DATA_UPDATES_KEY),
+            'UPDATE key_value_cache SET value=? WHERE NAME=?',
+            (str(ts_now() - DATA_UPDATES_REFRESH), DBCache.LAST_DATA_UPDATES_TS.value),
         )
 
     assert should_run_periodic_task(
         database=database,
-        key_name=LAST_DATA_UPDATES_KEY,
+        key_name=DBCache.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is True
 
@@ -524,7 +520,10 @@ def test_maybe_detect_new_spam_tokens(
     assert updated_token.protocol == SPAM_PROTOCOL
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
-        cursor.execute('SELECT value FROM settings WHERE name=?', (LAST_SPAM_ASSETS_DETECT_KEY,))
+        cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            (DBCache.LAST_SPAM_ASSETS_DETECT_KEY.value,),
+        )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
 
 
@@ -575,7 +574,7 @@ def test_maybe_augmented_detect_new_spam_tokens(
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
         cursor.execute(
-            'SELECT value FROM settings WHERE name=?',
-            (LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,),
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
