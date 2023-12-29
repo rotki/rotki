@@ -8,11 +8,8 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import check_if_spam_token
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import (
-    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-    LAST_SPAM_ASSETS_DETECT_KEY,
-)
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -99,7 +96,7 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
         )
         write_cursor.execute(  # remember last time spam detection ran
             'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
-            (LAST_SPAM_ASSETS_DETECT_KEY, str(ts_now())),
+            (DBCache.LAST_SPAM_ASSETS_DETECT_KEY.value, str(ts_now())),
         )
 
     for chain in chains_to_refresh:
@@ -216,8 +213,8 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
             user_db_write_cursor=write_cursor,
         )
         write_cursor.execute(  # remember last time augmented spam detection ran
-            'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
-            (LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, str(ts_now())),
+            'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+            (DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value, str(ts_now())),
         )
 
     for chain in chains_with_spam:  # let frontend know so they refresh balances

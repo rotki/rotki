@@ -4,16 +4,9 @@ from dataclasses import dataclass, field, fields
 from typing import Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import (
-    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-    LAST_OWNED_ASSETS_UPDATE,
-    LAST_SPAM_ASSETS_DETECT_KEY,
-)
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
-from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY, UpdateType
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
@@ -101,22 +94,12 @@ STRING_KEYS = (
     'date_display_format',
     'frontend_settings',
 )
-TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
-IGNORED_KEYS = (
-    LAST_EVM_ACCOUNTS_DETECT_KEY,
-    LAST_DATA_UPDATES_KEY,
-    LAST_SPAM_ASSETS_DETECT_KEY,
-    LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-    LAST_OWNED_ASSETS_UPDATE,
-) + tuple(x.serialize() for x in UpdateType)
-
 
 CachedDBSettingsFieldNames = Literal[
     'have_premium',
     'version',
     'premium_should_sync',
     'include_crypto2crypto',
-    'last_data_upload_ts',
     'ui_floating_precision',
     'taxfree_after_period',
     'balance_save_frequency',
@@ -125,7 +108,6 @@ CachedDBSettingsFieldNames = Literal[
     'dot_rpc_endpoint',
     'main_currency',
     'date_display_format',
-    'last_balance_save',
     'submit_usage_analytics',
     'active_modules',
     'frontend_settings',
@@ -155,7 +137,6 @@ CachedDBSettingsFieldNames = Literal[
 DBSettingsFieldTypes = (
     bool |
     int |
-    Timestamp |
     str |
     Asset |
     Sequence[ModuleName] |
@@ -174,7 +155,6 @@ class DBSettings:
     last_write_ts: Timestamp = field(default=Timestamp(0))
     premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
     include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
-    last_data_upload_ts: Timestamp = field(default=Timestamp(0))
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
     taxfree_after_period: int | None = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
@@ -183,7 +163,6 @@ class DBSettings:
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    last_balance_save: Timestamp = field(default=Timestamp(0))
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     active_modules: Sequence[ModuleName] = field(default=DEFAULT_ACTIVE_MODULES)  # type: ignore
     frontend_settings: str = ''
@@ -299,8 +278,6 @@ def db_settings_from_dict(
             specified_args[key] = int(value)
         elif key in STRING_KEYS:
             specified_args[key] = str(value)
-        elif key in IGNORED_KEYS:  # temp until https://github.com/rotki/rotki/issues/5684 is done
-            continue  # some keys are using the settings table in lieu of a key-value cache
         elif key == 'taxfree_after_period':
             # taxfree_after_period can also be None, to signify disabled setting
             if value is None:
@@ -318,7 +295,7 @@ def db_settings_from_dict(
 
         elif key == 'main_currency':
             specified_args[key] = Asset(str(value)).resolve_to_asset_with_oracles()
-        elif key in TIMESTAMP_KEYS:
+        elif key == 'last_write_ts':
             specified_args[key] = Timestamp(int(value))
         elif key == 'active_modules':
             specified_args[key] = json.loads(value)
@@ -421,7 +398,7 @@ class CachedSettings:
     def get_entry(self, attr: CachedDBSettingsFieldNames) -> DBSettingsFieldTypes:
         return getattr(self._settings, attr)
 
-    def get_settings(self) -> DBSettings | None:
+    def get_settings(self) -> DBSettings:
         return self._settings
 
     # commonly used settings with their own get function

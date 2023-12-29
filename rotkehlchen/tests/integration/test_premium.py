@@ -9,6 +9,7 @@ import gevent
 import pytest
 
 from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
@@ -26,6 +27,7 @@ from rotkehlchen.tests.utils.premium import (
     get_different_hash,
     setup_starting_environment,
 )
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -50,12 +52,17 @@ def test_upload_data_to_server(
 ) -> None:
     """Test our side of uploading data to the server"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        last_ts = rotkehlchen_instance.data.db.get_cache(
+            cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+        )
         assert last_ts == 0
 
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP.resolve_to_fiat_asset()))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(
+            write_cursor,
+            ModifiableDBSettings(main_currency=A_GBP.resolve_to_fiat_asset()),
+        )
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
@@ -96,7 +103,7 @@ def test_upload_data_to_server(
     )
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-        assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0
+        assert rotkehlchen_instance.data.db.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS) == Timestamp(0)  # noqa: E501
 
     now = ts_now()
     with patched_get, patched_put:
@@ -106,12 +113,12 @@ def test_upload_data_to_server(
 
         if db_settings['premium_should_sync'] is False:
             with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-                assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0  # noqa: E501
+                assert rotkehlchen_instance.data.db.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS) == 0  # noqa: E501
             assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
             return
 
         with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-            last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+            last_ts = rotkehlchen_instance.data.db.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS)  # noqa: E501
         msg = 'The last data upload timestamp should have been saved in the db as now'
         assert last_ts >= now and last_ts - now < 50, msg
         last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
@@ -128,14 +135,16 @@ def test_upload_data_to_server(
     )
     assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-        assert last_ts == rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')  # noqa: E501
+        assert last_ts == rotkehlchen_instance.data.db.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS)  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     """Test that if the server has same data hash as we no upload happens"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        last_ts = rotkehlchen_instance.data.db.get_cache(
+            cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+        )
 
     assert last_ts == 0
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
@@ -169,7 +178,9 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
     """Test that if the server has bigger DB size no upload happens"""
     with rotkehlchen_instance.data.db.user_write() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        last_ts = rotkehlchen_instance.data.db.get_cache(
+            cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+        )
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
@@ -486,7 +497,9 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     We emulate bigger size by just lowering sql_vm_instructions_cb to force a context switch
     """
     with rotkehlchen_instance.data.db.user_write() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        last_ts = rotkehlchen_instance.data.db.get_cache(
+            cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+        )
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
@@ -547,7 +560,9 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         assert len(result.fetchall()) == 1, 'the plaintext DB should not be attached here'
 
     with db.user_write() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        last_ts = rotkehlchen_instance.data.db.get_cache(
+            cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS,
+        )
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501

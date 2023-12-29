@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.history.price import PriceHistorian
@@ -22,11 +23,11 @@ log = RotkehlchenLogsAdapter(logger)
 def should_run_periodic_task(
         database: 'DBHandler',
         key_name: Literal[
-            'last_data_updates_ts',
-            'last_evm_accounts_detect_ts',
-            'last_spam_assets_detect_key',
-            'last_augmented_spam_assets_detect_key',
-            'last_owned_assets_update',
+            DBCache.LAST_DATA_UPDATES_TS,
+            DBCache.LAST_EVM_ACCOUNTS_DETECT_TS,
+            DBCache.LAST_SPAM_ASSETS_DETECT_KEY,
+            DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+            DBCache.LAST_OWNED_ASSETS_UPDATE,
         ],
         refresh_period: int,
 ) -> bool:
@@ -35,7 +36,7 @@ def should_run_periodic_task(
     it again.
     """
     with database.conn.read_ctx() as cursor:
-        cursor.execute('SELECT value FROM settings WHERE name=?', (key_name,))
+        cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (key_name.value,))
         timestamp_in_db = cursor.fetchone()
 
     if timestamp_in_db is None:

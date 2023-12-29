@@ -44,6 +44,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
@@ -63,6 +64,7 @@ from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
+    DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
@@ -190,10 +192,10 @@ class DBHandler:
         self.setting_to_default_type = {
             'version': (int, ROTKEHLCHEN_DB_VERSION),
             'last_write_ts': (int, Timestamp(0)),
-            'last_data_upload_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
             'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
             'ongoing_upgrade_from_version': (int, None),
+            'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -340,7 +342,7 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['last_write_ts', 'last_data_upload_ts']) -> Timestamp:  # noqa: E501
+    def get_setting(self, cursor: 'DBCursor', name: Literal['last_write_ts']) -> Timestamp:
         ...
 
     @overload
@@ -355,16 +357,20 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['ongoing_upgrade_from_version']) -> int | None:  # noqa: E501
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['last_data_migration']) -> int | None:
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
             name: Literal[
                 'version',
                 'last_write_ts',
-                'last_data_upload_ts',
                 'premium_should_sync',
                 'main_currency',
                 'ongoing_upgrade_from_version',
+                'last_data_migration',
             ],
     ) -> int | None | (Timestamp | (bool | AssetWithOracles)):
         deserializer, default_value = self.setting_to_default_type[name]
@@ -383,7 +389,6 @@ class DBHandler:
             name: Literal[
                 'version',
                 'last_write_ts',
-                'last_data_upload_ts',
                 'premium_should_sync',
                 'ongoing_upgrade_from_version',
                 'main_currency',
@@ -582,6 +587,38 @@ class DBHandler:
             list(settings_dict.items()),
         )
         CachedSettings().update_entries(settings)
+
+    @overload
+    def get_cache(self, cursor: 'DBCursor', name: DBCache) -> Timestamp:
+        ...
+
+    @overload
+    def get_cache(self, cursor: 'DBCursor') -> dict[DBCache, Timestamp]:
+        ...
+
+    def get_cache(
+            self,
+            cursor: 'DBCursor',
+            name: DBCache | None = None,
+    ) -> dict[DBCache, Timestamp] | Timestamp:
+        """Returns the cache values from the `key_value_cache` table of the DB
+        - If `name` is not passed, it returns all the values in the table
+        - If `name` is passed, it returns the value of the given name, defaults to Timestamp(0)"""
+        if name is None:
+            cursor.execute('SELECT name, value FROM key_value_cache;')
+            return {
+                DBCache.deserialize(q[0]): Timestamp(int(q[1]))
+                for q in cursor
+            }
+        value = cursor.execute('SELECT value FROM key_value_cache WHERE name=?;', (name.value,)).fetchone()  # noqa: E501
+        return Timestamp(0) if value is None else Timestamp(int(value[0]))
+
+    def set_cache(self, write_cursor: 'DBCursor', cache: dict[DBCache, Timestamp]) -> None:
+        """Save the values of the cache to the `key_value_cache` table of the DB"""
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            [(name.value, value) for name, value in cache.items()],
+        )
 
     @need_writable_cursor('user_write')
     def add_external_service_credentials(

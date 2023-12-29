@@ -49,6 +49,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -1075,6 +1076,9 @@ class Rotkehlchen:
         """Returns the db settings with a check whether premium is active or not"""
         return self.data.db.get_settings(cursor, have_premium=self.premium is not None)
 
+    def get_cache(self, cursor: 'DBCursor') -> dict[DBCache, Timestamp]:
+        return self.data.db.get_cache(cursor)
+
     def setup_exchange(
             self,
             name: str,
@@ -1116,12 +1120,12 @@ class Rotkehlchen:
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
-                result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
+                result[DBCache.LAST_BALANCE_SAVE.value] = self.data.db.get_last_balance_save_time(cursor)  # noqa: E501
                 connected_nodes = {}
                 for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
                     connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['connected_nodes'] = connected_nodes
-                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
+                result[DBCache.LAST_DATA_UPLOAD_TS.value] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
         return result
 
     def shutdown(self) -> None:

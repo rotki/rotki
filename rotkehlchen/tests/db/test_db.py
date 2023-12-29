@@ -26,6 +26,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
@@ -434,10 +435,8 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'include_gas_costs': DEFAULT_INCLUDE_GAS_COSTS,
         'taxfree_after_period': YEAR_IN_SECONDS,
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
-        'last_balance_save': 0,
         'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
-        'last_data_upload_ts': 0,
         'premium_should_sync': False,
         'submit_usage_analytics': True,
         'last_write_ts': 0,
@@ -502,8 +501,6 @@ def test_settings_entry_types(database):
     assert res.taxfree_after_period == 1
     assert isinstance(res.balance_save_frequency, int)
     assert res.balance_save_frequency == 24
-    assert isinstance(res.last_balance_save, int)
-    assert res.last_balance_save == 0
     assert isinstance(res.main_currency, Asset)
     assert res.main_currency == DEFAULT_TESTS_MAIN_CURRENCY
     assert isinstance(res.date_display_format, str)
@@ -514,6 +511,26 @@ def test_settings_entry_types(database):
     assert res.active_modules == DEFAULT_ACTIVE_MODULES
     assert isinstance(res.frontend_settings, str)
     assert res.frontend_settings == ''
+
+
+def test_key_value_cache_entry_types(database):
+    with database.user_write() as cursor:
+        database.set_cache(cursor, cache={
+            DBCache.LAST_BALANCE_SAVE: 123,
+            DBCache.LAST_DATA_UPDATES_TS: 123,
+            DBCache.LAST_EVM_ACCOUNTS_DETECT_TS: 123,
+        })
+        cache = database.get_cache(cursor)
+        default_value = database.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS)
+    assert isinstance(cache[DBCache.LAST_BALANCE_SAVE], int)
+    assert isinstance(cache[DBCache.LAST_DATA_UPDATES_TS], int)
+    assert isinstance(cache[DBCache.LAST_EVM_ACCOUNTS_DETECT_TS], int)
+    assert (
+        cache[DBCache.LAST_BALANCE_SAVE] ==
+        cache[DBCache.LAST_DATA_UPDATES_TS] ==
+        cache[DBCache.LAST_EVM_ACCOUNTS_DETECT_TS] == 123
+    )
+    assert default_value == Timestamp(0)
 
 
 def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):

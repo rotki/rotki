@@ -124,7 +124,7 @@ def detect_accounts_migration_check(
     # set high version so that DB data updates don't get applied
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
             [
                 (UpdateType.SPAM_ASSETS.serialize(), 999),
                 (UpdateType.RPC_NODES.serialize(), 999),
@@ -266,8 +266,8 @@ def test_failed_migration(database):
         DataMigrationManager(rotki).maybe_migrate_data()
 
     with database.conn.read_ctx() as cursor:
-        settings = database.get_settings(cursor)
-    assert settings.last_data_migration == 0, 'no migration should have happened'
+        last_data_migration = database.get_setting(cursor=cursor, name='last_data_migration')
+    assert last_data_migration == 0, 'no migration should have happened'
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

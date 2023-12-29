@@ -1971,7 +1971,18 @@ def test_upgrade_db_40_to_41(user_data_dir):
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
     )
+    # add some settings that should move in the upgrade
+    settings = {
+        'last_balance_save': 234,
+        'last_data_upload_ts': 345,
+        'last_data_updates_ts': 456,
+        'last_owned_assets_update': 567,
+        'last_evm_accounts_detect_ts': 678,
+        'last_spam_assets_detect_key': 789,
+        'last_augmented_spam_assets_detect_key': 890,
+    }
     with db_v40.conn.write_ctx() as cursor:
+        cursor.executemany('INSERT INTO settings VALUES (?, ?)', settings.items())
         assert table_exists(cursor, 'key_value_cache') is False
     db_v40.logout()
 
@@ -1982,15 +1993,15 @@ def test_upgrade_db_40_to_41(user_data_dir):
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
     )
-    with db.conn.write_ctx() as cursor:
+    # check if all the above values have been moved
+    with db.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
         name TEXT NOT NULL PRIMARY KEY,
         value TEXT
     )""") is True
-        cursor.execute('INSERT INTO key_value_cache VALUES (?, ?)', ('test', 'test'))
-        cursor.execute('SELECT * FROM key_value_cache')
-        assert cursor.fetchone() == ('test', 'test')
-        assert cursor.fetchall() == []
+        cache_values = cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
+        for name, value in cache_values:
+            assert int(value) == settings[name]
     db.logout()
 
 
