@@ -37,6 +37,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -104,6 +105,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         self.session = requests.session()
         self.warning_given = False
         set_user_agent(self.session)
+        self.timestamp_to_block_cache: LRUCacheWithRemove[Timestamp, int] = LRUCacheWithRemove(maxsize=32)  # noqa: E501
         # set per-chain earliest timestamps that can be turned to blocks. Never returns block 0
         if service == ExternalService.ETHERSCAN:
             self.earliest_ts = 1438269989
@@ -279,8 +281,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 ) from e
 
             try:
-                result = json_ret.get('result', None)
-                if result is None:
+                if (result := json_ret.get('result')) is None:
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
@@ -289,7 +290,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
-                # sucessful proxy calls do not include a status
+                # successful proxy calls do not include a status
                 status = int(json_ret.get('status', 1))
 
                 if status != 1:
@@ -676,6 +677,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         if ts < self.earliest_ts:
             return 0  # etherscan does not handle timestamps close to genesis well
 
+        # check if value exists in the cache
+        if (block_number := self.timestamp_to_block_cache.get(ts)) is not None:
+            return block_number
+
         options = {'timestamp': ts, 'closest': closest}
         result = self._query(
             module='block',
@@ -690,6 +695,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 f'result {result}',
             ) from e
 
+        self.timestamp_to_block_cache.add(key=ts, value=number)
         return number
 
     def get_contract_creation_hash(self, address: ChecksumEvmAddress) -> EVMTxHash | None:
