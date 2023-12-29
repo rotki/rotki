@@ -154,13 +154,15 @@ export const useAssetInfoRetrieval = () => {
       );
       return result;
     } catch (e: any) {
-      notify({
-        title: t('actions.assets.erc20.error.title', payload),
-        message: t('actions.assets.erc20.error.description', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.assets.erc20.error.title', payload),
+          message: t('actions.assets.erc20.error.description', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
       return {};
     }
   };

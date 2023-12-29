@@ -100,13 +100,15 @@ export const useBalances = createSharedComposable(() => {
         title: t('actions.balances.all_balances.task.title')
       });
     } catch (e: any) {
-      notify({
-        title: t('actions.balances.all_balances.error.title'),
-        message: t('actions.balances.all_balances.error.message', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.balances.all_balances.error.title'),
+          message: t('actions.balances.all_balances.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
     }
   };
 

@@ -73,15 +73,17 @@ export const useAaveStore = defineStore('defi/aave', () => {
       );
       set(balances, AaveBalances.parse(result));
     } catch (e: any) {
-      const message = t('actions.defi.aave_balances.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.aave_balances.error.title');
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        const message = t('actions.defi.aave_balances.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.aave_balances.error.title');
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED);
@@ -115,17 +117,19 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
       set(history, AaveHistory.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      const message = t('actions.defi.aave_history.error.description', {
-        error: e.message
-      });
-      const title = t('actions.defi.aave_history.error.title');
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        const message = t('actions.defi.aave_history.error.description', {
+          error: e.message
+        });
+        const title = t('actions.defi.aave_history.error.title');
 
-      notify({
-        title,
-        message,
-        display: true
-      });
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
 
     setStatus(Status.LOADED, section);

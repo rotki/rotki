@@ -1,5 +1,6 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
+import { isTaskCancelled } from '@/utils/index';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -36,14 +37,16 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
     set(state, task.parser ? task.parser(result) : result);
   } catch (e: any) {
-    logger.error(`action failure for task ${TaskType[task.type]}:`, e);
-    const { notify } = useNotificationsStore();
-    notify({
-      title: task.onError.title,
-      message: task.onError.error(e.message),
-      severity: Severity.ERROR,
-      display: true
-    });
+    if (!isTaskCancelled(e)) {
+      logger.error(`action failure for task ${TaskType[task.type]}:`, e);
+      const { notify } = useNotificationsStore();
+      notify({
+        title: task.onError.title,
+        message: task.onError.error(e.message),
+        severity: Severity.ERROR,
+        display: true
+      });
+    }
   }
   setStatus(Status.LOADED);
 }

@@ -78,7 +78,9 @@ export const useSync = createSharedComposable(() => {
         notifyFailure(message ?? '');
       }
     } catch (e: any) {
-      notifyFailure(e.message);
+      if (!isTaskCancelled(e)) {
+        notifyFailure(e.message);
+      }
     }
   };
 

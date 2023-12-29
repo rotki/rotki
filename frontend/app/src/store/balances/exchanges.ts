@@ -172,19 +172,24 @@ export const useExchangeBalancesStore = defineStore(
         });
         setStatus(Status.LOADED);
       } catch (e: any) {
-        const message = t('actions.balances.exchange_balances.error.message', {
-          location,
-          error: e.message
-        }).toString();
-        const title = t('actions.balances.exchange_balances.error.title', {
-          location
-        }).toString();
+        if (!isTaskCancelled(e)) {
+          const message = t(
+            'actions.balances.exchange_balances.error.message',
+            {
+              location,
+              error: e.message
+            }
+          ).toString();
+          const title = t('actions.balances.exchange_balances.error.title', {
+            location
+          }).toString();
 
-        notify({
-          title,
-          message,
-          display: true
-        });
+          notify({
+            title,
+            message,
+            display: true
+          });
+        }
         resetStatus();
       }
     };
@@ -249,17 +254,19 @@ export const useExchangeBalancesStore = defineStore(
           true
         );
         return true;
-      } catch {
-        notify({
-          title: t('actions.balances.exchange_savings_interest.error.title', {
-            location
-          }),
-          message: t(
-            'actions.balances.exchange_savings_interest.error.message',
-            { location }
-          ),
-          display: true
-        });
+      } catch (e: any) {
+        if (!isTaskCancelled(e)) {
+          notify({
+            title: t('actions.balances.exchange_savings_interest.error.title', {
+              location
+            }),
+            message: t(
+              'actions.balances.exchange_savings_interest.error.message',
+              { location }
+            ),
+            display: true
+          });
+        }
       }
 
       return false;

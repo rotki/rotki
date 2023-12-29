@@ -129,14 +129,16 @@ const fetchAirdrops = async () => {
     );
     set(airdrops, Airdrops.parse(result));
   } catch (e: any) {
-    logger.error(e);
-    notify({
-      title: t('actions.defi.airdrops.error.title').toString(),
-      message: t('actions.defi.airdrops.error.description', {
-        error: e.message
-      }).toString(),
-      display: true
-    });
+    if (!isTaskCancelled(e)) {
+      logger.error(e);
+      notify({
+        title: t('actions.defi.airdrops.error.title').toString(),
+        message: t('actions.defi.airdrops.error.description', {
+          error: e.message
+        }).toString(),
+        display: true
+      });
+    }
   } finally {
     set(loading, false);
   }

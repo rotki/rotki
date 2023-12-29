@@ -169,6 +169,9 @@ const importData = async () => {
     });
     success = result;
   } catch (e: any) {
+    if (isTaskCancelled(e)) {
+      return fetchReports();
+    }
     message = e.message;
     success = false;
   }

@@ -70,17 +70,27 @@ export const useAddressesNamesStore = defineStore(
       if (forceUpdate) {
         const taskType = TaskType.FETCH_ENS_NAMES;
         const { taskId } = await getEnsNamesTask(filteredAddresses);
-        const { result } = await awaitTask<EthNames, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: t('ens_names.task.title')
+        try {
+          const { result } = await awaitTask<EthNames, TaskMeta>(
+            taskId,
+            taskType,
+            {
+              title: t('ens_names.task.title')
+            }
+          );
+          set(ensNames, {
+            ...get(ensNames),
+            ...result
+          });
+        } catch (e: any) {
+          if (!isTaskCancelled(e)) {
+            notify({
+              title: t('ens_names.task.title'),
+              message: t('ens_names.error.message', { message: e.message }),
+              display: true
+            });
           }
-        );
-        set(ensNames, {
-          ...get(ensNames),
-          ...result
-        });
+        }
         resetAddressNamesData(payload);
       } else {
         const result = await getEnsNames(filteredAddresses);

@@ -48,18 +48,20 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       );
       set(unDecodedEventsBreakdown, snakeCaseTransformer(result));
     } catch (e: any) {
-      const description = t(
-        'actions.history.fetch_undecoded_events.error.message',
-        {
-          message: e.message
-        }
-      );
+      if (!isTaskCancelled(e)) {
+        const description = t(
+          'actions.history.fetch_undecoded_events.error.message',
+          {
+            message: e.message
+          }
+        );
 
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
     }
   };
 
@@ -101,15 +103,20 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       await awaitTask(taskId, taskType, taskMeta, true);
       clearDependedSection();
     } catch (e) {
-      logger.error(e);
-      notify({
-        title: t('actions.transactions_redecode_missing.error.title'),
-        message: t('actions.transactions_redecode_missing.error.description', {
-          error: e,
-          evmChain
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.transactions_redecode_missing.error.title'),
+          message: t(
+            'actions.transactions_redecode_missing.error.description',
+            {
+              error: e,
+              evmChain
+            }
+          ),
+          display: true
+        });
+      }
     }
   };
 
@@ -181,14 +188,16 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         clearDependedSection();
       }
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.transactions_redecode.error.title'),
-        message: t('actions.transactions_redecode.error.description', {
-          error: e
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.transactions_redecode.error.title'),
+          message: t('actions.transactions_redecode.error.description', {
+            error: e
+          }),
+          display: true
+        });
+      }
     }
   };
 

@@ -54,14 +54,16 @@ export const useBlockchainBalances = () => {
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.balances.blockchain.error.title'),
-        message: t('actions.balances.blockchain.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.balances.blockchain.error.title'),
+          message: t('actions.balances.blockchain.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
   };

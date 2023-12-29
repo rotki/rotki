@@ -1,14 +1,15 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import dayjs from 'dayjs';
 import { find, toArray } from 'lodash-es';
+import { TaskType } from '@/types/task-type';
 import {
   BackendCancelledTaskError,
   type Task,
   type TaskMap,
   type TaskMeta,
-  TaskNotFoundError
+  TaskNotFoundError,
+  UserCancelledTaskError
 } from '@/types/task';
-import { TaskType } from '@/types/task-type';
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
   const locked = [...get(lockedTasks)];
@@ -21,6 +22,8 @@ type ErrorHandler = (
   task: Task<TaskMeta>,
   message?: string
 ) => ActionResult<unknown>;
+
+const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 
 const useError = (): { error: ErrorHandler } => {
   const { t } = useI18n();
@@ -92,7 +95,7 @@ export const useTaskStore = defineStore('tasks', () => {
     const remainingTasks = { ...get(tasks) };
     delete remainingTasks[taskId];
     set(tasks, remainingTasks);
-    set(locked, unlockTask(locked, taskId));
+    unlock(taskId);
   };
 
   const isTaskRunning = (
@@ -149,6 +152,33 @@ export const useTaskStore = defineStore('tasks', () => {
     });
   };
 
+  const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
+    const { id, type, meta } = task;
+
+    if (!get(isTaskRunning(type, meta))) {
+      return false;
+    }
+
+    try {
+      const deleted = await api.cancelAsyncTask(id);
+
+      if (deleted) {
+        const handler = handlers[type] ?? handlers[`${type}-${id}`];
+        if (!handler) {
+          remove(task.id);
+        } else {
+          lock(id);
+          handleResult({ result: null, message: USER_CANCELLED_TASK }, task);
+          unlock(id);
+        }
+      }
+
+      return deleted;
+    } catch {
+      return false;
+    }
+  };
+
   const awaitTask = async <R, M extends TaskMeta>(
     id: number,
     type: TaskType,
@@ -169,6 +199,15 @@ export const useTaskStore = defineStore('tasks', () => {
           } else if (result === null) {
             let errorMessage: string;
             if (message) {
+              if (message === USER_CANCELLED_TASK) {
+                let msg = 'Request cancelled';
+                if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
+                  msg += ` ::dev_only_msg_part:: task_id: ${id}, task_type: ${TaskType[type]}`;
+                }
+                logger.debug(msg);
+                reject(new UserCancelledTaskError(msg));
+                return;
+              }
               errorMessage = message;
               /* c8 ignore next 5 */
               if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
@@ -301,6 +340,7 @@ export const useTaskStore = defineStore('tasks', () => {
     locked,
     add,
     remove,
+    cancelTask,
     isTaskRunning,
     hasRunningTasks,
     metadata,

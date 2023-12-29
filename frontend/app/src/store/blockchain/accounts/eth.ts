@@ -94,7 +94,9 @@ export const useEthAccountsStore = defineStore(
           message: ''
         };
       } catch (e: any) {
-        logger.error(e);
+        if (!isTaskCancelled(e)) {
+          logger.error(e);
+        }
         let message = e.message;
         if (e instanceof ApiValidationError) {
           message = e.getValidationErrors(payload);

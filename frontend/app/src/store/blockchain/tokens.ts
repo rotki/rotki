@@ -105,7 +105,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         setState(chain, result);
       }
     } catch (e) {
-      logger.error(e);
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+      }
     }
   };
 

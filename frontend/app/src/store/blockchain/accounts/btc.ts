@@ -39,20 +39,22 @@ export const useBtcAccountsStore = defineStore(
           blockchain: payload.blockchain
         });
       } catch (e: any) {
-        logger.error(e);
-        const title = t('actions.balances.xpub_removal.error.title');
-        const description = t(
-          'actions.balances.xpub_removal.error.description',
-          {
-            xpub: payload.xpub,
-            error: e.message
-          }
-        );
-        notify({
-          title,
-          message: description,
-          display: true
-        });
+        if (!isTaskCancelled(e)) {
+          logger.error(e);
+          const title = t('actions.balances.xpub_removal.error.title');
+          const description = t(
+            'actions.balances.xpub_removal.error.description',
+            {
+              xpub: payload.xpub,
+              error: e.message
+            }
+          );
+          notify({
+            title,
+            message: description,
+            display: true
+          });
+        }
       }
     };
 

@@ -170,14 +170,16 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       set(manualBalancesData, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.balances.manual_balances.error.title'),
-        message: t('actions.balances.manual_balances.error.message', {
-          message: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.balances.manual_balances.error.title'),
+          message: t('actions.balances.manual_balances.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
   };
@@ -201,7 +203,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+      }
 
       let messages = e.message;
       if (e instanceof ApiValidationError) {
@@ -233,7 +237,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+      }
 
       let message = e.message;
       if (e instanceof ApiValidationError) {

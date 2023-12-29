@@ -63,16 +63,18 @@ export const useTrades = () => {
       );
       return true;
     } catch (e: any) {
-      notify({
-        title: t('actions.trades.error.title', {
-          exchange
-        }),
-        message: t('actions.trades.error.description', {
-          exchange,
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.trades.error.title', {
+            exchange
+          }),
+          message: t('actions.trades.error.description', {
+            exchange,
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
 
     return false;

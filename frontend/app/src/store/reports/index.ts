@@ -251,10 +251,12 @@ export const useReportsStore = defineStore('reports', () => {
       }
       return result;
     } catch (e: any) {
-      set(reportError, {
-        error: e.message,
-        message: t('actions.reports.generate.error.description').toString()
-      });
+      if (!isTaskCancelled(e)) {
+        set(reportError, {
+          error: e.message,
+          message: t('actions.reports.generate.error.description').toString()
+        });
+      }
       return -1;
     } finally {
       clearInterval(intervalId);
@@ -303,10 +305,12 @@ export const useReportsStore = defineStore('reports', () => {
 
       return result;
     } catch (e: any) {
-      set(reportError, {
-        error: e.message,
-        message: t('actions.reports.generate.error.description').toString()
-      });
+      if (!isTaskCancelled(e)) {
+        set(reportError, {
+          error: e.message,
+          message: t('actions.reports.generate.error.description').toString()
+        });
+      }
 
       return {};
     } finally {

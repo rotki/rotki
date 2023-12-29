@@ -729,6 +729,7 @@
     "toRem": true,
     "useClipboardItems": true,
     "isOfEnum": true,
-    "isOfEventType": true
+    "isOfEventType": true,
+    "isTaskCancelled": true
   }
 }

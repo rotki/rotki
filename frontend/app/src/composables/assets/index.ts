@@ -43,15 +43,18 @@ export const useAssets = () => {
         versions: result
       };
     } catch (e: any) {
-      const title = t('actions.assets.versions.task.title').toString();
-      const description = t('actions.assets.versions.error.description', {
-        message: e.message
-      }).toString();
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        const title = t('actions.assets.versions.task.title').toString();
+        const description = t('actions.assets.versions.error.description', {
+          message: e.message
+        }).toString();
+
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
       return {
         updateAvailable: false
       };
@@ -82,15 +85,17 @@ export const useAssets = () => {
         conflicts: result
       };
     } catch (e: any) {
-      const title = t('actions.assets.update.task.title').toString();
-      const description = t('actions.assets.update.error.description', {
-        message: e.message
-      }).toString();
-      notify({
-        title,
-        message: description,
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        const title = t('actions.assets.update.task.title').toString();
+        const description = t('actions.assets.update.error.description', {
+          message: e.message
+        }).toString();
+        notify({
+          title,
+          message: description,
+          display: true
+        });
+      }
       return {
         done: false
       };
@@ -132,7 +137,9 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+      }
 
       return {
         success: false,
@@ -181,7 +188,9 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      logger.error(e);
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+      }
 
       return {
         success: false,

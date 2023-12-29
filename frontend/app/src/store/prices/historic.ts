@@ -10,6 +10,7 @@ export const useHistoricCachePriceStore = defineStore(
     const { queryHistoricalRates } = usePriceApi();
     const { awaitTask } = useTaskStore();
     const { t } = useI18n();
+    const { notify } = useNotificationsStore();
 
     const createKey = (fromAsset: string, timestamp: number | string) =>
       `${fromAsset}#${timestamp}`;
@@ -28,26 +29,39 @@ export const useHistoricCachePriceStore = defineStore(
         targetAsset
       });
 
-      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t(
-            'actions.balances.historic_fetch_price.task.title'
-          ).toString(),
-          description: t(
-            'actions.balances.historic_fetch_price.task.description',
-            {
-              count: assetsTimestamp.length,
-              toAsset: targetAsset
-            },
-            2
-          )
-        },
-        true
-      );
+      let data = { targetAsset: '', assets: {} };
 
-      const response = HistoricPrices.parse(result);
+      try {
+        const { result } = await awaitTask<HistoricPrices, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: t('actions.balances.historic_fetch_price.task.title'),
+            description: t(
+              'actions.balances.historic_fetch_price.task.description',
+              {
+                count: assetsTimestamp.length,
+                toAsset: targetAsset
+              },
+              2
+            )
+          },
+          true
+        );
+        data = result;
+      } catch (e: any) {
+        if (!isTaskCancelled(e)) {
+          notify({
+            title: t('actions.balances.historic_fetch_price.task.title'),
+            message: t('actions.balances.historic_fetch_price.error.message', {
+              message: e.message
+            }),
+            display: true
+          });
+        }
+      }
+
+      const response = HistoricPrices.parse(data);
 
       return function* () {
         for (const assetTimestamp of assetsTimestamp) {

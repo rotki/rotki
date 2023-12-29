@@ -53,14 +53,16 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       set(details, Eth2Details.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.staking.eth2.error.title'),
-        message: t('actions.staking.eth2.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.staking.eth2.error.title'),
+          message: t('actions.staking.eth2.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
     setStatus(Status.LOADED);
@@ -110,13 +112,16 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       return true;
     } catch (e: any) {
       setStatus(Status.NONE);
-      notify({
-        title: t('actions.eth2_staking_stats.error.title').toString(),
-        message: t('actions.eth2_staking_stats.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
+
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.eth2_staking_stats.error.title').toString(),
+          message: t('actions.eth2_staking_stats.error.message', {
+            message: e.message
+          }).toString(),
+          display: true
+        });
+      }
     }
 
     return false;

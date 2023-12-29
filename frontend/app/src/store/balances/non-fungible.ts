@@ -63,6 +63,9 @@ export const useNonFungibleBalancesStore = defineStore(
         );
         return true;
       } catch (e: any) {
+        if (isTaskCancelled(e)) {
+          return false;
+        }
         notify({
           title: t('actions.nft_balances.error.title'),
           message: t('actions.nft_balances.error.message', {

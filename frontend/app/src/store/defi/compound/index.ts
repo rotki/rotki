@@ -59,13 +59,15 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       );
       set(balances, CompoundBalances.parse(result));
     } catch (e: any) {
-      notify({
-        title: t('actions.defi.compound.error.title'),
-        message: t('actions.defi.compound.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.defi.compound.error.title'),
+          message: t('actions.defi.compound.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED);
   };
@@ -97,14 +99,16 @@ export const useCompoundStore = defineStore('defi/compound', () => {
 
       set(history, CompoundStats.parse(result));
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.defi.compound_history.error.title'),
-        message: t('actions.defi.compound_history.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.defi.compound_history.error.title'),
+          message: t('actions.defi.compound_history.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   };

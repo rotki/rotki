@@ -64,13 +64,26 @@ export const useSessionPurge = () => {
 
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
+  const { notify } = useNotificationsStore();
 
   const refreshGeneralCache = async () => {
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();
-    await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: t('actions.session.refresh_general_cache.task.title')
-    });
+    try {
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+        title: t('actions.session.refresh_general_cache.task.title')
+      });
+    } catch (e: any) {
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.session.refresh_general_cache.task.title'),
+          message: t('actions.session.refresh_general_cache.error.message', {
+            message: e.message
+          }),
+          display: true
+        });
+      }
+    }
   };
 
   return {

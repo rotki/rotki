@@ -133,15 +133,17 @@ export const useDefiStore = defineStore('defi', () => {
 
       set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
-      const title = t('actions.defi.balances.error.title');
-      const message = t('actions.defi.balances.error.description', {
-        error: e.message
-      });
-      notify({
-        title,
-        message,
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        const title = t('actions.defi.balances.error.title');
+        const message = t('actions.defi.balances.error.description', {
+          error: e.message
+        });
+        notify({
+          title,
+          message,
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED);
   };

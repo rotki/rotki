@@ -97,13 +97,15 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       set(loopring, AccountAssetBalances.parse(result));
       setStatus(Status.LOADED);
     } catch (e: any) {
-      notify({
-        title: t('actions.balances.loopring.error.title'),
-        message: t('actions.balances.loopring.error.description', {
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.balances.loopring.error.title'),
+          message: t('actions.balances.loopring.error.description', {
+            error: e.message
+          }),
+          display: true
+        });
+      }
       resetStatus();
     }
   };

@@ -53,16 +53,18 @@ export const useAssetMovements = () => {
         TaskMeta
       >(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      notify({
-        title: t('actions.asset_movements.error.title', {
-          exchange
-        }),
-        message: t('actions.asset_movements.error.description', {
-          exchange,
-          error: e.message
-        }),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.asset_movements.error.title', {
+            exchange
+          }),
+          message: t('actions.asset_movements.error.description', {
+            exchange,
+            error: e.message
+          }),
+          display: true
+        });
+      }
     }
 
     return false;

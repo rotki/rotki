@@ -194,16 +194,18 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2Balances, balances);
       }
     } catch (e: any) {
-      notify({
-        title: t('actions.defi.yearn_vaults.error.title', {
-          version
-        }).toString(),
-        message: t('actions.defi.yearn_vaults.error.description', {
-          error: e.message,
-          version
-        }).toString(),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.defi.yearn_vaults.error.title', {
+            version
+          }).toString(),
+          message: t('actions.defi.yearn_vaults.error.description', {
+            error: e.message,
+            version
+          }).toString(),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   }
@@ -258,16 +260,18 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         set(vaultsV2History, data);
       }
     } catch (e: any) {
-      notify({
-        title: t('actions.defi.yearn_vaults_history.error.title', {
-          version: payload.version
-        }).toString(),
-        message: t('actions.defi.yearn_vaults_history.error.description', {
-          error: e.message,
-          version: payload.version
-        }).toString(),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        notify({
+          title: t('actions.defi.yearn_vaults_history.error.title', {
+            version: payload.version
+          }).toString(),
+          message: t('actions.defi.yearn_vaults_history.error.description', {
+            error: e.message,
+            version: payload.version
+          }).toString(),
+          display: true
+        });
+      }
     }
     setStatus(Status.LOADED, section);
   }

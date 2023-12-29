@@ -304,14 +304,16 @@ export const useBlockchains = () => {
 
       return result;
     } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.detect_evm_accounts.error.title').toString(),
-        message: t('actions.detect_evm_accounts.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
+      if (!isTaskCancelled(e)) {
+        logger.error(e);
+        notify({
+          title: t('actions.detect_evm_accounts.error.title').toString(),
+          message: t('actions.detect_evm_accounts.error.message', {
+            message: e.message
+          }).toString(),
+          display: true
+        });
+      }
     }
   };
 

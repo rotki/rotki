@@ -84,7 +84,9 @@ const uploadPackaged = async (file: string) => {
       set(uploaded, true);
     }
   } catch (e: any) {
-    set(errorMessage, e.message);
+    if (!isTaskCancelled(e)) {
+      set(errorMessage, e.message);
+    }
   }
 };
 
@@ -118,7 +120,9 @@ const uploadFile = async () => {
           set(uploaded, true);
         }
       } catch (e: any) {
-        set(errorMessage, e.message);
+        if (!isTaskCancelled(e)) {
+          set(errorMessage, e.message);
+        }
       }
     }
   }
