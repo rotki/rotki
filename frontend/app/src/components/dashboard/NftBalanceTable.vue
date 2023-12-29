@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
@@ -26,6 +30,11 @@ const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
+const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+  column: 'lastPrice',
+  direction: 'desc' as const
+});
+
 const group = DashboardTableType.NFT;
 
 const {
@@ -34,7 +43,7 @@ const {
   options,
   fetchData,
   setPage,
-  setOptions
+  setTableOptions
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
@@ -50,55 +59,58 @@ const {
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
+const tableHeaders = computed<DataTableColumn[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
 
-  const headers: DataTableHeader[] = [
+  const headers: DataTableColumn[] = [
     {
-      text: t('common.name'),
-      value: 'name',
-      class: 'text-no-wrap'
-    },
-    {
-      text: t('nft_balance_table.column.price_in_asset'),
-      value: 'priceInAsset',
-      align: 'end',
-      width: '75%',
+      label: t('common.name'),
+      key: 'name',
       class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-0',
+      sortable: true
     },
     {
-      text: t('common.price_in_symbol', {
+      label: t('nft_balance_table.column.price_in_asset'),
+      key: 'priceInAsset',
+      align: 'end',
+      class: 'text-no-wrap',
+      cellClass: 'py-0'
+    },
+    {
+      label: t('common.price_in_symbol', {
         symbol: get(currencySymbol)
       }),
-      value: 'lastPrice',
+      key: 'lastPrice',
       align: 'end',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      cellClass: 'py-0',
+      sortable: true
     }
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      text: t('nft_balance_table.column.percentage'),
-      value: 'percentageOfTotalNetValue',
+      label: t('nft_balance_table.column.percentage'),
+      key: 'percentageOfTotalNetValue',
       align: 'end',
       class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-0'
     });
   }
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
-      text: t(
+      label: t(
         'dashboard_asset_table.headers.percentage_of_total_current_group',
         {
           group
         }
       ),
-      value: 'percentageOfTotalCurrentGroup',
+      key: 'percentageOfTotalCurrentGroup',
       align: 'end',
       class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-0'
     });
   }
 
@@ -177,51 +189,66 @@ watch(loading, async (isLoading, wasLoading) => {
 
     <CollectionHandler :collection="balances" @set-page="setPage($event)">
       <template #default="{ data, itemLength }">
-        <DataTable
-          :headers="tableHeaders"
-          :items="data"
+        <RuiDataTable
+          :cols="tableHeaders"
+          :rows="data"
           :loading="isLoading"
           :options="options"
-          :server-items-length="itemLength"
-          @update:options="setOptions($event)"
+          :sort.sync="sort"
+          :pagination="{
+            limit: options.itemsPerPage,
+            page: options.page,
+            total: itemLength
+          }"
+          :pagination-modifiers="{ external: true }"
+          :sort-modifiers="{ external: true }"
+          :empty="{ description: t('data_table.no_data') }"
+          :sticky-offset="64"
+          row-attr="id"
+          sticky-header
+          outlined
+          @update:options="setTableOptions($event)"
         >
-          <template #item.name="{ item }">
-            <NftDetails :identifier="item.id" />
+          <template #item.name="{ row }">
+            <NftDetails :identifier="row.id" />
           </template>
-          <template #item.priceInAsset="{ item }">
+          <template #item.priceInAsset="{ row }">
             <AmountDisplay
-              v-if="item.priceAsset !== currencySymbol"
-              :value="item.priceInAsset"
-              :asset="item.priceAsset"
+              v-if="row.priceAsset !== currencySymbol"
+              :value="row.priceInAsset"
+              :asset="row.priceAsset"
             />
             <span v-else>-</span>
           </template>
-          <template #item.lastPrice="{ item }">
+          <template #item.lastPrice="{ row }">
             <AmountDisplay
               no-scramble
-              :price-asset="item.priceAsset"
-              :amount="item.priceInAsset"
-              :value="item.usdPrice"
+              :price-asset="row.priceAsset"
+              :amount="row.priceInAsset"
+              :value="row.usdPrice"
               show-currency="symbol"
               fiat-currency="USD"
             />
           </template>
-          <template #item.percentageOfTotalNetValue="{ item }">
+          <template #item.percentageOfTotalNetValue="{ row }">
             <PercentageDisplay
-              :value="percentageOfTotalNetValue(item.usdPrice)"
+              :value="percentageOfTotalNetValue(row.usdPrice)"
+              :asset-padding="0.1"
             />
           </template>
-          <template #item.percentageOfTotalCurrentGroup="{ item }">
+          <template #item.percentageOfTotalCurrentGroup="{ row }">
             <PercentageDisplay
-              :value="percentageOfCurrentGroup(item.usdPrice)"
+              :value="percentageOfCurrentGroup(row.usdPrice)"
+              :asset-padding="0.1"
             />
           </template>
-          <template #body.append="{ isMobile }">
+          <template #body.append>
             <RowAppend
               label-colspan="2"
               :label="t('common.total')"
               :right-patch-colspan="tableHeaders.length - 3"
-              :is-mobile="isMobile"
+              :is-mobile="false"
+              class-name="[&>td]:p-4 text-sm"
             >
               <AmountDisplay
                 v-if="totalUsdValue"
@@ -231,7 +258,7 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </RowAppend>
           </template>
-        </DataTable>
+        </RuiDataTable>
       </template>
     </CollectionHandler>
   </DashboardExpandableTable>
