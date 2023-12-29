@@ -243,22 +243,17 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             try:
                 response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                if 'Max retries exceeded with url' not in str(e):
-                    raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e  # noqa: E501
+                raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e
 
-            if (
-                    (max_retries_exceeded := response is None) or  # max retries exceeded with url
-                    response.status_code == HTTPStatus.TOO_MANY_REQUESTS
-            ):
-                error_str = 'max retries exceeded error' if max_retries_exceeded else '429 error'
+            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if backoff >= backoff_limit:
                     raise RemoteError(
-                        f'Getting {self.chain} Etherscan {error_str} '
+                        f'Getting {self.chain} Etherscan too many requests error '
                         f'even after we incrementally backed off',
                     )
 
                 log.debug(
-                    f'Got {error_str} from {self.chain} etherscan. Will '
+                    f'Got too many requests error from {self.chain} etherscan. Will '
                     f'backoff for {backoff} seconds.',
                 )
                 gevent.sleep(backoff)
