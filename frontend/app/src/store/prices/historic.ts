@@ -1,7 +1,8 @@
 import { type BigNumber } from '@rotki/common';
+import { taskCancelledError } from '@/utils';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 
 export const useHistoricCachePriceStore = defineStore(
   'prices/historic-cache',
@@ -51,7 +52,7 @@ export const useHistoricCachePriceStore = defineStore(
         );
         data = result;
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
+        if (taskCancelledError(e)) {
           // pass
         }
       }

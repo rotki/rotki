@@ -2,6 +2,7 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
+import { taskCancelledError } from '@/utils';
 import { type DataTableHeader } from '@/types/vuetify';
 import {
   AIRDROP_POAP,
@@ -11,7 +12,7 @@ import {
   type PoapDelivery
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 
 const ETH = Blockchain.ETH;
@@ -129,7 +130,7 @@ const fetchAirdrops = async () => {
     );
     set(airdrops, Airdrops.parse(result));
   } catch (e: any) {
-    if (!(e instanceof UserCancelledTaskError)) {
+    if (!taskCancelledError(e)) {
       logger.error(e);
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),

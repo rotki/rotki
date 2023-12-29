@@ -1,7 +1,8 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
+import { taskCancelledError } from '@/utils/index';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type FetchData } from '@/types/fetch';
 
@@ -36,7 +37,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
     set(state, task.parser ? task.parser(result) : result);
   } catch (e: any) {
-    if (!(e instanceof UserCancelledTaskError)) {
+    if (!taskCancelledError(e)) {
       logger.error(`action failure for task ${TaskType[task.type]}:`, e);
       const { notify } = useNotificationsStore();
       notify({

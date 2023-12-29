@@ -14,7 +14,8 @@ import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
+import { taskCancelledError } from '@/utils';
 
 export const useSessionPurge = () => {
   const { resetState } = useDefiStore();
@@ -73,7 +74,7 @@ export const useSessionPurge = () => {
         title: t('actions.session.refresh_general_cache.task.title')
       });
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
+      if (taskCancelledError(e)) {
         // pass
       }
     }

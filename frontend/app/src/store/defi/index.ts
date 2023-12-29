@@ -1,10 +1,11 @@
 import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
+import { taskCancelledError } from '@/utils';
 import { AllDefiProtocols } from '@/types/defi/overview';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ProtocolVersion } from '@/types/defi';
 import {
@@ -133,7 +134,7 @@ export const useDefiStore = defineStore('defi', () => {
 
       set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         const title = t('actions.defi.balances.error.title');
         const message = t('actions.defi.balances.error.description', {
           error: e.message

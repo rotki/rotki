@@ -7,8 +7,9 @@ import {
   type EthStakingRewardsPayload
 } from '@rotki/common/lib/staking/eth2';
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useEth2StakingStore = defineStore('staking/eth2', () => {
@@ -53,7 +54,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       set(details, Eth2Details.parse(result));
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
         notify({
           title: t('actions.staking.eth2.error.title'),
@@ -113,7 +114,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     } catch (e: any) {
       setStatus(Status.NONE);
 
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         notify({
           title: t('actions.eth2_staking_stats.error.title').toString(),
           message: t('actions.eth2_staking_stats.error.message', {

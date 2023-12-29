@@ -259,6 +259,7 @@ declare global {
   const sumAssetBalances: typeof import('./utils/balances')['sumAssetBalances']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
+  const taskCancelledError: typeof import('./utils/index')['taskCancelledError']
   const templateRef: typeof import('@vueuse/core')['templateRef']
   const throttledRef: typeof import('@vueuse/core')['throttledRef']
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
@@ -986,6 +987,7 @@ declare module 'vue' {
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
+    readonly taskCancelledError: UnwrapRef<typeof import('./utils/index')['taskCancelledError']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
@@ -1706,6 +1708,7 @@ declare module '@vue/runtime-core' {
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
+    readonly taskCancelledError: UnwrapRef<typeof import('./utils/index')['taskCancelledError']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>

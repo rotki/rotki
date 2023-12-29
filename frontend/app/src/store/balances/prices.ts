@@ -1,5 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import { type Balances } from '@/types/blockchain/balances';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
@@ -10,7 +11,7 @@ import {
   type OracleCachePayload
 } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { type ActionStatus } from '@/types/action';
@@ -59,7 +60,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
           ...AssetPriceResponse.parse(result)
         });
       } catch (e: any) {
-        if (e instanceof UserCancelledTaskError) {
+        if (taskCancelledError(e)) {
           // pass
         }
       }
@@ -120,7 +121,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
       set(exchangeRates, ExchangeRates.parse(result));
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         notify({
           title: t('actions.balances.exchange_rates.error.title').toString(),
           message: t('actions.balances.exchange_rates.error.message', {
@@ -172,7 +173,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset][timestamp];
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
       }
       return One.negated();
@@ -218,7 +219,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         success: result
       };
     } catch (e: any) {
-      if (e instanceof UserCancelledTaskError) {
+      if (taskCancelledError(e)) {
         // pass
       }
       return {

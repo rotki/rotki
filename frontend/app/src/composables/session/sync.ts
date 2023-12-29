@@ -1,6 +1,7 @@
 import { Severity } from '@rotki/common/lib/messages';
+import { taskCancelledError } from '@/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   SYNC_DOWNLOAD,
@@ -78,7 +79,7 @@ export const useSync = createSharedComposable(() => {
         notifyFailure(message ?? '');
       }
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         notifyFailure(e.message);
       }
     }

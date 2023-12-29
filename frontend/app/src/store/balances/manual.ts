@@ -1,5 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import {
   type AssetBalances,
   type BalanceByLocation,
@@ -13,7 +14,7 @@ import {
 } from '@/types/manual-balances';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
@@ -170,7 +171,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       set(manualBalancesData, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
         notify({
           title: t('actions.balances.manual_balances.error.title'),
@@ -203,7 +204,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
       }
 
@@ -237,7 +238,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
       }
 

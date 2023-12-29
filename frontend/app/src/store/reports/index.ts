@@ -1,5 +1,6 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { taskCancelledError } from '@/utils';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ProfitLossReportDebugPayload,
@@ -9,7 +10,7 @@ import {
   type Reports,
   type SelectedReport
 } from '@/types/reports';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AddressBookSimplePayload } from '@/types/eth-names';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -251,7 +252,7 @@ export const useReportsStore = defineStore('reports', () => {
       }
       return result;
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         set(reportError, {
           error: e.message,
           message: t('actions.reports.generate.error.description').toString()
@@ -305,7 +306,7 @@ export const useReportsStore = defineStore('reports', () => {
 
       return result;
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         set(reportError, {
           error: e.message,
           message: t('actions.reports.generate.error.description').toString()

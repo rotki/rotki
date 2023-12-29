@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
+import { taskCancelledError } from '@/utils';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ImportSourceType } from '@/types/upload-types';
 import { toMessages } from '@/utils/validation';
@@ -84,7 +85,7 @@ const uploadPackaged = async (file: string) => {
       set(uploaded, true);
     }
   } catch (e: any) {
-    if (!(e instanceof UserCancelledTaskError)) {
+    if (!taskCancelledError(e)) {
       set(errorMessage, e.message);
     }
   }
@@ -120,7 +121,7 @@ const uploadFile = async () => {
           set(uploaded, true);
         }
       } catch (e: any) {
-        if (!(e instanceof UserCancelledTaskError)) {
+        if (!taskCancelledError(e)) {
           set(errorMessage, e.message);
         }
       }

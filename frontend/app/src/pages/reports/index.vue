@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
+import { taskCancelledError } from '@/utils';
 import { Routes } from '@/router/routes';
 import {
   type ProfitLossReportDebugPayload,
   type ProfitLossReportPeriod
 } from '@/types/reports';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { displayDateFormatter } from '@/data/date_formatter';
 
@@ -169,7 +170,7 @@ const importData = async () => {
     });
     success = result;
   } catch (e: any) {
-    if (e instanceof UserCancelledTaskError) {
+    if (taskCancelledError(e)) {
       return fetchReports();
     }
     message = e.message;

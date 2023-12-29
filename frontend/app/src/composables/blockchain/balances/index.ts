@@ -1,10 +1,11 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import { chainSection } from '@/types/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
 import { type AssetPrices } from '@/types/prices';
 import { Status } from '@/types/status';
-import { type BlockchainMetadata, UserCancelledTaskError } from '@/types/task';
+import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
@@ -54,7 +55,7 @@ export const useBlockchainBalances = () => {
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
         notify({
           title: t('actions.balances.blockchain.error.title'),

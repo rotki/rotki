@@ -1,5 +1,6 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { groupBy } from 'lodash-es';
+import { taskCancelledError } from '@/utils';
 import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
@@ -8,11 +9,7 @@ import {
   type TransactionRequestPayload
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
-import {
-  BackendCancelledTaskError,
-  type TaskMeta,
-  UserCancelledTaskError
-} from '@/types/task';
+import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { Module } from '@/types/modules';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -68,7 +65,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       if (e instanceof BackendCancelledTaskError) {
         logger.debug(e);
         removeQueryStatus(account);
-      } else if (!(e instanceof UserCancelledTaskError)) {
+      } else if (!taskCancelledError(e)) {
         notify({
           title: t('actions.transactions.error.title'),
           message: t('actions.transactions.error.description', {
@@ -190,7 +187,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
         notify({
           title: t('actions.online_events.error.title'),

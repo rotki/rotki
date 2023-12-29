@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import {
   type AddressBookEntries,
   type AddressBookEntry,
@@ -9,7 +10,7 @@ import {
   type AddressNameRequestPayload,
   type EthNames
 } from '@/types/eth-names';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { type Collection } from '@/types/collection';
@@ -83,7 +84,7 @@ export const useAddressesNamesStore = defineStore(
             ...result
           });
         } catch (e: any) {
-          if (e instanceof UserCancelledTaskError) {
+          if (taskCancelledError(e)) {
             // pass
           }
         }

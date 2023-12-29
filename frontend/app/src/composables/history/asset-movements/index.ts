@@ -1,4 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
+import { taskCancelledError } from '@/utils';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
@@ -8,7 +9,7 @@ import {
   type AssetMovementRequestPayload
 } from '@/types/history/asset-movements';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type TradeLocation } from '@/types/history/trade/location';
 
@@ -53,7 +54,7 @@ export const useAssetMovements = () => {
         TaskMeta
       >(taskId, taskType, taskMeta, true);
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         notify({
           title: t('actions.asset_movements.error.title', {
             exchange

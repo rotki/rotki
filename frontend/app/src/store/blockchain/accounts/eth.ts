@@ -3,10 +3,11 @@ import {
   type Eth2ValidatorEntry,
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
+import { taskCancelledError } from '@/utils';
 import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type ActionStatus } from '@/types/action';
@@ -94,7 +95,7 @@ export const useEthAccountsStore = defineStore(
           message: ''
         };
       } catch (e: any) {
-        if (!(e instanceof UserCancelledTaskError)) {
+        if (!taskCancelledError(e)) {
           logger.error(e);
         }
         let message = e.message;

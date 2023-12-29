@@ -6,10 +6,11 @@ import {
   type AssetUpdatePayload,
   type AssetUpdateResult
 } from '@/types/asset';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { taskCancelledError } from '@/utils';
 
 export const useAssets = () => {
   const { awaitTask } = useTaskStore();
@@ -43,7 +44,7 @@ export const useAssets = () => {
         versions: result
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         const title = t('actions.assets.versions.task.title').toString();
         const description = t('actions.assets.versions.error.description', {
           message: e.message
@@ -85,7 +86,7 @@ export const useAssets = () => {
         conflicts: result
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         const title = t('actions.assets.update.task.title').toString();
         const description = t('actions.assets.update.error.description', {
           message: e.message
@@ -137,7 +138,7 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
       }
 
@@ -188,7 +189,7 @@ export const useAssets = () => {
         success: true
       };
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
       }
 

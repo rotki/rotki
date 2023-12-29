@@ -2,6 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
+import { taskCancelledError } from '@/utils';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import {
@@ -9,7 +10,7 @@ import {
   type AddAccountsPayload,
   type BaseAddAccountsPayload
 } from '@/types/blockchain/accounts';
-import { type TaskMeta, UserCancelledTaskError } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { Section } from '@/types/status';
 
 export const useBlockchains = () => {
@@ -304,7 +305,7 @@ export const useBlockchains = () => {
 
       return result;
     } catch (e: any) {
-      if (!(e instanceof UserCancelledTaskError)) {
+      if (!taskCancelledError(e)) {
         logger.error(e);
         notify({
           title: t('actions.detect_evm_accounts.error.title').toString(),
