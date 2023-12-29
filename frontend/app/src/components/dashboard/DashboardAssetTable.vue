@@ -81,7 +81,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
 const filtered = computed(() => {
   const sortBy = get(sort);
   const data = get(balances).filter(assetFilter);
-  if (sortBy && !Array.isArray(sortBy) && sortBy.column) {
+  if (!Array.isArray(sortBy) && sortBy?.column) {
     return sortItems(
       data,
       [sortBy.column as keyof AssetBalance],
@@ -98,7 +98,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     {
       label: t('common.asset'),
       key: 'asset',
-      class: 'text-no-wrap !w-[99%]',
+      class: 'text-no-wrap',
       cellClass: 'py-0',
       sortable: true
     },
@@ -217,6 +217,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       :expanded="expanded"
       :sticky-offset="64"
       row-attr="asset"
+      sticky-header
       single-expand
       outlined
     >
@@ -290,20 +291,20 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
         </RowAppend>
       </template>
       <template #expanded-item="{ row }">
-        <RuiCard>
-          <EvmNativeTokenBreakdown
-            v-if="isEvmNativeToken(row.asset)"
-            show-percentage
-            :total="row.usdValue"
-            :identifier="row.asset"
-          />
-          <AssetBalances
-            v-else
-            hide-total
-            v-bind="props"
-            :balances="row.breakdown ?? []"
-          />
-        </RuiCard>
+        <EvmNativeTokenBreakdown
+          v-if="isEvmNativeToken(row.asset)"
+          show-percentage
+          :total="row.usdValue"
+          :identifier="row.asset"
+          class="bg-white dark:bg-[#1E1E1E]"
+        />
+        <AssetBalances
+          v-else
+          hide-total
+          v-bind="props"
+          :balances="row.breakdown ?? []"
+          class="bg-white dark:bg-[#1E1E1E]"
+        />
       </template>
       <template #item.expand="{ row }">
         <RuiTableRowExpander
