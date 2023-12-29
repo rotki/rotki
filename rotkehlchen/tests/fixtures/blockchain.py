@@ -691,8 +691,12 @@ def fixture_beaconchain(database, messages_aggregator):
 
 
 @pytest.fixture(name='opensea')
-def fixture_opensea(database, messages_aggregator):
-    return Opensea(database=database, msg_aggregator=messages_aggregator)
+def fixture_opensea(database, messages_aggregator, ethereum_inquirer):
+    return Opensea(
+        database=database,
+        msg_aggregator=messages_aggregator,
+        ethereum_inquirer=ethereum_inquirer,
+    )
 
 
 @pytest.fixture(name='btc_derivation_gap_limit')
