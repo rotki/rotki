@@ -512,6 +512,91 @@ To package the application for your platform you need to run the packaging scrip
     pip3 install packaging requests
     ./package.py --build full
 
+Nix
+-------------
+
+You can use `Nix <https://nixos.org/download>`_ package manager to start rotki development. Create ``flake.nix`` in the root of the project and copy the following into::
+
+    {
+      description = "Rotki project with virtualenv";
+
+      inputs = {
+        nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+        nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+        flake-utils.url = "github:numtide/flake-utils";
+      };
+
+      outputs = { self, nixpkgs, flake-utils, ... }:
+        flake-utils.lib.eachDefaultSystem (system:
+          let
+            pkgs = nixpkgs.legacyPackages.${system};
+
+            # We need to override the python3 package with exact version python3.10, because
+            # otherwise latest python3.11 version is used.
+            # When executing "pnpm run dev:web" this will prepend the following path to the PATH envvar
+            # > /nix/store/qp5zys77biz7imbk6yy85q5pdv7qk84j-python3-3.11.6/bin
+            # Inside frontend/scripts/start-dev.js, we're then using startProcess('python', ...), which
+            # searches for python in PATH, finding python3.11 instead of python3.10.
+            python310 = pkgs.python310;
+            nodejsWithPython310 = pkgs.nodejs.override { python3 = python310; };
+            nodePackages = pkgs.nodePackages.override { nodejs = nodejsWithPython310; };
+            pnpmWithPython310 = nodePackages.pnpm;
+
+            # Create a Python environment that includes the dependencies from requirements.txt
+            myPythonEnv = pkgs.mkShell {
+              name = "my-python-env";
+              buildInputs = [
+                pkgs.gcc
+                pkgs.stdenv.cc.cc.lib
+                pkgs.bash
+                pkgs.lzma
+                pkgs.git
+                pnpmWithPython310
+                pkgs.python310
+                pkgs.python310Packages.virtualenv
+                pkgs.python310Packages.pip
+              ];
+
+              # The shellHook is executed whenever the Nix shell is entered
+              shellHook = ''
+                # Create a virtualenv in the current directory
+                ${pkgs.pkgs.python310Packages.virtualenv}/bin/virtualenv --no-setuptools --no-wheel .venv
+
+                # Activate the virtualenv
+                source .venv/bin/activate
+
+                # Set the RUFF_PATH environment variable
+                export RUFF_PATH=${pkgs.ruff}/bin/ruff
+
+                # allow for the environment to pick up packages installed with virtualenv
+                export PYTHONPATH=.venv/${pkgs.python310.sitePackages}/:$PYTHONPATH
+
+                # fix libstdc++.so not found error
+                export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
+
+                # Install dependencies from requirements.txt
+                pip install setuptools
+                pip install -r ${./requirements.txt}
+                pip install -r ${./requirements_dev.txt}
+                pip install -r ${./requirements_lint.txt}
+              '';
+            };
+          in
+          {
+            devShell = myPythonEnv;
+          }
+        );
+    }
+
+Then just execute the following command to let Nix build the entire environment where you can start rotki development::
+
+    nix develop
+
+From this point onward start backend/frontend::
+
+    cd frontend
+    pnpm run dev:web
+
 OSX
 =====
 
