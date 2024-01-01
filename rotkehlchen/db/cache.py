@@ -22,7 +22,7 @@ class DBCache(Enum):
             raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
 
 
-def serialize_cache_for_api(cache: dict[DBCache, int]) -> dict[str, Timestamp]:
+def serialize_cache_for_api(cache: dict[DBCache, Timestamp]) -> dict[str, Timestamp]:
     """Serialize the cache for /settings API consumption."""
     return {
         DBCache.LAST_DATA_UPLOAD_TS.value: Timestamp(cache.get(DBCache.LAST_DATA_UPLOAD_TS, 0)),

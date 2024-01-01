@@ -1974,7 +1974,7 @@ def test_upgrade_db_40_to_41(user_data_dir):
         resume_from_backup=False,
     )
     # add some settings that should move in the upgrade
-    settings = {
+    should_move = {
         'last_balance_save': 234,
         'last_data_upload_ts': 345,
         'last_data_updates_ts': 456,
@@ -1983,6 +1983,14 @@ def test_upgrade_db_40_to_41(user_data_dir):
         'last_spam_assets_detect_key': 789,
         'last_augmented_spam_assets_detect_key': 890,
     }
+    should_not_move = {
+        'spam_assets_version': 901,
+        'rpc_nodes_version': 12,
+        'contracts_version': 123,
+        'global_addressbook_version': 234,
+        'accounting_rules_version': 345,
+    }
+    settings = should_move | should_not_move
     with db_v40.conn.write_ctx() as cursor:
         cursor.executemany('INSERT INTO settings VALUES (?, ?)', settings.items())
         assert table_exists(cursor, 'key_value_cache') is False
@@ -2003,7 +2011,8 @@ def test_upgrade_db_40_to_41(user_data_dir):
     )""") is True
         cache_values = cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
         for name, value in cache_values:
-            assert int(value) == settings[name]
+            assert name not in should_not_move
+            assert int(value) == should_move[name]
     db.logout()
 
 
@@ -2057,6 +2066,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
+    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '41'
     removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
