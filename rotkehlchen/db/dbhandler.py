@@ -72,6 +72,7 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
+    serialize_db_setting,
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
@@ -122,6 +123,7 @@ from rotkehlchen.types import (
     ChainAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
+    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -196,6 +198,7 @@ class DBHandler:
             'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
             'ongoing_upgrade_from_version': (int, None),
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
+            'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -247,7 +250,8 @@ class DBHandler:
         ))
         if len(found_backups) == 0:
             raise DBUpgradeError(
-                'Your encrypted database is in a half-upgraded state and there was no backup '
+                f'Your encrypted database is in a half-upgraded state at '
+                f'v{ongoing_upgrade_from_version} and there was no backup '
                 'found. Please open an issue on our github or contact us in our discord server.',
             )
 
@@ -278,6 +282,31 @@ class DBHandler:
         with open(self.user_data_dir / DBINFO_FILENAME, 'w', encoding='utf8') as f:
             f.write(rlk_jsondumps(dbinfo))
 
+    def _check_settings(self) -> None:
+        """Check that the non_syncing_exchanges setting only has active locations"""
+        with self.conn.read_ctx() as cursor:
+            non_syncing_exchanges = self.get_setting(
+                cursor=cursor,
+                name='non_syncing_exchanges',
+            )
+
+        valid_locations = [
+            exchange_location_id
+            for exchange_location_id in non_syncing_exchanges
+            if exchange_location_id.location in SUPPORTED_EXCHANGES
+        ]
+        if len(valid_locations) != len(non_syncing_exchanges):
+            with self.user_write() as write_cursor:
+                self.set_setting(
+                    write_cursor=write_cursor,
+                    name='non_syncing_exchanges',
+                    value=serialize_db_setting(
+                        value=valid_locations,
+                        setting='non_syncing_exchanges',
+                        is_modifiable=True,
+                    ),
+                )
+
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
@@ -292,7 +321,7 @@ class DBHandler:
         is older than the one supported.
         - DBSchemaError if database schema is malformed.
         """
-        # Run upgrades if needed
+        # Run upgrades if needed -- only for user DB
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
@@ -301,30 +330,32 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
-        # set up transient connection
-        self._connect(conn_attribute='conn_transient')
-        if self.conn_transient:
-            transient_version = 0
-            cursor = self.conn_transient.cursor()
-            with suppress(sqlcipher.DatabaseError):  # not created yet
-                result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
-                if result is not None:
-                    transient_version = int(result[0])
 
-            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-                # "upgrade" transient DB
-                tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
-                cursor.executescript('PRAGMA foreign_keys = OFF;')
-                cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
-                cursor.executescript('PRAGMA foreign_keys = ON;')
-            self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-            cursor.execute(
-                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-            )
-            self.conn_transient.commit()
-
+        # run checks on the database
         self.conn.schema_sanity_check()
+        self._check_settings()
+
+        # This logic executes only for the transient db
+        self._connect(conn_attribute='conn_transient')
+        transient_version = 0
+        cursor = self.conn_transient.cursor()
+        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+            result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
+            if result is not None:
+                transient_version = int(result[0])
+
+        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+            # "upgrade" transient DB
+            tables = list(cursor.execute('select name from sqlite_master where type is "table"'))
+            cursor.executescript('PRAGMA foreign_keys = OFF;')
+            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
+            cursor.executescript('PRAGMA foreign_keys = ON;')
+        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+        cursor.execute(
+            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+        )
+        self.conn_transient.commit()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -361,6 +392,10 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['last_data_migration']) -> int | None:
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> list['ExchangeLocationID']:  # noqa: E501
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
@@ -371,8 +406,9 @@ class DBHandler:
                 'main_currency',
                 'ongoing_upgrade_from_version',
                 'last_data_migration',
+                'non_syncing_exchanges',
             ],
-    ) -> int | None | (Timestamp | (bool | AssetWithOracles)):
+    ) -> int | None | (Timestamp | (bool | AssetWithOracles)) | list['ExchangeLocationID']:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
@@ -392,8 +428,9 @@ class DBHandler:
                 'premium_should_sync',
                 'ongoing_upgrade_from_version',
                 'main_currency',
+                'non_syncing_exchanges',
             ],
-            value: int | (Timestamp | Asset),
+            value: int | (Timestamp | Asset) | str,
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -1467,9 +1504,31 @@ class DBHandler:
             )
 
     def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
+        """
+        Removes the exchange location from user_credentials and from
+        `the non_syncing_exchanges`setting.
+        """
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE name=? AND location=?',
             (name, location.serialize_for_db()),
+        )
+
+        settings = self.get_settings(write_cursor)
+        if len(ignored_locations_settings := settings.non_syncing_exchanges) == 0:
+            return
+
+        ignored_exchanges = [
+            exchange for exchange in ignored_locations_settings
+            if not (exchange.location == location and exchange.name == name)
+        ]
+        self.set_setting(
+            write_cursor=write_cursor,
+            name='non_syncing_exchanges',
+            value=serialize_db_setting(
+                value=ignored_exchanges,
+                setting='non_syncing_exchanges',
+                is_modifiable=True,
+            ),
         )
 
     def get_exchange_credentials(

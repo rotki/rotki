@@ -508,8 +508,10 @@ class DBConnection:
 
         Raises DBSchemaError if anything is off.
         """
-        if self.minimized_schema is None:
-            return  # Should happen only for transient db
+        assert (
+            self.connection_type != DBConnectionType.TRANSIENT and
+            self.minimized_schema is not None
+        )
 
         with self.read_ctx() as cursor:
             sanity_check_impl(

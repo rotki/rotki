@@ -598,7 +598,7 @@ class TypesAndCounterpatiesFiltersSchema(Schema):
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
-    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
+    counterparties = DelimitedOrNormalList(fields.String(load_default=None), load_default=None)
 
 
 class HistoryEventSchema(

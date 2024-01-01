@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 from more_itertools import peekable
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.evm.accounting.structures import (
     BaseEventSettings,
     EventsAccountantCallback,
@@ -409,7 +410,7 @@ def query_missing_accounting_rules(
         accounting_pot: 'AccountingPot',
         evm_accounting_aggregator: 'EVMAccountingAggregators',
         events: Sequence[HistoryBaseEntry],
-) -> list[bool]:
+) -> list[EventAccountingRuleStatus]:
     """
     For a list of events returns a list of the same length with boolean values where True
     means that the event won't be affected by any accounting rule or processed in accounting
@@ -456,14 +457,14 @@ def query_missing_accounting_rules(
                     (isinstance(event, EvmEvent) and event.event_identifier.startswith('BP1_'))
             ):
 
-                accountant.processable_events_cache.add(event.identifier, False)  # type: ignore
+                accountant.processable_events_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # type: ignore  # noqa: E501
                 current_event_index += 1
                 continue
 
             # check the rule in the database
             row = cursor.execute(query, event_binding).fetchone()
-            is_missing_rule = row[0] == 0
-            accountant.processable_events_cache.add(event.identifier, is_missing_rule)  # type: ignore
+            accounting_outcome = EventAccountingRuleStatus.NOT_PROCESSED if row[0] == 0 else EventAccountingRuleStatus.HAS_RULE  # noqa: E501
+            accountant.processable_events_cache.add(event.identifier, accounting_outcome)  # type: ignore
             accountant.processable_events_cache_signatures.get(event.get_type_identifier()).append(event.identifier)  # type: ignore
 
             # the current event in addition to have an accounting rule could have a callback that
@@ -478,14 +479,25 @@ def query_missing_accounting_rules(
             )
             if len(new_missing_accounting_rule) != 0:
                 current_event_index += len(new_missing_accounting_rule)
-                if is_missing_rule is True:  # we processed it in the callback so is not missing
-                    accountant.processable_events_cache.add(event.identifier, False)  # type: ignore
+                if accounting_outcome is EventAccountingRuleStatus.NOT_PROCESSED:  # we processed it in the callback so is not missing  # noqa: E501
+                    accountant.processable_events_cache.add(
+                        key=event.identifier,  # type: ignore  # the identifier is optional in the event
+                        value=EventAccountingRuleStatus.PROCESSED,
+                    )
 
                 # update information about the new events
                 for processed_event_id, event_type_identifier in new_missing_accounting_rule:
-                    accountant.processable_events_cache.add(processed_event_id, False)
+                    accountant.processable_events_cache.add(
+                        key=processed_event_id,
+                        value=EventAccountingRuleStatus.PROCESSED,
+                    )
                     accountant.processable_events_cache_signatures.get(event_type_identifier).append(processed_event_id)
 
-    # we use bool because the cache can return None and in order to cover this case we use
-    # `None`'s Falsy value meaning that the event doesn't have an accounting rule
-    return [bool(accountant.processable_events_cache.get(event.identifier)) for event in events]  # type: ignore[arg-type]
+    result = []
+    for event in events:
+        if (processable_status := accountant.processable_events_cache.get(event.identifier)) is None:  # type: ignore # noqa: E501
+            result.append(EventAccountingRuleStatus.NOT_PROCESSED)
+        else:
+            result.append(processable_status)
+
+    return result

@@ -79,6 +79,7 @@ from rotkehlchen.tests.utils.constants import (
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -87,6 +88,7 @@ from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     CostBasisMethod,
+    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -188,27 +190,20 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
         data.unlock(username, '1234', create_new=False, resume_from_backup=False)
 
 
-def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
-    """Tests that adding and removing an exchange in the DB works.
-
-    Also unknown exchanges should fail
+@pytest.mark.parametrize('db_settings', [
+    {'non_syncing_exchanges': [ExchangeLocationID(name='Coinbase', location=Location.COINBASE)]}])
+def test_add_remove_exchange(database: DBHandler) -> None:
     """
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(
-        user_data_dir=user_data_dir,
-        password='123',
-        msg_aggregator=msg_aggregator,
-        initial_settings=None,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-        resume_from_backup=False,
-    )
+    Tests that adding and removing an exchange in the DB works. It also test that
+    deleting an exchange also removes it from the non_syncing_exchanges setting
 
-    # Test that an unknown exchange fails
-    with pytest.raises(InputError):
-        db.add_exchange('foo', Location.EXTERNAL, 'api_key', 'api_secret')
+    Also unknown exchanges should fail.
+    """
+    with pytest.raises(InputError):  # Test that an unknown exchange fails
+        database.add_exchange('foo', Location.EXTERNAL, ApiKey('api_key'), ApiSecret(b'api_secret'))  # noqa: E501
 
-    with db.conn.read_ctx() as cursor:
-        credentials = db.get_exchange_credentials(cursor)
+    with database.conn.read_ctx() as cursor:
+        credentials = database.get_exchange_credentials(cursor)
         assert len(credentials) == 0
 
         kraken_api_key1 = ApiKey('kraken_api_key')
@@ -219,11 +214,15 @@ def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
         binance_api_secret = ApiSecret(b'binance_api_secret')
 
         # add mock kraken and binance
-        db.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
-        db.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
-        db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+        database.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
+        database.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
+        database.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
         # and check the credentials can be retrieved
-        credentials = db.get_exchange_credentials(cursor)
+        credentials = database.get_exchange_credentials(cursor)
+
+        # check that we have the coinbase exchange in the list of exchanges to not sync
+        settings = database.get_settings(cursor=cursor)
+        assert settings.non_syncing_exchanges[0].location == Location.COINBASE
 
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 2
@@ -242,9 +241,9 @@ def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
     assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
-    with db.user_write() as cursor:
-        db.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
-        credentials = db.get_exchange_credentials(cursor)
+    with database.user_write() as cursor:
+        database.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
+        credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 1
     kraken2 = credentials[Location.KRAKEN][0]
@@ -258,15 +257,34 @@ def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
     assert binance.api_secret == binance_api_secret
 
     # remove last exchange of a location and see nothing is returned
-    with db.user_write() as cursor:
-        db.remove_exchange(cursor, 'kraken2', Location.KRAKEN)
-        credentials = db.get_exchange_credentials(cursor)
+    with database.user_write() as cursor:
+        database.remove_exchange(cursor, 'kraken2', Location.KRAKEN)
+        credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 1
     assert len(credentials[Location.BINANCE]) == 1
     binance = credentials[Location.BINANCE][0]
     assert binance.name == 'binance'
     assert binance.api_key == binance_api_key
     assert binance.api_secret == binance_api_secret
+
+    # check that deleting an exchange also removes it from the list of ignored for sync
+    database.add_exchange('Coinbase', Location.COINBASE, make_api_key(), make_api_secret())
+    database.add_exchange('Coinbase 2', Location.COINBASE, make_api_key(), make_api_secret())
+
+    with database.user_write() as write_cursor:
+        database.remove_exchange(
+            write_cursor=write_cursor,
+            name='Coinbase',
+            location=Location.COINBASE,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        settings = database.get_settings(cursor=cursor)
+        assert len(settings.non_syncing_exchanges) == 0
+        updated_credentials = database.get_exchange_credentials(cursor)
+
+    assert len(updated_credentials[Location.BINANCE]) == 1
+    assert updated_credentials[Location.COINBASE][0].name == 'Coinbase 2'
 
 
 def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb: int) -> None:
@@ -1870,3 +1888,26 @@ def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
                 extra_data=None,
             )
             assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
+
+
+@pytest.mark.parametrize('db_settings', [
+    {
+        'non_syncing_exchanges': [
+            ExchangeLocationID(name='Coinbase', location=Location.COINBASE),
+            ExchangeLocationID(name='Bittrex', location=Location.BITTREX),
+            ExchangeLocationID(name='Ftx', location=Location.FTX),
+        ],
+    },
+])
+def test_startup_check_settings(database: 'DBHandler') -> None:
+    """
+    Test that after first connection we remove locations from the non syncing exchanges setting
+    that are no longer available in the app
+    """
+    database._run_actions_after_first_connection()
+    with database.conn.read_ctx() as cursor:
+        settings: DBSettings = database.get_settings(cursor)
+
+    assert settings.non_syncing_exchanges == [
+        ExchangeLocationID(name='Coinbase', location=Location.COINBASE),
+    ]

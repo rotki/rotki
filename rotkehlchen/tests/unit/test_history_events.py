@@ -1,5 +1,6 @@
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
@@ -30,7 +31,7 @@ def test_serialize_with_invalid_type_subtype():
         customized_event_ids=[],
         ignored_ids_mapping={},
         hidden_event_ids=[],
-        missing_accounting_rule=True,  # needed to recreate the error thistestsfor
+        event_accounting_rule_status=EventAccountingRuleStatus.NOT_PROCESSED,  # needed to recreate the error this tests for  # noqa: E501
         grouped_events_num=None,
     ) == {
         'entry': {
@@ -47,5 +48,5 @@ def test_serialize_with_invalid_type_subtype():
             'sequence_index': 1,
             'timestamp': 1,
         },
-        'missing_accounting_rule': True,
+        'event_accounting_rule_status': 'not processed',
     }

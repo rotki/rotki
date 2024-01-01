@@ -201,7 +201,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         usd_price = ZERO
         for underlying_token in custom_token.underlying_tokens:
             token = EvmToken(underlying_token.get_identifier(parent_chain=custom_token.chain_id))
-            underlying_asset_price, oracle, _ = Inquirer().find_usd_price_and_oracle(token)
+            underlying_asset_price, oracle, _ = Inquirer.find_usd_price_and_oracle(token)
             usd_price += underlying_asset_price * underlying_token.weight
 
         if usd_price != ZERO_PRICE:
@@ -340,8 +340,9 @@ class Inquirer:
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
 
-    def get_evm_manager(self, chain_id: ChainID) -> 'EvmManager':
-        evm_manager = self._evm_managers.get(chain_id)
+    @staticmethod
+    def get_evm_manager(chain_id: ChainID) -> 'EvmManager':
+        evm_manager = Inquirer._evm_managers.get(chain_id)
         assert evm_manager is not None, f'evm manager for chain id {chain_id} should have been injected'  # noqa: E501
         return evm_manager
 
@@ -519,9 +520,8 @@ class Inquirer:
         if from_asset == to_asset:
             return Price(ONE), CurrentPriceOracle.MANUALCURRENT, False
 
-        instance = Inquirer()
         if to_asset == A_USD:
-            price, oracle, used_main_currency = instance.find_usd_price_and_oracle(
+            price, oracle, used_main_currency = Inquirer.find_usd_price_and_oracle(
                 asset=from_asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
@@ -530,11 +530,11 @@ class Inquirer:
             return price, oracle, used_main_currency
 
         if ignore_cache is False:
-            cache = instance.get_cached_current_price_entry(cache_key=(from_asset, to_asset), match_main_currency=match_main_currency)  # noqa: E501
+            cache = Inquirer.get_cached_current_price_entry(cache_key=(from_asset, to_asset), match_main_currency=match_main_currency)  # noqa: E501
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
-        oracle_price, oracle_queried, used_main_currency = instance._query_oracle_instances(
+        oracle_price, oracle_queried, used_main_currency = Inquirer._query_oracle_instances(
             from_asset=from_asset,
             to_asset=to_asset,
             skip_onchain=skip_onchain,
@@ -552,7 +552,7 @@ class Inquirer:
             coming_from_latest_price: bool = False,
     ) -> Price:
         """Wrapper around _find_price to ignore oracle queried when getting price"""
-        price, _, _ = Inquirer()._find_price(
+        price, _, _ = Inquirer._find_price(
             from_asset=from_asset,
             to_asset=to_asset,
             ignore_cache=ignore_cache,
@@ -574,7 +574,7 @@ class Inquirer:
         Wrapper around _find_price to include oracle queried when getting price and
         flag that shows whether returned price is in main currency.
         """
-        return Inquirer()._find_price(
+        return Inquirer._find_price(
             from_asset=from_asset,
             to_asset=to_asset,
             ignore_cache=ignore_cache,
@@ -591,7 +591,7 @@ class Inquirer:
             coming_from_latest_price: bool = False,
     ) -> Price:
         """Wrapper around _find_usd_price to ignore oracle queried when getting usd price"""
-        price, _, _ = Inquirer()._find_usd_price(
+        price, _, _ = Inquirer._find_usd_price(
             asset=asset,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
@@ -611,7 +611,7 @@ class Inquirer:
         Wrapper around _find_usd_price to include oracle queried when getting usd price and
         flag that shows whether returned price is in main currency
         """
-        return Inquirer()._find_usd_price(
+        return Inquirer._find_usd_price(
             asset=asset,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
@@ -636,10 +636,9 @@ class Inquirer:
         if asset == A_USD:
             return Price(ONE), CurrentPriceOracle.FIAT, False
 
-        instance = Inquirer()
         cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = instance.get_cached_current_price_entry(cache_key=cache_key, match_main_currency=match_main_currency)  # noqa: E501
+            cache = Inquirer.get_cached_current_price_entry(cache_key=cache_key, match_main_currency=match_main_currency)  # noqa: E501
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
@@ -651,7 +650,7 @@ class Inquirer:
 
         if isinstance(asset, FiatAsset):
             with suppress(RemoteError):
-                price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
+                price, oracle = Inquirer._query_fiat_pair(base=asset, quote=Inquirer.usd)
                 return price, oracle, False
 
         # continue, asset isn't fiat or a price can be found by one of the oracles (CC for example)
@@ -665,8 +664,8 @@ class Inquirer:
             underlying_tokens = asset.underlying_tokens
 
             # Check if it is a special token
-            if asset.identifier in instance.special_tokens:
-                ethereum = instance.get_evm_manager(chain_id=ChainID.ETHEREUM)
+            if asset.identifier in Inquirer.special_tokens:
+                ethereum = Inquirer.get_evm_manager(chain_id=ChainID.ETHEREUM)
                 underlying_asset_price, oracle = get_underlying_asset_price(asset)
                 usd_price = handle_defi_price_query(
                     ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
@@ -712,7 +711,7 @@ class Inquirer:
 
             try:
                 price_in_btc = get_bisq_market_price(bsq)
-                btc_price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_BTC)
+                btc_price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
                 usd_price = Price(price_in_btc * btc_price)
                 Inquirer.set_cached_price(
                     cache_key=cache_key,
@@ -725,7 +724,7 @@ class Inquirer:
                 )
             except (RemoteError, DeserializationError) as e:
                 msg = f'Could not find price for BSQ. {e!s}'
-                instance._msg_aggregator.add_warning(msg)
+                Inquirer._msg_aggregator.add_warning(msg)
                 return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN, False
             else:
                 return usd_price, oracle, False
@@ -734,7 +733,7 @@ class Inquirer:
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
             return Price(FVal(0.01)), CurrentPriceOracle.FIAT, False
 
-        price, oracle, used_main_currency = instance._query_oracle_instances(
+        price, oracle, used_main_currency = Inquirer._query_oracle_instances(
             from_asset=asset,
             to_asset=A_USD,
             coming_from_latest_price=coming_from_latest_price,

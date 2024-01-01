@@ -9,6 +9,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -1106,6 +1107,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }, {
         'entry': {
             'identifier': 5,
@@ -1126,6 +1128,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[:2] == tx1_events
     tx2_events = [{
@@ -1148,6 +1151,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }, {
         'entry': {
             'identifier': 2,
@@ -1168,6 +1172,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[2:4] == tx2_events
     tx3_events = [{
@@ -1190,6 +1195,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[4:5] == tx3_events
     tx4_events = [{
@@ -1212,6 +1218,7 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
             'extra_data': None,
         },
+        'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[5:6] == tx4_events
 
@@ -1249,6 +1256,7 @@ def test_query_transactions_check_decoded_events(
             'extra_data': None,
         },
         'customized': True,
+        'event_accounting_rule_status': 'not processed',
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -1443,7 +1451,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
         expected_totals_with_grouping=3,
         entries_limit=entries_limit,
     )
-    expected = generate_events_response([event5, event6])
+    expected = generate_events_response(
+        data=[event5, event6],
+        accounting_status=EventAccountingRuleStatus.NOT_PROCESSED,
+    )
     assert returned_events == expected
 
     # test that filtering by subtype works
@@ -1458,7 +1469,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
         expected_totals_with_grouping=3,
         entries_limit=entries_limit,
     )
-    expected = generate_events_response([event5])
+    expected = generate_events_response(
+        data=[event5],
+        accounting_status=EventAccountingRuleStatus.NOT_PROCESSED,
+    )
     assert returned_events == expected
 
     # test filtering by products
@@ -1484,7 +1498,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
         expected_totals_with_grouping=3,
         entries_limit=entries_limit,
     )
-    expected = generate_events_response([event5])
+    expected = generate_events_response(
+        data=[event5],
+        accounting_status=EventAccountingRuleStatus.NOT_PROCESSED,
+    )
     assert returned_events == expected
 
 

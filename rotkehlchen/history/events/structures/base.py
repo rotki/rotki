@@ -7,6 +7,7 @@ from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
@@ -256,7 +257,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             customized_event_ids: list[int],
             ignored_ids_mapping: dict[ActionType, set[str]],
             hidden_event_ids: list[int],
-            missing_accounting_rule: bool,
+            event_accounting_rule_status: EventAccountingRuleStatus,
             grouped_events_num: int | None = None,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
@@ -269,8 +270,8 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
-        if missing_accounting_rule is True and self.maybe_get_direction() != EventDirection.NEUTRAL:  # noqa: E501
-            result['missing_accounting_rule'] = True
+
+        result['event_accounting_rule_status'] = event_accounting_rule_status.serialize()
 
         return result
 

@@ -3,6 +3,7 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
@@ -220,14 +221,12 @@ def test_missing_accounting_rules_accounting_treatment(
         notes='my notes',
     )
     events = store_and_retrieve_events([swap_event_spend, swap_event_receive, swap_event_fee], database)  # noqa: E501
-    assert not all(
-        query_missing_accounting_rules(
-            db=database,
-            accounting_pot=accountant.pots[0],
-            evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
-            events=events,
-            accountant=accountant,
-        ),
+    assert EventAccountingRuleStatus.NOT_PROCESSED not in query_missing_accounting_rules(
+        db=database,
+        accounting_pot=accountant.pots[0],
+        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        events=events,
+        accountant=accountant,
     )
 
 
@@ -287,7 +286,10 @@ def test_events_affected_by_others_accounting_treatment(
         evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
         events=events,
         accountant=accountant,
-    ) == [False, False]
+    ) == [
+        EventAccountingRuleStatus.HAS_RULE,
+        EventAccountingRuleStatus.PROCESSED,
+    ]
 
 
 @pytest.mark.parametrize('accountant_without_rules', [True])
@@ -358,7 +360,11 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
         events=events,
         accountant=accountant,
-    ) == [False, False, False]
+    ) == [
+        EventAccountingRuleStatus.HAS_RULE,
+        EventAccountingRuleStatus.PROCESSED,
+        EventAccountingRuleStatus.PROCESSED,
+    ]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x7716a99194d758c8537F056825b75Dd0C8FDD89f']])
@@ -428,7 +434,7 @@ def test_events_affected_by_others_callbacks(
         evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
         events=db_events,
         accountant=accountant,
-    ) == [False, False, False]
+    ) == [EventAccountingRuleStatus.PROCESSED] * 3
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x7716a99194d758c8537F056825b75Dd0C8FDD89f']])
@@ -498,7 +504,7 @@ def test_events_affected_by_others_callbacks_with_fitlers(
         evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
         events=db_events[1:],
         accountant=accountant,
-    ) == [False, False]
+    ) == [EventAccountingRuleStatus.PROCESSED, EventAccountingRuleStatus.PROCESSED]
 
 
 @pytest.mark.parametrize('accountant_without_rules', [True])
@@ -570,4 +576,4 @@ def test_correct_accounting_treatment_is_selected(
         evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
         events=events,
         accountant=accountant,
-    ) == [False, False]
+    ) == [EventAccountingRuleStatus.HAS_RULE, EventAccountingRuleStatus.PROCESSED]

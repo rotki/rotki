@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
@@ -77,6 +78,25 @@ def _setup_conflict_tests(
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT local_id FROM unresolved_remote_conflicts')
         assert cursor.fetchall() == [(1,), (2,)]
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_query_rules(rotkehlchen_api_server):
+    """Test that querying accounting rules works fine"""
+    response = requests.post(
+        api_url_for(  # test matching counterparty None
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'event_types': ['deposit'],
+            'event_subtypes': ['deposit_asset'],
+            'counterparties': [None],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 1
+    assert result['entries_total'] != 0
 
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
@@ -419,7 +439,10 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
-    assert all(entry['missing_accounting_rule'] for entry in result['entries'])
+    assert all(
+        entry['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+        for entry in result['entries']
+    )
 
     # add a rule for the return event and check that the cache was updated
     response = requests.put(
@@ -446,8 +469,8 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
-    assert 'missing_accounting_rule' not in result['entries'][0]
-    assert result['entries'][1]['missing_accounting_rule'] is True
+    assert result['entries'][0]['event_accounting_rule_status'] == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    assert result['entries'][1]['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
 
     # update a rule to check that it removes the cache from the second event too
     response = requests.patch(
@@ -475,8 +498,8 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
-    for entry in result['entries']:
-        assert 'missing_accounting_rule' not in entry
+    assert result['entries'][0]['event_accounting_rule_status'] == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    assert result['entries'][1]['event_accounting_rule_status'] == EventAccountingRuleStatus.PROCESSED.serialize()  # noqa: E501
 
     # delete accounting rule and check that both events will not be processed now
     # update a rule to check that it removes the cache from the second event too
@@ -496,4 +519,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
-    all(entry['missing_accounting_rule'] for entry in result['entries'])
+    all(
+        entry['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+        for entry in result['entries']
+    )

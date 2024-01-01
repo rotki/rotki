@@ -115,7 +115,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     for entry in nfts:
         if entry['token_identifier'] == '_nft_0xc3f733ca98e0dad0386979eb96fb1722a1a05e69_129':
             assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
-            assert entry['external_link'] == 'https://purrse.mooncat.community/129'
+            assert entry['external_link'] == 'https://chainstation.mooncatrescue.com/mooncats/129'
             assert 'image_url' in entry
             assert FVal(entry['price_eth']) > ZERO
             assert FVal(entry['price_usd']) > ZERO
