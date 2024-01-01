@@ -6,6 +6,7 @@ import {
 
 type Model = {
   onlyShowOwned: boolean;
+  onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 };
 
@@ -49,17 +50,37 @@ const onlyShowOwned = computed({
     });
   }
 });
+
+const onlyShowWhitelisted = computed({
+  get() {
+    return props.value.onlyShowWhitelisted;
+  },
+  set(value: boolean) {
+    emit('input', {
+      ...props.value,
+      onlyShowWhitelisted: value
+    });
+  }
+});
 </script>
 
 <template>
   <TableStatusFilter v-model="showMenu">
-    <div class="p-1" data-cy="asset-filter-menu">
+    <div class="p-1 pt-2" data-cy="asset-filter-menu">
       <RuiCheckbox
         v-model="onlyShowOwned"
         color="primary"
         data-cy="asset-filter-only-show-owned"
-        class="mt-0 px-4 py-2"
+        class="mt-0 px-3"
         :label="t('asset_table.only_show_owned')"
+        hide-details
+      />
+      <RuiCheckbox
+        v-model="onlyShowWhitelisted"
+        color="primary"
+        data-cy="asset-filter-only-show-whitelisted"
+        class="mt-0 px-3"
+        :label="t('asset_table.only_show_whitelisted')"
         hide-details
       />
       <div class="font-bold text-uppercase p-2 text-sm">

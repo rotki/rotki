@@ -5,6 +5,7 @@ export const useDataLoader = () => {
   const { fetchWatchers } = useWatchersStore();
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
+  const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
   const { fetchAllTradeLocations } = useLocationStore();
   const { fetch, refreshPrices } = useBalances();
@@ -14,6 +15,7 @@ export const useDataLoader = () => {
 
     await Promise.allSettled([
       fetchIgnoredAssets(),
+      fetchWhitelistedAssets(),
       fetchWatchers(),
       fetch(),
       fetchNetValue()

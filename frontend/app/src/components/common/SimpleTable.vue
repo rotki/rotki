@@ -52,23 +52,31 @@ const style = computed<StyleValue | undefined>(() => {
 
   table {
     @apply w-full;
+
+    th,
+    td {
+      @apply py-2 px-4;
+    }
+
+    thead {
+      @apply border-b w-full border-rui-grey-200;
+
+      th {
+        @apply font-medium text-sm text-rui-text-secondary text-start;
+      }
+    }
+
+    tbody {
+      tr {
+        td {
+          @apply border-b-0 #{!important};
+        }
+      }
+    }
   }
 
   &.outlined {
     @apply border rounded-md border-rui-grey-200;
-  }
-
-  thead {
-    @apply border-b w-full border-rui-grey-200;
-  }
-
-  th {
-    @apply font-medium text-sm text-rui-text-secondary text-start;
-  }
-
-  th,
-  td {
-    @apply py-2 px-4;
   }
 }
 

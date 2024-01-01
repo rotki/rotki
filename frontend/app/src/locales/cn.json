@@ -1036,6 +1036,7 @@
     "only_show_ignored": "只显示忽略的资产 ({length}) | 只显示忽略的资产",
     "only_show_owned": "只显示自有资产",
     "only_show_unignored": "只显示未忽略的资产",
+    "only_show_whitelisted": "只显示白名单资产",
     "selected": "{count} 个资产被选中",
     "show_all": "显示全部",
     "underlying_tokens": "底层代币"

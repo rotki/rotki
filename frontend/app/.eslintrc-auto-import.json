@@ -730,6 +730,8 @@
     "useClipboardItems": true,
     "isOfEnum": true,
     "isOfEventType": true,
-    "isTaskCancelled": true
+    "isTaskCancelled": true,
+    "useAssetWhitelistApi": true,
+    "useWhitelistedAssetsStore": true
   }
 }

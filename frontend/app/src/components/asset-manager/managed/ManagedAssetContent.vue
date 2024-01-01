@@ -22,17 +22,21 @@ const { identifier, mainPage } = toRefs(props);
 const mergeTool = ref<boolean>(false);
 const ignoredFilter = ref<{
   onlyShowOwned: boolean;
+  onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }>({
   onlyShowOwned: false,
+  onlyShowWhitelisted: false,
   ignoredAssetsHandling: 'exclude'
 });
 
 const extraParams = computed(() => {
-  const { ignoredAssetsHandling, onlyShowOwned } = get(ignoredFilter);
+  const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } =
+    get(ignoredFilter);
   return {
     ignoredAssetsHandling,
-    showUserOwnedAssetsOnly: onlyShowOwned.toString()
+    showUserOwnedAssetsOnly: onlyShowOwned.toString(),
+    showWhitelistedAssetsOnly: onlyShowWhitelisted.toString()
   };
 });
 
@@ -130,6 +134,7 @@ const {
   onUpdateFilters(query) {
     set(ignoredFilter, {
       onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
+      onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
       ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude'
     });
   },

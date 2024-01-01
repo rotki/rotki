@@ -4,6 +4,7 @@ import { type ComputedRef } from 'vue';
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
+import ManagedAssetAction from '@/components/asset-manager/managed/ManagedAssetAction.vue';
 
 defineOptions({
   name: 'AssetBreakdown'
@@ -15,8 +16,11 @@ const props = defineProps<{
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
+  useWhitelistedAssetsStore();
 
 const isIgnored = isAssetIgnored(identifier);
+const isWhitelisted = isAssetWhitelisted(identifier);
 
 const toggleIgnoreAsset = async () => {
   const id = get(identifier);
@@ -24,6 +28,15 @@ const toggleIgnoreAsset = async () => {
     await unignoreAsset(id);
   } else {
     await ignoreAsset(id);
+  }
+};
+
+const toggleWhitelistAsset = async () => {
+  const id = get(identifier);
+  if (get(isWhitelisted)) {
+    await unWhitelistAsset(id);
+  } else {
+    await whitelistAsset(id);
   }
 };
 
@@ -94,7 +107,7 @@ const goToEdit = () => {
 
 <template>
   <TablePageLayout class="p-4" hide-header>
-    <div class="flex flex-wrap justify-between w-full">
+    <div class="flex flex-wrap justify-between w-full gap-4">
       <div class="flex gap-4 items-center">
         <AssetIcon
           :identifier="identifier"
@@ -140,7 +153,26 @@ const goToEdit = () => {
           {{ t('assets.ignore') }}
         </div>
 
-        <VSwitch :input-value="isIgnored" @change="toggleIgnoreAsset()" />
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+          tooltip-class="max-w-[10rem]"
+          :disabled="!isWhitelisted"
+        >
+          <template #activator>
+            <VSwitch
+              :disabled="isWhitelisted"
+              :input-value="isIgnored"
+              @change="toggleIgnoreAsset()"
+            />
+          </template>
+          {{ t('ignore.whitelist.hint') }}
+        </RuiTooltip>
+
+        <ManagedAssetAction
+          :identifier="identifier"
+          @toggle-whitelist="toggleWhitelistAsset()"
+        />
       </div>
     </div>
 
