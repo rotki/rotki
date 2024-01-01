@@ -110,7 +110,7 @@ class RotkiDataUpdater:
             self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
             with self.user_db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(  # this was the last update to be applied for this data type, so remember it  # noqa: E501
-                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
                     (update_type.serialize(), update_version),
                 )
 
@@ -372,7 +372,7 @@ class RotkiDataUpdater:
     def _check_for_last_version(cursor: 'DBCursor', update_type: UpdateType) -> int:
         """This method checks the database for the last local version of `update_type`"""
         found_version = cursor.execute(
-            'SELECT value FROM key_value_cache WHERE name=?',
+            'SELECT value FROM settings WHERE name=?',
             (update_type.serialize(),),
         ).fetchone()
         return int(found_version[0]) if found_version is not None else 0

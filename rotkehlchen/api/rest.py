@@ -1124,7 +1124,8 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = {
                 'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
-                'settings': process_result(self.rotkehlchen.get_settings(cursor)),
+                'settings': process_result(self.rotkehlchen.get_settings(cursor)) |
+                serialize_cache_for_api(self.rotkehlchen.get_cache(cursor)),
             }
         return {
             'result': result,
@@ -1192,6 +1193,7 @@ class RestAPI:
         exchanges = self.rotkehlchen.exchange_manager.get_connected_exchanges_info()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = process_result(self.rotkehlchen.get_settings(cursor))
+            settings |= serialize_cache_for_api(self.rotkehlchen.get_cache(cursor))
 
         return _wrap_in_ok_result({
             'exchanges': exchanges,
@@ -1580,10 +1582,11 @@ class RestAPI:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
+            cache = self.rotkehlchen.get_cache(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, None)
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
-            'settings': settings.serialize(),
+            'settings': settings.serialize() | serialize_cache_for_api(cache),
             'ignored_events_ids': {k.serialize(): list(v) for k, v in ignored_ids.items()},
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),

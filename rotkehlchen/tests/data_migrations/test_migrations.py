@@ -124,7 +124,7 @@ def detect_accounts_migration_check(
     # set high version so that DB data updates don't get applied
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
             [
                 (UpdateType.SPAM_ASSETS.serialize(), 999),
                 (UpdateType.RPC_NODES.serialize(), 999),

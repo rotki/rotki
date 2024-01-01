@@ -13,6 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.db.cache import DBCache
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -45,6 +46,8 @@ def check_proper_unlock_result(
     assert response_data['settings']['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in dataclasses.fields(DBSettings):
         assert setting.name in response_data['settings']
+    assert DBCache.LAST_DATA_UPLOAD_TS.value in response_data['settings']
+    assert DBCache.LAST_BALANCE_SAVE.value in response_data['settings']
 
     if settings_to_check is not None:
         for setting_to_check, value in settings_to_check.items():

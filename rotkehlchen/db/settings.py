@@ -7,6 +7,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
+from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
@@ -94,6 +95,8 @@ STRING_KEYS = (
     'date_display_format',
     'frontend_settings',
 )
+
+UPDATE_TYPES_VERSIONS = {x.serialize() for x in UpdateType}
 
 CachedDBSettingsFieldNames = Literal[
     'have_premium',
@@ -278,6 +281,8 @@ def db_settings_from_dict(
             specified_args[key] = int(value)
         elif key in STRING_KEYS:
             specified_args[key] = str(value)
+        elif key in UPDATE_TYPES_VERSIONS:
+            continue  # these are handled separately
         elif key == 'taxfree_after_period':
             # taxfree_after_period can also be None, to signify disabled setting
             if value is None:

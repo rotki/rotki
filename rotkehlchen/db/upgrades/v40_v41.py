@@ -33,11 +33,6 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
         'last_evm_accounts_detect_ts',
         'last_spam_assets_detect_key',
         'last_augmented_spam_assets_detect_key',
-        'spam_assets_version',
-        'rpc_nodes_version',
-        'contracts_version',
-        'global_addressbook_version',
-        'accounting_rules_version',
     )
     movable_settings = write_cursor.execute(
         f'SELECT name, value FROM settings WHERE name IN ({",".join(["?"] * len(settings_moved))});',  # noqa: E501
