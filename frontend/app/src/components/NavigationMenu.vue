@@ -219,146 +219,62 @@ const navItems: MenuItem[] = [
 </script>
 
 <template>
-  <div>
-    <VList
-      nav
-      class="navigation-menu"
-      :class="{ 'navigation-menu--mini': isMini }"
-    >
-      <VListItemGroup>
-        <template v-for="(navItem, i) in navItems">
-          <VListItem
-            v-if="navItem.type === 'item'"
-            :key="i"
-            :class="`navigation-menu__item navigation__${navItem.class}`"
-            active-class="navigation-menu__item--active"
-            :to="navItem.route"
-          >
+  <div class="p-2" :class="{ '!p-0': isMini }">
+    <template v-for="(navItem, i) in navItems">
+      <RouterLink v-if="navItem.type === 'item'" :key="i" :to="navItem.route">
+        <template #default="{ isActive, href }">
+          <a :href="href">
             <NavigationMenuItem
-              :show-tooltips="isMini"
+              :class="`navigation__${navItem.class}`"
+              :mini="isMini"
               :text="navItem.text"
               :icon="navItem.icon"
               :image="navItem.image"
+              :active="isActive"
               :icon-component="navItem.component"
             />
-          </VListItem>
-          <VListGroup v-else-if="navItem.type === 'group'" :key="i">
-            <template #activator>
-              <NavigationMenuItem
-                :show-tooltips="isMini"
-                :text="navItem.text"
-                :icon="navItem.icon"
-                :icon-component="navItem.component"
-                :image="navItem.image"
-                :class="`navigation-menu__item navigation__${navItem.class}`"
-              />
-            </template>
-            <div
-              class="navigation-submenu"
-              :class="{ 'navigation-submenu--mini': isMini }"
-            >
-              <VListItem
-                v-for="(subNavItem, si) in navItem.items"
-                :key="si"
-                :class="`navigation-menu__item navigation__${subNavItem.class}`"
-                active-class="navigation-menu__item--active"
-                :to="subNavItem.route"
-              >
-                <template #default="{ active }">
-                  <NavigationMenuItem
-                    :show-tooltips="isMini"
-                    :text="subNavItem.text"
-                    :icon="subNavItem.icon"
-                    :image="subNavItem.image"
-                    :icon-component="subNavItem.component"
-                    :active="active"
-                    sub-menu
-                  />
-                </template>
-              </VListItem>
-            </div>
-          </VListGroup>
-          <RuiDivider
-            v-else-if="navItem.type === 'divider'"
-            :key="i"
-            class="my-2"
-          />
+          </a>
         </template>
-      </VListItemGroup>
-    </VList>
+      </RouterLink>
+      <NavigationMenuItem
+        v-else-if="navItem.type === 'group'"
+        :key="i"
+        :class="`navigation__${navItem.class}`"
+        :mini="isMini"
+        :text="navItem.text"
+        :icon="navItem.icon"
+        :icon-component="navItem.component"
+        :image="navItem.image"
+        parent
+      >
+        <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800': isMini }">
+          <RouterLink
+            v-for="(subNavItem, si) in navItem.items"
+            :key="si"
+            :to="subNavItem.route"
+          >
+            <template #default="{ isActive, href }">
+              <a :href="href">
+                <NavigationMenuItem
+                  :class="`navigation__${subNavItem.class}`"
+                  :mini="isMini"
+                  :text="subNavItem.text"
+                  :icon="subNavItem.icon"
+                  :image="subNavItem.image"
+                  :icon-component="subNavItem.component"
+                  :active="isActive"
+                  sub-menu
+                />
+              </a>
+            </template>
+          </RouterLink>
+        </div>
+      </NavigationMenuItem>
+      <RuiDivider
+        v-else-if="navItem.type === 'divider'"
+        :key="i"
+        class="my-2"
+      />
+    </template>
   </div>
 </template>
-
-<style scoped lang="scss">
-:deep(.v-list-item) {
-  border-radius: 0.25rem;
-  padding: 0 0.75rem;
-  margin-bottom: 0 !important;
-}
-
-.navigation-menu {
-  &__item {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.v-list-item__icon) {
-      @apply text-rui-text-secondary;
-    }
-
-    &--active {
-      @apply bg-rui-primary font-bold;
-      @apply text-white;
-
-      :deep(.v-list-item__icon) {
-        /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-        @apply text-white;
-      }
-
-      :deep(.nav-icon) {
-        opacity: 1 !important;
-        filter: brightness(0) invert(100%);
-      }
-    }
-  }
-
-  &--mini {
-    padding: 0;
-
-    :deep(.v-list-item) {
-      padding-left: 1.5rem;
-      justify-content: center;
-
-      .v-list-item {
-        &__content {
-          display: none !important;
-        }
-      }
-    }
-  }
-}
-
-.navigation-submenu {
-  :deep(.v-list-item) {
-    padding-left: 3rem;
-    min-height: 0;
-  }
-
-  &--mini {
-    background: var(--v-rotki-light-grey-darken1);
-
-    :deep(.v-list-item) {
-      padding-left: 1.5rem;
-    }
-  }
-}
-
-.theme {
-  &--dark {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.navigation-submenu--mini) {
-      background: var(--v-secondary-lighten1);
-    }
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-  }
-}
-</style>

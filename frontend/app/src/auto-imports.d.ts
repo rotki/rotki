@@ -159,6 +159,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isTaskCancelled: typeof import('./utils/index')['isTaskCancelled']
   const isTransactionEvent: typeof import('./utils/report')['isTransactionEvent']
   const isValidDate: typeof import('./utils/date')['isValidDate']
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
@@ -259,7 +260,6 @@ declare global {
   const sumAssetBalances: typeof import('./utils/balances')['sumAssetBalances']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
-  const isTaskCancelled: typeof import('./utils/index')['isTaskCancelled']
   const templateRef: typeof import('@vueuse/core')['templateRef']
   const throttledRef: typeof import('@vueuse/core')['throttledRef']
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
@@ -887,6 +887,7 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
@@ -987,7 +988,6 @@ declare module 'vue' {
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
-    readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
@@ -1608,6 +1608,7 @@ declare module '@vue/runtime-core' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
@@ -1708,7 +1709,6 @@ declare module '@vue/runtime-core' {
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
-    readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
