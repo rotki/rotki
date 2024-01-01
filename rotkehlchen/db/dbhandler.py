@@ -537,6 +537,8 @@ class DBHandler:
         closed when we detach which will result in DB plaintext locked.
         """
         with self.conn.critical_section():
+            # flush the wal file to have up to date information when exporting data
+            self.conn.execute('PRAGMA wal_checkpoint;')
             self.conn.executescript(
                 f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
                 'SELECT sqlcipher_export("plaintext");'
@@ -552,6 +554,7 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if the wrong password is given
         """
+        self.conn.execute('PRAGMA wal_checkpoint;')
         self.disconnect()
         rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it

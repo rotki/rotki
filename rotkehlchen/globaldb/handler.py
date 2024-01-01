@@ -368,6 +368,7 @@ class GlobalDBHandler:
 
         with userdb.conn.read_ctx() as cursor:
             globaldb = GlobalDBHandler()
+            globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
             cursor.execute(
                 f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
             )
@@ -474,6 +475,7 @@ class GlobalDBHandler:
         query, bindings = filter_query.prepare()
         query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
         resolved_eth = A_ETH.resolve_to_crypto_asset()
+        globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
         with db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
