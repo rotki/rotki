@@ -36,6 +36,10 @@ def test_query_db_info(
         backup2.write_text(backup2_contents)
         (users_dir / username / '1633042045_rotkehlchen_db_v28.backup').touch()
 
+    if start_with_logged_in_user:
+        db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+        db.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
+
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_response_with_result(response)
     assert len(result) == 2

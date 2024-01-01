@@ -52,6 +52,7 @@ def _search_only_assets_levenstein(
     resolved_eth = A_ETH.resolve_to_crypto_asset()
     globaldb = GlobalDBHandler()
     treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
+    globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
     with db.conn.critical_section():  # needed due to ATTACH. Must not context switch out of this
         cursor.execute(
             f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
