@@ -26,7 +26,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 1
+        "grouped_events_num": 1,
+        "event_accounting_rule_status": "has rule"
       },
       {
         "entry": {
@@ -53,7 +54,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 1
+        "grouped_events_num": 1,
+        "event_accounting_rule_status": "has rule"
       },
       {
         "entry": {
@@ -80,7 +82,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 2
+        "grouped_events_num": 2,
+        "event_accounting_rule_status": "has rule"
       },
       {
         "entry": {
@@ -107,7 +110,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 1
+        "grouped_events_num": 1,
+        "event_accounting_rule_status": "has rule"
       },
       {
         "entry": {
@@ -134,7 +138,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 1
+        "grouped_events_num": 1,
+        "event_accounting_rule_status": "has rule"
       },
       {
         "entry": {
@@ -161,7 +166,8 @@
         "has_details": false,
         "customized": false,
         "ignored_in_accounting": false,
-        "grouped_events_num": 2
+        "grouped_events_num": 2,
+        "event_accounting_rule_status": "has rule"
       }
     ],
     "entries_found": 6,

@@ -6,6 +6,8 @@ import {
   type EthWithdrawalEvent,
   type EvmHistoryEvent,
   type HistoryEvent,
+  HistoryEventAccountingRuleStatus,
+  type HistoryEventEntry,
   type OnlineHistoryEvent
 } from '@/types/history/events';
 
@@ -81,3 +83,19 @@ export const isEthDepositEventRef = (
     const eventVal = get(event);
     return isEthDepositEvent(eventVal) ? eventVal : undefined;
   });
+
+export const isMissingAccountingRule = (
+  type: HistoryEventAccountingRuleStatus
+): boolean => type === HistoryEventAccountingRuleStatus.NOT_PROCESSED;
+
+export const isEventMissingAccountingRule = (
+  event: HistoryEventEntry
+): boolean => isMissingAccountingRule(event.eventAccountingRuleStatus);
+
+export const isAccountingRuleProcessed = (
+  type: HistoryEventAccountingRuleStatus
+): boolean => type === HistoryEventAccountingRuleStatus.PROCESSED;
+
+export const isEventAccountingRuleProcessed = (
+  event: HistoryEventEntry
+): boolean => isAccountingRuleProcessed(event.eventAccountingRuleStatus);

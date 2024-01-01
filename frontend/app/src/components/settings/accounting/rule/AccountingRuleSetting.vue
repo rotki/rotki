@@ -209,13 +209,15 @@ onMounted(async () => {
     setOpenDialog(true);
     await router.replace({ query: {} });
   } else if (editRule) {
-    const rule = await getAccountingRule({
-      eventTypes: [ruleData.eventType],
-      eventSubtypes: [ruleData.eventSubtype],
-      counterparties: counterparty ? [ruleData.counterparty] : undefined,
-      limit: 1,
-      offset: 0
-    });
+    const rule = await getAccountingRule(
+      {
+        eventTypes: [ruleData.eventType],
+        eventSubtypes: [ruleData.eventSubtype],
+        limit: 2,
+        offset: 0
+      },
+      ruleData.counterparty
+    );
     set(editableItem, rule);
     setOpenDialog(!!rule);
     await router.replace({ query: {} });

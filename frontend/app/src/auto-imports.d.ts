@@ -135,6 +135,7 @@ declare global {
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('./utils/color')['invertColor']
+  const isAccountingRuleProcessed: typeof import('./utils/history/events')['isAccountingRuleProcessed']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isEthBlockEvent: typeof import('./utils/history/events')['isEthBlockEvent']
   const isEthBlockEventRef: typeof import('./utils/history/events')['isEthBlockEventRef']
@@ -142,11 +143,15 @@ declare global {
   const isEthDepositEvent: typeof import('./utils/history/events')['isEthDepositEvent']
   const isEthDepositEventRef: typeof import('./utils/history/events')['isEthDepositEventRef']
   const isEthDepositEventType: typeof import('./utils/history/events')['isEthDepositEventType']
+  const isEventAccountingRuleProcessed: typeof import('./utils/history/events')['isEventAccountingRuleProcessed']
+  const isEventMissingAccountingRule: typeof import('./utils/history/events')['isEventMissingAccountingRule']
+  const isEventMissingAccountingRuleType: typeof import('./utils/history/events')['isEventMissingAccountingRuleType']
   const isEvmEvent: typeof import('./utils/history/events')['isEvmEvent']
   const isEvmEventRef: typeof import('./utils/history/events')['isEvmEventRef']
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
   const isEvmIdentifier: typeof import('./utils/assets')['isEvmIdentifier']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
+  const isMissingAccountingRule: typeof import('./utils/history/events')['isMissingAccountingRule']
   const isNft: typeof import('./utils/nft')['isNft']
   const isOnlineHistoryEvent: typeof import('./utils/history/events')['isOnlineHistoryEvent']
   const isOnlineHistoryEventRef: typeof import('./utils/history/events')['isOnlineHistoryEventRef']
@@ -857,6 +862,7 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
+    readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
     readonly isEthBlockEventRef: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEventRef']>
@@ -864,11 +870,14 @@ declare module 'vue' {
     readonly isEthDepositEvent: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEvent']>
     readonly isEthDepositEventRef: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEventRef']>
     readonly isEthDepositEventType: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEventType']>
+    readonly isEventAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isEventAccountingRuleProcessed']>
+    readonly isEventMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isEventMissingAccountingRule']>
     readonly isEvmEvent: UnwrapRef<typeof import('./utils/history/events')['isEvmEvent']>
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
+    readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
     readonly isOnlineHistoryEvent: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEvent']>
     readonly isOnlineHistoryEventRef: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventRef']>
@@ -1573,6 +1582,7 @@ declare module '@vue/runtime-core' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
+    readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
     readonly isEthBlockEventRef: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEventRef']>
@@ -1580,11 +1590,14 @@ declare module '@vue/runtime-core' {
     readonly isEthDepositEvent: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEvent']>
     readonly isEthDepositEventRef: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEventRef']>
     readonly isEthDepositEventType: UnwrapRef<typeof import('./utils/history/events')['isEthDepositEventType']>
+    readonly isEventAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isEventAccountingRuleProcessed']>
+    readonly isEventMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isEventMissingAccountingRule']>
     readonly isEvmEvent: UnwrapRef<typeof import('./utils/history/events')['isEvmEvent']>
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
+    readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
     readonly isOnlineHistoryEvent: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEvent']>
     readonly isOnlineHistoryEventRef: UnwrapRef<typeof import('./utils/history/events')['isOnlineHistoryEventRef']>
