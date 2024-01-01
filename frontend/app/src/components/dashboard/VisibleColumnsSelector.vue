@@ -49,35 +49,45 @@ const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
 
   await store.updateSetting(payload);
 };
+
+const active = (value: TableColumn) =>
+  get(currentVisibleColumns).includes(value);
+
+const update = (value: TableColumn) => {
+  const visible = [...get(currentVisibleColumns)];
+  const index = visible.indexOf(value);
+  if (index === -1) {
+    visible.push(value);
+  } else {
+    visible.splice(index, 1);
+  }
+
+  onVisibleColumnsChange(visible);
+};
 </script>
 
 <template>
-  <VList>
-    <VListItemGroup
-      :value="currentVisibleColumns"
-      multiple
-      @change="onVisibleColumnsChange($event)"
-    >
-      <template v-for="(item, i) in availableColumns">
-        <VListItem :key="i" :value="item.value">
-          <template #default="{ active }">
-            <VListItemContent>
-              <VListItemTitle>
-                {{ item.text }}
-              </VListItemTitle>
-            </VListItemContent>
+  <div class="py-2">
+    <template v-for="item in availableColumns">
+      <RuiButton
+        :key="item.value"
+        variant="list"
+        class="py-1 [&>span:first-child]:flex-1"
+        :value="item.value"
+        @click="update(item.value)"
+      >
+        {{ item.text }}
 
-            <VListItemAction>
-              <RuiCheckbox
-                class="-my-2"
-                color="primary"
-                hide-details
-                :value="active"
-              />
-            </VListItemAction>
-          </template>
-        </VListItem>
-      </template>
-    </VListItemGroup>
-  </VList>
+        <template #append>
+          <RuiCheckbox
+            class="!p-0 pl-2"
+            color="primary"
+            hide-details
+            :value="active(item.value)"
+            @input="update(item.value)"
+          />
+        </template>
+      </RuiButton>
+    </template>
+  </div>
 </template>

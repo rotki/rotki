@@ -196,16 +196,12 @@ export class RotkiApp {
     const menuClass = `.navigation__${menu}`;
     cy.get(menuClass).then(menu => {
       const parent = menu.parent().parent();
-      if (!parent.hasClass('v-list-group--active')) {
+      if (!parent.hasClass('submenu-wrapper__expanded')) {
         click(menuClass);
       }
 
       if (submenu) {
-        cy.get(menuClass)
-          .parent()
-          .parent()
-          .find('.v-list-group__items')
-          .scrollIntoView();
+        cy.get(menuClass).find('.submenu-wrapper').scrollIntoView();
 
         const subMenuClass = `.navigation__${submenu}`;
         click(subMenuClass);
