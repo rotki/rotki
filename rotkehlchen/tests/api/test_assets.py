@@ -1106,6 +1106,22 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         ) == [A_DAI.identifier]
 
+    # check that we can query it from the api
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'falsepositivespamtokenresource'))
+    result = assert_proper_response_with_result(response)
+    assert result == [A_DAI]
+
+    # test that the filter in the search for assets works
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ), json={'show_whitelisted_assets_only': True},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert result['entries'][0]['identifier'] == A_DAI.identifier
+
     # remove it from the list of false positives
     response = requests.delete(
         api_url_for(

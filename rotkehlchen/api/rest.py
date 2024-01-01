@@ -181,6 +181,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache_values,
+    globaldb_get_general_cache_values,
     globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -4685,3 +4686,12 @@ class RestAPI:
             )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_spam_assets_false_positives(self) -> Response:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            whitelisted_tokens = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+            )
+
+        return api_response(_wrap_in_ok_result(whitelisted_tokens), status_code=HTTPStatus.OK)

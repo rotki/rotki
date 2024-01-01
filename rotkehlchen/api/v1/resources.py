@@ -3126,3 +3126,6 @@ class FalsePositiveSpamTokenResource(BaseMethodView):
     @use_kwargs(post_delete_schema, location='json_and_query')
     def delete(self, token: EvmToken) -> Response:
         return self.rest_api.remove_from_spam_assets_false_positives(token=token)
+
+    def get(self) -> Response:
+        return self.rest_api.get_spam_assets_false_positives()

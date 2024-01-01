@@ -3069,6 +3069,7 @@ Querying all supported assets
    :reqjson string evm_chain: The name for the evm chain to be used to filter the result data. Possible values are ``ethereum``, ``optimism``, ``gnosis``, ``celo``, etc. Optional.
    :reqjson string address: The address of the evm asset to be used to filter the result data. Optional.
    :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to ``"false"``. Optional.
+   :reqjson bool show_whitelisted_assets_only: If set to true then only whitelisted spam tokens are queried.
    :reqjson string ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
    :reqjson list[string] identifiers: A list of asset identifiers to filter by. Optional.
 
@@ -10073,9 +10074,38 @@ False positive in spam assets
   :statuscode 409: No user is currently logged in.
   :statuscode 500: Internal rotki error.
 
+.. http:get:: /api/(version)/assets/ignored/whitelist
+
+   Doing a GET on this endpoint will return a list of the assets that are whitelisted.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ignored/whitelist HTTP/1.1
+      Host: localhost:5042
+
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": ['eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'],
+        "message": ""
+      }
+
+  :resjson bool result: list of the assets whitelisted.
+  :statuscode 200: Assets listed succesfully.
+  :statuscode 409: No user is currently logged in.
+  :statuscode 500: Internal rotki error.
+
 .. http:delete:: /api/(version)/assets/ignored/whitelist
 
-   Doing a DEELTE on this endpoint will remove the provided token from the list of false positives.
+   Doing a DELETE on this endpoint will remove the provided token from the list of false positives.
 
   **Example Request**
 
