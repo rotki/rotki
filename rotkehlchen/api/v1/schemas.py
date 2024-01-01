@@ -1985,6 +1985,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     evm_chain = EvmChainNameField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
+    show_whitelisted_assets_only = fields.Boolean(load_default=False)
     identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
 
     def __init__(self, db: 'DBHandler') -> None:
@@ -2034,6 +2035,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             address=data['address'],
             identifiers=data['identifiers'],
             show_user_owned_assets_only=data['show_user_owned_assets_only'],
+            show_whitelisted_assets_only=data['show_whitelisted_assets_only'],
             ignored_assets_handling=data['ignored_assets_handling'],
         )
         return {'filter_query': filter_query}

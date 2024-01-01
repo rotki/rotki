@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -21,6 +22,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     AssetMovementCategory,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -1384,6 +1386,7 @@ class AssetsFilterQuery(DBFilterQuery):
             asset_type: AssetType | None = None,
             identifiers: list[str] | None = None,
             show_user_owned_assets_only: bool = False,
+            show_whitelisted_assets_only: bool = False,
             return_exact_matches: bool = False,
             chain_id: ChainID | None = None,
             identifier_column_name: str = 'identifier',
@@ -1463,6 +1466,15 @@ class AssetsFilterQuery(DBFilterQuery):
                 and_op=True,
                 column='address',
                 value=address,
+            ))
+        if show_whitelisted_assets_only is True:
+            filters.append(DBSubtableSelectFilter(
+                and_op=True,
+                asset_key=identifier_column_name,
+                operator='IN',
+                select_value='value',
+                select_table='general_cache',
+                select_condition=f'key="{compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,))}"',
             ))
         filter_query.filters = filters
         return filter_query
