@@ -11,14 +11,13 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailySta
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
-    MOCKED_PRICES,
-    TIMESTAMP_1_MS,
     accounting_history_process,
     check_pnls_and_csv,
     history1,
@@ -487,7 +486,8 @@ def test_all_chains_have_explorers(accountant: 'Accountant'):
         assert chain in accountant.csvexporter.transaction_explorers
 
 
-@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_non_history_event_in_history_iterator(accountant):
     """Test that the PnL report does not fail if a non-history event follows a swap
 
@@ -498,10 +498,11 @@ def test_non_history_event_in_history_iterator(accountant):
     contract_address = make_evm_address()
     swap_amount_str = '0.99'
     receive_amount_str = '10000'
+    event_timestamp_ms = TimestampMS(1635314397 - DAY_IN_SECONDS * 1000)
     history = [HistoryEvent(
         event_identifier='1',
         sequence_index=0,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=event_timestamp_ms,
         location=Location.EXTERNAL,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
@@ -510,7 +511,7 @@ def test_non_history_event_in_history_iterator(accountant):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=1,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=event_timestamp_ms,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
@@ -523,7 +524,7 @@ def test_non_history_event_in_history_iterator(accountant):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=2,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=event_timestamp_ms,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -535,7 +536,7 @@ def test_non_history_event_in_history_iterator(accountant):
         address=contract_address,
     ), ValidatorDailyStats(
         validator_index=1,
-        timestamp=Timestamp(2),
+        timestamp=Timestamp(1635314397 - DAY_IN_SECONDS + 1),
         pnl=FVal('0.1'),
     )]
     accounting_history_process(accountant, Timestamp(0), Timestamp(1635314397), history)

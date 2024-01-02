@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, suppress
 from pathlib import Path
 from unittest.mock import patch
 
@@ -2237,5 +2237,7 @@ def test_unfinished_upgrades(user_data_dir):
 
             for f in os.listdir(user_data_dir):
                 if f.endswith('backup'):
-                    (Path(user_data_dir) / f).unlink()
+                    with suppress(PermissionError):  # in windows this can happen
+                        (Path(user_data_dir) / f).unlink()
+
             db.logout()

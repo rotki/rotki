@@ -565,7 +565,7 @@ class DBHandler:
         rdbpath.unlink()
 
         # dump the unencrypted data into a temporary file
-        with tempfile.TemporaryDirectory() as tmpdirname:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdirname:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
             tempdbpath = os.path.join(tmpdirname, 'temp.db')
             with open(tempdbpath, 'wb') as f:
                 f.write(unencrypted_db_data)

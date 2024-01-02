@@ -115,12 +115,17 @@ def timestamp_to_date(
         formatstr: str = '%d/%m/%Y %H:%M:%S',
         treat_as_local: bool = False,
 ) -> str:
-    """Transforms a timestamp to a datestring depending on given formatstr and UTC/local choice"""
+    """
+    Transforms a timestamp to a datestring depending on given formatstr and UTC/local choice
+    May raise:
+    - OSError: if the ts provided is outside the limits for the system. Happens providing
+    close to 0 ts in windows. https://github.com/python/cpython/issues/107078
+    """
     if treat_as_local is False:
         date = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime(formatstr)
     else:  # localtime
         date = datetime.datetime.fromtimestamp(
-            ts,  # ignore below is due to: https://github.com/pjknkda/flake8-datetimez/issues/11
+            ts,
             tz=datetime.datetime.fromtimestamp(ts).astimezone().tzinfo,
         ).strftime(formatstr)
 
