@@ -15,20 +15,25 @@ import requests
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import create_timestamp
 
 
-def assert_csv_export_response(response, csv_dir, is_download=False):
+def assert_csv_export_response(response, csv_dir, is_download=False, expected_num_of_events=37):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -45,7 +50,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 12
+            assert len(row) == 13
             assert row['location'] in {
                 'kraken',
                 'bittrex',
@@ -65,6 +70,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
             assert create_timestamp(row['timestamp'], '%d/%m/%Y %H:%M:%S %Z') > 0
             assert row['notes'] is not None
             assert row['asset'] is not None
+            assert row['asset_identifier'] is not None
             assert row['taxable_amount'] is not None
             assert row['free_amount'] is not None
             assert row['price'] is not None
@@ -75,7 +81,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
             count += 1
             rows.append(row)
 
-    assert count == 37
+    assert count == expected_num_of_events
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -157,6 +163,34 @@ def test_history_export_download_csv(
         with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
             zip_ref.extractall(extractdir)
         assert_csv_export_response(response, extractdir, is_download=True)
+    # check if the report works when using assets that don't have a symbol
+    custom_asset = CustomAsset.initialize(
+        identifier='XYZ',
+        name='custom name',
+        custom_asset_type='custom type',
+    )
+    db_custom_assets = DBCustomAssets(rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db)  # noqa: E501
+    db_custom_assets.add_custom_asset(custom_asset)
+    accounting_history_process(
+        rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.accountant,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493376),
+        history_list=[HistoryEvent(
+            event_identifier=str(make_evm_tx_hash()),
+            sequence_index=0,
+            timestamp=TimestampMS(1601040360000),
+            location=Location.ETHEREUM,
+            asset=custom_asset,
+            balance=Balance(amount=FVal('1.5')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+        )],
+    )
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
+        json={'directory_path': csv_dir},
+    )
+    assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1569924574: 1}}}])

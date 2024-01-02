@@ -266,6 +266,11 @@ prices = {
             1628994441: FVal(0.9),
         },
     },
+    'XYZ': {  # custom asset used in test 'test_history_export_download_csv'
+        'EUR': {
+            1601040360: ONE,
+        },
+    },
 }
 
 

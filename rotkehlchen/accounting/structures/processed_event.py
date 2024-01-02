@@ -96,7 +96,7 @@ class ProcessedAccountingEvent:
             'notes': self.notes,
             'location': str(self.location),
             'timestamp': self.timestamp,
-            'asset': self.asset.identifier,
+            'asset_identifier': self.asset.identifier,
             'free_amount': str(self.free_amount),
             'taxable_amount': str(self.taxable_amount),
             'price': str(self.price),
@@ -110,7 +110,11 @@ class ProcessedAccountingEvent:
                 taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
             exported_dict['cost_basis_taxable'] = taxable_basis
             exported_dict['cost_basis_free'] = free_basis
-            exported_dict['asset'] = str(self.asset)
+            exported_dict['asset_identifier'] = str(self.asset)
+            try:
+                exported_dict['asset'] = self.asset.symbol_or_name()
+            except UnknownAsset:
+                exported_dict['asset'] = ''
             if tx_hash is not None:
                 exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
         else:  # for the other types of export we include the cost basis information
@@ -216,7 +220,7 @@ class ProcessedAccountingEvent:
                 notes=data['notes'],
                 location=Location.deserialize(data['location']),
                 timestamp=timestamp,
-                asset=Asset(data['asset']).check_existence(),
+                asset=Asset(data['asset_identifier']).check_existence(),
                 free_amount=deserialize_fval(data['free_amount'], name='free_amount', location='processed event decoding'),  # noqa: E501
                 taxable_amount=deserialize_fval(data['taxable_amount'], name='taxable_amount', location='processed event decoding'),  # noqa: E501
                 price=deserialize_price(data['price']),
