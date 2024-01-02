@@ -3638,7 +3638,7 @@ class RestAPI:
                 if 'assets.json' not in zip_file.namelist():
                     raise ValidationError('assets.json could not be found in the provided zip file.')  # noqa: E501
 
-                with tempfile.TemporaryDirectory() as tempdir:
+                with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tempdir:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
                     zip_file.extract('assets.json', tempdir)
                     import_assets_from_file(
                         path=Path(tempdir) / 'assets.json',
@@ -4469,9 +4469,8 @@ class RestAPI:
             headers.update({key: None for key in serialized_event})
 
         if directory_path is None:  # on download
-            with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
                 file_path = Path(temp_dir) / FILENAME_HISTORY_EVENTS_CSV
-
                 try:
                     dict_to_csv_file(
                         file_path,

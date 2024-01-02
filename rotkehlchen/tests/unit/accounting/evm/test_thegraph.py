@@ -25,7 +25,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
 
-TS1, TS2, TS3 = Timestamp(1), Timestamp(2), Timestamp(3)
+TS1, TS2, TS3 = Timestamp(1704200595), Timestamp(1704201595), Timestamp(1704202595)
 TSMS1, TSMS2, TSMS3 = ts_sec_to_ms(TS1), ts_sec_to_ms(TS2), ts_sec_to_ms(TS3)
 USER_ADDRESS = make_evm_address()
 HASH1, HASH2, HASH3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
