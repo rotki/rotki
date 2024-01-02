@@ -1020,7 +1020,7 @@
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
-    "only_show_whitelisted": "Εμφάνιση μόνο λευκών στοιχείων ενεργητικού",
+    "only_show_whitelisted": "Εμφάνιση μόνο των στοιχείων ενεργητικού που περιλαμβάνονται στη λίστα επιτρεπόμενων στοιχείων",
     "selected": "{count} asset(s) selected",
     "show_all": "Show all",
     "underlying_tokens": "Underlying Tokens"
