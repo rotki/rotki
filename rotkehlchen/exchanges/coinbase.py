@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -445,27 +446,34 @@ class Coinbase(ExchangeInterface):
 
         now = ts_now()
         for account_id, last_update_timestamp in account_info:
-            # TODO: The used query range should be replaced by cache for this: https://github.com/rotki/rotki/issues/5684  # noqa: E501
-            account_last_ts_name = f'{self.location}_{self.name}_{account_id}_last_query_ts'
             with self.db.conn.read_ctx() as cursor:
-                cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name=?', (account_last_ts_name,))  # noqa: E501
                 last_query = 0
-                if (result := cursor.fetchone()) is not None:
-                    last_query = result[0]
+                if (result := self.db.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_QUERY_TS,
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                    account_id=account_id,
+                )) is not None:
+                    last_query = int(result)
 
                 if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
                     continue  # if no update since last query or last query recent stop
 
                 account_last_id_name = f'{self.location}_{self.name}_{account_id}_last_query_id'
-                cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name=?', (account_last_id_name,))  # TODO: change this too for 5684  # noqa: E501
-                last_id = None
-                if (result := cursor.fetchone()) is not None:
-                    last_id = result[0]
+                cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (account_last_id_name,))  # noqa: E501
+                last_id = self.db.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_QUERY_ID,
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                    account_id=account_id,
+                )
 
             trades, asset_movements, history_events = self._query_single_account_transactions(
                 account_id=account_id,
                 account_last_id_name=account_last_id_name,
-                last_tx_id=last_id,
+                last_tx_id=str(last_id),
             )
 
             # The approach here does not follow the exchange interface querying with
@@ -480,9 +488,13 @@ class Coinbase(ExchangeInterface):
                 if len(history_events) != 0:
                     db = DBHistoryEvents(self.db)
                     db.add_history_events(write_cursor=write_cursor, history=history_events)
-                write_cursor.execute(  # TODO: Replace with cache from 5684 like above
-                    'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?) ',  # noqa: E501
-                    (account_last_ts_name, 0, ts_now()),
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_QUERY_TS,
+                    value=ts_now(),
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                    account_id=account_id,
                 )
 
     def _query_single_account_transactions(
@@ -547,9 +559,9 @@ class Coinbase(ExchangeInterface):
         self._process_trades_from_conversion(trade_pairs=trade_pairs, trades=trades)
 
         with self.db.user_write() as write_cursor:  # Remember last transaction id for account
-            write_cursor.execute(  # TODO: Replace with cache from 5684 like above
-                'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?) ',  # noqa: E501
-                (account_last_id_name, 0, transactions[-1]['id']),
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
+                (account_last_id_name, transactions[-1]['id']),
             )
 
         return trades, asset_movements, history_events

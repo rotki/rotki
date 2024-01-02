@@ -49,6 +49,47 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _move_non_settings_mappings_to_cache')
 
 
+def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
+    """An auxiliary function to move `name` and `end_ts` from `used_query_ranges` table to
+    `key_value_cache` table if it matches the given pattern"""
+    rows = write_cursor.execute(
+        'SELECT name, end_ts FROM used_query_ranges WHERE name LIKE ?',
+        (pattern, ),
+    ).fetchall()
+    if len(rows) != 0:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO key_value_cache(name, value) VALUES(?, ?);', rows,
+        )
+        write_cursor.executemany(
+            'DELETE FROM used_query_ranges WHERE name = ?', [(row[0],) for row in rows],
+        )
+
+
+def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
+    """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
+    log.debug('Enter _move_non_intervals_from_used_query_ranges_to_cache')
+    value_patterns = {
+        '{pattern}%': (  # to match patterns with prefixes
+            'ethwithdrawalsts_',
+            'ethwithdrawalsidx_',
+        ),
+        '%{pattern}': (  # to match patterns with suffixes
+            '_last_cryptotx_offset',
+            '_last_query_ts',
+            '_last_query_id',
+        ),
+        '{pattern}': (  # to match patterns as exact names
+            'last_produced_blocks_query_ts',
+            'last_withdrawals_exit_query_ts',
+            'last_events_processing_task_ts',
+        ),
+    }
+    for key, patterns in value_patterns.items():
+        for pattern in patterns:
+            maybe_move_value(write_cursor, key.format(pattern=pattern))
+    log.debug('Exit _move_non_intervals_from_used_query_ranges_to_cache')
+
+
 def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _add_new_supported_locations')
     write_cursor.execute(
@@ -62,13 +103,17 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
         - Create a new table for key-value cache
+        - Move non-settings and non-used query ranges to the new cache
+        - Add new supported locations
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
         _move_non_settings_mappings_to_cache(write_cursor)
+        progress_handler.new_step()
+        _move_non_intervals_from_used_query_ranges_to_cache(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
     progress_handler.new_step()

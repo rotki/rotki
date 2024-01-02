@@ -111,7 +111,6 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.cache import serialize_cache_for_api
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -456,15 +455,15 @@ class RestAPI:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             new_settings = process_result(self.rotkehlchen.get_settings(cursor))
-            cache = process_result(self.rotkehlchen.get_cache(cursor))
-        result_dict = {'result': new_settings | serialize_cache_for_api(cache), 'message': ''}
+            cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
+        result_dict = {'result': new_settings | cache, 'message': ''}
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     def get_settings(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = process_result(self.rotkehlchen.get_settings(cursor))
-            cache = process_result(self.rotkehlchen.get_cache(cursor))
-        result_dict = _wrap_in_ok_result(settings | serialize_cache_for_api(cache))
+            cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
+        result_dict = _wrap_in_ok_result(settings | cache)
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     def query_tasks_outcome(self, task_id: int | None) -> Response:
@@ -1126,7 +1125,7 @@ class RestAPI:
             result = {
                 'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
                 'settings': process_result(self.rotkehlchen.get_settings(cursor)) |
-                serialize_cache_for_api(self.rotkehlchen.get_cache(cursor)),
+                self.rotkehlchen.data.db.get_cache_for_api(cursor),
             }
         return {
             'result': result,
@@ -1194,7 +1193,7 @@ class RestAPI:
         exchanges = self.rotkehlchen.exchange_manager.get_connected_exchanges_info()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = process_result(self.rotkehlchen.get_settings(cursor))
-            settings |= serialize_cache_for_api(self.rotkehlchen.get_cache(cursor))
+            settings |= self.rotkehlchen.data.db.get_cache_for_api(cursor)
 
         return _wrap_in_ok_result({
             'exchanges': exchanges,
@@ -1583,11 +1582,11 @@ class RestAPI:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
-            cache = self.rotkehlchen.get_cache(cursor)
+            cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, None)
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
-            'settings': settings.serialize() | serialize_cache_for_api(cache),
+            'settings': settings.serialize() | cache,
             'ignored_events_ids': {k.serialize(): list(v) for k, v in ignored_ids.items()},
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),

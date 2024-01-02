@@ -390,4 +390,4 @@ def test_query_no_withdrawals(
 
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
-        assert cursor.execute('SELECT * FROM used_query_ranges').fetchone()[0] == 'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
+        assert cursor.execute('SELECT name FROM key_value_cache').fetchone()[0] == 'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501

@@ -9,11 +9,6 @@ import gevent
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.modules.eth2.constants import (
-    LAST_PRODUCED_BLOCKS_QUERY_TS,
-    LAST_WITHDRAWALS_EXIT_QUERY_TS,
-    WITHDRAWALS_TS_PREFIX,
-)
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
@@ -28,7 +23,7 @@ from rotkehlchen.constants.timing import (
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
 )
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -58,7 +53,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
-from .events import LAST_EVENTS_PROCESSING_TASK_TS, process_events
+from .events import process_events
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -540,8 +535,10 @@ class TaskManager:
     def _maybe_query_produced_blocks(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the blocks production query if enough time has passed"""
         with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_used_query_range(cursor, LAST_PRODUCED_BLOCKS_QUERY_TS)
-            if result is not None and ts_now() - result[1] <= DAY_IN_SECONDS:
+            result = self.database.get_static_cache(
+                cursor=cursor, name=DBCacheStatic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+            )
+            if result is not None and ts_now() - result <= DAY_IN_SECONDS:
                 return None
 
             cursor.execute('SELECT validator_index FROM eth2_validators')
@@ -575,14 +572,17 @@ class TaskManager:
         now = ts_now()
         addresses = self.chains_aggregator.accounts.eth
         with self.database.conn.read_ctx() as cursor:
-            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', (f'{WITHDRAWALS_TS_PREFIX}%',)).fetchall()  # noqa: E501
+            end_timestamps = cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name LIKE ?',
+                (DBCacheDynamic.WITHDRAWALS_TS.value.replace('{address}', '%'),),
+            ).fetchall()
 
         should_query = False
         if len(end_timestamps) != len(addresses):
             should_query = True
         else:
             for entry in end_timestamps:
-                if now - entry[0] >= HOUR_IN_SECONDS * 3:
+                if now - int(entry[0]) >= HOUR_IN_SECONDS * 3:
                     should_query = True
                     break
 
@@ -610,8 +610,10 @@ class TaskManager:
             return None
 
         with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_EXIT_QUERY_TS)
-            if result is not None and ts_now() - result[1] <= HOUR_IN_SECONDS * 2:
+            result = self.database.get_static_cache(
+                cursor=cursor, name=DBCacheStatic.LAST_WITHDRAWALS_EXIT_QUERY_TS,
+            )
+            if result is not None and ts_now() - result <= HOUR_IN_SECONDS * 2:
                 return None
 
         task_name = 'Periodically detect withdrawal exits'
@@ -627,8 +629,10 @@ class TaskManager:
         """Schedules the events processing task which may combine/edit events"""
         now = ts_now()
         with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_used_query_range(cursor, LAST_EVENTS_PROCESSING_TASK_TS)
-            if result is not None and now - result[1] <= HOUR_IN_SECONDS:
+            result = self.database.get_static_cache(
+                cursor=cursor, name=DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
+            )
+            if result is not None and now - result <= HOUR_IN_SECONDS:
                 return None
 
         task_name = 'Periodically process events'
@@ -661,7 +665,7 @@ class TaskManager:
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
         """
-        if should_run_periodic_task(self.database, DBCache.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -676,7 +680,7 @@ class TaskManager:
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
         """
-        if should_run_periodic_task(self.database, DBCache.LAST_EVM_ACCOUNTS_DETECT_TS, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -705,7 +709,7 @@ class TaskManager:
         This function queries the globaldb looking for assets that look like spam tokens
         and ignores them in addition to marking them as spam tokens
         """
-        if should_run_periodic_task(self.database, DBCache.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -722,7 +726,7 @@ class TaskManager:
         time consuming analysis on user's asset that involves external calls in order to find and
         detect potential spam tokens.
         """
-        if should_run_periodic_task(self.database, DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -739,7 +743,7 @@ class TaskManager:
         This task is required to have a fresh status on the assets searches when the filter for
         owned assets is used.
         """
-        if should_run_periodic_task(self.database, DBCache.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(

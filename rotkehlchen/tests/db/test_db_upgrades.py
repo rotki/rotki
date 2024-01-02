@@ -1973,8 +1973,8 @@ def test_upgrade_db_40_to_41(user_data_dir):
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
     )
-    # add some settings that should move in the upgrade
-    should_move = {
+    # add some settings and used_query_ranges that should/shouldn't move in the upgrade
+    should_move_settings = {
         'last_balance_save': 234,
         'last_data_upload_ts': 345,
         'last_data_updates_ts': 456,
@@ -1983,17 +1983,46 @@ def test_upgrade_db_40_to_41(user_data_dir):
         'last_spam_assets_detect_key': 789,
         'last_augmented_spam_assets_detect_key': 890,
     }
-    should_not_move = {
+    should_not_move_settings = {
+        'version': 40,
+        'last_write_ts': 890,
         'spam_assets_version': 901,
         'rpc_nodes_version': 12,
         'contracts_version': 123,
         'global_addressbook_version': 234,
         'accounting_rules_version': 345,
     }
-    settings = should_move | should_not_move
+    should_move_used_query_ranges = {
+        'ethwithdrawalsts_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 123,
+        'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 123,
+        'ethwithdrawalsidx_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 234,
+        f'{Location.BITSTAMP}_bitstamp1_last_cryptotx_offset': 345,
+        f'{Location.COINBASE}_coinbase1_123_last_query_ts': 456,
+        f'{Location.COINBASE}_coinbase1_123_last_query_id': 567,
+        'last_produced_blocks_query_ts': 678,
+        'last_withdrawals_exit_query_ts': 789,
+        'last_events_processing_task_ts': 890,
+    }
+    should_not_move_used_query_ranges = {
+        'coinbase_trades_Coinbase 1': 123,
+        'coinbase_margins_Coinbase 1': 234,
+        'coinbase_asset_movements_Coinbase 1': 345,
+        'balancer_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 456,
+        'balancer_events_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 456,
+        'binance_history_events_binance1': 567,
+        'binance_lending_history_binance1': 678,
+        'yearn_vaults_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 789,
+        'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 890,
+        'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 901,
+    }
     with db_v40.conn.write_ctx() as cursor:
-        cursor.executemany('INSERT INTO settings VALUES (?, ?)', settings.items())
         assert table_exists(cursor, 'key_value_cache') is False
+        cursor.execute('SELECT name FROM settings;')
+        for names in cursor:
+            assert names[0] in should_move_settings | should_not_move_settings
+        cursor.execute('SELECT name FROM used_query_ranges;')
+        for names in cursor:
+            assert names[0] in should_move_used_query_ranges | should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 0
     db_v40.logout()
@@ -2012,10 +2041,26 @@ def test_upgrade_db_40_to_41(user_data_dir):
         value TEXT
     )""") is True
         cache_values = cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
+        assert len(cache_values) == len(should_move_settings) + len(should_move_used_query_ranges)
         for name, value in cache_values:
-            assert name not in should_not_move
-            assert int(value) == should_move[name]
-
+            assert name not in should_not_move_settings
+            assert name not in should_not_move_used_query_ranges
+            if name in should_move_settings:
+                assert int(value) == should_move_settings[name]
+            elif name in should_move_used_query_ranges:
+                assert int(value) == should_move_used_query_ranges[name]
+            else:
+                pytest.fail(f'{name} should not end up in key_value_cache table')
+        db_settings = cursor.execute('SELECT name FROM settings').fetchall()
+        assert len(db_settings) == len(should_not_move_settings)
+        for name in db_settings:
+            assert name[0] not in should_move_settings
+            assert name[0] in should_not_move_settings
+        db_used_query_ranges = cursor.execute('SELECT name FROM used_query_ranges').fetchall()
+        assert len(db_used_query_ranges) == len(should_not_move_used_query_ranges)
+        for name in db_used_query_ranges:
+            assert name[0] not in should_move_used_query_ranges
+            assert name[0] in should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 1
     db.logout()

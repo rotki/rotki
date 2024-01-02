@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.history.price import PriceHistorian
@@ -23,11 +23,11 @@ log = RotkehlchenLogsAdapter(logger)
 def should_run_periodic_task(
         database: 'DBHandler',
         key_name: Literal[
-            DBCache.LAST_DATA_UPDATES_TS,
-            DBCache.LAST_EVM_ACCOUNTS_DETECT_TS,
-            DBCache.LAST_SPAM_ASSETS_DETECT_KEY,
-            DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-            DBCache.LAST_OWNED_ASSETS_UPDATE,
+            DBCacheStatic.LAST_DATA_UPDATES_TS,
+            DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
+            DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
+            DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+            DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
         ],
         refresh_period: int,
 ) -> bool:

@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -261,13 +262,15 @@ class Bitstamp(ExchangeInterface):
         )
 
         # also query crypto transactions, to get address and transaction id (but no fee)
-        # TODO: The used query range should be replaced by cache for this: https://github.com/rotki/rotki/issues/5684  # noqa: E501
-        crypto_last_query_name = f'{self.location}_{self.name}_last_cryptotx_offset'
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name=?', (crypto_last_query_name,))  # noqa: E501
             offset = 0
-            if (result := cursor.fetchone()) is not None:
-                offset = result[0]
+            if (result := self.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                location=self.location.serialize(),
+                location_name=self.name,
+            )) is not None:
+                offset = result
 
         crypto_asset_movements = self._query_crypto_transactions(offset)
 
@@ -365,11 +368,13 @@ class Bitstamp(ExchangeInterface):
 
         if options['offset'] != offset:
             # write the new offset
-            crypto_last_query_name = f'{self.location}_{self.name}_last_cryptotx_offset'
             with self.db.user_write() as write_cursor:
-                write_cursor.execute(  # TODO: Replace with cache from 5684 like above
-                    'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?) ',  # noqa: E501
-                    (crypto_last_query_name, 0, options['offset']),
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                    value=Timestamp(options['offset']),
+                    location=self.location.serialize(),
+                    location_name=self.name,
                 )
 
         return total_asset_movements

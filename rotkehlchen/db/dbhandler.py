@@ -44,7 +44,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
@@ -630,36 +630,69 @@ class DBHandler:
         )
         CachedSettings().update_entries(settings)
 
-    @overload
-    def get_cache(self, cursor: 'DBCursor', name: DBCache) -> Timestamp:
-        ...
+    def get_cache_for_api(self, cursor: 'DBCursor') -> dict[str, int]:
+        """Returns a few key-value pairs that are used in the API
+        from the `key_value_cache` table of the DB. Defaults to `Timestamp(0)` if not found"""
+        cursor.execute(
+            'SELECT name, value FROM key_value_cache WHERE name IN (?,?);',
+            (DBCacheStatic.LAST_DATA_UPLOAD_TS.value, DBCacheStatic.LAST_BALANCE_SAVE.value),
+        )
+        db_cache = {name: int(value) for name, value in cursor}
+        return {  # Return with default value, if needed
+            DBCacheStatic.LAST_BALANCE_SAVE.value: db_cache.get(DBCacheStatic.LAST_BALANCE_SAVE.value, 0),  # noqa: E501
+            DBCacheStatic.LAST_DATA_UPLOAD_TS.value: db_cache.get(DBCacheStatic.LAST_DATA_UPLOAD_TS.value, 0),  # noqa: E501
+        }
 
-    @overload
-    def get_cache(self, cursor: 'DBCursor') -> dict[DBCache, Timestamp]:
-        ...
-
-    def get_cache(
+    def get_static_cache(
             self,
             cursor: 'DBCursor',
-            name: DBCache | None = None,
-    ) -> dict[DBCache, Timestamp] | Timestamp:
-        """Returns the cache values from the `key_value_cache` table of the DB
-        - If `name` is not passed, it returns all the values in the table
-        - If `name` is passed, it returns the value of the given name, defaults to Timestamp(0)"""
-        if name is None:
-            cursor.execute('SELECT name, value FROM key_value_cache;')
-            return {
-                DBCache.deserialize(q[0]): Timestamp(int(q[1]))
-                for q in cursor
-            }
-        value = cursor.execute('SELECT value FROM key_value_cache WHERE name=?;', (name.value,)).fetchone()  # noqa: E501
-        return Timestamp(0) if value is None else Timestamp(int(value[0]))
+            name: DBCacheStatic,
+    ) -> Timestamp | None:
+        """Returns the cache value from the `key_value_cache` table of the DB
+        according to the given `name`. Defaults to `None` if not found"""
+        value = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?;', (name.value,),
+        ).fetchone()
+        return None if value is None else Timestamp(int(value[0]))
 
-    def set_cache(self, write_cursor: 'DBCursor', cache: dict[DBCache, Timestamp]) -> None:
-        """Save the values of the cache to the `key_value_cache` table of the DB"""
-        write_cursor.executemany(
+    def set_static_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: DBCacheStatic,
+            value: Timestamp,
+    ) -> None:
+        """Save the name-value pair of the cache with constant name
+        to the `key_value_cache` table of the DB"""
+        write_cursor.execute(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-            [(name.value, value) for name, value in cache.items()],
+            (name.value, value),
+        )
+
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: DBCacheDynamic,
+            **kwargs: str,
+    ) -> Timestamp | None:
+        """Returns the cache value from the `key_value_cache` table of the DB
+        according to the given `name` and `kwargs`. Defaults to `None` if not found"""
+        value = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
+        ).fetchone()
+        return None if value is None else Timestamp(int(value[0]))
+
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: DBCacheDynamic,
+            value: Timestamp,
+            **kwargs: str,
+    ) -> None:
+        """Save the name-value pair of the cache with variable name
+        to the `key_value_cache` table of the DB"""
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            (name.get_db_key(**kwargs), value),
         )
 
     @need_writable_cursor('user_write')
@@ -923,6 +956,10 @@ class DBHandler:
             names_to_delete += f'\\_{exchange_name}'
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            (names_to_delete, '\\'),
+        )
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
             (names_to_delete, '\\'),
         )
 
