@@ -1,11 +1,3 @@
-import {
-  TRADE_LOCATION_ARBITRUM_ONE,
-  TRADE_LOCATION_BASE,
-  TRADE_LOCATION_ETHEREUM,
-  TRADE_LOCATION_GNOSIS,
-  TRADE_LOCATION_OPTIMISM,
-  TRADE_LOCATION_POLYGON_POS
-} from '@/data/defaults';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
 import { externalLinks } from '@/data/external-links';
@@ -49,39 +41,38 @@ const { etherscan } = externalLinks;
  */
 export const getEtherScanRegisterUrl = (location: string) => {
   switch (location) {
-    case TRADE_LOCATION_OPTIMISM:
+    case 'optimism':
       return {
         external: etherscan.optimism,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
-    case TRADE_LOCATION_ETHEREUM:
+    case 'ethereum':
       return {
         external: etherscan.ethereum,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
-    // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
-    case toSnakeCase(TRADE_LOCATION_POLYGON_POS):
+    case 'polygon_pos':
       return {
         external: etherscan.polygonPos,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
-          hash: `#${TRADE_LOCATION_POLYGON_POS}`
+          hash: `#${location}`
         }
       };
-    case toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE):
+    case 'arbitrum_one':
       return {
         external: etherscan.arbitrum,
         route: {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
-          hash: `#${TRADE_LOCATION_ARBITRUM_ONE}`
+          hash: `#${location}`
         }
       };
-    case TRADE_LOCATION_BASE:
+    case 'base':
       return {
         external: etherscan.base,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
-    case TRADE_LOCATION_GNOSIS:
+    case 'gnosis':
       return {
         external: etherscan.gnosis,
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }

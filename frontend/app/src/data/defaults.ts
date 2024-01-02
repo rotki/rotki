@@ -40,15 +40,3 @@ export const TRADE_LOCATION_EXTERNAL = 'external';
 export const TRADE_LOCATION_BANKS = 'banks';
 
 export const TRADE_LOCATION_BLOCKCHAIN = 'blockchain';
-
-export const TRADE_LOCATION_ETHEREUM = 'ethereum';
-
-export const TRADE_LOCATION_OPTIMISM = 'optimism';
-
-export const TRADE_LOCATION_POLYGON_POS = 'polygon pos';
-
-export const TRADE_LOCATION_ARBITRUM_ONE = 'arbitrum one';
-
-export const TRADE_LOCATION_BASE = 'base';
-
-export const TRADE_LOCATION_GNOSIS = 'gnosis';
