@@ -499,7 +499,7 @@ def test_query_historical_dsr_non_premium(
     assert_error_response(
         response=response,
         contained_in_msg='Currently logged in user testuser does not have a premium subscription',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.FORBIDDEN,
     )
 
 

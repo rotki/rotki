@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.db import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultEvent, YearnVaultHistory
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
@@ -39,10 +39,9 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
 TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
@@ -108,23 +107,8 @@ def check_vault_history(name, expected_history, result_history):
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize(  # Force infura to make sure one of our history tests work with web3
-    'ethereum_manager_connect_at_start',
-    [
-        (
-            WeightedNode(
-                node_info=NodeName(
-                    name='own',
-                    endpoint=INFURA_TEST,
-                    owned=True,
-                    blockchain=SupportedBlockchain.ETHEREUM,
-                ),
-                weight=ONE,
-                active=True,
-            ),
-        ),
-    ],
-)
+# @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])  # Force infura to make sure one of our history tests work with web3  # noqa: E501
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the yearn vaults history endpoint works. Uses real data.
 
@@ -588,7 +572,7 @@ def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_
     assert_error_response(
         response=response,
         contained_in_msg='Currently logged in user testuser does not have a premium subscription',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.FORBIDDEN,
     )
 
 

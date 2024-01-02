@@ -392,7 +392,7 @@ def require_loggedin_user() -> Callable:
             rest_api = view_class.rest_api
             if rest_api.rotkehlchen.user_is_logged_in is False:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
             return f(*args, **kwargs)
 
         return wrapper
@@ -417,7 +417,7 @@ def require_premium_user(active_check: bool) -> Callable:
             rest_api = view_class.rest_api
             if rest_api.rotkehlchen.user_is_logged_in is False:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
             msg = (
                 f'Currently logged in user {rest_api.rotkehlchen.data.username} '
@@ -425,11 +425,11 @@ def require_premium_user(active_check: bool) -> Callable:
             )
             if rest_api.rotkehlchen.premium is None:
                 result_dict = wrap_in_fail_result(msg)
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
             if active_check and rest_api.rotkehlchen.premium.is_active() is False:
                 result_dict = wrap_in_fail_result(msg)
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
             return f(*args, **kwargs)
 

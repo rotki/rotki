@@ -165,7 +165,7 @@ Handling user creation, sign-in, log-out and querying
    :resjson object result: For successful requests, result contains the currently connected exchanges, and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Adding the new user was successful
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid. Permission error while trying to access the directory where rotki saves data.
+   :statuscode 409: Another user is already logged in. User already exists. Given Premium API credentials are invalid. Permission error while trying to access the directory where rotki saves data.
    :statuscode 500: Internal rotki error
 
 .. http:post:: /api/(version)/users/(username)
@@ -242,7 +242,7 @@ Handling user creation, sign-in, log-out and querying
 
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
-   :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where rotki saves data.
+   :statuscode 409: User does not exist.  Another user is already logged in. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where rotki saves data.
    :statuscode 500: Generic internal rotki error
    :statuscode 542: Internal rotki error relating to the database. Check message for more details.
 
@@ -348,6 +348,7 @@ Handling user creation, sign-in, log-out and querying
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: API key/secret deleted successfully
    :statuscode 400: Provided call is in some way malformed.
+   :statuscode 403: Logged in User does not have premium.
    :statuscode 409: User is not logged in, or user does not exist, or db operation error
    :statuscode 500: Internal rotki error
 
@@ -424,9 +425,9 @@ Modify user password
       }
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
-   :statuscode 200: Password changed successfully
-   :statuscode 401: Password mismatch
+   :statuscode 200: Password changed successfull
    :statuscode 400: Provided call is in some way malformed. For example a user who is not logged in has been specified.
+   :statuscode 401: Password mismatch
    :statuscode 409: User is not logged in, or user does not exist, or db operation error
    :statuscode 500: Internal rotki error
 
@@ -723,7 +724,8 @@ Getting or modifying settings
 
    :statuscode 200: Modifying settings was successful
    :statuscode 400: Provided JSON is in some way malformed, of invalid value for a setting.
-   :statuscode 409: No user is logged in or tried to set eth rpc endpoint that could not be reached.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
 Getting backend arguments
@@ -1048,10 +1050,10 @@ Query the result of an ongoing backend task
 
    :statuscode 200: The task's outcome is successfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
-      :statuscode 404: There is no task with the given task id
-      :statuscode 409: No user is currently logged in
-      :statuscode 500: Internal rotki error
-      :statuscode 502: Problem contacting a remote service
+   :statuscode 401: No user is currently logged in
+   :statuscode 404: There is no task with the given task id
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
 
 
 Cancel ongoing async tasks
@@ -1085,7 +1087,10 @@ Cancel ongoing async tasks
 
       :statuscode 200: The task was successfully canceled.
       :statuscode 400: Provided JSON is in some way malformed.
+      :statuscode 401: No user is currently logged in
       :statuscode 404: There is no task with the given task id.
+      :statuscode 500: Internal rotki error
+
 
 Query the latest price of assets
 ===================================
@@ -1262,7 +1267,7 @@ Get all manually input latest prices
 
    :resjson object result: A list of results with the prices along their `from_asset` and `to_asset`.
    :statuscode 200: Successful query
-   :statuscode 409: No user is logged in.
+   :statuscode 401: No user is logged in.
    :statuscode 500: Internal rotki error
 
 
@@ -1669,7 +1674,7 @@ Get a list of setup exchanges
 
    :resjson list result: A list of exchange location/name pairs that have been setup for the logged in user.
    :statuscode 200: The exchanges list has been successfully setup
-   :statuscode 409: No user is logged in.
+   :statuscode 401: No user is logged in.
    :statuscode 500: Internal rotki error
 
 Setup or remove an exchange
@@ -1712,7 +1717,8 @@ Setup or remove an exchange
    :resjson bool result: A boolean indicating success or failure
    :statuscode 200: The exchange has been successfully setup
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. The exchange has already been registered. The API key/secret is invalid or some other error.
+   :statuscode 401: No user is logged in
+   :statuscode 409: The exchange has already been registered. The API key/secret is invalid or some other error.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/exchanges
@@ -1747,7 +1753,8 @@ Setup or remove an exchange
    :resjson bool result: A boolean indicating success or failure
    :statuscode 200: The exchange has been successfully deleted
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. The exchange is not registered or some other error
+   :statuscode 401: No user is logged in.
+   :statuscode 409: The exchange is not registered or some other error
    :statuscode 500: Internal rotki error
 
 Edit an exchange entry
@@ -1790,7 +1797,8 @@ Edit an exchange entry
    :resjson bool result: A boolean indicating success if all went well. If there is an error then the usual result: null and message having a value format is followed.
    :statuscode 200: The exchange has been successfully edited
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. The exchange can not be found. The new exchange credentials were invalid.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: The exchange can not be found. The new exchange credentials were invalid.
    :statuscode 500: Internal rotki error
 
 Querying the balances of exchanges
@@ -1836,7 +1844,8 @@ Querying the balances of exchanges
    :resjson object result: If successful contains the balances of each asset held in the exchange. Each key of the object is an asset's symbol. Then the value is another object.  In the ``"amount"`` key of that object is the amount held in the asset. And in the ``"usd_value"`` key is the equivalent $ value as of this moment.
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in.Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Exchange is not registered or some other exchange query error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 .. http:get:: /api/(version)/exchanges/balances/
@@ -1881,7 +1890,8 @@ Querying the balances of exchanges
    :resjson object result: If successful contains the balances of each asset held in the exchange. Each key of the object is an asset's symbol. Then the value is another object.  In the ``"amount"`` key of that object is the amount held in the asset. And in the ``"usd_value"`` key is the equivalent $ value as of this moment.
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some exchange query error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 
@@ -1915,7 +1925,8 @@ Purging locally saved data for exchanges
 
    :statuscode 200: Data successfully purged.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in. Exchange is not registered or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Exchange is not registered or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 Purging locally saved evm transactions
@@ -1948,7 +1959,8 @@ Purging locally saved evm transactions
 
    :statuscode 200: Data successfully purged.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged.
+   :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 
@@ -1988,7 +2000,8 @@ Decode transactions that haven't been decoded yet
 
    :resjson object decoded_tx_number: A mapping of how many transactions were decoded per requested chain. If a chain was not requested no key will exist in the mapping.
    :statuscode 200: Transactions successfully decoded.
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 .. http:get:: /api/(version)/blockchains/evm/transactions/decode
@@ -2020,7 +2033,8 @@ Decode transactions that haven't been decoded yet
    :resjson object result: A mapping of the EVM chain name to the number of transactions missing the decoding.
 
    :statuscode 200: Transactions successfully counted.
-   :statuscode 409: User is not logged in. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 
@@ -2055,7 +2069,8 @@ Purging locally saved data for ethereum modules
 
    :statuscode 200: Data successfully purged.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 
@@ -2221,7 +2236,8 @@ Request creation of oracle price cache
 
    :statuscode 200: Cache successfully created.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: The oracle could not be queried due to an error on their side.
 
@@ -2258,7 +2274,8 @@ Delete an oracle price cache
 
    :statuscode 200: Cache successfully delete.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 Get oracle price cache data
@@ -2314,7 +2331,8 @@ Get oracle price cache data
 
    :statuscode 200: Cache successfully delete.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 Get supported oracles
@@ -2408,7 +2426,8 @@ Query supported ethereum modules
    :resjson object result: A list of all supported module each with its id and human readable name
 
    :statuscode 200: Data successfully purged.
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 Querying evm transactions
@@ -2530,7 +2549,8 @@ Querying evm transactions
 
    :statuscode 200: Transactions successfully queried
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -2636,7 +2656,8 @@ Querying tags
    :resjson string foreground_color: The foreground color to render the tag in the frontend with.
 
    :statuscode 200: Tags successfully queried.
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
 Adding new tags
@@ -2703,7 +2724,8 @@ Adding new tags
 
    :statuscode 200: Tag successfully created.
    :statuscode 400: Provided request JSON is in some way malformed.
-   :statuscode 409: User is not logged in. Tag with the same name already exists.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Tag with the same name already exists.
    :statuscode 500: Internal rotki error
 
 Editing a tag
@@ -2770,7 +2792,8 @@ Editing a tag
 
    :statuscode 200: Tag successfully created.
    :statuscode 400: Provided request JSON is in some way malformed. Or no field to edit was given.
-   :statuscode 409: User is not logged in. Tag with the given name does not exist.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Tag with the given name does not exist.
    :statuscode 500: Internal rotki error
 
 Deleting a tag
@@ -2825,7 +2848,8 @@ Deleting a tag
 
    :statuscode 200: Tag successfully removed.
    :statuscode 400: Provided request JSON is in some way malformed.
-   :statuscode 409: User is not logged in. Tag with the given name does not exist.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Tag with the given name does not exist.
    :statuscode 500: Internal rotki error
 
 Querying onchain balances
@@ -2933,7 +2957,8 @@ Querying onchain balances
 
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in. Invalid blockchain, or problems querying the given blockchain
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Invalid blockchain, or problems querying the given blockchain
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan or blockchain.info could not be reached or returned unexpected response.
 
@@ -3031,7 +3056,7 @@ Querying all balances
    :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liablity. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
    :statuscode 500: Internal rotki error
 
 Querying all supported assets
@@ -3416,7 +3441,7 @@ Querying owned assets
    :resjson list result: A list of asset symbols owned by the user
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error
 
 Detecting owned tokens
@@ -3467,7 +3492,7 @@ Detecting owned tokens
   :resjson object result: a dictionary containing mappings of an account to owned tokens and last tokens update timestamp. Tokens and last_update_timestamp can be None (if no info about account's tokens yet).
   :statuscode 200: Tokens successfully detected.
   :statuscode 400: Provided JSON is in some way malformed
-  :statuscode 409: No user is currently logged in.
+  :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error
 
 Get asset types
@@ -3783,7 +3808,8 @@ Performing an asset update
    :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
    :statuscode 200: Update was successfully applied (if any).
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Conflicts were found during update. The conflicts should also be returned. No user is currently logged in.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
@@ -3863,7 +3889,8 @@ Replacing an asset
 
    :statuscode 200: Asset successfully replaced.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Some conflict at replacing or user is not logged in.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some conflict at replacing.
    :statuscode 500: Internal rotki error
 
 Querying asset icons
@@ -3976,10 +4003,7 @@ Statistics for netvalue over time
 
 .. http:get:: /api/(version)/statistics/netvalue/
 
-   .. note::
-      This endpoint is only available for premium users
-
-   Doing a GET on the statistics netvalue over time endpoint will return all the saved historical data points with user's history
+   Doing a GET on the statistics netvalue over time endpoint will return all the saved historical data points with user's history. For non-premium users this returns up to 2 weeks of data in the past.
 
 
    **Example Request**:
@@ -4008,7 +4032,7 @@ Statistics for netvalue over time
    :resjson list[string] data: A list of net usd value for the corresponding timestamps. They are matched by list index.
    :statuscode 200: Netvalue statistics successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :Statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
 Statistics for asset or collection balance over time
@@ -4065,7 +4089,8 @@ Statistics for asset or collection balance over time
 
    :statuscode 200: Single asset balance statistics successfully queried
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
 
 Statistics for value distribution
@@ -4122,7 +4147,8 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution successfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error.
 
 .. http:get:: /api/(version)/statistics/value_distribution/
@@ -4176,7 +4202,8 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution successfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error.
 
 Statistics rendering code
@@ -4213,7 +4240,9 @@ Statistics rendering code
    :resjson string result: The source code of the renderer.
    :statuscode 200: Rendering code successfully returned.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. There is a problem reaching the rotki server.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: There is a problem reaching the rotki server.
    :statuscode 500: Internal rotki error.
 
 Dealing with trades
@@ -6375,7 +6404,9 @@ Getting ethereum MakerDAO DSR historical report
    :resjsonarr int tx_hash: The transaction hash of the DSR movement
 
    :statuscode 200: DSR history successfully queried.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or makerdao module is not activated.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Makerdao module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -6582,7 +6613,9 @@ Getting MakerDAO vault details
    :resjsonarr string tx_hash: The transaction hash associated with the event.
 
    :statuscode 200: Vault details successfully queried
-   :statuscode 409: User is not logged in. Or makerdao module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Makerdao module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -6742,7 +6775,8 @@ Getting Aave stats
 
    :statuscode 200: Aave history successfully queried.
    :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
+   :statuscode 401: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 409: Aave module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -6857,7 +6891,9 @@ Getting Balancer balances
    :resjson object user_balance: The liquidity token amount of the user balance and its estimated USD value.
 
    :statuscode 200: Balancer balances successfully queried.
-   :statuscode 409: User is not logged in. Or Balancer module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Balancer module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as the graph node could not be reached or returned unexpected response.
 
@@ -6961,7 +6997,9 @@ Getting Balancer events
    :resjson string usd_profit_loss: The total profit/loss in USD.
 
    :statuscode 200: Balancer events successfully queried.
-   :statuscode 409: User is not logged in. Or Balancer module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Balancer module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as the graph node could not be reached or returned unexpected response.
 
@@ -7051,7 +7089,8 @@ Getting Compound balances
    :resjson object result: A mapping of all accounts that currently have compound balance to the balances and APY data for each account for lending and borrowing. Each key is an asset identifier and its values are the current balance and the APY in %
 
    :statuscode 200: Compound balances successfully queried.
-   :statuscode 409: User is not logged in. Or compound module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Compound module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
@@ -7145,7 +7184,9 @@ Getting compound statistics
 
    :statuscode 200: Compound statistics successfully queried.
    :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 409: User is not logged in. Or compound module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Compound module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7206,7 +7247,8 @@ Getting Liquity balances
    :resjson object result: A mapping of all accounts that currently have Liquity positions to ``trove`` information.
 
    :statuscode 200: Liquity balances successfully queried.
-   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Liquity module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -7290,7 +7332,8 @@ Getting Liquity staked amount
    :resjson object optional[proxies]: A mapping of proxy addresses to the amount and value of assets staked in the protocol.
 
    :statuscode 200: Liquity staking information successfully queried.
-   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Liquity module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -7374,7 +7417,8 @@ Getting Liquity stability pool information
    :resjson object rewards: Information about the amount and usd value of the LQTY rewards gained.
 
    :statuscode 200: Liquity information successfully queried.
-   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Liquity module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7535,7 +7579,8 @@ Getting Liquity staking information
 
    :statuscode 200: Liquity staking stats successfully queried.
    :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Liquity module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7612,7 +7657,8 @@ Getting Uniswap balances
    :resjson object user_balance: The liquidity token user balance and its USD value.
 
    :statuscode 200: Uniswap balances successfully queried.
-   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Uniswap module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
@@ -7693,7 +7739,8 @@ Getting Uniswap V3 balances
    :resjson object user_balance: The liquidity token user balance and its USD value.
 
    :statuscode 200: Uniswap balances successfully queried.
-   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Uniswap module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -7757,7 +7804,9 @@ Getting Uniswap/Sushiswap events
 
    :statuscode 200: Uniswap events successfully queried.
    :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Uniswap module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
@@ -7843,7 +7892,8 @@ Getting yearn finance vaults balances
 
 
    :statuscode 200: Yearn vault balances successfully queried.
-   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 409: User is not logged in.
+   :statuscode 409: Yearn module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -7993,7 +8043,9 @@ Getting yearn finance vaults historical data
    :resjson object profit_loss: The total profit/loss for the vault
 
    :statuscode 200: Yearn vaults history successfully queried.
-   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Yearn module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8070,7 +8122,8 @@ Getting yearn finance V2 vaults balances
 
 
    :statuscode 200: Yearn vault V2 balances successfully queried.
-   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Yearn module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8213,7 +8266,9 @@ Getting yearn finance V2 vaults historical data
    :resjson object profit_loss: The total profit/loss for the vault
 
    :statuscode 200: Yearn vaults V2 history successfully queried.
-   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premiu.m
+   :statuscode 409: Yearn module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8263,7 +8318,8 @@ Getting Loopring balances
    :resjson object result: A mapping between accounts and their balances
 
    :statuscode 200: Loopring balances successfully queried.
-   :statuscode 409: User is not logged in. Or loopring module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Loopring module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as loopring returned an unexpected result.
 
@@ -8356,7 +8412,9 @@ Getting Eth2 Staking details
    :resjson performance_total object: How much has the validator earned in ETH (and USD equivalent value) since it was activated.
 
    :statuscode 200: Eth2 staking details successfully queried
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8403,7 +8461,9 @@ Getting Eth2 Staking details
    :resjson execution_layer_rewards string: Amount of ETH earned as part of MEV rewards and new blocks created for the given filter.
 
    :statuscode 200: Stats correctly queried.
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -8475,7 +8535,9 @@ Getting Eth2 Staking daily stats
    :resjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: Eth2 staking details successfully queried
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8517,7 +8579,8 @@ Adding an Eth2 validator
 
    :statuscode 200: Eth2 validator successfully added.
    :statuscode 401: Can't add the validator since user is not premium and would go over the limit.
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as beaconcha.in could not be reached or returned unexpected response.
 
@@ -8557,7 +8620,8 @@ Deleting Eth2 validators
       }
 
    :statuscode 200: Eth2 validator/s successfully delete.
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -8592,7 +8656,8 @@ Editing an Eth2 validator
       }
 
    :statuscode 200: Eth2 validator successfully edited.
-   :statuscode 409: User is not logged in, eth2 module is not activated or validator doesn't exist.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: eth2 module is not activated or validator doesn't exist.
    :statuscode 500: Internal rotki error.
 
 
@@ -8650,7 +8715,8 @@ Getting tracked Eth2 validators
    :resjson string ownership_percentage: The ownership percentage of the validator
 
    :statuscode 200: Eth2 validator defaults successfully returned.
-   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 
 
@@ -8705,7 +8771,8 @@ Getting Pickle's DILL balances
    :resjson object result: A mapping of all accounts that currently have Pickle locked to keys ``locked_amount``,  ``pending_rewards`` and ``locked_until``
 
    :statuscode 200: Pickle balances successfully queried.
-   :statuscode 409: User is not logged in or Pickle module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Pickle module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -8763,7 +8830,7 @@ Querying ethereum airdrops
    :reqjson object result: A mapping of addresses to protocols for which claimable airdrops exist
 
    :statuscode 200: Tags successfully queried.
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not query an airdrop file
    :statuscode 507: Failed to store CSV files for airdrops.
@@ -8800,7 +8867,7 @@ Get addresses to query per protocol
 
    :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
    :statuscode 200: The addresses have been queried successfully
-   :statuscode 409: No user is logged in.
+   :statuscode 401: No user is logged in.
    :statuscode 500: Internal rotki error
 
 
@@ -8843,7 +8910,8 @@ Add address to query per protocol
    :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
    :statuscode 200: The address has been added successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is logged in. The address already exists in the addresses to query for that protocol.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: The address already exists in the addresses to query for that protocol.
    :statuscode 500: Internal rotki error
 
 Remove an address to query per protocol
@@ -8885,7 +8953,8 @@ Remove an address to query per protocol
    :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
    :statuscode 200: The address has been removed successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is logged in. The address is not in the addresses to query for that protocol.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: The address is not in the addresses to query for that protocol.
    :statuscode 500: Internal rotki error
 
 
@@ -8940,7 +9009,8 @@ Adding EVM accounts to all EVM chains
    :resjson list result: A mapping containing the evm chain keys and which addresses were added for each chain.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Remote error occurred when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
@@ -8976,7 +9046,8 @@ Adding EVM accounts to all EVM chains
    :resjson bool result: true in case of success, null otherwise.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: User is not logged in. Node that was queried is not synchronized.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Node that was queried is not synchronized.
    :statuscode 500: Internal rotki error
    :statuscode 502: Remote error occurred.
 
@@ -9039,7 +9110,8 @@ Adding blockchain accounts
    :resjson list result: A list containing accounts' addresses that were added during a request.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Remote error occurred when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
@@ -9095,7 +9167,8 @@ Adding BTC/BCH xpubs
 
    :statuscode 200: Xpub successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as blockstream or haskoin. Check message for details.
 
@@ -9190,7 +9263,8 @@ Editing BTC/BCH xpubs
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Xpub successfully edited
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
 
 Deleting BTC/BCH xpubs
@@ -9277,7 +9351,8 @@ Deleting BTC/BCH xpubs
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Xpub successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some error occurred when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
 
@@ -9350,7 +9425,8 @@ Editing blockchain account data
 
    :statuscode 200: Accounts successfully edited
    :statuscode 400: Provided JSON or data is in some way malformed. Given list to edit is empty.
-   :statuscode 409: User is not logged in. An account given to edit does not exist or a given tag does not exist.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: An account given to edit does not exist or a given tag does not exist.
    :statuscode 500: Internal rotki error
 
 Removing blockchain accounts
@@ -9432,7 +9508,8 @@ Removing blockchain accounts
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Accounts successfully deleted
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to remove contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Some error occurred when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as Etherscan. Check message for details.
 
@@ -9491,7 +9568,7 @@ Getting manually tracked balances
 
    :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
    :statuscode 200: Balances successfully queried
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
    :statuscode 500: Internal rotki error
 
 Adding manually tracked balances
@@ -9576,7 +9653,8 @@ Adding manually tracked balances
    :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
    :statuscode 200: Balances successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list. One of the balance labels already exist.
-   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as Cryptocompare. Check message for details.
 
@@ -9655,7 +9733,8 @@ Editing manually tracked balances
    :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
    :statuscode 200: Balances successfully edited
    :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list.
-   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as Cryptocompare. Check message for details.
 
@@ -9706,7 +9785,8 @@ Deleting manually tracked balances
    :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
    :statuscode 200: Balances successfully delete
    :statuscode 400: Provided JSON or data is in some way malformed. One of the labels to remove did not exist.
-   :statuscode 409: User is not logged in. Check message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Check message for details.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as Cryptocompare. Check message for details.
 
@@ -9753,7 +9833,8 @@ Getting watchers
    :reqjson string type: The type of the watcher. Valid types are: "makervault_collateralization_ratio".
    :reqjson object args: An object containing the args for the vault. Depending on the vault type different args are possible. Check `here <watcher_types_section_>`__ to see the different options.
    :statuscode 200: Watchers successfully queried
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not connect to or got unexpected response format from rotki server
 
@@ -9824,7 +9905,8 @@ Adding new watcher
    :resjson object result: An object containing all the watchers, including the ones that were added. The watchers follow the schema defined `above <watchers_schema_section_>`__.
    :statuscode 200: Watchers successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. Or the same watcher already exists for this user in the DB.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not connect to or got unexpected response format from rotki server
 
@@ -9883,7 +9965,8 @@ Editing watchers
    :resjson object result: An object containing all the watchers as defined `here <watchers_schema_section_>`__
    :statuscode 200: Watchers successfully edited
    :statuscode 400: Provided JSON or data is in some way malformed. Or a given identifier does not exist in the DB.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not connect to or got unexpected response format from rotki server
 
@@ -9930,7 +10013,8 @@ Deleting watchers
    :resjson object result: An object containing all the watchers after deletion. The watchers follow the schema defined `above <watchers_schema_section_>`__.
    :statuscode 200: Watchers successfully delete
    :statuscode 400: Provided JSON or data is in some way malformed. One of the identifiers  to remove did not exist.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not connect to or got unexpected response format from rotki server
 
@@ -9964,7 +10048,7 @@ Dealing with ignored assets
    :resjson list result: A list of asset names that are currently ignored.
    :statuscode 200: Assets successfully queried
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
    :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/assets/ignored/
@@ -9999,7 +10083,8 @@ Dealing with ignored assets
    :resjson list result: A list of asset names that are currently ignored.
    :statuscode 200: Assets successfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. One of the assets provided is already on the list.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: One of the assets provided is already on the list.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/assets/ignored/
@@ -10034,7 +10119,8 @@ Dealing with ignored assets
    :resjson list result: A list of asset names that are currently ignored.
    :statuscode 200: Assets successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. One of the assets provided is not on the list.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: One of the assets provided is not on the list.
    :statuscode 500: Internal rotki error
 
 
@@ -10173,7 +10259,8 @@ Dealing with ignored actions
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Action ids successfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. One of the action ids provided is already on the list.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: One of the action ids provided is already on the list.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/actions/ignored/
@@ -10218,7 +10305,8 @@ Dealing with ignored actions
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Action ids successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. One of the action ids provided is not on the list.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: One of the action ids provided is not on the list.
    :statuscode 500: Internal rotki error
 
 
@@ -10357,7 +10445,7 @@ Data imports
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. Or premium was needed for the import and not found.
+   :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -10548,7 +10636,8 @@ Querying  NFTs
    :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
    :statuscode 200: NFTs successfully queried
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or nft module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: nft module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
 
@@ -10635,7 +10724,8 @@ Show NFT Balances
    :resjson int total_usd_value: Total usd value of the nfts in the filter.
    :statuscode 200: NFT balances successfully queried
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or nft module is not activated.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: nft module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
 
@@ -10687,7 +10777,7 @@ Querying database information
    :resjson object info: Under the userdb this contains the info of the currently logged in user. It has the path to the DB file, the size in bytes and the DB version.
    :resjson list backups: Under the userdb this contains the list of detected backups (if any) for the user db. Each list entry is an object with the size in bytes of the backup, the unix timestamp in which it was taken and the user DB version.
    :statuscode 200: Data were queried successfully.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
 Creating a database backup
@@ -10720,7 +10810,8 @@ Creating a database backup
    :resjson string result: The full path of the newly created database backup
 
    :statuscode 200: Backup was created successfully.
-   :statuscode 409: No user is currently logged in or failure to create the DB backup.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failure to create the DB backup.
    :statuscode 500: Internal rotki error.
 
 Deleting a database backup
@@ -10756,7 +10847,8 @@ Deleting a database backup
 
    :statuscode 200: Backup was deleted successfully.
    :statuscode 400: The given filepath does not exist
-   :statuscode 409: No user is currently logged in or failure to delete the backup or the requested file to delete is not in the user's data directory.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failure to delete the backup or the requested file to delete is not in the user's data directory.
    :statuscode 500: Internal rotki error.
 
 Downloading a database backup
@@ -10786,7 +10878,8 @@ Downloading a database backup
 
    :statuscode 200: Backup was downloaded successfully.
    :statuscode 400: The given filepath does not exist
-   :statuscode 409: No user is currently logged in or failure to download the backup or the requested file to download is not in the user's data directory.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failure to download the backup or the requested file to download is not in the user's data directory.
    :statuscode 500: Internal rotki error.
 
 Get associated locations
@@ -10816,7 +10909,8 @@ Get associated locations
       }
 
    :statuscode 200: Locations successfully queried.
-   :statuscode 409: User is not logged in. Check error message for details.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
 Staking events
@@ -10918,7 +11012,8 @@ Staking events
 
    :statuscode 200: Events are successfully returned
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: Kraken is not active or some parameter for filters is not valid.
    :statuscode 500: Internal rotki error
 
 
@@ -10958,7 +11053,7 @@ Export assets added by the user
    :resjsonarr string destination: Folder where the generated files will be saved
 
    :statuscode 200: Response file is correctly generated
-   :statuscode 409: No user is logged in.
+   :statuscode 401: No user is logged in.
    :statuscode 507: Failed to create the file.
 
 
@@ -11003,7 +11098,8 @@ Import assets added by the user
       }
 
    :statuscode 200: Assets correctly imported
-   :statuscode 409: No user is logged in, imported file is for an older version of the schema or file can't be loaded or format is not valid.
+   :statuscode 401: No user is logged in.
+   :statuscode 409: Imported file is for an older version of the schema or file can't be loaded or format is not valid.
    :statuscode 500: Internal rotki error
    :statuscode 507: Filesystem error, probably related to size.
 
@@ -11059,7 +11155,7 @@ Handling snapshot manipulation
 
    :resjson object result: A dictionary representing the snapshot at the specified timestamp.
    :statuscode 200: Snapshot was retrieved successfully.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 404: No snapshot data found for the given timestamp.
    :statuscode 500: Internal rotki error.
 
@@ -11094,7 +11190,8 @@ Handling snapshot manipulation
    :resjson bool result: Boolean denoting success or failure of the query.
    :statuscode 200: Files were exported successfully.
    :statuscode 400: Provided query parameter(s) is in some way malformed or given path is not a directory.
-   :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11122,7 +11219,8 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was downloaded successfully.
    :statuscode 400: Provided query parameter(s) is in some way malformed.
-   :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11152,7 +11250,8 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was deleted successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. No snapshot found for the specified timestamp.Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No snapshot found for the specified timestamp.Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11205,7 +11304,8 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was updated successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. JSON has different timestamps. Snapshot contains an unknown asset. JSON has invalid headers. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: JSON has different timestamps. Snapshot contains an unknown asset. JSON has invalid headers. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11241,7 +11341,8 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was imported successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset. Csv file has invalid headers. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: CSV file has different timestamps. Snapshot contains an unknown asset. Csv file has invalid headers. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11302,7 +11403,8 @@ Get ENS names
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Names were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: Failed to query names or no user is currently logged in or addresses have incorrect format.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failed to query names or addresses have incorrect format.
    :statuscode 500: Internal rotki error.
 
 
@@ -11363,7 +11465,8 @@ Get mappings from addressbook
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Mappings were returned successfully.
     :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: No user is currently logged in or addresses have incorrect format.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 409: Addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
@@ -11407,7 +11510,8 @@ Insert mappings into addressbook
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Entries were added successfully.
     :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: Some of the provided entries already exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 409: Some of the provided entries already exist in the addressbook or addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
@@ -11454,7 +11558,8 @@ Update mappings in the addressbook
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Entries were updated successfully.
     :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: Some of the provided entries don't exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 409: Some of the provided entries don't exist in the addressbook or addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
@@ -11500,7 +11605,8 @@ Delete mappings in the addressbook
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Entries were deleted successfully.
     :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: Some of the provided entries don't exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 409: No user is currently logged in.
+    :statuscode 409: Some of the provided entries don't exist in the addressbook or addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
@@ -11549,7 +11655,8 @@ Search for all known names of an address
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Mappings were returned successfully.
     :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: No user is currently logged in or addresses have incorrect format.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 409: Addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
@@ -11622,7 +11729,7 @@ Handling user notes
    :resjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: User notes were retrieved successfully.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
 .. http:delete:: /api/(version)/notes
@@ -11652,7 +11759,8 @@ Handling user notes
 
    :statuscode 200: User note was deleted successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. No user note found. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No user note found. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11695,7 +11803,8 @@ Handling user notes
 
    :statuscode 200: User note was updated successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. User note does not exist.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: User note does not exist.
    :statuscode 500: Internal rotki error.
 
 
@@ -11734,7 +11843,8 @@ Handling user notes
 
    :statuscode 200: User note was added successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. User note with the given title already exists. User has reached the limit of available notes. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: User note with the given title already exists. User has reached the limit of available notes. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11800,7 +11910,7 @@ Custom Assets
 
    :statuscode 200: Custom assets were retrieved successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
 .. http:delete:: /api/(version)/assets/custom
@@ -11830,7 +11940,8 @@ Custom Assets
 
    :statuscode 200: Custom asset was deleted successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. No custom asset found. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No custom asset found. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11869,7 +11980,8 @@ Custom Assets
 
    :statuscode 200: Custom asset was updated successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Custom asset name and type is already being used. Custom asset does not exist.  Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Custom asset name and type is already being used. Custom asset does not exist.  Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11907,7 +12019,8 @@ Custom Assets
 
    :statuscode 200: Custom asset was created successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Custom asset with the given name and type already exists. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Custom asset with the given name and type already exists. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11935,7 +12048,8 @@ Custom Assets
    :resjson list[str] result: The list of custom asset types in the DB.
 
    :statuscode 200: Custom asset types retrieved successfully.
-   :statuscode 409: No user is currently logged in. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Other error. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11982,7 +12096,7 @@ Events Details
    :statuscode 200: The details were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 404: There is no event with the provided identifier or the event has no details to be returned.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
 Add EVM Transaction By Hash
@@ -12031,7 +12145,7 @@ Add EVM Transaction By Hash
    :statuscode 200: The transaction was saved successfully.
    :statuscode 400: Provided JSON is in some way malformed. Transaction is already present in DB. Address provided is not tracked by rotki.
    :statuscode 404: Transaction hash not found for the specified chain.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -12129,7 +12243,7 @@ Get Binance Savings Interests History
 
    :statuscode 200: The balances were returned successfully.
    :statuscode 400: Invalid location provided.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as binance could not be reached or returned unexpected response.
 
@@ -12707,7 +12821,8 @@ Dealing with skipped external events
    :statuscode 200: File were exported successfully
    :statuscode 400: Provided JSON is in some way malformed or given string is not a directory.
    :statuscode 404: No file was found when trying to export the events in CSV.
-   :statuscode 409: No user is currently logged in. No permissions to write in the given directory. Check error message.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -12852,7 +12967,8 @@ Managing custom accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Entry correctly stored.
-  :statuscode 409: No user is currently logged in. Failed to validate the data. Combination of type, subtype and counterparty already exists.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Combination of type, subtype and counterparty already exists.
   :statuscode 500: Internal rotki error.
 
 
@@ -12897,7 +13013,8 @@ Managing custom accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Entry correctly updated.
-  :statuscode 409: No user is currently logged in. Failed to validate the data. Entry doesn't exist. Combination of type, subtype and counterparty already exists.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Entry doesn't exist. Combination of type, subtype and counterparty already exists.
   :statuscode 500: Internal rotki error.
 
 .. http:delete:: /api/(version)/accounting/rules
@@ -12932,7 +13049,8 @@ Managing custom accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Entry correctly deleted.
-  :statuscode 409: No user is currently logged in. Failed to validate the data. Or entry doesn't exist.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Or entry doesn't exist.
   :statuscode 500: Internal rotki error.
 
 
@@ -13041,7 +13159,7 @@ Solving conflicts in accounting rules
   :resjson object result: An object, mapping identifiers to the local and remote version of the conflict.
 
   :statuscode 200: All okay
-  :statuscode 409: No user is currently logged in
+  :statuscode 401: No user is currently logged in
   :statuscode 500: Internal rotki error
 
 
@@ -13080,5 +13198,6 @@ Solving conflicts in accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Conflicts resolved succesfully.
-  :statuscode 409: No user is currently logged in. Couldn't find the rule locally.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Couldn't find the rule locally.
   :statuscode 500: Internal rotki error.

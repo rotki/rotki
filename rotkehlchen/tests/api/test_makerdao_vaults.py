@@ -297,7 +297,7 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg='Currently logged in user testuser does not have a premium subscription',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.FORBIDDEN,
     )
 
 

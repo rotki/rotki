@@ -588,7 +588,7 @@ def test_user_logout(rotkehlchen_api_server, username, db_password):
     assert_error_response(
         response=response,
         contained_in_msg='No user is currently logged in',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.UNAUTHORIZED,
     )
     assert rotki.user_is_logged_in is False
 

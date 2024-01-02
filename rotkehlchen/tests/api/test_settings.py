@@ -115,7 +115,7 @@ def test_querying_settings(rotkehlchen_api_server, username):
     assert_error_response(
         response=response,
         contained_in_msg='No user is currently logged in',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.UNAUTHORIZED,
     )
 
 

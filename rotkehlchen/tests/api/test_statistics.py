@@ -114,7 +114,7 @@ def test_query_statistics_asset_balance(
         assert_error_response(
             response=response,
             contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
     # and now test that statistics work fine for BTC, with given time range
@@ -137,7 +137,7 @@ def test_query_statistics_asset_balance(
         assert_error_response(
             response=response,
             contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
     # finally test that if the time range is not including the saved balances we get nothing back
@@ -154,7 +154,7 @@ def test_query_statistics_asset_balance(
         assert_error_response(
             response=response,
             contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
 
@@ -285,7 +285,7 @@ def test_query_statistics_value_distribution(
             assert_error_response(
                 response=response,
                 contained_in_msg='logged in user testuser does not have a premium subscription',
-                status_code=HTTPStatus.CONFLICT,
+                status_code=HTTPStatus.FORBIDDEN,
             )
 
     # and now test that statistics work fine for distribution by location for json body
@@ -355,7 +355,7 @@ def test_query_statistics_value_distribution(
         assert_error_response(
             response=response,
             contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
 
@@ -421,5 +421,5 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
         assert_error_response(
             response=response,
             contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.FORBIDDEN,
         )

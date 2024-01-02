@@ -846,7 +846,7 @@ def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
     assert_error_response(
         response=response,
         contained_in_msg='No user is currently logged in',
-        status_code=HTTPStatus.CONFLICT,
+        status_code=HTTPStatus.UNAUTHORIZED,
     )
 
 
