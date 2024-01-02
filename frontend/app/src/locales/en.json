@@ -880,6 +880,12 @@
         "error": {
           "title": "Editing tag"
         }
+      },
+      "whitelisted_assets": {
+        "error": {
+          "message": "Failed to retrieve whitelisted assets: {error}",
+          "title": "Querying whitelisted assets"
+        }
       }
     },
     "staking": {
@@ -1147,6 +1153,7 @@
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
+    "only_show_whitelisted": "Only show whitelisted assets",
     "selected": "{count} asset(s) selected",
     "show_all": "Show all",
     "underlying_tokens": "Underlying Tokens"
@@ -2699,6 +2706,19 @@
     "no_items": {
       "description": "All the selected entries are already ignored | All the selected entries are already included",
       "title": "No entries to ignore | No entries to unignore"
+    },
+    "whitelist": {
+      "failed": {
+        "unwhitelist_message": "Token could not be removed from whitelisted assets: {message}",
+        "unwhitelist_title": "Failed to remove token from whitelist",
+        "whitelist_message": "Token could not be added to whitelisted assets: {message}",
+        "whitelist_title": "Failed to add token to whitelist"
+      },
+      "hint": "The asset is whitelisted, meaning that the Rotki algorithm will not mark this asset as a spam asset. To be able to ignore this asset, you need to remove it from whitelist.",
+      "action": {
+        "add": "Add asset to whitelist",
+        "remove": "Remove asset from whitelist"
+      }
     }
   },
   "ignore_buttons": {

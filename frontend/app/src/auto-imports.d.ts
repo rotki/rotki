@@ -352,6 +352,7 @@ declare global {
   const useAssetMovementsApi: typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']
   const useAssetPageNavigation: typeof import('./composables/assets/navigation')['useAssetPageNavigation']
   const useAssetPricesApi: typeof import('./composables/api/assets/prices')['useAssetPricesApi']
+  const useAssetWhitelistApi: typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']
   const useAssets: typeof import('./composables/assets/index')['useAssets']
   const useAssetsApi: typeof import('./composables/api/assets/index')['useAssetsApi']
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
@@ -699,6 +700,7 @@ declare global {
   const useWebWorker: typeof import('@vueuse/core')['useWebWorker']
   const useWebWorkerFn: typeof import('@vueuse/core')['useWebWorkerFn']
   const useWebsocketStore: typeof import('./store/websocket')['useWebsocketStore']
+  const useWhitelistedAssetsStore: typeof import('./store/assets/whitelisted')['useWhitelistedAssetsStore']
   const useWindowFocus: typeof import('@vueuse/core')['useWindowFocus']
   const useWindowScroll: typeof import('@vueuse/core')['useWindowScroll']
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
@@ -1080,6 +1082,7 @@ declare module 'vue' {
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
     readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
+    readonly useAssetWhitelistApi: UnwrapRef<typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
@@ -1427,6 +1430,7 @@ declare module 'vue' {
     readonly useWebWorker: UnwrapRef<typeof import('@vueuse/core')['useWebWorker']>
     readonly useWebWorkerFn: UnwrapRef<typeof import('@vueuse/core')['useWebWorkerFn']>
     readonly useWebsocketStore: UnwrapRef<typeof import('./store/websocket')['useWebsocketStore']>
+    readonly useWhitelistedAssetsStore: UnwrapRef<typeof import('./store/assets/whitelisted')['useWhitelistedAssetsStore']>
     readonly useWindowFocus: UnwrapRef<typeof import('@vueuse/core')['useWindowFocus']>
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
@@ -1801,6 +1805,7 @@ declare module '@vue/runtime-core' {
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
     readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
+    readonly useAssetWhitelistApi: UnwrapRef<typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
@@ -2148,6 +2153,7 @@ declare module '@vue/runtime-core' {
     readonly useWebWorker: UnwrapRef<typeof import('@vueuse/core')['useWebWorker']>
     readonly useWebWorkerFn: UnwrapRef<typeof import('@vueuse/core')['useWebWorkerFn']>
     readonly useWebsocketStore: UnwrapRef<typeof import('./store/websocket')['useWebsocketStore']>
+    readonly useWhitelistedAssetsStore: UnwrapRef<typeof import('./store/assets/whitelisted')['useWhitelistedAssetsStore']>
     readonly useWindowFocus: UnwrapRef<typeof import('@vueuse/core')['useWindowFocus']>
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>

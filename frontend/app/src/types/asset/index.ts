@@ -69,6 +69,7 @@ export interface AssetRequestPayload
   evmChain?: string;
   address?: string;
   showUserOwnedAssetsOnly?: boolean;
+  showWhitelistedAssetsOnly?: boolean;
   ignoredAssetsHandling?: string;
   identifiers?: string[];
 }

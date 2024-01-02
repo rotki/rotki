@@ -14,7 +14,7 @@ const { t } = useI18n();
     <template #title>
       {{ t('asset_table.underlying_tokens') }}
     </template>
-    <SimpleTable>
+    <SimpleTable variant="default">
       <thead>
         <tr>
           <th>{{ t('common.address') }}</th>

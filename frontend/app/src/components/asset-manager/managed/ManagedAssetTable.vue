@@ -5,6 +5,7 @@ import { type TablePagination } from '@/types/pagination';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
 import { CUSTOM_ASSET, type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type ActionStatus } from '@/types/action';
+import ManagedAssetAction from '@/components/asset-manager/managed/ManagedAssetAction.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -18,6 +19,7 @@ const props = withDefaults(
     ignoredAssets: string[];
     ignoredFilter: {
       onlyShowOwned: boolean;
+      onlyShowWhitelisted: boolean;
       ignoredAssetsHandling: IgnoredAssetsHandlingType;
     };
 
@@ -38,6 +40,7 @@ const emit = defineEmits<{
     e: 'update:ignored-filter',
     value: {
       onlyShowOwned: boolean;
+      onlyShowWhitelisted: boolean;
       ignoredAssetsHandling: IgnoredAssetsHandlingType;
     }
   ): void;
@@ -75,9 +78,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    width: '48px',
     value: 'expand',
-    sortable: false
+    sortable: false,
+    class: 'pl-0',
+    cellClass: 'pl-0'
   }
 ]);
 const edit = (asset: SupportedAsset) => emit('edit', asset);
@@ -116,6 +120,12 @@ const getAsset = (item: SupportedAsset) => {
 
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
+  useWhitelistedAssetsStore();
+
+const isAssetWhitelistedValue = (asset: string) =>
+  get(isAssetWhitelisted(asset));
+
 const { getChain } = useSupportedChains();
 
 const toggleIgnoreAsset = async (identifier: string) => {
@@ -125,6 +135,17 @@ const toggleIgnoreAsset = async (identifier: string) => {
     await ignoreAsset(identifier);
   }
   if (props.ignoredFilter.ignoredAssetsHandling !== 'none') {
+    emit('refresh');
+  }
+};
+
+const toggleWhitelistAsset = async (identifier: string) => {
+  if (get(isAssetWhitelisted(identifier))) {
+    await unWhitelistAsset(identifier);
+  } else {
+    await whitelistAsset(identifier);
+  }
+  if (props.ignoredFilter.onlyShowWhitelisted) {
     emit('refresh');
   }
 };
@@ -242,10 +263,21 @@ const massIgnore = async (ignored: boolean) => {
       </template>
       <template #item.ignored="{ item }">
         <div class="flex justify-center">
-          <VSwitch
-            :input-value="isAssetIgnored(item.identifier)"
-            @change="toggleIgnoreAsset(item.identifier)"
-          />
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+            tooltip-class="max-w-[10rem]"
+            :disabled="!isAssetWhitelistedValue(item.identifier)"
+          >
+            <template #activator>
+              <VSwitch
+                :disabled="isAssetWhitelistedValue(item.identifier)"
+                :input-value="isAssetIgnored(item.identifier)"
+                @change="toggleIgnoreAsset(item.identifier)"
+              />
+            </template>
+            {{ t('ignore.whitelist.hint') }}
+          </RuiTooltip>
         </div>
       </template>
       <template #item.actions="{ item }">
@@ -259,6 +291,10 @@ const massIgnore = async (ignored: boolean) => {
           <CopyButton
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
+          />
+          <ManagedAssetAction
+            :identifier="item.identifier"
+            @toggle-whitelist="toggleWhitelistAsset(item.identifier)"
           />
         </RowActions>
       </template>

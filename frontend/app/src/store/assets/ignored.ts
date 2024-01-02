@@ -2,7 +2,7 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ActionStatus } from '@/types/action';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
-  const ignoredAssets = ref<string[]>([]);
+  const ignoredAssets: Ref<string[]> = ref([]);
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 

@@ -41,7 +41,7 @@ const onEditRule = () => {
       transition="slide-y-transition"
     >
       <template #activator="{ on }">
-        <RuiButton class="!p-2" icon size="sm" variant="text" v-on="on">
+        <RuiButton class="!p-2" icon variant="text" v-on="on">
           <RuiIcon name="more-2-fill" size="20" />
         </RuiButton>
       </template>
