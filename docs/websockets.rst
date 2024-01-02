@@ -93,7 +93,7 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 
 
 - ``start_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
-- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: ``to_version`` - version of the the database upgrade that is currently being applied; ``total_steps`` - total number of steps that currently running upgrade consists of; ``current_step`` - step that the upgrade is at as of this websocket message.
+- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: ``to_version`` - version of the database upgrade that is currently being applied; ``total_steps`` - total number of steps that currently running upgrade consists of; ``current_step`` - step that the upgrade is at as of this websocket message.
 - ``target_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
 
 
