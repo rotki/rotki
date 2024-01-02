@@ -19,17 +19,17 @@
   },
   "peerDependencies": {
     "@vueuse/core": "9.6.0",
-    "vue": "2.7.14"
+    "vue": "2.7.16"
   },
   "dependencies": {
     "bignumber.js": "9.1.2",
     "zod": "3.22.4"
   },
   "devDependencies": {
-    "@vueuse/core": "10.7.0",
-    "core-js": "3.34.0",
+    "@vueuse/core": "10.7.1",
+    "core-js": "3.35.0",
     "rimraf": "5.0.5",
     "typescript": "5.2.2",
-    "vue": "2.7.15"
+    "vue": "2.7.16"
   }
 }
