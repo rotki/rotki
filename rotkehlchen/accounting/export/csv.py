@@ -206,6 +206,7 @@ class CSVExporter(CustomizableDateMixin):
             'location': '',
             'timestamp': '',
             'asset': '',
+            'asset_identifier': '',
             'free_amount': '',
             'taxable_amount': '',
             'price': '',
