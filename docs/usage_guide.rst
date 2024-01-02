@@ -581,7 +581,7 @@ in a different instance of rotki to easily transfer your user asset entries.
 Reset assets database
 -------------------------------------
 
-There is two options to reset assets database:
+There are two options to reset assets database:
 
 1. ``Soft Reset`` This option will not reset assets that were added by the user.
 2. ``Hard Reset`` This option will also reset assets that were added by the user.
@@ -750,7 +750,7 @@ Binance / Binance US
 
 Binance API is engineered in a way that makes it really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance servers and rate limits may apply.
 To avoid having to query all existing trade pairs, it is possible to select what markets should be queried. This will considerably increase the speed as the amount of queries to binance will be reduced to only the markets you specify.
-To select which what markets you want to query edit your binance exchange instance
+To select which markets you want to query edit your binance exchange instance
 
 .. image:: images/exchanges_edit_binance.png
    :alt: Edit binance in the exchanges section
@@ -1143,7 +1143,7 @@ If you stake LQTY in the protocol you can see stability pool deposits, staked am
    :alt: See your Liquity staking gains
    :align: center
 
-On the left side, we display information for your current deposited amount of ``LUSD`` in the stability pool along with the ``ETH`` and ``LQTY`` rewards that you haven't claimed yet. In the right side, we display the staked ``LQTY`` and the ``ETH`` and ``LUSD`` that are available to claim.
+On the left side, we display information for your current deposited amount of ``LUSD`` in the stability pool along with the ``ETH`` and ``LQTY`` rewards that you haven't claimed yet. On the right side, we display the staked ``LQTY`` and the ``ETH`` and ``LUSD`` that are available to claim.
 
 The Liquity statistics are calculated using the queried events and you might need to wait for some time until all the events are queried to get the final values. The values in terms of USD can be displayed using prices at the moment of the different events (``historical``) or using prices at the present (``current``).
 

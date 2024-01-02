@@ -151,7 +151,7 @@ following::
     On Linux the mounted volume folders for data and logs will be
     owned by the ``root`` user. If the owner of these folder changes
     to some other user than root this will make them inaccessible
-    by the the container, which can result in 500 errors when
+    by the container, which can result in 500 errors when
     accessing rotki in the container.
 
     If you run into this issue you can fix it by changing the
@@ -174,7 +174,7 @@ Configuring backend in docker
 It is possible to change the configuration of the backend in the docker container. You can do so
 using two different approaches.
 
-The first approach include mounting a config volume::
+The first approach includes mounting a config volume::
 
    docker run -d --name rotki \
        -p 8084:80 \
@@ -297,7 +297,7 @@ password using ``bcrypt`` for your user.
     htpasswd -cB ~/.rotki/.htpasswd user
 
 Then proceed to create an ``.env`` file in the same directory where your ``docker-compose.yml`` will be.
-In the env file set your authentication user, the domain and the e-mail of the where you will receive
+In the env file set your authentication user, the domain and the e-mail where you will receive
 notification about the status of your domain.
 
 .. code-block:: bash
@@ -605,7 +605,7 @@ The tl;dr version is:
 - Confirm ``pip``(pip3) install correctly and up to date
 - Get your node under control with ``nvm``. It has been tested with v18
 
-The you will also need `VirtualEnv <https://virtualenv.pypa.io>`_.
+You will also need `VirtualEnv <https://virtualenv.pypa.io>`_.
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 
@@ -718,7 +718,7 @@ Python
     pip install --upgrade pip
 
 6. Using pip, install virtualenvironment and the virtualenvwrapper-win. `See instructions here for installing them on Windows <http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/>`_. You can choose to follow the rest of the guide as an example or just read the instructions.
-7. Lastly, make sure you have the Microsoft Visual Studio build tools. For some reason installing the build tools alone won't work; you'll need to install the "Desktop development with C++" workload from Visual Studio. To do this, head over to `Microsoft's Website <https://visualstudio.microsoft.com/vs/>`_ and install Visual Studio. After doing that open up the Visual Studio Installer (can open it from the windows start menu) then click on "Modify" button. Under the "Workloads" tab, select `Desktop development with C++ <https://i.stack.imgur.com/C292w.png/>`_ (under the Desktop & Mobile section). Then finally, click on the "modify" button to download and install it. You may need to restart you PC.
+7. Lastly, make sure you have the Microsoft Visual Studio build tools. For some reason installing the build tools alone won't work; you'll need to install the "Desktop development with C++" workload from Visual Studio. To do this, head over to `Microsoft's Website <https://visualstudio.microsoft.com/vs/>`_ and install Visual Studio. After doing that open up the Visual Studio Installer (can open it from the windows start menu) then click on "Modify" button. Under the "Workloads" tab, select `Desktop development with C++ <https://i.stack.imgur.com/C292w.png/>`_ (under the Desktop & Mobile section). Then finally, click on the "modify" button to download and install it. You may need to restart your PC.
 
 Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
 
