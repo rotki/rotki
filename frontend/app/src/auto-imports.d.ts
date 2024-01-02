@@ -472,7 +472,7 @@ declare global {
   const useFloor: typeof import('@vueuse/math')['useFloor']
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
-  const useFooterProps: typeof import('./composables/datatable')['useFooterProps']
+  const useFooterProps: typeof import('./composables/datatable.common')['useFooterProps']
   const useForm: typeof import('./composables/form')['useForm']
   const useFps: typeof import('@vueuse/core')['useFps']
   const useFrontendSettingsStore: typeof import('./store/settings/frontend')['useFrontendSettingsStore']

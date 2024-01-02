@@ -63,10 +63,8 @@ export class AssetsManagerPage {
         '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
       ).click();
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
-      ).then(() => {
-        expect($switch.attr('aria-checked')).not.to.eq(initialValue);
-      });
+        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+      ).should('have.attr', 'aria-checked', 'true');
     });
   }
 
@@ -91,10 +89,8 @@ export class AssetsManagerPage {
         '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
       ).click();
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
-      ).then(() => {
-        expect($switch.attr('aria-checked')).not.to.eq(initialValue);
-      });
+        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+      ).should('have.attr', 'aria-checked', 'false');
     });
   }
 
