@@ -1994,6 +1994,8 @@ def test_upgrade_db_40_to_41(user_data_dir):
     with db_v40.conn.write_ctx() as cursor:
         cursor.executemany('INSERT INTO settings VALUES (?, ?)', settings.items())
         assert table_exists(cursor, 'key_value_cache') is False
+        cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
+        assert cursor.fetchone()[0] == 0
     db_v40.logout()
 
     # Execute upgrade
@@ -2013,6 +2015,9 @@ def test_upgrade_db_40_to_41(user_data_dir):
         for name, value in cache_values:
             assert name not in should_not_move
             assert int(value) == should_move[name]
+
+        cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
+        assert cursor.fetchone()[0] == 1
     db.logout()
 
 
