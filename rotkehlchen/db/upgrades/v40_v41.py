@@ -49,17 +49,28 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _move_non_settings_mappings_to_cache')
 
 
+def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_new_supported_locations')
+    write_cursor.execute(
+        'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+        ('m', 45),
+    )
+    log.debug('Exit _add_new_supported_locations')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
         - Create a new table for key-value cache
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
         _move_non_settings_mappings_to_cache(write_cursor)
+        progress_handler.new_step()
+        _add_new_supported_locations(write_cursor)
     progress_handler.new_step()
 
     log.debug('Finish userdb v40->v41 upgrade')
