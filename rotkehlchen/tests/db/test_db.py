@@ -26,7 +26,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
@@ -533,22 +533,21 @@ def test_settings_entry_types(database):
 
 def test_key_value_cache_entry_types(database):
     with database.user_write() as cursor:
-        database.set_cache(cursor, cache={
-            DBCache.LAST_BALANCE_SAVE: 123,
-            DBCache.LAST_DATA_UPDATES_TS: 123,
-            DBCache.LAST_EVM_ACCOUNTS_DETECT_TS: 123,
-        })
-        cache = database.get_cache(cursor)
-        default_value = database.get_cache(cursor=cursor, name=DBCache.LAST_DATA_UPLOAD_TS)
-    assert isinstance(cache[DBCache.LAST_BALANCE_SAVE], int)
-    assert isinstance(cache[DBCache.LAST_DATA_UPDATES_TS], int)
-    assert isinstance(cache[DBCache.LAST_EVM_ACCOUNTS_DETECT_TS], int)
+        for db_cache in (
+            DBCacheStatic.LAST_BALANCE_SAVE,
+            DBCacheStatic.LAST_DATA_UPLOAD_TS,
+            DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
+        ):
+            database.set_static_cache(write_cursor=cursor, name=db_cache, value=123)
+        cache = database.get_cache_for_api(cursor)
+        default_value = database.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS)  # noqa: E501
+    assert isinstance(cache[DBCacheStatic.LAST_BALANCE_SAVE.value], int)
+    assert isinstance(cache[DBCacheStatic.LAST_DATA_UPLOAD_TS.value], int)
     assert (
-        cache[DBCache.LAST_BALANCE_SAVE] ==
-        cache[DBCache.LAST_DATA_UPDATES_TS] ==
-        cache[DBCache.LAST_EVM_ACCOUNTS_DETECT_TS] == 123
+        cache[DBCacheStatic.LAST_BALANCE_SAVE.value] ==
+        cache[DBCacheStatic.LAST_DATA_UPLOAD_TS.value] == 123
     )
-    assert default_value == Timestamp(0)
+    assert default_value is None
 
 
 def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):

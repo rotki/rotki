@@ -7,11 +7,10 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_TS_PREFIX
 from rotkehlchen.constants.assets import A_YFI
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -396,19 +395,19 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
     """
     assert should_run_periodic_task(
         database=database,
-        key_name=DBCache.LAST_DATA_UPDATES_TS,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is True
 
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
-            (DBCache.LAST_DATA_UPDATES_TS.value, str(ts_now())),
+            (DBCacheStatic.LAST_DATA_UPDATES_TS.value, str(ts_now())),
         )
 
     assert should_run_periodic_task(
         database=database,
-        key_name=DBCache.LAST_DATA_UPDATES_TS,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is False
 
@@ -416,12 +415,12 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'UPDATE key_value_cache SET value=? WHERE NAME=?',
-            (str(ts_now() - DATA_UPDATES_REFRESH), DBCache.LAST_DATA_UPDATES_TS.value),
+            (str(ts_now() - DATA_UPDATES_REFRESH), DBCacheStatic.LAST_DATA_UPDATES_TS.value),
         )
 
     assert should_run_periodic_task(
         database=database,
-        key_name=DBCache.LAST_DATA_UPDATES_TS,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is True
 
@@ -488,9 +487,11 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
         ):
             with task_manager.database.user_write() as write_cursor:
                 for address in ethereum_accounts:
-                    write_cursor.execute(
-                        'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?)',  # noqa: E501
-                        (f'{WITHDRAWALS_TS_PREFIX}_{address}', 0, ts_now() - 3600 * hours_ago),
+                    task_manager.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.WITHDRAWALS_TS,
+                        value=ts_now() - 3600 * hours_ago,
+                        address=address,
                     )
             task_manager.schedule()
             gevent.sleep(0)  # context switch for execution of task
@@ -522,7 +523,7 @@ def test_maybe_detect_new_spam_tokens(
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
         cursor.execute(
             'SELECT value FROM settings WHERE name=?',
-            (DBCache.LAST_SPAM_ASSETS_DETECT_KEY.value,),
+            (DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
 
@@ -575,6 +576,6 @@ def test_maybe_augmented_detect_new_spam_tokens(
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
         cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?',
-            (DBCache.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value,),
+            (DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501

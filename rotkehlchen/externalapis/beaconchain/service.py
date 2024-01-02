@@ -8,9 +8,9 @@ import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.eth2.constants import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +18,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -367,11 +367,10 @@ class BeaconChain(ExternalServiceWithApiKey):
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
             with self.db.user_write() as write_cursor:
-                self.db.update_used_query_range(
+                self.db.set_static_cache(
                     write_cursor=write_cursor,
-                    name=LAST_PRODUCED_BLOCKS_QUERY_TS,
-                    start_ts=Timestamp(0),
-                    end_ts=ts_now(),
+                    name=DBCacheStatic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                    value=ts_now(),
                 )
 
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501

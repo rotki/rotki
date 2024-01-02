@@ -11,7 +11,7 @@ from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.cache import DBCache
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
@@ -365,7 +365,7 @@ class RotkiDataUpdater:
         with self.user_db.user_write() as cursor:
             cursor.execute(  # remember last time data updates were detected
                 'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                (DBCache.LAST_DATA_UPDATES_TS.value, str(ts_now())),
+                (DBCacheStatic.LAST_DATA_UPDATES_TS.value, str(ts_now())),
             )
 
     @staticmethod

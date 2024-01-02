@@ -1,10 +1,9 @@
-from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
 
 
-class DBCache(Enum):
-    """It contains all the values that can be stored in the `key_value_cache` table of the DB"""
+class DBCacheStatic(Enum):
+    """It contains all the keys that don't depend on a variable
+    that can be stored in the `key_value_cache` table"""
     LAST_BALANCE_SAVE = 'last_balance_save'
     LAST_DATA_UPLOAD_TS = 'last_data_upload_ts'
     LAST_DATA_UPDATES_TS = 'last_data_updates_ts'
@@ -12,19 +11,19 @@ class DBCache(Enum):
     LAST_EVM_ACCOUNTS_DETECT_TS = 'last_evm_accounts_detect_ts'
     LAST_SPAM_ASSETS_DETECT_KEY = 'last_spam_assets_detect_key'
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY = 'last_augmented_spam_assets_detect_key'
-
-    @classmethod
-    def deserialize(cls: type['DBCache'], value: str) -> 'DBCache':
-        """The method to deserialize a string to an enum object"""
-        try:
-            return getattr(cls, value.upper())
-        except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
+    LAST_EVENTS_PROCESSING_TASK_TS = 'last_events_processing_task_ts'
+    LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
+    LAST_WITHDRAWALS_EXIT_QUERY_TS = 'last_withdrawals_exit_query_ts'
 
 
-def serialize_cache_for_api(cache: dict[DBCache, Timestamp]) -> dict[str, Timestamp]:
-    """Serialize the cache for /settings API consumption."""
-    return {
-        DBCache.LAST_DATA_UPLOAD_TS.value: Timestamp(cache.get(DBCache.LAST_DATA_UPLOAD_TS, 0)),
-        DBCache.LAST_BALANCE_SAVE.value: Timestamp(cache.get(DBCache.LAST_BALANCE_SAVE, 0)),
-    }
+class DBCacheDynamic(Enum):
+    """It contains all the formattable keys that depend on a variable
+    that can be stored in the `key_value_cache` table"""
+    LAST_CRYPTOTX_OFFSET = '{location}_{location_name}_last_cryptotx_offset'
+    LAST_QUERY_TS = '{location}_{location_name}_{account_id}_last_query_ts'
+    LAST_QUERY_ID = '{location}_{location_name}_{account_id}_last_query_id'
+    WITHDRAWALS_TS = 'ethwithdrawalsts_{address}'
+    WITHDRAWALS_IDX = 'ethwithdrawalsidx_{address}'
+
+    def get_db_key(self, **kwargs: str) -> str:
+        return self.value.format(**kwargs)

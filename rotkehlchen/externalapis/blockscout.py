@@ -8,10 +8,7 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.eth2.constants import (
-    WITHDRAWALS_IDX_PREFIX,
-    WITHDRAWALS_TS_PREFIX,
-)
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -123,14 +120,16 @@ class Blockscout(ExternalServiceWithApiKey):
         - KeyError if the response from blockscout does not contain expected keys
         """
         extra_args: dict[str, Any] = {}
-        range_name = f'{WITHDRAWALS_IDX_PREFIX}_{address}'
-        ts_range_name = f'{WITHDRAWALS_TS_PREFIX}_{address}'
         dbevents = DBHistoryEvents(self.db)
         last_known_withdrawal_idx, index_to_write, ts_to_write = sys.maxsize, None, Timestamp(0)
         withdrawals: list[EthWithdrawalEvent] = []
         with self.db.conn.read_ctx() as cursor:
-            if (idx_result := self.db.get_used_query_range(cursor, range_name)) is not None:
-                last_known_withdrawal_idx = idx_result[1]
+            if (idx_result := self.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.WITHDRAWALS_IDX,
+                address=address,
+            )) is not None:
+                last_known_withdrawal_idx = idx_result
 
         while True:
             result = self._query(module='addresses', endpoint='withdrawals', encoded_args=address, extra_args=extra_args)  # noqa: E501
@@ -185,5 +184,15 @@ class Blockscout(ExternalServiceWithApiKey):
 
         if index_to_write is not None:  # let's also update index if needed
             with self.db.user_write() as write_cursor:
-                self.db.update_used_query_range(write_cursor, range_name, Timestamp(0), index_to_write)  # noqa: E501
-                self.db.update_used_query_range(write_cursor, ts_range_name, Timestamp(0), ts_to_write)  # noqa: E501  # type: ignore
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.WITHDRAWALS_IDX,
+                    value=index_to_write,
+                    address=address,
+                )
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.WITHDRAWALS_TS,
+                    value=ts_to_write,
+                    address=address,
+                )

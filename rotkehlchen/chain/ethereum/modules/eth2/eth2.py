@@ -15,6 +15,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -35,12 +36,10 @@ from rotkehlchen.utils.misc import from_gwei, ts_now
 from .constants import (
     CPT_ETH2,
     FREE_VALIDATORS_LIMIT,
-    LAST_WITHDRAWALS_EXIT_QUERY_TS,
     UNKNOWN_VALIDATOR_INDEX,
     VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
-    WITHDRAWALS_TS_PREFIX,
 )
 from .structures import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
@@ -347,12 +346,15 @@ class Eth2(EthereumModule):
                 self.query_single_address_withdrawals(address, to_ts)
 
     def query_single_address_withdrawals(self, address: ChecksumEvmAddress, to_ts: Timestamp) -> None:  # noqa: E501
-        range_name = f'{WITHDRAWALS_TS_PREFIX}_{address}'
         with self.database.conn.read_ctx() as cursor:
-            last_query = self.database.get_used_query_range(cursor, range_name)
+            last_query = self.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.WITHDRAWALS_TS,
+                address=address,
+            )
 
         from_ts = Timestamp(0)
-        if last_query is not None and to_ts - (from_ts := last_query[1]) <= HOUR_IN_SECONDS * 3:
+        if last_query is not None and to_ts - (from_ts := last_query) <= HOUR_IN_SECONDS * 3:
             return
 
         log.debug(f'Querying {address} ETH withdrawals from {from_ts} to {to_ts}')
@@ -375,7 +377,12 @@ class Eth2(EthereumModule):
                 return
 
         with self.database.user_write() as write_cursor:
-            self.database.update_used_query_range(write_cursor, range_name, Timestamp(0), to_ts)
+            self.database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.WITHDRAWALS_TS,
+                value=to_ts,
+                address=address,
+            )
 
     def get_validator_daily_stats(
             self,
@@ -517,11 +524,10 @@ class Eth2(EthereumModule):
         are last known to be active and set the DB values accordingly"""
         now = ts_now()
         with self.database.user_write() as write_cursor:
-            self.database.update_used_query_range(
+            self.database.set_static_cache(
                 write_cursor=write_cursor,
-                name=LAST_WITHDRAWALS_EXIT_QUERY_TS,
-                start_ts=Timestamp(0),
-                end_ts=now,
+                name=DBCacheStatic.LAST_WITHDRAWALS_EXIT_QUERY_TS,
+                value=now,
             )
 
         dbeth2 = DBEth2(self.database)
