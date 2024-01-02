@@ -43,5 +43,5 @@ jobs:
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
       - name: Verify External Links
-        working-directory: ./frontend/app
-        run: pnpm run link:verify
+        working-directory: ./frontend
+        run: pnpm run --filter rotki link:verify
