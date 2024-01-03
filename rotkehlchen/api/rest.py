@@ -1737,15 +1737,26 @@ class RestAPI:
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         try:
-            added_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)
+            added_accounts, existed_accounts, failed_accounts, no_activity_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)  # noqa: E501
         except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        result = defaultdict(list)
+        result: dict[str, dict[str, list[ChecksumEvmAddress]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
+
         for chain, address in added_accounts:
-            result[chain.serialize()].append(address)
+            result['added'][chain.serialize()].append(address)
+
+        for chain, address in failed_accounts:
+            result['failed'][chain.serialize()].append(address)
+
+        for chain, address in existed_accounts:
+            result['existed'][chain.serialize()].append(address)
+
+        for chain, address in no_activity_accounts:
+            result['no_activity'][chain.serialize()].append(address)
+
         return _wrap_in_ok_result(result)
 
     @async_api_call()
