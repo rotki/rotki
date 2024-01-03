@@ -1412,12 +1412,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             address: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_CHAINS],
-    ) -> list[SUPPORTED_EVM_CHAINS]:
+    ) -> tuple[list[SUPPORTED_EVM_CHAINS], list[SUPPORTED_EVM_CHAINS]]:
         """
         Track address for the chains provided. If the address is already tracked on a
-        chain, skips this chain. Returns a list of chains where the address was added successfully.
+        chain, skips this chain.
+        Returns a list of chains where the address was added successfully and a list where we
+        failed to check or add it.
         """
-        added_chains = []
+        added_chains, failed_chains = [], []
         for chain in chains:
             try:
                 self.modify_blockchain_accounts(
@@ -1427,60 +1429,100 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 )
             except InputError:
                 log.debug(f'Not adding {address} to {chain} since it already exists')
+                failed_chains.append(chain)
                 continue
             except RemoteError as e:
                 log.error(f'Not adding {address} to {chain} due to {e!s}')
+                failed_chains.append(chain)
                 continue
 
             added_chains.append(chain)
 
-        return added_chains
+        return added_chains, failed_chains
 
     def check_chains_and_add_accounts(
             self,
             account: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_CHAINS],
-    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+    ) -> tuple[
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        bool,
+    ]:
         """
         Accepts an account and a list of chains to check activity in. For each chain checks whether
-        the account is active there and if it is, starts tracking it. Returns a list of tuples
-        (chain, account) for each chain where the account was added in.
+        the account is active there and if it is, starts tracking it. Returns a tuple of:
+        - a list of tuples (chain, account) for each chain where the account was added
+        - a list of tuples (chain, account) for each chain where we failed to check the account
+        - boolean being False if the account didn't have activity in any chain
         """
         active_chains = self.check_single_address_activity(
             address=account,
             chains=chains,
         )
-        new_tracked_chains = self.track_evm_address(account, active_chains)
+        failed_chains = []
+        if 0 < len(active_chains) < len(chains):
+            failed_chains = [chain for chain in chains if chain not in active_chains]
+        elif len(active_chains) == 0:
+            return [], [], False
 
-        return [(chain, account) for chain in new_tracked_chains]
+        new_tracked_chains, new_failed_chains = self.track_evm_address(account, active_chains)
+        failed_chains += new_failed_chains
+
+        return (
+            [(chain, account) for chain in new_tracked_chains],
+            [(chain, account) for chain in failed_chains],
+            True,
+        )
 
     def add_accounts_to_all_evm(
             self,
             accounts: list[ChecksumEvmAddress],
-    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+    ) -> tuple[
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+    ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
-        Returns a list of tuples of the address and the chain it was added in.
+        Returns four lists:
+        - list address, chain tuples for all newly added addresses.
+        - list address, chain tuples for all addresses already tracked.
+        - list address, chain tuples for all addresses that failed to be added.
+        - list address, chain tuples for all where address doesn't have activity in chain.
 
         May raise:
         - RemoteError if an external service such as etherscan is queried and there
         is a problem with its query.
         """
+        all_evm_chains = get_args(SUPPORTED_EVM_CHAINS)
         added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
-        # Distinguish between contracts and EOAs
+        failed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        existed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        no_activity_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+
         for account in accounts:
+            existed_accounts += [(chain, account) for chain in all_evm_chains if account in self.accounts.get(chain)]  # noqa: E501
+            # Distinguish between contracts and EOAs
             if self.is_contract(account, SupportedBlockchain.ETHEREUM):
-                added_chains = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
+                added_chains, _ = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
                 if len(added_chains) == 1:  # Is always either 1 or 0 since is only for ethereum
                     added_accounts.append((SupportedBlockchain.ETHEREUM, account))
             else:
-                chains_to_check = [x for x in typing.get_args(SUPPORTED_EVM_CHAINS) if account not in self.accounts.get(x)]  # noqa: E501
-                added_accounts += self.check_chains_and_add_accounts(
+                chains_to_check = [x for x in all_evm_chains if account not in self.accounts.get(x)]  # noqa: E501
+                new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(  # noqa: E501
                     account=account,
                     chains=chains_to_check,
                 )
 
-        return added_accounts
+                if had_activity is True:
+                    added_accounts += new_accounts
+                    failed_accounts += new_failed_accounts
+                elif had_activity is False and len(chains_to_check) != 0:
+                    no_activity_accounts += [(chain, account) for chain in chains_to_check]
+
+        return added_accounts, existed_accounts, failed_accounts, no_activity_accounts
 
     def detect_evm_accounts(
             self,
@@ -1519,7 +1561,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if len(chains_to_check) == 0:
                 continue
 
-            added_accounts += self.check_chains_and_add_accounts(account, chains_to_check)
+            new_added_accounts, _, _ = self.check_chains_and_add_accounts(
+                account=account,
+                chains=chains_to_check,
+            )
+            added_accounts += new_added_accounts
 
         if progress_handler is not None:
             progress_handler.new_step('Potentially write migrated addresses to the DB')

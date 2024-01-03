@@ -8908,11 +8908,17 @@ Adding EVM accounts to all EVM chains
 
       {
           "accounts": [{
-                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "address": "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
                   "label": "my new metamask",
                   "tags": ["public", "metamask"]
               }, {
-                  "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
+                  "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306"
+              }, {
+                  "address": "0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"
+              }, {
+                  "address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+              }, {
+                  "address": "0x7277F7849966426d345D8F6B9AFD1d3d89183083"
               }]
       }
 
@@ -8927,17 +8933,42 @@ Adding EVM accounts to all EVM chains
 
       {
         "result": {
-            "eth": [
-                "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-                "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
-            ],
-            "avax": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
-            "optimism": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]
+            "added": {
+               "eth": [
+                     "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+                     "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+               ],
+               "optimism": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
+               "avax": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
+               "polygon_pos": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
+               "arbitrum_one": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
+               "base": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
+               "gnosis": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"]
+            },
+            "failed": {
+               "eth": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"],
+               "optimism": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"],
+            },
+            "existed": {
+               "gnosis": ["0x7277F7849966426d345D8F6B9AFD1d3d89183083"]
+            },
+            "no_activity":{
+               "eth":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "optimism":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "avax":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "polygon_pos":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "arbitrum_one":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "base":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
+               "gnosis":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"]
+            }
         },
         "message": ""
       }
 
-   :resjson list result: A mapping containing the evm chain keys and which addresses were added for each chain.
+   :resjson object added: A mapping containing the evm chain keys and which addresses were added for each chain.
+   :resjson object existed: A mapping containing the evm chain keys and which addresses were already tracked before the api call and no action was taken on them.
+   :resjson object failed: A mapping containing the evm chain keys and which addresses failed to get added for each chain due to some error contacting remote APIs.
+   :resjson object no_activity: A mapping containing the evm chain keys and which addresses don't have activity in that chain.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.

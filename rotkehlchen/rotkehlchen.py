@@ -647,7 +647,12 @@ class Rotkehlchen:
     def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+    ) -> tuple[
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+    ]:
         """Adds each account for all evm addresses
 
         Counting ethereum mainnet as the main chain we check if the account is a contract
@@ -655,7 +660,11 @@ class Rotkehlchen:
         the address and if yes we add it too.
         If it's already added in a chain we just ignore that chain.
 
-        Returns a list of tuples of the address and the chain it was added in
+        Returns four lists:
+        - list address, chain tuples for all newly added addresses.
+        - list address, chain tuples for all addresses already tracked.
+        - list address, chain tuples for all addresses that failed to be added.
+        - list address, chain tuples for all where address doesn't have activity in chain.
 
         May raise:
         - TagConstraintError if any of the given account data contain unknown tags.
@@ -671,7 +680,7 @@ class Rotkehlchen:
                 data_type='blockchain accounts',
             )
 
-        added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
+        added_accounts, existed_accounts, failed_accounts, no_activity_accounts = self.chains_aggregator.add_accounts_to_all_evm(  # noqa: E501
             accounts=[entry.address for entry in account_data],
         )
         with self.data.db.user_write() as write_cursor:
@@ -682,7 +691,7 @@ class Rotkehlchen:
                     account_data=[account_data_entry.to_blockchain_account_data(chain)],
                 )
 
-        return added_accounts
+        return added_accounts, existed_accounts, failed_accounts, no_activity_accounts
 
     @overload
     def add_single_blockchain_accounts(
