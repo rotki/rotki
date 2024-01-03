@@ -25,6 +25,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
+import { Routes } from '@/router/routes';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -530,7 +531,7 @@ const onAddMissingRule = (
   data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>
 ) => {
   vueRouter.push({
-    path: '/settings/accounting',
+    path: Routes.SETTINGS_ACCOUNTING,
     query: { 'add-rule': 'true', ...data }
   });
 };

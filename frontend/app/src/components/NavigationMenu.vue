@@ -221,7 +221,12 @@ const navItems: MenuItem[] = [
 <template>
   <div class="p-2" :class="{ '!p-0': isMini }">
     <template v-for="(navItem, i) in navItems">
-      <RouterLink v-if="navItem.type === 'item'" :key="i" :to="navItem.route">
+      <RouterLink
+        v-if="navItem.type === 'item'"
+        :key="i"
+        :to="navItem.route"
+        custom
+      >
         <template #default="{ isActive, href }">
           <a :href="href">
             <NavigationMenuItem
@@ -252,6 +257,7 @@ const navItems: MenuItem[] = [
             v-for="(subNavItem, si) in navItem.items"
             :key="si"
             :to="subNavItem.route"
+            custom
           >
             <template #default="{ isActive, href }">
               <a :href="href">
