@@ -6,6 +6,10 @@ import {
   type SupportedModule
 } from '@/types/modules';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     value?: string;

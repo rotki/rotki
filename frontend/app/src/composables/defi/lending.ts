@@ -23,7 +23,7 @@ import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
 import { type LiquityLoan } from '@/types/defi/liquity';
-import { Module } from '@/types/modules';
+import { DefiProtocol } from '@/types/modules';
 
 type NullableLoan =
   | MakerDAOVaultModel
@@ -57,25 +57,25 @@ export const useDefiLending = () => {
 
   const { yearnVaultsAssets } = yearnStore;
 
-  const loans = (protocols: Module[] = []): ComputedRef<DefiLoan[]> =>
+  const loans = (protocols: DefiProtocol[] = []): ComputedRef<DefiLoan[]> =>
     computed(() => {
       const loans: DefiLoan[] = [];
       const showAll = protocols.length === 0;
 
-      if (showAll || protocols.includes(Module.MAKERDAO_VAULTS)) {
+      if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
         loans.push(
           ...get(makerDAOVaults).map(
             value =>
               ({
                 identifier: `${value.identifier}`,
                 label: scrambleIdentifier(value.identifier),
-                protocol: Module.MAKERDAO_VAULTS
+                protocol: DefiProtocol.MAKERDAO_VAULTS
               }) satisfies DefiLoan
           )
         );
       }
 
-      if (showAll || protocols.includes(Module.AAVE)) {
+      if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const perAddressAaveBalances = get(aaveBalances);
         for (const address of Object.keys(perAddressAaveBalances)) {
           const { borrowing } = perAddressAaveBalances[address];
@@ -91,7 +91,7 @@ export const useDefiLending = () => {
             loans.push({
               identifier: `${symbol} - ${address}`,
               label: `${symbol} - ${formattedAddress}`,
-              protocol: Module.AAVE,
+              protocol: DefiProtocol.AAVE,
               owner: address,
               asset
             });
@@ -99,7 +99,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.COMPOUND)) {
+      if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const compBalances = get(compoundBalances);
         for (const address of Object.keys(compBalances)) {
           const { borrowing } = compBalances[address];
@@ -116,7 +116,7 @@ export const useDefiLending = () => {
             loans.push({
               identifier: `${symbol} - ${address}`,
               label: `${symbol} - ${formattedAddress}`,
-              protocol: Module.COMPOUND,
+              protocol: DefiProtocol.COMPOUND,
               owner: address,
               asset
             });
@@ -124,7 +124,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.LIQUITY)) {
+      if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
         const balances = get(liquityBalances);
         const balanceAddress = Object.keys(balances);
 
@@ -137,7 +137,7 @@ export const useDefiLending = () => {
             return {
               identifier: `Trove ${troveId} - ${address}`,
               label: `Trove ${formattedTroveId} - ${formattedAddress}`,
-              protocol: Module.LIQUITY,
+              protocol: DefiProtocol.LIQUITY,
               owner: address,
               asset: ''
             };
@@ -160,7 +160,7 @@ export const useDefiLending = () => {
         return null;
       }
 
-      if (loan.protocol === Module.MAKERDAO_VAULTS) {
+      if (loan.protocol === DefiProtocol.MAKERDAO_VAULTS) {
         const makerVaults: MakerDAOVaultModel[] = get(makerDAOVaults);
         const vault = makerVaults.find(
           vault => vault.identifier.toString().toLocaleLowerCase() === id
@@ -184,7 +184,7 @@ export const useDefiLending = () => {
           : vault;
       }
 
-      if (loan.protocol === Module.AAVE) {
+      if (loan.protocol === DefiProtocol.AAVE) {
         const perAddressAaveBalances = get(aaveBalances);
         const perAddressAaveHistory = get(aaveHistory);
         const owner = loan.owner ?? '';
@@ -237,7 +237,7 @@ export const useDefiLending = () => {
         } satisfies AaveLoan;
       }
 
-      if (loan.protocol === Module.COMPOUND) {
+      if (loan.protocol === DefiProtocol.COMPOUND) {
         const owner = loan.owner ?? '';
         const asset = loan.asset ?? '';
 
@@ -271,7 +271,7 @@ export const useDefiLending = () => {
         } satisfies CompoundLoan;
       }
 
-      if (loan.protocol === Module.LIQUITY) {
+      if (loan.protocol === DefiProtocol.LIQUITY) {
         assert(loan.owner);
         const { owner } = loan;
 
@@ -285,13 +285,15 @@ export const useDefiLending = () => {
       return null;
     });
 
-  const loanSummary = (protocols: Module[] = []): ComputedRef<LoanSummary> =>
+  const loanSummary = (
+    protocols: DefiProtocol[] = []
+  ): ComputedRef<LoanSummary> =>
     computed(() => {
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
 
       const showAll = protocols.length === 0;
-      if (showAll || protocols.includes(Module.MAKERDAO_VAULTS)) {
+      if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
         const makerVaults = get(makerDAOVaults);
         totalCollateralUsd = makerVaults
           .reduce(
@@ -306,7 +308,7 @@ export const useDefiLending = () => {
           .plus(totalDebt);
       }
 
-      if (showAll || protocols.includes(Module.AAVE)) {
+      if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const perAddressAaveBalances = get(aaveBalances);
         for (const address of Object.keys(perAddressAaveBalances)) {
           const { borrowing, lending } = perAddressAaveBalances[address];
@@ -320,7 +322,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.COMPOUND)) {
+      if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const compBalances = get(compoundBalances);
         for (const address of Object.keys(compBalances)) {
           const { borrowing, lending } = compBalances[address];
@@ -334,7 +336,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.LIQUITY)) {
+      if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
         const balances = get(liquityBalances);
         for (const address in balances) {
           const balance = balances[address];
@@ -348,7 +350,7 @@ export const useDefiLending = () => {
     });
 
   const lendingBalances = (
-    protocols: Module[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): ComputedRef<DefiBalance[]> =>
     computed(() => {
@@ -356,7 +358,7 @@ export const useDefiLending = () => {
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
 
-      if (showAll || protocols.includes(Module.MAKERDAO_DSR)) {
+      if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
         const makerDsrBalances = get(dsrBalances);
         for (const address of Object.keys(makerDsrBalances.balances)) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -369,7 +371,7 @@ export const useDefiLending = () => {
           const format = isBigNumber ? currentDsr.toFormat(2) : 0;
           balances.push({
             address,
-            protocol: Module.MAKERDAO_DSR,
+            protocol: DefiProtocol.MAKERDAO_DSR,
             asset: assetSymbolToIdentifierMap.DAI,
             balance: { ...balance },
             effectiveInterestRate: `${format}%`
@@ -377,7 +379,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.AAVE)) {
+      if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const perAddressAaveBalances = get(aaveBalances);
         for (const address of Object.keys(perAddressAaveBalances)) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -389,7 +391,7 @@ export const useDefiLending = () => {
             const aaveAsset = lending[asset];
             balances.push({
               address,
-              protocol: Module.AAVE,
+              protocol: DefiProtocol.AAVE,
               asset,
               effectiveInterestRate: aaveAsset.apy,
               balance: { ...aaveAsset.balance }
@@ -398,7 +400,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.COMPOUND)) {
+      if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const compBalances: CompoundBalances = get(compoundBalances);
         for (const address of Object.keys(compBalances)) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -409,7 +411,7 @@ export const useDefiLending = () => {
             const assetDetails = lending[asset];
             balances.push({
               address,
-              protocol: Module.COMPOUND,
+              protocol: DefiProtocol.COMPOUND,
               asset,
               effectiveInterestRate: assetDetails.apy ?? '0%',
               balance: { ...assetDetails.balance }
@@ -526,7 +528,7 @@ export const useDefiLending = () => {
   };
 
   const effectiveInterestRate = (
-    protocols: Module[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): ComputedRef<string> =>
     computed(() => {
@@ -583,7 +585,10 @@ export const useDefiLending = () => {
           );
         });
 
-      if (protocols.length === 0 || protocols.includes(Module.YEARN)) {
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS)
+      ) {
         const { usdValue: yUsdValue, weight: yWeight } = get(
           yearnData(ProtocolVersion.V1)
         );
@@ -591,7 +596,10 @@ export const useDefiLending = () => {
         weight = weight.plus(yWeight);
       }
 
-      if (protocols.length === 0 || protocols.includes(Module.YEARN_V2)) {
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+      ) {
         const { usdValue: yUsdValue, weight: yWeight } = get(
           yearnData(ProtocolVersion.V2)
         );
@@ -606,7 +614,7 @@ export const useDefiLending = () => {
     });
 
   const totalUsdEarned = (
-    protocols: Module[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): ComputedRef<BigNumber> =>
     computed(() => {
@@ -614,7 +622,7 @@ export const useDefiLending = () => {
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
 
-      if (showAll || protocols.includes(Module.MAKERDAO_DSR)) {
+      if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
         const history = get(dsrHistory);
         for (const address of Object.keys(history)) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -624,7 +632,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.AAVE)) {
+      if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const history = get(aaveHistory);
         for (const address of Object.keys(history)) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -637,7 +645,7 @@ export const useDefiLending = () => {
         }
       }
 
-      if (showAll || protocols.includes(Module.COMPOUND)) {
+      if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const history = get(compoundHistory);
         for (const address in history.interestProfit) {
           if (!allAddresses && !addresses.includes(address)) {
@@ -670,18 +678,18 @@ export const useDefiLending = () => {
         return yearnEarned;
       }
 
-      if (showAll || protocols.includes(Module.YEARN)) {
+      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
         total = total.plus(yearnTotalEarned(get(yearnV1History)));
       }
 
-      if (showAll || protocols.includes(Module.YEARN_V2)) {
+      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
         total = total.plus(yearnTotalEarned(get(yearnV2History)));
       }
       return total;
     });
 
   const totalLendingDeposit = (
-    protocols: Module[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): ComputedRef<BigNumber> =>
     computed(() => {
@@ -698,13 +706,19 @@ export const useDefiLending = () => {
           )
         );
 
-      if (protocols.length === 0 || protocols.includes(Module.YEARN)) {
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS)
+      ) {
         lendingDeposit = lendingDeposit.plus(
           get(getYearnDeposit(ProtocolVersion.V1))
         );
       }
 
-      if (protocols.length === 0 || protocols.includes(Module.YEARN_V2)) {
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+      ) {
         lendingDeposit = lendingDeposit.plus(
           get(getYearnDeposit(ProtocolVersion.V2))
         );
@@ -714,7 +728,7 @@ export const useDefiLending = () => {
     });
 
   const aggregatedLendingBalances = (
-    protocols: Module[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): ComputedRef<BaseDefiBalance[]> =>
     computed(() => {

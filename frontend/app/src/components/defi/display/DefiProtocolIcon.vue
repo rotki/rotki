@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { toSentenceCase } from '@/utils/text';
-import { Module } from '@/types/modules';
+import { DefiProtocol } from '@/types/modules';
 
 const props = withDefaults(
   defineProps<{
-    protocol: Module;
+    protocol: DefiProtocol;
     mode?: 'icon' | 'label' | 'both';
   }>(),
   { mode: 'both' }
@@ -24,13 +24,13 @@ const icon = computed(() => {
 
 const name = computed(() => {
   const defiProtocol = get(protocol);
-  if (defiProtocol === Module.MAKERDAO_DSR) {
+  if (defiProtocol === DefiProtocol.MAKERDAO_DSR) {
     return 'MakerDAO DSR';
-  } else if (defiProtocol === Module.MAKERDAO_VAULTS) {
+  } else if (defiProtocol === DefiProtocol.MAKERDAO_VAULTS) {
     return 'MakerDAO Vaults';
-  } else if (defiProtocol === Module.YEARN) {
+  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS) {
     return 'yearn.finance Vaults';
-  } else if (defiProtocol === Module.YEARN_V2) {
+  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS_V2) {
     return 'yearn.finance Vaults v2';
   }
   return defiProtocol;

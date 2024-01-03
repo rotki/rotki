@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type Module, isDefiProtocol } from '@/types/modules';
+import {
+  type DefiProtocol,
+  type Module,
+  isDefiProtocol
+} from '@/types/modules';
 import { Section } from '@/types/status';
 
 defineProps<{
@@ -7,7 +11,7 @@ defineProps<{
 }>();
 
 const selection = ref<string>();
-const protocol = ref<Module | null>(null);
+const protocol = ref<DefiProtocol | null>(null);
 const defiLending = useDefiLending();
 const route = useRoute();
 const { t } = useI18n();

@@ -27,22 +27,6 @@ export const DECENTRALIZED_EXCHANGES = [
   Module.SUSHISWAP
 ];
 
-export const DEFI_PROTOCOLS = [
-  Module.YEARN,
-  Module.YEARN_V2,
-  Module.AAVE,
-  Module.MAKERDAO_DSR,
-  Module.MAKERDAO_VAULTS,
-  Module.COMPOUND,
-  Module.UNISWAP,
-  Module.LIQUITY
-] as const;
-
-export const isDefiProtocol = (
-  protocol: any
-): protocol is (typeof DEFI_PROTOCOLS)[number] =>
-  DEFI_PROTOCOLS.includes(protocol);
-
 export interface SupportedModule {
   name: string;
   icon: string;
@@ -121,3 +105,17 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     icon: './assets/images/protocols/liquity.svg'
   }
 ];
+
+export enum DefiProtocol {
+  YEARN_VAULTS = Module.YEARN,
+  YEARN_VAULTS_V2 = Module.YEARN_V2,
+  AAVE = Module.AAVE,
+  MAKERDAO_DSR = Module.MAKERDAO_DSR,
+  MAKERDAO_VAULTS = Module.MAKERDAO_VAULTS,
+  COMPOUND = Module.COMPOUND,
+  UNISWAP = Module.UNISWAP,
+  LIQUITY = Module.LIQUITY
+}
+
+export const isDefiProtocol = (protocol: any): protocol is DefiProtocol =>
+  Object.values(DefiProtocol).includes(protocol);

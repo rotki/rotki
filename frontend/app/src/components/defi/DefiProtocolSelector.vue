@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import {
+  DefiProtocol,
+  SUPPORTED_MODULES,
+  isDefiProtocol
+} from '@/types/modules';
 
 const props = withDefaults(
   defineProps<{
-    value?: Module | null;
+    value?: DefiProtocol | null;
     liabilities?: boolean;
   }>(),
   {
@@ -13,23 +17,27 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', protocol: Module | null): void;
+  (e: 'input', protocol: DefiProtocol | null): void;
 }>();
 
-const dual = [Module.AAVE, Module.COMPOUND];
-const borrowing = [Module.MAKERDAO_VAULTS, Module.LIQUITY];
-const lending = [Module.MAKERDAO_DSR, Module.YEARN, Module.YEARN_V2];
+const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
+const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
+const lending = [
+  DefiProtocol.MAKERDAO_DSR,
+  DefiProtocol.YEARN_VAULTS,
+  DefiProtocol.YEARN_VAULTS_V2
+];
 
 const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
 const { t } = useI18n();
 
-const input = (_selectedProtocol: Module | null) => {
+const input = (_selectedProtocol: DefiProtocol | null) => {
   emit('input', _selectedProtocol);
 };
 
-const protocols = computed<Module[]>(() => {
+const protocols = computed<DefiProtocol[]>(() => {
   if (get(liabilities)) {
     return [...dual, ...borrowing];
   }
@@ -37,9 +45,12 @@ const protocols = computed<Module[]>(() => {
 });
 
 const protocolsData = computed(() =>
-  SUPPORTED_MODULES.filter(({ identifier }) =>
-    get(protocols).includes(identifier)
-  )
+  SUPPORTED_MODULES.filter(({ identifier }) => {
+    if (!isDefiProtocol(identifier)) {
+      return false;
+    }
+    return get(protocols).includes(identifier);
+  })
 );
 </script>
 

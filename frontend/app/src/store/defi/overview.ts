@@ -6,7 +6,7 @@ import {
 } from '@/types/defi/overview';
 import { Section, Status } from '@/types/status';
 import { type Writeable } from '@/types';
-import { Module, isDefiProtocol } from '@/types/modules';
+import { DefiProtocol, isDefiProtocol } from '@/types/modules';
 
 export const useDefiOverviewStore = defineStore('defi/store', () => {
   const { getStatus } = useStatusUpdater(Section.DEFI_OVERVIEW);
@@ -27,7 +27,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
   };
 
   const protocolSummary = (
-    protocol: Module,
+    protocol: DefiProtocol,
     section: Section,
     noLiabilities?: boolean,
     noDeposits?: boolean
@@ -40,7 +40,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
       ) {
         return undefined;
       }
-      const filter: Module[] = [protocol];
+      const filter: DefiProtocol[] = [protocol];
       const { totalCollateralUsd, totalDebt } = noLiabilities
         ? { totalCollateralUsd: Zero, totalDebt: Zero }
         : get(loanSummary(filter));
@@ -66,10 +66,14 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     });
 
   const listedProtocols: Record<string, [Section, boolean, boolean]> = {
-    [Module.AAVE]: [Section.DEFI_AAVE_BALANCES, false, false],
-    [Module.COMPOUND]: [Section.DEFI_COMPOUND_BALANCES, false, false],
-    [Module.YEARN]: [Section.DEFI_YEARN_VAULTS_BALANCES, true, false],
-    [Module.LIQUITY]: [Section.DEFI_LIQUITY_BALANCES, false, true]
+    [DefiProtocol.AAVE]: [Section.DEFI_AAVE_BALANCES, false, false],
+    [DefiProtocol.COMPOUND]: [Section.DEFI_COMPOUND_BALANCES, false, false],
+    [DefiProtocol.YEARN_VAULTS]: [
+      Section.DEFI_YEARN_VAULTS_BALANCES,
+      true,
+      false
+    ],
+    [DefiProtocol.LIQUITY]: [Section.DEFI_LIQUITY_BALANCES, false, true]
   };
 
   const overview: ComputedRef<DefiProtocolSummary[]> = computed(() => {
@@ -146,9 +150,9 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
       overviewStatus === Status.LOADED ||
       overviewStatus === Status.REFRESHING
     ) {
-      const filter: Module[] = [Module.MAKERDAO_DSR];
+      const filter: DefiProtocol[] = [DefiProtocol.MAKERDAO_DSR];
       const makerDAODSRSummary: DefiProtocolSummary = {
-        protocol: Module.MAKERDAO_DSR,
+        protocol: DefiProtocol.MAKERDAO_DSR,
         tokenInfo: null,
         assets: [],
         depositsUrl: '/defi/deposits?protocol=makerdao',
@@ -160,10 +164,10 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
       };
 
       const { totalCollateralUsd, totalDebt } = get(
-        loanSummary([Module.MAKERDAO_VAULTS])
+        loanSummary([DefiProtocol.MAKERDAO_VAULTS])
       );
       const makerDAOVaultSummary: DefiProtocolSummary = {
-        protocol: Module.MAKERDAO_VAULTS,
+        protocol: DefiProtocol.MAKERDAO_VAULTS,
         tokenInfo: null,
         assets: [],
         deposits: false,
@@ -175,23 +179,23 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
       };
 
       if (shouldShowOverview(makerDAODSRSummary)) {
-        summary[Module.MAKERDAO_DSR] = makerDAODSRSummary;
+        summary[DefiProtocol.MAKERDAO_DSR] = makerDAODSRSummary;
       }
 
       if (shouldShowOverview(makerDAOVaultSummary)) {
-        summary[Module.MAKERDAO_VAULTS] = makerDAOVaultSummary;
+        summary[DefiProtocol.MAKERDAO_VAULTS] = makerDAOVaultSummary;
       }
 
       const yearnV2Summary = get(
         protocolSummary(
-          Module.YEARN_V2,
+          DefiProtocol.YEARN_VAULTS_V2,
           Section.DEFI_YEARN_VAULTS_V2_BALANCES,
           true
         )
       );
 
       if (yearnV2Summary && shouldShowOverview(yearnV2Summary)) {
-        summary[Module.YEARN_V2] = yearnV2Summary;
+        summary[DefiProtocol.YEARN_VAULTS_V2] = yearnV2Summary;
       }
     }
 

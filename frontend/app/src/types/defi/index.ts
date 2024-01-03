@@ -1,7 +1,7 @@
 import { type Balance } from '@rotki/common';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type Account } from '@rotki/common/lib/account';
-import { type Module } from '@/types/modules';
+import { type DefiProtocol } from '@/types/modules';
 
 export interface Collateral<T = string> extends Balance {
   readonly asset: T;
@@ -16,7 +16,7 @@ export interface CollateralizedLoan<C extends Collateral | Collateral[]>
 export interface DefiLoan {
   readonly identifier: string;
   readonly label?: string;
-  readonly protocol: Module;
+  readonly protocol: DefiProtocol;
   readonly asset?: string;
   readonly owner?: string;
 }
@@ -40,5 +40,5 @@ export interface ProtocolMetadata {
 }
 
 export interface DefiAccount<T = Blockchain> extends Account<T> {
-  readonly protocols: Module[];
+  readonly protocols: DefiProtocol[];
 }

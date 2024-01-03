@@ -1,11 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { AllDefiProtocols } from '@/types/defi/overview';
-import {
-  DECENTRALIZED_EXCHANGES,
-  type DEFI_PROTOCOLS,
-  Module
-} from '@/types/modules';
+import { DECENTRALIZED_EXCHANGES, DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -43,42 +39,53 @@ export const useDefiStore = defineStore('defi', () => {
   const { addresses: makerDaoAddresses } = storeToRefs(makerDaoStore);
 
   type DefiProtocols = Exclude<
-    (typeof DEFI_PROTOCOLS)[number],
-    Module.MAKERDAO_VAULTS | Module.UNISWAP | Module.LIQUITY
+    DefiProtocol,
+    DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP | DefiProtocol.LIQUITY
   >;
 
-  const defiAccounts = (protocols: Module[]): ComputedRef<DefiAccount[]> =>
+  const defiAccounts = (
+    protocols: DefiProtocol[]
+  ): ComputedRef<DefiAccount[]> =>
     computed(() => {
       const addresses: {
         [key in DefiProtocols]: string[];
       } = {
-        [Module.MAKERDAO_DSR]: [],
-        [Module.AAVE]: [],
-        [Module.COMPOUND]: [],
-        [Module.YEARN]: [],
-        [Module.YEARN_V2]: []
+        [DefiProtocol.MAKERDAO_DSR]: [],
+        [DefiProtocol.AAVE]: [],
+        [DefiProtocol.COMPOUND]: [],
+        [DefiProtocol.YEARN_VAULTS]: [],
+        [DefiProtocol.YEARN_VAULTS_V2]: []
       };
 
       const noProtocolsSelected = protocols.length === 0;
 
-      if (noProtocolsSelected || protocols.includes(Module.MAKERDAO_DSR)) {
-        addresses[Module.MAKERDAO_DSR] = get(makerDaoAddresses);
+      if (
+        noProtocolsSelected ||
+        protocols.includes(DefiProtocol.MAKERDAO_DSR)
+      ) {
+        addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
       }
 
-      if (noProtocolsSelected || protocols.includes(Module.AAVE)) {
-        addresses[Module.AAVE] = get(aaveAddresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE)) {
+        addresses[DefiProtocol.AAVE] = get(aaveAddresses);
       }
 
-      if (noProtocolsSelected || protocols.includes(Module.COMPOUND)) {
-        addresses[Module.COMPOUND] = get(compoundAddresses);
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND)) {
+        addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
       }
 
-      if (noProtocolsSelected || protocols.includes(Module.YEARN)) {
-        addresses[Module.YEARN] = get(yearnV1Addresses);
+      if (
+        noProtocolsSelected ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS)
+      ) {
+        addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
       }
 
-      if (noProtocolsSelected || protocols.includes(Module.YEARN_V2)) {
-        addresses[Module.YEARN_V2] = get(yearnV2Addresses);
+      if (
+        noProtocolsSelected ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+      ) {
+        addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
       }
 
       const accounts: Record<string, DefiAccount> = {};

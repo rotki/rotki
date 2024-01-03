@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type Module } from '@/types/modules';
+import { type DefiProtocol } from '@/types/modules';
 
 interface DefiProtocolInfo {
   readonly identifier: string;
   readonly label?: string;
-  readonly protocol: Module;
+  readonly protocol: DefiProtocol;
 }
 
 const props = defineProps<{

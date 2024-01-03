@@ -3,7 +3,7 @@ import { type AaveLoan } from '@/types/defi/lending';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type LiquityLoan } from '@/types/defi/liquity';
-import { Module } from '@/types/modules';
+import { DefiProtocol } from '@/types/modules';
 
 type Loan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan;
 
@@ -11,7 +11,7 @@ const props = defineProps<{ loan: Loan }>();
 
 const { loan } = toRefs(props);
 
-const create = <T extends Loan>(protocol: Module) =>
+const create = <T extends Loan>(protocol: DefiProtocol) =>
   computed<T | null>(() => {
     const currentLoan = get(loan);
     if (currentLoan.protocol === protocol) {
@@ -20,10 +20,10 @@ const create = <T extends Loan>(protocol: Module) =>
     return null;
   });
 
-const vault = create<MakerDAOVaultModel>(Module.MAKERDAO_VAULTS);
-const aaveLoan = create<AaveLoan>(Module.AAVE);
-const compoundLoan = create<CompoundLoan>(Module.COMPOUND);
-const liquityLoan = create<LiquityLoan>(Module.LIQUITY);
+const vault = create<MakerDAOVaultModel>(DefiProtocol.MAKERDAO_VAULTS);
+const aaveLoan = create<AaveLoan>(DefiProtocol.AAVE);
+const compoundLoan = create<CompoundLoan>(DefiProtocol.COMPOUND);
+const liquityLoan = create<LiquityLoan>(DefiProtocol.LIQUITY);
 </script>
 
 <template>

@@ -6,7 +6,7 @@ import {
   type MakerDAOVault,
   MakerDAOVaultDetails
 } from '@/types/defi/maker';
-import { Module } from '@/types/modules';
+import { DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -15,7 +15,7 @@ const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
     ...vault,
     identifier: vault.identifier.toString(),
-    protocol: Module.MAKERDAO_VAULTS,
+    protocol: DefiProtocol.MAKERDAO_VAULTS,
     collateral: { ...vault.collateral, asset: vault.collateralAsset },
     collateralizationRatio: vault.collateralizationRatio ?? undefined,
     liquidationPrice: vault.liquidationPrice
