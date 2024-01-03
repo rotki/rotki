@@ -1,9 +1,7 @@
 ﻿<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { useListeners } from 'vue';
 
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 const { t } = useI18n();
 
 const selections = [
@@ -33,7 +31,10 @@ const selections = [
     outlined
     persistent-hint
     :items="selections"
-    v-on="rootListeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #item="{ item, attrs, on }">
       <ListItem

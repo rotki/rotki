@@ -86,7 +86,7 @@ watch(isSyncing, (current, prev) => {
           <MenuTooltipButton
             :tooltip="t('sync_indicator.menu_tooltip')"
             class-name="secondary--text text--lighten-4"
-            :on-menu="on"
+            v-on="on"
           >
             <RuiIcon v-if="isSyncing" :name="icon" color="primary" />
             <RuiIcon v-else name="cloud-line" />

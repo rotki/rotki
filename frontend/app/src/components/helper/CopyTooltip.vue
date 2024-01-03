@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
-
 defineProps<{
   copied: boolean;
   tooltip?: string | null;
 }>();
 const { t } = useI18n();
-
-const listeners = useListeners();
 </script>
 
 <template>
@@ -15,7 +11,10 @@ const listeners = useListeners();
     :popper="{ placement: 'top' }"
     :open-delay="200"
     class="text-no-wrap cursor-pointer"
-    v-on="listeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #activator>
       <slot />

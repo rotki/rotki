@@ -97,7 +97,7 @@ const importSnapshot = async () => {
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
         :variant="!dark ? 'default' : 'text'"
         size="sm"
-        :on-menu="on"
+        v-on="on"
       >
         <slot name="button-icon">
           <RuiIcon name="screenshot-2-line" />

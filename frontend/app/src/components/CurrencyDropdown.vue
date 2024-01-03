@@ -75,7 +75,7 @@ const calculateFontSize = (symbol: string) => {
           })
         "
         class-name="secondary--text text--lighten-4 currency-dropdown text-[1.375rem] font-bold"
-        :on-menu="on"
+        v-on="on"
       >
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>

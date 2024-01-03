@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
@@ -17,7 +16,6 @@ const emit = defineEmits<{
 }>();
 
 const rootAttrs = useAttrs();
-const listeners = useListeners();
 
 const { items, excludes } = toRefs(props);
 
@@ -56,7 +54,10 @@ const locations = computed<TradeLocationData[]>(() => {
     item-text="name"
     auto-select-first
     @input="change($event)"
-    v-on="listeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #item="{ item, attrs, on }">
       <LocationIcon

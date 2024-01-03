@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
-
 const props = defineProps<{
   value: string;
 }>();
@@ -22,7 +20,6 @@ const model = computed({
 });
 
 const attrs = useAttrs();
-const listeners = useListeners();
 
 const isValid = (entry: string | null): boolean =>
   !entry ? false : entry.length > 0;
@@ -41,7 +38,10 @@ const saveData = (value?: string) => {
       color="primary"
       clearable
       v-bind="attrs"
-      v-on="listeners"
+      v-on="
+        // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+        $listeners
+      "
       @click:clear="saveData()"
     />
     <RuiButton

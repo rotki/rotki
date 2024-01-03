@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
 import IMask, { type InputMask } from 'imask';
 
 const props = withDefaults(
@@ -19,7 +18,6 @@ const emit = defineEmits<{
 
 const attrs = useAttrs();
 const slots = useSlots();
-const listeners = useListeners();
 
 const filteredListeners = (listeners: any) => ({
   ...listeners,
@@ -105,7 +103,10 @@ const onFocus = () => {
     ref="textInput"
     :value="currentValue"
     v-bind="attrs"
-    v-on="filteredListeners(listeners)"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      filteredListeners($listeners)
+    "
     @focus="onFocus()"
   >
     <!-- Pass on all named slots -->

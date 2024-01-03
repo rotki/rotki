@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
 
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 
 const selections = [
   {
@@ -32,7 +30,10 @@ const { t } = useI18n();
     outlined
     persistent-hint
     :items="selections"
-    v-on="rootListeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #item="{ item, attrs, on }">
       <ListItem

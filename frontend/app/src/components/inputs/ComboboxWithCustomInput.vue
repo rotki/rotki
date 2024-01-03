@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref, useListeners } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -40,7 +40,6 @@ const filteredItems: ComputedRef<any[]> = computed(() => {
 });
 
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 const slots = useSlots();
 </script>
 
@@ -50,7 +49,10 @@ const slots = useSlots();
     v-bind="rootAttrs"
     :search-input.sync="search"
     :items="filteredItems"
-    v-on="rootListeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
     @input="input($event)"
   >
     <!-- Pass on all named slots -->
