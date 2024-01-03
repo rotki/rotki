@@ -21,6 +21,12 @@ export const ModuleEnum = z.nativeEnum(Module);
 
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
 
+export const DECENTRALIZED_EXCHANGES = [
+  Module.UNISWAP,
+  Module.BALANCER,
+  Module.SUSHISWAP
+];
+
 export interface SupportedModule {
   name: string;
   icon: string;
@@ -99,3 +105,17 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     icon: './assets/images/protocols/liquity.svg'
   }
 ];
+
+export enum DefiProtocol {
+  YEARN_VAULTS = Module.YEARN,
+  YEARN_VAULTS_V2 = Module.YEARN_V2,
+  AAVE = Module.AAVE,
+  MAKERDAO_DSR = Module.MAKERDAO_DSR,
+  MAKERDAO_VAULTS = Module.MAKERDAO_VAULTS,
+  COMPOUND = Module.COMPOUND,
+  UNISWAP = Module.UNISWAP,
+  LIQUITY = Module.LIQUITY
+}
+
+export const isDefiProtocol = (protocol: any): protocol is DefiProtocol =>
+  Object.values(DefiProtocol).includes(protocol);

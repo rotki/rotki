@@ -4,7 +4,6 @@ import { sortBy } from 'lodash-es';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { type BtcBalances } from '@/types/blockchain/balances';
 import { useCurrencies } from '@/types/currencies';
-import { SupportedExchange } from '@/types/exchanges';
 import '../../../i18n';
 import { BalanceType } from '@/types/balances';
 import { type BtcAccountData } from '@/types/blockchain/accounts';
@@ -21,13 +20,13 @@ describe('store::balances/aggregated', () => {
 
     set(connectedExchanges, [
       {
-        location: SupportedExchange.KRAKEN,
+        location: 'kraken',
         name: 'Bitrex Acc'
       }
     ]);
 
     set(exchangeBalances, {
-      [SupportedExchange.KRAKEN]: {
+      kraken: {
         DAI: {
           amount: bigNumberify(50),
           usdValue: bigNumberify(50)
@@ -261,13 +260,13 @@ describe('store::balances/aggregated', () => {
     const { connectedExchanges } = storeToRefs(useExchangesStore());
     set(connectedExchanges, [
       {
-        location: SupportedExchange.KRAKEN,
+        location: 'kraken',
         name: 'Bitrex Acc'
       }
     ]);
 
     set(exchangeBalances, {
-      [SupportedExchange.KRAKEN]: {
+      kraken: {
         DAI: {
           amount: bigNumberify(50),
           usdValue: bigNumberify(50)

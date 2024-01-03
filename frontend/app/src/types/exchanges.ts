@@ -2,7 +2,6 @@ import { AssetBalance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type Nullable } from '@/types';
 import { type AssetBalances } from '@/types/balances';
-import { type EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection, CollectionCommonFields } from '@/types/collection';
 
@@ -10,35 +9,8 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
-export enum SupportedExchange {
-  POLONIEX = 'poloniex',
-  KRAKEN = 'kraken',
-  BITMEX = 'bitmex',
-  BITPANDA = 'bitpanda',
-  BITFINEX = 'bitfinex',
-  BINANCE = 'binance',
-  COINBASE = 'coinbase',
-  COINBASEPRO = 'coinbasepro',
-  BITSTAMP = 'bitstamp',
-  BINANCEUS = 'binanceus',
-  BITCOIN_DE = 'bitcoinde',
-  ICONOMI = 'iconomi',
-  KUCOIN = 'kucoin',
-  INDEPENDENTRESERVE = 'independentreserve',
-  GEMINI = 'gemini',
-  OKX = 'okx',
-  WOO = 'woo',
-  BYBIT = 'bybit'
-}
-
-const SupportedExchangeType = z.nativeEnum(SupportedExchange);
-
-export const SUPPORTED_EXCHANGES = Object.values(SupportedExchange);
-
-export type SupportedExternalExchanges = (typeof EXTERNAL_EXCHANGES)[number];
-
 export const Exchange = z.object({
-  location: SupportedExchangeType,
+  location: z.string(),
   name: z.string(),
   krakenAccountType: KrakenAccountType.optional()
 });
@@ -70,7 +42,7 @@ export interface ExchangeSetupPayload {
 export interface ExchangePayload {
   readonly name: string;
   readonly newName: Nullable<string>;
-  readonly location: SupportedExchange;
+  readonly location: string;
   readonly apiKey: Nullable<string>;
   readonly apiSecret: Nullable<string>;
   readonly passphrase: Nullable<string>;

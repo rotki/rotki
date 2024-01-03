@@ -35,85 +35,8 @@ export class Defaults {
   static DEFAULT_READ_TIMEOUT = 30;
 }
 
-export const EXCHANGE_BISQ = 'bisq';
-
-export const EXCHANGE_BITMEX = 'bitmex';
-
-export const EXCHANGE_BITTREX = 'bittrex';
-
-export const EXCHANGE_CRYPTOCOM = 'cryptocom';
-
-export const EXCHANGE_BLOCKFI = 'blockfi';
-
-export const EXCHANGE_NEXO = 'nexo';
-
-export const EXCHANGE_SHAPESHIFT = 'shapeshift';
-
-export const EXCHANGE_UPHOLD = 'uphold';
-
-export const EXCHANGE_UNISWAP = 'uniswap';
-
-export const EXCHANGE_BALANCER = 'balancer';
-
-export const EXCHANGE_SUSHISWAP = 'sushiswap';
-
 export const TRADE_LOCATION_EXTERNAL = 'external';
 
 export const TRADE_LOCATION_BANKS = 'banks';
 
-export const TRADE_LOCATION_EQUITIES = 'equities';
-
-export const TRADE_LOCATION_REALESTATE = 'realestate';
-
-export const TRADE_LOCATION_COMMODITIES = 'commodities';
-
 export const TRADE_LOCATION_BLOCKCHAIN = 'blockchain';
-
-export const TRADE_LOCATION_ETHEREUM = 'ethereum';
-
-export const TRADE_LOCATION_OPTIMISM = 'optimism';
-
-export const TRADE_LOCATION_POLYGON_POS = 'polygon pos';
-
-export const TRADE_LOCATION_ARBITRUM_ONE = 'arbitrum one';
-
-export const TRADE_LOCATION_BASE = 'base';
-
-export const TRADE_LOCATION_GNOSIS = 'gnosis';
-
-export const SUPPORTED_TRADE_LOCATIONS = [
-  EXCHANGE_UNISWAP,
-  EXCHANGE_BALANCER,
-  EXCHANGE_SUSHISWAP,
-  EXCHANGE_CRYPTOCOM,
-  EXCHANGE_BLOCKFI,
-  EXCHANGE_NEXO,
-  EXCHANGE_SHAPESHIFT,
-  EXCHANGE_UPHOLD,
-  EXCHANGE_BISQ,
-  EXCHANGE_BITMEX,
-  EXCHANGE_BITTREX,
-  TRADE_LOCATION_EXTERNAL,
-  TRADE_LOCATION_BANKS,
-  TRADE_LOCATION_EQUITIES,
-  TRADE_LOCATION_REALESTATE,
-  TRADE_LOCATION_COMMODITIES,
-  TRADE_LOCATION_BLOCKCHAIN,
-  TRADE_LOCATION_ETHEREUM,
-  TRADE_LOCATION_OPTIMISM,
-  TRADE_LOCATION_POLYGON_POS,
-  TRADE_LOCATION_ARBITRUM_ONE,
-  TRADE_LOCATION_BASE,
-  TRADE_LOCATION_GNOSIS
-] as const;
-
-export const EXTERNAL_EXCHANGES = [
-  EXCHANGE_CRYPTOCOM,
-  EXCHANGE_BLOCKFI,
-  EXCHANGE_NEXO,
-  EXCHANGE_SHAPESHIFT,
-  EXCHANGE_UPHOLD,
-  EXCHANGE_BISQ,
-  EXCHANGE_BITMEX,
-  EXCHANGE_BITTREX
-];

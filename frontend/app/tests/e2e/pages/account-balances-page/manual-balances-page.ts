@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { toSentenceCase } from '@/utils/text';
 import { RotkiApp } from '../rotki-app';
 import { formatAmount, updateLocationBalance } from '../../utils/amounts';
@@ -9,7 +8,7 @@ export interface FixtureManualBalance {
   readonly keyword: string;
   readonly label: string;
   readonly amount: string;
-  readonly location: TradeLocation;
+  readonly location: string;
   readonly tags: string[];
 }
 

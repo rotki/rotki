@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
 import { toMessages } from '@/utils/validation';
 import { BalanceType } from '@/types/balances';
@@ -32,7 +31,7 @@ const asset = ref<string>('');
 const label = ref<string>('');
 const amount = ref<string>('');
 const tags: Ref<string[]> = ref([]);
-const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
+const location: Ref<string> = ref(TRADE_LOCATION_EXTERNAL);
 const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
 const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null> =

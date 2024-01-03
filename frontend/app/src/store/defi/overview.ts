@@ -1,4 +1,3 @@
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { sortBy } from 'lodash-es';
 import {
@@ -7,6 +6,7 @@ import {
 } from '@/types/defi/overview';
 import { Section, Status } from '@/types/status';
 import { type Writeable } from '@/types';
+import { DefiProtocol, isDefiProtocol } from '@/types/modules';
 
 export const useDefiOverviewStore = defineStore('defi/store', () => {
   const { getStatus } = useStatusUpdater(Section.DEFI_OVERVIEW);
@@ -76,9 +76,6 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     [DefiProtocol.LIQUITY]: [Section.DEFI_LIQUITY_BALANCES, false, true]
   };
 
-  const isListedDefiProtocol = (protocol: string): protocol is DefiProtocol =>
-    Object.values(DefiProtocol).includes(protocol as any);
-
   const overview: ComputedRef<DefiProtocolSummary[]> = computed(() => {
     const summary: Record<string, DefiProtocolSummary> = {};
 
@@ -90,7 +87,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         const protocolId = get(getDefiIdentifierByName(protocol));
 
         const data = listedProtocols[protocolId];
-        if (data && isListedDefiProtocol(protocolId)) {
+        if (data && isDefiProtocol(protocolId)) {
           const dataSummary = get(protocolSummary(protocolId, ...data));
 
           if (dataSummary && shouldShowOverview(dataSummary)) {

@@ -7,7 +7,10 @@ export const useCacheClear = <T>(
     success: string;
     error: string;
   },
-  confirmText: (source: string) => {
+  confirmText: (
+    textSource: string,
+    source: T
+  ) => {
     title: string;
     message: string;
   }
@@ -41,7 +44,7 @@ export const useCacheClear = <T>(
 
   const { show } = useConfirmStore();
   const showConfirmation = (source: T) => {
-    show(confirmText(text(source)), async () => clear(source));
+    show(confirmText(text(source), source), async () => clear(source));
     set(confirm, true);
   };
 

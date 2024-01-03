@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type DefiProtocol } from '@/types/modules';
 
 interface DefiProtocolInfo {
   readonly identifier: string;
@@ -17,13 +17,12 @@ const getIcon = ({ protocol }: DefiProtocolInfo): string =>
 </script>
 
 <template>
-  <div class="flex flex-row items-center">
+  <div class="flex flex-row items-center gap-2">
     <AppImage
       contain
-      width="26px"
-      max-height="24px"
+      size="24px"
       :src="`./assets/images/protocols/${getIcon(item)}.svg`"
     />
-    <span class="ml-2">{{ item.label ?? item.identifier }}</span>
+    {{ item.label ?? item.identifier }}
   </div>
 </template>

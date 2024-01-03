@@ -1,4 +1,3 @@
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
@@ -7,7 +6,7 @@ import {
   type MakerDAOVault,
   MakerDAOVaultDetails
 } from '@/types/defi/maker';
-import { Module } from '@/types/modules';
+import { DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
-
-interface Protocol {
-  name: string;
-  icon: string;
-  identifier: DefiProtocol;
-}
+import {
+  DefiProtocol,
+  SUPPORTED_MODULES,
+  isDefiProtocol
+} from '@/types/modules';
 
 const props = withDefaults(
   defineProps<{
@@ -22,48 +20,12 @@ const emit = defineEmits<{
   (e: 'input', protocol: DefiProtocol | null): void;
 }>();
 
-const dual: Protocol[] = [
-  {
-    identifier: DefiProtocol.AAVE,
-    name: 'Aave',
-    icon: './assets/images/protocols/aave.svg'
-  },
-  {
-    identifier: DefiProtocol.COMPOUND,
-    name: 'Compound',
-    icon: './assets/images/protocols/compound.svg'
-  }
-];
-
-const borrowing: Protocol[] = [
-  {
-    identifier: DefiProtocol.MAKERDAO_VAULTS,
-    name: 'MakerDAO Vaults',
-    icon: './assets/images/protocols/makerdao.svg'
-  },
-  {
-    identifier: DefiProtocol.LIQUITY,
-    name: 'Liquity',
-    icon: './assets/images/protocols/liquity.svg'
-  }
-];
-
-const lending: Protocol[] = [
-  {
-    identifier: DefiProtocol.MAKERDAO_DSR,
-    name: 'MakerDAO DSR',
-    icon: './assets/images/protocols/makerdao.svg'
-  },
-  {
-    identifier: DefiProtocol.YEARN_VAULTS,
-    name: 'yearn.finance',
-    icon: './assets/images/protocols/yearn_vaults.svg'
-  },
-  {
-    identifier: DefiProtocol.YEARN_VAULTS_V2,
-    name: 'yearn.finance v2',
-    icon: './assets/images/protocols/yearn_vaults.svg'
-  }
+const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
+const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
+const lending = [
+  DefiProtocol.MAKERDAO_DSR,
+  DefiProtocol.YEARN_VAULTS,
+  DefiProtocol.YEARN_VAULTS_V2
 ];
 
 const { liabilities } = toRefs(props);
@@ -75,12 +37,21 @@ const input = (_selectedProtocol: DefiProtocol | null) => {
   emit('input', _selectedProtocol);
 };
 
-const protocols = computed<Protocol[]>(() => {
+const protocols = computed<DefiProtocol[]>(() => {
   if (get(liabilities)) {
     return [...dual, ...borrowing];
   }
   return [...dual, ...lending];
 });
+
+const protocolsData = computed(() =>
+  SUPPORTED_MODULES.filter(({ identifier }) => {
+    if (!isDefiProtocol(identifier)) {
+      return false;
+    }
+    return get(protocols).includes(identifier);
+  })
+);
 </script>
 
 <template>
@@ -88,7 +59,7 @@ const protocols = computed<Protocol[]>(() => {
     <VAutocomplete
       :value="value"
       :search-input.sync="search"
-      :items="protocols"
+      :items="protocolsData"
       hide-details
       hide-selected
       hide-no-data
@@ -104,10 +75,10 @@ const protocols = computed<Protocol[]>(() => {
       @input="input($event)"
     >
       <template #selection="{ attrs, item }">
-        <DefiProtocolDetails v-bind="attrs" :item="item" />
+        <DefiIcon v-bind="attrs" :item="item" />
       </template>
       <template #item="{ attrs, item }">
-        <DefiProtocolDetails v-bind="attrs" :item="item" />
+        <DefiIcon v-bind="attrs" :item="item" />
       </template>
     </VAutocomplete>
     <div class="p-2 text-body-2 text-rui-text-secondary">

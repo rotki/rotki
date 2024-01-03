@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type Module } from '@/types/modules';
+import {
+  type DefiProtocol,
+  type Module,
+  isDefiProtocol
+} from '@/types/modules';
 import { Section } from '@/types/status';
 
 defineProps<{
@@ -46,10 +49,8 @@ const refresh = async () => {
 onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
-  const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
-  if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex]);
+  if (isDefiProtocol(queryElement)) {
+    set(protocol, queryElement);
   }
   await defiLending.fetchBorrowing(false);
 });

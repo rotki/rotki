@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type AaveLoan } from '@/types/defi/lending';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type LiquityLoan } from '@/types/defi/liquity';
+import { DefiProtocol } from '@/types/modules';
 
 type Loan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan;
 

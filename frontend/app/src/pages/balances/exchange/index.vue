@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { Routes } from '@/router/routes';
-import { SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { type Nullable } from '@/types';
 
 const props = withDefaults(
   defineProps<{
-    exchange?: Nullable<SupportedExchange>;
+    exchange?: Nullable<string>;
   }>(),
   {
     exchange: null
@@ -31,7 +30,7 @@ const refreshExchangeBalances = async () => {
 };
 
 const selectedExchange = ref<string>('');
-const usedExchanges = computed<SupportedExchange[]>(() =>
+const usedExchanges = computed<string[]>(() =>
   get(connectedExchanges)
     .map(({ location }) => location)
     .filter(uniqueStrings)
@@ -54,7 +53,7 @@ watch(route, () => {
   setSelectedExchange();
 });
 
-const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
+const exchangeBalance = (exchange: string): BigNumber => {
   const balances = get(getBalances(exchange));
   return balances.reduce(
     (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
@@ -109,10 +108,9 @@ onMounted(() => {
 });
 
 const isBinance = (
-  exchange: SupportedExchange | null
-): exchange is SupportedExchange.BINANCE | SupportedExchange.BINANCEUS =>
-  !!exchange &&
-  [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(exchange);
+  exchange: string | null
+): exchange is 'binance' | 'binanceus' =>
+  !!exchange && ['binance', 'binanceus'].includes(exchange);
 </script>
 
 <template>

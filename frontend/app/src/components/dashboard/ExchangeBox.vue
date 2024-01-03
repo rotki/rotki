@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { Routes } from '@/router/routes';
 
 const props = defineProps<{
-  location: TradeLocation;
+  location: string;
   amount: BigNumber;
 }>();
 

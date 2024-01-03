@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { toSentenceCase } from '@/utils/text';
+import { DefiProtocol } from '@/types/modules';
 
 const props = withDefaults(
   defineProps<{

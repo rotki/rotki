@@ -1,5 +1,5 @@
-import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type LiquityBalance } from '@rotki/common/lib/liquity';
+import { type DefiProtocol } from '@/types/modules';
 
 export interface LiquityLoan {
   readonly owner: string;

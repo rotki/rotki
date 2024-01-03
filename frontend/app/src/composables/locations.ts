@@ -1,15 +1,12 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import { isBlockchain } from '@/types/blockchain/chains';
-import {
-  type TradeLocation,
-  type TradeLocationData
-} from '@/types/history/trade/location';
+import { type TradeLocationData } from '@/types/history/trade/location';
 
 export const useLocations = createSharedComposable(() => {
   const { tradeLocations } = storeToRefs(useLocationStore());
 
-  const exchangeName = (location: MaybeRef<TradeLocation>): string => {
+  const exchangeName = (location: MaybeRef<string>): string => {
     const exchange = get(tradeLocations).find(
       tl => tl.identifier === get(location)
     );
@@ -40,9 +37,8 @@ export const useLocations = createSharedComposable(() => {
       return locations.find(location => location.identifier === id) ?? null;
     });
 
-  const getLocationData = (
-    identifier: TradeLocation
-  ): TradeLocationData | null => get(locationData(identifier));
+  const getLocationData = (identifier: string): TradeLocationData | null =>
+    get(locationData(identifier));
 
   return {
     tradeLocations,

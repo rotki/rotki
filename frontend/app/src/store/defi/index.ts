@@ -1,21 +1,17 @@
-import { type DefiAccount } from '@rotki/common/lib/account';
-import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { AllDefiProtocols } from '@/types/defi/overview';
-import { Module } from '@/types/modules';
+import { DECENTRALIZED_EXCHANGES, DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { ProtocolVersion } from '@/types/defi';
-import {
-  ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES
-} from '@/types/session/purge';
+import { type DefiAccount, ProtocolVersion } from '@/types/defi';
+import { Purgeable } from '@/types/session/purge';
 
 type ResetStateParams =
   | Module
-  | typeof ALL_MODULES
-  | typeof ALL_DECENTRALIZED_EXCHANGES;
+  | typeof Purgeable.DEFI_MODULES
+  | typeof Purgeable.DECENTRALIZED_EXCHANGES;
 
 export const useDefiStore = defineStore('defi', () => {
   const allProtocols: Ref<AllDefiProtocols> = ref({});
@@ -193,11 +189,9 @@ export const useDefiStore = defineStore('defi', () => {
   };
 
   const resetState = (module: ResetStateParams) => {
-    if (module === ALL_DECENTRALIZED_EXCHANGES) {
-      [Module.UNISWAP, Module.SUSHISWAP, Module.BALANCER].map(mod =>
-        modules[mod]()
-      );
-    } else if (module === ALL_MODULES) {
+    if (module === Purgeable.DECENTRALIZED_EXCHANGES) {
+      DECENTRALIZED_EXCHANGES.map(mod => modules[mod]());
+    } else if (module === Purgeable.DEFI_MODULES) {
       for (const mod in modules) {
         modules[mod as Module]();
       }
@@ -214,7 +208,7 @@ export const useDefiStore = defineStore('defi', () => {
 
   const reset = () => {
     set(allProtocols, {});
-    resetState(ALL_MODULES);
+    resetState(Purgeable.DEFI_MODULES);
   };
 
   watch(premium, premium => {

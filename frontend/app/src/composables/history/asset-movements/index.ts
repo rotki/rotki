@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type Collection, type CollectionResponse } from '@/types/collection';
-import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AssetMovement,
@@ -10,7 +9,6 @@ import {
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type TradeLocation } from '@/types/history/trade/location';
 
 export const useAssetMovements = () => {
   const locationsStore = useHistoryStore();
@@ -23,9 +21,7 @@ export const useAssetMovements = () => {
 
   const { getAssetMovements, getAssetMovementsTask } = useAssetMovementsApi();
 
-  const syncAssetMovementsTask = async (
-    location: TradeLocation
-  ): Promise<boolean> => {
+  const syncAssetMovementsTask = async (location: string): Promise<boolean> => {
     const taskType = TaskType.MOVEMENTS;
 
     const defaults: AssetMovementRequestPayload = {
@@ -72,7 +68,7 @@ export const useAssetMovements = () => {
 
   const refreshAssetMovements = async (
     userInitiated = false,
-    location?: SupportedExchange
+    location?: string
   ): Promise<void> => {
     const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
       useStatusUpdater(Section.ASSET_MOVEMENT);

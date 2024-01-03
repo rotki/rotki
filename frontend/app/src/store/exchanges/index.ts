@@ -1,8 +1,7 @@
 import {
   type EditExchange,
   type Exchange,
-  type ExchangeSetupPayload,
-  type SupportedExchange
+  type ExchangeSetupPayload
 } from '@/types/exchanges';
 
 export const useExchangesStore = defineStore('exchanges', () => {
@@ -18,7 +17,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
 
   const { t } = useI18n();
 
-  const getExchangeNonce = (exchange: SupportedExchange): ComputedRef<number> =>
+  const getExchangeNonce = (exchange: string): ComputedRef<number> =>
     computed(
       () =>
         get(connectedExchanges).filter(({ location }) => location === exchange)

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
-import { Module } from '@/types/modules';
+import { DefiProtocol, Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import {
@@ -133,10 +133,8 @@ const refresh = async () => {
 onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
-  const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
-  if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex]);
+  if (isDefiProtocol(queryElement)) {
+    set(protocol, queryElement);
   }
   await defiLending.fetchLending();
 });

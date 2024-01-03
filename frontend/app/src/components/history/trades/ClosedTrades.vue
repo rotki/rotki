@@ -2,7 +2,6 @@
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { Routes } from '@/router/routes';
-import { type TradeLocation } from '@/types/history/trade/location';
 import {
   type Trade,
   type TradeEntry,
@@ -15,7 +14,7 @@ import type { Filters, Matcher } from '@/composables/filters/trades';
 
 const props = withDefaults(
   defineProps<{
-    locationOverview?: TradeLocation;
+    locationOverview?: string;
     mainPage?: boolean;
   }>(),
   {

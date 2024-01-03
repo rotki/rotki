@@ -3,7 +3,6 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
-import { TradeLocation } from '@/types/history/trade/location';
 import { CollectionCommonFields } from '@/types/collection';
 
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
@@ -12,7 +11,7 @@ export type MovementCategory = z.infer<typeof MovementCategory>;
 
 export const AssetMovement = z.object({
   identifier: z.string(),
-  location: TradeLocation,
+  location: z.string(),
   category: MovementCategory,
   address: z.string().nullable(),
   transactionId: z.string().nullable(),

@@ -1,7 +1,6 @@
 //TODO: Split class
 /* eslint-disable max-lines */
 import { type Balance, BigNumber } from '@rotki/common';
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
   type AaveHistoryTotal,
@@ -24,6 +23,7 @@ import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
 import { type LiquityLoan } from '@/types/defi/liquity';
+import { DefiProtocol } from '@/types/modules';
 
 type NullableLoan =
   | MakerDAOVaultModel

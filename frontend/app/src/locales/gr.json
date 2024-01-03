@@ -1689,8 +1689,9 @@
   "data_management": {
     "purge_data": {
       "confirm": {
-        "message": "Are you sure you want to purge the cached data for {source}?",
-        "title": "Confirm cached data purge"
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε τα αποθηκευμένα δεδομένα για {source} ({value})?",
+        "message_all": "Είστε σίγουροι ότι θέλετε να καθαρίσετε τα αποθηκευμένα δεδομένα για όλα τα {source}?",
+        "title": "Επιβεβαίωση εκκαθάρισης αποθηκευμένων δεδομένων"
       },
       "evm_transaction_purge_confirm": {
         "message": "Είστε βέβαιοι ότι θέλετε να εκκαθαρίσετε τα αποθηκευμένα δεδομένα από τις συναλλαγές EVM; Αυτή η ενέργεια θα καταργήσει τις συναλλαγές και τις αποδείξεις και θα χρειαστεί πολύς χρόνος για να ζητήσετε τα πάντα."
@@ -3513,18 +3514,28 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "all_decentralized_exchanges": "All Decentralized Exchanges",
-    "all_exchanges": "All Centralized Exchanges",
-    "all_modules": "All Modules",
-    "evm_transactions": "EVM Transactions",
+    "centralized_exchanges": "Κεντρικοποιημένα ανταλλακτήρια",
+    "centralized_exchange_to_clear": {
+      "label": "Κεντρικοποιημένα ανταλλακτήρια για εκκαθάριση",
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλα τα κεντρικοποιημένα ανταλλακτήρια."
+    },
+    "decentralized_exchanges": "Αποκεντρωμένα ανταλλακτήρια",
+    "decentralized_exchange_to_clear": {
+      "label": "Αποκεντρωμένα ανταλλακτήρια για εκκαθάριση",
+      "hint": "Αδειάστε αυτό το πεδίο για να καταργήσετε τα δεδομένα για όλα τα αποκεντρωμένα ανταλλακτήρια"
+    },
+    "defi_modules": "DeFi Modules",
+    "defi_module_to_clear": {
+      "label": "Μονάδα DeFi για εκκαθάριση",
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi"
+    },
+    "evm_transactions": "Συναλλαγές EVM",
     "evm_chain_to_clear": {
       "label": "EVM chain για εκκαθάριση",
-      "hint": "Καθαρίστε αυτό το πεδίο για να καταργήσετε τα δεδομένα συναλλαγών για όλα τα chains"
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα συναλλαγής για όλες τις αλυσίδες"
     },
-    "exchange": "Exchange: {name}",
-    "label": "Select a data source",
-    "module": "Module: {name}",
-    "tooltip": "Purge the cached data for the selected source"
+    "label": "Επιλέξτε μια πηγή δεδομένων",
+    "tooltip": "Εκκαθάριση των αποθηκευμένων δεδομένων για την επιλεγμένη πηγή"
   },
   "queried_address_dialog": {
     "add": "Add address",

@@ -1684,8 +1684,9 @@
   "data_management": {
     "purge_data": {
       "confirm": {
-        "message": "Are you sure you want to purge the cached data for {source}?",
-        "title": "Confirm cached data purge"
+        "message": "¿Está seguro de que desea purgar los datos almacenados en caché para {source} ({value})?",
+        "message_all": "¿Está seguro de que desea purgar los datos almacenados en caché para todos los {source}?",
+        "title": "Confirmar purga de datos en caché"
       },
       "evm_transaction_purge_confirm": {
         "message": "¿Está seguro de que desea eliminar los datos almacenados en caché de las transacciones EVM? Esta acción eliminará las transacciones y los recibos, y llevará mucho tiempo volver a consultar todo."
@@ -3490,18 +3491,28 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "all_decentralized_exchanges": "All Decentralized Exchanges",
-    "all_exchanges": "All Centralized Exchanges",
-    "all_modules": "All Modules",
-    "evm_transactions": "EVM Transactions",
+    "centralized_exchanges": "Bolsas centralizadas",
+    "centralized_exchange_to_clear": {
+      "label": "Intercambio centralizado para compensar",
+      "hint": "Vacíe este campo para eliminar los datos de todos los intercambios centralizados"
+    },
+    "decentralized_exchanges": "Intercambios descentralizados",
+    "decentralized_exchange_to_clear": {
+      "label": "Intercambio descentralizado para compensar",
+      "hint": "Vacía este campo para eliminar los datos de todos los intercambios descentralizados"
+    },
+    "defi_modules": "Módulos DeFi",
+    "defi_module_to_clear": {
+      "label": "Módulo DeFi a borrar",
+      "hint": "Vacía este campo para eliminar los datos de todos los módulos defi"
+    },
+    "evm_transactions": "Transacciones EVM",
     "evm_chain_to_clear": {
       "label": "Cadena EVM para borrar",
-      "hint": "Vacíe este campo para eliminar los datos de la transacción para toda la cadena."
+      "hint": "Vacíe este campo para eliminar los datos de transacción de todas las cadenas"
     },
-    "exchange": "Exchange: {name}",
-    "label": "Select a data source",
-    "module": "Module: {name}",
-    "tooltip": "Purge the cached data for the selected source"
+    "label": "Seleccione una fuente de datos",
+    "tooltip": "Purga los datos en caché de la fuente seleccionada"
   },
   "queried_address_dialog": {
     "add": "Add address",
