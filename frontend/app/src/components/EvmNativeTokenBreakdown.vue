@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common/lib';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const props = withDefaults(
@@ -35,38 +39,47 @@ const breakdowns = computed(() => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
-  const headers: DataTableHeader[] = [
+const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+  column: 'balance.usdValue',
+  direction: 'desc' as const
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => {
+  const headers: DataTableColumn[] = [
     {
-      text: t('common.location'),
-      value: 'location',
+      label: t('common.location'),
+      key: 'location',
       align: 'center',
-      width: '120px',
       class: 'text-no-wrap',
-      cellClass: 'py-2'
+      cellClass: 'py-2',
+      sortable: true
     },
     {
-      text: t('common.amount'),
-      value: 'balance.amount',
+      label: t('common.amount'),
+      key: 'balance.amount',
       align: 'end',
-      width: '60%'
+      class: 'w-full',
+      cellClass: 'py-2',
+      sortable: true
     },
     {
-      text: t('asset_locations.header.value', {
+      label: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD
       }),
-      value: 'balance.usdValue',
-      align: 'end'
+      key: 'balance.usdValue',
+      align: 'end',
+      cellClass: 'py-2',
+      sortable: true
     }
   ];
 
   if (get(showPercentage)) {
     headers.push({
-      text: t('asset_locations.header.percentage'),
-      value: 'percentage',
+      label: t('asset_locations.header.percentage'),
+      key: 'percentage',
       align: 'end',
       class: 'text-no-wrap',
-      sortable: false
+      cellClass: 'py-2'
     });
   }
 
@@ -83,31 +96,37 @@ const percentage = (value: BigNumber) => {
 </script>
 
 <template>
-  <DataTable
-    :headers="tableHeaders"
-    :items="breakdowns"
-    sort-by="balance.amount"
+  <RuiDataTable
+    :cols="tableHeaders"
+    :rows="breakdowns"
+    :sort.sync="sort"
+    :empty="{ description: t('data_table.no_data') }"
+    row-attr="location"
+    outlined
   >
-    <template #item.location="{ item }">
+    <template #item.location="{ row }">
       <LocationDisplay
-        :identifier="item.location"
-        :detail-path="item.detailPath"
+        :identifier="row.location"
+        :detail-path="row.detailPath"
       />
     </template>
-    <template #item.balance.amount="{ item }">
-      <AmountDisplay :value="item.balance.amount" />
+    <template #item.balance.amount="{ row }">
+      <AmountDisplay :value="row.balance.amount" />
     </template>
-    <template #item.balance.usdValue="{ item }">
+    <template #item.balance.usdValue="{ row }">
       <AmountDisplay
         show-currency="symbol"
-        :amount="item.balance.amount"
+        :amount="row.balance.amount"
         :price-asset="identifier"
         fiat-currency="USD"
-        :value="item.balance.usdValue"
+        :value="row.balance.usdValue"
       />
     </template>
-    <template #item.percentage="{ item }">
-      <PercentageDisplay :value="percentage(item.balance.usdValue)" />
+    <template #item.percentage="{ row }">
+      <PercentageDisplay
+        :value="percentage(row.balance.usdValue)"
+        :asset-padding="0.1"
+      />
     </template>
-  </DataTable>
+  </RuiDataTable>
 </template>

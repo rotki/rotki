@@ -98,7 +98,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     {
       label: t('common.asset'),
       key: 'asset',
-      class: 'text-no-wrap',
+      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
       sortable: true
     },

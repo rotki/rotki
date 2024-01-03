@@ -221,6 +221,7 @@ const isBinance = (
                     hide-breakdown
                     :loading="isExchangeLoading"
                     :balances="balances"
+                    sticky-header
                   />
                 </RuiTabItem>
                 <RuiTabItem

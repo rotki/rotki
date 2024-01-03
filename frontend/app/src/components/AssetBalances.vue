@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice } from '@rotki/common';
+import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
 import { some } from 'lodash-es';
-import { type DataTableHeader } from '@/types/vuetify';
 import { isEvmNativeToken } from '@/types/asset';
 
 const props = withDefaults(
@@ -11,13 +14,19 @@ const props = withDefaults(
     loading?: boolean;
     hideTotal?: boolean;
     hideBreakdown?: boolean;
+    stickyHeader?: boolean;
   }>(),
   {
     loading: false,
     hideTotal: false,
-    hideBreakdown: false
+    hideBreakdown: false,
+    stickyHeader: false
   }
 );
+
+defineComponent({
+  name: 'AssetBalances'
+});
 
 const { t } = useI18n();
 
@@ -31,43 +40,61 @@ const total = computed(() =>
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.asset').toString(),
-    value: 'asset',
-    class: 'text-no-wrap'
+    label: t('common.asset'),
+    key: 'asset',
+    class: 'text-no-wrap w-full',
+    cellClass: 'py-0',
+    sortable: true
   },
   {
-    text: t('common.price_in_symbol', {
+    label: t('common.price_in_symbol', {
       symbol: get(currencySymbol)
-    }).toString(),
-    value: 'usdPrice',
+    }),
+    key: 'usdPrice',
     align: 'end',
-    class: 'text-no-wrap'
+    cellClass: 'py-0',
+    sortable: true
   },
   {
-    text: t('common.amount').toString(),
-    value: 'amount',
+    label: t('common.amount'),
+    key: 'amount',
     align: 'end',
-    width: '50%'
+    cellClass: 'py-0',
+    sortable: true
   },
   {
-    text: t('common.value_in_symbol', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
-    }).toString(),
-    value: 'usdValue',
+    }),
+    key: 'usdValue',
     align: 'end',
-    class: 'text-no-wrap'
-  },
-  {
-    text: '',
-    width: '48px',
-    value: 'expand',
-    sortable: false
+    class: 'text-no-wrap',
+    cellClass: 'py-0',
+    sortable: true
   }
 ]);
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
+
+const sorted = computed(() => {
+  const sortBy = get(sort);
+  const data = [...get(balances)];
+  if (!Array.isArray(sortBy) && sortBy?.column) {
+    return sortItems(
+      data,
+      [sortBy.column as keyof AssetBalance],
+      [sortBy.direction === 'desc']
+    );
+  }
+  return data;
+});
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
@@ -77,57 +104,59 @@ const expand = (item: AssetBalanceWithPrice) => {
 </script>
 
 <template>
-  <DataTable
-    :headers="tableHeaders"
-    :items="balances"
+  <RuiDataTable
+    :cols="tableHeaders"
+    :rows="sorted"
     :loading="loading"
-    single-expand
     :expanded="expanded"
     :loading-text="t('asset_balances.loading')"
-    :custom-sort="sortItems"
-    sort-by="usdValue"
-    item-key="asset"
+    :sort.sync="sort"
+    :sort-modifiers="{ external: true }"
+    :empty="{ description: t('data_table.no_data') }"
+    :sticky-offset="64"
+    :sticky-header="stickyHeader"
+    row-attr="asset"
+    single-expand
+    outlined
   >
-    <template #item.asset="{ item }">
+    <template #item.asset="{ row }">
       <AssetDetails
         opens-details
-        :asset="item.asset"
-        :is-collection-parent="!!item.breakdown"
+        :asset="row.asset"
+        :is-collection-parent="!!row.breakdown"
       />
     </template>
-    <template #item.usdPrice="{ item }">
+    <template #item.usdPrice="{ row }">
       <AmountDisplay
-        :loading="!item.usdPrice || item.usdPrice.lt(0)"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
         no-scramble
         show-currency="symbol"
-        :price-asset="item.asset"
-        :price-of-asset="item.usdPrice"
+        :price-asset="row.asset"
+        :price-of-asset="row.usdPrice"
         fiat-currency="USD"
-        :value="item.usdPrice"
+        :value="row.usdPrice"
       />
     </template>
-    <template #item.amount="{ item }">
-      <AmountDisplay :value="item.amount" />
+    <template #item.amount="{ row }">
+      <AmountDisplay :value="row.amount" />
     </template>
-    <template #item.usdValue="{ item }">
+    <template #item.usdValue="{ row }">
       <AmountDisplay
         show-currency="symbol"
-        :amount="item.amount"
-        :price-asset="item.asset"
-        :price-of-asset="item.usdPrice"
+        :amount="row.amount"
+        :price-asset="row.asset"
+        :price-of-asset="row.usdPrice"
         fiat-currency="USD"
-        :value="item.usdValue"
+        :value="row.usdValue"
       />
     </template>
-    <template
-      v-if="balances.length > 0 && !hideTotal"
-      #body.append="{ isMobile }"
-    >
+    <template v-if="balances.length > 0 && !hideTotal" #body.append>
       <RowAppend
         label-colspan="3"
         :label="t('common.total')"
-        :is-mobile="isMobile"
+        :is-mobile="false"
         :right-patch-colspan="2"
+        class-name="[&>td]:p-4 text-sm"
       >
         <AmountDisplay
           fiat-currency="USD"
@@ -136,29 +165,28 @@ const expand = (item: AssetBalanceWithPrice) => {
         />
       </RowAppend>
     </template>
-    <template #expanded-item="{ item }">
-      <TableExpandContainer visible :colspan="tableHeaders.length">
-        <EvmNativeTokenBreakdown
-          v-if="!hideBreakdown && isEvmNativeToken(item.asset)"
-          blockchain-only
-          :identifier="item.asset"
-        />
-        <AssetBalances
-          v-else
-          v-bind="props"
-          hide-total
-          :balances="item.breakdown ?? []"
-        />
-      </TableExpandContainer>
-    </template>
-    <template #item.expand="{ item }">
-      <RowExpander
-        v-if="
-          item.breakdown || (!hideBreakdown && isEvmNativeToken(item.asset))
-        "
-        :expanded="isExpanded(item.asset)"
-        @click="expand(item)"
+    <template #expanded-item="{ row }">
+      <EvmNativeTokenBreakdown
+        v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
+        blockchain-only
+        :identifier="row.asset"
+        class="bg-white dark:bg-[#1E1E1E]"
+      />
+      <AssetBalances
+        v-else
+        v-bind="props"
+        hide-total
+        :balances="row.breakdown ?? []"
+        :sticky-header="false"
+        class="bg-white dark:bg-[#1E1E1E]"
       />
     </template>
-  </DataTable>
+    <template #item.expand="{ row }">
+      <RuiTableRowExpander
+        v-if="row.breakdown || (!hideBreakdown && isEvmNativeToken(row.asset))"
+        :expanded="isExpanded(row.asset)"
+        @click="expand(row)"
+      />
+    </template>
+  </RuiDataTable>
 </template>

@@ -66,7 +66,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     {
       label: t('common.name'),
       key: 'name',
-      class: 'text-no-wrap',
+      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
       sortable: true
     },
@@ -193,7 +193,6 @@ watch(loading, async (isLoading, wasLoading) => {
           :cols="tableHeaders"
           :rows="data"
           :loading="isLoading"
-          :options="options"
           :sort.sync="sort"
           :pagination="{
             limit: options.itemsPerPage,
