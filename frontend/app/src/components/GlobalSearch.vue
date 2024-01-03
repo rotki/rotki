@@ -415,7 +415,7 @@ onBeforeMount(async () => {
             key
           }).toString()
         "
-        :on-menu="on"
+        v-on="on"
       >
         <RuiIcon name="search-line" />
       </MenuTooltipButton>

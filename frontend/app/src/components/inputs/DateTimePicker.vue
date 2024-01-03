@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type ComputedRef, type Ref, useListeners } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import IMask, {
   type AnyMaskedOptions,
   type InputMask,
@@ -335,8 +335,6 @@ const focus = () => {
   });
 };
 
-const listeners = useListeners();
-
 const filteredListeners = (listeners: any) => ({
   ...listeners,
   input: () => {}
@@ -356,7 +354,10 @@ const filteredListeners = (listeners: any) => ({
     :outlined="outlined"
     :error-messages="toMessages(v$.date)"
     @focus="focus()"
-    v-on="filteredListeners(listeners)"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      filteredListeners($listeners)
+    "
   >
     <template #append>
       <VMenu

@@ -22,7 +22,7 @@ const showMenu: Ref<boolean> = ref(false);
       <MenuTooltipButton
         :tooltip="t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
-        :on-menu="on"
+        v-on="on"
       >
         <RuiIcon name="settings-4-line" />
       </MenuTooltipButton>

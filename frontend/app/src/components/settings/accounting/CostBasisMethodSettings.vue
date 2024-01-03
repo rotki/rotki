@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
-
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 const { costBasisMethodData } = useCostBasisMethod();
 </script>
 
@@ -14,7 +11,10 @@ const { costBasisMethodData } = useCostBasisMethod();
     item-value="identifier"
     item-text="identifier"
     :items="costBasisMethodData"
-    v-on="rootListeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #item="{ item, attrs, on }">
       <ListItem

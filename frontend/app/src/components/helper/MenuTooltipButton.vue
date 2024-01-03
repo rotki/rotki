@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { type ButtonProps } from '@rotki/ui-library-compat';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 withDefaults(
   defineProps<{
     tooltip: string;
-    onMenu?: object;
     retainFocusOnClick?: boolean;
     className?: string;
     href?: string;
@@ -12,7 +15,6 @@ withDefaults(
     size?: ButtonProps['size'];
   }>(),
   {
-    onMenu: undefined,
     retainFocusOnClick: false,
     className: '',
     variant: 'text',
@@ -20,12 +22,6 @@ withDefaults(
     href: undefined
   }
 );
-
-const emit = defineEmits<{
-  (e: 'click'): void;
-}>();
-
-const click = () => emit('click');
 </script>
 
 <template>
@@ -44,12 +40,15 @@ const click = () => emit('click');
         :class="[className, !size && '!w-12 !h-12']"
         :size="size"
         :retain-focus-on-click="retainFocusOnClick"
-        @click="click()"
-        v-on="onMenu"
+        v-bind="$attrs"
+        v-on="
+          // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+          $listeners
+        "
       >
         <slot />
       </RuiButton>
     </template>
-    <span>{{ tooltip }}</span>
+    {{ tooltip }}
   </RuiTooltip>
 </template>

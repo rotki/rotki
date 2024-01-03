@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { type Ref, useListeners } from 'vue';
+import { type Ref } from 'vue';
 import { type AssetInfoWithId } from '@/types/asset';
 import { transformCase } from '@/utils/text';
 import { type NftAsset } from '@/types/nfts';
@@ -167,8 +167,6 @@ onMounted(async () => {
 watch(value, async () => {
   await checkValue();
 });
-
-const listeners = useListeners();
 </script>
 
 <template>
@@ -196,7 +194,10 @@ const listeners = useListeners();
     :outlined="outlined"
     no-filter
     :class="outlined ? 'asset-select--outlined' : null"
-    v-on="listeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
     @input="input($event)"
     @blur="blur()"
   >

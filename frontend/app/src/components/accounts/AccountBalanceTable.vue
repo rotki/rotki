@@ -2,7 +2,7 @@
 import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEqual, some, sortBy } from 'lodash-es';
-import { type ComputedRef, type Ref, useListeners } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
@@ -41,7 +41,6 @@ type IndexedBlockchainAccountWithBalance = BlockchainAccountWithBalance & {
 const { balances, blockchain, visibleTags, selected, loopring } = toRefs(props);
 
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -431,7 +430,10 @@ defineExpose({
     data-cy="account-table"
     :data-location="blockchain"
     :group-by="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
-    v-on="rootListeners"
+    v-on="
+      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+      $listeners
+    "
   >
     <template #header.accountSelection>
       <RuiCheckbox

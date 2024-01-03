@@ -47,7 +47,7 @@ const css = useCssModule();
         <MenuTooltipButton
           tooltip="Account"
           class-name="user-dropdown secondary--text text--lighten-4"
-          :on-menu="on"
+          v-on="on"
         >
           <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>

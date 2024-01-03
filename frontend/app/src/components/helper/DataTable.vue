@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 
@@ -69,7 +68,6 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const rootAttrs = useAttrs();
-const rootListeners = useListeners();
 const frontendSettingsStore = useFrontendSettingsStore();
 const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
   frontendSettingsStore
@@ -205,7 +203,10 @@ const { dark } = useTheme();
       :loading-text="loadingText"
       :options="options"
       :custom-group="customGroup"
-      v-on="rootListeners"
+      v-on="
+        // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
+        $listeners
+      "
       @update:items-per-page="onItemsPerPageChange($event)"
       @update:page="scrollToTop()"
     >
