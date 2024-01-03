@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
+import { Routes } from '@/router/routes';
 
 const name = 'loopring';
 
@@ -15,7 +16,7 @@ const status = actionStatus(name);
 const isLoopringActive = useArrayIncludes(activeModules, Module.LOOPRING);
 
 const refresh = () => fetchLoopringBalances(true);
-const navigateToModules = () => useRouter().push('/settings/modules');
+const navigateToModules = () => useRouter().push(Routes.SETTINGS_MODULES);
 </script>
 
 <template>

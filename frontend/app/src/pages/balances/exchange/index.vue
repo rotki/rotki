@@ -77,7 +77,10 @@ const balances = computed(() => {
 
 const vueRouter = useRouter();
 const navigate = () => {
-  vueRouter.push('/settings/api-keys/exchanges?add=true');
+  vueRouter.push({
+    path: Routes.API_KEYS_EXCHANGES,
+    query: { add: 'true' }
+  });
 };
 
 const exchangeSavingsExist: Ref<boolean> = ref(false);

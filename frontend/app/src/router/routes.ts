@@ -149,7 +149,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.history_sub.trades')
     },
     HISTORY_DEPOSITS_WITHDRAWALS: {
-      route: '/history/deposits-withdrawals',
+      route: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
       icon: 'bank-line',
       text: t('navigation_menu.history_sub.deposits_withdrawals')
     },
@@ -169,22 +169,22 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.defi_sub.overview')
     },
     DEFI_DEPOSITS: {
-      route: '/defi/deposits',
+      route: Routes.DEFI_DEPOSITS,
       icon: 'login-circle-line',
       text: t('common.deposits')
     },
     DEFI_LIABILITIES: {
-      route: '/defi/liabilities',
+      route: Routes.DEFI_LIABILITIES,
       icon: 'logout-circle-r-line',
       text: t('navigation_menu.defi_sub.liabilities')
     },
     DEFI_DEPOSITS_PROTOCOLS: {
-      route: '/defi/deposits/protocols',
+      route: Routes.DEFI_DEPOSITS_PROTOCOLS,
       icon: 'settings-2-line',
       text: t('navigation_menu.defi_sub.deposits_sub.protocols')
     },
     DEFI_DEPOSITS_LIQUIDITY: {
-      route: '/defi/deposits/liquidity/:location',
+      route: Routes.DEFI_DEPOSITS_LIQUIDITY,
       icon: 'water-percent-line',
       text: t('navigation_menu.defi_sub.deposits_sub.liquidity')
     },
