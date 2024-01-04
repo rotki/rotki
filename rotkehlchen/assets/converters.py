@@ -1154,6 +1154,9 @@ def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
     if not isinstance(nexo_name, str):
         raise DeserializationError(f'Got non-string type {type(nexo_name)} for nexo asset')
 
+    if nexo_name == 'USDTERC':  # map USDTERC to USDT
+        nexo_name = strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+
     our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
     return symbol_to_asset_or_token(our_name)
 
