@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
+from eth_utils import to_hex
 from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
@@ -397,7 +398,7 @@ def _compute_uniswap_v2_like_pool_address(
     try:
         return generate_address_via_create2(
             address=factory_address,
-            salt=Web3.toHex(Web3.solidityKeccak(  # pylint: disable=no-value-for-parameter
+            salt=to_hex(Web3.solidity_keccak(  # pylint: disable=no-value-for-parameter
                 abi_types=['address', 'address'],
                 values=[token0.evm_address, token1.evm_address],
             )),

@@ -30,7 +30,7 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
     if not include_etherscan_key:
         return
     # Add the tests only etherscan API key
-    if os.environ.get('MATIX_JOB', 'others') == 'api':
+    if os.environ.get('MATRIX_JOB', 'others') == 'api':
         eth_api_key = 'R7QNMZJF1Z5EZM96GMSZSQKHQK3V2TBKW5'
     else:
         eth_api_key = '8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'

@@ -100,7 +100,7 @@ class EvmContract(NamedTuple):
             args=arguments if arguments else [],
         )
         output_types = get_abi_output_types(fn_abi)
-        return WEB3.codec.decode_abi(output_types, result)
+        return WEB3.codec.decode(output_types, result)
 
     def decode_event(
             self,

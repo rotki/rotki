@@ -177,7 +177,7 @@ def mock_etherscan_for_dsr(
                 assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
                 output_types = get_abi_output_types(fn_abi)
                 args = [1, proxies]
-                result = '0x' + web3.codec.encode_abi(output_types, args).hex()
+                result = '0x' + web3.codec.encode(output_types, args).hex()
                 response = f'{{"status":"1","message":"OK","result":"{result}"}}'
             elif to_address == makerdao_pot.address:
                 if input_data.startswith('0x0bebac86'):  # pie

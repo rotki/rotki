@@ -1,10 +1,10 @@
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
-from eth_abi import encode_abi
-from eth_utils import to_checksum_address, to_normalized_address
+from eth_abi import encode as encode_abi
+from eth_utils import to_checksum_address, to_hex, to_normalized_address
 from web3 import Web3
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -210,7 +210,7 @@ def uniswap_v3_lp_token_balances(
                 tokens_a.append(token1_info)
                 token2_info = ethereum.get_erc20_contract_info(to_checksum_address(position[3]))
                 tokens_b.append(token2_info)
-            except (BadFunctionCallOutput, ValueError) as e:
+            except (Web3Exception, ValueError) as e:
                 log.error(
                     f'Error retrieving contract information for address: {position[2]} '
                     f'due to: {e!s}',
@@ -347,7 +347,7 @@ def _compute_pool_address(
 
     return generate_address_via_create2(
         address=uniswap_v3_factory_address,
-        salt=Web3.toHex(Web3.keccak(encode_abi(['address', 'address', 'uint24'], parameters))),
+        salt=to_hex(Web3.keccak(encode_abi(['address', 'address', 'uint24'], parameters))),
         init_code=POOL_INIT_CODE_HASH,
         is_init_code_hashed=True,
     )
