@@ -257,8 +257,6 @@
     "toRefs": true,
     "toSentenceCase": true,
     "toSnakeCase": true,
-    "toSortedAssetBalanceArray": true,
-    "toSortedAssetBalanceWithPrice": true,
     "toUnit": true,
     "totalCollateral": true,
     "transformEntryWithMeta": true,
@@ -732,6 +730,7 @@
     "isOfEventType": true,
     "isTaskCancelled": true,
     "useAssetWhitelistApi": true,
-    "useWhitelistedAssetsStore": true
+    "useWhitelistedAssetsStore": true,
+    "useBalanceSorting": true
   }
 }

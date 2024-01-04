@@ -19,6 +19,8 @@ export const useBlockchainAggregatedBalances = () => {
     useChainBalancesStore()
   );
   const { assetPrice } = useBalancePricesStore();
+  const { toSortedAssetBalanceWithPrice, toSortedAssetBalanceArray } =
+    useBalanceSorting();
 
   const totals: ComputedRef<AssetBalances> = computed(() => {
     const balances: AssetBalances = {};

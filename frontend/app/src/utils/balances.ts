@@ -1,13 +1,11 @@
 import {
   type AssetBalance,
-  type AssetBalanceWithPrice,
   type Balance,
   type BigNumber,
   type HasBalance
 } from '@rotki/common';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import { groupBy } from 'lodash-es';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -121,89 +119,6 @@ export const sumAssetBalances = (
   }
   return summed;
 };
-
-const toSortedAndGroupedArray = <T extends Balance>(
-  ownedAssets: AssetBalances,
-  isIgnored: (asset: string) => boolean,
-  groupMultiChain: boolean,
-  map: (asset: string) => T & { asset: string }
-): T[] => {
-  const { assetInfo } = useAssetInfoRetrieval();
-  const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
-
-  const data = Object.keys(ownedAssets)
-    .filter(asset => !isIgnored(asset))
-    .map(map);
-
-  if (!groupMultiChain) {
-    return data.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-  }
-
-  const groupedBalances = groupBy(data, balance => {
-    const info = get(assetInfo(balance.asset));
-
-    if (info?.collectionId) {
-      return `collection-${info.collectionId}`;
-    }
-
-    return balance.asset;
-  });
-
-  const mapped: T[] = [];
-
-  Object.keys(groupedBalances).forEach(key => {
-    const grouped = groupedBalances[key];
-    const isAssetCollection = key.startsWith('collection-');
-    const collectionKey = key.split('collection-')[1];
-    const assetCollectionInfo = !isAssetCollection
-      ? false
-      : get(fetchedAssetCollections)?.[collectionKey];
-
-    if (assetCollectionInfo && grouped.length > 1) {
-      const sumBalance = grouped.reduce(
-        (accumulator, currentBalance) =>
-          balanceSum(accumulator, currentBalance),
-        zeroBalance()
-      );
-
-      const parent: T = {
-        ...grouped[0],
-        ...sumBalance,
-        breakdown: grouped
-      };
-
-      mapped.push(parent);
-    } else {
-      mapped.push(...grouped);
-    }
-  });
-
-  return mapped.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-};
-
-export const toSortedAssetBalanceWithPrice = (
-  ownedAssets: AssetBalances,
-  isIgnored: (asset: string) => boolean,
-  getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
-  groupMultiChain = true
-): AssetBalanceWithPrice[] =>
-  toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
-    asset,
-    amount: ownedAssets[asset].amount,
-    usdValue: ownedAssets[asset].usdValue,
-    usdPrice: get(getPrice(asset)) ?? NoPrice
-  }));
-
-export const toSortedAssetBalanceArray = (
-  ownedAssets: AssetBalances,
-  isIgnored: (asset: string) => boolean,
-  groupMultiChain = false
-): AssetBalance[] =>
-  toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
-    asset,
-    amount: ownedAssets[asset].amount,
-    usdValue: ownedAssets[asset].usdValue
-  }));
 
 export const accountsWithBalances = (
   accounts: GeneralAccountData[],

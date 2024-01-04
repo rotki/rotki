@@ -35,6 +35,7 @@ export const useExchangeBalancesStore = defineStore(
       getExchangeSavings,
       getExchangeSavingsTask
     } = useExchangeApi();
+    const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
     const exchanges: ComputedRef<ExchangeInfo[]> = computed(() => {
       const balances = get(exchangeBalances);
