@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
 
-defineProps<{
+const props = defineProps<{
   label: string;
   tags: string[];
   disabled: boolean;
@@ -13,27 +13,28 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const labelModel = useVModel(props, 'label', emit);
+const tagsModel = useVModel(props, 'tags', emit);
 </script>
 
 <template>
   <Fragment>
     <RuiTextField
-      :value="label"
+      v-model="labelModel"
       data-cy="account-label-field"
       color="primary"
       variant="outlined"
       class="account-form__label"
       :label="t('common.name')"
       :disabled="disabled"
-      @input="emit('update:label', $event || '')"
     />
 
     <TagInput
-      :value="tags"
+      v-model="tagsModel"
       data-cy="account-tag-field"
       outlined
       :disabled="disabled"
-      @input="emit('update:tags', $event)"
     />
   </Fragment>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     value?: string;
     locations?: string[];
@@ -17,9 +17,8 @@ withDefaults(
 const emit = defineEmits<{
   (e: 'input', location: string): void;
 }>();
-const input = (location: string) => {
-  emit('input', location);
-};
+
+const model = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
 </script>
@@ -30,7 +29,7 @@ const { t } = useI18n();
       {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
     </div>
     <LocationSelector
-      :value="value"
+      v-model="model"
       :items="locations"
       class="edit-balances-snapshot__location"
       attach=".edit-balances-snapshot__location"
@@ -41,7 +40,6 @@ const { t } = useI18n();
       :hide-details="!!value"
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
       :label="t('common.location')"
-      @input="input($event)"
     />
     <div v-if="previewLocationBalance" class="mt-4">
       <div class="text-subtitle-2">

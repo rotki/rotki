@@ -44,10 +44,6 @@ const headers = computed<DataTableColumn[]>(() => [
 
 const close = () => emit('close');
 
-const onChange = (newTag: Tag) => {
-  set(tag, newTag);
-};
-
 const save = async (newTag: Tag) => {
   set(tag, defaultTag());
   if (get(editMode)) {
@@ -113,7 +109,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
     <TagCreator
       :tag="tag"
       :edit-mode="editMode"
-      @changed="onChange($event)"
+      @update:tag="tag = $event"
       @cancel="cancel()"
       @save="save($event)"
     />

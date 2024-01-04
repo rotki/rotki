@@ -511,6 +511,7 @@ declare global {
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
   const useItemCache: typeof import('./composables/item-cache')['useItemCache']
+  const useKebabVModel: typeof import('./utils/model/index')['useKebabVModel']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useKrakenApi: typeof import('./composables/api/staking/kraken')['useKrakenApi']
   const useKrakenStakingEventTypes: typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']
@@ -590,6 +591,7 @@ declare global {
   const usePriceApi: typeof import('./composables/api/balances/price')['usePriceApi']
   const usePrivacyMode: typeof import('./composables/privacy')['usePrivacyMode']
   const useProjection: typeof import('@vueuse/math')['useProjection']
+  const usePropVModel: typeof import('./utils/model/index')['usePropVModel']
   const useProxy: typeof import('./composables/common')['useProxy']
   const useQueriedAddressApi: typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']
   const useQueriedAddressesStore: typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']
@@ -598,6 +600,7 @@ declare global {
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
   const useRefMap: typeof import('./composables/utils/useRefMap/index')['useRefMap']
+  const useRefPropVModel: typeof import('./utils/model/index')['useRefPropVModel']
   const useRefresh: typeof import('./composables/balances/refresh')['useRefresh']
   const useReportsApi: typeof import('./composables/api/reports/index')['useReportsApi']
   const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
@@ -624,6 +627,8 @@ declare global {
   const useSettingsApi: typeof import('./composables/api/settings/settings-api')['useSettingsApi']
   const useSettingsStore: typeof import('./store/settings/index')['useSettingsStore']
   const useShare: typeof import('@vueuse/core')['useShare']
+  const useSimplePropVModel: typeof import('./utils/model/index')['useSimplePropVModel']
+  const useSimpleVModel: typeof import('./utils/model/index')['useSimpleVModel']
   const useSkippedHistoryEventsApi: typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']
   const useSlots: typeof import('vue')['useSlots']
   const useSnapshotApi: typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']
@@ -1240,6 +1245,7 @@ declare module 'vue' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
+    readonly useKebabVModel: UnwrapRef<typeof import('./utils/model/index')['useKebabVModel']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
@@ -1319,6 +1325,7 @@ declare module 'vue' {
     readonly usePriceApi: UnwrapRef<typeof import('./composables/api/balances/price')['usePriceApi']>
     readonly usePrivacyMode: UnwrapRef<typeof import('./composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
+    readonly usePropVModel: UnwrapRef<typeof import('./utils/model/index')['usePropVModel']>
     readonly useProxy: UnwrapRef<typeof import('./composables/common')['useProxy']>
     readonly useQueriedAddressApi: UnwrapRef<typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']>
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
@@ -1327,6 +1334,7 @@ declare module 'vue' {
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefMap: UnwrapRef<typeof import('./composables/utils/useRefMap/index')['useRefMap']>
+    readonly useRefPropVModel: UnwrapRef<typeof import('./utils/model/index')['useRefPropVModel']>
     readonly useRefresh: UnwrapRef<typeof import('./composables/balances/refresh')['useRefresh']>
     readonly useReportsApi: UnwrapRef<typeof import('./composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
@@ -1353,6 +1361,8 @@ declare module 'vue' {
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
+    readonly useSimplePropVModel: UnwrapRef<typeof import('./utils/model/index')['useSimplePropVModel']>
+    readonly useSimpleVModel: UnwrapRef<typeof import('./utils/model/index')['useSimpleVModel']>
     readonly useSkippedHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>
@@ -1962,6 +1972,7 @@ declare module '@vue/runtime-core' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
+    readonly useKebabVModel: UnwrapRef<typeof import('./utils/model/index')['useKebabVModel']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
@@ -2041,6 +2052,7 @@ declare module '@vue/runtime-core' {
     readonly usePriceApi: UnwrapRef<typeof import('./composables/api/balances/price')['usePriceApi']>
     readonly usePrivacyMode: UnwrapRef<typeof import('./composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
+    readonly usePropVModel: UnwrapRef<typeof import('./utils/model/index')['usePropVModel']>
     readonly useProxy: UnwrapRef<typeof import('./composables/common')['useProxy']>
     readonly useQueriedAddressApi: UnwrapRef<typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']>
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
@@ -2049,6 +2061,7 @@ declare module '@vue/runtime-core' {
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefMap: UnwrapRef<typeof import('./composables/utils/useRefMap/index')['useRefMap']>
+    readonly useRefPropVModel: UnwrapRef<typeof import('./utils/model/index')['useRefPropVModel']>
     readonly useRefresh: UnwrapRef<typeof import('./composables/balances/refresh')['useRefresh']>
     readonly useReportsApi: UnwrapRef<typeof import('./composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
@@ -2075,6 +2088,8 @@ declare module '@vue/runtime-core' {
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
+    readonly useSimplePropVModel: UnwrapRef<typeof import('./utils/model/index')['useSimplePropVModel']>
+    readonly useSimpleVModel: UnwrapRef<typeof import('./utils/model/index')['useSimpleVModel']>
     readonly useSkippedHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>

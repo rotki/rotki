@@ -10,11 +10,15 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'changed', tag: Tag): void;
+  (e: 'update:tag', tag: Tag): void;
   (e: 'save', tag: Tag): void;
   (e: 'cancel'): void;
 }>();
+
 const { t } = useI18n();
+
+const name = usePropVModel(props, 'tag', 'name', emit);
+const description = usePropVModel(props, 'tag', 'description', emit);
 
 const { tag } = toRefs(props);
 
@@ -33,14 +37,14 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    name: useRefMap(tag, tag => tag.name),
-    description: useRefMap(tag, tag => tag.description)
+    name,
+    description
   },
   { $autoDirty: true }
 );
 
 const changed = (event: TagEvent) => {
-  emit('changed', {
+  emit('update:tag', {
     ...props.tag,
     ...event
   });
@@ -92,22 +96,20 @@ watch(tag, () => {
     </div>
     <div class="mt-4">
       <RuiTextField
+        v-model="name"
         variant="outlined"
         color="primary"
         class="tag_creator__name"
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
-        :value="tag.name"
         :disabled="editMode"
-        @input="changed({ name: $event })"
       />
       <RuiTextField
+        v-model="description"
         variant="outlined"
         color="primary"
         class="tag_creator__description"
-        :value="tag.description"
         :label="t('common.description')"
-        @input="changed({ description: $event })"
       />
     </div>
     <div class="grid md:grid-cols-2 gap-4">

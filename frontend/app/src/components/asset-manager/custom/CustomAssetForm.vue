@@ -49,6 +49,9 @@ const { t } = useI18n();
 
 const search = ref<string | null>('');
 
+const name = useRefPropVModel(formData, 'name');
+const customAssetType = useRefPropVModel(formData, 'customAssetType');
+
 const note = computed({
   get() {
     return get(formData).notes ?? undefined;
@@ -58,11 +61,11 @@ const note = computed({
   }
 });
 
-watch(search, customAssetType => {
-  if (customAssetType === null) {
-    customAssetType = get(formData).customAssetType;
+watch(search, type => {
+  if (type === null) {
+    type = get(formData).customAssetType;
   }
-  input({ customAssetType });
+  set(customAssetType, type);
 });
 
 const rules = {
@@ -85,8 +88,8 @@ const { setValidation, setSubmitFunc } = useCustomAssetForm();
 const v$ = setValidation(
   rules,
   {
-    name: computed(() => get(formData).name),
-    type: computed(() => get(formData).customAssetType)
+    name,
+    type: customAssetType
   },
   { $autoDirty: true }
 );
@@ -134,26 +137,24 @@ setSubmitFunc(save);
   <div class="flex flex-col gap-2">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <RuiTextField
+        v-model="name"
         data-cy="name"
-        :value="formData.name"
         variant="outlined"
         color="primary"
         clearable
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
-        @input="input({ name: $event })"
       />
       <VCombobox
+        v-model="customAssetType"
         data-cy="type"
         :items="types"
-        :value="formData.customAssetType"
         outlined
         persistent-hint
         clearable
         :label="t('common.type')"
         :error-messages="toMessages(v$.type)"
         :search-input.sync="search"
-        @input="input({ customAssetType: $event })"
       />
     </div>
     <RuiTextArea

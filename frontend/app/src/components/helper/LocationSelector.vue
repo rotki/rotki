@@ -12,14 +12,13 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'change', value: string): void;
+  (e: 'input', value: string): void;
 }>();
 
+const model = useSimpleVModel(props, emit);
 const rootAttrs = useAttrs();
 
 const { items, excludes } = toRefs(props);
-
-const change = (_value: string) => emit('change', _value);
 
 const { tradeLocations } = useLocations();
 
@@ -46,14 +45,13 @@ const locations = computed<TradeLocationData[]>(() => {
 <template>
   <VAutocomplete
     v-bind="rootAttrs"
+    v-model="model"
     data-cy="location-input"
-    :value="value"
     :items="locations"
     :attach="attach"
     item-value="identifier"
     item-text="name"
     auto-select-first
-    @input="change($event)"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners

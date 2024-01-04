@@ -731,6 +731,11 @@
     "isTaskCancelled": true,
     "useAssetWhitelistApi": true,
     "useWhitelistedAssetsStore": true,
-    "useBalanceSorting": true
+    "useBalanceSorting": true,
+    "usePropVModel": true,
+    "useSimpleVModel": true,
+    "useSimplePropVModel": true,
+    "useKebabVModel": true,
+    "useRefPropVModel": true
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
   defineProps<{
     value: boolean;
     disabled?: boolean;
@@ -14,19 +14,20 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const model = useSimpleVModel(props, emit);
 </script>
 
 <template>
   <RuiCard class="rounded">
     <label class="flex items-center gap-3 cursor-pointer">
       <RuiCheckbox
+        v-model="model"
         data-cy="account-all-evm-chains"
         class="mt-0 p-1"
         color="primary"
-        :value="value"
         :disabled="disabled"
         hide-details
-        @input="emit('input', !value)"
       />
       <div :class="{ 'opacity-50': disabled }">
         <div class="text-body-1">

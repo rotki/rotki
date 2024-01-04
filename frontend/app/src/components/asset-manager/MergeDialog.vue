@@ -7,9 +7,12 @@ type Errors = Partial<
   Record<'targetIdentifier' | 'sourceIdentifier', string[]>
 >;
 
-defineProps<{ value: boolean }>();
+const props = defineProps<{ value: boolean }>();
 
 const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+
+const display = useSimpleVModel(props, emit);
+
 const done = ref(false);
 const errorMessages = ref<Errors>({});
 const targetIdentifier = ref('');
@@ -91,7 +94,7 @@ const v$ = useVuelidate(
 </script>
 
 <template>
-  <VDialog :value="value" max-width="500" @input="input($event)">
+  <VDialog v-model="display" max-width="500">
     <RuiCard>
       <template #header>{{ t('merge_dialog.title') }}</template>
       <template #subheader>{{ t('merge_dialog.subtitle') }}</template>
