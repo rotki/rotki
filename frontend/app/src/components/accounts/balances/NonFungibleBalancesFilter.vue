@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
-import { type NonFungibleBalance } from '@/types/nfbalances';
 
 const props = defineProps<{
-  selected: NonFungibleBalance[];
+  selected: string[];
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:selected', selected: NonFungibleBalance[]): void;
+  (e: 'update:selected', selected: string[]): void;
   (
     e: 'update:ignored-assets-handling',
     ignoredAssetsHandling: IgnoredAssetsHandlingType
   ): void;
   (e: 'mass-ignore', ignored: boolean): void;
 }>();
-
-const updateSelected = (selected: NonFungibleBalance[]) => {
-  emit('update:selected', selected);
-};
 
 const internalValue = computed({
   get() {
@@ -47,7 +42,11 @@ const { t } = useI18n();
         <span class="text-body-2 text-rui-text-secondary">{{
           t('asset_table.selected', { count: selected.length })
         }}</span>
-        <RuiButton size="sm" variant="outlined" @click="updateSelected([])">
+        <RuiButton
+          size="sm"
+          variant="outlined"
+          @click="emit('update:selected', [])"
+        >
           {{ t('common.actions.clear_selection') }}
         </RuiButton>
       </div>

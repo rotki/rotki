@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
@@ -24,48 +24,50 @@ const { deleteLatestPrice } = useAssetPricesApi();
 
 const customPrice: Ref<Partial<ManualPriceFormPayload> | null> = ref(null);
 
-const selected: Ref<NonFungibleBalance[]> = ref([]);
+const selected: Ref<string[]> = ref([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 
 const extraParams = computed(() => ({
   ignoredAssetsHandling: get(ignoredAssetsHandling)
 }));
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.name'),
-    value: 'name',
-    cellClass: 'text-no-wrap'
+    label: t('common.name'),
+    key: 'name',
+    cellClass: 'text-no-wrap',
+    sortable: true
   },
   {
-    text: t('non_fungible_balances.ignore'),
-    value: 'ignored',
+    label: t('non_fungible_balances.ignore'),
+    key: 'ignored',
     align: 'center',
     sortable: false
   },
   {
-    text: t('non_fungible_balances.column.price_in_asset'),
-    value: 'priceInAsset',
+    label: t('non_fungible_balances.column.price_in_asset'),
+    key: 'priceInAsset',
     align: 'end',
     width: '75%',
     class: 'text-no-wrap',
     sortable: false
   },
   {
-    text: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    value: 'lastPrice',
+    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    key: 'lastPrice',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: true
   },
   {
-    text: t('non_fungible_balances.column.custom_price'),
-    value: 'manuallyInput',
+    label: t('non_fungible_balances.column.custom_price'),
+    key: 'manuallyInput',
     class: 'text-no-wrap',
     sortable: false
   },
   {
-    text: t('common.actions_text'),
-    value: 'actions',
+    label: t('common.actions_text'),
+    key: 'actions',
     align: 'center',
     sortable: false,
     width: '50'
@@ -113,10 +115,9 @@ const toggleIgnoreAsset = async (identifier: string) => {
 const massIgnore = async (ignored: boolean) => {
   const ids = get(selected)
     .filter(item => {
-      const isItemIgnored = get(isIgnored(item.id));
+      const isItemIgnored = get(isIgnored(item));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
-    .map(item => item.id)
     .filter(uniqueStrings);
 
   let status: ActionStatus;
@@ -155,7 +156,7 @@ const {
   fetchData,
   options,
   setPage,
-  setOptions
+  setTableOptions
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
@@ -251,67 +252,76 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       />
       <CollectionHandler :collection="balances" @set-page="setPage($event)">
         <template #default="{ data, itemLength, totalUsdValue }">
-          <DataTable
+          <RuiDataTable
             v-model="selected"
-            :headers="tableHeaders"
-            :items="data"
+            row-attr="id"
+            outlined
+            :cols="tableHeaders"
+            :rows="data"
             :options="options"
-            :server-items-length="itemLength"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength
+            }"
+            :pagination-modifiers="{ external: true }"
             :loading="isLoading"
             show-select
-            @update:options="setOptions($event)"
+            @update:options="setTableOptions($event)"
           >
-            <template #item.name="{ item }">
-              <NftDetails :identifier="item.id" />
+            <template #item.name="{ row }">
+              <NftDetails :identifier="row.id" />
             </template>
-            <template #item.ignored="{ item }">
+            <template #item.ignored="{ row }">
               <div class="flex justify-center">
                 <VSwitch
-                  :input-value="isIgnored(item.id)"
-                  @change="toggleIgnoreAsset(item.id)"
+                  :input-value="isIgnored(row.id)"
+                  @change="toggleIgnoreAsset(row.id)"
                 />
               </div>
             </template>
-            <template #item.priceInAsset="{ item }">
+            <template #item.priceInAsset="{ row }">
               <AmountDisplay
-                v-if="item.priceAsset !== currencySymbol"
-                :value="item.priceInAsset"
-                :asset="item.priceAsset"
+                v-if="row.priceAsset !== currencySymbol"
+                :value="row.priceInAsset"
+                :asset="row.priceAsset"
               />
               <span v-else>-</span>
             </template>
-            <template #item.lastPrice="{ item }">
+            <template #item.lastPrice="{ row }">
               <AmountDisplay
-                :price-asset="item.priceAsset"
-                :amount="item.priceInAsset"
-                :value="item.usdPrice"
+                :price-asset="row.priceAsset"
+                :amount="row.priceInAsset"
+                :value="row.usdPrice"
                 no-scramble
                 show-currency="symbol"
                 fiat-currency="USD"
               />
             </template>
-            <template #item.actions="{ item }">
+            <template #item.actions="{ row }">
               <RowActions
                 :delete-tooltip="t('assets.custom_price.delete.tooltip')"
                 :edit-tooltip="t('assets.custom_price.edit.tooltip')"
-                :delete-disabled="!item.manuallyInput"
-                @delete-click="showDeleteConfirmation(item)"
-                @edit-click="setPriceForm(item)"
+                :delete-disabled="!row.manuallyInput"
+                @delete-click="showDeleteConfirmation(row)"
+                @edit-click="setPriceForm(row)"
               />
             </template>
-            <template #item.manuallyInput="{ item }">
+            <template #item.manuallyInput="{ row }">
               <SuccessDisplay
-                v-if="item.manuallyInput"
+                v-if="row.manuallyInput"
                 class="mx-auto"
                 success
               />
+              <div v-else />
             </template>
-            <template #body.append="{ isMobile }">
+            <template #body.append>
               <RowAppend
+                v-if="totalUsdValue"
                 label-colspan="4"
                 :label="t('common.total')"
+                class="[&>td]:p-4"
                 :right-patch-colspan="2"
-                :is-mobile="isMobile"
               >
                 <AmountDisplay
                   :value="totalUsdValue"
@@ -320,7 +330,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
                 />
               </RowAppend>
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
     </RuiCard>
