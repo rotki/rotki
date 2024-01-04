@@ -1737,25 +1737,36 @@ class RestAPI:
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         try:
-            added_accounts, existed_accounts, failed_accounts, no_activity_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)  # noqa: E501
+            (
+                added_accounts,
+                existed_accounts,
+                failed_accounts,
+                no_activity_accounts,
+                eth_contract_addresses,
+            ) = self.rotkehlchen.add_evm_accounts(account_data=account_data)
         except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        result: dict[str, dict[str, list[ChecksumEvmAddress]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
+        all_evm_chains_num = len(get_args(SUPPORTED_EVM_CHAINS))
+        result_dicts: dict[str, dict[ChecksumEvmAddress, list[str]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
 
-        for chain, address in added_accounts:
-            result['added'][chain.serialize()].append(address)
+        all_key = 'all'  # key used when all the evm chains are returned
+        for response_key, list_of_accounts in (
+            ('added', added_accounts),
+            ('failed', failed_accounts),
+            ('existed', existed_accounts),
+            ('no_activity', no_activity_accounts),
+        ):
+            for chain, address in list_of_accounts:
+                result_dicts[response_key][address].append(chain.serialize())
+                if len(result_dicts[response_key][address]) == all_evm_chains_num:
+                    result_dicts[response_key][address] = [all_key]
 
-        for chain, address in failed_accounts:
-            result['failed'][chain.serialize()].append(address)
-
-        for chain, address in existed_accounts:
-            result['existed'][chain.serialize()].append(address)
-
-        for chain, address in no_activity_accounts:
-            result['no_activity'][chain.serialize()].append(address)
+        result: dict[str, Any] = result_dicts
+        if len(eth_contract_addresses) != 0:
+            result |= {'eth_contracts': eth_contract_addresses}
 
         return _wrap_in_ok_result(result)
 

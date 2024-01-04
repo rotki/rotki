@@ -296,33 +296,30 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
     result = assert_proper_response_with_result(response)
     assert result == {
         'added': {
-            'eth': [common_account, contract_account],
-            'avax': [common_account],
-            'polygon_pos': [common_account],
-            'arbitrum_one': [common_account],
-            'base': [common_account],
-            'optimism': [common_account],
-            'gnosis': [common_account],
+            '0x9531C059098e3d194fF87FebB587aB07B30B1306': ['all'],
+            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['eth'],
         },
-        'existed': {'gnosis': [already_added_to_all_chains]},
         'failed': {
-            'eth': [failing_account],
-            'avax': [failing_account],
-            'polygon_pos': [failing_account],
-            'arbitrum_one': [failing_account],
-            'base': [failing_account],
-            'optimism': [failing_account],
-            'gnosis': [failing_account],
+            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
+                'polygon_pos',
+                'arbitrum_one',
+                'base',
+                'gnosis',
+            ],
         },
+        'existed': {'0x7277F7849966426d345D8F6B9AFD1d3d89183083': ['gnosis']},
         'no_activity': {
-            'eth': [no_activity_account, already_added_to_all_chains],
-            'avax': [no_activity_account, already_added_to_all_chains],
-            'polygon_pos': [no_activity_account, already_added_to_all_chains],
-            'arbitrum_one': [no_activity_account, already_added_to_all_chains],
-            'base': [no_activity_account, already_added_to_all_chains],
-            'optimism': [no_activity_account, already_added_to_all_chains],
-            'gnosis': [no_activity_account],
+            '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa': ['all'],
+            '0x7277F7849966426d345D8F6B9AFD1d3d89183083': [
+                'eth',
+                'optimism',
+                'avax',
+                'polygon_pos',
+                'arbitrum_one',
+                'base',
+            ],
         },
+        'eth_contracts': ['0x9008D19f58AAbD9eD0D60971565AA8510560ab41'],
     }
 
     # Now get accounts to make sure they are all input correctly
@@ -541,4 +538,4 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
 
         task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert outcome['result']['added']['eth'] == [common_account]
+        assert outcome['result']['added'][common_account] == ['all']
