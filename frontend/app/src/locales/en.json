@@ -305,14 +305,21 @@
       },
       "blockchain_accounts_add": {
         "error": {
+          "failed": "Failed to add address {address} to these chains:\n {list}",
+          "non_eth": "All non ETH chains",
+          "failed_reason": {
+            "no_activity": "No activity",
+            "existed": "Has been added before",
+            "is_contract": "Is ETH contract address"
+          },
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
-          "empty_addresses_description": "Address {address} was not added because it is either a contract or doesn't have any activity in any of the supported EVM chains",
-          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
-          "title": "Adding {blockchain} accounts"
+          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}"
+        },
+        "success": {
+          "description": "Address {address} is successfully added for all EVM chains | Address {address} is successfully added for these chains: \n {list}"
         },
         "no_new": {
-          "description": "The selected addresses are already tracked by rotki",
-          "title": "Adding {blockchain} accounts"
+          "description": "The selected addresses are already tracked by rotki"
         },
         "task": {
           "description": "Adding {address}",

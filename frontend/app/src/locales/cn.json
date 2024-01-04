@@ -242,13 +242,10 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "无法添加 {addresses} 个新的 {blockchain} 账户： {error}",
-          "empty_addresses_description": "地址 {address} 未添加，因为它是合约或在任何受支持的 EVM 链中没有任何活动",
-          "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}",
-          "title": "添加 {blockchain} 账户"
+          "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}"
         },
         "no_new": {
-          "description": "所选地址已被 rotki 跟踪",
-          "title": "添加 {blockchain} 账户"
+          "description": "所选地址已被 rotki 跟踪"
         },
         "task": {
           "description": "添加 {address}",

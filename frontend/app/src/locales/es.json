@@ -240,13 +240,10 @@
       },
       "blockchain_accounts_add": {
         "error": {
-          "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
-          "empty_addresses_description": "La dirección {address} no se agregó porque es un contrato o no tiene ninguna actividad en ninguna de las cadenas EVM admitidas",
-          "title": "Adding {blockchain} accounts"
+          "description": "Failed to add {addresses} new {blockchain} accounts: {error}"
         },
         "no_new": {
-          "description": "The selected addresses are already tracked by rotki",
-          "title": "Adding {blockchain} accounts"
+          "description": "The selected addresses are already tracked by rotki"
         },
         "task": {
           "description": "Adding {address}",
