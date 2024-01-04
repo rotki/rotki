@@ -13,6 +13,7 @@ export const useAccountDetails = (
   const { balances: ethBalances, loopring } = storeToRefs(ethBalancesStore);
   const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
   const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { toSortedAssetBalanceArray } = useBalanceSorting();
 
   const balances: ComputedRef<BlockchainAssetBalances> = computed(() => {
     const chain = get(blockchain);

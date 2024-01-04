@@ -15,6 +15,8 @@ export const useAggregatedBalances = () => {
     useManualAssetBalances();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
+  const { lpAggregatedBalances } = useLiquidityPosition();
 
   const balances = (
     hideIgnored = true,
@@ -70,7 +72,6 @@ export const useAggregatedBalances = () => {
         return asset;
       });
 
-      const { lpAggregatedBalances } = useLiquidityPosition();
       const lpBalances = get(lpAggregatedBalances(false));
       const lpAssets = lpBalances
         .map(item => item.asset)

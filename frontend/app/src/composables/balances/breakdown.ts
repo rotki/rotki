@@ -20,6 +20,7 @@ export const useBalancesBreakdown = () => {
     useBlockchainAggregatedBalances();
   const { toSelectedCurrency, assetPrice } = useBalancePricesStore();
   const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
   const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() =>

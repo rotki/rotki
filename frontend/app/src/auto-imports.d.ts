@@ -364,6 +364,7 @@ declare global {
   const useBackendMessagesStore: typeof import('./store/backend-messages')['useBackendMessagesStore']
   const useBackupApi: typeof import('./composables/api/backup')['useBackupApi']
   const useBalancePricesStore: typeof import('./store/balances/prices')['useBalancePricesStore']
+  const useBalanceSorting: typeof import('./composables/balances/sorting')['useBalanceSorting']
   const useBalancerApi: typeof import('./composables/api/defi/balancer')['useBalancerApi']
   const useBalancerStore: typeof import('./store/defi/balancer/index')['useBalancerStore']
   const useBalances: typeof import('./composables/balances/index')['useBalances']
@@ -1005,8 +1006,6 @@ declare module 'vue' {
     readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
-    readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
-    readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
@@ -1094,6 +1093,7 @@ declare module 'vue' {
     readonly useBackendMessagesStore: UnwrapRef<typeof import('./store/backend-messages')['useBackendMessagesStore']>
     readonly useBackupApi: UnwrapRef<typeof import('./composables/api/backup')['useBackupApi']>
     readonly useBalancePricesStore: UnwrapRef<typeof import('./store/balances/prices')['useBalancePricesStore']>
+    readonly useBalanceSorting: UnwrapRef<typeof import('./composables/balances/sorting')['useBalanceSorting']>
     readonly useBalancerApi: UnwrapRef<typeof import('./composables/api/defi/balancer')['useBalancerApi']>
     readonly useBalancerStore: UnwrapRef<typeof import('./store/defi/balancer/index')['useBalancerStore']>
     readonly useBalances: UnwrapRef<typeof import('./composables/balances/index')['useBalances']>
@@ -1728,8 +1728,6 @@ declare module '@vue/runtime-core' {
     readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
-    readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
-    readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
@@ -1817,6 +1815,7 @@ declare module '@vue/runtime-core' {
     readonly useBackendMessagesStore: UnwrapRef<typeof import('./store/backend-messages')['useBackendMessagesStore']>
     readonly useBackupApi: UnwrapRef<typeof import('./composables/api/backup')['useBackupApi']>
     readonly useBalancePricesStore: UnwrapRef<typeof import('./store/balances/prices')['useBalancePricesStore']>
+    readonly useBalanceSorting: UnwrapRef<typeof import('./composables/balances/sorting')['useBalanceSorting']>
     readonly useBalancerApi: UnwrapRef<typeof import('./composables/api/defi/balancer')['useBalancerApi']>
     readonly useBalancerStore: UnwrapRef<typeof import('./store/defi/balancer/index')['useBalancerStore']>
     readonly useBalances: UnwrapRef<typeof import('./composables/balances/index')['useBalances']>
