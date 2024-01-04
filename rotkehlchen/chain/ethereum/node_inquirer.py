@@ -4,9 +4,9 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, overload
 
 import requests
-from ens.abis import RESOLVER as ENS_RESOLVER_ABI
+from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
+from ens.constants import ENS_MAINNET_ADDR
 from ens.exceptions import InvalidName
-from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
 from web3 import Web3
@@ -46,7 +46,6 @@ from rotkehlchen.utils.network import request_get_dict
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
 from .etherscan import EthereumEtherscan
-from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -181,14 +180,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
     ) -> ChecksumEvmAddress | HexStr | None:
         """Performs an ENS lookup and returns address if found else None
 
-        TODO: currently web3.py 5.15.0 does not support multichain ENS domains
-        (EIP-2304), therefore requesting a non-Ethereum address won't use the
-        web3 ens library and will require to extend the library resolver ABI.
-        An issue in their repo (#1839) reporting the lack of support has been
-        created. This function will require refactoring once they include
-        support for EIP-2304.
-        https://github.com/ethereum/web3.py/issues/1839
-
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
@@ -202,7 +193,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         ens_resolver_abi = ENS_RESOLVER_ABI.copy()
         arguments = [normal_name_to_hash(normal_name)]
         if blockchain != SupportedBlockchain.ETHEREUM:
-            ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
             arguments.append(blockchain.ens_coin_type())
 
         address = self._call_contract(

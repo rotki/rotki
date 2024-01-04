@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import requests
-from ens.abis import RESOLVER as ENS_RESOLVER_ABI
+from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
 from ens.utils import normal_name_to_hash
 from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
@@ -37,34 +37,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ENS_METADATA_URL = 'https://metadata.ens.domains/mainnet'
-
-
-# TODO: remove this once web3.py updates ENS library for supporting multichain
-# https://github.com/ethereum/web3.py/issues/1839
-ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
-    {
-        'constant': True,
-        'inputs': [
-            {
-                'name': 'node',
-                'type': 'bytes32',
-            },
-            {
-                'name': 'coinType',
-                'type': 'uint256',
-            },
-        ],
-        'name': 'addr',
-        'outputs': [
-            {
-                'name': 'ret',
-                'type': 'bytes',
-            },
-        ],
-        'payable': False,
-        'type': 'function',
-    },
-]
 MULTICALL_CHUNKS = 20
 
 

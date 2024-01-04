@@ -17,7 +17,11 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNot
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
+    deserialize_int_from_hex_or_int,
+    deserialize_timestamp,
+)
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -31,7 +35,6 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import hexstr_to_int
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -320,7 +323,7 @@ class DBEvmTx:
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
-        tx_type = hexstr_to_int(data.get('type', '0x0'))
+        tx_type = deserialize_int_from_hex_or_int(data.get('type', '0x0'), location='receipt data insertion')  # noqa: E501
         status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
         serialized_chain_id = chain_id.serialize_for_db()
         if status is None:

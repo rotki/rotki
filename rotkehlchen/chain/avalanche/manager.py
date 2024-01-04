@@ -5,7 +5,7 @@ from typing import Any
 from eth_utils import to_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.constants import ZERO
@@ -44,7 +44,7 @@ class AvalancheManager:
         self.msg_aggregator = msg_aggregator
 
     def connected_to_any_web3(self) -> bool:
-        return self.w3.isConnected()
+        return self.w3.is_connected()
 
     def get_latest_block_number(self) -> int:
         return self.w3.eth.block_number
@@ -104,7 +104,7 @@ class AvalancheManager:
         - RemoteError if Covalent is used and there is a problem querying it or
         parsing its response
         """
-        return hex_or_bytes_to_str(self.w3.eth.getCode(account))
+        return hex_or_bytes_to_str(self.w3.eth.get_code(account))
 
     def get_transaction_receipt(
             self,
@@ -171,7 +171,7 @@ class AvalancheManager:
         try:
             method = getattr(contract.caller, method_name)
             result = method(*arguments if arguments else [])
-        except (ValueError, BadFunctionCallOutput) as e:
+        except (ValueError, Web3Exception) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',
             ) from e

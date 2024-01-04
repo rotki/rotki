@@ -18,12 +18,7 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import (
-    BadFunctionCallOutput,
-    BadResponseFormat,
-    BlockNotFound,
-    TransactionNotFound,
-)
+from web3.exceptions import TransactionNotFound, Web3Exception
 from web3.middleware import geth_poa_middleware
 from web3.types import BlockIdentifier, FilterParams
 
@@ -141,7 +136,7 @@ def _query_web3_get_logs(
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
             new_events_web3: list[dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
-        except (ValueError, KeyError) as e:
+        except (Web3Exception, ValueError, KeyError) as e:
             if isinstance(e, ValueError):
                 try:
                     decoded_error = json.loads(str(e).replace("'", '"'))
@@ -354,7 +349,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 requests.exceptions.RequestException,
                 BlockchainQueryError,
                 KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
-                ValueError,  # noticed when fetching historical balance of pruned node. Happened with public node's node  # noqa: E501
+                Web3Exception,
+                ValueError,  # can still happen in web3py v6 for missing trieerror. Essentially historical balance call  # noqa: E501
         ):
             return None
 
@@ -377,15 +373,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         )
         ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
         web3 = Web3(provider, ens=ens)
-        with suppress(ValueError):
+        for middleware in (
+                'validation',  # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
+                'gas_price_strategy',  # We do not need to automatically estimate gas
+                'gas_estimate',
+                'name_to_address',  # we do our own handling for ens names
+        ):
             # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
-            # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
-            web3.middleware_onion.remove('validation')
-            # We do not need to automatically estimate gas
-            web3.middleware_onion.remove('gas_price_strategy')
-            web3.middleware_onion.remove('gas_estimate')
-            # we do our own handling for ens names
-            web3.middleware_onion.remove('name_to_address')
+            with suppress(ValueError):  # If not existing raises ValuError, so ignore
+                web3.middleware_onion.remove(middleware)
+
         if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
             # TODO: Is it needed for all non-mainet EVM chains?
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
@@ -410,7 +407,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         web3, rpc_endpoint = self._init_web3(node)
         try:  # it is here that an actual connection is attempted
-            is_connected = web3.isConnected()
+            is_connected = web3.is_connected()
         except requests.exceptions.RequestException:
             message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
             log.warning(message)
@@ -455,7 +452,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                         synchronized = False
                     else:
                         synchronized, msg = _is_synchronized(current_block, latest_block)
-            except ValueError as e:
+            except (Web3Exception, ValueError) as e:
                 message = (
                     f'Failed to connect to {self.chain_name} node {node} at endpoint '
                     f'{rpc_endpoint} due to {e!s}'
@@ -528,21 +525,20 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             try:
                 web3 = web3node.web3_instance if web3node is not None else None
                 result = method(web3, **kwargs)
-            except (
-                RemoteError,
-                requests.exceptions.RequestException,
-                BlockchainQueryError,
-                BlockNotFound,
-                BadResponseFormat,
-                ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448  # noqa: E501
-            ) as e:
-                log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
-                # Catch all possible errors here and just try next node call
-                continue
             except TransactionNotFound:
                 if kwargs.get('must_exist', False) is True:
                     continue  # try other nodes, as transaction has to exist
                 return None
+            except (
+                    RemoteError,
+                    requests.exceptions.RequestException,
+                    BlockchainQueryError,
+                    Web3Exception,
+                    ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
+            ) as e:
+                log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
+                # Catch all possible errors here and just try next node call
+                continue
 
             return result
 
@@ -616,7 +612,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if web3 is None:
             return self.etherscan.get_code(account)
 
-        return hex_or_bytes_to_str(web3.eth.getCode(account))
+        return hex_or_bytes_to_str(web3.eth.get_code(account))
 
     def _call_contract_etherscan(
             self,
@@ -650,7 +646,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             args=arguments,
         )
         output_types = get_abi_output_types(fn_abi)
-        output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
+        output_data = web3.codec.decode(output_types, bytes.fromhex(result[2:]))
 
         if len(output_data) == 1:
             # due to https://github.com/PyCQA/pylint/issues/4114
@@ -704,7 +700,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         try:
             method = getattr(contract.caller(block_identifier=block_identifier), method_name)
             result = method(*arguments if arguments else [])
-        except (ValueError, BadFunctionCallOutput) as e:
+        except (Web3Exception, ValueError) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',
             ) from e
@@ -744,7 +740,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     receipt_log['transactionIndex'] = tx_index
                 # This is only implemented for some evm chains
                 self._additional_receipt_processing(tx_receipt)
-            except (DeserializationError, ValueError, KeyError) as e:
+            except (DeserializationError, Web3Exception, ValueError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'missing key {msg}'
@@ -1384,11 +1380,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         try:
             tx = web3.eth.get_transaction(self._get_pruned_check_tx_hash())  # type: ignore
         except (
-            RequestException,
-            TransactionNotFound,
-            BlockchainQueryError,
-            KeyError,
-            ValueError,
+                RequestException,
+                Web3Exception,
+                KeyError,
+                ValueError,  # may still be raised in web3 v6 for missing trie error
         ):
             tx = None
 

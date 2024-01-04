@@ -79,7 +79,7 @@ jobs:
         env:
           PYTEST_ARGS: '--durations=150'
           FORCE_COLOR: 1
-          MATIX_JOB: ${{ matrix.test-group }}
+          MATRIX_JOB: ${{ matrix.test-group }}
         run: |
           if [ "${{ runner.os }}" == 'macOS' ];
           then
