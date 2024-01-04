@@ -385,7 +385,7 @@ def toggle_ignore_an_asset(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': [asset_to_ignore.identifier]},
+        ), json={'assets': [{'asset': asset_to_ignore.identifier}]},
     )
     assert response.status_code == 200
     response_result = response.json().get('result', [])

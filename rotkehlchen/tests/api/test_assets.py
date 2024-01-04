@@ -144,7 +144,11 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     clean_ignored_assets(rotki.data.db)
     # add three assets to ignored assets
-    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
+    ignored_assets = [
+        {'asset': A_GNO.identifier, 'is_spam': True},
+        {'asset': A_RDN.identifier, 'is_spam': False},
+        {'asset': 'XMR', 'is_spam': False},
+    ]
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -152,8 +156,9 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
         ), json={'assets': ignored_assets},
     )
     result = assert_proper_response_with_result(response)
-    expected_ignored_assets = set(ignored_assets)
+    expected_ignored_assets = {ignored_asset['asset'] for ignored_asset in ignored_assets}
     assert expected_ignored_assets == set(result)
+    assert A_GNO.resolve_to_evm_token().protocol == SPAM_PROTOCOL
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
@@ -178,6 +183,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
         assets_after_deletion = {A_RDN.identifier}
         result = assert_proper_response_with_result(response)
         assert assets_after_deletion == set(result)
+        assert A_GNO.resolve_to_evm_token().protocol is None
 
         # check that the changes are reflected
         assert rotki.data.db.get_ignored_asset_ids(cursor) == assets_after_deletion
@@ -200,7 +206,12 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # add three assets to ignored assets
-    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
+    ignored_assets = [
+        {'asset': A_GNO.identifier, 'is_spam': False},
+        {'asset': A_RDN.identifier, 'is_spam': False},
+        {'asset': 'XMR', 'is_spam': False},
+    ]
+    set_of_assets = {ignored_asset['asset'] for ignored_asset in ignored_assets}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -208,6 +219,9 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         ), json={'assets': ignored_assets},
     )
     assert_proper_response(response)
+
+    def prepare_request_body(assets: list[str]) -> list[dict[str, str]] | list[str]:
+        return [{'asset': asset} for asset in assets] if method == 'put' else assets
 
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(
@@ -240,7 +254,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': ['notanasset']},
+        ), json={'assets': prepare_request_body(['notanasset'])},
     )
     assert_error_response(
         response=response,
@@ -250,15 +264,12 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
 
     # Test that list with one valid and one invalid is rejected and not even the
     # valid one is processed
-    if method == 'put':
-        asset = 'ETH'
-    else:
-        asset = 'XMR'
+    asset = 'ETH' if method == 'put' else 'XMR'
     response = getattr(requests, method)(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': [asset, 'notanasset']},
+        ), json={'assets': prepare_request_body([asset, 'notanasset'])},
     )
     assert_error_response(
         response=response,
@@ -267,7 +278,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     )
     # Check that assets did not get modified
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set_of_assets
 
         # Test the adding an already existing asset or removing a non-existing asset is an error
         if method == 'put':
@@ -280,7 +291,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
             api_url_for(
                 rotkehlchen_api_server,
                 'ignoredassetsresource',
-            ), json={'assets': [asset]},
+            ), json={'assets': prepare_request_body([asset])},
         )
         assert_error_response(
             response=response,
@@ -288,7 +299,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
             status_code=HTTPStatus.CONFLICT,
         )
         # Check that assets did not get modified
-        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set_of_assets
 
 
 def test_get_all_assets(rotkehlchen_api_server):
@@ -1051,7 +1062,7 @@ def test_only_ignored_assets(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': ignored_assets},
+        ), json={'assets': [{'asset': asset} for asset in ignored_assets]},
     )
     assert_proper_response(response)
     response = requests.post(
