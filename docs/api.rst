@@ -8933,42 +8933,45 @@ Adding EVM accounts to all EVM chains
 
       {
         "result": {
-            "added": {
-               "eth": [
-                     "0x9531C059098e3d194fF87FebB587aB07B30B1306",
-                     "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
-               ],
-               "optimism": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
-               "avax": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
-               "polygon_pos": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
-               "arbitrum_one": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
-               "base": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"],
-               "gnosis": ["0x9531C059098e3d194fF87FebB587aB07B30B1306"]
+            "added":{
+               "0x9531C059098e3d194fF87FebB587aB07B30B1306": ["all"],
+               "0x9008D19f58AAbD9eD0D60971565AA8510560ab41": ["eth"]
             },
-            "failed": {
-               "eth": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"],
-               "optimism": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"],
+            "failed":{
+               "0xc37b40ABdB939635068d3c5f13E7faF686F03B65": [
+                  "polygon_pos",
+                  "arbitrum_one",
+                  "base",
+                  "gnosis"
+               ]
             },
-            "existed": {
-               "gnosis": ["0x7277F7849966426d345D8F6B9AFD1d3d89183083"]
+            "existed":{
+               "0x7277F7849966426d345D8F6B9AFD1d3d89183083": ["gnosis"]
             },
             "no_activity":{
-               "eth":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "optimism":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "avax":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "polygon_pos":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "arbitrum_one":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "base":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"],
-               "gnosis":["0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa"]
-            }
+               "0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa": ["all"],
+               "0x7277F7849966426d345D8F6B9AFD1d3d89183083": [
+                  "eth",
+                  "optimism",
+                  "avax",
+                  "polygon_pos",
+                  "arbitrum_one",
+                  "base"
+               ]
+            },
+            "eth_contracts": ["0x9008D19f58AAbD9eD0D60971565AA8510560ab41"]
         },
         "message": ""
       }
 
-   :resjson object added: A mapping containing the evm chain keys and which addresses were added for each chain.
-   :resjson object existed: A mapping containing the evm chain keys and which addresses were already tracked before the api call and no action was taken on them.
-   :resjson object failed: A mapping containing the evm chain keys and which addresses failed to get added for each chain due to some error contacting remote APIs.
-   :resjson object no_activity: A mapping containing the evm chain keys and which addresses don't have activity in that chain.
+   .. note::
+     When a result includes all the chains instead of listing them all we use the special symbol ``all``
+
+   :resjson object added: A mapping containing addresses and what chains they were added to.
+   :resjson object existed: A mapping containing addresses and in what chains they were already tracked before the api call so no action was taken on them.
+   :resjson object failed: A mapping containing which chains failed to get added for each address due to some error contacting remote APIs.
+   :resjson object no_activity: A mapping containing addresses and in which chains they had no activity so no action was taken for them.
+   :resjson list no_activity: A list of the addresses that were detected as ethereum contracts.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.

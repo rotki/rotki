@@ -652,6 +652,7 @@ class Rotkehlchen:
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm addresses
 
@@ -664,7 +665,9 @@ class Rotkehlchen:
         - list address, chain tuples for all newly added addresses.
         - list address, chain tuples for all addresses already tracked.
         - list address, chain tuples for all addresses that failed to be added.
-        - list address, chain tuples for all where address doesn't have activity in chain.
+        - list address, chain tuples for all addresses that have no activity in their chain.
+        - a list of addresses that are contracts in ethereum. We only do this check in ethereum
+            and this is why we return a list.
 
         May raise:
         - TagConstraintError if any of the given account data contain unknown tags.
@@ -680,9 +683,13 @@ class Rotkehlchen:
                 data_type='blockchain accounts',
             )
 
-        added_accounts, existed_accounts, failed_accounts, no_activity_accounts = self.chains_aggregator.add_accounts_to_all_evm(  # noqa: E501
-            accounts=[entry.address for entry in account_data],
-        )
+        (
+            added_accounts,
+            existed_accounts,
+            failed_accounts,
+            no_activity_accounts,
+            eth_contract_addresses,
+        ) = self.chains_aggregator.add_accounts_to_all_evm(accounts=[entry.address for entry in account_data])  # noqa: E501
         with self.data.db.user_write() as write_cursor:
             for chain, address in added_accounts:
                 account_data_entry = account_data_map[address]
@@ -691,7 +698,13 @@ class Rotkehlchen:
                     account_data=[account_data_entry.to_blockchain_account_data(chain)],
                 )
 
-        return added_accounts, existed_accounts, failed_accounts, no_activity_accounts
+        return (
+            added_accounts,
+            existed_accounts,
+            failed_accounts,
+            no_activity_accounts,
+            eth_contract_addresses,
+        )
 
     @overload
     def add_single_blockchain_accounts(

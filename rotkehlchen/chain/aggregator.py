@@ -1372,9 +1372,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             address: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_CHAINS],
-    ) -> list[SUPPORTED_EVM_CHAINS]:
-        """Checks whether address is active in the given chains. Returns a list of active chains"""
+    ) -> tuple[list[SUPPORTED_EVM_CHAINS], list[SUPPORTED_EVM_CHAINS]]:
+        """Checks whether address is active in the given chains.
+        Returns a list of active chains and a list of chains where we couldn't query info
+        """
         active_chains = []
+        failed_to_query_chains: list[SUPPORTED_EVM_CHAINS] = []
         for chain in chains:
             chain_manager: EvmManager = self.get_chain_manager(chain)
             try:
@@ -1388,6 +1391,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         )
                     except (requests.exceptions.RequestException, RemoteError) as e:
                         log.error(f'Failed to check {address} activity in avalanche due to {e!s}')
+                        failed_to_query_chains.append(chain)
                         has_activity = False
 
                     if has_activity is False:
@@ -1402,11 +1406,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         continue  # do not add the address for the chain
             except RemoteError as e:
                 log.error(f'{e!s} when checking if {address} is active at {chain}')
+                failed_to_query_chains.append(chain)
                 continue
 
             active_chains.append(chain)
 
-        return active_chains
+        return active_chains, failed_to_query_chains
 
     def track_evm_address(
             self,
@@ -1456,22 +1461,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - a list of tuples (chain, account) for each chain where we failed to check the account
         - boolean being False if the account didn't have activity in any chain
         """
-        active_chains = self.check_single_address_activity(
+        active_chains, failed_to_query_chains = self.check_single_address_activity(
             address=account,
             chains=chains,
         )
-        failed_chains = []
-        if 0 < len(active_chains) < len(chains):
-            failed_chains = [chain for chain in chains if chain not in active_chains]
-        elif len(active_chains) == 0:
+        if len(active_chains) == 0:
             return [], [], False
 
         new_tracked_chains, new_failed_chains = self.track_evm_address(account, active_chains)
-        failed_chains += new_failed_chains
+        failed_to_query_chains += new_failed_chains
 
         return (
             [(chain, account) for chain in new_tracked_chains],
-            [(chain, account) for chain in failed_chains],
+            [(chain, account) for chain in failed_to_query_chains],
             True,
         )
 
@@ -1483,6 +1485,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
@@ -1490,7 +1493,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - list address, chain tuples for all newly added addresses.
         - list address, chain tuples for all addresses already tracked.
         - list address, chain tuples for all addresses that failed to be added.
-        - list address, chain tuples for all where address doesn't have activity in chain.
+        - list address, chain tuples for all addresses that have no activity in their chain.
+        - list of addresses that are ethereum contracts
 
         May raise:
         - RemoteError if an external service such as etherscan is queried and there
@@ -1501,6 +1505,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         failed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
         existed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
         no_activity_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        eth_contract_addresses: list[ChecksumEvmAddress] = []
 
         for account in accounts:
             existed_accounts += [(chain, account) for chain in all_evm_chains if account in self.accounts.get(chain)]  # noqa: E501
@@ -1509,6 +1514,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 added_chains, _ = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
                 if len(added_chains) == 1:  # Is always either 1 or 0 since is only for ethereum
                     added_accounts.append((SupportedBlockchain.ETHEREUM, account))
+                    eth_contract_addresses.append(account)
             else:
                 chains_to_check = [x for x in all_evm_chains if account not in self.accounts.get(x)]  # noqa: E501
                 new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(  # noqa: E501
@@ -1522,7 +1528,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 elif had_activity is False and len(chains_to_check) != 0:
                     no_activity_accounts += [(chain, account) for chain in chains_to_check]
 
-        return added_accounts, existed_accounts, failed_accounts, no_activity_accounts
+        return (
+            added_accounts,
+            existed_accounts,
+            failed_accounts,
+            no_activity_accounts,
+            eth_contract_addresses,
+        )
 
     def detect_evm_accounts(
             self,
