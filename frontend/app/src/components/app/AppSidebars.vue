@@ -16,16 +16,16 @@ const {
     />
     <HelpSidebar
       :visible="showHelpBar"
-      @visible:update="showHelpBar = $event"
+      @update:visible="showHelpBar = $event"
       @about="showAbout = true"
     />
     <PinnedSidebar
       :visible="showPinned"
-      @visible:update="showPinned = $event"
+      @update:visible="showPinned = $event"
     />
     <UserNotesSidebar
       :visible="showNotesSidebar"
-      @visible:update="showNotesSidebar = $event"
+      @update:visible="showNotesSidebar = $event"
     />
   </div>
 </template>

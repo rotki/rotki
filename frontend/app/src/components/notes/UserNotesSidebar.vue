@@ -2,21 +2,20 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
-defineProps<{
+const props = defineProps<{
   visible: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'visible:update', visible: boolean): void;
+  (e: 'update:visible', visible: boolean): void;
   (e: 'about'): void;
 }>();
 
 const { t } = useI18n();
 
+const display = useVModel(props, 'visible', emit);
+
 const tab = ref<number>(0);
-const visibleUpdate = (_visible: boolean) => {
-  emit('visible:update', _visible);
-};
 
 const route = useRoute();
 
@@ -80,16 +79,15 @@ const { smAndDown } = useDisplay();
 
 <template>
   <VNavigationDrawer
+    v-model="display"
     width="400px"
     class="user-notes-sidebar"
     :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
     absolute
     clipped
-    :value="visible"
     right
     temporary
     hide-overlay
-    @input="visibleUpdate($event)"
   >
     <div
       class="flex items-center justify-between gap-2 w-full border-b border-default"
@@ -114,7 +112,7 @@ const { smAndDown } = useDisplay();
         </template>
       </RuiTabs>
 
-      <RuiButton class="!p-2" variant="text" icon @click="visibleUpdate(false)">
+      <RuiButton class="!p-2" variant="text" icon @click="display = false">
         <RuiIcon name="close-line" />
       </RuiButton>
     </div>
