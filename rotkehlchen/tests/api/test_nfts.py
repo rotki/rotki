@@ -278,7 +278,12 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ignoredassetsresource',
         ),
-        json={'assets': [NFT_ID_FOR_TEST_ACC4, NFT_ID_FOR_TEST_ACC6_2]},
+        json={
+            'assets': [
+                {'asset': NFT_ID_FOR_TEST_ACC4},
+                {'asset': NFT_ID_FOR_TEST_ACC6_2},
+            ],
+        },
     )
 
     # Make sure that ignoring cache doesn't remove any NFTs from the app
@@ -495,7 +500,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
             rotkehlchen_api_server,
             'ignoredassetsresource',
         ),
-        json={'assets': [NFT_ID_FOR_TEST_ACC4]},
+        json={'assets': [{'asset': NFT_ID_FOR_TEST_ACC4}]},
     )
     result = assert_proper_response_with_result(response)
     assert NFT_ID_FOR_TEST_ACC4 in result

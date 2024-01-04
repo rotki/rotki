@@ -1959,10 +1959,33 @@ class RestAPI:
             result = self.rotkehlchen.data.db.get_ignored_asset_ids(cursor)
         return api_response(_wrap_in_ok_result(list(result)), status_code=HTTPStatus.OK)
 
-    def add_ignored_assets(self, assets: list[Asset]) -> Response:
-        result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets)
+    def add_ignored_assets(self, assets_to_ignore: list[tuple[Asset, bool]]) -> Response:
+        """
+        Add the provided assets to the list of ignored assets and update the protocol field
+        if they are evm assets and need to be marked as spam. `assets_to_ignore` is a list
+        of assets ids and a boolean being True when the asset needs to be marked as spam too.
+        """
+        result, msg = self.rotkehlchen.data.add_ignored_assets(
+            assets=[asset[0] for asset in assets_to_ignore],
+        )
         if result is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        # set the spam protocol to the assets that require it and clean the assets cache
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.executemany(
+                'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+                [
+                    (SPAM_PROTOCOL, asset_tuple[0].identifier)
+                    for asset_tuple in assets_to_ignore if asset_tuple[1] is True
+                ],
+            )
+
+        asset_resolver = AssetResolver()
+        for asset, is_spam in assets_to_ignore:
+            if is_spam is True:
+                asset_resolver.clean_memory_cache(asset.identifier)
+
         result_dict = _wrap_in_result(list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -1970,6 +1993,17 @@ class RestAPI:
         result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         if result is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        # remove the spam protocol from evm assets and clean the assets cache
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.executemany(
+                'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+                [(None, asset.identifier) for asset in assets],
+            )
+        asset_resolver = AssetResolver()
+        for asset in assets:
+            asset_resolver.clean_memory_cache(asset.identifier)
+
         result_dict = _wrap_in_result(list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

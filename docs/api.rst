@@ -10011,9 +10011,14 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": ["eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"]}
+      {"assets": [{
+         "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96",
+         "is_spam": true
+      }]}
 
-   :reqjson list assets: A list of asset symbols to add to the ignored assets.
+   :reqjson list assets: A list of assets to be ignored
+   :reqjson string asset: The id of the asset to be ignored
+   :reqjson bool is_spam: True if the asset should also be marked as spam in addition to putting to the ignore list.
 
    **Example Response**:
 
@@ -10035,7 +10040,7 @@ Dealing with ignored assets
 
 .. http:delete:: /api/(version)/assets/ignored/
 
-   Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. Returns the new list without the removed assets in the response.
+   Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. It will also remove the assets from the spam list. Returns the new list without the removed assets in the response.
 
 
    **Example Request**:
