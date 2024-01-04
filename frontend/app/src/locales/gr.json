@@ -236,13 +236,10 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
-          "empty_addresses_description": "Η διεύθυνση {address} δεν προστέθηκε επειδή είτε είναι contract είτε δεν έχει καμία δραστηριότητα σε καμία από τις υποστηριζόμενες EVM chains",
-          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
-          "title": "Adding {blockchain} accounts"
+          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}"
         },
         "no_new": {
-          "description": "The selected addresses are already tracked by rotki",
-          "title": "Adding {blockchain} accounts"
+          "description": "The selected addresses are already tracked by rotki"
         },
         "task": {
           "description": "Adding {address}",

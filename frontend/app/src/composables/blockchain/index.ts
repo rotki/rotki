@@ -1,7 +1,7 @@
+/* eslint-disable max-lines */
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
-import { isEmpty } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import {
@@ -95,13 +95,14 @@ export const useBlockchains = () => {
   const addEvmAccounts = async (
     payload: BaseAddAccountsPayload
   ): Promise<void> => {
-    const finishAddition = async (chain: Blockchain, addresses: string[]) => {
+    const blockchain = 'EVM';
+    const finishAddition = async (chain: Blockchain, address: string) => {
       const modules = payload.modules;
       if (chain === Blockchain.ETH) {
         if (modules) {
           await enableModule({
             enable: payload.modules,
-            addresses
+            addresses: [address]
           });
         }
         resetDefi();
@@ -110,32 +111,112 @@ export const useBlockchains = () => {
       }
 
       if (supportsTransactions(chain)) {
-        await fetchDetected(chain, addresses);
+        await fetchDetected(chain, [address]);
       }
       await refreshAccounts(chain);
     };
 
     const promiseResult = await Promise.allSettled(
       payload.payload.map(async account => {
-        const addresses = await addEvmAccount(account);
-        if (isEmpty(addresses)) {
-          return notify({
-            title: t('actions.balances.blockchain_accounts_add.error.title', {
-              blockchain: 'EVM'
-            }),
+        const add = await addEvmAccount(account);
+        const { added, existed, failed, noActivity, ethContracts } = add;
+
+        const notificationTitle = t(
+          'actions.balances.blockchain_accounts_add.task.title',
+          {
+            blockchain
+          }
+        );
+
+        const getChainsText = (chains: string[], explanation?: string) =>
+          chains
+            .map(chain => {
+              let text = `- ${get(getChainName(chain))}`;
+              if (explanation) {
+                text += ` (${explanation})`;
+              }
+              return text;
+            })
+            .join('\n');
+
+        if (added) {
+          const [address, chains] = Object.entries(added)[0];
+
+          chains.forEach(chain => {
+            if (!isBlockchain(chain)) {
+              logger.error(`${chain} was not a valid blockchain`);
+              return;
+            }
+            startPromise(finishAddition(chain, address));
+          });
+
+          const isAll = chains.length === 0 && chains[0] === 'all';
+
+          notify({
+            title: notificationTitle,
             message: t(
-              'actions.balances.blockchain_accounts_add.error.empty_addresses_description',
-              { address: account.address }
+              'actions.balances.blockchain_accounts_add.success.description',
+              {
+                address: account.address,
+                list: !isAll ? getChainsText(chains) : ''
+              },
+              isAll ? 1 : 2
             ),
+            severity: Severity.INFO,
             display: true
           });
         }
-        for (const chain in addresses) {
-          if (!isBlockchain(chain)) {
-            logger.error(`${chain} was not a valid blockchain`);
-            continue;
-          }
-          startPromise(finishAddition(chain, addresses[chain]));
+
+        const listOfFailureText = [];
+        if (noActivity) {
+          listOfFailureText.push(
+            getChainsText(
+              Object.values(noActivity)[0],
+              t(
+                'actions.balances.blockchain_accounts_add.error.failed_reason.no_activity'
+              )
+            )
+          );
+        }
+
+        if (existed) {
+          listOfFailureText.push(
+            getChainsText(
+              Object.values(existed)[0],
+              t(
+                'actions.balances.blockchain_accounts_add.error.failed_reason.existed'
+              )
+            )
+          );
+        }
+
+        if (ethContracts) {
+          listOfFailureText.push(
+            getChainsText(
+              [t('actions.balances.blockchain_accounts_add.error.non_eth')],
+              t(
+                'actions.balances.blockchain_accounts_add.error.failed_reason.is_contract'
+              )
+            )
+          );
+        }
+
+        if (failed) {
+          listOfFailureText.push(getChainsText(Object.values(failed)[0]));
+        }
+
+        if (listOfFailureText.length > 0) {
+          return notify({
+            title: notificationTitle,
+            message: t(
+              'actions.balances.blockchain_accounts_add.error.failed',
+              {
+                address: account.address,
+                list: listOfFailureText.join('\n')
+              }
+            ),
+            display: true
+          });
         }
       })
     );
@@ -157,15 +238,15 @@ export const useBlockchains = () => {
 
     if (failedPayload.length > 0) {
       const titleError = t(
-        'actions.balances.blockchain_accounts_add.error.title',
-        { blockchain: 'EVM' }
+        'actions.balances.blockchain_accounts_add.task.title',
+        { blockchain }
       );
       const description = t(
         'actions.balances.blockchain_accounts_add.error.failed_list_description',
         {
           list: failedPayload.map(({ address }) => `- ${address}`).join('\n'),
           address: payload.payload.length,
-          blockchain: 'EVM'
+          blockchain
         }
       );
 
@@ -188,7 +269,7 @@ export const useBlockchains = () => {
     }
     const filteredPayload = getNewAccountPayload(blockchain, payload);
     if (filteredPayload.length === 0) {
-      const title = t('actions.balances.blockchain_accounts_add.no_new.title', {
+      const title = t('actions.balances.blockchain_accounts_add.task.title', {
         blockchain: get(getChainName(blockchain))
       });
       const description = t(
@@ -231,7 +312,7 @@ export const useBlockchains = () => {
     });
 
     const titleError = t(
-      'actions.balances.blockchain_accounts_add.error.title',
+      'actions.balances.blockchain_accounts_add.task.title',
       { blockchain }
     );
 
