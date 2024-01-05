@@ -21,7 +21,7 @@ from packaging import version
 
 rotki_version = get_version()
 
-pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.7.0')
+pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.3.0')
 BACKEND_PREFIX = 'rotki-core'
 SUPPORTED_ARCHS = [
     'AMD64',  # Windows
@@ -669,7 +669,7 @@ class MacPackaging:
             sys.exit(1)
 
         miniupnpc_dist = miniupnpc_directory / 'dist'
-        wheel_file = miniupnpc_dist / f'{miniupnpc}-cp310-cp310-macosx_10_9_universal2.whl'
+        wheel_file = miniupnpc_dist / f'{miniupnpc}-cp311-cp311-macosx_10_9_universal2.whl'
         wheel_directory = self.__storage.wheel_directory
         wheel_directory.mkdir(exist_ok=True)
         shutil.move(wheel_file, wheel_directory)
@@ -691,7 +691,6 @@ class MacPackaging:
         """
         self.__build_miniupnpc_universal()
         self.__universal_repackage('coincurve')
-        self.__universal_repackage('py-ed25519-zebra-bindings')
 
     def install_wheels(self, install: Callable[[str], None]) -> None:
         """
