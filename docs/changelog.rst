@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7176` The exported CSV for PnL Report now contains a label of the address in notes, if available.
 * :feature:`7146` The exported CSV for PnL Report now contains an Asset column with symbols.
 * :feature:`6254` Users can now stop the execution of long-running queries.
 * :feature:`7092` Users of metamask swaps will now see them properly decoded in the history view and have them taken into account during accounting.

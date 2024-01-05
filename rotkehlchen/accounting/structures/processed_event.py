@@ -1,5 +1,6 @@
 import builtins
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -9,13 +10,16 @@ from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import EVM_LOCATIONS, ChainAddress, ChainID, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 T = TypeVar('T', bound='ProcessedAccountingEvent')
@@ -61,11 +65,25 @@ class ProcessedAccountingEvent:
 
         return desc
 
+    def _maybe_add_label_with_address(
+            self,
+            database: DBHandler,
+            matched_address: re.Match[str],
+    ) -> str:
+        """Aux method to enrich addresses in the event notes using the addressbook"""
+        chain_address = ChainAddress(
+            address=string_to_evm_address(matched_address.group()),
+            blockchain=ChainID(self.location.to_chain_id()).to_blockchain(),
+        )
+        name = database.get_blockchain_account_label(chain_address)
+        return f'{chain_address.address} [{name}]' if name else chain_address.address
+
     @overload
     def to_exported_dict(
             self,
             ts_converter: Callable[[Timestamp], str],
             export_type: Literal[AccountingEventExportType.CSV],
+            database: DBHandler,
             evm_explorer: str | None,
     ) -> dict[str, Any]:
         ...
@@ -82,6 +100,7 @@ class ProcessedAccountingEvent:
             self,
             ts_converter: Callable[[Timestamp], str],
             export_type: AccountingEventExportType,
+            database: DBHandler | None = None,
             evm_explorer: str | None = None,
     ) -> dict[str, Any]:
         """These are the fields that will appear in CSV, report API and are also exported to the
@@ -117,6 +136,15 @@ class ProcessedAccountingEvent:
                 exported_dict['asset'] = ''
             if tx_hash is not None:
                 exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
+            if self.location in EVM_LOCATIONS and database is not None:
+                # call _maybe_add_label_with_address on each address in the note
+                exported_dict['notes'] = EVM_ADDRESS_REGEX.sub(
+                    repl=lambda matched_address: self._maybe_add_label_with_address(
+                        database=database,
+                        matched_address=matched_address,
+                    ),
+                    string=exported_dict['notes'],  # type: ignore [call-overload]  # exported_dict['notes'] is always a string
+                )
         else:  # for the other types of export we include the cost basis information
             cost_basis = None
             if self.cost_basis is not None:

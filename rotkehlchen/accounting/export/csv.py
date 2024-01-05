@@ -307,6 +307,7 @@ class CSVExporter(CustomizableDateMixin):
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,
             export_type=AccountingEventExportType.CSV,
+            database=self.database,
             evm_explorer=evm_explorer,
         )
         # For CSV also convert timestamp to date
