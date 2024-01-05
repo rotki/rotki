@@ -17,15 +17,13 @@ const props = withDefaults(
     transform?: TransformMessageCallback | null;
     successMessage?: string | TransformMessageCallback<string>;
     errorMessage?: string | TransformMessageCallback<string>;
-    debounce?: number;
   }>(),
   {
     frontendSetting: false,
     sessionSetting: false,
     transform: null,
     successMessage: '',
-    errorMessage: '',
-    debounce: 1500
+    errorMessage: ''
   }
 );
 
@@ -37,8 +35,7 @@ const {
   sessionSetting,
   successMessage,
   errorMessage,
-  transform,
-  debounce
+  transform
 } = toRefs(props);
 const { error, success, clear, wait, stop, setSuccess, setError } =
   useClearableMessages();
@@ -88,7 +85,7 @@ const updateImmediate = async (newValue: any) => {
   emit('finished');
 };
 
-const update = useDebounceFn(updateImmediate, debounce);
+const update = useDebounceFn(updateImmediate, 1500);
 </script>
 
 <template>

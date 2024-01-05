@@ -99,11 +99,10 @@ watch([enabled, multiplier], setData);
         </div>
         <div class="scrambler flex border-t border-default pt-4">
           <SettingsOption
-            #default="{ update: updateScramble }"
+            #default="{ updateImmediate: updateScramble }"
             class="scrambler-toggle"
             setting="scrambleData"
             session-setting
-            :debounce="0"
           >
             <RuiCheckbox
               v-model="scrambleData"
@@ -120,12 +119,11 @@ watch([enabled, multiplier], setData);
           </SettingsOption>
 
           <SettingsOption
-            #default="{ update: updateMultiplier }"
+            #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
             class="scrambler-data"
             :error-message="t('frontend_settings.validation.scramble.error')"
             session-setting
-            :debounce="0"
           >
             <RuiTextField
               v-model="scrambleMultiplier"
