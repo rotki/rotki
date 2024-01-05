@@ -106,7 +106,7 @@ export type ChainSections = {
   readonly [chain in Blockchain]: Section;
 };
 
-export interface AssetBreakdown {
+export interface AssetBreakdown extends Partial<Balance> {
   readonly location: string;
   readonly balance: Balance;
   readonly address: string;

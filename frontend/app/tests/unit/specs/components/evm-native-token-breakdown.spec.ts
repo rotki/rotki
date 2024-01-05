@@ -8,6 +8,7 @@ import {
 import { computed, ref } from 'vue';
 import { expect } from 'vitest';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import { libraryDefaults } from '../../utils/provide-defaults';
 
 vi.mock('@/composables/locations', () => ({
   useLocations: vi.fn().mockReturnValue({
@@ -134,6 +135,7 @@ describe('EvmNativeTokenBreakdown.vue', () => {
     return mount(EvmNativeTokenBreakdown, {
       pinia,
       vuetify,
+      provide: libraryDefaults,
       ...options
     });
   };

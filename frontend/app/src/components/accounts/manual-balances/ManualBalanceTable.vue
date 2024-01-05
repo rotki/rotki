@@ -2,7 +2,7 @@
 import { type ManualBalance } from '@/types/manual-balances';
 import type {
   DataTableColumn,
-  DataTableSortColumn
+  DataTableSortData
 } from '@rotki/ui-library-compat';
 
 const props = withDefaults(
@@ -24,7 +24,7 @@ const { t } = useI18n();
 const { balances } = toRefs(props);
 
 const onlyTags = ref<string[]>([]);
-const sort = ref<DataTableSortColumn | DataTableSortColumn[] | undefined>({
+const sort = ref<DataTableSortData>({
   column: 'usdValue',
   direction: 'desc'
 });

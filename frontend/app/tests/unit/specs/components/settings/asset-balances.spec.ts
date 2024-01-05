@@ -3,6 +3,7 @@ import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
 import createCustomPinia from '../../../utils/create-pinia';
+import { libraryDefaults } from '../../../utils/provide-defaults';
 
 describe('AssetBalances.vue', () => {
   let wrapper: Wrapper<any>;
@@ -15,7 +16,8 @@ describe('AssetBalances.vue', () => {
       pinia,
       propsData: {
         balances: []
-      }
+      },
+      provide: libraryDefaults
     });
   });
 
@@ -27,17 +29,12 @@ describe('AssetBalances.vue', () => {
     await wrapper.setProps({ loading: true });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
-    expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'asset_balances.loading'
-    );
+    expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
 
     await wrapper.setProps({ loading: false });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.v-data-table__progress').exists()).toBeFalsy();
-    expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'No data available'
-    );
+    expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });

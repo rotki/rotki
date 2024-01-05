@@ -6,7 +6,7 @@ import {
 } from '@rotki/common';
 import {
   type DataTableColumn,
-  type DataTableSortColumn
+  type DataTableSortData
 } from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
 import { type Nullable } from '@/types';
@@ -33,7 +33,7 @@ const search = ref('');
 
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
-const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
   direction: 'desc' as const
 });
@@ -98,7 +98,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     {
       label: t('common.asset'),
       key: 'asset',
-      class: 'text-no-wrap',
+      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
       sortable: true
     },

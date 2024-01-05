@@ -174,6 +174,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
           :loading="isBlockchainLoading"
           :title="t('blockchain_balances.per_asset.title')"
           :balances="blockchainAssets"
+          sticky-header
         />
       </RuiCard>
 
