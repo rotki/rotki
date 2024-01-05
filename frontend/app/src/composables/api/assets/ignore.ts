@@ -5,6 +5,7 @@ import {
   validStatus,
   validWithoutSessionStatus
 } from '@/services/utils';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useAssetIgnoreApi = () => {
   const getIgnoredAssets = async (): Promise<string[]> => {
@@ -18,12 +19,15 @@ export const useAssetIgnoreApi = () => {
     return handleResponse(response);
   };
 
-  const addIgnoredAssets = async (assets: string[]): Promise<string[]> => {
+  const addIgnoredAssets = async (
+    assets: string[],
+    isSpam = false
+  ): Promise<string[]> => {
     const response = await api.instance.put<ActionResult<string[]>>(
       '/assets/ignored',
-      {
-        assets
-      },
+      snakeCaseTransformer({
+        assets: assets.map(asset => ({ asset, isSpam }))
+      }),
       {
         validateStatus: validStatus
       }

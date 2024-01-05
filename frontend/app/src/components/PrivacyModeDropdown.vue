@@ -99,7 +99,7 @@ watch([enabled, multiplier], setData);
         </div>
         <div class="scrambler flex border-t border-default pt-4">
           <SettingsOption
-            #default="{ update: updateScramble }"
+            #default="{ updateImmediate: updateScramble }"
             class="scrambler-toggle"
             setting="scrambleData"
             session-setting
@@ -119,7 +119,7 @@ watch([enabled, multiplier], setData);
           </SettingsOption>
 
           <SettingsOption
-            #default="{ update: updateMultiplier }"
+            #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
             class="scrambler-data"
             :error-message="t('frontend_settings.validation.scramble.error')"
