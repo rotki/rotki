@@ -303,7 +303,7 @@ class Trade(AccountingEventMixin):
     def __str__(self) -> str:
         return (
             f'trade at {self.location!s} location and date '
-            f'{datetime.datetime.fromtimestamp(self.timestamp, tz=datetime.timezone.utc)} '
+            f'{datetime.datetime.fromtimestamp(self.timestamp, tz=datetime.UTC)} '
             f'of type {self.trade_type!s} with base asset: {self.base_asset.symbol_or_name()} '
             f'and quote asset: {self.quote_asset.symbol_or_name()}'
         )

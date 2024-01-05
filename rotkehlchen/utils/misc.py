@@ -102,7 +102,7 @@ def timestamp_to_iso8601(ts: Timestamp, utc_as_z: bool = False) -> str:
 
     If `utc_as_z` is True then timezone will be shown with a Z instead of the standard
     +00:00. Z is useful for proper URL encoding."""
-    res = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
+    res = datetime.datetime.fromtimestamp(ts, tz=datetime.UTC).isoformat()
     return res if utc_as_z is False else res.replace('+00:00', 'Z')
 
 
@@ -122,7 +122,7 @@ def timestamp_to_date(
     close to 0 ts in windows. https://github.com/python/cpython/issues/107078
     """
     if treat_as_local is False:
-        date = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime(formatstr)
+        date = datetime.datetime.fromtimestamp(ts, tz=datetime.UTC).strftime(formatstr)
     else:  # localtime
         date = datetime.datetime.fromtimestamp(
             ts,

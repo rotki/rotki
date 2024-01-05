@@ -307,7 +307,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
     requests_patch = patch('requests.get', side_effect=mock_requests_get)
 
-    future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
+    future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), requests_patch, call_contract_patch:
         rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 

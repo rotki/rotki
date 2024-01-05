@@ -75,7 +75,7 @@ def test_yearn_api(database, ethereum_inquirer):
     assert token.started == Timestamp(1654174125)
 
     # trigger the query again and check that the timestamp was updated
-    future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
+    future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), patch.object(requests, 'get', wraps=mock_yearn_api):
         query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
 

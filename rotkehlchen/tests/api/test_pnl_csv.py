@@ -206,7 +206,7 @@ def test_encoding(
     unicode_notes = 'Κοκκινολαίμης 飛到頂端'  # Use some unicode characters
     locale_patch = patch.object(
         _locale,  # ugly python-version-specific hack
-        '_get_locale_encoding',
+        'getencoding',
         return_value=encoding_to_use,
     )
     history_patch = patch.object(

@@ -246,7 +246,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         # now move forward in time to invalidate the cache
         freezer.move_to(datetime.datetime.fromtimestamp(
             ts_now() + CURRENT_PRICE_CACHE_SECS + 1,
-            tz=datetime.timezone.utc,
+            tz=datetime.UTC,
         ))
         price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 2
@@ -560,14 +560,14 @@ def test_punishing_of_oracles_works(inquirer):
         # move the current time forward and check that coingecko is still penalized
         with freeze_time(datetime.datetime.fromtimestamp(
                 ts_now() + ORACLE_PENALTY_TS / 2,
-                tz=datetime.timezone.utc,
+                tz=datetime.UTC,
         )):
             assert inquirer._coingecko.is_penalized() is True
 
         # move the current time forward and check that coingecko is no longer penalized
         with freeze_time(datetime.datetime.fromtimestamp(
                 ts_now() + ORACLE_PENALTY_TS + 1,
-                tz=datetime.timezone.utc,
+                tz=datetime.UTC,
         )):
             assert inquirer._coingecko.is_penalized() is False
 
