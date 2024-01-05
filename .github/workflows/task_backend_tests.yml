@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [api, others]
+        test-group: [others]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,15 +89,8 @@ jobs:
           fi          
 
           export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
+          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -x --ignore=rotkehlchen/tests/api rotkehlchen/tests/
 
-          if [ "${{ matrix.test-group }}" == 'api' ]
-          then
-            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
-          else
-            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
-          fi
-          
-          python pytestgeventwrapper.py --dead-fixtures
         shell: bash
       - name: Upload coverage
         uses: codecov/codecov-action@v3

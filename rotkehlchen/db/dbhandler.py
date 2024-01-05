@@ -216,7 +216,7 @@ class DBHandler:
 
     def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """
-        Checks the database whether there are any not finished upgrades and automatically uses a
+        Check the database whether there are any not finished upgrades and automatically uses a
         backup if there are any. If no backup found, throws an error to the user
         """
         with self.conn.read_ctx() as cursor:
