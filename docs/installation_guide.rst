@@ -311,7 +311,7 @@ Next you need to create the ``docker-compose.yml``.
 
 .. code-block:: yaml
 
-    version: "3.10"
+    version: "3.11"
 
     services:
       proxy:
@@ -478,9 +478,9 @@ Install electron and any other dependencies by::
     cd frontend
     pnpm install --frozen-lockfile
 
-Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.10 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <https://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
+Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.11 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <https://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
-    mkvirtualenv rotki -p /usr/bin/python3.10
+    mkvirtualenv rotki -p /usr/bin/python3.11
 
 Then install all the python requirements by doing::
 
@@ -531,16 +531,16 @@ You can use `Nix <https://nixos.org/download>`_ package manager to start rotki d
           let
             pkgs = nixpkgs.legacyPackages.${system};
 
-            # We need to override the python3 package with exact version python3.10, because
-            # otherwise latest python3.11 version is used.
+            # We need to override the python3 package with exact version python3.11, because
+            # otherwise latest python version is used.
             # When executing "pnpm run dev:web" this will prepend the following path to the PATH envvar
             # > /nix/store/qp5zys77biz7imbk6yy85q5pdv7qk84j-python3-3.11.6/bin
             # Inside frontend/scripts/start-dev.js, we're then using startProcess('python', ...), which
-            # searches for python in PATH, finding python3.11 instead of python3.10.
-            python310 = pkgs.python310;
-            nodejsWithPython310 = pkgs.nodejs.override { python3 = python310; };
-            nodePackages = pkgs.nodePackages.override { nodejs = nodejsWithPython310; };
-            pnpmWithPython310 = nodePackages.pnpm;
+            # searches for python in PATH, finding python3.11 instead of latest python
+            python311 = pkgs.python311;
+            nodejsWithPython311 = pkgs.nodejs.override { python3 = python311; };
+            nodePackages = pkgs.nodePackages.override { nodejs = nodejsWithPython311; };
+            pnpmWithPython311 = nodePackages.pnpm;
 
             # Create a Python environment that includes the dependencies from requirements.txt
             myPythonEnv = pkgs.mkShell {
@@ -551,16 +551,16 @@ You can use `Nix <https://nixos.org/download>`_ package manager to start rotki d
                 pkgs.bash
                 pkgs.lzma
                 pkgs.git
-                pnpmWithPython310
-                pkgs.python310
-                pkgs.python310Packages.virtualenv
-                pkgs.python310Packages.pip
+                pnpmWithPython311
+                pkgs.python311
+                pkgs.python311Packages.virtualenv
+                pkgs.python311Packages.pip
               ];
 
               # The shellHook is executed whenever the Nix shell is entered
               shellHook = ''
                 # Create a virtualenv in the current directory
-                ${pkgs.pkgs.python310Packages.virtualenv}/bin/virtualenv --no-setuptools --no-wheel .venv
+                ${pkgs.pkgs.python311Packages.virtualenv}/bin/virtualenv --no-setuptools --no-wheel .venv
 
                 # Activate the virtualenv
                 source .venv/bin/activate
@@ -569,7 +569,7 @@ You can use `Nix <https://nixos.org/download>`_ package manager to start rotki d
                 export RUFF_PATH=${pkgs.ruff}/bin/ruff
 
                 # allow for the environment to pick up packages installed with virtualenv
-                export PYTHONPATH=.venv/${pkgs.python310.sitePackages}/:$PYTHONPATH
+                export PYTHONPATH=.venv/${pkgs.python311.sitePackages}/:$PYTHONPATH
 
                 # fix libstdc++.so not found error
                 export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
@@ -601,7 +601,7 @@ OSX
 =====
 
 The tl;dr version is:
-- Use a virtual env with Python 3.10.x
+- Use a virtual env with Python 3.11.x
 - Confirm ``pip``(pip3) install correctly and up to date
 - Get your node under control with ``nvm``. It has been tested with v18
 
@@ -619,9 +619,9 @@ And add the following to your shell startup file (e.g. .bashrc, .bash_profile, o
     #Virtualenvwrapper settings:
     export WORKON_HOME=$HOME/.virtualenvs
     export PROJECT_HOME=$HOME/rotki_dev
-    export VIRTUALENVWRAPPER_PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
-    export VIRTUALENVWRAPPER_VIRTUALENV=/Library/Frameworks/Python.framework/Versions/3.10/bin/virtualenv
-    source /Library/Frameworks/Python.framework/Versions/3.10/bin/virtualenvwrapper.sh
+    export VIRTUALENVWRAPPER_PYTHON=/Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+    export VIRTUALENVWRAPPER_VIRTUALENV=/Library/Frameworks/Python.framework/Versions/3.11/bin/virtualenv
+    source /Library/Frameworks/Python.framework/Versions/3.11/bin/virtualenvwrapper.sh
 
 And reload shell startup file::
 
@@ -705,7 +705,7 @@ Install ``pnpm``::
 Python
 ^^^^^^^^^^^^^^^^^^^^
 
-1. Get `python 3.10 <https://www.python.org/downloads/release/python-31011/>`_ (3.10 is required due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
+1. Get `python 3.11 <https://www.python.org/downloads/release/python-3117/>`_ (3.11 is required due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
 2. For some reason python does not always install to the Path variable in Windows. To ensure you have the necessary python directories referenced, go to Control Panel -> System -> Advanced system settings -> Advanced (tab) -> Environment Variables... In the Environment Variables... dialog under "System Variables" open the "Path" variable and ensure that both the root python directory as well as the ``\Scripts\`` subdirectory are included. If they are not, add them one by one by clicking "New" and then "Browse" and locating the correct directories. NOTE: By default the Windows MSI installer place python in the ``C:\Users\<username>\AppData\Local\Programs\`` directory.
 3. To test if you have entered python correctly into the Path variable, open a command prompt and type in ``python`` then hit Enter. The python cli should run and you should see the python version you installed depicted above the prompt. Press CTRL+Z, then Enter to exit.
 

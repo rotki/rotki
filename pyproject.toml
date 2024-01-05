@@ -9,7 +9,7 @@ authors = [
 ]
 description = "Acccounting, asset management and tax report helper for cryptocurrencies"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -217,7 +217,7 @@ exclude = [
 ]
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.per-file-ignores]
 

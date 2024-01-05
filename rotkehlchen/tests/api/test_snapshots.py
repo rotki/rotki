@@ -301,12 +301,12 @@ def validate_timestamp(
         if display_date_in_localtime:  # Check that it respects the timezone
             expected_datetime = datetime.datetime.fromtimestamp(
                 expected_utc_timestamp,
-                tz=datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo,
+                tz=datetime.datetime.now(datetime.UTC).astimezone().tzinfo,
             ).strftime('%Y-%m-%d %H:%M:%S')
         else:  # Should be a stringified utc timestamp
             expected_datetime = datetime.datetime.fromtimestamp(
                 expected_utc_timestamp,
-                tz=datetime.timezone.utc,
+                tz=datetime.UTC,
             ).strftime('%Y-%m-%d %H:%M:%S')
 
         assert received_serialized_timestamp == expected_datetime

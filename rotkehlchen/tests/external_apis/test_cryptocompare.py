@@ -108,7 +108,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     # first timestamp cryptocompare has histohour BTC/USD when queried from this test is
     btc_start_ts = 1279940400
     now_ts = btc_start_ts + 3600 * 2000 + 122
-    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.timezone.utc))
+    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
     cc = Cryptocompare(data_directory=data_dir, database=database)
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
@@ -126,7 +126,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
 
     # now let's move a bit to the future and query again to see the cache is appended to
     now_ts = now_ts + 3600 * 2000 * 2 + 4700
-    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.timezone.utc))
+    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
@@ -172,7 +172,7 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     )]
     globaldb.add_historical_prices(cache_data)
 
-    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.timezone.utc))
+    freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
     cc = Cryptocompare(data_directory=data_dir, database=database)
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),

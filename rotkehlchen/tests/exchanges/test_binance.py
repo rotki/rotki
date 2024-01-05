@@ -698,7 +698,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     assert len(movements) == 6
 
 
-@pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.timezone.utc))
+@pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
 def test_api_query_list_calls_with_time_delta(function_scope_binance):
     """Test the `api_query_list()` arguments when deposit/withdraw history
     requests involve a time delta.
@@ -706,7 +706,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
     From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
     to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS).
     """
-    now_ts_ms = int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp()) * 1000
+    now_ts_ms = int(datetime.datetime.now(tz=datetime.UTC).timestamp()) * 1000
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
     end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
     expected_calls = [
@@ -797,7 +797,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
         assert mock_api_query_list.call_args_list == expected_calls
 
 
-@pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.timezone.utc))
+@pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
 def test_api_query_retry_on_status_code_429(function_scope_binance):
     """Test when Binance API returns 429 and the request is retried, the
     signature is not polluted by any attribute from the previous call.

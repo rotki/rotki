@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from json.decoder import JSONDecodeError
 from unittest.mock import patch
 
@@ -64,7 +64,7 @@ def test_iso8601ts_to_timestamp():
     timezone_ts_str = '1997-07-16T22:30'
     timezone_ts_at_utc = 869092200
     assert iso8601ts_to_timestamp(timezone_ts_str + 'Z') == timezone_ts_at_utc
-    utc_now = datetime.now(timezone.utc)  # Get current time in UTC
+    utc_now = datetime.now(UTC)  # Get current time in UTC
     local_now = utc_now.astimezone()  # Get current time in local timezone
     utc_offset = local_now.utcoffset().total_seconds()  # Calculate the UTC offset in seconds
     assert iso8601ts_to_timestamp(timezone_ts_str) == timezone_ts_at_utc - utc_offset

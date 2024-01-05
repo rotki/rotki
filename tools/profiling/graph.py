@@ -50,7 +50,7 @@ MEMORY = 1
 
 def ts_to_dt(string_ts):
     """converts a string timestamp to a datatime object"""
-    return datetime.datetime.fromtimestamp(int(float(string_ts)), tz=datetime.timezone.utc)
+    return datetime.datetime.fromtimestamp(int(float(string_ts)), tz=datetime.UTC)
 
 
 def plot_date_axis(axes):

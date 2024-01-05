@@ -51,7 +51,7 @@ configure_logging(default_args())
 from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
-assert sys.version_info.minor == 10, 'Need to use python 3.10 for rotki'
+assert sys.version_info.minor == 11, 'Need to use python 3.11 for rotki'
 
 
 def pytest_addoption(parser):
@@ -136,7 +136,7 @@ def _fixture_profiler(request):
             TraceSampler,
         )
 
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         tmpdirname = tempfile.gettempdir()
         stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
         with open(stack_path, 'w', encoding='utf8') as stack_stream:
