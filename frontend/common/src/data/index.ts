@@ -59,7 +59,8 @@ export const AssetInfo = z.object({
   customAssetType: z.string().nullish(),
   collectionId: z.string().nullish(),
   collectionName: z.string().nullish(),
-  imageUrl: z.string().nullish()
+  imageUrl: z.string().nullish(),
+  isSpam: z.boolean().optional()
 });
 
 export const AssetInfoWithTransformer = AssetInfo.transform(data => ({

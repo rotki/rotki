@@ -19,14 +19,11 @@ export const useAssetIgnoreApi = () => {
     return handleResponse(response);
   };
 
-  const addIgnoredAssets = async (
-    assets: string[],
-    isSpam = false
-  ): Promise<string[]> => {
+  const addIgnoredAssets = async (assets: string[]): Promise<string[]> => {
     const response = await api.instance.put<ActionResult<string[]>>(
       '/assets/ignored',
       snakeCaseTransformer({
-        assets: assets.map(asset => ({ asset, isSpam }))
+        assets
       }),
       {
         validateStatus: validStatus

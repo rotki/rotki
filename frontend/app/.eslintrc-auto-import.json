@@ -741,6 +741,8 @@
     "isEventMissingAccountingRuleType": true,
     "isAccountingRuleProcessed": true,
     "isEventAccountingRuleProcessed": true,
-    "isMissingAccountingRule": true
+    "isMissingAccountingRule": true,
+    "useAssetSpamApi": true,
+    "useSpamAsset": true
   }
 }

@@ -4,7 +4,7 @@ import { type ComputedRef } from 'vue';
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-import ManagedAssetAction from '@/components/asset-manager/managed/ManagedAssetAction.vue';
+import { EVM_TOKEN } from '@/types/asset';
 
 defineOptions({
   name: 'AssetBreakdown'
@@ -18,6 +18,7 @@ const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
   useWhitelistedAssetsStore();
+const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
@@ -38,11 +39,11 @@ const toggleWhitelistAsset = async () => {
   } else {
     await whitelistAsset(id);
   }
+  refetchAssetInfo(id);
 };
-
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo, tokenAddress } =
+const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } =
   useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
 const name = assetName(identifier);
@@ -103,6 +104,18 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
 const goToEdit = () => {
   router.push(get(editRoute));
 };
+
+const isSpam = computed(() => get(asset)?.isSpam || false);
+
+const toggleSpam = async () => {
+  const id = get(identifier);
+  if (get(isSpam)) {
+    await removeAssetFromSpamList(id);
+  } else {
+    await markAssetAsSpam(id);
+  }
+  refetchAssetInfo(id);
+};
 </script>
 
 <template>
@@ -148,8 +161,8 @@ const goToEdit = () => {
           <RuiIcon name="pencil-line" />
         </RuiButton>
       </div>
-      <div class="flex gap-4 items-center">
-        <div class="text-body-2">
+      <div class="flex items-center">
+        <div class="text-body-2 mr-4">
           {{ t('assets.ignore') }}
         </div>
 
@@ -157,21 +170,24 @@ const goToEdit = () => {
           :popper="{ placement: 'top' }"
           :open-delay="400"
           tooltip-class="max-w-[10rem]"
-          :disabled="!isWhitelisted"
+          :disabled="!isWhitelisted && !isSpam"
         >
           <template #activator>
             <VSwitch
-              :disabled="isWhitelisted"
+              :disabled="isWhitelisted || isSpam"
               :input-value="isIgnored"
               @change="toggleIgnoreAsset()"
             />
           </template>
-          {{ t('ignore.whitelist.hint') }}
+          {{ isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}
         </RuiTooltip>
 
-        <ManagedAssetAction
+        <ManagedAssetIgnoringMore
+          v-if="asset?.assetType === EVM_TOKEN"
           :identifier="identifier"
+          :is-spam="isSpam"
           @toggle-whitelist="toggleWhitelistAsset()"
+          @toggle-spam="toggleSpam()"
         />
       </div>
     </div>
