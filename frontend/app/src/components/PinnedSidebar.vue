@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 
-defineProps<{ visible: boolean }>();
+const props = defineProps<{ visible: boolean }>();
 
-const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
+const emit = defineEmits<{
+  (e: 'update:visible', visible: boolean): void;
+}>();
+
+const display = useVModel(props, 'visible', emit);
 
 const ReportActionableCard = defineAsyncComponent(
   () => import('@/components/profitloss/ReportActionableCard.vue')
 );
-
-const visibleUpdate = (visible: boolean) => {
-  emit('visible:update', visible);
-};
 
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
@@ -26,14 +26,13 @@ const component: ComputedRef = computed(() => {
 
 <template>
   <VNavigationDrawer
+    v-model="display"
     class="pinned-sidebar"
     clipped
     width="560px"
-    :value="visible"
     right
     temporary
     hide-overlay
-    @input="visibleUpdate($event)"
   >
     <div>
       <Component

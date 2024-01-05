@@ -2,15 +2,18 @@
 import IndexedDb from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
-defineProps<{
+const props = defineProps<{
   visible: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'visible:update', visible: boolean): void;
+  (e: 'update:visible', visible: boolean): void;
   (e: 'about'): void;
 }>();
+
 const { t } = useI18n();
+
+const display = useVModel(props, 'visible', emit);
 
 interface Entry {
   readonly icon: string;
@@ -54,12 +57,8 @@ const entries: Entry[] = [
 
 const interop = useInterop();
 
-const visibleUpdate = (_visible: boolean) => {
-  emit('visible:update', _visible);
-};
-
 const openAbout = () => {
-  visibleUpdate(false);
+  set(display, false);
   emit('about');
 };
 
@@ -86,20 +85,19 @@ const { smAndDown } = useDisplay();
 
 <template>
   <VNavigationDrawer
+    v-model="display"
     width="400px"
     class="help-sidebar"
     :class="smAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
-    :value="visible"
     right
     temporary
     hide-overlay
-    @input="visibleUpdate($event)"
   >
     <div class="flex justify-between items-center pa-4">
       <div class="text-h6">{{ t('help_sidebar.title') }}</div>
-      <RuiButton variant="text" icon @click="visibleUpdate(false)">
+      <RuiButton variant="text" icon @click="display = false">
         <RuiIcon name="close-line" />
       </RuiButton>
     </div>
