@@ -103,6 +103,7 @@ watch([enabled, multiplier], setData);
             class="scrambler-toggle"
             setting="scrambleData"
             session-setting
+            :debounce="0"
           >
             <RuiCheckbox
               v-model="scrambleData"
@@ -124,6 +125,7 @@ watch([enabled, multiplier], setData);
             class="scrambler-data"
             :error-message="t('frontend_settings.validation.scramble.error')"
             session-setting
+            :debounce="0"
           >
             <RuiTextField
               v-model="scrambleMultiplier"
