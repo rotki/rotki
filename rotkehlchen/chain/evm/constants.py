@@ -1,3 +1,4 @@
+import re
 from typing import Final
 
 from rotkehlchen.types import deserialize_evm_tx_hash
@@ -9,6 +10,7 @@ ZERO_ADDRESS = string_to_evm_address('0x0000000000000000000000000000000000000000
 ETH_SPECIAL_ADDRESS = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 ZERO_32_BYTES_HEX = '0x' + '0' * 64
 GENESIS_HASH = deserialize_evm_tx_hash(ZERO_32_BYTES_HEX)  # hash for transactions in genesis block
+EVM_ADDRESS_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
 
 # Fake receipt with values taken from ethereum mainnet, to emulate a receipt for the
 # genesis transactions

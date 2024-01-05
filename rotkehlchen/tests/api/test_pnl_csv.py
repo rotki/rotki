@@ -16,7 +16,9 @@ from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CustomAsset
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.fval import FVal
@@ -29,7 +31,7 @@ from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_AD
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import create_timestamp
 
 
@@ -82,6 +84,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False, expected_nu
             rows.append(row)
 
     assert count == expected_num_of_events
+    return rows
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -184,13 +187,25 @@ def test_history_export_download_csv(
             balance=Balance(amount=FVal('1.5')),
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
+            notes=f'Test note to check if label is added with {ETH_ADDRESS1} address',
         )],
     )
+    # add a label for this address in the DB to check if it's added in the exported note
+    with rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db.edit_blockchain_accounts(
+            write_cursor=cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=string_to_evm_address(ETH_ADDRESS1),
+                label='ETH_ADDRESS1',
+            )],
+        )
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
-    assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
+    rows = assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
+    assert rows[0]['notes'] == f'Test note to check if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1] address'  # noqa: E501
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1569924574: 1}}}])
