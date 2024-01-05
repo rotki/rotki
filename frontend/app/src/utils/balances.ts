@@ -74,9 +74,12 @@ export const groupAssetBreakdown = (
   const grouped = breakdowns.reduce((acc, breakdown) => {
     const key = groupBy(breakdown);
     if (!acc[key]) {
-      acc[key] = { ...breakdown, balance: zeroBalance() };
+      acc[key] = { ...breakdown, balance: zeroBalance(), ...zeroBalance() };
     }
-    acc[key].balance = balanceSum(acc[key].balance, breakdown.balance);
+    const balance = balanceSum(acc[key].balance, breakdown.balance);
+    acc[key].balance = balance;
+    acc[key].amount = balance.amount;
+    acc[key].usdValue = balance.usdValue;
     return acc;
   }, initial);
 

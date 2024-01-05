@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   type DataTableColumn,
-  type DataTableSortColumn
+  type DataTableSortData
 } from '@rotki/ui-library-compat';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
 import { ProtocolVersion } from '@/types/defi';
@@ -18,7 +18,7 @@ const props = withDefaults(
 );
 const { selectedAddresses, version } = toRefs(props);
 
-const sortBy = ref<DataTableSortColumn | DataTableSortColumn[] | undefined>({
+const sortBy = ref<DataTableSortData>({
   column: 'roi',
   direction: 'desc' as const
 });

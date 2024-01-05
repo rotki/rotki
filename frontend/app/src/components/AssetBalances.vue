@@ -2,11 +2,15 @@
 import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
 import {
   type DataTableColumn,
-  type DataTableSortColumn
+  type DataTableSortData
 } from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
+
+defineOptions({
+  name: 'AssetBalances'
+});
 
 const props = withDefaults(
   defineProps<{
@@ -24,10 +28,6 @@ const props = withDefaults(
   }
 );
 
-defineComponent({
-  name: 'AssetBalances'
-});
-
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
@@ -40,7 +40,7 @@ const total = computed(() =>
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
   direction: 'desc' as const
 });

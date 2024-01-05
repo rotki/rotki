@@ -2,7 +2,7 @@
 import { type BigNumber } from '@rotki/common';
 import {
   type DataTableColumn,
-  type DataTableSortColumn
+  type DataTableSortData
 } from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
@@ -30,7 +30,7 @@ const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+const sort: Ref<DataTableSortData> = ref({
   column: 'lastPrice',
   direction: 'desc' as const
 });

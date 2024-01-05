@@ -2,7 +2,7 @@
 import { type BigNumber } from '@rotki/common/lib';
 import {
   type DataTableColumn,
-  type DataTableSortColumn
+  type DataTableSortData
 } from '@rotki/ui-library-compat';
 import { type Ref } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -39,8 +39,8 @@ const breakdowns = computed(() => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
-  column: 'balance.usdValue',
+const sort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
   direction: 'desc' as const
 });
 
@@ -56,7 +56,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     },
     {
       label: t('common.amount'),
-      key: 'balance.amount',
+      key: 'amount',
       align: 'end',
       class: 'w-full',
       cellClass: 'py-2',
@@ -66,7 +66,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD
       }),
-      key: 'balance.usdValue',
+      key: 'usdValue',
       align: 'end',
       cellClass: 'py-2',
       sortable: true
@@ -110,10 +110,10 @@ const percentage = (value: BigNumber) => {
         :detail-path="row.detailPath"
       />
     </template>
-    <template #item.balance.amount="{ row }">
+    <template #item.amount="{ row }">
       <AmountDisplay :value="row.balance.amount" />
     </template>
-    <template #item.balance.usdValue="{ row }">
+    <template #item.usdValue="{ row }">
       <AmountDisplay
         show-currency="symbol"
         :amount="row.balance.amount"

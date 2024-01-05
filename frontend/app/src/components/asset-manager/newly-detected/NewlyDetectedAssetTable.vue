@@ -4,7 +4,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 import type {
   DataTableColumn,
-  DataTableSortColumn
+  DataTableSortData
 } from '@rotki/ui-library-compat';
 
 const { t } = useI18n();
@@ -62,7 +62,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 ]);
 
 const selected: Ref<string[]> = ref([]);
-const sort: Ref<DataTableSortColumn | DataTableSortColumn[] | undefined> = ref({
+const sort: Ref<DataTableSortData> = ref({
   direction: 'desc' as const
 });
 
