@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
 import pytest
+from gql.transport.exceptions import TransportQueryError
 
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.db.settings import CachedSettings
@@ -33,7 +34,7 @@ def test_exception_retries():
     querystr = format_query_indentation(TEST_QUERY_1.format())
 
     client = MagicMock()
-    client.execute.side_effect = Exception('any message')
+    client.execute.side_effect = TransportQueryError('any message')
 
     backoff_factor_patch = patch(
         'rotkehlchen.chain.ethereum.graph.RETRY_BACKOFF_FACTOR',
