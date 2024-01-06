@@ -10,7 +10,7 @@ urllib3==2.1.0
 coincurve==18.0.0
 base58check==1.0.2
 bech32==1.2.0
-gql==2.0.0
+gql[requests]==3.5.0
 scalecodec==1.2.7
 py-sr25519-bindings==0.2.0
 py-ed25519-zebra-bindings==1.0.1
@@ -39,7 +39,7 @@ filetype==1.2.0
 polyleven==0.8
 
 # We used to only use this for packaging, but now use it for the version comparison functionality
-packaging==23.1
+packaging==23.2
 
 bip-utils==2.9.0
 

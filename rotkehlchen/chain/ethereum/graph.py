@@ -1,12 +1,15 @@
 import json
 import logging
 import re
+from http import HTTPStatus
 from typing import Any
 
 import gevent
 import requests
 from gql import Client, gql
+from gql.transport.exceptions import TransportError, TransportQueryError, TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
+from graphql.error import GraphQLError
 
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -73,17 +76,17 @@ class Graph:
         while retries_left > 0:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
-            # need to catch Exception here due to stupidity of gql library
-            except (requests.exceptions.RequestException, Exception) as e:  # pylint: disable=broad-except
-                # NB: the lack of a good API error handling by The Graph combined
-                # with gql v2 raising bare exceptions doesn't allow us to act
-                # better on failed requests. Currently all trigger the retry logic.
-                # TODO: upgrade to gql v3 and amend this code on any improvement
-                # The Graph does on its API error handling.
-                exc_msg = str(e)
+            except (TransportServerError, TransportQueryError) as e:
+                # https://gql.readthedocs.io/en/latest/advanced/error_handling.html
+                # Kind of guessing here ... these may be the only ones we can backoff for
+                base_msg = f'The Graph query to {querystr} failed due to {e}'
                 retries_left -= 1
-                base_msg = f'The Graph query to {querystr} failed due to {exc_msg}'
-                if retries_left:
+                if (  # check if we should retry
+                        retries_left != 0 and (
+                            (isinstance(e, TransportServerError) and e.code == HTTPStatus.TOO_MANY_REQUESTS) or  # noqa: E501
+                            isinstance(e, TransportQueryError)
+                        )
+                ):
                     sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, retry_limit - retries_left)
                     retry_msg = (
                         f'Retrying query after {sleep_seconds} seconds. '
@@ -93,6 +96,9 @@ class Graph:
                     gevent.sleep(sleep_seconds)
                 else:
                     raise RemoteError(f'{base_msg}. No retries left.') from e
+
+            except (GraphQLError, TransportError) as e:
+                raise RemoteError(f'Failed to query the graph for {querystr} due to {e}') from e
             else:
                 break
 
