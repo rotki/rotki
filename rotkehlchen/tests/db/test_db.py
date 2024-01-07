@@ -783,14 +783,14 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
     liability = BalanceType.LIABILITY.serialize_for_db()
 
     timed_balance_entries = [
-        (1514841100, 'ETH', '2', '0', asset),  #
-        (1514851200, 'ETH', '2', '0', liability),  # 0
+        (1514841100, 'ETH', '2', '0', asset),
+        (1514851200, 'ETH', '2', '0', liability),
         (1514937600, 'BTC', '1', '0', asset),
         (1514937700, 'BTC', '1', '0', asset),
-        (1514937800, 'BTC', '1', '0', asset),  # 0
-        (1514937900, 'ETH', '3', '0', asset),  #
-        (1514938000, 'BTC', '3', '0', asset),  # 0
-        (1514938100, 'BTC', '1', '0', asset),  # 0
+        (1514937800, 'BTC', '1', '0', asset),
+        (1514937900, 'ETH', '3', '0', asset),
+        (1514938000, 'BTC', '3', '0', asset),
+        (1514938100, 'BTC', '1', '0', asset),
     ]
 
     with data.db.user_write() as write_cursor:
@@ -826,16 +826,16 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         timed_balance_entries = [
             (1514841100, 'BTC', '1', '0', asset),
             (1514841100, 'ETC', '10', '0', asset),
-            (1514842100, 'ETH', '2', '0', asset),  #
+            (1514842100, 'ETH', '2', '0', asset),
             (1514842100, 'BTC', '1', '0', asset),
-            (1514843100, 'ETH', '2', '0', asset),  #
-            (1514844100, 'BTC', '2', '0', asset),  # 0
+            (1514843100, 'ETH', '2', '0', asset),
+            (1514844100, 'BTC', '2', '0', asset),
             (1514845100, 'BTC', '2', '0', asset),
-            (1514846100, 'BTC', '2', '0', asset),  # 0
-            (1514847100, 'ETH', '2', '0', asset),  #
-            (1514848100, 'BTC', '1', '0', asset),  # 0
+            (1514846100, 'BTC', '2', '0', asset),
+            (1514847100, 'ETH', '2', '0', asset),
+            (1514848100, 'BTC', '1', '0', asset),
             (1514848100, 'LTC', '5', '0', asset),
-            (1514849100, 'BTC', '1', '0', asset),  # 0
+            (1514849100, 'BTC', '1', '0', asset),
         ]
 
         write_cursor.executemany(
@@ -865,18 +865,18 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         data.db.set_settings(write_cursor, settings=ModifiableDBSettings(ssf_graph_multiplier=2))
 
         timed_balance_entries = [
-            (1659748923, 'ETH', '2', '0', asset),  #
+            (1659748923, 'ETH', '2', '0', asset),
             (1659748923, 'ETH2', '10', '0', asset),
             # 312 timestamps with 0 balances will be added here due to the ssf_graph_multiplier
-            (1686821381, 'ETH', '2', '0', asset),  #
+            (1686821381, 'ETH', '2', '0', asset),
             (1686821381, 'BTC', '1', '0', asset),
             (1686821381, 'LTC', '5', '0', asset),
             (1686822381, 'LTC', '5', '0', asset),  # inferred 0
             (1686823381, 'LTC', '5', '0', asset),
             (1686824381, 'LTC', '5', '0', asset),  # inferred 0
-            (1686825013, 'ETH', '2', '0', asset),  #
-            (1686825081, 'ETH', '2', '0', asset),  #
-            (1686827028, 'ETH', '2', '0', asset),  #
+            (1686825013, 'ETH', '2', '0', asset),
+            (1686825081, 'ETH', '2', '0', asset),
+            (1686827028, 'ETH', '2', '0', asset),
         ]
 
         write_cursor.executemany(
