@@ -188,7 +188,7 @@ def test_no_logs_and_zero_eth(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database)
@@ -258,7 +258,7 @@ def test_simple_erc20_transfer(
         chain_id=chain,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=73,
@@ -354,7 +354,7 @@ def test_eth_transfer(
         chain_id=chain,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
@@ -438,7 +438,7 @@ def test_eth_spend(
         chain_id=chain,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
@@ -515,7 +515,7 @@ def test_eth_deposit(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database)

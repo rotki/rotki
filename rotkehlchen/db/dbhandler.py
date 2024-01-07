@@ -1271,7 +1271,7 @@ class DBHandler:
             try:
                 balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
-                    id=entry[6],
+                    identifier=entry[6],
                     asset=Asset(entry[0]).check_existence(),
                     label=entry[1],
                     amount=FVal(entry[2]),
@@ -1300,7 +1300,7 @@ class DBHandler:
                     'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '  # noqa: E501
                     'VALUES (?, ?, ?, ?, ?)', (entry.asset.identifier, entry.label, str(entry.amount), entry.location.serialize_for_db(), entry.balance_type.serialize_for_db()),  # noqa: E501
                 )
-                entry.id = write_cursor.lastrowid
+                entry.identifier = write_cursor.lastrowid
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'One of the manually tracked balance entries already exists in the DB. {e!s}',
@@ -1330,7 +1330,7 @@ class DBHandler:
             entry.location.serialize_for_db(),
             BalanceType.serialize_for_db(entry.balance_type),
             entry.label,
-            entry.id,
+            entry.identifier,
         ) for entry in data]
 
         write_cursor.executemany(

@@ -185,7 +185,7 @@ class AccountingPot(CustomizableDateMixin):
             taxable_amount = ZERO
             free_amount = amount
         event = ProcessedAccountingEvent(
-            type=event_type,
+            event_type=event_type,
             notes=notes,
             location=location,
             timestamp=timestamp,
@@ -281,7 +281,7 @@ class AccountingPot(CustomizableDateMixin):
             free_amount = amount - spend_cost.taxable_amount
 
         spend_event = ProcessedAccountingEvent(
-            type=event_type,
+            event_type=event_type,
             notes=notes,
             location=location,
             timestamp=timestamp,

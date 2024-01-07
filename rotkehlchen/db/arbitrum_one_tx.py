@@ -40,6 +40,6 @@ class DBArbitrumOneTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            tx_type=tx_receipt.type,
+            tx_type=tx_receipt.tx_type,
             db_id=result[12],
         )

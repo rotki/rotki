@@ -67,7 +67,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=21,
@@ -159,7 +159,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=44,
@@ -320,7 +320,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=32,
@@ -469,7 +469,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=20,
@@ -649,7 +649,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=2,
@@ -764,7 +764,7 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=30,
@@ -857,7 +857,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=23,
@@ -1003,7 +1003,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=31,
@@ -1118,7 +1118,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=357,
@@ -1220,7 +1220,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=55,
@@ -1564,7 +1564,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=83,
@@ -1791,7 +1791,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=97,
@@ -2102,7 +2102,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=77,

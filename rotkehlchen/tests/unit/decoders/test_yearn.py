@@ -54,7 +54,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
         tx_hash=evmhash,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=154,
@@ -175,7 +175,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
         tx_hash=evmhash,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=78,
@@ -286,7 +286,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=289,
@@ -397,7 +397,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=78,

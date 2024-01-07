@@ -1662,7 +1662,7 @@ class GlobalDBHandler:
                             # Get ids for assets to insert them in the user db
                             write_cursor.execute('SELECT identifier from assets')
                             ids = write_cursor.fetchall()
-                            ids_proccesed = ', '.join([f'("{id[0]}")' for id in ids])
+                            ids_proccesed = ', '.join([f'("{identifier[0]}")' for identifier in ids])  # noqa: E501
                             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
                             user_db_cursor.switch_foreign_keys('ON')
 
@@ -1704,10 +1704,10 @@ class GlobalDBHandler:
                     # Get the list of ids that we will restore
                     query = read_cursor.execute('SELECT identifier from clean_db.assets;')
                     shipped_asset_ids = set(query.fetchall())
-                    asset_ids = ', '.join([f'"{id[0]}"' for id in shipped_asset_ids])
+                    asset_ids = ', '.join([f'"{identifier[0]}"' for identifier in shipped_asset_ids])  # noqa: E501
                     query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
                     shipped_collection_ids = set(query.fetchall())
-                    collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
+                    collection_ids = ', '.join([f'"{identifier[0]}"' for identifier in shipped_collection_ids])  # noqa: E501
 
                 with self.conn.write_ctx() as write_cursor:
                     # If versions match drop tables

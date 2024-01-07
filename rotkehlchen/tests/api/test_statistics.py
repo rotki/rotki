@@ -239,7 +239,7 @@ def test_query_statistics_value_distribution(
         btc_accounts=btc_accounts,
         token_balances=token_balances,
         manually_tracked_balances=[ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal('1550'),
@@ -247,7 +247,7 @@ def test_query_statistics_value_distribution(
             tags=None,
             balance_type=BalanceType.ASSET,
         ), ManuallyTrackedBalance(
-            id=2,
+            identifier=2,
             asset=A_ETH2,
             label='John Doe',
             amount=FVal('2.6'),

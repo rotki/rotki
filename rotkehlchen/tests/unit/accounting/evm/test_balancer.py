@@ -129,7 +129,7 @@ def test_balancer_multiple_deposit(accountant: 'Accountant'):
 
     expected_events = [
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Deposit 131578.947368421052491563 mUSD to a Balancer v1 pool',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -143,7 +143,7 @@ def test_balancer_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Deposit 131421.703252 USDC to a Balancer v1 pool',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -157,7 +157,7 @@ def test_balancer_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Refunded 6578.947368421052624578 mUSD after depositing in Balancer V1 pool',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -171,7 +171,7 @@ def test_balancer_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Refunded 6571.085163 USDC after depositing in Balancer V1 pool',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -185,7 +185,7 @@ def test_balancer_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Receive 1675.495956074927519908 BPT from a Balancer v1 pool',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,

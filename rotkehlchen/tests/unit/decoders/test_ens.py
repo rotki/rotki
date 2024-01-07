@@ -141,7 +141,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=289,
@@ -247,7 +247,7 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=269,

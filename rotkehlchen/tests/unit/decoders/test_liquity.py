@@ -56,7 +56,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=91,
@@ -185,7 +185,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=204,
@@ -290,7 +290,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=204,
@@ -403,7 +403,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=907,
@@ -499,7 +499,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=131,
@@ -637,7 +637,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=175,
@@ -797,7 +797,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=117,

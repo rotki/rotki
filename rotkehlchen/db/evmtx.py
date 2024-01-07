@@ -401,7 +401,7 @@ class DBEvmTx:
             chain_id=chain_id,
             contract_address=result[0],
             status=bool(result[1]),  # works since value is either 0 or 1
-            type=result[2],
+            tx_type=result[2],
         )
 
         cursor.execute(

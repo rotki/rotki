@@ -85,7 +85,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
     assert len(events) == sum(1 for x in expected_pnls if x != ZERO)
     for idx, event in enumerate(events):
         assert event.pnl.taxable == expected_pnls[idx]
-        assert event.type == AccountingEventType.STAKING
+        assert event.event_type == AccountingEventType.STAKING
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

@@ -80,7 +80,7 @@ def test_deserialize_location(database):
     for idx, data in enumerate(Location):
         assert Location.deserialize(str(data)) == data
         balances.append(ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=A_BTC,
             label='Test' + str(idx),
             amount=ONE,

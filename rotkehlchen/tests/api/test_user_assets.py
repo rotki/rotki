@@ -544,7 +544,7 @@ def test_user_asset_delete_guard(rotkehlchen_api_server):
     user_asset1_id = result['identifier']
     with user_db.user_write() as cursor:
         user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=Asset(user_asset1_id),
             label='manual1',
             amount=ONE,

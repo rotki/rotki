@@ -809,7 +809,7 @@ class MacPackaging:
         self.cleanup_keychain()
 
     @log_group('zip')
-    def zip(self) -> None:
+    def perform_zip(self) -> None:
         """
         Creates a zip from the directory that contains the backend, checksums it
         and moves them to the dist/ directory.
@@ -997,11 +997,11 @@ class BackendBuilder:
         self.__sanity_check()
         self.__package()
 
-        # When building for macOS zip() is responsible for moving the packaged backend to dist/
+        # When building for mac perfom_zip() is responsible for moving the packaged backend to dist
         if mac is not None:
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))
-            mac.zip()
+            mac.perform_zip()
         else:
             self.__move_to_dist()
 

@@ -1051,7 +1051,7 @@ class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
 
 
 class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
-    id = fields.Integer(required=True)
+    id = fields.Integer(required=True)  # noqa: A003  # it's okay to shadow builtin here
 
     @post_load
     def make_manually_tracked_balances(
@@ -2180,7 +2180,7 @@ class ExchangeRatesSchema(AsyncQueryArgumentSchema):
 
 
 class WatcherSchema(Schema):
-    type = fields.String(required=True)
+    type = fields.String(required=True)  # noqa: A003  # it's okay to shadow builtin here
     args = fields.Dict(required=True)
 
 

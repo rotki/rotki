@@ -53,7 +53,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
         contract_address=None,
         status=True,
         chain_id=ChainID.ETHEREUM,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=91,
@@ -176,7 +176,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
         contract_address=None,
         status=True,
         chain_id=ChainID.ETHEREUM,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=327,
@@ -309,7 +309,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=90,
