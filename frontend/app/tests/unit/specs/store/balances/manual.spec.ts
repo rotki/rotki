@@ -39,7 +39,7 @@ describe('store::balances/manual', () => {
 
   const balances = [
     {
-      id: 1,
+      identifier: 1,
       usdValue: bigNumberify(50),
       amount: bigNumberify(50),
       asset: 'DAI',
@@ -49,7 +49,7 @@ describe('store::balances/manual', () => {
       balanceType: BalanceType.ASSET
     },
     {
-      id: 2,
+      identifier: 2,
       usdValue: bigNumberify(30),
       amount: bigNumberify(30),
       asset: 'BTC',
@@ -59,7 +59,7 @@ describe('store::balances/manual', () => {
       balanceType: BalanceType.ASSET
     },
     {
-      id: 3,
+      identifier: 3,
       usdValue: bigNumberify(50),
       amount: bigNumberify(50),
       asset: 'EUR',
@@ -72,7 +72,7 @@ describe('store::balances/manual', () => {
 
   const ethAndEth2Balances = [
     {
-      id: 4,
+      identifier: 4,
       usdValue: bigNumberify(50),
       amount: bigNumberify(50),
       asset: 'ETH',
@@ -82,7 +82,7 @@ describe('store::balances/manual', () => {
       balanceType: BalanceType.ASSET
     },
     {
-      id: 5,
+      identifier: 5,
       usdValue: bigNumberify(100),
       amount: bigNumberify(100),
       asset: 'ETH2',
@@ -210,7 +210,7 @@ describe('store::balances/manual', () => {
   describe('fetchManualBalances', () => {
     const mockBalancesResponse = [
       {
-        id: 1,
+        identifier: 1,
         usdValue: '50',
         amount: '50',
         asset: 'DAI',
@@ -220,7 +220,7 @@ describe('store::balances/manual', () => {
         balanceType: BalanceType.ASSET
       },
       {
-        id: 2,
+        identifier: 2,
         usdValue: '30',
         amount: '30',
         asset: 'BTC',
@@ -230,7 +230,7 @@ describe('store::balances/manual', () => {
         balanceType: BalanceType.ASSET
       },
       {
-        id: 3,
+        identifier: 3,
         usdValue: '50',
         amount: '50',
         asset: 'EUR',

@@ -274,7 +274,7 @@ def deserialize_tags_from_db(val: str | None) -> list[str] | None:
 def _get_tag_reference(
         entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
         object_reference_keys: list[
-            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> str:
     reference = ''
@@ -288,7 +288,7 @@ def _get_tag_reference(
 def _prepare_tag_mappings(
         entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
         object_reference_keys: list[
-            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> list[tuple[str, str]]:
     """Common function to prepare tag mappings. Caller has to make sure entry.tags is not None"""
@@ -302,7 +302,7 @@ def insert_tag_mappings(
         write_cursor: 'DBCursor',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
         object_reference_keys: list[
-            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> None:
     """
@@ -323,7 +323,7 @@ def replace_tag_mappings(
         write_cursor: 'DBCursor',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
         object_reference_keys: list[
-            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> None:
     """Just like insert_tag_mappings but first deletes all existing mappings"""

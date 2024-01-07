@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { BalanceType } from '@/types/balances';
 
 export const ManualBalance = z.object({
-  id: z.number().positive(),
+  identifier: z.number().positive(),
   asset: z.string(),
   label: z.string(),
   amount: NumericString,

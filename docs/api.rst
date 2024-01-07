@@ -9574,7 +9574,7 @@ Getting manually tracked balances
       {
           "result": {
           "balances": [{
-                  "id": 1,
+                  "identifier": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
@@ -9582,14 +9582,14 @@ Getting manually tracked balances
                   "tags": ["public"],
                   "location": "blockchain"
               }, {
-                  "id": 2,
+                  "identifier": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
                   "location": "blockchain"
               }, {
-                  "id": 3,
+                  "identifier": 3,
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
@@ -9632,12 +9632,14 @@ Adding manually tracked balances
                   "label": "My monero wallet",
                   "amount": "50.315",
                   "tags": ["public"],
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "liability"
               }]
       }
 
@@ -9647,6 +9649,7 @@ Adding manually tracked balances
    :reqjsonarr string amount: The amount of asset that is stored.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance. Can be null. Should never be an empty list.
    :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "ftxus", "independentreserve"]
+   :reqjsonarr string[optional] balance_type: The type of the balance. Either "asset" or "liability". By default it's an asset.
 
    **Example Response**:
 
@@ -9658,28 +9661,31 @@ Adding manually tracked balances
       {
           "result": {
           "balances": [{
-                  "id": 1,
+                  "identifier": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
                   "usd_value": "2370.13839",
                   "tags": ["public"],
-                  "location": "blockchain"
+                  "location": "blockchain",
+                   "balance_type": "asset"
               }, {
-                  "id" :2,
+                  "identifier" :2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }, {
-                  "id": 3
+                  "identifier": 3
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
                   "usd_value": "6067.77",
                   "tags": ["private", "inheritance"]
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }]
           "message": ""
       }
@@ -9700,7 +9706,7 @@ Editing manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by id.
+   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by identifier.
 
    **Example Request**:
 
@@ -9712,18 +9718,20 @@ Editing manually tracked balances
 
       {
           "balances": [{
-                  "id": 1,
+                  "identifier": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "4.5",
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
                   },{
-                  "id": 3,
+                  "identifier": 3,
                   "asset": "ETH"    ,
                   "label": "My favorite wallet",
                   "amount": "10",
                   "tags": [],
-                  "location": "kraken"
+                  "location": "kraken",
+                  "balance_type": "liability"
               }]
       }
 
@@ -9739,27 +9747,30 @@ Editing manually tracked balances
       {
           "result": {
           "balances": [{
-                  "id" 1,
+                  "identifier" 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "4.5",
                   "usd_value": "210.548",
                   "tags": ["public"],
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }, {
-                  "id": 2,
+                  "identifier": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }, {
-                  "id": 3,
+                  "identifier": 3,
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "10"
                   "usd_value": "1330.85"
-                  "location": "kraken"
+                  "location": "kraken",
+                  "balance_type": "asset"
               }]
           "message": ""
       }
@@ -9780,7 +9791,7 @@ Deleting manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a DELETE on the the manual balances endpoint with a list of ids of manually tracked balances will remove these balances from the database for the current user.
+   Doing a DELETE on the the manual balances endpoint with a list of identifiers of manually tracked balances will remove these balances from the database for the current user.
     If one of the given ids to remove is invalid the entire request will fail.
 
 
@@ -9806,12 +9817,13 @@ Deleting manually tracked balances
       {
           "result": {
           "balances": [{
-                  "id": 2,
+                  "identifier": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
-                  "location": "blockchain"
+                  "location": "blockchain",
+                  "balance_type": "asset"
               }]
           "message": ""
       }
