@@ -622,7 +622,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     expected_balances = deepcopy(balances)
     expected_balances[0]['usd_value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
     expected_balances[0]['tags'] = None
-    expected_balances[0]['id'] = 1
+    expected_balances[0]['identifier'] = 1
 
     if not only_in_globaldb:
         response = requests.put(
@@ -746,7 +746,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
     )
     result = assert_proper_response_with_result(response)
     assert result['balances'] == [{
-        'id': 1,
+        'identifier': 1,
         'asset': 'ICP',
         'label': 'forgotten balance',
         'amount': '1',

@@ -1046,12 +1046,12 @@ class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
-        data['id'] = -1  # can be any value because id will be set automatically
+        data['identifier'] = -1  # can be any value because id will be set automatically
         return ManuallyTrackedBalance(**data)
 
 
 class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
-    id = fields.Integer(required=True)  # noqa: A003  # it's okay to shadow builtin here
+    identifier = fields.Integer(required=True)
 
     @post_load
     def make_manually_tracked_balances(

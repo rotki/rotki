@@ -1306,7 +1306,7 @@ class DBHandler:
                 f'One of the manually tracked balance entries already exists in the DB. {e!s}',
             ) from e
 
-        insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
+        insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
@@ -1340,7 +1340,7 @@ class DBHandler:
         if write_cursor.rowcount != len(data):
             msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
             raise InputError(msg)
-        replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
+        replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
     def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
         """

@@ -22,7 +22,7 @@ export const useManualBalancesApi = () => {
   };
 
   const addManualBalances = async (
-    balances: Omit<ManualBalance, 'id'>[]
+    balances: Omit<ManualBalance, 'identifier'>[]
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',

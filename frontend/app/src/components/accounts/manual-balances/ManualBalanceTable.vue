@@ -217,7 +217,7 @@ const showDeleteConfirmation = (id: number) => {
           :edit-tooltip="t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="t('manual_balances_table.delete_tooltip')"
           @edit-click="edit(row)"
-          @delete-click="showDeleteConfirmation(row.id)"
+          @delete-click="showDeleteConfirmation(row.identifier)"
         />
       </template>
       <template v-if="visibleBalances.length > 0" #body.append>

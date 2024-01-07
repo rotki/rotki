@@ -26,7 +26,7 @@ const { edit, context } = toRefs(props);
 
 const errors: Ref<Record<string, string[]>> = ref({});
 
-const id = ref<number | null>(null);
+const identifier = ref<number | null>(null);
 const asset = ref<string>('');
 const label = ref<string>('');
 const amount = ref<string>('');
@@ -49,7 +49,7 @@ const clear = () => {
 };
 
 const setBalance = (balance: ManualBalance) => {
-  set(id, balance.id);
+  set(identifier, balance.identifier);
   set(asset, balance.asset);
   set(label, balance.label);
   set(amount, balance.amount.toFixed());
@@ -113,7 +113,7 @@ const v$ = setValidation(
 );
 
 const save = async () => {
-  const balance: Omit<ManualBalance, 'id' | 'asset'> = {
+  const balance: Omit<ManualBalance, 'identifier' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
     tags: get(tags),
@@ -123,14 +123,14 @@ const save = async () => {
 
   const usedAsset: string = get(asset);
 
-  const idVal = get(id);
+  const idVal = get(identifier);
   const isEdit = get(edit) && idVal;
 
   const form = get(priceForm);
   await form?.savePrice(usedAsset);
 
   const status = await (isEdit
-    ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
+    ? editManualBalance({ ...balance, identifier: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
 
   startPromise(refreshPrices(true));

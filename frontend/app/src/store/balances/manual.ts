@@ -185,7 +185,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   };
 
   const addManualBalance = async (
-    balance: Omit<ManualBalance, 'id'>
+    balance: Omit<ManualBalance, 'identifier'>
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
       const taskType = TaskType.MANUAL_BALANCES_ADD;

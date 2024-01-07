@@ -148,9 +148,9 @@ def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
     expected_balances = []
     for new_id, balance in enumerate(balances, start=1):
         new_balance = balance.copy()
-        new_balance['id'] = new_id
+        new_balance['identifier'] = new_id
         expected_balances.append(new_balance)
-    result_balances = sorted(result['balances'], key=itemgetter('id'))
+    result_balances = sorted(result['balances'], key=itemgetter('identifier'))
     assert_balances_match(expected_balances=expected_balances, returned_balances=result_balances)
 
     return expected_balances
@@ -273,7 +273,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     expected_balances = []
     for new_id, balance in enumerate(balances, start=1):
         new_balance = balance.copy()
-        new_balance['id'] = new_id
+        new_balance['identifier'] = new_id
         expected_balances.append(new_balance)
     assert_balances_match(
         expected_balances=expected_balances,
@@ -576,7 +576,7 @@ def test_add_edit_manually_tracked_balances_errors(
     data['balances'][0]['tags'] = []
     if verb == 'PATCH':
         for idx, entry in enumerate(data['balances']):
-            entry['id'] = idx  # just to have a valid id in the request
+            entry['identifier'] = idx  # just to have a valid id in the request
     response = requests.request(
         verb,
         api_url_for(
@@ -670,7 +670,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
     ids_to_delete = [1, 4]
-    expected_balances = [b for b in balances if b['id'] not in ids_to_delete]
+    expected_balances = [b for b in balances if b['identifier'] not in ids_to_delete]
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -781,7 +781,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
 def test_update_manual_balance_label(rotkehlchen_api_server):
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
-    balances.sort(key=itemgetter('id'))
+    balances.sort(key=itemgetter('identifier'))
     balance_to_patch_1 = balances.pop()
     balance_to_patch_1['label'] = 'NEW PATCHED LABEL 1'
     balance_to_patch_2 = balances.pop()
