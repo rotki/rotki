@@ -188,7 +188,7 @@ def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:
     """
     data: dict[str, Any] = {
         'transactionHash': receipt.tx_hash.hex(),
-        'type': hex(receipt.type),
+        'type': hex(receipt.tx_type),
         'contractAddress': receipt.contract_address,
         'status': int(receipt.status),
         'logs': [],
@@ -258,7 +258,7 @@ def setup_ethereum_transactions_test(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=295,
@@ -313,7 +313,7 @@ def setup_ethereum_transactions_test(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=2,
+        tx_type=2,
         logs=[
             EvmTxReceiptLog(
                 log_index=438,

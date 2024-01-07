@@ -278,7 +278,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=251,
@@ -365,7 +365,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=24,
@@ -452,7 +452,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=418,
@@ -578,7 +578,7 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=25,
@@ -701,7 +701,7 @@ def test_aave_v2_borrow(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=306,
@@ -823,7 +823,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=152,

@@ -50,7 +50,7 @@ class HexBytes(bytes):
         bytesval = to_bytes(val)
         return cast(HexBytes, super().__new__(cls, bytesval))  # type: ignore  # https://github.com/python/typeshed/issues/2630
 
-    def hex(self) -> str:  # type: ignore
+    def hex(self) -> str:  # type: ignore  # noqa: A003
         """
         Output hex-encoded bytes, with an "0x" prefix.
 

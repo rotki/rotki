@@ -176,7 +176,7 @@ def test_accounting_receive_settings(
         expected_extra_data = {'tx_hash': EXAMPLE_TX_HASH_HEX}
 
     expected_event = ProcessedAccountingEvent(
-        type=AccountingEventType.TRANSACTION_EVENT,
+        event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Received 1 ETH',
         location=Location.ETHEREUM,
         timestamp=TIMESTAMP_1_SECS,
@@ -265,7 +265,7 @@ def test_accounting_spend_settings(
     elif is_taxable and counterparty == CPT_GAS and include_crypto2crypto is False:
         taxable_pnl = -FVal(1500)
     expected_event = ProcessedAccountingEvent(
-        type=AccountingEventType.TRANSACTION_EVENT,
+        event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Send 0.5 ETH to 0xABC',
         location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
@@ -333,7 +333,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     acquisition_event.remaining_amount = ZERO
 
     expected_spend_event = ProcessedAccountingEvent(
-        type=AccountingEventType.TRANSACTION_EVENT,
+        event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Swap 1 ETH in a uniswap pool',
         location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
@@ -363,7 +363,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     expected_spend_event.count_cost_basis_pnl = True
 
     expected_receive_event = ProcessedAccountingEvent(
-        type=AccountingEventType.TRANSACTION_EVENT,
+        event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Receive 3000 DAI as the result of a swap',
         location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,

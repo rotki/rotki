@@ -1594,8 +1594,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     ).fetchone()[0] == Location.POLYGON_POS.serialize_for_db()
     nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     default_polygon_nodes_with_ids = [
-        (id, *node)
-        for id, node in enumerate(DEFAULT_POLYGON_NODES_AT_V38, start=max_initial_node_id + 1)
+        (identifier, *node)
+        for identifier, node in enumerate(DEFAULT_POLYGON_NODES_AT_V38, start=max_initial_node_id + 1)  # noqa: E501
     ]
     assert nodes_after == nodes_before + default_polygon_nodes_with_ids
     expected_internal_txs = [tuple(x[:3]) + tuple(x[5:]) for x in expected_internal_txs]

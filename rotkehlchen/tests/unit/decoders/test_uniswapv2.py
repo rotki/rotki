@@ -62,7 +62,7 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=508,
@@ -220,7 +220,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=306,
@@ -435,7 +435,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=117,
@@ -602,7 +602,7 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=31,
@@ -812,7 +812,7 @@ def test_uniswap_v2_swap_events_order(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=31,

@@ -101,7 +101,7 @@ def test_get_transaction_receipt(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=235,

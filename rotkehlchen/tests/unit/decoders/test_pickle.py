@@ -50,7 +50,7 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=259,
@@ -159,7 +159,7 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=105,

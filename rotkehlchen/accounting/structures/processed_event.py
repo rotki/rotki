@@ -34,7 +34,7 @@ class ProcessedAccountingEvent:
         - Gets saved in the DB for saved reports
         - Exported via CSV
     """
-    type: AccountingEventType
+    event_type: AccountingEventType
     notes: str
     location: Location
     timestamp: Timestamp
@@ -54,7 +54,7 @@ class ProcessedAccountingEvent:
     count_cost_basis_pnl: bool = field(init=False, default=False)
 
     def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
-        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol_or_name()} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
+        desc = f'{self.event_type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol_or_name()} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
         if self.cost_basis:
             taxable, free = self.cost_basis.to_string(ts_converter)
             desc += f'Cost basis. Taxable {taxable}. Free: {free}'
@@ -92,7 +92,7 @@ class ProcessedAccountingEvent:
         a link to each transaction.
         """
         exported_dict = {
-            'type': self.type.serialize(),
+            'type': self.event_type.serialize(),
             'notes': self.notes,
             'location': str(self.location),
             'timestamp': self.timestamp,
@@ -216,7 +216,7 @@ class ProcessedAccountingEvent:
             else:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])
             event = cls(
-                type=AccountingEventType.deserialize(data['type']),
+                event_type=AccountingEventType.deserialize(data['type']),
                 notes=data['notes'],
                 location=Location.deserialize(data['location']),
                 timestamp=timestamp,

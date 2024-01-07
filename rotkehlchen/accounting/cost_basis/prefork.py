@@ -49,7 +49,7 @@ def handle_prefork_asset_acquisitions(
         if acquisition[0].identifier in ignored_asset_ids:
             continue
         event = ProcessedAccountingEvent(
-            type=AccountingEventType.PREFORK_ACQUISITION,
+            event_type=AccountingEventType.PREFORK_ACQUISITION,
             notes=acquisition[1],
             location=location,
             timestamp=timestamp,

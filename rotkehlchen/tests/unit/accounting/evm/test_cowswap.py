@@ -83,7 +83,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
     }
     expected_processed_events = [
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Swap {swap_amount_str} WBTC in cowswap',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,
@@ -96,7 +96,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
             index=0,
             extra_data=extra_data,
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.FEE,
+            event_type=AccountingEventType.FEE,
             notes=f'Spend {fee_amount_str} WBTC as a cowswap fee',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,
@@ -109,7 +109,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
             index=1,
             extra_data=extra_data,
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,

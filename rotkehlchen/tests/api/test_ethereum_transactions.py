@@ -1705,7 +1705,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
             chain_id=chain,
             contract_address=None,
             status=True,
-            type=2,
+            tx_type=2,
             logs=[
                 EvmTxReceiptLog(
                     log_index=438,

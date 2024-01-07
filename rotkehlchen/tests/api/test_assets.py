@@ -88,7 +88,7 @@ def test_query_owned_assets(
         ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
         manually_tracked_balances=[ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal(1550),

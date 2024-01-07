@@ -170,7 +170,7 @@ def test_query_all_balances(
         ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
         manually_tracked_balances=[ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal('1550'),
@@ -394,7 +394,7 @@ def test_query_all_balances_with_manually_tracked_balances(
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     manually_tracked_balances = [ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_BTC,
         label='XPUB BTC wallet',
         amount=FVal('10'),
@@ -402,7 +402,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         tags=None,
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_BTC,
         label='BTC in hardware wallet',
         amount=FVal('20'),
@@ -410,7 +410,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         tags=['private'],
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_ETH,
         label='ETH in a not supported exchange wallet',
         amount=FVal('10'),
@@ -418,7 +418,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         tags=['private'],
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_EUR,
         label='N26 account',
         amount=FVal('12500.15'),
@@ -426,7 +426,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         tags=None,
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_EUR,
         label='Deutsche Bank account',
         amount=FVal('1337.1337'),

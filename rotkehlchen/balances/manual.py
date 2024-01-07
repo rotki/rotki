@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ManuallyTrackedBalance:
-    id: int
+    identifier: int
     asset: Asset
     label: str
     amount: FVal
@@ -25,7 +25,7 @@ class ManuallyTrackedBalance:
 
 
 class ManuallyTrackedBalanceWithValue(NamedTuple):
-    id: int
+    identifier: int
     asset: Asset
     label: str
     value: Balance
@@ -60,7 +60,7 @@ def get_manually_tracked_balances(
 
         value = Balance(amount=entry.amount, usd_value=price * entry.amount)
         balances_with_value.append(ManuallyTrackedBalanceWithValue(
-            id=entry.id,
+            identifier=entry.identifier,
             asset=entry.asset,
             label=entry.label,
             value=value,

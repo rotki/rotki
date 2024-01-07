@@ -1,12 +1,13 @@
 from typing import Any, NamedTuple
-import pytest
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 
+import pytest
+
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.user_messages import MessagesAggregator
 
 
 class MockedWsMessage(NamedTuple):
-    type: WSMessageType
+    message_type: WSMessageType
     data: dict[str, Any] | list[Any]
 
 
@@ -20,7 +21,7 @@ class MockRotkiNotifier:
             to_send_data: dict[str, Any] | list[Any],
             **kwargs: Any,
     ) -> None:
-        self.messages.append(MockedWsMessage(type=message_type, data=to_send_data))
+        self.messages.append(MockedWsMessage(message_type=message_type, data=to_send_data))
 
     def pop_message(self) -> MockedWsMessage | None:
         if len(self.messages) == 0:

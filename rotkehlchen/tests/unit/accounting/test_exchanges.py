@@ -45,7 +45,7 @@ def test_account_for_coinbase_income_expense(rotkehlchen_api_server_with_exchang
     assert report['total_actions'] == expected_total_actions
     events_map = defaultdict(int)
     for event in events:
-        events_map[event.type] += 1
+        events_map[event.event_type] += 1
 
     assert events_map[AccountingEventType.TRADE] == 4
     assert events_map[AccountingEventType.ASSET_MOVEMENT] == 1
@@ -109,38 +109,38 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
     _, events = accounting_create_and_process_history(rotki=rotki, start_ts=Timestamp(0), end_ts=Timestamp(1611426233))  # noqa: E501
     assert len(events) == 6
     event1 = events[0]
-    assert event1.type == AccountingEventType.TRADE
+    assert event1.event_type == AccountingEventType.TRADE
     assert event1.location == Location.COINBASE
     assert event1.taxable_amount == FVal(1.5)
     assert event1.asset == A_BTC
 
     event2 = events[1]
-    assert event2.type == AccountingEventType.TRADE
+    assert event2.event_type == AccountingEventType.TRADE
     assert event2.location == Location.COINBASE
     assert event2.free_amount == ONE
     assert event2.asset == A_ETH
 
     event3 = events[2]
-    assert event3.type == AccountingEventType.TRADE
+    assert event3.event_type == AccountingEventType.TRADE
     assert event3.location == Location.EXTERNAL
     assert event3.taxable_amount == FVal(7)
     assert event3.asset == A_USDT
 
     event4 = events[3]
-    assert event4.type == AccountingEventType.TRADE
+    assert event4.event_type == AccountingEventType.TRADE
     assert event4.location == Location.EXTERNAL
     assert event4.free_amount == FVal(49)
     assert event4.asset == A_LINK
 
     event5 = events[4]
-    assert event5.type == AccountingEventType.ASSET_MOVEMENT
+    assert event5.event_type == AccountingEventType.ASSET_MOVEMENT
     assert event5.location == Location.COINBASE
     assert event5.free_amount == ZERO
     assert event5.taxable_amount == FVal(0.00001)
     assert event5.asset == A_BTC
 
     event6 = events[5]
-    assert event6.type == AccountingEventType.MARGIN_POSITION
+    assert event6.event_type == AccountingEventType.MARGIN_POSITION
     assert event6.location == Location.COINBASE
     assert event6.free_amount == ZERO
     assert event6.taxable_amount == ONE

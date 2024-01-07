@@ -60,7 +60,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=306,
@@ -190,7 +190,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=21,
@@ -383,7 +383,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=216,

@@ -552,7 +552,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
     token0_id = ethaddress_to_identifier(expected_tokens[0].evm_address)
     with user_db.user_write() as cursor:
         user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
-            id=-1,
+            identifier=-1,
             asset=Asset(token0_id),
             label='manual1',
             amount=ONE,

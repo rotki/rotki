@@ -51,21 +51,21 @@ def test_booster_deposit(
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
     assert mocked_notifier.pop_message() == MockedWsMessage(
-        type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+        message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
         data={
             'token_identifier': 'eip155:1/erc20:0x182B723a58739a9c974cFDB385ceaDb237453c28',  # stETH  # noqa: E501
             'seen_tx_hash': tx_hex,
         },
     )
     assert mocked_notifier.pop_message() == MockedWsMessage(
-        type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+        message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
         data={
             'token_identifier': 'eip155:1/erc20:0x9518c9063eB0262D791f38d8d6Eb0aca33c63ed0',  # cvxsteCRV  # noqa: E501
             'seen_tx_hash': tx_hex,
         },
     )
     assert mocked_notifier.pop_message() == MockedWsMessage(
-        type=WSMessageType.REFRESH_BALANCES,
+        message_type=WSMessageType.REFRESH_BALANCES,
         data={
             'type': 'blockchain_balances',
             'blockchain': 'eth',
@@ -195,7 +195,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=449,
@@ -457,7 +457,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=342,
@@ -575,7 +575,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=215,
@@ -708,7 +708,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=422,
@@ -801,7 +801,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=592,
@@ -885,7 +885,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=306,

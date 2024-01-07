@@ -60,7 +60,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=370,
@@ -203,7 +203,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=412,
@@ -361,7 +361,7 @@ def test_curve_remove_liquidity(
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=506,
@@ -491,7 +491,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=191,
@@ -608,7 +608,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
-        type=0,
+        tx_type=0,
         logs=[
             EvmTxReceiptLog(
                 log_index=2183,
@@ -868,7 +868,7 @@ def test_gauge_deposit(
     mocked_notifier = database.msg_aggregator.rotki_notifier
     message = mocked_notifier.pop_message()
     assert message == MockedWsMessage(
-        type=WSMessageType.REFRESH_BALANCES,
+        message_type=WSMessageType.REFRESH_BALANCES,
         data={
             'type': 'blockchain_balances',
             'blockchain': 'eth',

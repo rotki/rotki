@@ -137,7 +137,7 @@ def test_curve_multiple_deposit(accountant: 'Accountant'):
 
     expected_events = [
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -151,7 +151,7 @@ def test_curve_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Deposit 5 USDT in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
@@ -165,7 +165,7 @@ def test_curve_multiple_deposit(accountant: 'Accountant'):
             extra_data={'tx_hash': EVM_HASH.hex()},  # pylint: disable=no-member
         ),
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,

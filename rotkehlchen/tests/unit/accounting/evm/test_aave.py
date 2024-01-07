@@ -90,7 +90,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
 
     expected_events = [
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Deposit 1000 DAI into AAVE v2',
             location=Location.ETHEREUM,
             timestamp=TS1,
@@ -103,7 +103,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             index=0,
             extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 50 DAI on Aave v2 as interest rate for {USER_ADDRESS}',
             location=Location.ETHEREUM,
             timestamp=TS2,
@@ -116,7 +116,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             index=1,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Withdraw 1050 DAI from AAVE v2',
             location=Location.ETHEREUM,
             timestamp=TS2,
@@ -198,7 +198,7 @@ def test_v2_payback(accountant: 'Accountant'):
     matched_acquisitions[0].event.remaining_amount = FVal(950)  # can't be set by init
     expected_events = [
         ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
             location=Location.ETHEREUM,
             timestamp=TS1,
@@ -211,7 +211,7 @@ def test_v2_payback(accountant: 'Accountant'):
             index=0,
             extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Lost 50 REN as debt during payback to Aave v2 loan for {USER_ADDRESS}',
             location=Location.ETHEREUM,
             timestamp=TS2,
@@ -230,7 +230,7 @@ def test_v2_payback(accountant: 'Accountant'):
             index=1,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
-            type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Repay 1050 REN on AAVE v2',
             location=Location.ETHEREUM,
             timestamp=TS2,

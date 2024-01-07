@@ -293,7 +293,7 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     starting_balance = ManuallyTrackedBalance(
-        id=-1,
+        identifier=-1,
         asset=A_EUR,
         label='foo',
         amount=FVal(10),
