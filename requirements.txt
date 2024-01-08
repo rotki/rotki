@@ -19,7 +19,7 @@ substrate-interface==1.7.5
 beautifulsoup4==4.12.2
 maxminddb==2.5.1
 miniupnpc==2.0.2; sys_platform != 'win32'
-miniupnpc==2.2.3; sys_platform == 'win32'
+miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
 cryptography==41.0.7
 py-machineid==0.4.6
 more-itertools==10.1.0  # for peekable iterators
