@@ -2,7 +2,7 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import {
   AIRDROP_POAP,
   type Airdrop,
@@ -49,30 +49,24 @@ const entries = computed(() => {
     }));
 });
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('airdrops.headers.source'),
-    value: 'source',
+    label: t('airdrops.headers.source'),
+    key: 'source',
     width: '200px'
   },
   {
-    text: t('common.address'),
-    value: 'address'
+    label: t('common.address'),
+    key: 'address'
   },
   {
-    text: t('common.amount'),
-    value: 'amount',
+    label: t('common.amount'),
+    key: 'amount',
     align: 'end'
   },
   {
-    text: t('common.status'),
-    value: 'claimed'
-  },
-  {
-    text: '',
-    value: 'link',
-    align: 'end',
-    width: '50px'
+    label: t('common.status'),
+    key: 'claimed'
   }
 ]);
 
@@ -202,53 +196,55 @@ onMounted(async () => {
         />
       </div>
 
-      <DataTable
-        :items="entries"
-        :headers="tableHeaders"
+      <RuiDataTable
+        outlined
+        :rows="entries"
+        :cols="tableHeaders"
         :loading="loading"
         single-expand
         :expanded.sync="expanded"
-        item-key="index"
+        row-attr="index"
       >
-        <template #item.address="{ item }">
-          <HashLink :text="item.address" />
+        <template #item.address="{ row }">
+          <HashLink :text="row.address" />
         </template>
-        <template #item.amount="{ item }">
+        <template #item.amount="{ row }">
           <AmountDisplay
-            v-if="!hasDetails(item.source)"
-            :value="item.amount"
-            :asset="item.asset"
+            v-if="!hasDetails(row.source)"
+            :value="row.amount"
+            :asset="row.asset"
           />
-          <span v-else>{{ item.details.length }}</span>
+          <span v-else>{{ row.details.length }}</span>
         </template>
-        <template #item.claimed="{ item: { claimed } }">
+        <template #item.claimed="{ row: { claimed } }">
           <RuiChip :color="claimed ? 'success' : 'grey'" size="sm">
             {{ claimed ? t('common.claimed') : t('common.unclaimed') }}
           </RuiChip>
         </template>
-        <template #item.source="{ item }">
-          <AirdropDisplay :source="item.source" />
+        <template #item.source="{ row }">
+          <AirdropDisplay :source="row.source" />
         </template>
-        <template #item.link="{ item }">
-          <ExternalLink v-if="!hasDetails(item.source)" :url="item.link" custom>
+        <template #item.expand="{ row }">
+          <ExternalLink v-if="!hasDetails(row.source)" :url="row.link" custom>
             <RuiButton variant="text" color="primary" icon>
               <RuiIcon size="16" name="external-link-line" />
             </RuiButton>
           </ExternalLink>
           <RowExpander
             v-else
-            :expanded="expanded.includes(item)"
-            @click="expand(item)"
+            :expanded="expanded.includes(row)"
+            @click="expand(row)"
           />
         </template>
-        <template #expanded-item="{ headers, item }">
+        <template #expanded-item="{ row }">
           <PoapDeliveryAirdrops
-            :items="item.details"
-            :colspan="headers.length"
-            :visible="hasDetails(item.source)"
+            v-if="hasDetails(row.source)"
+            :items="row.details"
+            :colspan="tableHeaders.length"
+            visible
           />
         </template>
-      </DataTable>
+      </RuiDataTable>
     </RuiCard>
   </TablePageLayout>
 </template>

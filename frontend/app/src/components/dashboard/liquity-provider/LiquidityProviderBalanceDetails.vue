@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 
 withDefaults(
   defineProps<{
-    span?: number;
     assets: XswapAsset[];
     premiumOnly?: boolean;
   }>(),
   {
-    span: 1,
     premiumOnly: true
   }
 );
@@ -18,36 +20,32 @@ withDefaults(
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.asset'),
-    value: 'asset',
-    cellClass: 'text-no-wrap',
-    sortable: false
+    label: t('common.asset'),
+    key: 'asset',
+    cellClass: 'text-no-wrap'
   },
   {
-    text: t('common.price', {
+    label: t('common.price', {
       symbol: get(currencySymbol)
     }),
-    value: 'usdPrice',
+    key: 'usdPrice',
     align: 'end',
-    class: 'text-no-wrap',
-    sortable: false
+    class: 'text-no-wrap'
   },
   {
-    text: t('common.amount'),
-    value: 'amount',
-    align: 'end',
-    sortable: false
+    label: t('common.amount'),
+    key: 'amount',
+    align: 'end'
   },
   {
-    text: t('common.value_in_symbol', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
-    value: 'usdValue',
+    key: 'usdValue',
     align: 'end',
-    class: 'text-no-wrap',
-    sortable: false
+    class: 'text-no-wrap'
   }
 ]);
 
@@ -62,52 +60,57 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
     amount: item.userBalance.amount,
     usdValue: item.userBalance.usdValue
   }));
+
+const sort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const
+});
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="span" no-padding>
-    <DataTable
-      v-if="premium || !premiumOnly"
-      hide-default-footer
-      flat
-      :headers="tableHeaders"
-      :items="transformAssets(assets)"
-      sort-by="usdValue"
-    >
-      <template #item.asset="{ item }">
-        <AssetDetails opens-details :asset="item.asset" />
-      </template>
-      <template #item.usdPrice="{ item }">
-        <AmountDisplay
-          v-if="item.usdPrice && item.usdPrice.gte(0)"
-          no-scramble
-          show-currency="symbol"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
-          fiat-currency="USD"
-          :value="item.usdPrice"
-        />
-        <span v-else>-</span>
-      </template>
-      <template #item.amount="{ item }">
-        <AmountDisplay :value="item.amount" />
-      </template>
-      <template #item.usdValue="{ item }">
-        <AmountDisplay
-          show-currency="symbol"
-          :amount="item.amount"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
-          fiat-currency="USD"
-          :value="item.usdValue"
-        />
-      </template>
-    </DataTable>
-    <RuiCard v-else dense variant="flat">
-      <div class="flex items-center gap-2 text-body-2">
-        <PremiumLock />
-        {{ t('uniswap.assets_non_premium') }}
-      </div>
-    </RuiCard>
-  </TableExpandContainer>
+  <RuiDataTable
+    v-if="premium || !premiumOnly"
+    dense
+    outlined
+    :cols="tableHeaders"
+    :sort="sort"
+    :rows="transformAssets(assets)"
+    row-attr=""
+    class="bg-white dark:bg-[#1E1E1E] my-2"
+  >
+    <template #item.asset="{ row }">
+      <AssetDetails opens-details :asset="row.asset" />
+    </template>
+    <template #item.usdPrice="{ row }">
+      <AmountDisplay
+        v-if="row.usdPrice && row.usdPrice.gte(0)"
+        no-scramble
+        show-currency="symbol"
+        :price-asset="row.asset"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdPrice"
+      />
+      <span v-else>-</span>
+    </template>
+    <template #item.amount="{ row }">
+      <AmountDisplay :value="row.amount" />
+    </template>
+    <template #item.usdValue="{ row }">
+      <AmountDisplay
+        show-currency="symbol"
+        :amount="row.amount"
+        :price-asset="row.asset"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdValue"
+      />
+    </template>
+  </RuiDataTable>
+  <RuiCard v-else dense variant="flat">
+    <div class="flex items-center gap-2 text-body-2">
+      <PremiumLock />
+      {{ t('uniswap.assets_non_premium') }}
+    </div>
+  </RuiCard>
 </template>

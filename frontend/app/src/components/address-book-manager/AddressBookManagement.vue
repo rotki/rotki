@@ -108,9 +108,9 @@ const {
   isLoading,
   options,
   fetchData,
-  setOptions,
   setFilter,
-  setPage
+  setPage,
+  setTableOptions
 } = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
@@ -193,7 +193,7 @@ watch(location, async () => {
               :blockchain="selectedChain"
               @edit="openForm($event)"
               @update:page="setPage($event)"
-              @update:options="setOptions($event)"
+              @update:options="setTableOptions($event)"
               @refresh="fetchData()"
             />
           </template>

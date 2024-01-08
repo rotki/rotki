@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
+import { type Ref } from 'vue';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
 import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload
@@ -7,38 +11,47 @@ import {
 
 const { t } = useI18n();
 
-const headers = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref([
   {
-    text: t('price_table.headers.from_asset'),
-    value: 'fromAsset'
+    column: 'timestamp',
+    direction: 'desc' as const
+  }
+]);
+
+const headers = computed<DataTableColumn[]>(() => [
+  {
+    label: t('price_table.headers.from_asset'),
+    key: 'fromAsset',
+    sortable: true
   },
   {
-    text: '',
-    value: 'wasWorth',
-    sortable: false
+    label: '',
+    key: 'wasWorth'
   },
   {
-    text: t('common.price'),
-    value: 'price',
-    align: 'end'
+    label: t('common.price'),
+    key: 'price',
+    align: 'end',
+    sortable: true
   },
   {
-    text: t('price_table.headers.to_asset'),
-    value: 'toAsset'
+    label: t('price_table.headers.to_asset'),
+    key: 'toAsset',
+    sortable: true
   },
   {
-    text: '',
-    value: 'on',
-    sortable: false
+    label: '',
+    key: 'on'
   },
   {
-    text: t('common.datetime'),
-    value: 'timestamp'
+    label: t('common.datetime'),
+    key: 'timestamp',
+    sortable: true
   },
   {
-    text: '',
-    value: 'actions',
-    sortable: false
+    label: '',
+    key: 'actions',
+    class: 'w-[3rem]'
   }
 ]);
 
@@ -182,36 +195,39 @@ setPostSubmitFunc(() => refresh({ modified: true }));
           </template>
         </AssetSelect>
       </div>
-      <DataTable
-        :items="items"
-        :headers="headers"
+      <RuiDataTable
+        outlined
+        dense
+        :cols="headers"
         :loading="loading"
-        sort-by="timestamp"
+        :rows="items"
+        row-attr=""
+        :sort.sync="sort"
       >
-        <template #item.fromAsset="{ item }">
-          <AssetDetails :asset="item.fromAsset" />
+        <template #item.fromAsset="{ row }">
+          <AssetDetails :asset="row.fromAsset" />
         </template>
-        <template #item.toAsset="{ item }">
-          <AssetDetails :asset="item.toAsset" />
+        <template #item.toAsset="{ row }">
+          <AssetDetails :asset="row.toAsset" />
         </template>
-        <template #item.timestamp="{ item }">
-          <DateDisplay :timestamp="item.timestamp" />
+        <template #item.timestamp="{ row }">
+          <DateDisplay :timestamp="row.timestamp" />
         </template>
-        <template #item.price="{ item }">
-          <AmountDisplay :value="item.price" />
+        <template #item.price="{ row }">
+          <AmountDisplay :value="row.price" />
         </template>
         <template #item.wasWorth>{{ t('price_table.was_worth') }}</template>
         <template #item.on>{{ t('price_table.on') }}</template>
-        <template #item.actions="{ item }">
+        <template #item.actions="{ row }">
           <RowActions
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(item)"
-            @edit-click="openForm(item)"
+            @delete-click="showDeleteConfirmation(row)"
+            @edit-click="openForm(row)"
           />
         </template>
-      </DataTable>
+      </RuiDataTable>
     </RuiCard>
 
     <BigDialog

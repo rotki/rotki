@@ -23,9 +23,9 @@ const price: Ref<string> = ref('');
 const openEditHistoricPriceDialog = async () => {
   set(showDialog, true);
   set(fetchingPrice, true);
-  const { asset, timestamp } = get(event);
+  const { assetIdentifier, timestamp } = get(event);
   const historicPrice = await getHistoricPrice({
-    fromAsset: asset,
+    fromAsset: assetIdentifier,
     toAsset: get(currency),
     timestamp
   });
@@ -59,7 +59,7 @@ const v$ = useVuelidate(
 const { setMessage } = useMessageStore();
 const updatePrice = async () => {
   const payload: HistoricalPriceFormPayload = {
-    fromAsset: get(event).asset,
+    fromAsset: get(event).assetIdentifier,
     toAsset: get(currency),
     timestamp: get(event).timestamp,
     price: get(price)
@@ -107,7 +107,7 @@ const updatePrice = async () => {
 
         <form class="flex flex-col gap-4">
           <AssetSelect
-            :value="event.asset"
+            :value="event.assetIdentifier"
             :label="t('price_form.from_asset')"
             hide-details
             disabled

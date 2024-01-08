@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { Routes } from '@/router/routes';
 import { type Report } from '@/types/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
@@ -23,38 +23,37 @@ const limits = computed(() => ({
   limit: get(reports).entriesLimit
 }));
 
-const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
+const tableHeaders: ComputedRef<DataTableColumn[]> = computed(() => [
   {
-    text: t('profit_loss_reports.columns.start'),
-    value: 'startTs'
+    label: t('profit_loss_reports.columns.start'),
+    key: 'startTs'
   },
   {
-    text: t('profit_loss_reports.columns.end'),
-    value: 'endTs'
+    label: t('profit_loss_reports.columns.end'),
+    key: 'endTs'
   },
   {
-    text: t('profit_loss_reports.columns.taxfree_profit_loss'),
-    value: 'free',
+    label: t('profit_loss_reports.columns.taxfree_profit_loss'),
+    key: 'free',
     align: 'end'
   },
   {
-    text: t('profit_loss_reports.columns.taxable_profit_loss'),
-    value: 'taxable',
+    label: t('profit_loss_reports.columns.taxable_profit_loss'),
+    key: 'taxable',
     align: 'end'
   },
   {
-    text: t('profit_loss_reports.columns.created'),
-    value: 'timestamp',
+    label: t('profit_loss_reports.columns.created'),
+    key: 'timestamp',
     align: 'end'
   },
   {
-    text: t('common.actions_text'),
-    value: 'actions',
+    label: t('common.actions_text'),
+    key: 'actions',
     align: 'end',
     width: 140,
     sortable: false
-  },
-  { text: '', value: 'expand', align: 'end', sortable: false }
+  }
 ]);
 
 onBeforeMount(async () => await fetchReports());
@@ -71,10 +70,6 @@ const getReportUrl = (identifier: number) => {
 };
 
 const latestReport = (reportId: number) => get(isLatestReport(reportId));
-
-const expand = (item: Report) => {
-  set(expanded, get(expanded).includes(item) ? [] : [item]);
-};
 </script>
 
 <template>
@@ -82,54 +77,56 @@ const expand = (item: Report) => {
     <template #header>
       {{ t('profit_loss_reports.title') }}
     </template>
-    <DataTable
-      :headers="tableHeaders"
-      :items="items"
+    <RuiDataTable
+      :cols="tableHeaders"
+      :rows="items"
       sort-by="timestamp"
       single-expand
       :expanded.sync="expanded"
+      outlined
+      row-attr="id"
     >
-      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
+      <template v-if="showUpgradeMessage" #body.prepend>
         <UpgradeRow
           :total="limits.total"
           :limit="limits.limit"
-          :colspan="headers.length"
+          :colspan="tableHeaders.length"
           :label="t('profit_loss_reports.title')"
         />
       </template>
-      <template #item.timestamp="{ item }">
-        <DateDisplay :timestamp="item.timestamp" />
+      <template #item.timestamp="{ row }">
+        <DateDisplay :timestamp="row.timestamp" />
       </template>
-      <template #item.startTs="{ item }">
-        <DateDisplay no-time :timestamp="item.startTs" />
+      <template #item.startTs="{ row }">
+        <DateDisplay no-time :timestamp="row.startTs" />
       </template>
-      <template #item.endTs="{ item }">
-        <DateDisplay no-time :timestamp="item.endTs" />
+      <template #item.endTs="{ row }">
+        <DateDisplay no-time :timestamp="row.endTs" />
       </template>
-      <template #item.free="{ item }">
+      <template #item.free="{ row }">
         <AmountDisplay
           force-currency
           show-currency="symbol"
           pnl
-          :value="calculateTotalProfitLoss(item).free"
-          :fiat-currency="item.settings.profitCurrency"
+          :value="calculateTotalProfitLoss(row).free"
+          :fiat-currency="row.settings.profitCurrency"
         />
       </template>
-      <template #item.taxable="{ item }">
+      <template #item.taxable="{ row }">
         <AmountDisplay
           force-currency
           show-currency="symbol"
           pnl
-          :value="calculateTotalProfitLoss(item).taxable"
-          :fiat-currency="item.settings.profitCurrency"
+          :value="calculateTotalProfitLoss(row).taxable"
+          :fiat-currency="row.settings.profitCurrency"
         />
       </template>
-      <template #item.actions="{ item }">
+      <template #item.actions="{ row }">
         <div class="flex justify-end gap-1">
-          <ExportReportCsv v-if="latestReport(item.identifier)" icon />
+          <ExportReportCsv v-if="latestReport(row.identifier)" icon />
           <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
             <template #activator>
-              <RouterLink :to="getReportUrl(item.identifier)">
+              <RouterLink :to="getReportUrl(row.identifier)">
                 <RuiButton size="sm" icon variant="text" color="primary">
                   <RuiIcon size="20" name="file-text-line" />
                 </RuiButton>
@@ -144,7 +141,7 @@ const expand = (item: Report) => {
                 size="sm"
                 variant="text"
                 color="primary"
-                @click="deleteReport(item.identifier)"
+                @click="deleteReport(row.identifier)"
               >
                 <RuiIcon size="20" name="delete-bin-5-line" />
               </RuiButton>
@@ -153,20 +150,12 @@ const expand = (item: Report) => {
           </RuiTooltip>
         </div>
       </template>
-      <template #expanded-item="{ headers, item }">
-        <td :colspan="headers.length" class="py-4">
-          <ProfitLossOverview
-            :report="item"
-            :symbol="item.settings.profitCurrency"
-          />
-        </td>
-      </template>
-      <template #item.expand="{ item }">
-        <RowExpander
-          :expanded="expanded.includes(item)"
-          @click="expand(item)"
+      <template #expanded-item="{ row }">
+        <ProfitLossOverview
+          :report="row"
+          :symbol="row.settings.profitCurrency"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
   </RuiCard>
 </template>
