@@ -5,6 +5,7 @@ import flushPromises from 'flush-promises';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
 import { setModules } from '../../../../utils/general-settings';
+import { libraryDefaults } from '../../../../utils/provide-defaults';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -24,12 +25,7 @@ describe('ModuleSelector.vue', () => {
       pinia,
       vuetify,
       stubs: ['card'],
-      provide: {
-        [Symbol.for('rui:table')]: {
-          itemsPerPage: ref(10),
-          globalItemsPerPage: false
-        }
-      }
+      provide: libraryDefaults
     });
   };
 

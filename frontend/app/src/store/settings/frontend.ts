@@ -167,6 +167,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     }
   }
 
+  const debounceUpdateSetting = useDebounceFn(updateSetting, 100);
+
   const { lastLanguage, forceUpdateMachineLanguage } = useLastLanguage();
 
   const checkMachineLanguage = (): void => {
@@ -179,6 +181,10 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   watch([language, forceUpdateMachineLanguage], () => {
     checkMachineLanguage();
+  });
+
+  watch(itemsPerPage, value => {
+    debounceUpdateSetting({ itemsPerPage: value });
   });
 
   const checkDefaultThemeVersion = () => {
