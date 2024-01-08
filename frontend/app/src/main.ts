@@ -55,7 +55,7 @@ setActivePinia(pinia);
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
 const rui = createRuiPlugin({
-  table: { itemsPerPage, globalItemsPerPage: true }
+  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100] }
 });
 
 Vue.use(rui);
