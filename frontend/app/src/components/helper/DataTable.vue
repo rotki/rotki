@@ -91,13 +91,11 @@ const itemsPerPageUsed = computed(
 );
 
 const onItemsPerPageChange = async (newValue: number) => {
-  if (get(itemsPerPageUsed) === newValue) {
+  if (get(itemsPerPageFromFrontendSetting) === newValue) {
     return;
   }
 
-  await frontendSettingsStore.updateSetting({
-    itemsPerPage: newValue
-  });
+  set(itemsPerPageFromFrontendSetting, newValue);
 };
 
 const scrollToTop = () => {

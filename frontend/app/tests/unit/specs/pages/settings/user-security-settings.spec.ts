@@ -1,6 +1,7 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import UserSecuritySettings from '@/pages/settings/data-security/index.vue';
+import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('@/services/backup', () => ({
   useBackupApi: () => ({
@@ -27,12 +28,7 @@ describe('UserSecuritySettings.vue', () => {
         'data-table',
         'card'
       ],
-      provide: {
-        [Symbol.for('rui:table')]: {
-          itemsPerPage: ref(10),
-          globalItemsPerPage: false
-        }
-      }
+      provide: libraryDefaults
     });
   }
 
