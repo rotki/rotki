@@ -7,7 +7,7 @@ export const useFooterProps = () => {
     lastIcon: 'mdi-chevron-double-right',
     prevIcon: 'mdi-chevron-left',
     nextIcon: 'mdi-chevron-right',
-    itemsPerPageOptions: [5, 10, 15, 25, 50, 100]
+    itemsPerPageOptions: [10, 25, 50, 100]
   }));
   return {
     footerProps
