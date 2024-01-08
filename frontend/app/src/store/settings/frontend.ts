@@ -70,9 +70,12 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const explorers: ComputedRef<ExplorersSettings> = computed(
     () => settings.explorers
   );
-  const itemsPerPage: ComputedRef<number> = computed(
-    () => settings.itemsPerPage
-  );
+  const itemsPerPage: WritableComputedRef<number> = computed({
+    get: () => settings.itemsPerPage,
+    set: (value: number) => {
+      settings.itemsPerPage = value;
+    }
+  });
   const amountRoundingMode: ComputedRef<RoundingMode> = computed(
     () => settings.amountRoundingMode
   );

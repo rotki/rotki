@@ -8,7 +8,7 @@ import { vuetify } from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
 import i18n from './i18n';
 import router from './router';
-import rui from './plugins/rui';
+import createRuiPlugin from './plugins/rui';
 
 import '@/plugins/rui';
 import '@/main.scss';
@@ -19,7 +19,6 @@ Vue.config.devtools = isDevelopment;
 
 Vue.use(PiniaVuePlugin);
 Vue.use(i18n);
-Vue.use(rui);
 
 // This should disable vite page reloads on CI.
 // Monitor e2e tests for this and if this doesn't work remove it.
@@ -52,6 +51,14 @@ if (isDevelopment) {
   pinia.use(storePiniaPlugins);
 }
 setActivePinia(pinia);
+
+const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+
+const rui = createRuiPlugin({
+  table: { itemsPerPage, globalItemsPerPage: true }
+});
+
+Vue.use(rui);
 
 new Vue({
   setup(): void {
