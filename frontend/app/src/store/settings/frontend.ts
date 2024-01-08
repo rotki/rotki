@@ -4,6 +4,7 @@ import {
   type TimeFramePeriod,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
+import { isUndefined } from 'lodash-es';
 import { getBnFormat } from '@/data/amount_formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type CurrencyLocation } from '@/types/currency-location';
@@ -183,8 +184,12 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   watchDebounced(
     itemsPerPage,
-    value => {
-      updateSetting({ itemsPerPage: value });
+    (value, oldValue) => {
+      if (isUndefined(oldValue) || value === oldValue) {
+        return;
+      }
+
+      updateSetting({ itemsPerPage: value }).catch(e => logger.debug(e));
     },
     { debounce: 100 }
   );
