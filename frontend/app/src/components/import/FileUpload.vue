@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
-const file = useVModel(props, 'value', emit, { eventName: 'input' });
+const file = useSimpleVModel(props, emit);
 
 const error = ref('');
 const active = ref(false);

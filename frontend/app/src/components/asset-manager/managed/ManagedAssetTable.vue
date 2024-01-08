@@ -95,9 +95,7 @@ const updateSelected = (selectedAssets: SupportedAsset[]) =>
 const updateExpanded = (expandedAssets: SupportedAsset[]) =>
   emit('update:expanded', expandedAssets);
 
-const ignoredFilter = useVModel(props, 'ignoredFilter', emit, {
-  eventName: 'update:ignored-filter'
-});
+const ignoredFilter = useKebabVModel(props, 'ignoredFilter', emit);
 
 const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 

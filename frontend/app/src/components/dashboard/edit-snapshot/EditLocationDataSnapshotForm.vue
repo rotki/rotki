@@ -17,17 +17,12 @@ const emit = defineEmits<{
   (e: 'update:form', payload: LocationDataSnapshotPayload): void;
 }>();
 
-const { form } = toRefs(props);
+const location = usePropVModel(props, 'form', 'location', emit);
+const value = usePropVModel(props, 'form', 'usdValue', emit);
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
-
-const updateForm = (partial: Partial<LocationDataSnapshotPayload>) => {
-  emit('update:form', {
-    ...(get(form) as LocationDataSnapshotPayload),
-    ...partial
-  });
-};
 
 const rules = {
   location: {
@@ -49,8 +44,8 @@ const { setValidation } = useEditLocationsSnapshotForm();
 const v$ = setValidation(
   rules,
   {
-    location: computed(() => get(form).location),
-    value: computed(() => get(form).usdValue)
+    location,
+    value
   },
   { $autoDirty: true }
 );
@@ -59,15 +54,14 @@ const v$ = setValidation(
 <template>
   <form class="flex flex-col gap-2">
     <LocationSelector
-      :value="form.location"
+      v-model="location"
       :excludes="excludedLocations"
       outlined
       :label="t('common.location')"
       :error-messages="toMessages(v$.location)"
-      @input="updateForm({ location: $event })"
     />
     <AmountInput
-      :value="form.usdValue"
+      v-model="value"
       outlined
       :label="
         t('common.value_in_symbol', {
@@ -75,7 +69,6 @@ const v$ = setValidation(
         })
       "
       :error-messages="toMessages(v$.value)"
-      @input="updateForm({ usdValue: $event })"
     />
   </form>
 </template>

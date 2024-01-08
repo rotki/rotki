@@ -14,9 +14,8 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { value } = toRefs(props);
 
-const input = (newInput: Partial<UserNote>) => {
-  emit('input', { ...get(value), ...newInput });
-};
+const title = useSimplePropVModel(props, 'title', emit);
+const content = useSimplePropVModel(props, 'content', emit);
 
 const { setValidation } = useUserNotesForm();
 
@@ -39,14 +38,13 @@ const v$ = setValidation(
 <template>
   <div>
     <RuiTextField
-      :value="value.title"
+      v-model="title"
       variant="outlined"
       color="primary"
       :label="t('notes_menu.labels.title')"
-      @input="input({ title: $event })"
     />
     <RuiTextArea
-      :value="value.content"
+      v-model="content"
       variant="outlined"
       color="primary"
       max-rows="5"
@@ -54,7 +52,6 @@ const v$ = setValidation(
       auto-grow
       :label="t('notes_menu.labels.content')"
       :error-messages="toMessages(v$.content)"
-      @input="input({ content: $event })"
     />
   </div>
 </template>

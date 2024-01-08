@@ -25,33 +25,33 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { value, enableForAllChains } = toRefs(props);
+
+const name = useSimplePropVModel(props, 'name', emit);
+const address = useSimplePropVModel(props, 'address', emit);
+const location = useSimplePropVModel(props, 'location', emit);
+const blockchain = useSimplePropVModel(props, 'blockchain', emit);
+const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames } = addressesNamesStore;
 
 const addressSuggestions = getAddressesWithoutNames();
-
-const input = (payload: Partial<AddressBookPayload>) => {
-  emit('input', { ...get(value), ...payload });
-};
-
 const locations: AddressBookLocation[] = ['global', 'private'];
 
 const rules = {
   address: {
     required: helpers.withMessage(
-      t('address_book.form.validation.address').toString(),
+      t('address_book.form.validation.address'),
       required
     ),
     isValidEthAddress: helpers.withMessage(
-      t('address_book.form.validation.valid').toString(),
+      t('address_book.form.validation.valid'),
       isValidEthAddress
     )
   },
   name: {
     required: helpers.withMessage(
-      t('address_book.form.validation.name').toString(),
+      t('address_book.form.validation.name'),
       required
     )
   }
@@ -62,15 +62,11 @@ const { setValidation } = useAddressBookForm();
 const v$ = setValidation(
   rules,
   {
-    address: computed(() => get(value).address),
-    name: computed(() => get(value).name)
+    address,
+    name
   },
   { $autoDirty: true }
 );
-
-const updateAllChainsState = (enable: boolean) => {
-  emit('update:enable-for-all-chains', enable);
-};
 
 const { getBlockie } = useBlockie();
 </script>
@@ -78,12 +74,11 @@ const { getBlockie } = useBlockie();
 <template>
   <form>
     <VSelect
-      :value="value.location"
+      v-model="location"
       outlined
       :label="t('common.location')"
       :items="locations"
       :disabled="edit"
-      @input="input({ location: $event })"
     >
       <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
       <template #selection="{ item }">
@@ -92,20 +87,19 @@ const { getBlockie } = useBlockie();
     </VSelect>
     <ChainSelect
       evm-only
-      :model-value="value.blockchain"
+      :model-value="blockchain"
       :disabled="edit || enableForAllChains"
-      @update:model-value="input({ blockchain: $event })"
+      @update:model-value="blockchain = $event"
     />
     <RuiCheckbox
+      v-model="enabledForAllChains"
       :disabled="edit"
       color="primary"
       class="-my-2"
-      :value="enableForAllChains"
       :label="t('address_book.form.labels.for_all_chain')"
-      @input="updateAllChainsState($event)"
     />
     <ComboboxWithCustomInput
-      :value="value.address || ''"
+      v-model="address"
       outlined
       :label="t('address_book.form.labels.address')"
       :items="addressSuggestions"
@@ -113,7 +107,6 @@ const { getBlockie } = useBlockie();
       :disabled="edit"
       :error-messages="toMessages(v$.address)"
       auto-select-first
-      @input="input({ address: $event })"
     >
       <template #prepend-inner>
         <span>
@@ -136,12 +129,11 @@ const { getBlockie } = useBlockie();
       </template>
     </ComboboxWithCustomInput>
     <RuiTextField
-      :value="value.name"
+      v-model="name"
       variant="outlined"
       color="primary"
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
-      @input="input({ name: $event })"
     />
   </form>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type AddressBookPayload } from '@/types/eth-names';
 
-defineProps<{
+const props = defineProps<{
   value: AddressBookPayload;
   enableForAllChains: boolean;
   editMode: boolean;
@@ -14,6 +14,9 @@ const emit = defineEmits<{
 }>();
 
 const { openDialog, submitting, trySubmit } = useAddressBookForm();
+
+const model = useSimpleVModel(props, emit);
+const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
 const resetForm = () => {
   emit('reset');
@@ -35,13 +38,10 @@ const { t } = useI18n();
     @cancel="resetForm()"
   >
     <AddressBookForm
-      :value="value"
+      v-model="model"
       :edit="editMode"
-      :enable-for-all-chains="enableForAllChains"
-      @input="emit('input', $event)"
-      @update:enable-for-all-chains="
-        emit('update:enable-for-all-chains', $event)
-      "
+      :enable-for-all-chains="enabledForAllChains"
+      @update:enable-for-all-chains="enabledForAllChains = $event"
     />
   </BigDialog>
 </template>

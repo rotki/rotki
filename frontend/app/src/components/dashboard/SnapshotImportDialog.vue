@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const visible = useVModel(props, 'value', emit, { eventName: 'input' });
+const visible = useSimpleVModel(props, emit);
 
 const balanceFile = computed<File | null>({
   get() {
