@@ -13,7 +13,6 @@ from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Literal
-from zipfile import ZipFile
 
 from setuptools_scm import get_version
 
@@ -328,7 +327,6 @@ class WindowsPackaging:
         """
         Downloads miniupnpc and extracts the dll in the virtual environment.
         """
-        miniupnc = 'miniupnpc_64bit_py39-2.2.24.zip'
         python_dir = Path(
             subprocess.check_output(
                 'python -c "import os, sys; print(os.path.dirname(sys.executable))"',
@@ -348,25 +346,18 @@ class WindowsPackaging:
 
         build_dir = self.__storage.build_directory
         os.chdir(build_dir)
-        zip_path = build_dir / miniupnc
-        extraction_dir = build_dir / 'miniupnpc'
-        extraction_dir.mkdir(exist_ok=True)
 
-        url = f'https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/{miniupnc}'
-        urllib.request.urlretrieve(url, zip_path)  # noqa: S310
+        dll_file = build_dir / dll_filename
 
-        with ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(extraction_dir)
+        url = f'https://github.com/rotki/rotki-build/raw/main/miniupnpc/dll/2.2.6/{dll_filename}'
+        urllib.request.urlretrieve(url, dll_file)  # noqa: S310
 
-        dll_file = extraction_dir / dll_filename
         logger.info(f'moving {dll_file} to {python_dir}')
 
         shutil.move(
             src=dll_file,
             dst=python_dir,
         )
-        zip_path.unlink(missing_ok=True)
-        shutil.rmtree(extraction_dir)
 
     @log_group('certificates')
     def import_signing_certificates(self) -> bool:
