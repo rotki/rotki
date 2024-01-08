@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type Collection } from '@/types/collection';
 import {
   type Filters,
@@ -21,7 +21,7 @@ const {
   isLoading,
   options,
   fetchData,
-  setOptions,
+  setTableOptions,
   setPage,
   filters,
   matchers,
@@ -56,62 +56,58 @@ const checkConflicts = async () => {
   }
 };
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
+    label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype'
     )}`,
-    value: 'eventTypeAndSubtype',
-    class: 'whitespace-break-spaces',
+    key: 'eventTypeAndSubtype',
+    class: 'whitespace-pre-line',
     cellClass: 'py-4',
     sortable: false
   },
   {
-    text: t('transactions.events.form.resulting_combination.label'),
-    value: 'resultingCombination',
+    label: t('transactions.events.form.resulting_combination.label'),
+    key: 'resultingCombination',
     sortable: false
   },
   {
-    text: t('accounting_settings.rule.labels.counterparty'),
-    value: 'counterparty',
+    label: t('accounting_settings.rule.labels.counterparty'),
+    key: 'counterparty',
     class: 'border-r border-default',
     cellClass: 'border-r border-default',
     sortable: false
   },
   {
-    text: t('accounting_settings.rule.labels.taxable'),
-    value: 'taxable',
+    label: t('accounting_settings.rule.labels.taxable'),
+    key: 'taxable',
     sortable: false,
-    cellClass: 'px-2',
-    class: 'px-2',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
     align: 'center'
   },
   {
-    text: t('accounting_settings.rule.labels.count_entire_amount_spend'),
-    value: 'countEntireAmountSpend',
+    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
+    key: 'countEntireAmountSpend',
     sortable: false,
-    width: '120px',
-    cellClass: 'px-2',
-    class: 'px-2',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
     align: 'center'
   },
   {
-    text: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
-    value: 'countCostBasisPnl',
+    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
+    key: 'countCostBasisPnl',
     sortable: false,
-    width: '120px',
-    cellClass: 'px-2',
-    class: 'px-2',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
     align: 'center'
   },
   {
-    text: t('accounting_settings.rule.labels.accounting_treatment'),
-    value: 'accountingTreatment',
+    label: t('accounting_settings.rule.labels.accounting_treatment'),
+    key: 'accountingTreatment',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
     sortable: false
   },
   {
-    text: t('common.actions_text'),
-    value: 'actions',
+    label: t('common.actions_text'),
+    key: 'actions',
     align: 'center',
     sortable: false,
     width: '1px'
@@ -296,13 +292,20 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
 
       <CollectionHandler :collection="state" @set-page="setPage($event)">
         <template #default="{ data, itemLength }">
-          <DataTable
-            :items="data"
-            :headers="tableHeaders"
+          <RuiDataTable
+            outlined
+            :rows="data"
+            :cols="tableHeaders"
             :loading="isLoading"
             :options="options"
-            :server-items-length="itemLength"
-            @update:options="setOptions($event)"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength
+            }"
+            row-attr="identifier"
+            :pagination-modifiers="{ external: true }"
+            @update:options="setTableOptions($event)"
           >
             <template #header.taxable>
               <RuiTooltip
@@ -378,57 +381,62 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
                 }}
               </RuiTooltip>
             </template>
-            <template #item.eventTypeAndSubtype="{ item }">
-              <div>{{ getHistoryEventTypeName(item.eventType) }} -</div>
-              <div>{{ getHistoryEventSubTypeName(item.eventSubtype) }}</div>
+            <template #header.accountingTreatment>
+              <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
+                {{ t('accounting_settings.rule.labels.accounting_treatment') }}
+              </div>
             </template>
-            <template #item.resultingCombination="{ item }">
+            <template #item.eventTypeAndSubtype="{ row }">
+              <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
+              <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
+            </template>
+            <template #item.resultingCombination="{ row }">
               <HistoryEventTypeCombination
-                :type="getType(item.eventType, item.eventSubtype)"
+                :type="getType(row.eventType, row.eventSubtype)"
                 show-label
               />
             </template>
-            <template #item.counterparty="{ item }">
+            <template #item.counterparty="{ row }">
               <HistoryEventTypeCounterparty
-                v-if="item.counterparty"
+                v-if="row.counterparty"
                 text
-                :event="{ counterparty: item.counterparty }"
+                :event="{ counterparty: row.counterparty }"
               />
               <span v-else>-</span>
             </template>
-            <template #item.taxable="{ item }">
+            <template #item.taxable="{ row }">
               <AccountingRuleWithLinkedSettingDisplay
                 identifier="taxable"
-                :item="item.taxable"
+                :item="row.taxable"
               />
             </template>
-            <template #item.countEntireAmountSpend="{ item }">
+            <template #item.countEntireAmountSpend="{ row }">
               <AccountingRuleWithLinkedSettingDisplay
                 identifier="countEntireAmountSpend"
-                :item="item.countEntireAmountSpend"
+                :item="row.countEntireAmountSpend"
               />
             </template>
-            <template #item.countCostBasisPnl="{ item }">
+            <template #item.countCostBasisPnl="{ row }">
               <AccountingRuleWithLinkedSettingDisplay
                 identifier="countCostBasisPnl"
-                :item="item.countCostBasisPnl"
+                :item="row.countCostBasisPnl"
               />
             </template>
-            <template #item.accountingTreatment="{ item }">
-              <BadgeDisplay v-if="item.accountingTreatment">
-                {{ item.accountingTreatment }}
+            <template #item.accountingTreatment="{ row }">
+              <BadgeDisplay v-if="row.accountingTreatment">
+                {{ row.accountingTreatment }}
               </BadgeDisplay>
               <span v-else>-</span>
             </template>
-            <template #item.actions="{ item }">
+            <template #item.actions="{ row }">
               <RowActions
                 :delete-tooltip="t('accounting_settings.rule.delete')"
                 :edit-tooltip="t('accounting_settings.rule.edit')"
-                @delete-click="showDeleteConfirmation(item)"
-                @edit-click="edit(item)"
+                @delete-click="showDeleteConfirmation(row)"
+                @edit-click="edit(row)"
               />
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
     </RuiCard>

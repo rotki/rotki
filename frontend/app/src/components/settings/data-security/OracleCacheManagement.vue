@@ -1,6 +1,10 @@
 ﻿<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
@@ -9,26 +13,32 @@ import { type OracleCacheMeta } from '@/types/prices';
 
 const { t } = useI18n();
 
-const headers = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref([]);
+
+const headers = computed<DataTableColumn[]>(() => [
   {
-    text: t('oracle_cache_management.headers.from').toString(),
-    value: 'fromAsset'
+    label: t('oracle_cache_management.headers.from').toString(),
+    key: 'fromAsset',
+    sortable: true
   },
   {
-    text: t('oracle_cache_management.headers.to').toString(),
-    value: 'toAsset'
+    label: t('oracle_cache_management.headers.to').toString(),
+    key: 'toAsset',
+    sortable: true
   },
   {
-    text: t('oracle_cache_management.headers.from_date').toString(),
-    value: 'fromTimestamp'
+    label: t('oracle_cache_management.headers.from_date').toString(),
+    key: 'fromTimestamp',
+    sortable: true
   },
   {
-    text: t('oracle_cache_management.headers.to_date').toString(),
-    value: 'toTimestamp'
+    label: t('oracle_cache_management.headers.to_date').toString(),
+    key: 'toTimestamp',
+    sortable: true
   },
   {
-    text: '',
-    value: 'actions'
+    label: '',
+    key: 'actions'
   }
 ]);
 
@@ -234,27 +244,35 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
         <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
       </RuiTooltip>
     </div>
-    <DataTable :headers="headers" :loading="loading" :items="filteredData">
-      <template #item.fromAsset="{ item }">
-        <AssetDetails opens-details :asset="item.fromAsset" />
+    <RuiDataTable
+      outlined
+      dense
+      :cols="headers"
+      :loading="loading"
+      :rows="filteredData"
+      row-attr=""
+      :sort.sync="sort"
+    >
+      <template #item.fromAsset="{ row }">
+        <AssetDetails opens-details :asset="row.fromAsset" />
       </template>
-      <template #item.toAsset="{ item }">
-        <AssetDetails opens-details :asset="item.toAsset" />
+      <template #item.toAsset="{ row }">
+        <AssetDetails opens-details :asset="row.toAsset" />
       </template>
-      <template #item.toTimestamp="{ item }">
-        <DateDisplay :timestamp="item.toTimestamp" />
+      <template #item.toTimestamp="{ row }">
+        <DateDisplay :timestamp="row.toTimestamp" />
       </template>
-      <template #item.fromTimestamp="{ item }">
-        <DateDisplay :timestamp="item.fromTimestamp" />
+      <template #item.fromTimestamp="{ row }">
+        <DateDisplay :timestamp="row.fromTimestamp" />
       </template>
-      <template #item.actions="{ item }">
+      <template #item.actions="{ row }">
         <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
           <template #activator>
             <RuiButton
               color="primary"
               variant="text"
               icon
-              @click="showDeleteConfirmation(item)"
+              @click="showDeleteConfirmation(row)"
             >
               <RuiIcon size="16" name="delete-bin-line" />
             </RuiButton>
@@ -262,6 +280,6 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
           <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
         </RuiTooltip>
       </template>
-    </DataTable>
+    </RuiDataTable>
   </RuiCard>
 </template>

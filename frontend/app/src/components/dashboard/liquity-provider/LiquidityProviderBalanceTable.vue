@@ -6,7 +6,10 @@ import {
 } from '@rotki/common/lib/defi/xswap';
 import { isEqual } from 'lodash-es';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
 import { Routes } from '@/router/routes';
 import {
   DashboardTableType,
@@ -18,27 +21,31 @@ import { TableColumn } from '@/types/table-column';
 const { t } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 
+const sort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const
+});
+
 const createTableHeaders = (
   currency: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
 ) =>
-  computed<DataTableHeader[]>(() => {
+  computed<DataTableColumn[]>(() => {
     const visibleColumns = get(dashboardTablesVisibleColumns)[
       LIQUIDITY_POSITION
     ];
 
-    const headers: DataTableHeader[] = [
+    const headers: DataTableColumn[] = [
       {
-        text: t('common.name'),
-        value: 'name',
-        cellClass: 'text-no-wrap',
-        sortable: false
+        label: t('common.name'),
+        key: 'name',
+        cellClass: 'text-no-wrap'
       },
       {
-        text: t('common.value_in_symbol', {
+        label: t('common.value_in_symbol', {
           symbol: get(currency)
         }),
-        value: 'usdValue',
+        key: 'usdValue',
         align: 'end',
         class: 'text-no-wrap'
       }
@@ -46,11 +53,10 @@ const createTableHeaders = (
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
-        text: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
-        value: 'percentageOfTotalNetValue',
+        label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
+        key: 'percentageOfTotalNetValue',
         align: 'end',
-        class: 'text-no-wrap',
-        sortable: false
+        class: 'text-no-wrap'
       });
     }
 
@@ -58,20 +64,17 @@ const createTableHeaders = (
       visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
     ) {
       headers.push({
-        text: t(
+        label: t(
           'dashboard_asset_table.headers.percentage_of_total_current_group',
           {
             group: t('dashboard.liquidity_position.title')
           }
         ),
-        value: 'percentageOfTotalCurrentGroup',
+        key: 'percentageOfTotalCurrentGroup',
         align: 'end',
-        class: 'text-no-wrap',
-        sortable: false
+        class: 'text-no-wrap'
       });
     }
-
-    headers.push({ text: '', value: 'data-table-expand', sortable: false });
 
     return headers;
   });
@@ -204,52 +207,50 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         class="text-h6 font-bold"
       />
     </template>
-    <DataTable
-      :headers="tableHeaders"
-      :items="balances"
-      sort-by="userBalance.usdValue"
+    <RuiDataTable
+      outlined
+      dense
+      :cols="tableHeaders"
+      :rows="balances"
+      :sort="sort"
       :loading="loading"
-      item-key="id"
-      show-expand
-      :expanded="expanded"
+      row-attr="id"
+      single-expand
+      :expanded.sync="expanded"
     >
-      <template #item.name="{ item }">
-        <div v-if="item.type === 'nft'">
-          <NftDetails
-            :identifier="item.asset"
-            :styled="{ margin: '1px 4px' }"
-          />
+      <template #item.name="{ row }">
+        <div v-if="row.type === 'nft'">
+          <NftDetails :identifier="row.asset" :styled="{ margin: '1px 4px' }" />
         </div>
 
         <div v-else class="flex items-center py-4">
-          <LpPoolIcon :type="item.lpType" :assets="getAssets(item.assets)" />
+          <LpPoolIcon :type="row.lpType" :assets="getAssets(row.assets)" />
           <div class="pl-4 font-medium">
-            {{ getPoolName(item.lpType, getAssets(item.assets)) }}
+            {{ getPoolName(row.lpType, getAssets(row.assets)) }}
           </div>
         </div>
       </template>
-      <template #item.usdValue="{ item }">
-        <AmountDisplay :value="item.usdValue" fiat-currency="USD" />
+      <template #item.usdValue="{ row }">
+        <AmountDisplay :value="row.usdValue" fiat-currency="USD" />
       </template>
-      <template #item.percentageOfTotalNetValue="{ item }">
-        <PercentageDisplay :value="percentageOfTotalNetValue(item.usdValue)" />
+      <template #item.percentageOfTotalNetValue="{ row }">
+        <PercentageDisplay :value="percentageOfTotalNetValue(row.usdValue)" />
       </template>
-      <template #item.percentageOfTotalCurrentGroup="{ item }">
-        <PercentageDisplay :value="percentageOfCurrentGroup(item.usdValue)" />
+      <template #item.percentageOfTotalCurrentGroup="{ row }">
+        <PercentageDisplay :value="percentageOfCurrentGroup(row.usdValue)" />
       </template>
-      <template #expanded-item="{ headers, item }">
+      <template #expanded-item="{ row }">
         <LiquidityProviderBalanceDetails
-          :span="headers.length"
-          :assets="item.assets"
-          :premium-only="item.premiumOnly"
+          :assets="row.assets"
+          :premium-only="row.premiumOnly"
         />
       </template>
-      <template #body.append="{ isMobile }">
+      <template #body.append>
         <RowAppend
           label-colspan="1"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 2"
-          :is-mobile="isMobile"
+          class-name="[&>td]:p-4"
         >
           <AmountDisplay
             :value="totalInUsd"
@@ -258,6 +259,6 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
           />
         </RowAppend>
       </template>
-    </DataTable>
+    </RuiDataTable>
   </DashboardExpandableTable>
 </template>

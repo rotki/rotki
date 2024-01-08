@@ -35,7 +35,7 @@ export const CostBasis = z.object({
 export type CostBasis = z.infer<typeof CostBasis>;
 
 export const ProfitLossEvent = z.object({
-  asset: z.string(),
+  assetIdentifier: z.string(),
   costBasis: CostBasis.nullable(),
   freeAmount: NumericString,
   location: z.string(),

@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { isNft } from '@/utils/nft';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 
@@ -11,34 +15,40 @@ const editMode: Ref<boolean> = ref(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const headers = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref([]);
+
+const headers = computed<DataTableColumn[]>(() => [
   {
-    text: t('price_table.headers.from_asset'),
-    value: 'fromAsset'
+    label: t('price_table.headers.from_asset'),
+    key: 'fromAsset',
+    sortable: true
   },
   {
-    text: '',
-    value: 'isWorth',
-    sortable: false
+    label: '',
+    key: 'isWorth'
   },
   {
-    text: t('common.price'),
-    value: 'price',
+    label: t('common.price'),
+    key: 'price',
+    align: 'end',
+    sortable: true
+  },
+  {
+    label: t('price_table.headers.to_asset'),
+    key: 'toAsset',
+    sortable: true
+  },
+  {
+    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    key: 'usdPrice',
+    align: 'end',
+    sortable: true
+  },
+  {
+    label: '',
+    key: 'actions',
+    class: 'w-[3rem]',
     align: 'end'
-  },
-  {
-    text: t('price_table.headers.to_asset'),
-    value: 'toAsset'
-  },
-  {
-    text: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    value: 'usdPrice',
-    align: 'end'
-  },
-  {
-    text: '',
-    value: 'actions',
-    sortable: false
   }
 ]);
 
@@ -148,47 +158,52 @@ onMounted(async () => {
           </template>
         </AssetSelect>
       </div>
-      <DataTable :items="items" :headers="headers" :loading="loading">
-        <template #item.fromAsset="{ item }">
-          <NftDetails
-            v-if="isNft(item.fromAsset)"
-            :identifier="item.fromAsset"
-          />
+      <RuiDataTable
+        outlined
+        dense
+        :cols="headers"
+        :loading="loading"
+        :rows="items"
+        row-attr=""
+        :sort.sync="sort"
+      >
+        <template #item.fromAsset="{ row }">
+          <NftDetails v-if="isNft(row.fromAsset)" :identifier="row.fromAsset" />
           <AssetDetails
             v-else
             class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
-            :asset="item.fromAsset"
+            :asset="row.fromAsset"
           />
         </template>
-        <template #item.toAsset="{ item }">
-          <AssetDetails :asset="item.toAsset" />
+        <template #item.toAsset="{ row }">
+          <AssetDetails :asset="row.toAsset" />
         </template>
-        <template #item.price="{ item }">
-          <AmountDisplay :value="item.price" />
+        <template #item.price="{ row }">
+          <AmountDisplay :value="row.price" />
         </template>
         <template #item.isWorth>
           {{ t('price_table.is_worth') }}
         </template>
-        <template #item.usdPrice="{ item }">
+        <template #item.usdPrice="{ row }">
           <AmountDisplay
-            :loading="!item.usdPrice || item.usdPrice.lt(0)"
+            :loading="!row.usdPrice || row.usdPrice.lt(0)"
             show-currency="symbol"
-            :price-asset="item.fromAsset"
-            :price-of-asset="item.usdPrice"
+            :price-asset="row.fromAsset"
+            :price-of-asset="row.usdPrice"
             fiat-currency="USD"
-            :value="item.usdPrice"
+            :value="row.usdPrice"
           />
         </template>
-        <template #item.actions="{ item }">
+        <template #item.actions="{ row }">
           <RowActions
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(item)"
-            @edit-click="openForm(item)"
+            @delete-click="showDeleteConfirmation(row)"
+            @edit-click="openForm(row)"
           />
         </template>
-      </DataTable>
+      </RuiDataTable>
     </RuiCard>
 
     <LatestPriceFormDialog :value="price" :edit-mode="editMode" />

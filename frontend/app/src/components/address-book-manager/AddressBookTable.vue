@@ -6,7 +6,10 @@ import {
 } from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableOptions
+} from '@rotki/ui-library-compat';
 import {
   type AddressBookEntry,
   type AddressBookLocation
@@ -24,7 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
   (e: 'update:page', page: number): void;
-  (e: 'update:options', pagination: TablePagination<AddressBookEntry>): void;
+  (e: 'update:options', pagination: DataTableOptions): void;
   (e: 'refresh'): void;
 }>();
 
@@ -34,7 +37,7 @@ const setPage = (page: number) => {
   emit('update:page', page);
 };
 
-const updatePagination = (pagination: TablePagination<AddressBookEntry>) =>
+const updatePagination = (pagination: DataTableOptions) =>
   emit('update:options', pagination);
 
 const refresh = () => {
@@ -94,20 +97,20 @@ const edit = (item: AddressBookEntry) => {
   emit('edit', item);
 };
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.address').toString(),
-    value: 'address',
+    label: t('common.address').toString(),
+    key: 'address',
     sortable: false
   },
   {
-    text: t('common.name').toString(),
-    value: 'name',
+    label: t('common.name').toString(),
+    key: 'name',
     sortable: false
   },
   {
-    text: '',
-    value: 'actions',
+    label: '',
+    key: 'actions',
     sortable: false
   }
 ]);
@@ -119,34 +122,43 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
   <div>
     <CollectionHandler :collection="collection" @set-page="setPage($event)">
       <template #default="{ data, itemLength }">
-        <DataTable
-          :items="data"
-          :headers="tableHeaders"
+        <RuiDataTable
+          dense
+          :rows="data"
+          :cols="tableHeaders"
           :loading="loading"
           :options="options"
+          :pagination="{
+            limit: options.itemsPerPage,
+            page: options.page,
+            total: itemLength
+          }"
+          :pagination-modifiers="{ external: true }"
+          row-attr=""
+          outlined
           :server-items-length="itemLength"
           @update:options="updatePagination($event)"
         >
-          <template #item.address="{ item }">
+          <template #item.address="{ row }">
             <AccountDisplay
               :account="{
-                address: item.address,
-                chain: item.blockchain
+                address: row.address,
+                chain: row.blockchain
               }"
               :use-alias-name="false"
               :truncate="false"
             />
           </template>
-          <template #item.actions="{ item }">
+          <template #item.actions="{ row }">
             <RowActions
               :disabled="loading"
               :delete-tooltip="t('address_book.actions.delete.tooltip')"
               :edit-tooltip="t('address_book.actions.edit.tooltip')"
-              @delete-click="showDeleteConfirmation(item)"
-              @edit-click="edit(item)"
+              @delete-click="showDeleteConfirmation(row)"
+              @edit-click="edit(row)"
             />
           </template>
-        </DataTable>
+        </RuiDataTable>
       </template>
     </CollectionHandler>
   </div>
