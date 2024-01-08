@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, cast, get_args, overload
+from typing import Any, Literal, Optional, Unpack, cast, get_args, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -44,7 +44,13 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
-from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.cache import (
+    AddressArgType,
+    DBCacheDynamic,
+    DBCacheStatic,
+    LabeledLocationArgsType,
+    LabeledLocationIdArgsType,
+)
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
@@ -668,6 +674,33 @@ class DBHandler:
             (name.value, value),
         )
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
+            **kwargs: Unpack[LabeledLocationArgsType],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_QUERY_TS, DBCacheDynamic.LAST_QUERY_ID],
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_TS, DBCacheDynamic.WITHDRAWALS_IDX],
+            **kwargs: Unpack[AddressArgType],
+    ) -> Timestamp | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
@@ -675,11 +708,41 @@ class DBHandler:
             **kwargs: str,
     ) -> Timestamp | None:
         """Returns the cache value from the `key_value_cache` table of the DB
-        according to the given `name` and `kwargs`. Defaults to `None` if not found"""
+        according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
         ).fetchone()
         return None if value is None else Timestamp(int(value[0]))
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
+            value: Timestamp,
+            **kwargs: Unpack[LabeledLocationArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_QUERY_TS, DBCacheDynamic.LAST_QUERY_ID],
+            value: Timestamp,
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_TS, DBCacheDynamic.WITHDRAWALS_IDX],
+            value: Timestamp,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
 
     def set_dynamic_cache(
             self,
@@ -688,8 +751,7 @@ class DBHandler:
             value: Timestamp,
             **kwargs: str,
     ) -> None:
-        """Save the name-value pair of the cache with variable name
-        to the `key_value_cache` table of the DB"""
+        """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
         write_cursor.execute(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
             (name.get_db_key(**kwargs), value),

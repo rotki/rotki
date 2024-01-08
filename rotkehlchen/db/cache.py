@@ -1,3 +1,5 @@
+from typing import TypedDict, Unpack, overload
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.mixins.enums import Enum
 
 
@@ -16,6 +18,22 @@ class DBCacheStatic(Enum):
     LAST_WITHDRAWALS_EXIT_QUERY_TS = 'last_withdrawals_exit_query_ts'
 
 
+class LabeledLocationArgsType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_CRYPTOTX_OFFSET`"""
+    location: str
+    location_name: str
+
+
+class LabeledLocationIdArgsType(LabeledLocationArgsType):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_QUERY_TS` and `DBCacheDynamic.LAST_QUERY_ID`"""  # noqa: E501
+    account_id: str
+
+
+class AddressArgType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.WITHDRAWALS_TS` and `DBCacheDynamic.WITHDRAWALS_IDX`"""  # noqa: E501
+    address: ChecksumEvmAddress
+
+
 class DBCacheDynamic(Enum):
     """It contains all the formattable keys that depend on a variable
     that can be stored in the `key_value_cache` table"""
@@ -25,5 +43,22 @@ class DBCacheDynamic(Enum):
     WITHDRAWALS_TS = 'ethwithdrawalsts_{address}'
     WITHDRAWALS_IDX = 'ethwithdrawalsidx_{address}'
 
+    @overload
+    def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[LabeledLocationIdArgsType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[AddressArgType]) -> str:
+        ...
+
     def get_db_key(self, **kwargs: str) -> str:
+        """Get the key that is used in the DB schema for the given kwargs.
+
+        May Raise KeyError if incompatible kwargs are passed. Pass the kwargs according to the
+        supported overloads only. The potential KeyError is handled by type checking. It is
+        considered a programming error and it is not handled explicitly."""
         return self.value.format(**kwargs)
