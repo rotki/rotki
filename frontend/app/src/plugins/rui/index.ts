@@ -184,7 +184,7 @@ import {
 } from '@rotki/ui-library-compat';
 import '@rotki/ui-library-compat/style.css';
 
-export default (defaults: RuiOptions['defaults']) =>
+export default (defaults: Partial<RuiOptions['defaults']>) =>
   createRui({
     theme: {
       mode: ThemeMode.light,
