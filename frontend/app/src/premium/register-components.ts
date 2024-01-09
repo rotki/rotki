@@ -13,6 +13,7 @@ import {
   RuiButton,
   RuiButtonGroup,
   RuiCard,
+  RuiChip,
   RuiDataTable,
   RuiDivider,
   RuiIcon,
@@ -74,6 +75,7 @@ const ruiRegister = (): void => {
   Vue.component('RuiCard', RuiCard);
   Vue.component('RuiDataTable', RuiDataTable);
   Vue.component('RuiDivider', RuiDivider);
+  Vue.component('RuiChip', RuiChip);
 };
 
 export function registerComponents(): void {

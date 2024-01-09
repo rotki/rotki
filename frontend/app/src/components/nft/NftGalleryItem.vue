@@ -115,8 +115,15 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
               width="auto"
               :src="imageUrl"
               :style="mediaStyle"
+              class="w-full"
             />
-            <AppImage v-else :src="imageUrl" contain :style="mediaStyle" />
+            <AppImage
+              v-else
+              :src="imageUrl"
+              contain
+              :style="mediaStyle"
+              size="100%"
+            />
           </ExternalLink>
         </template>
 

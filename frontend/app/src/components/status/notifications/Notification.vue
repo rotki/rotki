@@ -94,12 +94,14 @@ const action = async (notification: NotificationData) => {
     :variant="popup ? 'flat' : 'outlined'"
   >
     <div :class="css.body" class="flex-col items-stretch p-0">
-      <div class="flex pb-1 items-center">
+      <div class="flex pb-1 items-center overflow-hidden">
         <div class="mr-3 ml-1 my-0 rounded-full p-2" :class="circleBgClass">
           <RuiIcon size="24" class="text-white" :name="icon" />
         </div>
-        <div class="grow">
-          <div class="font-medium">{{ notification.title }}</div>
+        <div class="flex-1 text-truncate">
+          <div class="font-medium text-truncate" :title="notification.title">
+            {{ notification.title }}
+          </div>
           <div class="text-caption text-rui-text-secondary">{{ date }}</div>
         </div>
         <RuiTooltip
