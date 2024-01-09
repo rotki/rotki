@@ -880,7 +880,7 @@ Adding information for web3 nodes
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Insertion was successful.
-   :statuscode 409: No user is logged or entrie couldn't be created.
+   :statuscode 409: No user is logged or entry couldn't be created.
    :statuscode 500: Internal rotki error
 
 .. http:patch:: /api/(version)/blockchains/(blockchain)/nodes
@@ -912,7 +912,7 @@ Adding information for web3 nodes
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Update was successful.
-   :statuscode 409: No user is logged or entrie couldn't be updated.
+   :statuscode 409: No user is logged or entry couldn't be updated.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/blockchains/(blockchain)/nodes
@@ -5626,7 +5626,7 @@ Get missing acquisitions and prices
    :resjsonarr str from_asset: The asset whose price is missing.
    :resjsonarr str to_asset: The asset in which we want the price of from_asset.
    :resjsonarr int time: The timestamp for which the price is missing.
-   :resjosnarr bool reate_limited: True if we couldn't get the price and any of the oracles got rate limited.
+   :resjosnarr bool rate_limited: True if we couldn't get the price and any of the oracles got rate limited.
    :resjson list missing_acquisitions: A list that contains entries of missing acquisitions found during PnL reporting.
    :resjsonarr str asset: The asset that is involved in the event.
    :resjsonarr int time: The timestamp this event took place in.
@@ -8560,7 +8560,7 @@ Adding an Eth2 validator
       PUT /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
 
-   :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the public key of the validator has to be given!
    :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
    :resjson ownership_percentage: An optional string representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
