@@ -186,6 +186,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
+from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     get_event_type_identifier,
@@ -1990,6 +1991,12 @@ class RestAPI:
                     (SPAM_PROTOCOL, asset_tuple[0].identifier)
                     for asset_tuple in assets_to_ignore if asset_tuple[1] is True
                 ],
+            )
+            # remove the assets from the whitelist if they were there
+            globaldb_delete_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=tuple(asset_tuple[0].identifier for asset_tuple in assets_to_ignore if asset_tuple[1] is True),  # noqa: E501
             )
 
         asset_resolver = AssetResolver()
@@ -4720,12 +4727,7 @@ class RestAPI:
             )
 
             if token.protocol == SPAM_PROTOCOL:  # remove the spam protocol if it was set
-                write_cursor.execute(
-                    'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
-                    (None, token.identifier),
-                )
-                object.__setattr__(token, 'protocol', None)
-                AssetResolver.clean_memory_cache(identifier=token.identifier)
+                set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=False)
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:  # remove it from the ignored assets  # noqa: E501
             self.rotkehlchen.data.db.remove_from_ignored_assets(
@@ -4754,3 +4756,29 @@ class RestAPI:
             )
 
         return api_response(_wrap_in_ok_result(whitelisted_tokens), status_code=HTTPStatus.OK)
+
+    def add_token_to_spam(self, token: EvmToken) -> Response:
+        """Change the protocol value for the provided token to spam if it isn't spam"""
+        if token.protocol == SPAM_PROTOCOL:
+            return api_response(
+                result=wrap_in_fail_result(f'Token {token.identifier} is already marked as spam'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def remove_token_from_spam(self, token: EvmToken) -> Response:
+        """Change the protocol value of the token to None if its current value is spam"""
+        if token.protocol != SPAM_PROTOCOL:
+            return api_response(
+                result=wrap_in_fail_result(f'Token {token.identifier} is not marked as spam'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=False)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

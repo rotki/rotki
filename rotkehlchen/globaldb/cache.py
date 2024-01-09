@@ -66,7 +66,7 @@ def globaldb_set_general_cache_values(
 def globaldb_delete_general_cache_values(
         write_cursor: DBCursor,
         key_parts: Iterable[str | GeneralCacheType],
-        values: tuple[str] | None = None,
+        values: tuple[str, ...] | None = None,
 ) -> None:
     """
     Delete an entry from the general_cache. If a list of values is provided it deletes

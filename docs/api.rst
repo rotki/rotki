@@ -10274,6 +10274,78 @@ False positive in spam assets
   :statuscode 500: Internal rotki error.
 
 
+Toggle spam status in evm tokens
+==================================
+
+.. http:post:: /api/(version)/assets/evm/spam/
+
+   Doing a POST on this endpoint will mark the provided token as a spam token. Any protocol value that the token might have will be overwritten.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PATH /api/1/assets/evm/spam HTTP/1.1
+      Host: localhost:5042
+
+      {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+
+
+  :reqjsonarr string token: The identifier of the evm token that will be marked as spam
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Asset marked as spam successfully.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: The asset was already marked as spam.
+  :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/assets/evm/spam/
+
+   Doing a DELETE on this endpoint will remove the spam protocol from the token setting it to null.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/evm/spam HTTP/1.1
+      Host: localhost:5042
+
+      {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+
+
+  :reqjsonarr string token: The identifier of the evm token that will be updated removing the protocol value of spam.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Asset updated correctly.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: The asset wasn't marked as spam.
+  :statuscode 500: Internal rotki error.
+
+
 Dealing with ignored actions
 ==============================
 

@@ -3258,3 +3258,7 @@ class AccountingRuleConflictsPagination(DBPaginationSchema):
 
 class FalsePositveSpamTokenSchema(Schema):
     token = AssetField(expected_type=EvmToken, required=True)
+
+
+class SpamTokenSchema(Schema):
+    token = AssetField(expected_type=EvmToken, required=True)
