@@ -99,9 +99,19 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         """
         if asset.is_evm_token() is True:
             asset = asset.resolve_to_evm_token()
-            # The evm chain names we have so far match perfectly except for 'polygon pos'
-            # which is expected as polygon by the defillama api
-            chain_name = 'polygon' if asset.chain_id == ChainID.POLYGON_POS else str(asset.chain_id)  # noqa: E501
+            # The evm names for chains that we give don't match what defillama
+            # uses in all the cases
+            if asset.chain_id == ChainID.POLYGON_POS:
+                chain_name = 'polygon'
+            elif asset.chain_id == ChainID.ARBITRUM_ONE:
+                chain_name = 'arbitrum'
+            elif asset.chain_id == ChainID.BINANCE:
+                chain_name = 'bsc'
+            elif asset.chain_id == ChainID.AVALANCHE:
+                chain_name = 'avax'
+            else:
+                chain_name = str(asset.chain_id)
+
             return f'{chain_name}:{asset.evm_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
@@ -168,7 +178,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             log.warning(
                 f'Tried to query current price using Defillama from {from_asset} to '
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
-                f'suppported by defillama',
+                f'supported by defillama',
             )
             return ZERO_PRICE, False
 
@@ -183,7 +193,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
         # We got the price in usd but that is not what we need we should query for the next
         # step in the chain of prices
-        rate_price = Inquirer().find_price(from_asset=A_USD, to_asset=to_asset)
+        rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)
         return Price(usd_price * rate_price), False
 
     def can_query_history(
