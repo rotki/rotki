@@ -7892,7 +7892,7 @@ Getting yearn finance vaults balances
 
 
    :statuscode 200: Yearn vault balances successfully queried.
-   :statuscode 409: User is not logged in.
+   :statuscode 401: User is not logged in.
    :statuscode 409: Yearn module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.

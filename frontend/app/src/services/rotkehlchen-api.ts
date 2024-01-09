@@ -56,6 +56,7 @@ export class RotkehlchenApi {
       transformResponse: basicAxiosTransformer
     });
     this.setupCancellation();
+    this.setupAuthRedirect();
   }
 
   private setupCancellation() {
@@ -66,6 +67,29 @@ export class RotkehlchenApi {
       },
       error => {
         if (error.response) {
+          return Promise.reject(error.response.data);
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private setupAuthRedirect() {
+    this.axios.interceptors.response.use(
+      response => {
+        if (response.status === 401) {
+          this.cancel();
+          window.location.href = '/';
+        }
+
+        return response;
+      },
+      error => {
+        if (error.response) {
+          if (error.response.status === 401) {
+            this.cancel();
+            window.location.href = '/';
+          }
           return Promise.reject(error.response.data);
         }
         return Promise.reject(error);
