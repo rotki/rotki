@@ -62,7 +62,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     }, HistoryEventType.STAKING: {
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.STAKE_DEPOSIT,
         HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
-        HistoryEventSubType.REMOVE_ASSET: EventCategory.STAKE_WITHDRAWAL,
+        HistoryEventSubType.REMOVE_ASSET: EventCategory.UNSTAKE,
         HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
         HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
         HistoryEventSubType.FEE: EventCategory.FEE,
@@ -203,8 +203,11 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.STAKE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='Stake',
         icon='folder-add-line',
-    )}, EventCategory.STAKE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
+    )}, EventCategory.UNSTAKE: {DEFAULT: EventCategoryDetails(
         label='Unstake',
+        icon='folder-reduce-line',
+    )}, EventCategory.STAKE_EXIT: {DEFAULT: EventCategoryDetails(
+        label='exit',
         icon='folder-reduce-line',
     )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
         label='Attest',

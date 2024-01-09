@@ -442,6 +442,16 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     )
     result = assert_proper_response_with_result(response)
     assert 'global_mappings' in result
+    assert result['entry_type_mappings'] == {
+        'eth withdrawal event': {
+            'staking': {
+                'remove asset': {
+                    'is_exit': 'stake exit',
+                    'not_exit': 'withdraw',
+                },
+            },
+        },
+    }
     assert 'event_category_details' in result
     assert 'accounting_events_icons' in result
     received_accounting_event_types = {
