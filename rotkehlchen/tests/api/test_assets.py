@@ -19,7 +19,11 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.globaldb.cache import (
+    compute_cache_key,
+    globaldb_get_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -143,6 +147,15 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     clean_ignored_assets(rotki.data.db)
+    # add GNO to the whitelisted assets to verify that it is later removed
+    # from there when the token is set as spam.
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+            values=(A_GNO.identifier,),
+        )
+
     # add three assets to ignored assets
     ignored_assets = [
         {'asset': A_GNO.identifier, 'is_spam': True},
@@ -159,6 +172,16 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
     expected_ignored_assets = {ignored_asset['asset'] for ignored_asset in ignored_assets}
     assert expected_ignored_assets == set(result)
     assert A_GNO.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    # check that it is not whitelisted
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key=? AND value=?',
+            (
+                compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,)),
+                A_GNO.identifier,
+            ),
+        )
+        assert cursor.fetchone() == (0,)
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
@@ -1145,3 +1168,64 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
             cursor=cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         )) == 0
+
+
+def test_setting_tokens_as_spam(rotkehlchen_api_server):
+    """Test the endpoints which set the spam protocol on tokens"""
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamevmtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    assert_proper_response(response)
+    assert A_DAI.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+
+    # check that calling it again fails
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamevmtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is already marked as spam',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # check that it fails if we try to add any other asset type
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamevmtokenresource',
+        ), json={'token': A_BTC.identifier},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='to be EvmToken but in fact it was',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # remove the spam protocol
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamevmtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    assert_proper_response(response)
+    assert A_DAI.resolve_to_evm_token().protocol is None
+
+    # check that calling it again fails
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamevmtokenresource',
+        ), json={'token': A_DAI.identifier},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not marked as spam',
+        status_code=HTTPStatus.CONFLICT,
+    )

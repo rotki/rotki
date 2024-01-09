@@ -141,6 +141,7 @@ from rotkehlchen.api.v1.schemas import (
     SnapshotImportingSchema,
     SnapshotQuerySchema,
     SnapshotTimestampQuerySchema,
+    SpamTokenSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
@@ -3131,3 +3132,18 @@ class FalsePositiveSpamTokenResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_spam_assets_false_positives()
+
+
+class SpamEvmTokenResource(BaseMethodView):
+
+    post_delete_schema = SpamTokenSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_query')
+    def post(self, token: EvmToken) -> Response:
+        return self.rest_api.add_token_to_spam(token=token)
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_query')
+    def delete(self, token: EvmToken) -> Response:
+        return self.rest_api.remove_token_from_spam(token=token)
