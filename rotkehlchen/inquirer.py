@@ -168,23 +168,23 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price = Inquirer().find_yearn_price(token)
 
     if token == A_YV1_ALINK:
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_ALINK_V1)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ALINK_V1)
     elif token == A_YV1_GUSD:
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_GUSD)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_GUSD)
     elif token in (A_YV1_DAI, A_FARM_DAI):
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_DAI)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)
     elif token in (A_FARM_WETH, A_YV1_WETH):
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_ETH)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ETH)
     elif token == A_YV1_YFI:
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_YFI)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_YFI)
     elif token in (A_FARM_USDT, A_YV1_USDT):
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_USDT)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDT)
     elif token in (A_FARM_USDC, A_YV1_USDC):
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_USDC)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDC)
     elif token in (A_FARM_TUSD, A_YV1_TUSD):
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_TUSD)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
-        price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_BTC)
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
 
     # At this point we have to return the price if it's not None. If we don't do this and got
     # a price for a token that has underlying assets, the code will enter the if statement after
