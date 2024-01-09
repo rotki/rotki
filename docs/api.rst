@@ -12450,6 +12450,16 @@ Event Mappings
               "none":"send"
             }
           },
+          "entry_type_mappings":{
+            "eth withdrawal event":{
+              "staking":{
+                "remove asset":{
+                    "is_exit":"stake exit",
+                    "not_exit":"withdraw"
+                }
+              }
+            }
+          },
           "per_protocol_mappings":{
             "ethereum":{
               "aave":{
@@ -12516,6 +12526,7 @@ Event Mappings
       }
 
   :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
+  :resjson object type_mappings: the keys of this mapping are entry types and it contains the combinations of event type and subtype that would overwritte the information in ``global_mappings`` only for that entry type.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_category_details: This is a mapping of ``EventCategory`` to its direction and mapping of counterparty to details. For all the ``EventCategoryDetails`` mapping there is a ``"default"`` key mapping to the default details. For some exceptions there is also other keys which are counterparties. Such as for spend/fee and counterparty gas.
   :resjon object accounting_events_icons: Mapping of accounting event type to its corresponding icon name.

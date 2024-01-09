@@ -31,6 +31,7 @@ from rotkehlchen.accounting.constants import (
     FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
+from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
 from rotkehlchen.accounting.export.csv import (
     FILENAME_HISTORY_EVENTS_CSV,
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
@@ -4346,6 +4347,7 @@ class RestAPI:
     def get_types_mappings(self) -> Response:
         result = {
             'global_mappings': EVENT_CATEGORY_MAPPINGS,
+            'entry_type_mappings': ENTRY_TYPE_MAPPINGS,
             'event_category_details': {
                 category: {'counterparty_mappings': entries, 'direction': category.direction.serialize()}  # noqa: E501
                 for category, entries in EVENT_CATEGORY_DETAILS.items()
