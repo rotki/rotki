@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { contextColors } from '@rotki/ui-library-compat';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
@@ -35,7 +36,11 @@ export type HistoryEventCategoryMapping = z.infer<
 export const HistoryEventTypeData = z.object({
   globalMappings: HistoryEventTypeMapping,
   eventCategoryDetails: HistoryEventCategoryMapping,
-  accountingEventsIcons: z.record(z.string())
+  accountingEventsIcons: z.record(z.string()),
+  entryTypeMappings: z.record(
+    z.nativeEnum(HistoryEventEntryType),
+    z.record(HistoryEventTypeMapping)
+  )
 });
 
 export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;
