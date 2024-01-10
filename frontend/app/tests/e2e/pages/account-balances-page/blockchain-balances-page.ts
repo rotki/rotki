@@ -70,7 +70,7 @@ export class BlockchainBalancesPage {
 
     cy.get('@blockchain-section').should('exist');
     cy.get('@blockchain-section')
-      .get('.v-data-table__progress', { timeout: 300000 })
+      .get('th div[role=progressbar]', { timeout: 300000 })
       .should('not.exist');
 
     cy.get('@blockchain-section')
@@ -108,9 +108,12 @@ export class BlockchainBalancesPage {
   private getBalances() {
     const balances: Map<string, BigNumber> = new Map();
 
-    cy.get('[data-cy=blockchain-asset-balances] .v-data-table__empty-wrapper', {
-      timeout: 300000
-    }).should('not.exist');
+    cy.get(
+      '[data-cy=blockchain-asset-balances] > tbody > [class*=_tr__empty]',
+      {
+        timeout: 300000
+      }
+    ).should('not.exist');
 
     cy.get('[data-cy=account-table]').each($element =>
       this.updateTableBalance($element, balances)
@@ -147,20 +150,21 @@ export class BlockchainBalancesPage {
       return true;
     }
 
-    cy.wrap($element).as(`${blockchain}-table`);
+    cy.wrap($element.find('> div > table')).as(`${blockchain}-table`);
     cy.get(`@${blockchain}-table`).scrollIntoView();
     cy.get(`@${blockchain}-table`)
-      .find('.v-data-table__progress', {
+      .find('> thead > th div[role=progressbar]', {
         timeout: 240000
       })
       .should('not.be.exist');
 
-    const amount = $element
+    cy.get(`@${blockchain}-table`)
       .find(
-        `tr:contains(${blockchain.toUpperCase()}) td:nth-child(4) [data-cy="display-amount"]`
+        `> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`
       )
-      .text();
-    updateLocationBalance(amount, balances, blockchain);
+      .then(el => {
+        updateLocationBalance(el.text(), balances, blockchain);
+      });
   }
 
   editBalance(
@@ -191,7 +195,7 @@ export class BlockchainBalancesPage {
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
-      .find('[data-cy="account-balances-item-checkbox"]')
+      .find('[data-cy*=table-toggle-check-] input[type=checkbox]')
       .click();
 
     cy.get(`[data-cy=account-balances][data-location=${balance.blockchain}]`)

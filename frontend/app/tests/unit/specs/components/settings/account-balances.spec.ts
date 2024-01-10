@@ -6,6 +6,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import createCustomPinia from '../../../utils/create-pinia';
+import { libraryDefaults } from '../../../utils/provide-defaults';
 
 describe('AccountBalances.vue', () => {
   let wrapper: Wrapper<any>;
@@ -21,7 +22,8 @@ describe('AccountBalances.vue', () => {
         blockchain: Blockchain.ETH,
         balances: [],
         title: 'ETH balances'
-      }
+      },
+      provide: libraryDefaults
     });
   });
 
@@ -54,10 +56,7 @@ describe('AccountBalances.vue', () => {
         .attributes('disabled')
     ).toBe('disabled');
 
-    expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
-    expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'account_balances.data_table.loading'
-    );
+    expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
 
     remove(1);
     useStatusStore().setStatus({
@@ -72,9 +71,7 @@ describe('AccountBalances.vue', () => {
         .find('button')
         .attributes('disabled')
     ).toBeUndefined();
-    expect(wrapper.find('.v-data-table__progress').exists()).toBeFalsy();
-    expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'No data available'
-    );
+    expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });

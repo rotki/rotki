@@ -148,7 +148,8 @@ export const accountsWithBalances = (
       tags: account.tags ?? [],
       chain: blockchain,
       nativeAsset: nativeAsset !== blockchain ? nativeAsset : undefined,
-      balance
+      balance,
+      ...balance
     });
   }
   return data;
@@ -169,7 +170,8 @@ export const btcAccountsWithBalances = (
       label: label ?? '',
       tags: tags ?? [],
       chain: blockchain,
-      balance
+      balance,
+      ...balance
     });
   }
 

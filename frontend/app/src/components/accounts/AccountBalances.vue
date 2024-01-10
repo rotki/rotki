@@ -219,15 +219,13 @@ const refreshClick = async () => {
     <AccountBalanceTable
       ref="balanceTable"
       class="mt-4"
-      data-cy="blockchain-balances"
       :loopring="loopring"
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
-      :selected="selectedAddresses"
+      :selected.sync="selectedAddresses"
       @edit-click="editAccount($event)"
       @delete-xpub="showConfirmation($event)"
-      @addresses-selected="selectedAddresses = $event"
     />
   </RuiCard>
 </template>

@@ -56,8 +56,8 @@ importers:
         specifier: 1.1.2
         version: 1.1.2(eslint@8.55.0)
       '@rotki/ui-library-compat':
-        specifier: 0.14.0
-        version: 0.14.0(@vueuse/core@10.7.1)(@vueuse/shared@10.7.1)(vue@2.7.16)
+        specifier: 0.14.1
+        version: 0.14.1(@vueuse/core@10.7.1)(@vueuse/shared@10.7.1)(vue@2.7.16)
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -2590,8 +2590,8 @@ packages:
       - vue
     dev: true
 
-  /@rotki/ui-library-compat@0.14.0(@vueuse/core@10.7.1)(@vueuse/shared@10.7.1)(vue@2.7.16):
-    resolution: {integrity: sha512-aDNDNtaiMKrRB+CilrO3CGbhrV/QSvOlK2eWq3LPQqt+qXUz4k8xI5sh4EBO+op6uykp6JABON541hObz6JcoQ==}
+  /@rotki/ui-library-compat@0.14.1(@vueuse/core@10.7.1)(@vueuse/shared@10.7.1)(vue@2.7.16):
+    resolution: {integrity: sha512-U65zMT4WV7I+DJq1qz2Yu4dGbe6OaX7BvMFz4/yoOLh5JXur54DEmQEovd7TQn9R++Nwd0KPlXNjbPkFaPGFSg==}
     engines: {pnpm: '>=8 <9'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
