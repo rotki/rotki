@@ -150,20 +150,21 @@ export class BlockchainBalancesPage {
       return true;
     }
 
-    cy.wrap($element).as(`${blockchain}-table`);
+    cy.wrap($element.find('> div > table')).as(`${blockchain}-table`);
     cy.get(`@${blockchain}-table`).scrollIntoView();
     cy.get(`@${blockchain}-table`)
-      .find('th div[role=progressbar]', {
+      .find('> thead > th div[role=progressbar]', {
         timeout: 240000
       })
       .should('not.be.exist');
 
-    const amount = $element
+    cy.get(`@${blockchain}-table`)
       .find(
-        `tr:contains(${blockchain.toUpperCase()}) td:nth-child(4) [data-cy="display-amount"]`
+        `> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`
       )
-      .text();
-    updateLocationBalance(amount, balances, blockchain);
+      .then(el => {
+        updateLocationBalance(el.text(), balances, blockchain);
+      });
   }
 
   editBalance(
