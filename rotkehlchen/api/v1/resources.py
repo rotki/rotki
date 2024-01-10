@@ -28,7 +28,6 @@ from rotkehlchen.api.v1.schemas import (
     AccountingReportsSchema,
     AccountingRuleConflictsPagination,
     AccountingRulesQuerySchema,
-    AddIgnoredAssetsSchema,
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
@@ -66,7 +65,6 @@ from rotkehlchen.api.v1.schemas import (
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
-    DeleteIgnoredAssetsSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
     EditHistoryEventSchema,
@@ -106,6 +104,7 @@ from rotkehlchen.api.v1.schemas import (
     HistoryProcessingExportSchema,
     HistoryProcessingSchema,
     IgnoredActionsModifySchema,
+    IgnoredAssetsSchema,
     IntegerIdentifierSchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
@@ -1716,20 +1715,19 @@ class BTCXpubResource(BaseMethodView):
 
 class IgnoredAssetsResource(BaseMethodView):
 
-    put_schema = AddIgnoredAssetsSchema()
-    post_schema = DeleteIgnoredAssetsSchema()
+    modify_schema = IgnoredAssetsSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_ignored_assets()
 
     @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
-    def put(self, assets: list[tuple[Asset, bool]]) -> Response:
+    @use_kwargs(modify_schema, location='json')
+    def put(self, assets: list[Asset]) -> Response:
         return self.rest_api.add_ignored_assets(assets_to_ignore=assets)
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
+    @use_kwargs(modify_schema, location='json')
     def delete(self, assets: list[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
 

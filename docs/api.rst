@@ -10110,14 +10110,9 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": [{
-         "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96",
-         "is_spam": true
-      }]}
+      {"assets": ["eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"]}
 
-   :reqjson list assets: A list of assets to be ignored
-   :reqjson string asset: The id of the asset to be ignored
-   :reqjson bool is_spam: True if the asset should also be marked as spam in addition to putting to the ignore list.
+   :reqjson list assets: A list of asset symbols to add to the ignored assets.
 
    **Example Response**:
 
@@ -10140,7 +10135,7 @@ Dealing with ignored assets
 
 .. http:delete:: /api/(version)/assets/ignored/
 
-   Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. It will also remove the assets from the spam list. Returns the new list without the removed assets in the response.
+   Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. Returns the new list without the removed assets in the response.
 
 
    **Example Request**:
@@ -10208,7 +10203,7 @@ False positive in spam assets
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Asset added to spam whitelist successfully.
-  :statuscode 409: No user is currently logged in.
+  :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error.
 
 .. http:get:: /api/(version)/assets/ignored/whitelist
@@ -10279,7 +10274,7 @@ Toggle spam status in evm tokens
 
 .. http:post:: /api/(version)/assets/evm/spam/
 
-   Doing a POST on this endpoint will mark the provided token as a spam token. Any protocol value that the token might have will be overwritten.
+   Doing a POST on this endpoint will mark the provided token as a spam token. It will move the token to the list of ignored assets and remove it from the list of whitelisted tokens. Any protocol value that the token might have will be overwritten.
 
   **Example Request**
 
@@ -10308,12 +10303,11 @@ Toggle spam status in evm tokens
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Asset marked as spam successfully.
   :statuscode 401: No user is currently logged in.
-  :statuscode 409: The asset was already marked as spam.
   :statuscode 500: Internal rotki error.
 
 .. http:delete:: /api/(version)/assets/evm/spam/
 
-   Doing a DELETE on this endpoint will remove the spam protocol from the token setting it to null.
+   Doing a DELETE on this endpoint will remove the spam protocol from the token setting it to null. It will also remove the token from the list of ignored assets.
 
   **Example Request**
 
@@ -10342,7 +10336,6 @@ Toggle spam status in evm tokens
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Asset updated correctly.
   :statuscode 401: No user is currently logged in.
-  :statuscode 409: The asset wasn't marked as spam.
   :statuscode 500: Internal rotki error.
 
 
