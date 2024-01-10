@@ -1,5 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import {
   type HistoryEventCategoryDetailWithId,
   type HistoryEventCategoryMapping,
@@ -12,6 +13,8 @@ type Event = MaybeRef<{
   eventType: string;
   eventSubtype: string;
   counterparty?: string | null;
+  entryType?: string;
+  isExit?: boolean;
 }>;
 
 export const useHistoryEventMappings = createSharedComposable(() => {
@@ -26,7 +29,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
     eventCategoryDetails: {},
-    accountingEventsIcons: {}
+    accountingEventsIcons: {},
+    entryTypeMappings: {}
   });
 
   const historyEventTypeData: Ref<HistoryEventTypeData> =
@@ -101,16 +105,29 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     ({ globalMappings }) => globalMappings
   );
 
-  const getEventType = (
-    event: MaybeRef<{
-      eventType: string;
-      eventSubtype: string;
-    }>
-  ): ComputedRef<string | undefined> =>
-    computed(() => {
-      const { eventType, eventSubtype } = get(event);
+  const historyEventTypeByEntryTypeMapping = useRefMap(
+    historyEventTypeData,
+    ({ entryTypeMappings }) => entryTypeMappings
+  );
 
-      return get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
+  const getEventType = (event: Event): ComputedRef<string | undefined> =>
+    computed(() => {
+      const { eventType, eventSubtype, entryType, isExit } = get(event);
+
+      let byEntryType;
+      if (
+        entryType &&
+        entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT
+      ) {
+        byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[
+          eventType
+        ]?.[eventSubtype]?.[isExit ? 'isExit' : 'notExit'];
+      }
+
+      return (
+        byEntryType ||
+        get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype]
+      );
     });
 
   function getFallbackData(
