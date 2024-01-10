@@ -296,7 +296,9 @@ export const useExchangeBalancesStore = defineStore(
           await Promise.all(locations.map(syncExchangeSavings));
         }
         setStatus(
-          get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
+          get(isTaskRunning(TaskType.QUERY_EXCHANGE_SAVINGS))
+            ? Status.REFRESHING
+            : Status.LOADED
         );
       } catch (e) {
         logger.error(e);
