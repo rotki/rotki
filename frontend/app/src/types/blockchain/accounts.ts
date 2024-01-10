@@ -76,13 +76,21 @@ export interface FetchPricePayload {
   readonly selectedAssets: string[];
 }
 
-export interface AccountWithBalance extends GeneralAccount, HasBalance {
+// todo: flatten balance
+export interface AccountWithBalance
+  extends GeneralAccount,
+    HasBalance,
+    Partial<Balance> {
   nativeAsset?: string;
 }
 
 interface XpubAccount extends GeneralAccount, XpubPayload {}
 
-export interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
+// todo: flatten balance
+export interface XpubAccountWithBalance
+  extends XpubAccount,
+    HasBalance,
+    Partial<Balance> {}
 
 export interface AccountWithBalanceAndSharedOwnership
   extends AccountWithBalance {
@@ -106,6 +114,7 @@ export type ChainSections = {
   readonly [chain in Blockchain]: Section;
 };
 
+// todo: flatten balance
 export interface AssetBreakdown extends Partial<Balance> {
   readonly location: string;
   readonly balance: Balance;
