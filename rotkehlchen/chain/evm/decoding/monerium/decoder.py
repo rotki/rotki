@@ -46,8 +46,8 @@ class MoneriumCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(value=context.all_logs[0].topics[1])
-        to_address = hex_or_bytes_to_address(value=context.all_logs[0].topics[2])
+        from_address = hex_or_bytes_to_address(value=context.tx_log.topics[1])
+        to_address = hex_or_bytes_to_address(value=context.tx_log.topics[2])
 
         amount_raw = hex_or_bytes_to_int(value=context.tx_log.data)
         amount = token_normalized_value_decimals(
