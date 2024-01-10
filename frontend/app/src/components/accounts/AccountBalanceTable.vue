@@ -353,6 +353,7 @@ defineExpose({
     :expanded.sync="expanded"
     :sort.sync="sort"
     :empty="{ description: t('data_table.no_data') }"
+    :loading-text="t('account_balances.data_table.loading')"
     class="account-balances-list"
     data-cy="account-table"
     :data-location="blockchain"

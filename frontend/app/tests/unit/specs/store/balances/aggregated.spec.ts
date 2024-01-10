@@ -218,6 +218,8 @@ describe('store::balances/aggregated', () => {
           amount: bigNumberify(10),
           usdValue: bigNumberify(10)
         },
+        amount: bigNumberify(10),
+        usdValue: bigNumberify(10),
         chain: Blockchain.BTC,
         label: '',
         tags: []

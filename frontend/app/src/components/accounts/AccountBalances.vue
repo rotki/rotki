@@ -219,7 +219,6 @@ const refreshClick = async () => {
     <AccountBalanceTable
       ref="balanceTable"
       class="mt-4"
-      data-cy="blockchain-balances"
       :loopring="loopring"
       :blockchain="blockchain"
       :balances="balances"
