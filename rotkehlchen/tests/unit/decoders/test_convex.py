@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
+from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX, CVX_LOCKER_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -996,6 +996,54 @@ def test_convex_claim_pending_rewards(database, ethereum_inquirer, ethereum_acco
             notes='Claim 20.239941211089735958 CRV after compounding Convex pool',
             counterparty=CPT_CONVEX,
             address=string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD18327BB6D6de9241Bed63bb5E78459325FbbD70']])
+def test_convex_withdraw_expired_lock(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Tests a transaction that collects pending rewards but also compounds the pending CRV
+    in the pool. In this case the user is rewarded for performing this action.
+    """
+    user_address = ethereum_accounts[0]
+    evmhash = deserialize_evm_tx_hash('0x4b707540ec6eebf5e787c88df149e8141d2c295cda8a514da6d6111cf2deca40')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1704839507000)
+    gas_str, amount_str = '0.008929295372796715', '26633.698252368450151266'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=363,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_CVX,
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Unlock {amount_str} CVX from convex',
+            counterparty=CPT_CONVEX,
+            address=CVX_LOCKER_V2,
         ),
     ]
     assert events == expected_events
