@@ -74,6 +74,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Oneinchv4',
         'Oneinchv5',
         'OptimismBridge',
+        'Paraswap',
         'PickleFinance',
         'Safemultisig',
         'Stakedao',
@@ -153,6 +154,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'octant',
         'monerium',
         'metamask_swaps',
+        'paraswap',
     }
 
 
