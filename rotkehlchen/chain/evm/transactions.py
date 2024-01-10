@@ -499,11 +499,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                 f'token transactions from Etherscan. address: {address} spam detection failed',
             )
-            self.msg_aggregator.add_warning(
-                f'Failed to check if {address} has been spammed '
-                f'with any tokens on {self.evm_inquirer.chain_name}. '
-                f'Please check the logs.',
-            )
             return False
 
         return True

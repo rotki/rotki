@@ -236,13 +236,23 @@ export type NewHistoryEventPayload =
   | NewEthDepositEventPayload
   | NewEthWithdrawalEventPayload;
 
+export enum HistoryEventAccountingRuleStatus {
+  HAS_RULE = 'has rule',
+  NOT_PROCESSED = 'not processed',
+  PROCESSED = 'processed'
+}
+
+export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(
+  HistoryEventAccountingRuleStatus
+);
+
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({
     customized: z.boolean().optional(),
     hasDetails: z.boolean().optional(),
     hidden: z.boolean().optional(),
     groupedEventsNum: z.number().nullish(),
-    missingAccountingRule: z.boolean().optional()
+    eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum
   })
 );
 

@@ -44,6 +44,7 @@ from rotkehlchen.inquirer import (
     _query_currency_converterapi,
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
+from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -631,3 +632,59 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
         inquirer.find_usd_price(wsteth_op)
 
     assert oracle_query.call_count == 1
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@requires_env([TestEnvironment.NIGHTLY])
+def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
+    """Check that price is queried for tokens in different chains using defillama"""
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.DEFILLAMA])
+    globaldb.add_asset(EvmToken.initialize(
+        address=string_to_evm_address('0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000'),
+        chain_id=ChainID.BOBA,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='Wrapped Ether',
+        symbol='WETH',
+    ))
+    globaldb.add_asset(EvmToken.initialize(
+        address=string_to_evm_address('0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'),
+        chain_id=ChainID.AVALANCHE,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='Wrapped Avax',
+        symbol='WAVAX',
+    ))
+
+    globaldb.add_asset(EvmToken.initialize(
+        address=string_to_evm_address('0x15C3Eb3B621d1Bff62CbA1c9536B7c1AE9149b57'),
+        chain_id=ChainID.EVMOS,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='USD Coin on Axelar',
+        symbol='USDC',
+    ))
+    globaldb.add_asset(EvmToken.initialize(
+        address=string_to_evm_address('0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035'),
+        chain_id=ChainID.POLYGON_ZKEVM,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='USD Coin',
+        symbol='USDC',
+    ))
+
+    for token in (  # era, nova and celo are not tracked by coingecko
+        Asset('eip155:1/erc20:0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72'),  # ethereum
+        Asset('eip155:10/erc20:0x4200000000000000000000000000000000000006'),  # optimism
+        Asset('eip155:56/erc20:0x111111111117dC0aa78b770fA6A738034120C302'),  # binance
+        Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),  # gnosis
+        Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),  # polygon
+        Asset('eip155:250/erc20:0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE'),  # fantom
+        Asset('eip155:8453/erc20:0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA'),  # base
+        Asset('eip155:42161/erc20:0x5979D7b546E38E414F7E9822514be443A4800529'),  # arb
+        Asset('eip155:43114/erc20:0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'),  # avax
+        Asset('eip155:288/erc20:0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000'),  # boba
+        Asset('eip155:1101/erc20:0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035'),  # zkevm
+    ):
+        price = inquirer.find_usd_price(token)
+        assert price != ZERO

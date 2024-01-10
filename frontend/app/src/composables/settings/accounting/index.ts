@@ -22,10 +22,11 @@ export const useAccountingSettings = () => {
   const { notify } = useNotificationsStore();
 
   const getAccountingRule = async (
-    payload: MaybeRef<AccountingRuleRequestPayload>
+    payload: MaybeRef<AccountingRuleRequestPayload>,
+    counterparty: string | null
   ): Promise<AccountingRuleEntry | null> => {
     try {
-      return await fetchAccountingRule(get(payload));
+      return await fetchAccountingRule(get(payload), counterparty);
     } catch (e: any) {
       logger.error(e);
       const message = e?.message ?? e ?? '';

@@ -9,8 +9,11 @@ Changelog
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
+* :bug:`7526` Liquity trove LUSD borrowing fee and stability pool LQTY frontend fee will now be properly shown and processed by rotki.
+* :bug:`-` USDT will be processed correctly when importing events from nexo.
 * :bug:`-` Failure to resolve etherscan api or hitting maximum backoff after too many retries will now no longer raise an exception.
 * :bug:`-` Some coinbase trades imported via the API should no longer show negative amounts. If you see negative amounts, purge and repull coinbase data.
+* :bug:`-` The defillama oracle should now work correctly with tokens in arbitrum and binance.
 * :bug:`-` Removing exchanges will also remove them from the setting of non syncing exchanges.
 
 * :release:`1.31.2 <2023-12-22>`

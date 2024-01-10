@@ -10,6 +10,7 @@ import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
+from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_evm_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
@@ -789,3 +790,10 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
         with globaldb._packaged_db_conn.cursor() as cursor:
             cursor.execute('SELECT name FROM assets WHERE identifier="ETH"')
             assert cursor.fetchone()[0] == 'my eth'
+
+
+def test_nexo_converter():
+    """Test that we don't have overlaping keys in nexo and resolve to the expected assets"""
+    assert asset_from_nexo('USDT') == A_USDT
+    assert asset_from_nexo('USDTERC') == A_USDT
+    assert EvmToken('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206') == asset_from_nexo('NEXONEXO')  # noqa: E501
