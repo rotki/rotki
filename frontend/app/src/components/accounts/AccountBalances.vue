@@ -224,10 +224,9 @@ const refreshClick = async () => {
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
-      :selected="selectedAddresses"
+      :selected.sync="selectedAddresses"
       @edit-click="editAccount($event)"
       @delete-xpub="showConfirmation($event)"
-      @addresses-selected="selectedAddresses = $event"
     />
   </RuiCard>
 </template>

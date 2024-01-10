@@ -22,10 +22,6 @@ const { items } = toRefs(props);
 const { name: breakpoint, xs } = useDisplay();
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const mobileClass = computed<string | null>(() =>
-  get(xs) ? 'v-data-table__mobile-row' : null
-);
-
 const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
   const account = get(items).find(item => !item.address);
   assert(account);
@@ -62,14 +58,13 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
 </script>
 
 <template>
-  <td v-if="!group" class="font-medium" colspan="5" :class="mobileClass">
+  <td v-if="!group" class="font-medium text-subtitle-2 px-4 py-2" colspan="5">
     {{ t('account_group_header.standalone') }}
   </td>
   <Fragment v-else>
     <td
-      :colspan="xs ? 1 : 2"
+      colspan="2"
       :class="{
-        'v-data-table__mobile-row': xs,
         '!p-2': !xs
       }"
     >
@@ -111,22 +106,24 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       </div>
       <TagDisplay wrapper-class="ml-9" :tags="xpubTags" />
     </td>
-    <td class="text-end" :class="mobileClass">
+    <td class="text-end px-4">
       <AmountDisplay
         :value="sum"
         :loading="loading"
         :asset="xs ? 'BTC' : undefined"
+        :asset-padding="0.1"
       />
     </td>
-    <td class="text-end" :class="mobileClass">
+    <td class="text-end px-4">
       <AmountDisplay
         fiat-currency="USD"
         show-currency="symbol"
         :value="usdSum"
         :loading="loading"
+        :asset-padding="0.1"
       />
     </td>
-    <td class="text-end" :class="mobileClass">
+    <td class="text-end">
       <RowActions
         :edit-tooltip="t('account_group_header.edit_tooltip')"
         :delete-tooltip="t('account_group_header.delete_tooltip')"

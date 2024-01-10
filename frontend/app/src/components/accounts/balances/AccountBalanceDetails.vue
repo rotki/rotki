@@ -19,7 +19,7 @@ const { liabilities, assets, loopringBalances } = useAccountDetails(
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-4">
     <template v-if="!loopring">
       <AccountAssetBalances :title="t('common.assets')" :assets="assets" />
       <AccountAssetBalances
