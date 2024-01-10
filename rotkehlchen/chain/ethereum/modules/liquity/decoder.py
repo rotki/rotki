@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -12,7 +13,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -20,7 +20,23 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import CPT_LIQUITY
+from .constants import (
+    ACTIVE_POOL,
+    BALANCE_UPDATE,
+    BORROWER_OPERATIONS,
+    CPT_LIQUITY,
+    LIQUITY_STAKING,
+    LUSD_BORROWING_FEE_PAID,
+    STABILITY_POOL,
+    STABILITY_POOL_EVENTS,
+    STABILITY_POOL_GAIN_WITHDRAW,
+    STABILITY_POOL_LQTY_PAID_TO_DEPOSITOR,
+    STABILITY_POOL_LQTY_PAID_TO_FRONTEND,
+    STAKING_ETH_SENT,
+    STAKING_LQTY_CHANGE,
+    STAKING_LQTY_EVENTS,
+    STAKING_REWARDS_ASSETS,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -29,18 +45,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.user_messages import MessagesAggregator
 
-BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
-ACTIVE_POOL = string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
-STABILITY_POOL = string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb')
-LIQUITY_STAKING = string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d')
-
-STABILITY_POOL_GAIN_WITHDRAW = b'QEr"\xeb\xca\x92\xc35\xc9\xc8n+\xaa\x1c\xc0\xe4\x0f\xfa\xa9\x08JQE)\x80\xd5\xba\x8d\xec/c'  # noqa: E501
-STABILITY_POOL_LQTY_PAID = b'&\x08\xb9\x86\xa6\xac\x0flb\x9c\xa3p\x18\xe8\n\xf5V\x1e6bR\xae\x93`*\x96\xd3\xab.s\xe4-'  # noqa: E501
-STABILITY_POOL_EVENTS = {STABILITY_POOL_GAIN_WITHDRAW, STABILITY_POOL_LQTY_PAID}
-STAKING_LQTY_CHANGE = b'9\xdf\x0eR\x86\xa3\xef/B\xa0\xbfR\xf3,\xfe,X\xe5\xb0@_G\xfeQ/,$9\xe4\xcf\xe2\x04'  # noqa: E501
-STAKING_ETH_SENT = b'a\t\xe2U\x9d\xfavj\xae\xc7\x11\x83Q\xd4\x8aR?\nAW\xf4\x9c\x8dht\x9c\x8a\xc4\x13\x18\xad\x12'  # noqa: E501
-STAKING_LQTY_EVENTS = {STAKING_LQTY_CHANGE, STAKING_ETH_SENT}
-STAKING_REWARDS_ASSETS = {A_ETH, A_LUSD}
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -88,12 +92,13 @@ class LiquityDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Generate {event.balance.amount} {self.lusd.symbol} from liquity'
-            elif event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
+                event.notes = f'Generate {event.balance.amount} LUSD from liquity'
+
+            elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_LUSD:  # noqa: E501
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Return {event.balance.amount} {self.lusd.symbol} to liquity'
+                event.notes = f'Pay back {event.balance.amount} LUSD debt to liquity'
             elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -124,13 +129,31 @@ class LiquityDecoder(DecoderInterface):
                 amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.eth,
             )
-        elif context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID:
+        elif context.tx_log.topics[0] in {STABILITY_POOL_LQTY_PAID_TO_DEPOSITOR, STABILITY_POOL_LQTY_PAID_TO_FRONTEND}:  # noqa: E501
             collected_lqty = asset_normalized_value(
                 amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
+            if collected_lqty == ZERO:
+                return DEFAULT_DECODING_OUTPUT
 
-        for event in context.decoded_events:
+            if context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID_TO_FRONTEND:
+                frontend_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+                event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_LQTY,
+                    balance=Balance(amount=collected_lqty),
+                    location_label=context.transaction.from_address,
+                    notes=f'Paid {collected_lqty} LQTY as a frontend fee to {frontend_address}',
+                    counterparty=CPT_LIQUITY,
+                    address=context.tx_log.address,
+                )
+                return DecodingOutput(event=event)
+
+        for event in context.decoded_events:  # modify the send/receive events
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -145,7 +168,7 @@ class LiquityDecoder(DecoderInterface):
                     ) or (
                         event.asset == self.lqty and
                         event.balance.amount == collected_lqty and
-                        context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
+                        context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID_TO_DEPOSITOR
                     )
                 ):
                     event.event_type = HistoryEventType.STAKING
@@ -161,6 +184,41 @@ class LiquityDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_borrower_operations(
+            self,
+            context: DecoderContext,
+            post_decoding: bool = False,
+    ) -> DecodingOutput:
+        if context.tx_log.topics[0] != LUSD_BORROWING_FEE_PAID:
+            return DEFAULT_DECODING_OUTPUT
+
+        if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
+            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
+
+        borrower = self.base.get_address_or_proxy_owner(hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+        if borrower is None or self.base.is_tracked(borrower) is False:
+            return DEFAULT_DECODING_OUTPUT
+
+        if (fee_amount := asset_normalized_value(
+            amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            asset=self.lusd,
+        )) == ZERO:  # for many operations it emits a zero event log
+            return DEFAULT_DECODING_OUTPUT
+
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_LUSD,
+            balance=Balance(amount=fee_amount),
+            location_label=borrower,
+            notes=f'Paid {fee_amount} LUSD as a borrowing fee',
+            counterparty=CPT_LIQUITY,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
     def _decode_lqty_staking_deposits(
             self,
             context: DecoderContext,
@@ -174,14 +232,7 @@ class LiquityDecoder(DecoderInterface):
 
         user, lqty_amount = None, ZERO
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
-            user = hex_or_bytes_to_address(context.tx_log.topics[1])
-            proxy_owner = self.base.maybe_get_proxy_owner(user)
-            # When we will iterate over `decoded_events` the transfer that we will need will have
-            # `location_label` always set to the address of the real owner (so if a ds proxy is
-            # used, then `location_label` will be set to the address of the owner of the proxy).
-            # So if `user` is a proxy, we reassign it to the owner of the proxy.
-            if proxy_owner is not None:
-                user = proxy_owner
+            user = self.base.get_address_or_proxy_owner(hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
             lqty_amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,
@@ -229,6 +280,7 @@ class LiquityDecoder(DecoderInterface):
             ACTIVE_POOL: (self._decode_trove_operations,),
             STABILITY_POOL: (self._decode_stability_pool_event,),
             LIQUITY_STAKING: (self._decode_lqty_staking_deposits,),
+            BORROWER_OPERATIONS: (self._decode_borrower_operations,),
         }
 
     def _handle_post_decoding(
@@ -255,10 +307,12 @@ class LiquityDecoder(DecoderInterface):
                 decoding_rule = self._decode_stability_pool_event
             elif tx_log.address == LIQUITY_STAKING:
                 decoding_rule = self._decode_lqty_staking_deposits
+            elif tx_log.address == BORROWER_OPERATIONS:
+                decoding_rule = self._decode_borrower_operations
             else:
                 continue
 
-            decoding_rule(
+            decoding_output = decoding_rule(
                 context=DecoderContext(
                     tx_log=tx_log,
                     transaction=transaction,
@@ -268,6 +322,8 @@ class LiquityDecoder(DecoderInterface):
                 ),
                 post_decoding=True,
             )
+            if decoding_output.event is not None:
+                decoded_events.append(decoding_output.event)
 
         return decoded_events
 
