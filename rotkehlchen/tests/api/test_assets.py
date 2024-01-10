@@ -20,11 +20,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
-    compute_cache_key,
     globaldb_get_general_cache_values,
     globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
@@ -147,21 +147,8 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     clean_ignored_assets(rotki.data.db)
-    # add GNO to the whitelisted assets to verify that it is later removed
-    # from there when the token is set as spam.
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-            values=(A_GNO.identifier,),
-        )
-
     # add three assets to ignored assets
-    ignored_assets = [
-        {'asset': A_GNO.identifier, 'is_spam': True},
-        {'asset': A_RDN.identifier, 'is_spam': False},
-        {'asset': 'XMR', 'is_spam': False},
-    ]
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -169,19 +156,8 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
         ), json={'assets': ignored_assets},
     )
     result = assert_proper_response_with_result(response)
-    expected_ignored_assets = {ignored_asset['asset'] for ignored_asset in ignored_assets}
+    expected_ignored_assets = set(ignored_assets)
     assert expected_ignored_assets == set(result)
-    assert A_GNO.resolve_to_evm_token().protocol == SPAM_PROTOCOL
-    # check that it is not whitelisted
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        cursor.execute(
-            'SELECT COUNT(*) FROM general_cache WHERE key=? AND value=?',
-            (
-                compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,)),
-                A_GNO.identifier,
-            ),
-        )
-        assert cursor.fetchone() == (0,)
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
@@ -206,7 +182,6 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
         assets_after_deletion = {A_RDN.identifier}
         result = assert_proper_response_with_result(response)
         assert assets_after_deletion == set(result)
-        assert A_GNO.resolve_to_evm_token().protocol is None
 
         # check that the changes are reflected
         assert rotki.data.db.get_ignored_asset_ids(cursor) == assets_after_deletion
@@ -229,12 +204,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # add three assets to ignored assets
-    ignored_assets = [
-        {'asset': A_GNO.identifier, 'is_spam': False},
-        {'asset': A_RDN.identifier, 'is_spam': False},
-        {'asset': 'XMR', 'is_spam': False},
-    ]
-    set_of_assets = {ignored_asset['asset'] for ignored_asset in ignored_assets}
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -242,9 +212,6 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         ), json={'assets': ignored_assets},
     )
     assert_proper_response(response)
-
-    def prepare_request_body(assets: list[str]) -> list[dict[str, str]] | list[str]:
-        return [{'asset': asset} for asset in assets] if method == 'put' else assets
 
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(
@@ -277,7 +244,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': prepare_request_body(['notanasset'])},
+        ), json={'assets': ['notanasset']},
     )
     assert_error_response(
         response=response,
@@ -292,7 +259,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': prepare_request_body([asset, 'notanasset'])},
+        ), json={'assets': [asset, 'notanasset']},
     )
     assert_error_response(
         response=response,
@@ -301,7 +268,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     )
     # Check that assets did not get modified
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set_of_assets
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
         # Test the adding an already existing asset or removing a non-existing asset is an error
         if method == 'put':
@@ -314,7 +281,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
             api_url_for(
                 rotkehlchen_api_server,
                 'ignoredassetsresource',
-            ), json={'assets': prepare_request_body([asset])},
+            ), json={'assets': [asset]},
         )
         assert_error_response(
             response=response,
@@ -322,7 +289,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
             status_code=HTTPStatus.CONFLICT,
         )
         # Check that assets did not get modified
-        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set_of_assets
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
 def test_get_all_assets(rotkehlchen_api_server):
@@ -593,6 +560,13 @@ def test_get_all_assets(rotkehlchen_api_server):
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
     queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier)
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        set_token_spam_protocol(
+            write_cursor=write_cursor,
+            token=A_DAI.resolve_to_evm_token(),
+            is_spam=True,
+        )
+
     # add custom asset
     db_custom_assets = DBCustomAssets(
         db_handler=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
@@ -620,6 +594,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             assert 'custom_asset_type' not in details
             assert details['asset_type'] != 'custom asset'
             assert details['collection_id'] == '23'
+            assert details['is_spam'] is True
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
             assert details['asset_type'] == 'custom asset'
@@ -1085,7 +1060,7 @@ def test_only_ignored_assets(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredassetsresource',
-        ), json={'assets': [{'asset': asset} for asset in ignored_assets]},
+        ), json={'assets': ignored_assets},
     )
     assert_proper_response(response)
     response = requests.post(
@@ -1170,8 +1145,20 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
         )) == 0
 
 
-def test_setting_tokens_as_spam(rotkehlchen_api_server):
+def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     """Test the endpoints which set the spam protocol on tokens"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    globaldb = GlobalDBHandler()
+
+    # add token to whitelist to see that it gets removed
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+            values=(A_DAI.identifier,),
+        )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1180,19 +1167,14 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     assert A_DAI.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    with db.conn.read_ctx() as cursor:
+        assert A_DAI in rotki.data.db.get_ignored_asset_ids(cursor)
 
-    # check that calling it again fails
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'spamevmtokenresource',
-        ), json={'token': A_DAI.identifier},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='is already marked as spam',
-        status_code=HTTPStatus.CONFLICT,
-    )
+    with globaldb.conn.read_ctx() as cursor:
+        assert len(globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+        )) == 0
 
     # check that it fails if we try to add any other asset type
     response = requests.post(
@@ -1216,16 +1198,3 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     assert A_DAI.resolve_to_evm_token().protocol is None
-
-    # check that calling it again fails
-    response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server,
-            'spamevmtokenresource',
-        ), json={'token': A_DAI.identifier},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='is not marked as spam',
-        status_code=HTTPStatus.CONFLICT,
-    )

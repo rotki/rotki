@@ -1968,24 +1968,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
         return data
 
 
-class IgnoreSingleAsset(Schema):
-    asset = AssetField(expected_type=Asset)
-    is_spam = fields.Boolean(load_default=False)
-
-
-class AddIgnoredAssetsSchema(Schema):
-    assets = fields.List(fields.Nested(IgnoreSingleAsset), required=True)
-
-    @post_load
-    def make_list_of_tuples(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        return {'assets': [tuple(entry.values()) for entry in data['assets']]}
-
-
-class DeleteIgnoredAssetsSchema(Schema):
+class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(expected_type=Asset), required=True)
 
 

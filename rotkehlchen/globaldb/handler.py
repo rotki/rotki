@@ -73,7 +73,7 @@ SELECT {dbprefix}assets.identifier, name, symbol, chain, assets.type, custom_ass
 
 
 ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
-    'SELECT {dbprefix}assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type,custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol' +  # noqa: E501
+    'SELECT {dbprefix}assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, protocol' +  # noqa: E501
     _ALL_ASSETS_TABLES_JOINS +
     'LEFT JOIN {dbprefix}multiasset_mappings ON {dbprefix}assets.identifier={dbprefix}multiasset_mappings.asset LEFT JOIN {dbprefix}asset_collections ON {dbprefix}multiasset_mappings.collection_id={dbprefix}asset_collections.id'  # noqa: E501
 )
@@ -436,7 +436,7 @@ class GlobalDBHandler:
         (id, name, symbol, collection) for those identifiers and a dictionary that maps the
         collection id to their properties.
         """
-        result = {}
+        result: dict[str, dict[str, Any]] = {}
         asset_collections = {}
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -462,6 +462,8 @@ class GlobalDBHandler:
                             'name': entry[7],
                             'symbol': entry[8],
                         }
+                if entry[9] == SPAM_PROTOCOL:
+                    result[entry[0]].update({'is_spam': True})
         return result, asset_collections
 
     @staticmethod
