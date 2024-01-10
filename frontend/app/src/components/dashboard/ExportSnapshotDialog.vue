@@ -22,11 +22,9 @@ const emit = defineEmits<{
 
 const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const editMode = ref<boolean>(false);
 
-const updateVisibility = (visible: boolean) => {
-  emit('input', visible);
-};
+const editMode = ref<boolean>(false);
+const display = useSimpleVModel(props, emit);
 
 const formattedSelectedBalance = computed<BigNumber | null>(() => {
   if (get(balance)) {
@@ -44,7 +42,7 @@ const downloadSnapshot = async () => {
 
   downloadFileByBlobResponse(response, fileName);
 
-  updateVisibility(false);
+  set(display, false);
 };
 
 const { setMessage } = useMessageStore();
@@ -78,7 +76,7 @@ const exportSnapshotCSV = async () => {
         success
       };
 
-      updateVisibility(false);
+      set(display, false);
     } else {
       await downloadSnapshot();
     }
@@ -121,7 +119,7 @@ const deleteSnapshot = async () => {
       success
     };
 
-    updateVisibility(false);
+    set(display, false);
     await fetchNetValue();
   } catch (e: any) {
     message = {
@@ -135,7 +133,7 @@ const deleteSnapshot = async () => {
 };
 
 const finish = () => {
-  updateVisibility(false);
+  set(display, false);
   set(editMode, false);
 };
 
@@ -153,7 +151,7 @@ const showDeleteConfirmation = () => {
 </script>
 
 <template>
-  <VDialog :value="value" max-width="600" @input="updateVisibility($event)">
+  <VDialog v-model="display" max-width="600">
     <RuiCard>
       <template #header>
         {{ t('dashboard.snapshot.export_database_snapshot') }}

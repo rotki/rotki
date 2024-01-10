@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
 
-defineProps<{ value: boolean }>();
+const props = defineProps<{ value: boolean }>();
 
 const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
-const input = (value: boolean) => emit('input', value);
+
+const display = useSimpleVModel(props, emit);
 
 const formatter = displayDateFormatter;
 const directives: string[] = displayDateFormatter.directives;
@@ -49,7 +50,7 @@ const description = (directive: string): string => {
 </script>
 
 <template>
-  <VDialog v-if="value" :value="value" max-width="500" @input="input($event)">
+  <VDialog v-if="value" v-model="display" max-width="500">
     <RuiCard>
       <template #header>{{ t('date_format_help.title') }}</template>
       <template #subheader>{{ t('date_format_help.subtitle') }}</template>
@@ -75,7 +76,7 @@ const description = (directive: string): string => {
 
       <template #footer>
         <div class="grow" />
-        <RuiButton color="primary" @click="input(false)">
+        <RuiButton color="primary" @click="display = false">
           {{ t('common.actions.close') }}
         </RuiButton>
       </template>
