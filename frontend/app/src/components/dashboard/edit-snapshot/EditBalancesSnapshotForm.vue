@@ -33,12 +33,11 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const assetType = ref<string>('token');
 
-const updateForm = (partial: Partial<BalanceSnapshotPayloadAndLocation>) => {
-  emit('update:form', {
-    ...get(form),
-    ...partial
-  });
-};
+const category = usePropVModel(props, 'form', 'category', emit);
+const assetIdentifier = usePropVModel(props, 'form', 'assetIdentifier', emit);
+const amount = usePropVModel(props, 'form', 'amount', emit);
+const usdValue = usePropVModel(props, 'form', 'usdValue', emit);
+const location = usePropVModel(props, 'form', 'location', emit);
 
 const checkAssetType = () => {
   const formVal = get(form);
@@ -57,7 +56,7 @@ watch(form, () => {
 
 watch(assetType, assetType => {
   if (assetType === 'nft') {
-    updateForm({ amount: '1' });
+    set(amount, '1');
   }
 });
 
@@ -102,10 +101,9 @@ const updateAsset = (asset: string) => {
 <template>
   <form class="flex flex-col gap-2">
     <BalanceTypeInput
-      :value="form.category"
+      v-model="category"
       :label="t('common.category')"
       :error-messages="toMessages(v$.category)"
-      @input="updateForm({ category: $event })"
     />
     <div>
       <div class="text--secondary text-caption">
@@ -131,19 +129,18 @@ const updateAsset = (asset: string) => {
         </RuiRadioGroup>
         <AssetSelect
           v-if="assetType === 'token'"
-          :value="form.assetIdentifier"
+          v-model="assetIdentifier"
           outlined
           :disabled="edit"
           :show-ignored="true"
           :label="t('common.asset')"
           :enable-association="false"
           :error-messages="toMessages(v$.assetIdentifier)"
-          @input="updateForm({ assetIdentifier: $event })"
           @change="updateAsset($event)"
         />
         <RuiTextField
           v-else-if="assetType === 'nft'"
-          :value="form.assetIdentifier"
+          v-model="assetIdentifier"
           :label="t('common.asset')"
           variant="outlined"
           color="primary"
@@ -151,22 +148,20 @@ const updateAsset = (asset: string) => {
           class="mb-1.5"
           :error-messages="toMessages(v$.assetIdentifier)"
           :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
-          @input="updateForm({ assetIdentifier: $event })"
           @blur="updateAsset($event.target.value)"
         />
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AmountInput
+        v-model="amount"
         :disabled="assetType === 'nft'"
-        :value="form.amount"
         outlined
         :label="t('common.amount')"
         :error-messages="toMessages(v$.amount)"
-        @input="updateForm({ amount: $event })"
       />
       <AmountInput
-        :value="form.usdValue"
+        v-model="usdValue"
         outlined
         :label="
           t('common.value_in_symbol', {
@@ -174,15 +169,13 @@ const updateAsset = (asset: string) => {
           })
         "
         :error-messages="toMessages(v$.usdValue)"
-        @input="updateForm({ usdValue: $event })"
       />
     </div>
 
     <EditBalancesSnapshotLocationSelector
-      :value="form.location"
+      v-model="location"
       :locations="locations"
       :preview-location-balance="previewLocationBalance"
-      @input="updateForm({ location: $event })"
     />
   </form>
 </template>
