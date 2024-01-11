@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type PoapDeliveryDetails } from '@/types/defi/airdrops';
 import { default as images } from './poap.json';
 
@@ -32,14 +32,14 @@ type EventType = (typeof events)[number];
 
 const { t } = useI18n();
 
-const headers = computed<DataTableHeader[]>(() => [
+const headers = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.name').toString(),
-    value: 'name'
+    label: t('common.name'),
+    key: 'name'
   },
   {
-    text: '',
-    value: 'link',
+    label: '',
+    key: 'link',
     align: 'end',
     width: '50px'
   }
@@ -56,36 +56,31 @@ const getImage = (event: EventType): string => {
     <template #title>
       {{ t('poap_delivery_airdrops.title') }}
     </template>
-    <DataTable :items="items" :headers="headers">
-      <template #item.name="{ item }">
+
+    <RuiDataTable :rows="items" :cols="headers" row-attr="name">
+      <template #item.name="{ row }">
         <div class="flex items-center gap-4">
           <AdaptiveWrapper>
             <AppImage
-              class="poap-delivery-airdrops__image"
+              class="rounded-full"
               width="36px"
               height="36px"
               contain
-              :src="getImage(item.event)"
+              :src="getImage(row.event)"
             />
           </AdaptiveWrapper>
-          <div>{{ item.name }}</div>
+
+          <div>{{ row.name }}</div>
         </div>
       </template>
-      <template #item.link="{ item }">
-        <ExternalLink :url="item.link" custom>
+
+      <template #item.link="{ row }">
+        <ExternalLink :url="row.link" custom>
           <RuiButton variant="text" color="primary" icon>
             <RuiIcon size="16" name="external-link-line" />
           </RuiButton>
         </ExternalLink>
       </template>
-    </DataTable>
+    </RuiDataTable>
   </TableExpandContainer>
 </template>
-
-<style scoped lang="scss">
-.poap-delivery-airdrops {
-  &__image {
-    border-radius: 50%;
-  }
-}
-</style>
