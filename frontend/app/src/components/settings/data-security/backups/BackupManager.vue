@@ -12,6 +12,7 @@ const { t } = useI18n();
 const backupInfo = ref<DatabaseInfo | null>();
 const selected = ref<UserDbBackupWithId[]>([]);
 const loading = ref(false);
+const saving = ref(false);
 
 const backups = useRefMap(
   backupInfo,
@@ -52,7 +53,7 @@ const globalDb = computed(() => {
   };
 });
 
-const { info } = useBackupApi();
+const { info, createBackup, deleteBackup } = useBackupApi();
 
 const loadInfo = async () => {
   try {
@@ -76,16 +77,15 @@ const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) =>
   firstDb.time === secondDb.time &&
   firstDb.size === secondDb.size;
 
-onMounted(loadInfo);
-
-const { deleteBackup } = useBackupApi();
 const massRemove = async () => {
-  const filepaths = get(selected).map(db => getFilepath(db, directory));
+  const currentSelection = get(selected);
+  const filepaths = currentSelection.map(db => getFilepath(db, directory));
   try {
     await deleteBackup(filepaths);
-    if (get(backupInfo)) {
-      const info: DatabaseInfo = { ...get(backupInfo)! };
-      get(selected).forEach((db: UserDbBackup) => {
+    const backups = get(backupInfo);
+    if (backups) {
+      const info: DatabaseInfo = { ...backups };
+      currentSelection.forEach((db: UserDbBackup) => {
         const index = info.userdb.backups.findIndex(backup =>
           isSameEntry(backup, db)
         );
@@ -110,18 +110,20 @@ const remove = async (db: UserDbBackup) => {
   const filepath = getFilepath(db, directory);
   try {
     await deleteBackup([filepath]);
-    if (get(backupInfo)) {
-      const info: DatabaseInfo = { ...get(backupInfo)! };
+    const backups = get(backupInfo);
+    if (backups) {
+      const info: DatabaseInfo = { ...backups };
       const index = info.userdb.backups.findIndex(backup =>
         isSameEntry(backup, db)
       );
       info.userdb.backups.splice(index, 1);
       set(backupInfo, info);
 
-      if (get(selected).length > 0) {
+      const currentSelection = get(selected);
+      if (currentSelection.length > 0) {
         set(
           selected,
-          get(selected).filter(item => !isSameEntry(item, db))
+          currentSelection.filter(item => !isSameEntry(item, db))
         );
       }
     }
@@ -137,9 +139,6 @@ const remove = async (db: UserDbBackup) => {
     });
   }
 };
-
-const saving = ref(false);
-const { createBackup } = useBackupApi();
 
 const backup = async () => {
   try {
@@ -182,6 +181,8 @@ const showMassDeleteConfirmation = () => {
     massRemove
   );
 };
+
+onMounted(loadInfo);
 </script>
 
 <template>
