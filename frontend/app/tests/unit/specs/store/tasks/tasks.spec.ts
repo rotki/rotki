@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { rest } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { expect } from 'vitest';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -46,12 +46,12 @@ const mockTasks = (data: {
     body: TaskResultResponse<ActionResult<any>>;
   }[];
 }) => [
-  rest.get(`${backendUrl}/api/1/tasks`, (req, res, ctx) =>
-    res(ctx.status(200), ctx.json(getResult(data.status)))
+  http.get(`${backendUrl}/api/1/tasks`, () =>
+    HttpResponse.json(getResult(data.status), { status: 200 })
   ),
   ...data.tasks.map(task =>
-    rest.get(`${backendUrl}/api/1/tasks/${task.id}`, (req, res, ctx) =>
-      res(ctx.status(task.status), ctx.json(getResult(task.body)))
+    http.get(`${backendUrl}/api/1/tasks/${task.id}`, () =>
+      HttpResponse.json(getResult(task.body), { status: task.status })
     )
   )
 ];

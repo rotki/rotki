@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { expect } from 'vitest';
 import dayjs from 'dayjs';
 import {
@@ -38,13 +38,13 @@ describe('useDynamicMessages', () => {
     const { dashboardMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(200), ctx.json([testDash]))
+        () => HttpResponse.json([testDash], { status: 200 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json({}))
+        () => HttpResponse.json({}, { status: 404 })
       )
     );
     vi.setSystemTime(dayjs('2023/10/12').toDate());
@@ -57,13 +57,13 @@ describe('useDynamicMessages', () => {
     const { dashboardMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(200), ctx.json([testDash]))
+        () => HttpResponse.json([testDash], { status: 200 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json({}))
+        () => HttpResponse.json({}, { status: 404 })
       )
     );
     vi.setSystemTime(dayjs('2023/10/15').toDate());
@@ -76,19 +76,13 @@ describe('useDynamicMessages', () => {
     const { welcomeMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json([]))
+        () => HttpResponse.json([], { status: 404 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({
-              messages: [testWelcome]
-            })
-          )
+        () => HttpResponse.json({ messages: [testWelcome] }, { status: 200 })
       )
     );
     vi.setSystemTime(dayjs('2023/10/12').toDate());
@@ -103,19 +97,13 @@ describe('useDynamicMessages', () => {
     const { welcomeMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json([]))
+        () => HttpResponse.json([], { status: 404 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({
-              messages: [testWelcome]
-            })
-          )
+        () => HttpResponse.json({ messages: [testWelcome] }, { status: 200 })
       )
     );
     vi.setSystemTime(dayjs('2023/10/10').toDate());
@@ -128,20 +116,16 @@ describe('useDynamicMessages', () => {
     const { welcomeHeader, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json([]))
+        () => HttpResponse.json([], { status: 404 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({
-              header: 'test',
-              text: 'test',
-              messages: []
-            })
+        () =>
+          HttpResponse.json(
+            { header: 'test', text: 'test', messages: [] },
+            { status: 200 }
           )
       )
     );
@@ -157,13 +141,13 @@ describe('useDynamicMessages', () => {
     const { welcomeHeader, fetchMessages } = useDynamicMessages();
 
     server.use(
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json([]))
+        () => HttpResponse.json([], { status: 404 })
       ),
-      rest.get(
+      http.get(
         'https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json',
-        (req, res, ctx) => res(ctx.status(404), ctx.json({}))
+        () => HttpResponse.json({}, { status: 404 })
       )
     );
 
