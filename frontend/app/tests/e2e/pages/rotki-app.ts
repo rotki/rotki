@@ -140,9 +140,13 @@ export class RotkiApp {
     ).as('input');
 
     if (enable) {
+      cy.get('@input').should('not.be.checked');
       cy.get('@input').check();
+      cy.get('@input').should('be.checked');
     } else {
+      cy.get('@input').should('be.checked');
       cy.get('@input').uncheck();
+      cy.get('@input').should('not.be.checked');
     }
   }
 

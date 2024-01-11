@@ -114,7 +114,9 @@ describe('balances', () => {
   it('test scramble mode from top nav', () => {
     manualBalancesPage.visit();
     app.togglePrivacyMenu(true);
-    app.toggleScrambler(false);
+    cy.get(
+      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]'
+    ).should('not.be.checked');
     manualBalancesPage.balanceShouldMatch(manualBalances);
 
     app.toggleScrambler(true);
