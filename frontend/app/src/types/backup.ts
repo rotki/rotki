@@ -16,10 +16,14 @@ const UserDbBackup = z.object({
 });
 
 export type UserDbBackup = z.infer<typeof UserDbBackup>;
+
+export type UserDbBackupWithId = UserDbBackup & { id: number };
+
 const UserDb = z.object({
   info: UserDbInfo,
   backups: z.array(UserDbBackup)
 });
+
 const DatabaseInfo = z.object({
   globaldb: GlobalDbVersion,
   userdb: UserDb

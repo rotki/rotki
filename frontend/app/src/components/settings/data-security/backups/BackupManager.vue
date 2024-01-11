@@ -1,201 +1,172 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
+import {
+  type DatabaseInfo,
+  type UserDbBackup,
+  type UserDbBackupWithId
+} from '@/types/backup';
+
+const { t } = useI18n();
+
+const backupInfo = ref<DatabaseInfo | null>();
+const selected = ref<UserDbBackupWithId[]>([]);
+const loading = ref(false);
+const saving = ref(false);
+
+const backups = useRefMap(
+  backupInfo,
+  info =>
+    info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? []
+);
 
 const { notify } = useNotificationsStore();
 
+const directory = computed(() => {
+  const info = get(backupInfo);
+  if (!info) {
+    return '';
+  }
+  const { filepath } = info.userdb.info;
+
+  let index = filepath.lastIndexOf('/');
+  if (index === -1) {
+    index = filepath.lastIndexOf('\\');
+  }
+
+  return filepath.slice(0, index + 1);
+});
+
+const userDb = computed(() => {
+  const info = get(backupInfo);
+  return {
+    size: info ? size(info.userdb.info.size) : '0',
+    version: info ? info.userdb.info.version.toString() : '0'
+  };
+});
+
+const globalDb = computed(() => {
+  const info = get(backupInfo);
+  return {
+    schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
+    assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0'
+  };
+});
+
+const { info, createBackup, deleteBackup } = useBackupApi();
+
+const loadInfo = async () => {
+  try {
+    set(loading, true);
+    set(backupInfo, await info());
+  } catch (e: any) {
+    logger.error(e);
+    notify({
+      display: true,
+      title: t('database_backups.load_error.title'),
+      message: t('database_backups.load_error.message', {
+        message: e.message
+      })
+    });
+  } finally {
+    set(loading, false);
+  }
+};
 const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) =>
   firstDb.version === secondDb.version &&
   firstDb.time === secondDb.time &&
   firstDb.size === secondDb.size;
 
-const setupBackupInfo = () => {
-  const { t } = useI18n();
-  const backupInfo = ref<DatabaseInfo | null>();
-  const loading = ref(false);
-
-  const backups = computed(() => get(backupInfo)?.userdb?.backups ?? []);
-
-  const directory = computed(() => {
-    const info = get(backupInfo);
-    if (!info) {
-      return '';
-    }
-    const { filepath } = info.userdb.info;
-
-    let index = filepath.lastIndexOf('/');
-    if (index === -1) {
-      index = filepath.lastIndexOf('\\');
-    }
-
-    return filepath.slice(0, index + 1);
-  });
-
-  const userDb = computed(() => {
-    const info = get(backupInfo);
-    return {
-      size: info ? size(info.userdb.info.size) : '0',
-      version: info ? info.userdb.info.version.toString() : '0'
-    };
-  });
-
-  const globalDb = computed(() => {
-    const info = get(backupInfo);
-    return {
-      schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
-      assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0'
-    };
-  });
-
-  const { info } = useBackupApi();
-
-  const loadInfo = async () => {
-    try {
-      set(loading, true);
-      set(backupInfo, await info());
-    } catch (e: any) {
-      logger.error(e);
-      notify({
-        display: true,
-        title: t('database_backups.load_error.title').toString(),
-        message: t('database_backups.load_error.message', {
-          message: e.message
-        }).toString()
-      });
-    } finally {
-      set(loading, false);
-    }
-  };
-  onMounted(loadInfo);
-  return {
-    backups,
-    backupInfo,
-    userDb,
-    globalDb,
-    directory,
-    loading,
-    loadInfo
-  };
-};
-
-const setupBackupActions = (
-  directory: Ref<string>,
-  backupInfo: Ref<DatabaseInfo | null | undefined>,
-  refresh: () => Promise<void>,
-  selected: Ref<UserDbBackup[]>
-) => {
-  const { t } = useI18n();
-  const { deleteBackup } = useBackupApi();
-  const massRemove = async () => {
-    const filepaths = get(selected).map(db => getFilepath(db, directory));
-    try {
-      await deleteBackup(filepaths);
-      if (get(backupInfo)) {
-        const info: DatabaseInfo = { ...get(backupInfo)! };
-        get(selected).forEach((db: UserDbBackup) => {
-          const index = info.userdb.backups.findIndex(backup =>
-            isSameEntry(backup, db)
-          );
-          info.userdb.backups.splice(index, 1);
-        });
-        set(backupInfo, info);
-      }
-      set(selected, []);
-    } catch (e: any) {
-      logger.error(e);
-      notify({
-        display: true,
-        title: t('database_backups.delete_error.title').toString(),
-        message: t('database_backups.delete_error.mass_message', {
-          message: e.message
-        }).toString()
-      });
-    }
-  };
-
-  const remove = async (db: UserDbBackup) => {
-    const filepath = getFilepath(db, directory);
-    try {
-      await deleteBackup([filepath]);
-      if (get(backupInfo)) {
-        const info: DatabaseInfo = { ...get(backupInfo)! };
+const massRemove = async () => {
+  const currentSelection = get(selected);
+  const filepaths = currentSelection.map(db => getFilepath(db, directory));
+  try {
+    await deleteBackup(filepaths);
+    const backups = get(backupInfo);
+    if (backups) {
+      const info: DatabaseInfo = { ...backups };
+      currentSelection.forEach((db: UserDbBackup) => {
         const index = info.userdb.backups.findIndex(backup =>
           isSameEntry(backup, db)
         );
         info.userdb.backups.splice(index, 1);
-        set(backupInfo, info);
+      });
+      set(backupInfo, info);
+    }
+    set(selected, []);
+  } catch (e: any) {
+    logger.error(e);
+    notify({
+      display: true,
+      title: t('database_backups.delete_error.title'),
+      message: t('database_backups.delete_error.mass_message', {
+        message: e.message
+      })
+    });
+  }
+};
 
-        if (get(selected).length > 0) {
-          set(
-            selected,
-            get(selected).filter(item => !isSameEntry(item, db))
-          );
-        }
+const remove = async (db: UserDbBackup) => {
+  const filepath = getFilepath(db, directory);
+  try {
+    await deleteBackup([filepath]);
+    const backups = get(backupInfo);
+    if (backups) {
+      const info: DatabaseInfo = { ...backups };
+      const index = info.userdb.backups.findIndex(backup =>
+        isSameEntry(backup, db)
+      );
+      info.userdb.backups.splice(index, 1);
+      set(backupInfo, info);
+
+      const currentSelection = get(selected);
+      if (currentSelection.length > 0) {
+        set(
+          selected,
+          currentSelection.filter(item => !isSameEntry(item, db))
+        );
       }
-    } catch (e: any) {
-      logger.error(e);
-      notify({
-        display: true,
-        title: t('database_backups.delete_error.title').toString(),
-        message: t('database_backups.delete_error.message', {
-          file: filepath,
-          message: e.message
-        }).toString()
-      });
     }
-  };
-
-  const saving = ref(false);
-  const { createBackup } = useBackupApi();
-
-  const backup = async () => {
-    try {
-      set(saving, true);
-      const filepath = await createBackup();
-      notify({
-        display: true,
-        severity: Severity.INFO,
-        title: t('database_backups.backup.title').toString(),
-        message: t('database_backups.backup.message', {
-          filepath
-        }).toString()
-      });
-
-      await refresh();
-    } catch (e: any) {
-      logger.error(e);
-      notify({
-        display: true,
-        title: t('database_backups.backup_error.title').toString(),
-        message: t('database_backups.backup_error.message', {
-          message: e.message
-        }).toString()
-      });
-    } finally {
-      set(saving, false);
-    }
-  };
-  return { remove, massRemove, backup, saving };
+  } catch (e: any) {
+    logger.error(e);
+    notify({
+      display: true,
+      title: t('database_backups.delete_error.title'),
+      message: t('database_backups.delete_error.message', {
+        file: filepath,
+        message: e.message
+      })
+    });
+  }
 };
 
-const selected = ref<UserDbBackup[]>([]);
+const backup = async () => {
+  try {
+    set(saving, true);
+    const filepath = await createBackup();
+    notify({
+      display: true,
+      severity: Severity.INFO,
+      title: t('database_backups.backup.title'),
+      message: t('database_backups.backup.message', {
+        filepath
+      })
+    });
 
-const { t } = useI18n();
-const { backupInfo, directory, loadInfo, loading, backups, userDb, globalDb } =
-  setupBackupInfo();
-
-const onSelectedChange = (newSelected: UserDbBackup[]) => {
-  set(selected, newSelected);
+    await loadInfo();
+  } catch (e: any) {
+    logger.error(e);
+    notify({
+      display: true,
+      title: t('database_backups.backup_error.title'),
+      message: t('database_backups.backup_error.message', {
+        message: e.message
+      })
+    });
+  } finally {
+    set(saving, false);
+  }
 };
-
-const { backup, saving, remove, massRemove } = setupBackupActions(
-  directory,
-  backupInfo,
-  loadInfo,
-  selected
-);
 
 const { show } = useConfirmStore();
 
@@ -210,6 +181,8 @@ const showMassDeleteConfirmation = () => {
     massRemove
   );
 };
+
+onMounted(loadInfo);
 </script>
 
 <template>
@@ -235,8 +208,7 @@ const showMassDeleteConfirmation = () => {
         :loading="loading"
         :items="backups"
         :directory="directory"
-        :selected="selected"
-        @change="onSelectedChange($event)"
+        :selected.sync="selected"
         @remove="remove($event)"
       />
       <template #footer>

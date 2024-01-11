@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
-import Fragment from '@/components/helper/Fragment';
+import { type WritableComputedRef } from 'vue';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { type UserDbBackup } from '@/types/backup';
+import { type UserDbBackup, type UserDbBackupWithId } from '@/types/backup';
 import { size } from '@/utils/data';
 
 const props = withDefaults(
   defineProps<{
-    items: UserDbBackup[];
-    selected: UserDbBackup[];
+    items: UserDbBackupWithId[];
+    selected: UserDbBackupWithId[];
     loading?: boolean;
     directory: string;
   }>(),
@@ -19,36 +21,59 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'change', backup: UserDbBackup[]): void;
-  (e: 'remove', backup: UserDbBackup): void;
+  (e: 'update:selected', backup: UserDbBackupWithId[]): void;
+  (e: 'remove', backup: UserDbBackupWithId): void;
 }>();
 
 const { t } = useI18n();
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort = ref<DataTableSortData>({
+  column: 'size',
+  direction: 'desc'
+});
+
+const selection = computed({
+  get() {
+    return props.selected.map(x => x.id);
+  },
+  set(value?: number[]) {
+    if (!value) {
+      return [];
+    }
+    emit(
+      'update:selected',
+      props.items.filter(x => value.includes(x.id))
+    );
+  }
+}) as unknown as WritableComputedRef<string[]>; // TODO: remove after upgrading to vue 3
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    value: 'version',
-    text: t('database_backups.column.version')
+    key: 'version',
+    label: t('database_backups.column.version'),
+    sortable: true
   },
   {
-    value: 'time',
-    text: t('common.datetime')
+    key: 'time',
+    label: t('common.datetime'),
+    sortable: true
   },
   {
-    value: 'size',
+    key: 'size',
     align: 'end',
-    text: t('database_backups.column.size')
+    label: t('database_backups.column.size'),
+    sortable: true
   },
-  { value: 'actions', align: 'end', sortable: false, text: '' }
+  {
+    key: 'actions',
+    align: 'end',
+    sortable: false,
+    label: ''
+  }
 ]);
 
 const { items, directory } = toRefs(props);
-
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-
-const remove = (item: UserDbBackup & { index: number }) => {
-  emit('remove', item);
-};
 
 const totalSize = computed(() =>
   size(get(items).reduce((sum, db) => sum + db.size, 0))
@@ -57,21 +82,9 @@ const totalSize = computed(() =>
 const { fileUrl } = useBackupApi();
 const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
 
-const onSelectedChange = (selected: UserDbBackup[]) => {
-  emit('change', selected);
-};
-
-const itemsWithIndex: ComputedRef<(UserDbBackup & { index: number })[]> =
-  computed(() =>
-    get(items).map((item, index) => ({
-      ...item,
-      index
-    }))
-  );
-
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
+const showDeleteConfirmation = (item: UserDbBackupWithId) => {
   const messageInfo = () => {
     if (item) {
       return {
@@ -94,71 +107,70 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
       title: t('database_backups.confirm.title'),
       message: t('database_backups.confirm.message', { ...messageInfo })
     },
-    () => remove(item)
+    () => emit('remove', item)
   );
 };
 </script>
 
 <template>
-  <Fragment>
-    <DataTable
-      :value="selected"
-      :items="itemsWithIndex"
-      sort-by="time"
-      show-select
-      item-key="index"
-      :single-select="false"
-      :headers="tableHeaders"
-      :loading="loading"
-      @input="onSelectedChange($event)"
-    >
-      <template #item.time="{ item }">
-        <DateDisplay :timestamp="item.time" />
-      </template>
-      <template #item.size="{ item }">
-        {{ size(item.size) }}
-      </template>
-      <template #item.actions="{ item }">
-        <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
-          <template #activator>
-            <RuiButton
-              variant="text"
-              color="primary"
-              icon
-              @click="showDeleteConfirmation(item)"
-            >
-              <RuiIcon size="16" name="delete-bin-line" />
-            </RuiButton>
-          </template>
-          <span>{{ t('database_backups.action.delete') }}</span>
-        </RuiTooltip>
-        <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
-          <template #activator>
-            <RuiButton
-              variant="text"
-              color="primary"
-              icon
-              :href="getLink(item)"
-              download
-              tag="a"
-              class="mx-1"
-            >
-              <RuiIcon size="16" name="file-download-line" />
-            </RuiButton>
-          </template>
-          <span>{{ t('database_backups.action.download') }}</span>
-        </RuiTooltip>
-      </template>
-      <template #body.append="{ isMobile }">
-        <RowAppend
-          label-colspan="3"
-          :label="t('common.total')"
-          :right-patch-colspan="1"
-          :is-mobile="isMobile"
-        >
-          {{ totalSize }}
-        </RowAppend>
-      </template>
-    </DataTable>
-  </Fragment>
+  <RuiDataTable
+    v-model="selection"
+    :rows="items"
+    row-attr="id"
+    outlined
+    :sort.sync="sort"
+    :cols="tableHeaders"
+    :loading="loading"
+  >
+    <template #item.time="{ row }">
+      <DateDisplay :timestamp="row.time" />
+    </template>
+
+    <template #item.size="{ row }">
+      {{ size(row.size) }}
+    </template>
+
+    <template #item.actions="{ row }">
+      <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+        <template #activator>
+          <RuiButton
+            variant="text"
+            color="primary"
+            icon
+            @click="showDeleteConfirmation(row)"
+          >
+            <RuiIcon size="16" name="delete-bin-line" />
+          </RuiButton>
+        </template>
+        <span>{{ t('database_backups.action.delete') }}</span>
+      </RuiTooltip>
+      <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+        <template #activator>
+          <RuiButton
+            variant="text"
+            color="primary"
+            icon
+            :href="getLink(row)"
+            download
+            tag="a"
+            class="mx-1"
+          >
+            <RuiIcon size="16" name="file-download-line" />
+          </RuiButton>
+        </template>
+        <span>{{ t('database_backups.action.download') }}</span>
+      </RuiTooltip>
+    </template>
+
+    <template #body.append>
+      <RowAppend
+        label-colspan="3"
+        class-name="[&>td]:p-4 text-sm"
+        :label="t('common.total')"
+        :right-patch-colspan="1"
+      >
+        {{ totalSize }}
+      </RowAppend>
+    </template>
+  </RuiDataTable>
 </template>
