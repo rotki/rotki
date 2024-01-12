@@ -1,25 +1,33 @@
 <script setup lang="ts">
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-const props = defineProps<{ identifier: string }>();
-
-const { t } = useI18n();
+type AssetLocations = AssetLocation[];
 
 interface AssetLocation extends AssetBreakdown {
   readonly account?: GeneralAccount;
   readonly label: string;
 }
 
-type AssetLocations = AssetLocation[];
+const props = defineProps<{ identifier: string }>();
+
+const { t } = useI18n();
 
 const { identifier } = toRefs(props);
+
+const sort = ref<DataTableSortData>({
+  column: 'amount',
+  direction: 'desc'
+});
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress } = useAccountBalances();
@@ -86,14 +94,14 @@ const getPercentage = (usdValue: BigNumber): string => {
   return percentage.toFixed(2);
 };
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
+const headers = computed<DataTableColumn[]>(() => {
   const visibleItemsLength = get(visibleAssetLocations).length;
   const eth2Length = get(visibleAssetLocations).filter(
     account => account?.location === Blockchain.ETH2
   ).length;
 
-  const labelAccount = t('common.account').toString();
-  const labelValidator = t('asset_locations.header.validator').toString();
+  const labelAccount = t('common.account');
+  const labelValidator = t('asset_locations.header.validator');
 
   let label: string;
   if (eth2Length === 0) {
@@ -106,30 +114,34 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   return [
     {
-      text: t('common.location').toString(),
-      value: 'location',
+      label: t('common.location'),
+      key: 'location',
       align: 'center',
-      width: '120px'
+      cellClass: 'w-36',
+      sortable: true
     },
     {
-      text: label,
-      value: 'label'
+      label,
+      key: 'label',
+      sortable: true
     },
     {
-      text: t('common.amount').toString(),
-      value: 'balance.amount',
-      align: 'end'
+      label: t('common.amount'),
+      key: 'amount',
+      align: 'end',
+      sortable: true
     },
     {
-      text: t('asset_locations.header.value', {
+      label: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD
-      }).toString(),
-      value: 'balance.usdValue',
-      align: 'end'
+      }),
+      key: 'usdValue',
+      align: 'end',
+      sortable: true
     },
     {
-      text: t('asset_locations.header.percentage').toString(),
-      value: 'percentage',
+      label: t('asset_locations.header.percentage'),
+      key: 'percentage',
       sortable: false,
       align: 'end'
     }
@@ -147,40 +159,42 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         <TagFilter v-model="onlyTags" />
       </div>
     </div>
-    <DataTable
-      :headers="tableHeaders"
-      :items="visibleAssetLocations"
-      sort-by="balance.amount"
+    <RuiDataTable
+      :cols="headers"
+      :rows="visibleAssetLocations"
+      outlined
+      row-attr="location"
+      :sort.sync="sort"
       :loading="detailsLoading"
     >
-      <template #item.location="{ item }">
+      <template #item.location="{ row }">
         <LocationDisplay
-          :identifier="item.location"
-          :detail-path="item.detailPath"
+          :identifier="row.location"
+          :detail-path="row.detailPath"
           class="py-2"
         />
       </template>
-      <template #item.label="{ item }">
+      <template #item.label="{ row }">
         <div class="py-4">
-          <LabeledAddressDisplay v-if="item.account" :account="item.account" />
-          <TagDisplay :tags="item.tags" small />
+          <LabeledAddressDisplay v-if="row.account" :account="row.account" />
+          <TagDisplay :tags="row.tags" small />
         </div>
       </template>
-      <template #item.balance.amount="{ item }">
-        <AmountDisplay :value="item.balance.amount" />
+      <template #item.amount="{ row }">
+        <AmountDisplay :value="row.balance.amount" />
       </template>
-      <template #item.balance.usdValue="{ item }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
-          :amount="item.balance.amount"
+          :amount="row.balance.amount"
           :price-asset="identifier"
           fiat-currency="USD"
-          :value="item.balance.usdValue"
+          :value="row.balance.usdValue"
         />
       </template>
-      <template #item.percentage="{ item }">
-        <PercentageDisplay :value="getPercentage(item.balance.usdValue)" />
+      <template #item.percentage="{ row }">
+        <PercentageDisplay :value="getPercentage(row.balance.usdValue)" />
       </template>
-    </DataTable>
+    </RuiDataTable>
   </RuiCard>
 </template>
