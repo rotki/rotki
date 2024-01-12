@@ -18,10 +18,14 @@ export const useLocations = createSharedComposable(() => {
   const { getChainName, getChainImageUrl } = useSupportedChains();
 
   const locationData = (
-    identifier: MaybeRef<string>
+    identifier: MaybeRef<string | null>
   ): ComputedRef<TradeLocationData | null> =>
     computed(() => {
       const id = get(identifier);
+      if (!id) {
+        return null;
+      }
+
       const blockchainId = id.split(' ').join('_');
 
       if (isBlockchain(blockchainId)) {

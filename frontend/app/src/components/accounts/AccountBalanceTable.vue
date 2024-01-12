@@ -96,19 +96,31 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
         return { ...item, index };
       }
 
-      const row = { ...item, label: item.label || item.address, index };
-      const { label, address, chain, balance: chainBalance } = row;
+      const row = {
+        ...item,
+        display: item.label || item.address,
+        index
+      };
 
       if (!get(hasTokenDetection)) {
         return row;
       }
 
+      const {
+        label,
+        address,
+        chain,
+        display: displayText,
+        balance: chainBalance
+      } = row;
+
       const { total } = get(getEthDetectedTokensInfo(blockchain, address));
-      const rowLabel = get(addressNameSelector(address, chain)) || label;
+      const display = get(addressNameSelector(address, chain)) || displayText;
 
       const rowWithTokens = {
         ...row,
-        label: rowLabel,
+        label,
+        display,
         numOfDetectedTokens: total
       };
 
@@ -233,7 +245,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
   const headers: DataTableColumn[] = [
     {
       label: accountHeader,
-      key: 'label',
+      key: 'display',
       cellClass: 'py-0',
       sortable: true
     },
@@ -369,7 +381,7 @@ defineExpose({
     "
     @input="addressesSelected($event ?? [])"
   >
-    <template #item.label="{ row }">
+    <template #item.display="{ row }">
       <div class="py-2 account-balance-table__account">
         <LabeledAddressDisplay :account="row" />
         <TagDisplay :tags="row.tags" small />
