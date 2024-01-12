@@ -282,9 +282,9 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inq
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0x289ba1701c2f088cf0faf8b3705246331cb8a839'),
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564015506.584007913129639935')),
             location_label=user_address,
-            notes=f'Set LPT spending approval of {user_address} by {gateway_address} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes=f'Set LPT spending approval of {user_address} by {gateway_address} to 115792089237316195423570985008687907853269984665640564015506.584007913129639935',  # noqa: E501
             address=gateway_address,
         ), EvmEvent(
             tx_hash=evmhash,

@@ -148,7 +148,7 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
             AssetAmount(FVal('0.744372160905819159')),
             AssetAmount(FVal('-0.039312851799093402')),
         ],
-        usd_profit_loss=FVal('-0.76584117161052920880190053'),
+        usd_profit_loss=FVal('-0.765841171610529208801900530484163'),
         events=[
             BalancerEvent(
                 tx_hash=deserialize_evm_tx_hash(
@@ -179,7 +179,7 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
                 pool_address_token=BALANCER_TEST_ADDR2_POOL1,
                 lp_balance=Balance(
                     amount=FVal('0.042569019597126949'),
-                    usd_value=FVal('19.01364749076136579119809947'),
+                    usd_value=FVal('19.013647490761365791198099469515837'),
                 ),
                 amounts=[
                     AssetAmount(FVal('0.744372160905819159')),
@@ -202,7 +202,7 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
             AssetAmount(FVal('0')),
             AssetAmount(FVal('-2.756044298156096352')),
         ],
-        usd_profit_loss=FVal('-872.734395890491474835748575'),
+        usd_profit_loss=FVal('-872.7343958904914748357485746593728'),
         events=[
             BalancerEvent(
                 tx_hash=deserialize_evm_tx_hash(
@@ -238,7 +238,7 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
                 pool_address_token=BALANCER_TEST_ADDR2_POOL2,
                 lp_balance=Balance(
                     amount=FVal('1289.21726317692448827'),
-                    usd_value=FVal('2960.665604109508525164251425'),
+                    usd_value=FVal('2960.6656041095085251642514253406272'),
                 ),
                 amounts=[
                     AssetAmount(FVal('0')),

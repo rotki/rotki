@@ -372,9 +372,9 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039436.930578017129639935')),
             location_label=user_address,
-            notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985008687907853269984665640564039436.930578017129639935',  # noqa: E501
             address=string_to_evm_address('0x617Dee16B86534a5d792A4d7A62FB491B544111E'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -942,9 +942,9 @@ def test_uniswap_v2_swap_events_order(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
-            balance=Balance(FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(FVal('115792089237316195423570985008687907853269984665640564039434.499460237779741194')),
             location_label=user_address,
-            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985008687907853269984665640564039434.499460237779741194',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmEvent(
