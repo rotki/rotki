@@ -846,6 +846,14 @@ Rotki Generic Import
 =====================
 
 You can import data(trades & events) from exchanges not supported by rotki by clicking "Import Data" on the left sidebar, select "Custom Import" and following the prompt. This involves the user converting the source(a not directly supported exchange, protocol etc.) data to match the import format of rotki.
+
+.. note::
+    Keep in mind that all assets that you enter are identified by their asset identifier and not the symol as symbols are not unique. The identifier differs per asset and at the moment for ERC20 tokens follows the `CAIP-19 <https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-19.md>`__ format, and for others it's just the asset symbol or a random string for manually input tokens.
+
+    For the CAIP-19 format it's essentially calculated by knowing the chain ID and the address of your token. So for mainnet (chain ID 1) and USDT (0xdAC17F958D2ee523a2206206994597C13D831ec7) it's ``eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7``.
+
+    You can easily find the identifier of each asset by going to :menuselection:`Manage Assets > Assets` section and copying the identifier of the asset in question.
+
 The import is split into two types:
 
 1. Rotki Generic Trades
