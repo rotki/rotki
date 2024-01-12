@@ -110,17 +110,6 @@ describe('store::assets/retrieval', () => {
       expect(get(assetInfoRetrieval.assetName(identifier))).toEqual('');
     });
 
-    test('asset cache for identifier is pending', async () => {
-      const identifier = 'ETH';
-      vi.mocked(assetCacheStore.isPending).mockReturnValue(
-        computed(() => true)
-      );
-
-      expect(get(assetInfoRetrieval.assetInfo(identifier))).toEqual(null);
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual('');
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual('');
-    });
-
     describe('custom asset', () => {
       const identifier = 'ASSET_ID';
       const assetName = 'ASSET_NAME';

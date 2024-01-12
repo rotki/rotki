@@ -9,7 +9,7 @@ import { type EvmChainAddress } from '@/types/history/events';
 export const useAssetInfoRetrieval = () => {
   const { t } = useI18n();
   const { erc20details } = useAssetInfoApi();
-  const { retrieve, isPending } = useAssetCacheStore();
+  const { retrieve, queueIdentifier } = useAssetCacheStore();
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
@@ -45,10 +45,6 @@ export const useAssetInfoRetrieval = () => {
     computed(() => {
       const id = get(identifier);
       if (!id) {
-        return null;
-      }
-
-      if (get(isPending(id))) {
         return null;
       }
 
@@ -171,6 +167,7 @@ export const useAssetInfoRetrieval = () => {
     fetchTokenDetails,
     getAssociatedAssetIdentifier,
     assetInfo,
+    refetchAssetInfo: queueIdentifier,
     assetSymbol,
     assetName,
     tokenAddress

@@ -3,9 +3,12 @@ import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
-import { CUSTOM_ASSET, type IgnoredAssetsHandlingType } from '@/types/asset';
+import {
+  CUSTOM_ASSET,
+  EVM_TOKEN,
+  type IgnoredAssetsHandlingType
+} from '@/types/asset';
 import { type ActionStatus } from '@/types/action';
-import ManagedAssetAction from '@/components/asset-manager/managed/ManagedAssetAction.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -121,6 +124,8 @@ const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
   useWhitelistedAssetsStore();
 
+const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
+
 const isAssetWhitelistedValue = (asset: string) =>
   get(isAssetWhitelisted(asset));
 
@@ -137,15 +142,25 @@ const toggleIgnoreAsset = async (identifier: string) => {
   }
 };
 
+const isSpamAsset = (asset: SupportedAsset) => asset.protocol === 'spam';
+
+const toggleSpam = async (item: SupportedAsset) => {
+  const { identifier } = item;
+  if (isSpamAsset(item)) {
+    await removeAssetFromSpamList(identifier);
+  } else {
+    await markAssetAsSpam(identifier);
+  }
+  emit('refresh');
+};
+
 const toggleWhitelistAsset = async (identifier: string) => {
   if (get(isAssetWhitelisted(identifier))) {
     await unWhitelistAsset(identifier);
   } else {
     await whitelistAsset(identifier);
   }
-  if (props.ignoredFilter.onlyShowWhitelisted) {
-    emit('refresh');
-  }
+  emit('refresh');
 };
 
 const massIgnore = async (ignored: boolean) => {
@@ -260,22 +275,38 @@ const massIgnore = async (ignored: boolean) => {
         {{ formatType(item.assetType) }}
       </template>
       <template #item.ignored="{ item }">
-        <div class="flex justify-center">
+        <div class="flex justify-start">
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
             tooltip-class="max-w-[10rem]"
-            :disabled="!isAssetWhitelistedValue(item.identifier)"
+            :disabled="
+              !isAssetWhitelistedValue(item.identifier) && !isSpamAsset(item)
+            "
           >
             <template #activator>
               <VSwitch
-                :disabled="isAssetWhitelistedValue(item.identifier)"
+                :disabled="
+                  isAssetWhitelistedValue(item.identifier) || isSpamAsset(item)
+                "
                 :input-value="isAssetIgnored(item.identifier)"
                 @change="toggleIgnoreAsset(item.identifier)"
               />
             </template>
-            {{ t('ignore.whitelist.hint') }}
+            {{
+              isSpamAsset(item)
+                ? t('ignore.spam.hint')
+                : t('ignore.whitelist.hint')
+            }}
           </RuiTooltip>
+
+          <ManagedAssetIgnoringMore
+            v-if="item.assetType === EVM_TOKEN"
+            :identifier="item.identifier"
+            :is-spam="isSpamAsset(item)"
+            @toggle-whitelist="toggleWhitelistAsset(item.identifier)"
+            @toggle-spam="toggleSpam(item)"
+          />
         </div>
       </template>
       <template #item.actions="{ item }">
@@ -289,10 +320,6 @@ const massIgnore = async (ignored: boolean) => {
           <CopyButton
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
-          />
-          <ManagedAssetAction
-            :identifier="item.identifier"
-            @toggle-whitelist="toggleWhitelistAsset(item.identifier)"
           />
         </RowActions>
       </template>

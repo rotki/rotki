@@ -357,6 +357,7 @@ declare global {
   const useAssetMovementsApi: typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']
   const useAssetPageNavigation: typeof import('./composables/assets/navigation')['useAssetPageNavigation']
   const useAssetPricesApi: typeof import('./composables/api/assets/prices')['useAssetPricesApi']
+  const useAssetSpamApi: typeof import('./composables/api/assets/spam')['useAssetSpamApi']
   const useAssetWhitelistApi: typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']
   const useAssets: typeof import('./composables/assets/index')['useAssets']
   const useAssetsApi: typeof import('./composables/api/assets/index')['useAssetsApi']
@@ -638,6 +639,7 @@ declare global {
   const useSlots: typeof import('vue')['useSlots']
   const useSnapshotApi: typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']
   const useSorted: typeof import('@vueuse/core')['useSorted']
+  const useSpamAsset: typeof import('./composables/assets/spam')['useSpamAsset']
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
   const useSpeechSynthesis: typeof import('@vueuse/core')['useSpeechSynthesis']
   const useStaking: typeof import('./composables/staking/index')['useStaking']
@@ -1095,6 +1097,7 @@ declare module 'vue' {
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
     readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
+    readonly useAssetSpamApi: UnwrapRef<typeof import('./composables/api/assets/spam')['useAssetSpamApi']>
     readonly useAssetWhitelistApi: UnwrapRef<typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>
@@ -1376,6 +1379,7 @@ declare module 'vue' {
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
+    readonly useSpamAsset: UnwrapRef<typeof import('./composables/assets/spam')['useSpamAsset']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
     readonly useStaking: UnwrapRef<typeof import('./composables/staking/index')['useStaking']>
@@ -1826,6 +1830,7 @@ declare module '@vue/runtime-core' {
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
     readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
+    readonly useAssetSpamApi: UnwrapRef<typeof import('./composables/api/assets/spam')['useAssetSpamApi']>
     readonly useAssetWhitelistApi: UnwrapRef<typeof import('./composables/api/assets/whitelist')['useAssetWhitelistApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>
@@ -2107,6 +2112,7 @@ declare module '@vue/runtime-core' {
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
+    readonly useSpamAsset: UnwrapRef<typeof import('./composables/assets/spam')['useSpamAsset']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
     readonly useStaking: UnwrapRef<typeof import('./composables/staking/index')['useStaking']>

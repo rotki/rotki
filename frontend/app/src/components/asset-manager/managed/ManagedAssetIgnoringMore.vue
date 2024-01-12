@@ -1,10 +1,17 @@
 <script setup lang="ts">
-const props = defineProps<{
-  identifier: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    identifier: string;
+    isSpam?: boolean;
+  }>(),
+  {
+    isSpam: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'toggle-whitelist'): void;
+  (e: 'toggle-spam'): void;
 }>();
 
 const { identifier } = toRefs(props);
@@ -16,6 +23,10 @@ const isWhitelisted = isAssetWhitelisted(identifier);
 
 const toggleWhitelist = () => {
   emit('toggle-whitelist');
+};
+
+const toggleSpam = () => {
+  emit('toggle-spam');
 };
 </script>
 
@@ -29,26 +40,32 @@ const toggleWhitelist = () => {
       transition="slide-y-transition"
     >
       <template #activator="{ on }">
-        <RuiButton class="!p-2" icon variant="text" v-on="on">
-          <RuiIcon name="more-2-fill" size="20" />
+        <RuiButton class="!p-1" icon variant="text" v-on="on">
+          <RuiIcon name="arrow-down-s-line" size="20" />
         </RuiButton>
       </template>
       <div class="py-2 text-rui-text-secondary">
-        <RuiButton
-          v-if="!isWhitelisted"
-          variant="list"
-          @click="toggleWhitelist()"
-        >
+        <RuiButton variant="list" @click="toggleWhitelist()">
           <template #prepend>
-            <RuiIcon name="checkbox-circle-line" />
+            <RuiCheckbox
+              color="primary"
+              class="[&_span]:-mr-1 [&_span]:!py-0"
+              hide-details
+              :value="isWhitelisted"
+            />
           </template>
           {{ t('ignore.whitelist.action.add') }}
         </RuiButton>
-        <RuiButton v-else variant="list" @click="toggleWhitelist()">
+        <RuiButton variant="list" @click="toggleSpam()">
           <template #prepend>
-            <RuiIcon name="close-circle-line" />
+            <RuiCheckbox
+              color="primary"
+              class="[&_span]:-mr-1 [&_span]:!py-0"
+              hide-details
+              :value="isSpam"
+            />
           </template>
-          {{ t('ignore.whitelist.action.remove') }}
+          {{ t('ignore.spam.action.add') }}
         </RuiButton>
       </div>
     </VMenu>

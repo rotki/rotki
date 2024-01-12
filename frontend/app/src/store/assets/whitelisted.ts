@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type ActionStatus } from '@/types/action';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 export const useWhitelistedAssetsStore = defineStore(
   'assets/whitelisted',
