@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ExchangeSavingsCollection,
@@ -40,7 +44,7 @@ const {
   state: collection,
   options,
   fetchData,
-  setOptions
+  setTableOptions
 } = usePaginationFilters<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload,
@@ -65,49 +69,65 @@ onMounted(async () => {
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const tableHeaders = computed<DataTableHeader[]>(() => [
+
+const receivedTableSort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const
+});
+
+const receivedTableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.datetime'),
-    value: 'timestamp'
+    label: t('common.asset'),
+    key: 'asset',
+    sortable: true
   },
   {
-    text: t('common.asset'),
-    value: 'asset',
-    sortable: false
+    label: t('common.amount'),
+    key: 'amount',
+    align: 'end',
+    sortable: true
   },
   {
-    text: t('common.amount'),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: t('common.value_in_symbol', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
-    value: 'usdValue',
+    key: 'usdValue',
     align: 'end',
-    sortable: false
+    sortable: true
   }
 ]);
 
-const receivedTableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref([
   {
-    text: t('common.asset'),
-    value: 'asset',
-    sortable: false
+    column: 'usdValue',
+    direction: 'desc' as const
+  }
+]);
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
+  {
+    label: t('common.datetime'),
+    key: 'timestamp',
+    sortable: true
   },
   {
-    text: t('common.amount'),
-    value: 'amount',
-    align: 'end'
+    label: t('common.asset'),
+    key: 'asset',
+    sortable: true
   },
   {
-    text: t('common.value_in_symbol', {
+    label: t('common.amount'),
+    key: 'amount',
+    align: 'end',
+    sortable: true
+  },
+  {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
-    value: 'usdValue',
+    key: 'usdValue',
     align: 'end',
-    sortable: false
+    sortable: true
   }
 ]);
 </script>
@@ -119,28 +139,29 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
         {{ t('exchange_balances.received_interest') }}
       </template>
 
-      <DataTable
-        :headers="receivedTableHeaders"
-        :items="collection.received"
+      <RuiDataTable
+        outlined
+        dense
+        :cols="receivedTableHeaders"
+        :rows="collection.received"
         :loading="isLoading"
+        :sort.sync="receivedTableSort"
+        row-attr=""
       >
-        <template #item.asset="{ item }">
-          <AssetDetails opens-details hide-name :asset="item.asset" />
+        <template #item.asset="{ row }">
+          <AssetDetails opens-details hide-name :asset="row.asset" />
         </template>
-        <template #item.amount="{ item }">
-          <AmountDisplay :value="item.amount" />
+        <template #item.amount="{ row }">
+          <AmountDisplay :value="row.amount" />
         </template>
-        <template #item.usdValue="{ item }">
-          <AmountDisplay :value="item.usdValue" />
+        <template #item.usdValue="{ row }">
+          <AmountDisplay :value="row.usdValue" />
         </template>
-        <template
-          v-if="collection.received.length > 0"
-          #body.append="{ isMobile }"
-        >
+        <template v-if="collection.received.length > 0" #body.append>
           <RowAppend
             label-colspan="2"
             :label="t('common.total')"
-            :is-mobile="isMobile"
+            class="[&>td]:p-4"
           >
             <AmountDisplay
               v-if="collection.totalUsdValue"
@@ -150,7 +171,7 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
             />
           </RowAppend>
         </template>
-      </DataTable>
+      </RuiDataTable>
     </RuiCard>
     <RuiCard>
       <template #header>
@@ -159,29 +180,36 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
 
       <CollectionHandler :collection="collection">
         <template #default="{ data, itemLength }">
-          <DataTable
-            :headers="tableHeaders"
-            :items="data"
-            :loading="isLoading"
+          <RuiDataTable
+            outlined
+            dense
+            :cols="tableHeaders"
+            :rows="data"
             :options="options"
-            :server-items-length="itemLength"
-            multi-sort
-            :must-sort="false"
-            @update:options="setOptions($event)"
+            :sort.sync="sort"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength
+            }"
+            row-attr=""
+            :pagination-modifiers="{ external: true }"
+            :loading="isLoading"
+            @update:options="setTableOptions($event)"
           >
-            <template #item.asset="{ item }">
-              <AssetDetails opens-details hide-name :asset="item.asset" />
+            <template #item.asset="{ row }">
+              <AssetDetails opens-details hide-name :asset="row.asset" />
             </template>
-            <template #item.amount="{ item }">
-              <AmountDisplay :value="item.amount" />
+            <template #item.amount="{ row }">
+              <AmountDisplay :value="row.amount" />
             </template>
-            <template #item.usdValue="{ item }">
-              <AmountDisplay :value="item.usdValue" />
+            <template #item.usdValue="{ row }">
+              <AmountDisplay :value="row.usdValue" />
             </template>
-            <template #item.timestamp="{ item }">
-              <DateDisplay :timestamp="item.timestamp" />
+            <template #item.timestamp="{ row }">
+              <DateDisplay :timestamp="row.timestamp" />
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
     </RuiCard>
