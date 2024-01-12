@@ -1,6 +1,0 @@
-node_modules
-components.d.ts
-dist
-build
-coverage
-src/auto-imports.d.ts

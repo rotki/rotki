@@ -33,7 +33,11 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "@rotki/eslint-config": "1.1.2",
+    "@rotki/eslint-config": "2.1.0",
+    "eslint-plugin-cypress": "2.15.1",
+    "eslint-plugin-vuetify": "1.1.0",
+    "@rotki/eslint-plugin": "0.0.3",
+    "@intlify/eslint-plugin-vue-i18n": "2.0.0",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
     "eslint": "8.56.0",
