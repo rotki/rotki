@@ -280,9 +280,9 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457.384070053129639935'), usd_value=ZERO),  # noqa: E501
             location_label=location_label,
-            notes='Set stETH spending approval of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes='Set stETH spending approval of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 to 115792089237316195423570985008687907853269984665640564039457.384070053129639935',  # noqa: E501
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
             tx_hash=evmhash,

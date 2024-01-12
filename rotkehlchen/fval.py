@@ -1,4 +1,5 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, DefaultContext, InvalidOperation, setcontext
+from math import ceil, log10
 from typing import Any, Union
 
 from rotkehlchen.errors.serialization import ConversionError
@@ -6,6 +7,9 @@ from rotkehlchen.errors.serialization import ConversionError
 # Here even though we got __future__ annotations using FVal does not seem to work
 AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']
+
+DefaultContext.prec = ceil(log10(2 ** 256))  # support upto uint256 max value
+setcontext(DefaultContext)
 
 
 class FVal:

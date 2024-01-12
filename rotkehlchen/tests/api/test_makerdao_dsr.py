@@ -328,7 +328,7 @@ def setup_tests_for_dsr(
     )
 
     dsr_balance_response = {
-        'current_dsr': '8.022774065220581075333120100',
+        'current_dsr': '8.02277406522058107533312007531401770762840532683385494120377820398034738503100',  # noqa: E501
         'balances': {
             account1: _dsrdai_to_dai(params.account1_current_normalized_balance * current_chi),
             account2: _dsrdai_to_dai(params.account2_current_normalized_balance * current_chi),

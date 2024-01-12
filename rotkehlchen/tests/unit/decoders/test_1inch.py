@@ -144,9 +144,9 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_PAN,
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564037304.954007913129639935')),
             location_label=ADDY,
-            notes=f'Set PAN spending approval of {ADDY} by {ONEINCH_V2_MAINNET_ROUTER} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes=f'Set PAN spending approval of {ADDY} by {ONEINCH_V2_MAINNET_ROUTER} to 115792089237316195423570985008687907853269984665640564037304.954007913129639935',  # noqa: E501
             address=ONEINCH_V2_MAINNET_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -395,9 +395,9 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xE60779CC1b2c1d0580611c526a8DF0E3f870EC48'),
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640563937640.413716264772814197')),
             location_label=user_address,
-            notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640563937640.413716264772814197',  # noqa: E501
             address=ONEINCH_V4_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -590,10 +590,10 @@ def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=pos_usdt,
-            balance=Balance(FVal('115792089237316195423570985000000000000000000000000000000000000000000000')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457584007913032.844935')),
             location_label=user_addy,
             address=ONEINCH_V4_ROUTER,
-            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985000000000000000000000000000000000000000000000',  # noqa: E501
+            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039457584007913032.844935',  # noqa: E501
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=278,
@@ -770,9 +770,9 @@ def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accoun
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_LUSD,
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564038929.427407919914021705')),
             location_label=user_address,
-            notes='Set LUSD spending approval of 0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379 by 0x1111111254EEB25477B68fb85Ed929f73A960582 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes='Set LUSD spending approval of 0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379 by 0x1111111254EEB25477B68fb85Ed929f73A960582 to 115792089237316195423570985008687907853269984665640564038929.427407919914021705',  # noqa: E501
             address=ONEINCH_V5_ROUTER,
             counterparty=None,
         ), EvmEvent(
