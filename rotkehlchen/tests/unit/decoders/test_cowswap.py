@@ -246,9 +246,9 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=asset_fund,
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457583991913.129639935')),
             location_label=user_address_1,
-            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
+            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457583991913.129639935',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
 
         ), EvmEvent(  # 1st swap with FUND

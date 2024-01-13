@@ -46,11 +46,11 @@ def test_thegraph_delegate(database, ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_GRT,
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640563952473.318503163402575923')),
             location_label=ADDY_USER,
             notes=(
                 f'Set GRT spending approval of {ADDY_USER} by {ADDY_THEGRAPH}'
-                f' to 115792089237316195423570985000000000000000000000000000000000'
+                f' to 115792089237316195423570985008687907853269984665640563952473.318503163402575923'  # noqa: E501
             ),
             counterparty=None,
             address=ADDY_THEGRAPH,

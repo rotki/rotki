@@ -545,9 +545,9 @@ def test_deposit_yearn_full_amount(database, ethereum_inquirer, ethereum_account
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_1INCH,
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000'), usd_value=ZERO),  # noqa: E501
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564038972.292276463862611574'), usd_value=ZERO),  # noqa: E501
             location_label=user_address,
-            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985008687907853269984665640564038972.292276463862611574',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ),

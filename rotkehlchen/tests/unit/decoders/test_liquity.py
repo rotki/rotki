@@ -538,9 +538,9 @@ def test_ds_proxy_liquity_deposit(database, ethereum_inquirer, ethereum_accounts
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_LUSD,
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039370.086818754634000885')),
             location_label=user_address,
-            notes='Set LUSD spending approval of 0x0c3ce74FCB2B93F9244544919572818Dc2AC0641 by 0x7815beb98a927565eA43b5854644392F21dA0021 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            notes='Set LUSD spending approval of 0x0c3ce74FCB2B93F9244544919572818Dc2AC0641 by 0x7815beb98a927565eA43b5854644392F21dA0021 to 115792089237316195423570985008687907853269984665640564039370.086818754634000885',  # noqa: E501
             address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
         ),
     ]
