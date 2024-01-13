@@ -58,6 +58,49 @@ def test_bridge_dai_from_ethereum(database, ethereum_inquirer, ethereum_accounts
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xfF025244b556F0CD4617FBfE67F7986D7292A3E4']])
+def test_bridge_dai_from_ethereum_nolog(database, ethereum_inquirer, ethereum_accounts):
+    """Test the case where a simple transfer to the bridge is recognized as a bridging event"""
+    tx_hash = deserialize_evm_tx_hash('0x196e7d687e1e2ce280dbe7f52b6ffe5a61d3a851b38740a37d1d00caffce7562')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1705093391000)
+    gas, amount = '0.00115669008897503', '193.961036565990280733'
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=150,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_DAI,
+            balance=Balance(FVal(amount)),
+            location_label=user_address,
+            notes=f'Bridge {amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge',
+            tx_hash=tx_hash,
+            counterparty=CPT_GNOSIS_CHAIN,
+            address=BRIDGE_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
 def test_withdraw_dai_to_ethereum(database, ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
