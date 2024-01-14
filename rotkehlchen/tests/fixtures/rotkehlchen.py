@@ -42,15 +42,6 @@ from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_con
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
 
 
-@pytest.fixture(name='max_tasks_num')
-def fixture_max_tasks_num() -> int:
-    """The max number of tasks below which the manager can schedule tasks
-
-    By default -1 which disables the task manager
-    """
-    return -1
-
-
 @pytest.fixture(name='start_with_logged_in_user')
 def fixture_start_with_logged_in_user():
     return True

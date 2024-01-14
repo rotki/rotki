@@ -13,7 +13,6 @@ from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
@@ -46,58 +45,8 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
 
 
-class MockPremiumSyncManager:
-
-    def __init__(self):
-        pass
-
-    def maybe_upload_data_to_server(self) -> None:
-        pass
-
-
-@pytest.fixture(name='max_tasks_num')
-def fixture_max_tasks_num() -> int:
-    return 5
-
-
-@pytest.fixture(name='api_task_greenlets')
-def fixture_api_task_greenlets() -> list:
-    return []
-
-
-@pytest.fixture(name='task_manager')
-def fixture_task_manager(
-        database,
-        blockchain,
-        max_tasks_num,
-        greenlet_manager,
-        api_task_greenlets,
-        cryptocompare,
-        exchange_manager,
-        messages_aggregator,
-        username,
-) -> TaskManager:
-    task_manager = TaskManager(
-        max_tasks_num=max_tasks_num,
-        greenlet_manager=greenlet_manager,
-        api_task_greenlets=api_task_greenlets,
-        database=database,
-        cryptocompare=cryptocompare,
-        premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
-        chains_aggregator=blockchain,
-        exchange_manager=exchange_manager,
-        deactivate_premium=lambda: None,
-        query_balances=lambda: None,
-        activate_premium=lambda _: None,
-        msg_aggregator=messages_aggregator,
-        data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
-        username=username,
-    )
-    task_manager.should_schedule = True
-    return task_manager
-
-
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
     now = ts_now()
@@ -130,6 +79,7 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_schedule_xpub_derivation(task_manager, database):
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub_data1 = XpubData(
@@ -163,6 +113,7 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
         raise AssertionError(f'xpub derivation query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex):
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_history_query]
@@ -208,6 +159,7 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('one_receipt_in_db', [True, False])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_schedule_ethereum_txreceipts(
         task_manager,
         ethereum_manager,
@@ -310,6 +262,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             assert rotki.premium is not None, "Permium object is None and Periodic check didn't reactivate the premium status"  # noqa: E501
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_update_snapshot_balances(task_manager):
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
     query_balances_patch = patch.object(
@@ -333,6 +286,7 @@ def test_update_snapshot_balances(task_manager):
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_try_start_same_task(rotkehlchen_api_server):
     """
     1. Checks that it is not possible to start 2 same tasks
@@ -426,6 +380,7 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
     """Test that using maybe_kill_running_tx_query_tasks deletes greenlet from the running tasks
 
@@ -467,6 +422,7 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306']])  # noqa: E501
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
     task_manager.potential_tasks = [task_manager._maybe_query_withdrawals]
     query_patch = patch.object(
@@ -498,6 +454,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
             assert query_mock.call_count == expected_call_count, msg
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_detect_new_spam_tokens(
         task_manager: TaskManager,
         database: 'DBHandler',
@@ -531,6 +488,7 @@ def test_maybe_detect_new_spam_tokens(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xcC3Da35614E6CAEEA7947d7Cd58000C350E7FF84']])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb524c787669185E11d01C645D1910631e04Fa5Eb']])
+@pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_augmented_detect_new_spam_tokens(
         task_manager: TaskManager,
         database: 'DBHandler',

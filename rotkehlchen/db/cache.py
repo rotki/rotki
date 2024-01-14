@@ -1,4 +1,5 @@
 from typing import TypedDict, Unpack, overload
+
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.mixins.enums import Enum
 
@@ -16,6 +17,7 @@ class DBCacheStatic(Enum):
     LAST_EVENTS_PROCESSING_TASK_TS = 'last_events_processing_task_ts'
     LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
     LAST_WITHDRAWALS_EXIT_QUERY_TS = 'last_withdrawals_exit_query_ts'
+    LAST_MONERIUM_QUERY_TS = 'last_monerium_query_ts'
 
 
 class LabeledLocationArgsType(TypedDict):

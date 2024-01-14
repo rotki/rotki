@@ -28,6 +28,7 @@ def should_run_periodic_task(
             DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
             DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
             DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
+            DBCacheStatic.LAST_MONERIUM_QUERY_TS,
         ],
         refresh_period: int,
 ) -> bool:

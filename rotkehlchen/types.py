@@ -126,6 +126,7 @@ class ExternalService(SerializableEnumNameMixin):
     BASE_ETHERSCAN = 9
     GNOSIS_ETHERSCAN = 10
     BLOCKSCOUT = 11
+    MONERIUM = 12
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""

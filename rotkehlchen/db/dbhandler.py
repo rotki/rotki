@@ -1667,6 +1667,10 @@ class DBHandler:
                     f'the app with an older version. {e!s}',
                 )
                 continue
+
+            if location not in SUPPORTED_EXCHANGES:
+                continue
+
             credentials[location].append(ExchangeApiCredentials(
                 name=entry[0],
                 location=location,

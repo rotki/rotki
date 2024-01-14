@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7027` Monerium transactions are now decoded as mints and burns. If the user provides monerium credentials then a periodic task pulls data from the monerium API and the transactions are enriched with actual banking data and/or with bridging data from chain to chain.
 * :feature:`7176` The exported CSV for PnL Report now contains a label of the address in notes, if available.
 * :feature:`7146` The exported CSV for PnL Report now contains an Asset column with symbols.
 * :feature:`6254` Users can now stop the execution of long-running queries.
