@@ -47,11 +47,7 @@ def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accoun
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1696160411000)
-    approval_amount = '115792089237316195423570985000000000000000000000000000000000'
-    swap_amount = '6550.721365244578638016'
-    received_amount = '0.017595546435556104'
-    gas_fees = '0.001533786820220988'
-    metamask_fee = '0.000153961031311116'
+    approval_amount, swap_amount, received_amount, gas_fees, metamask_fee = '115792089237316195423570985008687907853269984665640564032906.862642668551001919', '6550.721365244578638016', '0.017595546435556104', '0.001533786820220988', '0.000153961031311116'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -132,10 +128,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702292675000)
-    swap_amount = '0.0495625'
-    received_amount = '2595.147664794130524115'
-    gas_fees = '0.004927174848537517'
-    fee_amount = '0.0004375'
+    swap_amount, received_amount, gas_fees, fee_amount = '0.0495625', '2595.147664794130524115', '0.004927174848537517', '0.0004375'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -204,10 +197,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702376699000)
-    swap_amount = '568.614655'
-    received_amount = '157279690809.1035325007342546'
-    gas_fees = '0.007519637280969888'
-    fee_amount = '5.019297'
+    swap_amount, received_amount, gas_fees, fee_amount = '568.614655', '157279690809.103532500734254552', '0.007519637280969888', '5.019297'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -276,10 +266,7 @@ def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accou
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702376675000)
-    swap_amount = '52000000000'
-    received_amount = '2837.148343'
-    gas_fees = '0.01015815871814444'
-    fee_amount = '24.824308'
+    swap_amount, received_amount, gas_fees, fee_amount = '52000000000', '2837.148343', '0.01015815871814444', '24.824308'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -348,11 +335,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1702399619000)
-    swap_amount = '89.301543595802992849'
-    received_amount = '323.028598123743886055'
-    gas_fees = '0.036588478688486165'
-    fee_amount = '0.788286009042397163'
-    approval_amount = '90071443.400914235154609988'
+    swap_amount, received_amount, gas_fees, fee_amount, approval_amount = '89.301543595802992849', '323.028598123743886055', '0.036588478688486165', '0.788286009042397163', '90071443.400914235154609988'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -433,10 +416,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
     )
     user_address = arbitrum_one_accounts[0]
     timestamp = TimestampMS(1702461343000)
-    swap_amount = '44.903625'
-    received_amount = '0.020630400240849773'
-    gas_fees = '0.0003196843'
-    metamask_fee = '0.396375'
+    swap_amount, received_amount, gas_fees, metamask_fee = '44.903625', '0.020630400240849773', '0.0003196843', '0.396375'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -505,10 +485,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
     )
     user_address = optimism_accounts[0]
     timestamp = TimestampMS(1702469285000)
-    swap_amount = '148.6875'
-    received_amount = '148.608467'
-    gas_fees = '0.000354333259086529'
-    fee_amount = '1.3125'
+    swap_amount, received_amount, gas_fees, fee_amount = '148.6875', '148.608467', '0.000354333259086529', '1.3125'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -577,11 +554,7 @@ def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accou
     )
     user_address = polygon_pos_accounts[0]
     timestamp = TimestampMS(1702471426000)
-    approval_amount = '115792089237316195423570985000000000000000000000000000000000000000000000'
-    swap_amount = '18.804192'
-    received_amount = '22.278327092660803452'
-    gas_fees = '0.079877964587736024'
-    fee_amount = '0.165989'
+    approval_amount, swap_amount, received_amount, gas_fees, fee_amount = '115792089237316195423570985008687907853269984665640564039457584007913105.669754', '18.804192', '22.278327092660803452', '0.079877964587736024', '0.165989'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
