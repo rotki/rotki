@@ -30,6 +30,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -156,6 +157,7 @@ class TaskManager:
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
             self._maybe_augmented_detect_new_spam_tokens,
+            self._maybe_query_monerium,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -752,6 +754,26 @@ class TaskManager:
             exception_is_error=True,
             method=update_owned_assets,
             user_db=self.database,
+        )]
+
+    def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_MONERIUM_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT api_key, api_secret FROM user_credentials WHERE name=? AND location=?',
+                ('monerium', Location.BANKS.serialize_for_db()),
+            ).fetchone()
+            if result is None:
+                return None
+
+        monerium = Monerium(database=self.database, user=result[0], password=result[1])
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Query monerium',
+            exception_is_error=False,  # don't spam user messages if errors happen
+            method=monerium.get_and_process_orders,
         )]
 
     def _schedule(self) -> None:

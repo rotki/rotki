@@ -234,3 +234,9 @@ def update_owned_assets(user_db: DBHandler) -> None:
     """Wrapper to be used in async task to update owned assets"""
     with user_db.conn.read_ctx() as cursor:
         user_db.update_owned_assets_in_globaldb(cursor=cursor)
+
+    with user_db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(  # remember last task ran
+            'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+            (DBCacheStatic.LAST_OWNED_ASSETS_UPDATE.value, str(ts_now())),
+        )

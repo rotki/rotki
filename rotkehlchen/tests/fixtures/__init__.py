@@ -13,6 +13,7 @@ from rotkehlchen.tests.fixtures.messages import *  # noqa: F403
 from rotkehlchen.tests.fixtures.networking import *  # noqa: F403
 from rotkehlchen.tests.fixtures.pylint import *  # noqa: F403
 from rotkehlchen.tests.fixtures.rotkehlchen import *  # noqa: F403
+from rotkehlchen.tests.fixtures.taskmanager import *  # noqa: F403
 from rotkehlchen.tests.fixtures.variables import *  # noqa: F403
 from rotkehlchen.tests.fixtures.websockets import *  # noqa: F403
 from rotkehlchen.tests.fixtures.xpubs import *  # noqa: F403
