@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
@@ -21,6 +22,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
+from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -396,7 +398,16 @@ def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bo
     ).fetchone()[0] == 1
     if exists and schema is not None:
         cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name=?', (name,))
-        return cursor.fetchone()[0] == schema
+        returned_schema = cursor.fetchone()[0].lower()
+        returned_properties = re.findall(
+            pattern=r'createtable.*?\((.+)\)',
+            string=db_script_normalizer(returned_schema),
+        )[0]
+        given_properties = re.findall(
+            pattern=r'createtable.*?\((.+)\)',
+            string=db_script_normalizer(schema.lower()),
+        )[0]
+        return returned_properties == given_properties
     return exists
 
 

@@ -762,8 +762,8 @@ class TaskManager:
 
         with self.database.conn.read_ctx() as cursor:
             result = cursor.execute(
-                'SELECT api_key, api_secret FROM user_credentials WHERE name=? AND location=?',
-                ('monerium', Location.BANKS.serialize_for_db()),
+                'SELECT api_key, api_secret FROM external_service_credentials WHERE name=?',
+                ('monerium',),
             ).fetchone()
             if result is None:
                 return None

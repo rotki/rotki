@@ -463,14 +463,15 @@ Getting or modifying external services API credentials
                "arbitrum_one": {"api_key":"key3"}
             },
             "cryptocompare": {"api_key":"boooookey"},
-            "opensea": {"api_key":"goooookey"}
+            "opensea": {"api_key":"goooookey"},
+            "monerium": {"username":"Ben", "password":"secure"}
          },
          "message":""
       }
 
-   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``. For etherscan services all are grouped under the ``etherscan`` key. If there are no etherscan services this key won't be present.
+   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``. For etherscan services all are grouped under the ``etherscan`` key. If there are no etherscan services this key won't be present. The ``monerium`` service has a different structure than the rest. Has ``username`` and ``password`` keys.
    :statuscode 200: Querying of external service credentials was successful
-   :statuscode 409: There is no logged in user
+   :statuscode 401: There is no logged in user
    :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/external_services
@@ -494,8 +495,10 @@ Getting or modifying external services API credentials
       }
 
    :reqjson list services: The services parameter is a list of services along with their api keys.
-   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"covalent"``, ``"opensea"`` and ``blockscout``.
-   :reqjsonarr string api_key: Each entry in the list should have an api_key entry
+   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"covalent"``, ``"opensea"``, ``blockscout``, ``monerium``.
+   :reqjsonarr string[optional] api_key: Each entry in the list should have an api_key entry except for monerium.
+   :reqjsonarr string[optional] username: The monerium entry should have a username key
+   :reqjsonarr string[optional] password: The monerium entry should have a password key
 
    **Example Response**:
 
@@ -512,10 +515,10 @@ Getting or modifying external services API credentials
           "message": ""
       }
 
-   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``
+   :resjson object result: The result object contains as many entries as the external services.
    :statuscode 200: Saving new external service credentials was successful
    :statuscode 400: Provided JSON is in some way malformed, of invalid value provided.
-   :statuscode 409: There is no logged in user
+   :statuscode 401: There is no logged in user
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/external_services

@@ -152,10 +152,19 @@ class ExternalServiceApiCredentials(NamedTuple):
     The Api in question must at least have an API key.
     """
     service: ExternalService
-    api_key: ApiKey
+    api_key: ApiKey  # for monerium this is the username
+    api_secret: str | None = None  # for monerium this is the password
 
-    def serialize_for_db(self) -> tuple[str, str]:
-        return (self.service.name.lower(), self.api_key)
+    def serialize_for_db(self) -> tuple[str, str, str | None]:
+        return (self.service.name.lower(), self.api_key, self.api_secret)
+
+    def serialize_for_api(self) -> tuple[str, dict[str, str]]:
+        value: dict[str, str]
+        if self.service == ExternalService.MONERIUM:
+            value = {'username': self.api_key, 'password': self.api_secret}  # type:ignore  # exists
+        else:
+            value = {'api_key': self.api_key}
+        return self.service.name.lower(), value
 
 
 T_TradePair = str

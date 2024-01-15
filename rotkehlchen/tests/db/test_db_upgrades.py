@@ -2025,6 +2025,18 @@ def test_upgrade_db_40_to_41(user_data_dir):
             assert names[0] in should_move_used_query_ranges | should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 0
+
+    # test external credentials are there
+    with db_v40.conn.read_ctx() as cursor:
+        assert table_exists(
+            cursor=cursor,
+            name='external_service_credentials',
+            schema="""CREATE TABLE external_service_credentials (
+            name VARCHAR[30] NOT NULL PRIMARY KEY,
+            api_key TEXT
+            )""") is True
+        assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2')]  # noqa: E501
+
     db_v40.logout()
 
     # Execute upgrade
@@ -2063,6 +2075,18 @@ def test_upgrade_db_40_to_41(user_data_dir):
             assert name[0] in should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 1
+
+        # test external credentials have been upgraded
+        assert table_exists(
+            cursor=cursor,
+            name='external_service_credentials',
+            schema="""CREATE TABLE external_service_credentials (
+            name VARCHAR[30] NOT NULL PRIMARY KEY,
+            api_key TEXT NOT NULL,
+            api_secret TEXT
+            )""") is True
+        assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL', None), ('blockscout', 'LOL2', None)]  # noqa: E501
+
     db.logout()
 
 
