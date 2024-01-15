@@ -2941,7 +2941,7 @@
     "manage_address_book": "Manage Address Book",
     "manage_assets": "Manage Assets",
     "manage_prices": "Administrar Precios",
-    "nfts": "NFTs",
+    "nfts": "NFTs Gallery",
     "profit_loss_report": "Profit and Loss Report",
     "settings": "Ajustes",
     "settings_sub": {
@@ -3129,9 +3129,6 @@
         "borrowing": "Liabilities"
       }
     }
-  },
-  "pagination": {
-    "of": "of {length}"
   },
   "percentage_display": {
     "symbol": "%"

@@ -3016,7 +3016,7 @@
       "historic_prices": "历史价格",
       "latest_prices": "最新价格"
     },
-    "nfts": "NFTs",
+    "nfts": "NFTs Gallery",
     "profit_loss_report": "盈亏报告",
     "settings": "设置",
     "settings_sub": {
@@ -3207,9 +3207,6 @@
         "borrowing": "负债"
       }
     }
-  },
-  "pagination": {
-    "of": "of {length}"
   },
   "percentage_display": {
     "symbol": "%"

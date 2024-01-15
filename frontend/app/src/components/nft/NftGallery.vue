@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { Ref } from 'vue';
-import type { Module } from '@/types/modules';
-import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
-import type { NftPriceArray } from '@/types/prices';
+import { type Ref } from 'vue';
+import {
+  type TablePaginationData,
+  useBreakpoint
+} from '@rotki/ui-library-compat';
+import { type Module } from '@/types/modules';
+import { type GalleryNft, type Nft, type Nfts } from '@/types/nfts';
+import { type NftPriceArray } from '@/types/prices';
 
 defineProps<{ modules: Module[] }>();
 
@@ -21,47 +25,63 @@ const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
-const sortProperties = [
-  {
-    text: t('common.name'),
-    value: 'name',
-  },
-  {
-    text: t('common.price'),
-    value: 'priceUsd',
-  },
-  {
-    text: t('nft_gallery.sort.collection'),
-    value: 'collection',
-  },
-];
-
 const chains = [Blockchain.ETH];
 
-const { name: breakpoint, width } = useDisplay();
 const page = ref(1);
+const itemsPerPage = ref(8);
 
-const itemsPerPage = computed(() => {
-  if (get(breakpoint) === 'xs')
+const paginationData = computed({
+  get() {
+    return {
+      page: get(page),
+      total: get(items).length,
+      limit: get(itemsPerPage),
+      limits: get(limits)
+    };
+  },
+  set(value: TablePaginationData) {
+    set(page, value.page);
+    set(itemsPerPage, value.limit);
+  }
+});
+
+const { isSmAndDown, isSm, isMd, is2xl } = useBreakpoint();
+
+const firstLimit = computed(() => {
+  if (get(isSmAndDown)) {
     return 1;
-  else if (get(breakpoint) === 'sm')
-    return 2;
-  else if (get(width) >= 1600)
-    return 10;
+  }
 
+  if (get(isSm)) {
+    return 2;
+  }
+
+  if (get(isMd)) {
+    return 6;
+  }
+
+  if (get(is2xl)) {
+    return 10;
+  }
   return 8;
 });
 
-watch(breakpoint, () => {
-  set(page, 1);
+const limits = computed(() => {
+  const first = get(firstLimit);
+  return [first, first * 2, first * 4];
+});
+
+watchImmediate(firstLimit, () => {
+  set(itemsPerPage, get(firstLimit));
 });
 
 const selectedAccounts = ref<GeneralAccount[]>([]);
 const selectedCollection = ref<string | null>(null);
 const premium = usePremium();
 
-watch(selectedAccounts, () => set(page, 1));
-watch(selectedCollection, () => set(page, 1));
+watch([firstLimit, selectedAccounts, selectedCollection], () => {
+  set(page, 1);
+});
 
 const items = computed(() => {
   const accounts = get(selectedAccounts);
@@ -82,22 +102,21 @@ const items = computed(() => {
   return get(nfts).sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
 });
 
-const pages = computed(() => Math.ceil(get(items).length / get(itemsPerPage)));
-
 const visibleNfts = computed(() => {
   const start = (get(page) - 1) * get(itemsPerPage);
   return get(items).slice(start, start + get(itemsPerPage));
 });
 
 const availableAddresses = computed(() =>
-  get(perAccount) ? Object.keys(get(perAccount)!) : [],
+  get(perAccount) ? Object.keys(get(perAccount)!) : []
 );
 
 const nfts = computed<GalleryNft[]>(() => {
   const addresses: Nfts | null = get(perAccount);
   const value = get(prices);
-  if (!addresses)
+  if (!addresses) {
     return [];
+  }
 
   const allNfts: GalleryNft[] = [];
   for (const address in addresses) {
@@ -114,14 +133,13 @@ const nfts = computed<GalleryNft[]>(() => {
         priceDetails = {
           priceAsset: price.priceAsset,
           priceInAsset: price.priceInAsset,
-          priceUsd: price.usdPrice,
+          priceUsd: price.usdPrice
         };
-      }
-      else {
+      } else {
         priceDetails = {
           priceAsset: 'ETH',
           priceInAsset: priceEth,
-          priceUsd,
+          priceUsd
         };
       }
 
@@ -132,9 +150,9 @@ const nfts = computed<GalleryNft[]>(() => {
 });
 
 const collections = computed(() => {
-  if (!get(nfts))
+  if (!get(nfts)) {
     return [];
-
+  }
   return get(nfts)
     .map(({ collection }) => collection.name ?? '')
     .filter(uniqueStrings);
@@ -142,47 +160,50 @@ const collections = computed(() => {
 
 const { fetchNfts: nftFetch } = useNfts();
 
-async function fetchNfts(ignoreCache = false) {
+const fetchNfts = async (ignoreCache = false) => {
   set(loading, true);
   const { message, result } = await nftFetch(ignoreCache);
   if (result) {
     set(total, result.entriesFound);
     set(limit, result.entriesLimit);
     set(perAccount, result.addresses);
-  }
-  else {
+  } else {
     set(error, message);
   }
   set(loading, false);
-}
+};
 
 const noData = computed(
   () =>
-    get(visibleNfts).length === 0
-    && !(get(selectedCollection) || get(selectedAccounts).length > 0),
+    get(visibleNfts).length === 0 &&
+    !(get(selectedCollection) || get(selectedAccounts).length > 0)
 );
 
 const { fetchNftsPrices } = useAssetPricesApi();
 
-async function fetchPrices() {
+const fetchPrices = async () => {
   try {
     const data = await fetchNftsPrices();
     set(prices, data);
+  } catch (e: any) {
+    set(priceError, e.message);
   }
-  catch (error_: any) {
-    set(priceError, error_.message);
-  }
-}
+};
 
-function updateSortBy(value: string) {
+const updateSortBy = (value: string) => {
   assert(['name', 'priceUsd', 'collection'].includes(value));
   set(sortBy, value);
-}
+};
 
 onMounted(fetchPrices);
 onMounted(fetchNfts);
 
-function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref<boolean>, a: GalleryNft, b: GalleryNft): number {
+const sortNfts = (
+  sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
+  sortDesc: Ref<boolean>,
+  a: GalleryNft,
+  b: GalleryNft
+): number => {
   const sortProp = get(sortBy);
   const desc = get(sortDesc);
   const isCollection = sortProp === 'collection';
@@ -192,80 +213,33 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
     return desc
       ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
       : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
-  }
-  else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
+  } else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
     return (
       desc ? bElement.minus(aElement) : aElement.minus(bElement)
     ).toNumber();
-  }
-  else if (aElement === null && bElement === null) {
+  } else if (aElement === null && bElement === null) {
     return 0;
-  }
-  else if (aElement && !bElement) {
+  } else if (aElement && !bElement) {
     return desc ? 1 : -1;
-  }
-  else if (!aElement && bElement) {
+  } else if (!aElement && bElement) {
     return desc ? -1 : 1;
   }
   return 0;
-}
+};
 </script>
 
 <template>
   <ProgressScreen v-if="loading && visibleNfts.length === 0">
     {{ t('nft_gallery.loading') }}
   </ProgressScreen>
-  <NoDataScreen
-    v-else-if="noData"
-    full
-  >
+  <NoDataScreen v-else-if="noData" full>
     <template #title>
       {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>
     {{ error ? error : t('nft_gallery.empty_subtitle') }}
   </NoDataScreen>
-  <div
-    v-else
-    class="py-4 flex flex-col gap-6"
-  >
-    <div class="flex justify-between gap-6 items-start">
-      <div class="grid md:grid-cols-2 gap-4 grow">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          :label="t('nft_gallery.select_account')"
-          :chains="chains"
-          dense
-          outlined
-          no-padding
-          flat
-          :usable-addresses="availableAddresses"
-        />
-        <div class="bg-white dark:bg-[#1E1E1E]">
-          <VAutocomplete
-            v-model="selectedCollection"
-            :label="t('nft_gallery.select_collection')"
-            single-line
-            clearable
-            hide-details
-            hide-selected
-            :items="collections"
-            outlined
-            dense
-          />
-        </div>
-        <SortingSelector
-          :sort-by="sortBy"
-          :sort-properties="sortProperties"
-          :sort-desc="sortDescending"
-          @update:sort-by="updateSortBy($event)"
-          @update:sort-desc="sortDescending = $event"
-        />
-        <Pagination
-          v-if="pages > 0"
-          v-model="page"
-          :length="pages"
-        />
-      </div>
+  <TablePageLayout v-else class="p-4" :title="[t('navigation_menu.nfts')]">
+    <template #buttons>
       <div class="flex items-center gap-3">
         <NftImageRenderingSettingMenu />
         <ActiveModules :modules="modules" />
@@ -275,40 +249,73 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
           @refresh="fetchNfts(true)"
         />
       </div>
-    </div>
-    <RuiDivider />
-    <i18n
-      v-if="!premium && visibleNfts.length > 0"
-      path="nft_gallery.upgrade"
-      class="text-rui-text-secondary text-center"
-    >
-      <template #limit>
-        {{ limit }}
-      </template>
-      <template #link>
-        <ExternalLink
-          :text="t('upgrade_row.rotki_premium')"
-          color="primary"
-          premium
-        />
-      </template>
-    </i18n>
-    <div
-      v-if="visibleNfts.length === 0"
-      class="min-h-[60vh] flex justify-center items-center text--secondary text-h6"
-    >
-      {{ t('nft_gallery.empty_filter') }}
-    </div>
-    <div
-      v-else
-      class="grid md:grid-cols-2 lg:grid-cols-4 min-[1600px]:grid-cols-5 gap-4"
-    >
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <RuiCard>
+        <div class="grid md:grid-cols-8 gap-4">
+          <BlockchainAccountSelector
+            v-model="selectedAccounts"
+            class="md:col-span-3"
+            :label="t('nft_gallery.select_account')"
+            :chains="chains"
+            dense
+            outlined
+            no-padding
+            flat
+            :usable-addresses="availableAddresses"
+          />
+
+          <NftCollectionSelector
+            v-model="selectedCollection"
+            class="md:col-span-3"
+            :items="collections"
+          />
+
+          <NftSorter
+            class="md:col-span-2"
+            :sort-by="sortBy"
+            :sort-desc="sortDescending"
+            @update:sort-by="updateSortBy($event)"
+            @update:sort-desc="sortDescending = $event"
+          />
+        </div>
+      </RuiCard>
+
+      <RuiAlert v-if="!premium && visibleNfts.length > 0" type="info">
+        <i18n path="nft_gallery.upgrade">
+          <template #limit> {{ limit }}</template>
+          <template #link>
+            <ExternalLink
+              :text="t('upgrade_row.rotki_premium')"
+              color="primary"
+              premium
+            />
+          </template>
+        </i18n>
+      </RuiAlert>
+
       <div
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
+        v-if="visibleNfts.length === 0"
+        class="min-h-[60vh] flex justify-center align-center text--secondary text-h6"
       >
-        <NftGalleryItem :item="item" />
+        {{ t('nft_gallery.empty_filter') }}
+      </div>
+      <div
+        v-else
+        class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+      >
+        <div
+          v-for="item in visibleNfts"
+          :key="item.tokenIdentifier"
+          class="overflow-hidden"
+        >
+          <NftGalleryItem :item="item" />
+        </div>
       </div>
     </div>
-  </div>
+    <RuiCard>
+      <RuiTablePagination v-model="paginationData" />
+    </RuiCard>
+  </TablePageLayout>
 </template>
