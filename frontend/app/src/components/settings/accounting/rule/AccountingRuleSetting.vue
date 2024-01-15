@@ -299,7 +299,6 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
             :rows="data"
             :cols="tableHeaders"
             :loading="isLoading"
-            :options="options"
             :pagination="{
               limit: options.itemsPerPage,
               page: options.page,

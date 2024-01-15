@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEqual } from 'lodash-es';
+import { isEqual, keyBy } from 'lodash-es';
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Collection } from '@/types/collection';
 import { type Nullable } from '@/types';
@@ -120,7 +120,7 @@ const {
   editableItem,
   options,
   fetchData,
-  setOptions,
+  setTableOptions,
   setFilter,
   setPage
 } = usePaginationFilters<
@@ -146,6 +146,20 @@ const {
 });
 
 setPostSubmitFunc(fetchData);
+
+const assetsMap = computed(() => keyBy(get(assets).data, 'identifier'));
+
+const selectedRows = computed({
+  get() {
+    return get(selected).map(({ identifier }) => identifier);
+  },
+  set(identifiers: string[]) {
+    set(
+      selected,
+      identifiers.map(identifier => get(assetsMap)[identifier])
+    );
+  }
+});
 
 const showDeleteConfirmation = (item: SupportedAsset) => {
   show(
@@ -244,18 +258,15 @@ watch(identifier, async assetId => {
         :filters="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
-        :ignored-filter="ignoredFilter"
-        :expanded="expanded"
-        :selected="selected"
+        :ignored-filter.sync="ignoredFilter"
+        :expanded.sync="expanded"
+        :selected.sync="selectedRows"
         :options="options"
         @refresh="fetchData()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"
-        @update:pagination="setOptions($event)"
+        @update:options="setTableOptions($event)"
         @update:filters="setFilter($event)"
-        @update:expanded="expanded = $event"
-        @update:selected="selected = $event"
-        @update:ignored-filter="ignoredFilter = $event"
       />
 
       <ManagedAssetFormDialog

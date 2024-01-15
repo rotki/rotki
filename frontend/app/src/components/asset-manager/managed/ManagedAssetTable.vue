@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableOptions,
+  type DataTableSortData
+} from '@rotki/ui-library-compat';
+import { type Ref } from 'vue';
 import { type TablePagination } from '@/types/pagination';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
 import {
@@ -17,7 +22,7 @@ const props = withDefaults(
     matchers: Matcher[];
     filters: Filters;
     expanded: SupportedAsset[];
-    selected: SupportedAsset[];
+    selected: string[];
     options: TablePagination<SupportedAsset>;
     ignoredAssets: string[];
     ignoredFilter: {
@@ -35,9 +40,9 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:pagination', pagination: TablePagination<SupportedAsset>): void;
+  (e: 'update:options', options: DataTableOptions): void;
   (e: 'update:filters', filters: Filters): void;
-  (e: 'update:selected', selectedAssets: SupportedAsset[]): void;
+  (e: 'update:selected', selectedAssets: string[]): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
   (
     e: 'update:ignored-filter',
@@ -51,50 +56,56 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref({
+  column: 'symbol',
+  direction: 'asc' as const
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.asset'),
-    value: 'symbol'
+    label: t('common.asset'),
+    key: 'symbol',
+    sortable: true,
+    cellClass: 'py-0'
   },
   {
-    text: t('common.type'),
-    value: 'type'
+    label: t('common.type'),
+    key: 'type',
+    sortable: true,
+    cellClass: 'py-0'
   },
   {
-    text: t('common.address'),
-    value: 'address'
+    label: t('common.address'),
+    key: 'address',
+    sortable: true,
+    cellClass: 'py-0'
   },
   {
-    text: t('asset_table.headers.started'),
-    value: 'started'
+    label: t('asset_table.headers.started'),
+    key: 'started',
+    sortable: true,
+    cellClass: 'py-0'
   },
   {
-    text: t('assets.ignore'),
-    value: 'ignored',
-    align: 'center',
+    label: t('assets.ignore'),
+    key: 'ignored',
+    cellClass: 'py-0'
+  },
+  {
+    label: '',
+    key: 'actions',
     sortable: false
-  },
-  {
-    text: '',
-    value: 'actions',
-    sortable: false
-  },
-  {
-    text: '',
-    value: 'expand',
-    sortable: false,
-    class: 'pl-0',
-    cellClass: 'pl-0'
   }
 ]);
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-const updatePagination = (pagination: TablePagination<SupportedAsset>) =>
-  emit('update:pagination', pagination);
+const updatePagination = (options: DataTableOptions) =>
+  emit('update:options', options);
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
-const updateSelected = (selectedAssets: SupportedAsset[]) =>
+const updateSelected = (selectedAssets: string[]) => {
   emit('update:selected', selectedAssets);
+};
 const updateExpanded = (expandedAssets: SupportedAsset[]) =>
   emit('update:expanded', expandedAssets);
 
@@ -165,11 +176,10 @@ const toggleWhitelistAsset = async (identifier: string) => {
 
 const massIgnore = async (ignored: boolean) => {
   const ids = get(props.selected)
-    .filter(item => {
-      const isItemIgnored = get(isAssetIgnored(item.identifier));
+    .filter(identifier => {
+      const isItemIgnored = get(isAssetIgnored(identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
-    .map(item => item.identifier)
     .filter(uniqueStrings);
 
   let status: ActionStatus;
@@ -234,105 +244,110 @@ const massIgnore = async (ignored: boolean) => {
       </div>
     </div>
 
-    <DataTable
+    <RuiDataTable
       :value="selected"
-      :items="tokens"
+      :rows="tokens"
       :loading="loading"
-      :headers="tableHeaders"
-      single-expand
+      :cols="tableHeaders"
       :expanded="expanded"
-      :options="options"
-      item-key="identifier"
-      sort-by="symbol"
-      :sort-desc="false"
-      :server-items-length="serverItemLength"
-      :single-select="false"
+      :pagination="{
+        limit: options.itemsPerPage,
+        page: options.page,
+        total: serverItemLength
+      }"
+      :pagination-modifiers="{ external: true }"
+      :sort.sync="sort"
+      :sort-modifiers="{ external: true }"
+      :sticky-offset="64"
+      row-attr="identifier"
       data-cy="managed-assets-table"
-      show-select
+      single-expand
+      sticky-header
+      outlined
       @update:options="updatePagination($event)"
-      @input="updateSelected($event)"
+      @input="updateSelected($event ?? [])"
     >
-      <template #item.symbol="{ item }">
+      <template #item.symbol="{ row }">
         <AssetDetailsBase
           :changeable="!loading"
           opens-details
-          :asset="getAsset(item)"
+          :asset="getAsset(row)"
         />
       </template>
-      <template #item.address="{ item }">
+      <template #item.address="{ row }">
         <HashLink
-          v-if="item.address"
-          :text="item.address"
-          :chain="getChain(item.evmChain)"
+          v-if="row.address"
+          :text="row.address"
+          :chain="getChain(row.evmChain)"
           hide-alias-name
         />
       </template>
-      <template #item.started="{ item }">
-        <DateDisplay v-if="item.started" :timestamp="item.started" />
+      <template #item.started="{ row }">
+        <DateDisplay v-if="row.started" :timestamp="row.started" />
         <span v-else>-</span>
       </template>
-      <template #item.type="{ item }">
-        {{ formatType(item.assetType) }}
+      <template #item.type="{ row }">
+        {{ formatType(row.assetType) }}
       </template>
-      <template #item.ignored="{ item }">
+      <template #item.ignored="{ row }">
         <div class="flex justify-start">
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
             tooltip-class="max-w-[10rem]"
             :disabled="
-              !isAssetWhitelistedValue(item.identifier) && !isSpamAsset(item)
+              !isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)
             "
           >
             <template #activator>
               <VSwitch
                 :disabled="
-                  isAssetWhitelistedValue(item.identifier) || isSpamAsset(item)
+                  isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
                 "
-                :input-value="isAssetIgnored(item.identifier)"
-                @change="toggleIgnoreAsset(item.identifier)"
+                :input-value="isAssetIgnored(row.identifier)"
+                @change="toggleIgnoreAsset(row.identifier)"
               />
             </template>
             {{
-              isSpamAsset(item)
+              isSpamAsset(row)
                 ? t('ignore.spam.hint')
                 : t('ignore.whitelist.hint')
             }}
           </RuiTooltip>
 
           <ManagedAssetIgnoringMore
-            v-if="item.assetType === EVM_TOKEN"
-            :identifier="item.identifier"
-            :is-spam="isSpamAsset(item)"
-            @toggle-whitelist="toggleWhitelistAsset(item.identifier)"
-            @toggle-spam="toggleSpam(item)"
+            v-if="row.assetType === EVM_TOKEN"
+            :identifier="row.identifier"
+            :is-spam="isSpamAsset(row)"
+            @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
+            @toggle-spam="toggleSpam(row)"
           />
         </div>
       </template>
-      <template #item.actions="{ item }">
+      <template #item.actions="{ row }">
         <RowActions
-          v-if="item.assetType !== CUSTOM_ASSET"
+          v-if="row.assetType !== CUSTOM_ASSET"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="deleteAsset(item)"
+          @edit-click="edit(row)"
+          @delete-click="deleteAsset(row)"
         >
           <CopyButton
             :tooltip="t('asset_table.copy_identifier.tooltip')"
-            :value="item.identifier"
+            :value="row.identifier"
           />
         </RowActions>
       </template>
-      <template #expanded-item="{ item, headers }">
-        <AssetUnderlyingTokens :cols="headers.length" :asset="item" />
+      <template #expanded-item="{ row }">
+        <AssetUnderlyingTokens :asset="row" />
       </template>
-      <template #item.expand="{ item }">
-        <RowExpander
-          v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
-          :expanded="expanded.includes(item)"
-          @click="updateExpanded(expanded.includes(item) ? [] : [item])"
+      <template #item.expand="{ row }">
+        <RuiTableRowExpander
+          v-if="row.underlyingTokens && row.underlyingTokens.length > 0"
+          :expanded="expanded.includes(row)"
+          @click="updateExpanded(expanded.includes(row) ? [] : [row])"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
   </div>
 </template>
