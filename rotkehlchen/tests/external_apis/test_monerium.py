@@ -12,7 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.fixture(name='monerium_credentials')
@@ -20,9 +20,9 @@ def _fixture_monerium_credentials(database):
     """Input mock monerium credentials to the DB for testing"""
     with database.user_write() as write_cursor:
         write_cursor.execute(
-            'INSERT OR REPLACE INTO user_credentials(name, location, api_key, api_secret) '
-            'VALUES(?, ?, ?, ?)',
-            ('monerium', Location.BANKS.serialize_for_db(), 'mockuser', 'mockpassword'),
+            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
+            'VALUES(?, ?, ?)',
+            (ExternalService.MONERIUM.name.lower(), 'mockuser', 'mockpassword'),
         )
 
 

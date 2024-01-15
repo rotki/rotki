@@ -39,7 +39,7 @@ def update_data_and_detect_accounts(
 
     rotki.chains_aggregator.detect_evm_accounts(progress_handler, chains=chains)
     external_services = []
-    for external_service, _ in external_service_credentials:
+    for external_service, _, _ in external_service_credentials:
         external_services.append(external_service)
 
     rotki.data.db.delete_external_service_credentials(external_services)

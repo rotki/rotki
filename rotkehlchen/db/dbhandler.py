@@ -764,7 +764,7 @@ class DBHandler:
             credentials: list[ExternalServiceApiCredentials],
     ) -> None:
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO external_service_credentials(name, api_key) VALUES(?, ?)',
+            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) VALUES(?, ?, ?)',  # noqa: E501
             [c.serialize_for_db() for c in credentials],
         )
 
@@ -778,7 +778,7 @@ class DBHandler:
     def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
         with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT name, api_key from external_service_credentials;')
+            cursor.execute('SELECT name, api_key, api_secret from external_service_credentials;')
 
             result = []
             for q in cursor:
@@ -791,6 +791,7 @@ class DBHandler:
                 result.append(ExternalServiceApiCredentials(
                     service=service,
                     api_key=q[1],
+                    api_secret=q[2],
                 ))
         return result
 
@@ -801,15 +802,14 @@ class DBHandler:
         """If existing it returns the external service credentials for the given service"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT api_key from external_service_credentials WHERE name=?;',
+                'SELECT api_key, api_secret from external_service_credentials WHERE name=?;',
                 (service_name.name.lower(),),
             )
-            result = cursor.fetchone()
-            if result is None:
+            if (result := cursor.fetchone()) is None:
                 return None
 
             # There can only be 1 result, since name is the primary key of the table
-            return ExternalServiceApiCredentials(service=service_name, api_key=result[0])
+            return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
     @need_writable_cursor('user_write')
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:

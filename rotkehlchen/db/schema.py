@@ -234,7 +234,8 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
     name VARCHAR[30] NOT NULL PRIMARY KEY,
-    api_key TEXT
+    api_key TEXT NOT NULL,
+    api_secret TEXT
 );
 """
 

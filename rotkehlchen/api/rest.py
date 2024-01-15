@@ -11,7 +11,7 @@ from collections.abc import Callable, Sequence
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, get_args, overload
 from zipfile import BadZipFile, ZipFile
 
 import gevent
@@ -574,14 +574,13 @@ class RestAPI:
 
     def _return_external_services_response(self) -> Response:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
-        response_dict: dict[str, dict[str, ApiKey] | dict[str, dict[str, ApiKey]]] = {}
+        response_dict: dict[str, Any] = {}
         for credential in credentials_list:
-            name = credential.service.name.lower()
-            key_info = {'api_key': credential.api_key}
+            name, key_info = credential.serialize_for_api()
             if (chain := credential.service.get_chain_for_etherscan()) is not None:
                 if 'etherscan' not in response_dict:
-                    response_dict['etherscan'] = cast(dict[str, dict[str, ApiKey]], {})
-                response_dict['etherscan'][chain.to_name()] = key_info  # type: ignore  # mypy fails to understand that this is the second branch on the union type defined before
+                    response_dict['etherscan'] = {}
+                response_dict['etherscan'][chain.to_name()] = key_info
             else:
                 response_dict[name] = key_info
 

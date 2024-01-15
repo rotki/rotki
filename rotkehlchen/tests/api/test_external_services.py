@@ -25,11 +25,13 @@ def test_add_get_external_service(rotkehlchen_api_server):
     expected_result = {
         'etherscan': {'ethereum': {'api_key': 'key1'}, 'arbitrum_one': {'api_key': 'key3'}},
         'cryptocompare': {'api_key': 'key2'},
+        'monerium': {'username': 'Ben', 'password': 'supersafepassword'},
     }
     data = {'services': [
         {'name': 'etherscan', 'api_key': 'key1'},
         {'name': 'arbitrum_one_etherscan', 'api_key': 'key3'},
         {'name': 'cryptocompare', 'api_key': 'key2'},
+        {'name': 'monerium', 'username': 'Ben', 'password': 'supersafepassword'},
     ]}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
@@ -162,7 +164,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"api_key": ["Missing data for required field."',
+        contained_in_msg='"api_key": ["an api key is needed for etherscan"',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -211,6 +213,30 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg='"api_key": ["Not a valid string."',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # monerium without username
+    data = {'services': [{'name': 'monerium', 'api_key': 'aaa'}]}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='monerium needs a username and password"',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # monerium without password
+    data = {'services': [{'name': 'monerium', 'username': 'Ben'}]}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='monerium needs a username and password"',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

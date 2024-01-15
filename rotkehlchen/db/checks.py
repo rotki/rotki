@@ -16,6 +16,11 @@ DEFAULT_SANITY_CHECK_MESSAGE = (
     'github or contact us in our discord server.'
 )
 
+WHITESPACE_RE = re.compile(
+    r'//.*?\n|/\*.*?\*/',
+    re.DOTALL | re.MULTILINE,
+)
+
 
 def db_script_normalizer(text: str) -> str:
     """Normalize the string for comparison of the DB schema. That means removing all
@@ -28,11 +33,7 @@ def db_script_normalizer(text: str) -> str:
         # else
         return s
 
-    pattern = re.compile(
-        r'//.*?\n|/\*.*?\*/',
-        re.DOTALL | re.MULTILINE,
-    )
-    return re.sub(pattern, replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").lower()  # noqa: E501
+    return WHITESPACE_RE.sub(replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").lower()  # noqa: E501
 
 
 def sanity_check_impl(

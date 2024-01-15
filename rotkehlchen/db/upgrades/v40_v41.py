@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -65,6 +66,20 @@ def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
         )
 
 
+def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
+    """Upgrade the external service credentials schema table to add a secret"""
+    log.debug('Enter _upgrade_external_service_credentials')
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='external_service_credentials',
+        schema="""name VARCHAR[30] NOT NULL PRIMARY KEY,
+        api_key TEXT NOT NULL,
+        api_secret TEXT""",
+        insert_columns='name,api_key,null',
+    )
+    log.debug('Exit _upgrade_external_service_credentials')
+
+
 def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
     """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
     log.debug('Enter _move_non_intervals_from_used_query_ranges_to_cache')
@@ -107,9 +122,11 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add new supported locations
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
+        progress_handler.new_step()
+        _upgrade_external_service_credentials(write_cursor)
         progress_handler.new_step()
         _move_non_settings_mappings_to_cache(write_cursor)
         progress_handler.new_step()

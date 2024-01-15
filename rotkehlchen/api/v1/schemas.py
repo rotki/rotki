@@ -1387,7 +1387,34 @@ class AllBalancesQuerySchema(AsyncQueryArgumentSchema):
 
 class ExternalServiceSchema(Schema):
     name = SerializableEnumField(enum_class=ExternalService, required=True)
-    api_key = fields.String(required=True)
+    api_key = fields.String(required=False)
+    username = fields.String(required=False)
+    password = fields.String(required=False)
+
+    @validates_schema
+    def validate_external_service(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data.get('api_key') is None:
+            if data['name'] != ExternalService.MONERIUM:
+                raise ValidationError(
+                    message=f'an api key is needed for {data["name"].name.lower()}',
+                    field_name='api_key',
+                )
+
+        elif None not in (data.get('username'), data.get('password')):
+            raise ValidationError(
+                message='username and password is only given for monerium',
+                field_name='username',
+            )
+
+        if data['name'] == ExternalService.MONERIUM and None in (data.get('username'), data.get('password')):  # noqa: E501
+            raise ValidationError(
+                message='monerium needs a username and password',
+                field_name='username',
+            )
 
     @post_load
     def make_external_service(
@@ -1396,7 +1423,12 @@ class ExternalServiceSchema(Schema):
             **_kwargs: Any,
     ) -> ExternalServiceApiCredentials:
         """Used when encoding an external resource given in via the API"""
-        return ExternalServiceApiCredentials(service=data['name'], api_key=data['api_key'])
+        api_key = data.get('api_key')
+        return ExternalServiceApiCredentials(
+            service=data['name'],
+            api_key=api_key if api_key is not None else data['username'],
+            api_secret=data.get('password'),
+        )
 
 
 class ExternalServicesResourceAddSchema(Schema):
