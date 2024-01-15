@@ -55,15 +55,15 @@ export class AssetsManagerPage {
     this.searchAsset(asset);
 
     cy.get(
-      '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
     ).then($switch => {
       const initialValue = $switch.attr('aria-checked');
       expect(initialValue, 'false');
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)'
       ).click();
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
       ).should('have.attr', 'aria-checked', 'true');
     });
   }
@@ -81,15 +81,15 @@ export class AssetsManagerPage {
   removeIgnoredAsset(asset: string) {
     this.searchAsset(asset);
     cy.get(
-      '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
     ).then($switch => {
       const initialValue = $switch.attr('aria-checked');
       expect(initialValue, 'true');
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6)'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)'
       ).click();
       cy.get(
-        '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
       ).should('have.attr', 'aria-checked', 'false');
     });
   }
