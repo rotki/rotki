@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { spawn } = require('node:child_process');
+const process = require('node:process');
 const { ArgumentParser } = require('argparse');
 const electron = require('electron');
 const { createServer, build, createLogger } = require('vite');

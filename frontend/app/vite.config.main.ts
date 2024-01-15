@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import { builtinModules } from 'node:module';
+import process from 'node:process';
 import { platform } from 'node:os';
 import { join, parse } from 'node:path';
 import { type Plugin, defineConfig } from 'vite';

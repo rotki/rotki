@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { HttpResponse, http } from 'msw';
 import assetMovements from '../../fixtures/asset-movements.json';
 

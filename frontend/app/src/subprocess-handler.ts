@@ -4,6 +4,8 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import process from 'node:process';
+import { Buffer } from 'node:buffer';
 import { type App, type BrowserWindow, app, ipcMain } from 'electron';
 import psList from 'ps-list';
 import { type Task, tasklist } from 'tasklist';
@@ -88,7 +90,7 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
 const BACKEND_DIRECTORY = 'backend';
 const COLIBRI_DIRECTORY = 'colibri';
 
-export default class SubprocessHandler {
+export class SubprocessHandler {
   readonly defaultLogDirectory: string;
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;

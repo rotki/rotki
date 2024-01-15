@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const process = require('node:process');
 const fs = require('node:fs');
 const { platform } = require('node:os');
 const path = require('node:path');

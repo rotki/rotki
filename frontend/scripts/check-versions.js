@@ -1,4 +1,5 @@
 const { execSync } = require('node:child_process');
+const process = require('node:process');
 const semver = require('semver');
 const { engines } = require('../package.json');
 

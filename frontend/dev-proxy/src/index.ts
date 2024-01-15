@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import * as querystring from 'node:querystring';
+import process from 'node:process';
+import { Buffer } from 'node:buffer';
 import { json, urlencoded } from 'body-parser';
 import express, { type Request, type Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';

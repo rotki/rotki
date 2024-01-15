@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 import { BrowserWindow, Menu, MenuItem, app, protocol, screen } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { ipcSetup } from '@/electron-main/ipc-setup';
@@ -7,7 +8,7 @@ import { TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { assert } from '@/utils/assertions';
 import createProtocol from './create-protocol';
-import SubprocessHandler from './subprocess-handler';
+import { SubprocessHandler } from './subprocess-handler';
 import type { Nullable } from '@/types';
 
 const isDevelopment = checkIfDevelopment();

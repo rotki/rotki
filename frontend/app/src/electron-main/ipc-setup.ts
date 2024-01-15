@@ -1,3 +1,5 @@
+import process from 'node:process';
+import { Buffer } from 'node:buffer';
 import {
   type BrowserWindow,
   Menu,
@@ -50,7 +52,7 @@ import type {
   TrayUpdate,
 } from '@/electron-main/ipc';
 import type { ProgressInfo } from 'electron-builder';
-import type SubprocessHandler from '@/subprocess-handler';
+import type { SubprocessHandler } from '@/subprocess-handler';
 
 const isDevelopment = checkIfDevelopment();
 

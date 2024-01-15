@@ -1,4 +1,5 @@
 const { platform } = require('node:os');
+const process = require('node:process');
 
 const MACOS_ARCHS = ['x64', 'arm64'];
 const LINUX_TARGETS = ['AppImage', 'tar.xz'];

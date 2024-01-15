@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const process = require('node:process');
 const { ArgumentParser } = require('argparse');
 const { build } = require('vite');
 const { sharedConfig } = require('./setup');

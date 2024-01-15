@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import { externalLinks } from '@/data/external-links';
@@ -28,7 +29,7 @@ const debugMenu = {
       label: 'Persist store',
       type: 'checkbox',
       checked: debugSettings.persistStore,
-      click: async (item: MenuItem, browserWindow: BrowserWindow) => {
+      click: (item: MenuItem, browserWindow: BrowserWindow) => {
         debugSettings.persistStore = item.checked;
         browserWindow.webContents.send(IPC_DEBUG_SETTINGS, debugSettings);
         browserWindow.reload();
@@ -147,7 +148,7 @@ const displayTrayIcon = {
   label: 'Display Tray Icon',
   type: 'checkbox',
   checked: settingsManager.appSettings.displayTray,
-  click: async (item: MenuItem) => {
+  click: (item: MenuItem) => {
     const displayTray = item.checked;
     settingsManager.appSettings.displayTray = displayTray;
     settingsManager.save();

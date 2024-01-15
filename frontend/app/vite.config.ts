@@ -1,5 +1,6 @@
 import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
+import process from 'node:process';
 import vue from '@vitejs/plugin-vue2';
 import AutoImport from 'unplugin-auto-import/vite';
 import DefineOptions from 'unplugin-vue-define-options/vite';

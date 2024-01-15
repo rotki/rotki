@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { HttpResponse, http } from 'msw';
 import trades from '../../fixtures/trades.json';
 

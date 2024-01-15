@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('node:path');
+const process = require('node:process');
 const { execSync } = require('node:child_process');
 const { startAndTest } = require('start-server-and-test');
 const { ArgumentParser } = require('argparse');

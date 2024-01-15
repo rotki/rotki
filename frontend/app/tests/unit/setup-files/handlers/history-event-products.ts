@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { HttpResponse, http } from 'msw';
 import historyEventProducts from '../../fixtures/history-event-products.json';
 

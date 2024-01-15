@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 import { type BrowserWindow, Menu, Tray, app } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import { assert } from '@/utils/assertions';
