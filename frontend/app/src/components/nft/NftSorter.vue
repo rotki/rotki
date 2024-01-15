@@ -2,7 +2,6 @@
 const props = defineProps<{
   sortBy: string;
   sortDesc: boolean;
-  sortProperties: { text: string; value: string }[];
 }>();
 
 const emit = defineEmits<{
@@ -12,15 +11,28 @@ const emit = defineEmits<{
 
 const { sortDesc: sortDescending } = toRefs(props);
 
-function updateSortBy(value: string) {
-  emit('update:sort-by', value);
-}
-
-function updateSortDesc() {
+function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
 }
 
+const sortByModel = useVModel(props, 'sortBy', emit);
+
 const { t } = useI18n();
+
+const sortProperties = [
+  {
+    text: t('common.name'),
+    value: 'name',
+  },
+  {
+    text: t('common.price'),
+    value: 'priceUsd',
+  },
+  {
+    text: t('nft_gallery.sort.collection'),
+    value: 'collection',
+  },
+];
 </script>
 
 <template>
@@ -31,11 +43,9 @@ const { t } = useI18n();
     >
       <template #activator>
         <RuiButton
-          variant="text"
-          icon
-          class="!p-2"
-          color="primary"
-          @click="updateSortDesc()"
+          color="secondary"
+          class="rounded-r-none"
+          @click="toggleSortDesc()"
         >
           <RuiIcon :name="sortDescending ? 'sort-desc' : 'sort-asc'" />
         </RuiButton>
@@ -43,17 +53,19 @@ const { t } = useI18n();
       <span v-if="sortDescending">
         {{ t('sorting_selector.desc.sort_asc_tooltip') }}
       </span>
-      <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>
+      <span v-else>
+        {{ t('sorting_selector.desc.sort_desc_tooltip') }}
+      </span>
     </RuiTooltip>
-    <div class="flex-1 ml-2 bg-white dark:bg-rui-grey-900">
+    <div class="flex-1">
       <VSelect
-        :value="sortBy"
+        v-model="sortByModel"
+        class="!rounded-l-none border-l-0"
         hide-details
         single-line
         dense
         outlined
         :items="sortProperties"
-        @input="updateSortBy($event)"
       />
     </div>
   </div>

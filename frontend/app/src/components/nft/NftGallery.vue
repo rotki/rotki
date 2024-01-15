@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  type TablePaginationData,
+  useBreakpoint,
+} from '@rotki/ui-library-compat';
 import type { GeneralAccount } from '@rotki/common/lib/account';
 import type { Ref } from 'vue';
 import type { Module } from '@/types/modules';
@@ -21,47 +25,60 @@ const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
-const sortProperties = [
-  {
-    text: t('common.name'),
-    value: 'name',
-  },
-  {
-    text: t('common.price'),
-    value: 'priceUsd',
-  },
-  {
-    text: t('nft_gallery.sort.collection'),
-    value: 'collection',
-  },
-];
-
 const chains = [Blockchain.ETH];
 
-const { name: breakpoint, width } = useDisplay();
 const page = ref(1);
+const itemsPerPage = ref(8);
 
-const itemsPerPage = computed(() => {
-  if (get(breakpoint) === 'xs')
+const paginationData = computed({
+  get() {
+    return {
+      page: get(page),
+      total: get(items).length,
+      limit: get(itemsPerPage),
+      limits: get(limits),
+    };
+  },
+  set(value: TablePaginationData) {
+    set(page, value.page);
+    set(itemsPerPage, value.limit);
+  },
+});
+
+const { isSmAndDown, isSm, isMd, is2xl } = useBreakpoint();
+
+const firstLimit = computed(() => {
+  if (get(isSmAndDown))
     return 1;
-  else if (get(breakpoint) === 'sm')
+
+  if (get(isSm))
     return 2;
-  else if (get(width) >= 1600)
+
+  if (get(isMd))
+    return 6;
+
+  if (get(is2xl))
     return 10;
 
   return 8;
 });
 
-watch(breakpoint, () => {
-  set(page, 1);
+const limits = computed(() => {
+  const first = get(firstLimit);
+  return [first, first * 2, first * 4];
+});
+
+watchImmediate(firstLimit, () => {
+  set(itemsPerPage, get(firstLimit));
 });
 
 const selectedAccounts = ref<GeneralAccount[]>([]);
 const selectedCollection = ref<string | null>(null);
 const premium = usePremium();
 
-watch(selectedAccounts, () => set(page, 1));
-watch(selectedCollection, () => set(page, 1));
+watch([firstLimit, selectedAccounts, selectedCollection], () => {
+  set(page, 1);
+});
 
 const items = computed(() => {
   const accounts = get(selectedAccounts);
@@ -81,8 +98,6 @@ const items = computed(() => {
 
   return get(nfts).sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
 });
-
-const pages = computed(() => Math.ceil(get(items).length / get(itemsPerPage)));
 
 const visibleNfts = computed(() => {
   const start = (get(page) - 1) * get(itemsPerPage);
@@ -224,48 +239,12 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
     </template>
     {{ error ? error : t('nft_gallery.empty_subtitle') }}
   </NoDataScreen>
-  <div
+  <TablePageLayout
     v-else
-    class="py-4 flex flex-col gap-6"
+    class="p-4"
+    :title="[t('navigation_menu.nfts')]"
   >
-    <div class="flex justify-between gap-6 items-start">
-      <div class="grid md:grid-cols-2 gap-4 grow">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          :label="t('nft_gallery.select_account')"
-          :chains="chains"
-          dense
-          outlined
-          no-padding
-          flat
-          :usable-addresses="availableAddresses"
-        />
-        <div class="bg-white dark:bg-[#1E1E1E]">
-          <VAutocomplete
-            v-model="selectedCollection"
-            :label="t('nft_gallery.select_collection')"
-            single-line
-            clearable
-            hide-details
-            hide-selected
-            :items="collections"
-            outlined
-            dense
-          />
-        </div>
-        <SortingSelector
-          :sort-by="sortBy"
-          :sort-properties="sortProperties"
-          :sort-desc="sortDescending"
-          @update:sort-by="updateSortBy($event)"
-          @update:sort-desc="sortDescending = $event"
-        />
-        <Pagination
-          v-if="pages > 0"
-          v-model="page"
-          :length="pages"
-        />
-      </div>
+    <template #buttons>
       <div class="flex items-center gap-3">
         <NftImageRenderingSettingMenu />
         <ActiveModules :modules="modules" />
@@ -275,40 +254,78 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
           @refresh="fetchNfts(true)"
         />
       </div>
-    </div>
-    <RuiDivider />
-    <i18n
-      v-if="!premium && visibleNfts.length > 0"
-      path="nft_gallery.upgrade"
-      class="text-rui-text-secondary text-center"
-    >
-      <template #limit>
-        {{ limit }}
-      </template>
-      <template #link>
-        <ExternalLink
-          :text="t('upgrade_row.rotki_premium')"
-          color="primary"
-          premium
-        />
-      </template>
-    </i18n>
-    <div
-      v-if="visibleNfts.length === 0"
-      class="min-h-[60vh] flex justify-center items-center text--secondary text-h6"
-    >
-      {{ t('nft_gallery.empty_filter') }}
-    </div>
-    <div
-      v-else
-      class="grid md:grid-cols-2 lg:grid-cols-4 min-[1600px]:grid-cols-5 gap-4"
-    >
-      <div
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <RuiCard>
+        <div class="grid md:grid-cols-8 gap-4">
+          <BlockchainAccountSelector
+            v-model="selectedAccounts"
+            class="md:col-span-3"
+            :label="t('nft_gallery.select_account')"
+            :chains="chains"
+            dense
+            outlined
+            no-padding
+            flat
+            :usable-addresses="availableAddresses"
+          />
+
+          <NftCollectionSelector
+            v-model="selectedCollection"
+            class="md:col-span-3"
+            :items="collections"
+          />
+
+          <NftSorter
+            class="md:col-span-2"
+            :sort-by="sortBy"
+            :sort-desc="sortDescending"
+            @update:sort-by="updateSortBy($event)"
+            @update:sort-desc="sortDescending = $event"
+          />
+        </div>
+      </RuiCard>
+
+      <RuiAlert
+        v-if="!premium && visibleNfts.length > 0"
+        type="info"
       >
-        <NftGalleryItem :item="item" />
+        <i18n path="nft_gallery.upgrade">
+          <template #limit>
+            {{ limit }}
+          </template>
+          <template #link>
+            <ExternalLink
+              :text="t('upgrade_row.rotki_premium')"
+              color="primary"
+              premium
+            />
+          </template>
+        </i18n>
+      </RuiAlert>
+
+      <div
+        v-if="visibleNfts.length === 0"
+        class="min-h-[60vh] flex justify-center items-center text--secondary text-h6"
+      >
+        {{ t('nft_gallery.empty_filter') }}
+      </div>
+      <div
+        v-else
+        class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+      >
+        <div
+          v-for="item in visibleNfts"
+          :key="item.tokenIdentifier"
+          class="overflow-hidden"
+        >
+          <NftGalleryItem :item="item" />
+        </div>
       </div>
     </div>
-  </div>
+    <RuiCard>
+      <RuiTablePagination v-model="paginationData" />
+    </RuiCard>
+  </TablePageLayout>
 </template>

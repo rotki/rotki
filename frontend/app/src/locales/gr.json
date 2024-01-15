@@ -2965,7 +2965,7 @@
       "historic_prices": "Ιστορικές τιμές",
       "latest_prices": "Πρόσφατε τιμές"
     },
-    "nfts": "NFTs",
+    "nfts": "NFTs Gallery",
     "profit_loss_report": "Λογαριασμός Κερδών και Ζημιών",
     "settings": "Ρυθμίσεις",
     "settings_sub": {
@@ -3149,9 +3149,6 @@
         "borrowing": "Liabilities"
       }
     }
-  },
-  "pagination": {
-    "of": "of {length}"
   },
   "percentage_display": {
     "symbol": "%"

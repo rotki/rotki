@@ -98,7 +98,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
     no-padding
     class="mx-auto overflow-hidden"
   >
-    <div class="relative">
+    <div class="relative flex">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :disabled="renderImage"
@@ -119,13 +119,15 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
               :src="imageUrl"
               :style="mediaStyle"
               class="w-full"
+              :class="css.media"
             />
             <AppImage
               v-else
               :src="imageUrl"
               contain
               :style="mediaStyle"
-              size="100%"
+              width="100%"
+              :class="css.media"
             />
           </ExternalLink>
         </template>
@@ -155,7 +157,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         <strong class="text-rui-warning-lighter">{{ domain }}</strong>
       </RuiTooltip>
     </div>
-    <div class="flex items-center justify-between gap-2 px-4 mt-2">
+    <div class="p-4">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -167,38 +169,43 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         </template>
         {{ name }}
       </RuiTooltip>
-      <AmountDisplay
-        class="text-rui-text-secondary text-subtitle-2"
-        :value="item.priceInAsset"
-        :asset="item.priceAsset"
-      />
-    </div>
-    <div class="flex items-center justify-between gap-2 px-4">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        tooltip-class="max-w-[20rem]"
-        class="text-truncate block text-subtitle-1 font-medium"
+        tooltip-class="max-w-[20rem] text-truncate overflow-hidden"
+        class="pt-1 text-truncate max-w-full"
       >
         <template #activator>
-          {{ item.collection.name }}
+          <RuiChip
+            tile
+            size="sm"
+            class="font-medium text-caption"
+          >
+            {{ item.collection.name }}
+          </RuiChip>
         </template>
         {{ item.collection.description }}
       </RuiTooltip>
-      <AmountDisplay
-        class="text-rui-text-secondary text-subtitle-2"
-        :price-asset="item.priceAsset"
-        :amount="item.priceInAsset"
-        :value="item.priceUsd"
-        show-currency="ticker"
-        fiat-currency="USD"
-      />
+      <div class="pt-4 flex flex-col font-medium">
+        <AmountDisplay
+          :value="item.priceInAsset"
+          :asset="item.priceAsset"
+        />
+        <AmountDisplay
+          class="text-rui-text-secondary"
+          :price-asset="item.priceAsset"
+          :amount="item.priceInAsset"
+          :value="item.priceUsd"
+          show-currency="ticker"
+          fiat-currency="USD"
+        />
+      </div>
     </div>
     <template #footer>
-      <div class="grow" />
       <IconLink
         v-if="item.permalink"
         :url="item.permalink"
+        class="-mt-2 -mx-1"
         text="OpenSea"
       />
     </template>
@@ -212,5 +219,10 @@ video {
 
 .unlock-button {
   @apply absolute right-2 bottom-2;
+}
+
+.media {
+  @apply object-contain;
+  aspect-ratio: 1 / 1;
 }
 </style>

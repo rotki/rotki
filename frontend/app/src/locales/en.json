@@ -3267,7 +3267,7 @@
       "historic_prices": "Historic Prices",
       "latest_prices": "Latest Prices"
     },
-    "nfts": "NFTs",
+    "nfts": "NFTs Gallery",
     "profit_loss_report": "Profit and Loss Report",
     "settings": "Settings",
     "settings_sub": {
@@ -3468,9 +3468,6 @@
         "borrowing": "Liabilities"
       }
     }
-  },
-  "pagination": {
-    "of": "of {length}"
   },
   "percentage_display": {
     "symbol": "%"

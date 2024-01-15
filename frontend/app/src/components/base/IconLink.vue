@@ -10,7 +10,6 @@ const props = withDefaults(
 );
 
 const { url } = toRefs(props);
-const { dark } = useTheme();
 
 const { href, onLinkClick } = useLinks(url);
 </script>
@@ -27,19 +26,12 @@ const { href, onLinkClick } = useLinks(url);
         :icon="!text"
         :text="!!text"
         color="primary"
-        class="ml-2"
         tag="a"
-        :class="dark || text ? null : 'grey lighten-4'"
         :href="href"
         target="_blank"
         @click="onLinkClick()"
       >
-        <span
-          v-if="text"
-          class="mr-2"
-        >
-          {{ text }}
-        </span>
+        <span v-if="text">{{ text }}</span>
         <template #append>
           <RuiIcon
             name="external-link-line"

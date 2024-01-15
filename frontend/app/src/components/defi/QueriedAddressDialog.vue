@@ -190,7 +190,7 @@ function close() {
       </div>
       <div
         v-else
-        class="border-t mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
+        class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
       >
         {{
           t('queried_address_dialog.all_address_queried', {
