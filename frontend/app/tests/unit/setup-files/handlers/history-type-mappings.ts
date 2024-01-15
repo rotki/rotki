@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { HttpResponse, http } from 'msw';
 import historyTypeMappings from '../../fixtures/history-type-mappings.json';
 

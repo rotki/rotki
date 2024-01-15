@@ -1,3 +1,4 @@
+const process = require('node:process');
 require('dotenv').config();
 const { notarize } = require('@electron/notarize');
 

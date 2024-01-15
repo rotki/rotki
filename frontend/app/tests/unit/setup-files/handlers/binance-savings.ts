@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { HttpResponse, http } from 'msw';
 import binanceSavings from '../../fixtures/binance-savings.json';
 
