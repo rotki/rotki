@@ -1,42 +1,51 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 
-defineProps<{
-  cols: number;
-  asset: SupportedAsset;
-}>();
+defineProps<{ asset: SupportedAsset }>();
 
 const { t } = useI18n();
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
+  {
+    label: t('common.address'),
+    key: 'address'
+  },
+  {
+    label: t('underlying_token_manager.tokens.token_kind'),
+    key: 'tokenKind',
+    cellClass: 'text-no-wrap'
+  },
+  {
+    label: t('underlying_token_manager.tokens.weight'),
+    key: 'weight',
+    cellClass: 'text-no-wrap'
+  }
+]);
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="cols" no-padding>
-    <template #title>
-      {{ t('asset_table.underlying_tokens') }}
-    </template>
-    <SimpleTable variant="default">
-      <thead>
-        <tr>
-          <th>{{ t('common.address') }}</th>
-          <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
-          <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="token in asset.underlyingTokens" :key="token.address">
-          <td class="grow">
-            <HashLink :text="token.address" full-address />
-          </td>
-          <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
-          <td class="shrink">
-            {{
-              t('underlying_token_manager.tokens.weight_percentage', {
-                weight: token.weight
-              })
-            }}
-          </td>
-        </tr>
-      </tbody>
-    </SimpleTable>
-  </TableExpandContainer>
+  <RuiCard>
+    <template #header>{{ t('asset_table.underlying_tokens') }}</template>
+    <RuiDataTable
+      outlined
+      :cols="tableHeaders"
+      :rows="asset.underlyingTokens ?? []"
+      row-attr="address"
+    >
+      <template #item.address="{ row }">
+        <HashLink :text="row.address" full-address />
+      </template>
+      <template #item.tokenKind="{ row }">
+        {{ row.tokenKind.toUpperCase() }}
+      </template>
+      <template #item.weight="{ row }">
+        {{
+          t('underlying_token_manager.tokens.weight_percentage', {
+            weight: row.weight
+          })
+        }}
+      </template>
+    </RuiDataTable>
+  </RuiCard>
 </template>

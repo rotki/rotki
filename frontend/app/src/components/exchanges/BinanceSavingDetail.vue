@@ -185,7 +185,6 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
             dense
             :cols="tableHeaders"
             :rows="data"
-            :options="options"
             :sort.sync="sort"
             :pagination="{
               limit: options.itemsPerPage,
