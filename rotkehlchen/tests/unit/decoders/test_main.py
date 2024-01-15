@@ -89,6 +89,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Convex',
         'Weth',
         'Yearn',
+        'Yearnygov',
         'ArbitrumOneBridge',
         'XdaiBridge',
     }
@@ -155,6 +156,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'monerium',
         'metamask_swaps',
         'paraswap',
+        'ygov',
     }
 
 
