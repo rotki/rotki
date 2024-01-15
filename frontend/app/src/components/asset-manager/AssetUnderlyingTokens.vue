@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library-compat';
-import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { UnderlyingToken } from '@rotki/common/lib/data';
 
-defineProps<{ asset: SupportedAsset }>();
+defineProps<{ tokens: UnderlyingToken[] }>();
 
 const { t } = useI18n();
 
@@ -32,7 +32,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     <RuiDataTable
       outlined
       :cols="tableHeaders"
-      :rows="asset.underlyingTokens ?? []"
+      :rows="tokens"
       row-attr="address"
     >
       <template #item.address="{ row }">

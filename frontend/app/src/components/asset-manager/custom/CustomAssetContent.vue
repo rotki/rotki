@@ -81,7 +81,7 @@ const {
   options,
   fetchData,
   setFilter,
-  setOptions,
+  setTableOptions,
   isLoading: loading,
   editableItem,
 } = usePaginationFilters<
@@ -173,13 +173,12 @@ watch(identifier, (assetId) => {
       :server-item-length="state.found"
       :filters="filters"
       :matchers="matchers"
-      :expanded="expanded"
+      :expanded.sync="expanded"
       :options="options"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
-      @update:pagination="setOptions($event)"
+      @update:options="setTableOptions($event)"
       @update:filters="setFilter($event)"
-      @update:expanded="expanded = $event"
     />
     <CustomAssetFormDialog
       :title="dialogTitle"
