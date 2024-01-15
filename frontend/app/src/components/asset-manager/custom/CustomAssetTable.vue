@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
-import {
-  type DataTableColumn,
-  type DataTableOptions,
-  type DataTableSortData
+import type {
+  DataTableColumn,
+  DataTableOptions,
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
 import type { TablePagination } from '@/types/pagination';
 import type { CustomAsset } from '@/types/asset';
@@ -59,11 +59,12 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     label: '',
     key: 'actions',
     cellClass: 'py-0',
-  }
+  },
 ]);
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
+
 function updatePagination(options: DataTableOptions) {
   emit('update:options', options);
 }
@@ -90,7 +91,7 @@ function isExpanded(identifier: string) {
 
 function expand(item: CustomAsset) {
   updateExpanded(isExpanded(item.identifier) ? [] : [item]);
-};
+}
 </script>
 
 <template>
@@ -158,7 +159,9 @@ function expand(item: CustomAsset) {
       </template>
       <template #expanded-item="{ row }">
         <RuiCard>
-          <div class="font-bold">{{ t('common.notes') }}:</div>
+          <div class="font-bold">
+            {{ t('common.notes') }}:
+          </div>
           <div class="pt-2">
             {{ row.notes }}
           </div>
