@@ -1,9 +1,8 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import {
   handleResponse,
   validStatus,
-  validWithoutSessionStatus
+  validWithoutSessionStatus,
 } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -15,12 +14,13 @@ import {
   type ManualPriceFormPayload,
   type ManualPricePayload,
   ManualPrices,
-  NftPriceArray
+  NftPriceArray,
 } from '@/types/prices';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useAssetPricesApi = () => {
+export function useAssetPricesApi() {
   const fetchHistoricalPrices = async (
-    payload?: Partial<ManualPricePayload>
+    payload?: Partial<ManualPricePayload>,
   ): Promise<HistoricalPrice[]> => {
     const response = await api.instance.get<ActionResult<HistoricalPrice[]>>(
       '/assets/prices/historical',
@@ -28,78 +28,78 @@ export const useAssetPricesApi = () => {
         params: payload
           ? snakeCaseTransformer(nonEmptyProperties(payload, true))
           : null,
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return HistoricalPrices.parse(handleResponse(response));
   };
 
   const addHistoricalPrice = async (
-    price: HistoricalPriceFormPayload
+    price: HistoricalPriceFormPayload,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/assets/prices/historical',
       snakeCaseTransformer(price),
       {
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const editHistoricalPrice = async (
-    price: HistoricalPriceFormPayload
+    price: HistoricalPriceFormPayload,
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/assets/prices/historical',
       snakeCaseTransformer(price),
       {
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const deleteHistoricalPrice = async (
-    payload: HistoricalPriceDeletePayload
+    payload: HistoricalPriceDeletePayload,
   ): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/prices/historical',
       {
         data: snakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const fetchLatestPrices = async (
-    payload?: Partial<ManualPricePayload>
+    payload?: Partial<ManualPricePayload>,
   ): Promise<ManualPrice[]> => {
     const response = await api.instance.post<ActionResult<ManualPrice[]>>(
       '/assets/prices/latest/all',
       payload ? snakeCaseTransformer(nonEmptyProperties(payload, true)) : null,
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return ManualPrices.parse(handleResponse(response));
   };
 
   const addLatestPrice = async (
-    payload: ManualPriceFormPayload
+    payload: ManualPriceFormPayload,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/assets/prices/latest',
       snakeCaseTransformer(payload),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -111,9 +111,9 @@ export const useAssetPricesApi = () => {
       {
         validateStatus: validStatus,
         data: {
-          asset
-        }
-      }
+          asset,
+        },
+      },
     );
 
     return handleResponse(response);
@@ -124,8 +124,8 @@ export const useAssetPricesApi = () => {
       '/nfts/prices',
       null,
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return NftPriceArray.parse(handleResponse(response));
@@ -139,6 +139,6 @@ export const useAssetPricesApi = () => {
     fetchLatestPrices,
     addLatestPrice,
     deleteLatestPrice,
-    fetchNftsPrices
+    fetchNftsPrices,
   };
-};
+}

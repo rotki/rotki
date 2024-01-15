@@ -1,6 +1,6 @@
-import {
-  type EditHistoryEventPayload,
-  type NewHistoryEventPayload
+import type {
+  EditHistoryEventPayload,
+  NewHistoryEventPayload,
 } from '@/types/history/events';
 import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 
@@ -12,7 +12,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     payload: NewHistoryEventPayload | EditHistoryEventPayload,
     assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | null>,
     errorMessages: Ref<Record<string, string[]>>,
-    reset: () => any
+    reset: () => any,
   ) => {
     const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
 
@@ -35,9 +35,10 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     if (result.message) {
       if (typeof result.message === 'string') {
         setMessage({
-          description: result.message
+          description: result.message,
         });
-      } else {
+      }
+      else {
         set(errorMessages, result.message);
       }
     }
@@ -47,6 +48,6 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
   return {
     ...useForm<boolean>(),
-    saveHistoryEventHandler
+    saveHistoryEventHandler,
   };
 });

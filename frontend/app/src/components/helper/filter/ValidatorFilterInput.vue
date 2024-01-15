@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
+import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 
 const props = withDefaults(
   defineProps<{
@@ -8,8 +8,8 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -20,25 +20,23 @@ const { value } = toRefs(props);
 
 const search: Ref<string> = ref('');
 
-const input = (value: Eth2ValidatorEntry[]) => {
+function input(value: Eth2ValidatorEntry[]) {
   emit('input', value);
-};
+}
 
-const filter = (
-  { publicKey, validatorIndex }: Eth2ValidatorEntry,
-  queryText: string
-) =>
-  publicKey.includes(queryText) ||
-  validatorIndex.toString().includes(queryText);
+function filter({ publicKey, validatorIndex }: Eth2ValidatorEntry, queryText: string) {
+  return publicKey.includes(queryText)
+    || validatorIndex.toString().includes(queryText);
+}
 
-const removeValidator = (validator: Eth2ValidatorEntry) => {
+function removeValidator(validator: Eth2ValidatorEntry) {
   const selection = [...get(value)];
   const index = selection.findIndex(v => v.publicKey === validator.publicKey);
-  if (index >= 0) {
+  if (index >= 0)
     selection.splice(index, 1);
-  }
+
   input(selection);
-};
+}
 
 const { t } = useI18n();
 </script>
@@ -69,7 +67,10 @@ const { t } = useI18n();
     @input="input($event)"
   >
     <template #item="{ item }">
-      <ValidatorDisplay class="py-2" :validator="item" />
+      <ValidatorDisplay
+        class="py-2"
+        :validator="item"
+      />
     </template>
     <template #selection="{ item }">
       <RuiChip
@@ -78,7 +79,10 @@ const { t } = useI18n();
         closeable
         @click:close="removeValidator(item)"
       >
-        <ValidatorDisplay :validator="item" horizontal />
+        <ValidatorDisplay
+          :validator="item"
+          horizontal
+        />
       </RuiChip>
     </template>
   </VAutocomplete>

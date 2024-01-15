@@ -21,5 +21,8 @@ onUnmounted(() => {
 
 <template>
   <RouterView v-if="defiSetupDone" />
-  <DefiWizard v-else class="mt-8" />
+  <DefiWizard
+    v-else
+    class="mt-8"
+  />
 </template>

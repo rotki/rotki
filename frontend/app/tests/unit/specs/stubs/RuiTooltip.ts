@@ -11,7 +11,7 @@ const RuiTooltipStub = {
       </div>
       <slot v-if="open" />
     </div>
-  `
+  `,
 };
 
 export default RuiTooltipStub;

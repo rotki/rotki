@@ -1,14 +1,14 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useAssetWhitelistApi = () => {
+export function useAssetWhitelistApi() {
   const getWhitelistedAssets = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>(
       '/assets/ignored/whitelist',
       {
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
@@ -18,11 +18,11 @@ export const useAssetWhitelistApi = () => {
     const response = await api.instance.post<ActionResult<boolean>>(
       '/assets/ignored/whitelist',
       {
-        token
+        token,
       },
       {
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
@@ -33,8 +33,8 @@ export const useAssetWhitelistApi = () => {
       '/assets/ignored/whitelist',
       {
         data: { token },
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
@@ -43,6 +43,6 @@ export const useAssetWhitelistApi = () => {
   return {
     getWhitelistedAssets,
     addAssetToWhitelist,
-    removeAssetFromWhitelist
+    removeAssetFromWhitelist,
   };
-};
+}

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type NewDetectedToken } from '@/types/websocket-messages';
+import type { ComputedRef, Ref } from 'vue';
+import type { NewDetectedToken } from '@/types/websocket-messages';
 import type {
   DataTableColumn,
-  DataTableSortData
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
 
 const { t } = useI18n();
@@ -15,15 +15,15 @@ const { cache } = storeToRefs(useAssetCacheStore());
 const { getChain } = useSupportedChains();
 
 const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() =>
-  get(tokens).map(data => {
+  get(tokens).map((data) => {
     const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
 
     return {
       ...data,
       address: getAddressFromEvmIdentifier(data.tokenIdentifier),
-      evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH
+      evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH,
     };
-  })
+  }),
 );
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
@@ -32,67 +32,68 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     key: 'tokenIdentifier',
     sortable: true,
     cellClass: 'py-0',
-    class: 'py-0'
+    class: 'py-0',
   },
   {
     label: t('common.address'),
     key: 'address',
     sortable: true,
     cellClass: 'py-0',
-    class: 'py-0'
+    class: 'py-0',
   },
   {
     label: t('asset_table.newly_detected.seen_during'),
     key: 'description',
     cellClass: 'py-0',
-    class: 'py-0'
+    class: 'py-0',
   },
   {
     label: t('common.actions.accept'),
     key: 'accept',
     cellClass: 'py-0',
-    class: 'py-0'
+    class: 'py-0',
   },
   {
     label: t('ignore_buttons.ignore'),
     key: 'ignore',
     cellClass: 'py-0',
-    class: 'py-0'
-  }
+    class: 'py-0',
+  },
 ]);
 
 const selected: Ref<string[]> = ref([]);
 const sort: Ref<DataTableSortData> = ref({
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
-const selectDeselectAllTokens = () => {
+function selectDeselectAllTokens() {
   const selectedLength = get(selected).length;
   const existLength = get(mappedTokens).length;
 
   if (selectedLength === existLength) {
     set(selected, []);
-  } else {
+  }
+  else {
     set(
       selected,
-      get(mappedTokens).map(({ tokenIdentifier }) => tokenIdentifier)
+      get(mappedTokens).map(({ tokenIdentifier }) => tokenIdentifier),
     );
   }
-};
+}
 
-const removeTokens = (identifiers?: string[]) => {
+function removeTokens(identifiers?: string[]) {
   removeNewDetectedTokens(identifiers || get(selected));
 
   set(selected, []);
-};
+}
 
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
 
-const ignoreTokens = async (identifiers?: string[]) => {
-  const ids =
-    identifiers ||
-    get(selected)
+async function ignoreTokens(identifiers?: string[]) {
+  const ids
+    = identifiers
+    || get(selected)
       .filter(tokenIdentifier => !get(isAssetIgnored(tokenIdentifier)))
       .filter(uniqueStrings);
 
@@ -100,17 +101,16 @@ const ignoreTokens = async (identifiers?: string[]) => {
     setMessage({
       success: false,
       title: t('ignore.no_items.title', 1),
-      description: t('ignore.no_items.description', 1)
+      description: t('ignore.no_items.description', 1),
     });
     return;
   }
 
   const status = await ignoreAsset(ids);
 
-  if (status.success) {
+  if (status.success)
     removeTokens(ids);
-  }
-};
+}
 </script>
 
 <template>
@@ -202,11 +202,18 @@ const ignoreTokens = async (identifiers?: string[]) => {
       @update:sort="sort = $event"
     >
       <template #item.tokenIdentifier="{ row }">
-        <AssetDetails :asset="row.tokenIdentifier" opens-details />
+        <AssetDetails
+          :asset="row.tokenIdentifier"
+          opens-details
+        />
       </template>
 
       <template #item.address="{ row }">
-        <HashLink :chain="row.evmChain" :text="row.address" hide-alias-name />
+        <HashLink
+          :chain="row.evmChain"
+          :text="row.address"
+          hide-alias-name
+        />
       </template>
 
       <template #item.description="{ row }">

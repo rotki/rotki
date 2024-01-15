@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type RoundingMode } from '@/types/settings/frontend-settings';
+import type { BigNumber } from '@rotki/common';
+import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const frontendSettingsStore = useFrontendSettingsStore();
 const { amountRoundingMode, valueRoundingMode } = storeToRefs(
-  frontendSettingsStore
+  frontendSettingsStore,
 );
 
 const numberExample: BigNumber = bigNumberify(0.0815);
 
-const setAmountRoundingMode = async (mode: RoundingMode) => {
+async function setAmountRoundingMode(mode: RoundingMode) {
   await frontendSettingsStore.updateSetting({
-    amountRoundingMode: mode
+    amountRoundingMode: mode,
   });
-};
+}
 
-const setValueRoundingMode = async (mode: RoundingMode) => {
+async function setValueRoundingMode(mode: RoundingMode) {
   await frontendSettingsStore.updateSetting({
-    valueRoundingMode: mode
+    valueRoundingMode: mode,
   });
-};
+}
 
 const { t } = useI18n();
 </script>
@@ -41,7 +41,10 @@ const { t } = useI18n();
         :hint="t('rounding_settings.amount_rounding_hint')"
         @change="setAmountRoundingMode($event)"
       >
-        <AmountDisplay class="ml-2" :value="numberExample" />
+        <AmountDisplay
+          class="ml-2"
+          :value="numberExample"
+        />
       </RoundingSelector>
       <RoundingSelector
         :value="valueRoundingMode"

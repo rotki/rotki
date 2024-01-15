@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type AssetBalance, type BigNumber } from '@rotki/common';
-import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type LiquityLoan } from '@/types/defi/liquity';
+import type { AssetBalance, BigNumber } from '@rotki/common';
+import type { ComputedRef } from 'vue';
+import type { LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps<{
   loan: LiquityLoan;
@@ -14,13 +14,13 @@ const { loan } = toRefs(props);
 
 const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
 const collateral: ComputedRef<AssetBalance> = computed(
-  () => get(loan).balance.collateral
+  () => get(loan).balance.collateral,
 );
 const ratio: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.collateralizationRatio
+  () => get(loan).balance.collateralizationRatio,
 );
 const liquidationPrice: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.liquidationPrice
+  () => get(loan).balance.liquidationPrice,
 );
 const premium = usePremium();
 
@@ -33,22 +33,31 @@ const chain = Blockchain.ETH;
     <LoanHeader :owner="loan.owner">
       {{
         t('liquity_lending.header', {
-          troveId: scrambleIdentifier(loan.balance.troveId)
+          troveId: scrambleIdentifier(loan.balance.troveId),
         })
       }}
     </LoanHeader>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <LiquityCollateral :collateral="collateral" :ratio="ratio" />
+      <LiquityCollateral
+        :collateral="collateral"
+        :ratio="ratio"
+      />
       <LiquityLiquidation
         v-if="liquidationPrice"
         :price="liquidationPrice"
         :asset="collateral.asset"
       />
-      <LoanDebt :debt="debt" :asset="debt.asset" />
+      <LoanDebt
+        :debt="debt"
+        :asset="debt.asset"
+      />
     </div>
 
-    <PremiumCard v-if="!premium" :title="t('liquity_lending.trove_events')" />
+    <PremiumCard
+      v-if="!premium"
+      :title="t('liquity_lending.trove_events')"
+    />
     <HistoryEventsView
       use-external-account-filter
       :section-title="t('liquity_lending.trove_events')"

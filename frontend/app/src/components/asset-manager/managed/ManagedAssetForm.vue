@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import {
-  type EvmTokenKind,
-  type SupportedAsset,
-  type UnderlyingToken
-} from '@rotki/common/lib/data';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
-import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { toSentenceCase } from '@/utils/text';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
@@ -16,14 +10,20 @@ import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { externalLinks } from '@/data/external-links';
+import type { ComputedRef, Ref } from 'vue';
+import type {
+  EvmTokenKind,
+  SupportedAsset,
+  UnderlyingToken,
+} from '@rotki/common/lib/data';
 
 const props = withDefaults(
   defineProps<{
     editableItem?: SupportedAsset | null;
   }>(),
   {
-    editableItem: null
-  }
+    editableItem: null,
+  },
 );
 
 function time(t: string): number | undefined {
@@ -56,8 +56,8 @@ const dontAutoFetch = ref<boolean>(false);
 
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 
-const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
-  ref(null);
+const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null>
+  = ref(null);
 const errors = ref<Record<string, string[]>>({});
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
@@ -80,8 +80,8 @@ const v$ = setValidation(
       required: requiredIf(isEvmToken),
       isValid: helpers.withMessage(
         t('asset_form.validation.valid_address'),
-        (v: string) => !get(isEvmToken) || isValidEthAddress(v)
-      )
+        (v: string) => !get(isEvmToken) || isValidEthAddress(v),
+      ),
     },
     tokenKind: { externalServerValidation },
     name: { externalServerValidation },
@@ -92,7 +92,7 @@ const v$ = setValidation(
     started: { externalServerValidation },
     protocol: { externalServerValidation },
     swappedFor: { externalServerValidation },
-    forked: { externalServerValidation }
+    forked: { externalServerValidation },
   },
   {
     assetType,
@@ -107,23 +107,22 @@ const v$ = setValidation(
     started,
     protocol,
     swappedFor,
-    forked
+    forked,
   },
-  { $autoDirty: true, $externalResults: errors }
+  { $autoDirty: true, $externalResults: errors },
 );
 
-const clearFieldError = (field: keyof SupportedAsset) => {
+function clearFieldError(field: keyof SupportedAsset) {
   set(errors, omit(get(errors), field));
-};
+}
 
-const clearFieldErrors = (fields: Array<keyof SupportedAsset>) => {
+function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
-};
+}
 
 watch([address, evmChain], async ([address, evmChain]) => {
-  if (!evmChain) {
+  if (!evmChain)
     return;
-  }
 
   if (get(dontAutoFetch) || !isValidEthAddress(address)) {
     set(dontAutoFetch, false);
@@ -134,7 +133,7 @@ watch([address, evmChain], async ([address, evmChain]) => {
   const {
     decimals: newDecimals,
     name: newName,
-    symbol: newSymbol
+    symbol: newSymbol,
   } = await fetchTokenDetails({ address, evmChain });
   set(decimals, newDecimals ?? get(decimals));
   set(name, newName || get(name));
@@ -148,17 +147,16 @@ watch(assetType, () => {
   set(errors, {});
 });
 
-const parseDecimals = (value?: string): number | null => {
-  if (!value) {
+function parseDecimals(value?: string): number | null {
+  if (!value)
     return null;
-  }
 
   const parsedValue = Number.parseInt(value);
   return Number.isNaN(parsedValue) ? null : parsedValue;
-};
+}
 
-const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'assetType'>> =
-  computed(() => {
+const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'assetType'>>
+  = computed(() => {
     const ut = get(underlyingTokens);
 
     return {
@@ -175,7 +173,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'assetType'>> =
       swappedFor: onlyIfTruthy(get(swappedFor)),
       protocol: onlyIfTruthy(get(protocol)),
       evmChain: get(evmChain) || null,
-      tokenKind: (get(tokenKind) as EvmTokenKind) || null
+      tokenKind: (get(tokenKind) as EvmTokenKind) || null,
     };
   });
 
@@ -184,13 +182,14 @@ onBeforeMount(async () => {
     const queriedTypes = await getAssetTypes();
     set(
       types,
-      queriedTypes.filter(item => item !== CUSTOM_ASSET)
+      queriedTypes.filter(item => item !== CUSTOM_ASSET),
     );
-  } catch (e: any) {
+  }
+  catch (error: any) {
     setMessage({
       description: t('asset_form.types.error', {
-        message: e.message
-      }).toString()
+        message: error.message,
+      }).toString(),
     });
   }
 });
@@ -198,9 +197,8 @@ onBeforeMount(async () => {
 onMounted(() => {
   const token = get(editableItem);
   set(dontAutoFetch, !!token);
-  if (!token) {
+  if (!token)
     return;
-  }
 
   set(name, token.name ?? '');
   set(symbol, token.symbol);
@@ -223,115 +221,112 @@ onMounted(() => {
   set(tokenKind, token.tokenKind);
 });
 
-const saveAsset = async () => {
+async function saveAsset() {
   let newIdentifier: string;
   const assetVal = get(asset);
 
   const assetPayload = get(isEvmToken)
     ? assetVal
     : omit(assetVal, [
-        'decimals',
-        'address',
-        'evmChain',
-        'type',
-        'tokenKind',
-        'underlyingTokens'
-      ]);
+      'decimals',
+      'address',
+      'evmChain',
+      'type',
+      'tokenKind',
+      'underlyingTokens',
+    ]);
 
   const payload = {
     ...assetPayload,
-    assetType: get(assetType)
+    assetType: get(assetType),
   };
 
   if (get(editableItem)) {
     newIdentifier = get(identifier);
     await editAsset({ ...payload, identifier: newIdentifier });
-  } else {
+  }
+  else {
     ({ identifier: newIdentifier } = await addAsset(payload));
   }
   return newIdentifier;
-};
+}
 
-const getUnderlyingTokenErrors = (
-  underlyingTokens:
-    | string
-    | Record<string, { address: string[]; weight: string[] }>
-) => {
-  if (typeof underlyingTokens === 'string') {
+function getUnderlyingTokenErrors(underlyingTokens:
+  | string
+  | Record<string, { address: string[]; weight: string[] }>) {
+  if (typeof underlyingTokens === 'string')
     return [underlyingTokens];
-  }
 
   const messages: string[] = [];
   for (const underlyingToken of Object.values(underlyingTokens)) {
     const ut = underlyingToken;
-    if (ut.address) {
+    if (ut.address)
       messages.push(...ut.address);
-    }
-    if (underlyingTokens.weight) {
+
+    if (underlyingTokens.weight)
       messages.push(...ut.weight);
-    }
   }
   return messages;
-};
+}
 
-const handleError = (
-  message:
-    | {
-        underlyingTokens:
-          | string
-          | Record<string, { address: string[]; weight: string[] }>;
-      }
-    | {
-        _schema: string[];
-      }
-) => {
+function handleError(message:
+  | {
+    underlyingTokens:
+      | string
+      | Record<string, { address: string[]; weight: string[] }>;
+  }
+  | {
+    _schema: string[];
+  }) {
   if ('underlyingTokens' in message) {
     const messages = getUnderlyingTokenErrors(message.underlyingTokens);
     setMessage({
       title: t('asset_form.underlying_tokens').toString(),
-      description: messages.join(',')
-    });
-  } else {
-    setMessage({
-      title: t('asset_form.underlying_tokens').toString(),
-      description: message._schema[0]
+      description: messages.join(','),
     });
   }
-};
+  else {
+    setMessage({
+      title: t('asset_form.underlying_tokens').toString(),
+      description: message._schema[0],
+    });
+  }
+}
 
 const { deleteCacheKey } = useAssetCacheStore();
 
-const save = async () => {
+async function save() {
   try {
     const newIdentifier = await saveAsset();
     set(identifier, newIdentifier);
     await get(assetIconFormRef)?.saveIcon(newIdentifier);
     deleteCacheKey(newIdentifier);
     return true;
-  } catch (e: any) {
-    let errorsMessage = e.message;
-    if (e instanceof ApiValidationError) {
-      errorsMessage = e.getValidationErrors(get(asset));
-    }
+  }
+  catch (error: any) {
+    let errorsMessage = error.message;
+    if (error instanceof ApiValidationError)
+      errorsMessage = error.getValidationErrors(get(asset));
 
     if (typeof errorsMessage === 'string') {
       setMessage({
         title: get(editableItem)
           ? t('asset_form.edit_error')
           : t('asset_form.add_error'),
-        description: errorsMessage
+        description: errorsMessage,
       });
-    } else {
-      if (errorsMessage.underlyingTokens || errorsMessage._schema) {
+    }
+    else {
+      if (errorsMessage.underlyingTokens || errorsMessage._schema)
         handleError(errorsMessage);
-      }
+
       set(errors, omit(errorsMessage, ['underlyingTokens', '_schema']));
       await get(v$).$validate();
     }
 
     return false;
   }
-};
+}
 
 setSubmitFunc(save);
 </script>
@@ -362,14 +357,19 @@ setSubmitFunc(save);
           :disabled="types.length === 1 || !!editableItem"
           :items="types"
         >
-          <template #item="{ item }">{{ toSentenceCase(item) }}</template>
+          <template #item="{ item }">
+            {{ toSentenceCase(item) }}
+          </template>
           <template #selection="{ item }">
             {{ toSentenceCase(item) }}
           </template>
         </VSelect>
       </div>
 
-      <div v-if="isEvmToken" class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <div
+        v-if="isEvmToken"
+        class="grid md:grid-cols-2 gap-x-4 gap-y-2"
+      >
         <div data-cy="chain-select">
           <VSelect
             v-model="evmChain"
@@ -432,7 +432,10 @@ setSubmitFunc(save);
           :label="t('asset_form.labels.symbol')"
           :disabled="submitting || fetching"
         />
-        <div v-if="isEvmToken" data-cy="decimal-input">
+        <div
+          v-if="isEvmToken"
+          data-cy="decimal-input"
+        >
           <RuiTextField
             v-model="decimals"
             variant="outlined"
@@ -465,7 +468,10 @@ setSubmitFunc(save);
               />
             </template>
           </RuiTextField>
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               <RuiCheckbox
                 v-model="coingeckoEnabled"
@@ -496,7 +502,10 @@ setSubmitFunc(save);
               />
             </template>
           </RuiTextField>
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               <RuiCheckbox
                 v-model="cryptocompareEnabled"
@@ -509,8 +518,15 @@ setSubmitFunc(save);
         </div>
       </div>
 
-      <RuiCard no-padding rounded="sm" class="mt-2 mb-4 overflow-hidden">
-        <VExpansionPanels flat tile>
+      <RuiCard
+        no-padding
+        rounded="sm"
+        class="mt-2 mb-4 overflow-hidden"
+      >
+        <VExpansionPanels
+          flat
+          tile
+        >
           <VExpansionPanel>
             <VExpansionPanelHeader>
               {{ t('asset_form.optional') }}

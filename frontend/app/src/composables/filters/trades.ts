@@ -6,7 +6,7 @@ import {
   assetSuggestions,
   dateDeserializer,
   dateSerializer,
-  dateValidator
+  dateValidator,
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
 
@@ -16,7 +16,7 @@ enum TradeFilterKeys {
   ACTION = 'action',
   START = 'start',
   END = 'end',
-  LOCATION = 'location'
+  LOCATION = 'location',
 }
 
 enum TradeFilterValueKeys {
@@ -25,14 +25,14 @@ enum TradeFilterValueKeys {
   ACTION = 'tradeType',
   START = 'fromTimestamp',
   END = 'toTimestamp',
-  LOCATION = 'location'
+  LOCATION = 'location',
 }
 
 export type Matcher = SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>;
 
 export type Filters = MatchedKeyword<TradeFilterValueKeys>;
 
-export const useTradeFilters = () => {
+export function useTradeFilters() {
   const filters: Ref<Filters> = ref({});
 
   const { associatedLocations } = storeToRefs(useHistoryStore());
@@ -50,7 +50,7 @@ export const useTradeFilters = () => {
           description: t('closed_trades.filter.base_asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo)
+          deserializer: assetDeserializer(assetInfo),
         },
         {
           key: TradeFilterKeys.QUOTE,
@@ -58,7 +58,7 @@ export const useTradeFilters = () => {
           description: t('closed_trades.filter.quote_asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo)
+          deserializer: assetDeserializer(assetInfo),
         },
         {
           key: TradeFilterKeys.ACTION,
@@ -66,7 +66,7 @@ export const useTradeFilters = () => {
           description: t('closed_trades.filter.trade_type'),
           string: true,
           suggestions: () => TradeType.options,
-          validate: type => (TradeType.options as string[]).includes(type)
+          validate: type => (TradeType.options as string[]).includes(type),
         },
         {
           key: TradeFilterKeys.START,
@@ -75,11 +75,11 @@ export const useTradeFilters = () => {
           string: true,
           suggestions: () => [],
           hint: t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
+            format: getDateInputISOFormat(get(dateInputFormat)),
           }),
           validate: dateValidator(dateInputFormat),
           serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat)
+          deserializer: dateDeserializer(dateInputFormat),
         },
         {
           key: TradeFilterKeys.END,
@@ -88,11 +88,11 @@ export const useTradeFilters = () => {
           string: true,
           suggestions: () => [],
           hint: t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
+            format: getDateInputISOFormat(get(dateInputFormat)),
           }),
           validate: dateValidator(dateInputFormat),
           serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat)
+          deserializer: dateDeserializer(dateInputFormat),
         },
         {
           key: TradeFilterKeys.LOCATION,
@@ -101,9 +101,9 @@ export const useTradeFilters = () => {
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location =>
-            get(associatedLocations).includes(location as any)
-        }
-      ] satisfies Matcher[]
+            get(associatedLocations).includes(location),
+        },
+      ] satisfies Matcher[],
   );
 
   const updateFilter = (newFilters: Filters) => {
@@ -117,13 +117,13 @@ export const useTradeFilters = () => {
     [TradeFilterValueKeys.ACTION]: OptionalString,
     [TradeFilterValueKeys.START]: OptionalString,
     [TradeFilterValueKeys.END]: OptionalString,
-    [TradeFilterValueKeys.LOCATION]: OptionalString
+    [TradeFilterValueKeys.LOCATION]: OptionalString,
   });
 
   return {
     filters,
     matchers,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

@@ -1,15 +1,15 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
-import { type OracleCacheMeta } from '@/types/prices';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import type { OracleCacheMeta } from '@/types/prices';
 
 const { t } = useI18n();
 
@@ -19,32 +19,32 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('oracle_cache_management.headers.from').toString(),
     key: 'fromAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('oracle_cache_management.headers.to').toString(),
     key: 'toAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('oracle_cache_management.headers.from_date').toString(),
     key: 'fromTimestamp',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('oracle_cache_management.headers.to_date').toString(),
     key: 'toTimestamp',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
-    key: 'actions'
-  }
+    key: 'actions',
+  },
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { createOracleCache, getPriceCache, deletePriceCache } =
-  useBalancePricesStore();
+const { createOracleCache, getPriceCache, deletePriceCache }
+  = useBalancePricesStore();
 
 const oracles: PrioritizedListItemData[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
 
@@ -55,17 +55,17 @@ const fromAsset = ref<string>('');
 const toAsset = ref<string>('');
 const selection = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
 
-const load = async () => {
+async function load() {
   set(loading, true);
   set(cacheData, await getPriceCache(PriceOracle.CRYPTOCOMPARE));
   set(loading, false);
-};
+}
 
 const filteredData = computed<OracleCacheMeta[]>(() => {
   const from = get(fromAsset);
   const to = get(toAsset);
 
-  return get(cacheData).filter(item => {
+  return get(cacheData).filter((item) => {
     const fromAssetMatch = !from || from === item.fromAsset;
     const toAssetMatch = !to || to === item.toAsset;
     return fromAssetMatch && toAssetMatch;
@@ -85,31 +85,32 @@ const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
 const { notify } = useNotificationsStore();
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const clearCache = async (entry: OracleCacheMeta) => {
+async function clearCache(entry: OracleCacheMeta) {
   const { fromAsset, toAsset } = entry;
   set(confirmClear, false);
   try {
     await deletePriceCache(get(selection), fromAsset, toAsset);
     await load();
-  } catch (e: any) {
+  }
+  catch (error: any) {
     const title = t('oracle_cache_management.notification.title').toString();
 
     const message = t('oracle_cache_management.clear_error', {
       fromAsset: get(assetSymbol(fromAsset)),
       toAsset: get(assetSymbol(toAsset)),
-      error: e.message
+      error: error.message,
     }).toString();
 
     notify({
       title,
       message,
       severity: Severity.ERROR,
-      display: true
+      display: true,
     });
   }
-};
+}
 
-const fetchPrices = async () => {
+async function fetchPrices() {
   const fromAssetVal = get(fromAsset);
   const toAssetVal = get(toAsset);
   const source = get(selection);
@@ -118,45 +119,44 @@ const fetchPrices = async () => {
     purgeOld: false,
     fromAsset: fromAssetVal,
     toAsset: toAssetVal,
-    source
+    source,
   });
 
-  if (!('message' in status)) {
+  if (!('message' in status))
     await load();
-  }
 
   const from = get(assetSymbol(fromAssetVal));
   const to = get(assetSymbol(toAssetVal));
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
-        fromAsset: from,
-        toAsset: to,
-        source
-      })
+      fromAsset: from,
+      toAsset: to,
+      source,
+    })
     : t('oracle_cache_management.notification.error', {
-        fromAsset: from,
-        toAsset: to,
-        source,
-        error: status.message
-      });
+      fromAsset: from,
+      toAsset: to,
+      source,
+      error: status.message,
+    });
   const title = t('oracle_cache_management.notification.title').toString();
 
   notify({
     title,
     message: message.toString(),
     severity: status.success ? Severity.INFO : Severity.ERROR,
-    display: true
+    display: true,
   });
-};
+}
 
-const clearFilter = () => {
+function clearFilter() {
   set(fromAsset, '');
   set(toAsset, '');
-};
+}
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (entry: OracleCacheMeta) => {
+function showDeleteConfirmation(entry: OracleCacheMeta) {
   const deleteFromAsset = entry?.fromAsset
     ? get(assetSymbol(entry.fromAsset))
     : '';
@@ -168,12 +168,12 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
       message: t('oracle_cache_management.delete_confirmation.message', {
         selection: get(selection),
         fromAsset: deleteFromAsset,
-        toAsset: deleteToAsset
-      }).toString()
+        toAsset: deleteToAsset,
+      }).toString(),
     },
-    () => clearCache(entry)
+    () => clearCache(entry),
   );
-};
+}
 </script>
 
 <template>
@@ -226,7 +226,10 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
           <RuiIcon name="close-line" />
         </RuiButton>
       </div>
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             :loading="pending"
@@ -254,10 +257,16 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
       :sort.sync="sort"
     >
       <template #item.fromAsset="{ row }">
-        <AssetDetails opens-details :asset="row.fromAsset" />
+        <AssetDetails
+          opens-details
+          :asset="row.fromAsset"
+        />
       </template>
       <template #item.toAsset="{ row }">
-        <AssetDetails opens-details :asset="row.toAsset" />
+        <AssetDetails
+          opens-details
+          :asset="row.toAsset"
+        />
       </template>
       <template #item.toTimestamp="{ row }">
         <DateDisplay :timestamp="row.toTimestamp" />
@@ -266,7 +275,10 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
         <DateDisplay :timestamp="row.fromTimestamp" />
       </template>
       <template #item.actions="{ row }">
-        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
           <template #activator>
             <RuiButton
               color="primary"
@@ -274,7 +286,10 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
               icon
               @click="showDeleteConfirmation(row)"
             >
-              <RuiIcon size="16" name="delete-bin-line" />
+              <RuiIcon
+                size="16"
+                name="delete-bin-line"
+              />
             </RuiButton>
           </template>
           <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>

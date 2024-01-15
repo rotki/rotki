@@ -1,7 +1,7 @@
-import { type ComputedRef } from 'vue';
-import { type MaybeRef } from '@vueuse/core';
 import { camelCase } from 'lodash-es';
-import { type ProtocolMetadata } from '@/types/defi';
+import type { ComputedRef } from 'vue';
+import type { MaybeRef } from '@vueuse/core';
+import type { ProtocolMetadata } from '@/types/defi';
 
 export const useDefiMetadata = createSharedComposable(() => {
   const { fetchDefiMetadata } = useDefiApi();
@@ -11,46 +11,46 @@ export const useDefiMetadata = createSharedComposable(() => {
   const metadata: Ref<ProtocolMetadata[]> = asyncComputed<
     ProtocolMetadata[]
   >(() => {
-    if (get(connected)) {
+    if (get(connected))
       return fetchDefiMetadata();
-    }
+
     return [];
   }, []);
 
   const getDefiData = (
-    identifier: MaybeRef<string>
+    identifier: MaybeRef<string>,
   ): ComputedRef<ProtocolMetadata | undefined> =>
     useArrayFind(
       metadata,
-      item => camelCase(item.identifier) === camelCase(get(identifier))
+      item => camelCase(item.identifier) === camelCase(get(identifier)),
     );
 
   const getDefiDataByName = (
-    name: MaybeRef<string>
+    name: MaybeRef<string>,
   ): ComputedRef<ProtocolMetadata | undefined> =>
     useArrayFind<ProtocolMetadata>(
       metadata,
-      item => decodeHtmlEntities(item.name) === decodeHtmlEntities(get(name))
+      item => decodeHtmlEntities(item.name) === decodeHtmlEntities(get(name)),
     );
 
   const getDefiName = (identifier: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
       useRefMap(getDefiData(identifier), i => i?.name),
-      identifier
+      identifier,
     );
 
   const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
       useRefMap(getDefiData(identifier), i => i?.icon),
-      computed(() => `${get(identifier)}.svg`)
+      computed(() => `${get(identifier)}.svg`),
     );
 
   const getDefiIdentifierByName = (
-    name: MaybeRef<string>
+    name: MaybeRef<string>,
   ): ComputedRef<string> =>
     useValueOrDefault(
       useRefMap(getDefiDataByName(name), i => i?.identifier),
-      name
+      name,
     );
 
   return {
@@ -58,6 +58,6 @@ export const useDefiMetadata = createSharedComposable(() => {
     getDefiData,
     getDefiName,
     getDefiImage,
-    getDefiIdentifierByName
+    getDefiIdentifierByName,
   };
 });

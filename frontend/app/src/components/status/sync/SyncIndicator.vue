@@ -4,7 +4,7 @@ import { TaskType } from '@/types/task-type';
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,
-  type SyncAction
+  type SyncAction,
 } from '@/types/session/sync';
 
 const { t } = useI18n();
@@ -16,7 +16,7 @@ const {
   syncAction,
   cancelSync,
   forceSync,
-  showSyncConfirmation
+  showSyncConfirmation,
 } = useSync();
 const { href, onLinkClick } = useLinks();
 
@@ -27,47 +27,46 @@ const visible = ref<boolean>(false);
 
 const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
 const textChoice = computed<number>(() =>
-  get(syncAction) === SYNC_UPLOAD ? 1 : 2
+  get(syncAction) === SYNC_UPLOAD ? 1 : 2,
 );
 const message = computed<string>(() =>
   get(syncAction) === SYNC_UPLOAD
     ? t('sync_indicator.upload_confirmation.message_upload').toString()
-    : t('sync_indicator.upload_confirmation.message_download').toString()
+    : t('sync_indicator.upload_confirmation.message_download').toString(),
 );
 
 const { resume, pause, counter } = useInterval(600, {
   immediate: false,
-  controls: true
+  controls: true,
 });
 
 const icon = computed(() => {
   const tick = get(counter) % 2 === 0;
-  if (get(isDownload)) {
+  if (get(isDownload))
     return tick ? 'download-cloud-2-line' : 'download-cloud-line';
-  }
+
   return tick ? 'upload-cloud-2-line' : 'upload-cloud-line';
 });
 
-const showConfirmation = (action: SyncAction) => {
+function showConfirmation(action: SyncAction) {
   set(visible, false);
   showSyncConfirmation(action);
-};
+}
 
-const performSync = async () => {
+async function performSync() {
   resume();
   set(pending, true);
   await forceSync(logout);
   set(pending, false);
   pause();
-};
+}
 
 const { isTaskRunning } = useTaskStore();
 const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
 
 watch(isSyncing, (current, prev) => {
-  if (current !== prev && !current) {
+  if (current !== prev && !current)
     cancelSync();
-  }
 });
 </script>
 
@@ -88,8 +87,15 @@ watch(isSyncing, (current, prev) => {
             class-name="secondary--text text--lighten-4"
             v-on="on"
           >
-            <RuiIcon v-if="isSyncing" :name="icon" color="primary" />
-            <RuiIcon v-else name="cloud-line" />
+            <RuiIcon
+              v-if="isSyncing"
+              :name="icon"
+              color="primary"
+            />
+            <RuiIcon
+              v-else
+              name="cloud-line"
+            />
           </MenuTooltipButton>
         </template>
         <div class="pa-4 md:w-[250px] w-full">
@@ -97,12 +103,18 @@ watch(isSyncing, (current, prev) => {
             {{ t('sync_indicator.last_data_upload') }}
           </div>
           <div class="py-2 text--secondary">
-            <DateDisplay v-if="lastDataUpload" :timestamp="lastDataUpload" />
+            <DateDisplay
+              v-if="lastDataUpload"
+              :timestamp="lastDataUpload"
+            />
             <span v-else>
               {{ t('common.never') }}
             </span>
           </div>
-          <SyncButtons :pending="pending" @action="showConfirmation($event)" />
+          <SyncButtons
+            :pending="pending"
+            @action="showConfirmation($event)"
+          />
         </div>
       </VMenu>
     </template>
@@ -115,7 +127,11 @@ watch(isSyncing, (current, prev) => {
         color="default"
       >
         <template #icon>
-          <RuiIcon name="lock-line" color="primary" size="14" />
+          <RuiIcon
+            name="lock-line"
+            color="primary"
+            size="14"
+          />
         </template>
         <MenuTooltipButton
           :tooltip="t('sync_indicator.menu_tooltip')"
@@ -149,7 +165,10 @@ watch(isSyncing, (current, prev) => {
           t('sync_indicator.upload_confirmation.message_download_relogin')
         "
       />
-      <RuiCheckbox v-model="confirmChecked" color="primary">
+      <RuiCheckbox
+        v-model="confirmChecked"
+        color="primary"
+      >
         {{ t('sync_indicator.upload_confirmation.confirm_check') }}
       </RuiCheckbox>
     </ConfirmDialog>

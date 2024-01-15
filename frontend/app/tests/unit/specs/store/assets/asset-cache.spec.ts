@@ -1,6 +1,6 @@
-import { type AssetInfo } from '@rotki/common/lib/data';
 import flushPromises from 'flush-promises';
-import { type AssetMap } from '@/types/asset';
+import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetMap } from '@/types/asset';
 
 describe('store::assets/cache', () => {
   let store: ReturnType<typeof useAssetCacheStore>;
@@ -17,16 +17,16 @@ describe('store::assets/cache', () => {
     const asset = {
       name: 'KEY Asset',
       symbol: 'KEY',
-      isCustomAsset: false
+      isCustomAsset: false,
     };
     const mapping: AssetMap = {
       assetCollections: {},
-      assets: { [key]: asset }
+      assets: { [key]: asset },
     };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null> =
-      store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null>
+      = store.retrieve('KEY');
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
@@ -37,11 +37,11 @@ describe('store::assets/cache', () => {
   it('should not request failed assets twice unless they expire', async () => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue({
       assetCollections: {},
-      assets: {}
+      assets: {},
     });
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null> =
-      store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null>
+      = store.retrieve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
@@ -60,11 +60,11 @@ describe('store::assets/cache', () => {
     const asset = {
       name: 'KEY Asset',
       symbol: 'KEY',
-      isCustomAsset: false
+      isCustomAsset: false,
     };
     const mapping: AssetMap = {
       assetCollections: {},
-      assets: { [key]: asset }
+      assets: { [key]: asset },
     };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
@@ -73,8 +73,8 @@ describe('store::assets/cache', () => {
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
     expect(get(firstRetrieval)).toEqual(asset);
     vi.advanceTimersByTime(1000 * 60 * 11);
-    const secondRetrieval: ComputedRef<AssetInfo | null> =
-      store.retrieve('KEY');
+    const secondRetrieval: ComputedRef<AssetInfo | null>
+      = store.retrieve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledTimes(2);
@@ -83,26 +83,25 @@ describe('store::assets/cache', () => {
 
   it('should stop caching assets after cache limit is reached', async () => {
     vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(
-      async identifier => {
+      async (identifier) => {
         const mapping: AssetMap = { assetCollections: {}, assets: {} };
         for (const id of identifier) {
           mapping.assets[id] = {
             symbol: id,
             name: `name ${id}`,
-            isCustomAsset: false
+            isCustomAsset: false,
           };
         }
         return mapping;
-      }
+      },
     );
 
     store.retrieve(`AST-0`);
     vi.advanceTimersByTime(3000);
     await flushPromises();
 
-    for (let i = 1; i < 50; i++) {
+    for (let i = 1; i < 50; i++)
       store.retrieve(`AST-${i}`);
-    }
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
@@ -111,9 +110,9 @@ describe('store::assets/cache', () => {
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
-    for (let i = 51; i < 505; i++) {
+    for (let i = 51; i < 505; i++)
       store.retrieve(`AST-${i}`);
-    }
+
     vi.advanceTimersByTime(4000);
     await flushPromises();
 

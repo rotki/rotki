@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type ReceivedAmount } from '@/types/staking';
+import type { BigNumber } from '@rotki/common';
+import type { ReceivedAmount } from '@/types/staking';
 
 const props = defineProps<{
   totalUsd: BigNumber;
@@ -16,9 +16,8 @@ const pricesAreLoading = computed(() => {
 const totalUsdCurrent = computed<BigNumber>(() => {
   const earnedAssets = get(earned);
   const assetPrices = get(prices);
-  if (Object.keys(assetPrices).length === 0) {
+  if (Object.keys(assetPrices).length === 0)
     return Zero;
-  }
 
   let sum = Zero;
 
@@ -45,9 +44,15 @@ const { t } = useI18n();
       <div class="flex justify-between items-center">
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.historical') }}
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
-              <RuiIcon size="20" name="information-line" />
+              <RuiIcon
+                size="20"
+                name="information-line"
+              />
             </template>
             <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
           </RuiTooltip>
@@ -65,9 +70,15 @@ const { t } = useI18n();
       <div class="flex justify-between items-center">
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.current') }}
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
-              <RuiIcon size="20" name="information-line" />
+              <RuiIcon
+                size="20"
+                name="information-line"
+              />
             </template>
             <span>{{ t('kraken_staking_overview.hint.current') }}</span>
           </RuiTooltip>

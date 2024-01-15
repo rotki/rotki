@@ -26,7 +26,10 @@ const model = ref('');
           :class="getClass(tab.route)"
         >
           <template #prepend>
-            <RuiIcon size="20" :name="tab.icon" />
+            <RuiIcon
+              size="20"
+              :name="tab.icon"
+            />
           </template>
           {{ tab.text }}
         </RuiTab>

@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
+import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 
 enum AddressBookFilterKeys {
   NAME = 'name',
-  ADDRESS = 'address'
+  ADDRESS = 'address',
 }
 
 enum AddressBookFilterValueKeys {
   NAME = 'nameSubstring',
-  ADDRESS = 'address'
+  ADDRESS = 'address',
 }
 
 export type Matcher = SearchMatcher<
@@ -18,7 +18,7 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeyword<AddressBookFilterValueKeys>;
 
-export const useAddressBookFilter = () => {
+export function useAddressBookFilter() {
   const filters: Ref<Filters> = ref({});
 
   const { t } = useI18n();
@@ -31,7 +31,7 @@ export const useAddressBookFilter = () => {
       hint: t('assets.filter.name_hint'),
       string: true,
       suggestions: () => [],
-      validate: () => true
+      validate: () => true,
     },
     {
       key: AddressBookFilterKeys.ADDRESS,
@@ -40,8 +40,8 @@ export const useAddressBookFilter = () => {
       string: true,
       multiple: true,
       suggestions: () => [],
-      validate: (address: string) => isValidEthAddress(address)
-    }
+      validate: (address: string) => isValidEthAddress(address),
+    },
   ]);
 
   const updateFilter = (newFilters: Filters) => {
@@ -51,13 +51,13 @@ export const useAddressBookFilter = () => {
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
     [AddressBookFilterValueKeys.NAME]: OptionalString,
-    [AddressBookFilterValueKeys.ADDRESS]: OptionalString
+    [AddressBookFilterValueKeys.ADDRESS]: OptionalString,
   });
 
   return {
     filters,
     matchers,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

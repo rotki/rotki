@@ -30,8 +30,8 @@ withDefaults(
     isMini?: boolean;
   }>(),
   {
-    isMini: false
-  }
+    isMini: false,
+  },
 );
 
 const { appRoutes } = useAppRoutes();
@@ -40,7 +40,7 @@ const navItems: MenuItem[] = [
   {
     type: 'item',
     class: 'dashboard',
-    ...Routes.DASHBOARD
+    ...Routes.DASHBOARD,
   },
   {
     type: 'group',
@@ -50,29 +50,29 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'accounts-balances-blockchain',
-        ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN
+        ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       },
       {
         type: 'item',
         class: 'accounts-balances-exchange',
-        ...Routes.ACCOUNTS_BALANCES_EXCHANGE
+        ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
       },
       {
         type: 'item',
         class: 'accounts-balances-manual',
-        ...Routes.ACCOUNTS_BALANCES_MANUAL
+        ...Routes.ACCOUNTS_BALANCES_MANUAL,
       },
       {
         type: 'item',
         class: 'accounts-balances-non-fungible',
-        ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE
-      }
-    ]
+        ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
+      },
+    ],
   },
   {
     type: 'item',
     class: 'nfts',
-    ...Routes.NFTS
+    ...Routes.NFTS,
   },
   {
     type: 'group',
@@ -82,19 +82,19 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'history-trades',
-        ...Routes.HISTORY_TRADES
+        ...Routes.HISTORY_TRADES,
       },
       {
         type: 'item',
         class: 'history-deposits-withdrawals',
-        ...Routes.HISTORY_DEPOSITS_WITHDRAWALS
+        ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
       },
       {
         type: 'item',
         class: 'history-events',
-        ...Routes.HISTORY_EVENTS
-      }
-    ]
+        ...Routes.HISTORY_EVENTS,
+      },
+    ],
   },
   {
     type: 'group',
@@ -104,43 +104,43 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'defi-overview',
-        ...Routes.DEFI_OVERVIEW
+        ...Routes.DEFI_OVERVIEW,
       },
       {
         type: 'item',
         class: 'defi-deposits',
-        ...Routes.DEFI_DEPOSITS
+        ...Routes.DEFI_DEPOSITS,
       },
       {
         type: 'item',
         class: 'defi-liabilities',
-        ...Routes.DEFI_LIABILITIES
+        ...Routes.DEFI_LIABILITIES,
       },
       {
         type: 'item',
         class: 'defi-airdrops',
-        ...Routes.DEFI_AIRDROPS
-      }
-    ]
+        ...Routes.DEFI_AIRDROPS,
+      },
+    ],
   },
   {
     type: 'item',
     class: 'statistics',
-    ...Routes.STATISTICS
+    ...Routes.STATISTICS,
   },
   {
     type: 'item',
     class: 'staking',
     ...Routes.STAKING,
-    route: Routes.STAKING.route.split(':')[0]
+    route: Routes.STAKING.route.split(':')[0],
   },
   {
     type: 'item',
     class: 'profit-loss-report',
-    ...Routes.PROFIT_LOSS_REPORTS
+    ...Routes.PROFIT_LOSS_REPORTS,
   },
   {
-    type: 'divider'
+    type: 'divider',
   },
   {
     type: 'group',
@@ -150,19 +150,19 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'asset-manager-managed',
-        ...Routes.ASSET_MANAGER_MANAGED
+        ...Routes.ASSET_MANAGER_MANAGED,
       },
       {
         type: 'item',
         class: 'asset-manager-custom',
-        ...Routes.ASSET_MANAGER_CUSTOM
+        ...Routes.ASSET_MANAGER_CUSTOM,
       },
       {
         type: 'item',
         class: 'asset-manager-newly-detected',
-        ...Routes.ASSET_MANAGER_NEWLY_DETECTED
-      }
-    ]
+        ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
+      },
+    ],
   },
   {
     type: 'group',
@@ -172,22 +172,22 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'price-manager-latest',
-        ...Routes.PRICE_MANAGER_LATEST
+        ...Routes.PRICE_MANAGER_LATEST,
       },
       {
         type: 'item',
         class: 'price-manager-historic',
-        ...Routes.PRICE_MANAGER_HISTORIC
-      }
-    ]
+        ...Routes.PRICE_MANAGER_HISTORIC,
+      },
+    ],
   },
   {
     type: 'item',
     class: 'address-book-manager',
-    ...Routes.ADDRESS_BOOK_MANAGER
+    ...Routes.ADDRESS_BOOK_MANAGER,
   },
   {
-    type: 'divider'
+    type: 'divider',
   },
   {
     type: 'group',
@@ -197,29 +197,32 @@ const navItems: MenuItem[] = [
       {
         type: 'item',
         class: 'api-keys-premium',
-        ...Routes.API_KEYS_ROTKI_PREMIUM
+        ...Routes.API_KEYS_ROTKI_PREMIUM,
       },
       {
         type: 'item',
         class: 'api-keys-exchanges',
-        ...Routes.API_KEYS_EXCHANGES
+        ...Routes.API_KEYS_EXCHANGES,
       },
       {
         type: 'item',
         class: 'api-keys-external-services',
-        ...Routes.API_KEYS_EXTERNAL_SERVICES
-      }
-    ]
+        ...Routes.API_KEYS_EXTERNAL_SERVICES,
+      },
+    ],
   },
   {
     type: 'item',
-    ...Routes.IMPORT
-  }
+    ...Routes.IMPORT,
+  },
 ];
 </script>
 
 <template>
-  <div class="p-2" :class="{ '!p-0': isMini }">
+  <div
+    class="p-2"
+    :class="{ '!p-0': isMini }"
+  >
     <template v-for="(navItem, i) in navItems">
       <RouterLink
         v-if="navItem.type === 'item'"

@@ -1,9 +1,9 @@
 // Asset Movements
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
+import type { PaginationRequestPayload } from '@/types/common';
 
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
 
@@ -20,7 +20,7 @@ export const AssetMovement = z.object({
   amount: NumericString,
   feeAsset: z.string(),
   fee: NumericString,
-  link: z.string()
+  link: z.string(),
 });
 
 export type AssetMovement = z.infer<typeof AssetMovement>;
@@ -29,10 +29,10 @@ export const AssetMovementCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
       .object({
-        entry: AssetMovement
+        entry: AssetMovement,
       })
-      .merge(EntryMeta)
-  )
+      .merge(EntryMeta),
+  ),
 });
 
 export interface AssetMovementRequestPayload

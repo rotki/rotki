@@ -1,6 +1,6 @@
-import {
-  type QueriedAddressPayload,
-  type QueriedAddresses
+import type {
+  QueriedAddressPayload,
+  QueriedAddresses,
 } from '@/types/session';
 
 export const useQueriedAddressesStore = defineStore(
@@ -13,35 +13,37 @@ export const useQueriedAddressesStore = defineStore(
     const { t } = useI18n();
 
     async function addQueriedAddress(
-      payload: QueriedAddressPayload
+      payload: QueriedAddressPayload,
     ): Promise<void> {
       try {
         set(queriedAddresses, await api.addQueriedAddress(payload));
-      } catch (e: any) {
+      }
+      catch (error: any) {
         setMessage({
           description: t(
             'actions.session.add_queriable_address.error.message',
             {
-              message: e.message
-            }
-          ).toString()
+              message: error.message,
+            },
+          ).toString(),
         });
       }
     }
 
     async function deleteQueriedAddress(
-      payload: QueriedAddressPayload
+      payload: QueriedAddressPayload,
     ): Promise<void> {
       try {
         set(queriedAddresses, await api.deleteQueriedAddress(payload));
-      } catch (e: any) {
+      }
+      catch (error: any) {
         setMessage({
           description: t(
             'actions.session.delete_queriable_address.error.message',
             {
-              message: e.message
-            }
-          ).toString()
+              message: error.message,
+            },
+          ).toString(),
         });
       }
     }
@@ -49,14 +51,15 @@ export const useQueriedAddressesStore = defineStore(
     async function fetchQueriedAddresses(): Promise<void> {
       try {
         set(queriedAddresses, await api.queriedAddresses());
-      } catch (e: any) {
+      }
+      catch (error: any) {
         setMessage({
           description: t(
             'actions.session.fetch_queriable_address.error.message',
             {
-              message: e.message
-            }
-          ).toString()
+              message: error.message,
+            },
+          ).toString(),
         });
       }
     }
@@ -65,13 +68,13 @@ export const useQueriedAddressesStore = defineStore(
       queriedAddresses,
       addQueriedAddress,
       deleteQueriedAddress,
-      fetchQueriedAddresses
+      fetchQueriedAddresses,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useQueriedAddressesStore, import.meta.hot)
+    acceptHMRUpdate(useQueriedAddressesStore, import.meta.hot),
   );
 }

@@ -3,7 +3,7 @@ import {
   type Content,
   type JSONContent,
   JSONEditor,
-  type TextContent
+  type TextContent,
 } from 'vanilla-jsoneditor';
 import { debounce } from 'lodash-es';
 
@@ -13,8 +13,8 @@ const props = withDefaults(
     value: Record<string, any>;
   }>(),
   {
-    label: ''
-  }
+    label: '',
+  },
 );
 
 const emit = defineEmits<{
@@ -34,7 +34,7 @@ onMounted(() => {
       'input',
       (updatedContent as TextContent).text === undefined
         ? (updatedContent as JSONContent).json
-        : (updatedContent as TextContent).text
+        : (updatedContent as TextContent).text,
     );
   }, 100);
 
@@ -42,11 +42,11 @@ onMounted(() => {
     target: get(jsonEditorContainer),
     props: {
       content: {
-        json: get(value)
+        json: get(value),
       },
       navigationBar: false,
-      onChange
-    }
+      onChange,
+    },
   });
 
   set(jsonEditor, newJsonEditor);
@@ -58,27 +58,29 @@ watch(
     const jsonEditorVal = get(jsonEditor);
     if (jsonEditorVal) {
       jsonEditorVal.set(
-        [undefined, ''].includes(newValue) ? { text: '' } : { json: newValue }
+        [undefined, ''].includes(newValue) ? { text: '' } : { json: newValue },
       );
     }
   },
   {
-    deep: true
-  }
+    deep: true,
+  },
 );
 
 onBeforeUnmount(() => {
   const jsonEditorVal = get(jsonEditor);
 
-  if (jsonEditorVal) {
+  if (jsonEditorVal)
     jsonEditorVal.destroy();
-  }
 });
 </script>
 
 <template>
   <div class="mt-4">
-    <div v-if="label" class="text-caption text-rui-text-secondary mb-1">
+    <div
+      v-if="label"
+      class="text-caption text-rui-text-secondary mb-1"
+    >
       {{ label }}
     </div>
     <div :class="css.editor">

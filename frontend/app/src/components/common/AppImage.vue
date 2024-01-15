@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type MaybeRef } from '@vueuse/core';
-import { type Ref } from 'vue';
 import { toRem } from '@/utils/data';
+import type { MaybeRef } from '@vueuse/core';
+import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -26,8 +26,8 @@ const props = withDefaults(
     sizes: undefined,
     srcset: undefined,
     alt: undefined,
-    contain: false
-  }
+    contain: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -47,27 +47,28 @@ const style = computed(() => ({
   width: getSizeOrValue(width),
   height: getSizeOrValue(height),
   maxWidth: getSizeOrValue(maxWidth),
-  maxHeight: getSizeOrValue(maxHeight)
+  maxHeight: getSizeOrValue(maxHeight),
 }));
 
-const getSizeOrValue = (value: MaybeRef<string | number | undefined>) =>
-  isDefined(get(size)) ? toRem(get(size)) : toRem(get(value));
+function getSizeOrValue(value: MaybeRef<string | number | undefined>) {
+  return isDefined(get(size)) ? toRem(get(size)) : toRem(get(value));
+}
 
-const onError = () => {
+function onError() {
   set(error, true);
   emit('error');
-};
+}
 
-const onLoad = () => {
+function onLoad() {
   set(error, false);
   set(success, true);
   emit('load');
-};
+}
 
-const onLoadStart = () => {
+function onLoadStart() {
   set(error, false);
   emit('loadstart');
-};
+}
 </script>
 
 <template>

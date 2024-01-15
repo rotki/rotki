@@ -1,12 +1,11 @@
-import { OnlineHistoryEventsQueryType } from '@/types/history/events';
-import { type HistoryEventEntry } from '@/types/history/events';
+import { type HistoryEventEntry, OnlineHistoryEventsQueryType } from '@/types/history/events';
 import historyEvents from '../../../fixtures/history-events.json';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
     isTaskRunning: vi.fn().mockReturnValue(false),
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/composables/api/history/events', () => ({
@@ -19,8 +18,8 @@ vi.mock('@/composables/api/history/events', () => ({
     addHistoryEvent: vi.fn(),
     editHistoryEvent: vi.fn(),
     queryOnlineHistoryEvents: vi.fn().mockResolvedValue({}),
-    fetchHistoryEvents: vi.fn().mockResolvedValue(historyEvents.result)
-  })
+    fetchHistoryEvents: vi.fn().mockResolvedValue(historyEvents.result),
+  }),
 }));
 
 describe('composables::history/events/tx', async () => {
@@ -33,7 +32,7 @@ describe('composables::history/events/tx', async () => {
       limit: -1,
       offset: 0,
       eventIdentifiers: [],
-      groupByEventIds: false
+      groupByEventIds: false,
     });
 
     events = eventsCollection.data;
@@ -43,7 +42,7 @@ describe('composables::history/events/tx', async () => {
     vi.clearAllMocks();
   });
 
-  test('initialize composable correctly', async () => {
+  it('initialize composable correctly', async () => {
     const eventsApi = useHistoryEventsApi();
     const addHistorySpy = vi.spyOn(eventsApi, 'addTransactionHash');
     const addHistoryEventSpy = vi.spyOn(eventsApi, 'addHistoryEvent');
@@ -57,22 +56,22 @@ describe('composables::history/events/tx', async () => {
       counterparty: '',
       product: '',
       txHash: '',
-      ...events[0]
+      ...events[0],
     };
 
     const editEvent = { ...event, identifier: 1 };
 
-    const { addTransactionHash, refreshTransactions } =
-      useHistoryTransactions();
+    const { addTransactionHash, refreshTransactions }
+      = useHistoryTransactions();
     const { fetchTransactionEvents } = useHistoryTransactionDecoding();
-    const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent } =
-      useHistoryEvents();
+    const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent }
+      = useHistoryEvents();
 
     // add a hash and check the spy function is called
     await addTransactionHash({
       txHash: '0x9',
       associatedAddress: '0x0...',
-      evmChain: ''
+      evmChain: '',
     });
 
     expect(addHistorySpy).toHaveBeenCalledOnce();
@@ -104,7 +103,7 @@ describe('composables::history/events/tx', async () => {
     expect(queryEvSpy).toHaveBeenCalledOnce();
     expect(queryEvSpy).toHaveBeenCalledWith({
       asyncQuery: true,
-      queryType: OnlineHistoryEventsQueryType.EXCHANGES
+      queryType: OnlineHistoryEventsQueryType.EXCHANGES,
     });
 
     // fetch all transaction and check the spy function is called

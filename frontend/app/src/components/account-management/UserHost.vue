@@ -4,7 +4,7 @@ import Fragment from '@/components/helper/Fragment';
 const { autolog } = useAutoLogin();
 const { isPackaged } = useInterop();
 const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
-  useMainStore()
+  useMainStore(),
 );
 
 const isDocker = import.meta.env.VITE_DOCKER;
@@ -12,7 +12,7 @@ const hasAcceptedDockerRisk = logicAnd(dockerRiskAccepted, isDocker);
 const loginIfConnected = logicOr(
   isPackaged,
   hasAcceptedDockerRisk,
-  logicNot(isDocker)
+  logicNot(isDocker),
 );
 const displayRouter = logicAnd(connected, loginIfConnected);
 

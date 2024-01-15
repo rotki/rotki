@@ -9,17 +9,17 @@ const { showUpdatePopup } = storeToRefs(useSessionStore());
 const appVersion = computed(() => get(version).latestVersion);
 
 const openLink = () => openUrl(get(version).downloadUrl);
-const openUpdatePopup = () => {
-  set(showUpdatePopup, true);
-};
 
-const update = () => {
-  if (isPackaged) {
+function openUpdatePopup() {
+  set(showUpdatePopup, true);
+}
+
+function update() {
+  if (isPackaged)
     openUpdatePopup();
-  } else {
+  else
     openLink();
-  }
-};
+}
 
 const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
 
@@ -28,17 +28,16 @@ const { pause, resume, isActive } = useIntervalFn(
     startPromise(getVersion());
   },
   period,
-  { immediate: false }
+  { immediate: false },
 );
 
-const setVersionUpdateCheckInterval = () => {
-  if (isActive) {
+function setVersionUpdateCheckInterval() {
+  if (isActive)
     pause();
-  }
-  if (period > 0) {
+
+  if (period > 0)
     resume();
-  }
-};
+}
 
 onMounted(() => {
   setVersionUpdateCheckInterval();
@@ -50,9 +49,16 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiTooltip v-if="updateNeeded" :open-delay="400">
+  <RuiTooltip
+    v-if="updateNeeded"
+    :open-delay="400"
+  >
     <template #activator>
-      <RuiButton color="info" icon @click="update()">
+      <RuiButton
+        color="info"
+        icon
+        @click="update()"
+      >
         <RuiIcon name="arrow-up-circle-line" />
       </RuiButton>
     </template>

@@ -5,7 +5,7 @@ export enum KrakenStakingEventType {
   REWARD = 'reward',
   RECEIVE_WRAPPED = 'receive wrapped',
   DEPOSIT_ASSET = 'deposit asset',
-  REMOVE_ASSET = 'remove asset'
+  REMOVE_ASSET = 'remove asset',
 }
 
 export const KrakenStakingEventTypeEnum = z.nativeEnum(KrakenStakingEventType);
@@ -16,7 +16,7 @@ const KrakenStakingEvent = z.object({
   timestamp: z.number().nonnegative(),
   location: z.literal('kraken'),
   amount: NumericString,
-  usdValue: NumericString
+  usdValue: NumericString,
 });
 
 export type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
@@ -24,7 +24,7 @@ export type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
 const ReceivedAmount = z.object({
   amount: NumericString,
   usdValue: NumericString,
-  asset: z.string()
+  asset: z.string(),
 });
 
 export type ReceivedAmount = z.infer<typeof ReceivedAmount>;
@@ -35,7 +35,7 @@ export const KrakenStakingEvents = z.object({
   entriesLimit: z.number().min(-1),
   entriesTotal: z.number().nonnegative(),
   received: z.array(ReceivedAmount),
-  totalUsdValue: NumericString
+  totalUsdValue: NumericString,
 });
 
 export type KrakenStakingEvents = z.infer<typeof KrakenStakingEvents>;
@@ -52,9 +52,11 @@ export interface KrakenStakingPagination {
   onlyCache?: boolean;
 }
 
-export const emptyPagination = (): KrakenStakingPagination => ({
-  offset: 0,
-  limit: 0,
-  ascending: [false],
-  orderByAttributes: ['timestamp']
-});
+export function emptyPagination(): KrakenStakingPagination {
+  return {
+    offset: 0,
+    limit: 0,
+    ascending: [false],
+    orderByAttributes: ['timestamp'],
+  };
+}

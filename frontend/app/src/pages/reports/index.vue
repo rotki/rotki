@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
 import { Routes } from '@/router/routes';
-import {
-  type ProfitLossReportDebugPayload,
-  type ProfitLossReportPeriod
-} from '@/types/reports';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
+import type {
+  ProfitLossReportDebugPayload,
+  ProfitLossReportPeriod,
+} from '@/types/reports';
+import type { TaskMeta } from '@/types/task';
 
 const { isTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
-const { generateReport, clearError, exportReportData, fetchReports } =
-  reportsStore;
+const { generateReport, clearError, exportReportData, fetchReports }
+  = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File | null>(null);
@@ -35,7 +35,7 @@ onMounted(async () => {
     if (start && end) {
       const period = {
         start: Number.parseInt(start),
-        end: Number.parseInt(end)
+        end: Number.parseInt(end),
       };
 
       await router.replace({ query: {} });
@@ -50,15 +50,14 @@ const { notify } = useNotificationsStore();
 
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
-const generate = async (period: ProfitLossReportPeriod) => {
-  if (get(pinned)?.name === 'report-actionable-card') {
+async function generate(period: ProfitLossReportPeriod) {
+  if (get(pinned)?.name === 'report-actionable-card')
     set(pinned, null);
-  }
 
   const formatDate = (timestamp: number) =>
     displayDateFormatter.format(
       new Date(timestamp * 1000),
-      get(dateDisplayFormat)
+      get(dateDisplayFormat),
     );
 
   const reportId = await generateReport(period);
@@ -67,8 +66,8 @@ const generate = async (period: ProfitLossReportPeriod) => {
     router.push({
       path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
       query: {
-        openReportActionable: 'true'
-      }
+        openReportActionable: 'true',
+      },
     });
   };
 
@@ -81,25 +80,25 @@ const generate = async (period: ProfitLossReportPeriod) => {
       title: t('profit_loss_reports.notification.title'),
       message: t('profit_loss_reports.notification.message', {
         start: formatDate(period.start),
-        end: formatDate(period.end)
+        end: formatDate(period.end),
       }),
       display: true,
       severity: Severity.INFO,
       priority: Priority.ACTION,
       action: {
         label: t('profit_loss_reports.notification.action'),
-        action
-      }
+        action,
+      },
     });
   }
-};
+}
 
 const { setMessage } = useMessageStore();
 
-const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
+async function exportData({ start, end }: ProfitLossReportPeriod) {
   const payload: ProfitLossReportDebugPayload = {
     fromTimestamp: start,
-    toTimestamp: end
+    toTimestamp: end,
   };
 
   let message: Message | null = null;
@@ -107,12 +106,12 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
   try {
     const isLocal = appSession;
     if (isLocal) {
-      const directoryPath =
-        (await openDirectory(t('common.select_directory'))) || '';
-      if (!directoryPath) {
+      const directoryPath
+        = (await openDirectory(t('common.select_directory'))) || '';
+      if (!directoryPath)
         return;
-      }
-      payload['directoryPath'] = directoryPath;
+
+      payload.directoryPath = directoryPath;
     }
 
     const result = await exportReportData(payload);
@@ -123,34 +122,35 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
         description: result
           ? t('profit_loss_reports.debug.export_message.success')
           : t('profit_loss_reports.debug.export_message.failure'),
-        success: !!result
+        success: !!result,
       };
-    } else {
+    }
+    else {
       downloadFileByTextContent(
         JSON.stringify(result, null, 2),
         'pnl_debug.json',
-        'application/json'
+        'application/json',
       );
     }
-  } catch (e: any) {
+  }
+  catch (error: any) {
     message = {
       title: t('profit_loss_reports.debug.export_message.title'),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
   }
 
-  if (message) {
+  if (message)
     setMessage(message);
-  }
-};
+}
 
 const { importReportData, uploadReportData } = useReportsApi();
 
-const importData = async () => {
-  if (!get(reportDebugData)) {
+async function importData() {
+  if (!get(reportDebugData))
     return;
-  }
+
   set(importDataLoading, true);
 
   let success: boolean;
@@ -165,14 +165,15 @@ const importData = async () => {
       : await uploadReportData(get(reportDebugData)!);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: t('profit_loss_reports.debug.import_message.title')
+      title: t('profit_loss_reports.debug.import_message.title'),
     });
     success = result;
-  } catch (e: any) {
-    if (isTaskCancelled(e)) {
+  }
+  catch (error: any) {
+    if (isTaskCancelled(error))
       return fetchReports();
-    }
-    message = e.message;
+
+    message = error.message;
     success = false;
   }
 
@@ -180,14 +181,15 @@ const importData = async () => {
     setMessage({
       title: t('profit_loss_reports.debug.import_message.title'),
       description: t('profit_loss_reports.debug.import_message.failure', {
-        message
-      })
+        message,
+      }),
     });
-  } else {
+  }
+  else {
     setMessage({
       title: t('profit_loss_reports.debug.import_message.title'),
       description: t('profit_loss_reports.debug.import_message.success'),
-      success: true
+      success: true,
     });
     await fetchReports();
   }
@@ -195,7 +197,7 @@ const importData = async () => {
   set(importDataLoading, false);
   get(reportDebugDataUploader)?.removeFile();
   set(reportDebugData, null);
-};
+}
 
 const processingState = computed(() => reportsStore.processingState);
 const progress = computed(() => reportsStore.progress);
@@ -218,22 +220,38 @@ const progress = computed(() => reportsStore.progress);
       :subtitle="t('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
-        <RuiButton variant="text" class="mt-2" @click="clearError()">
+        <RuiButton
+          variant="text"
+          class="mt-2"
+          @click="clearError()"
+        >
           {{ t('common.actions.close') }}
         </RuiButton>
       </template>
     </ErrorScreen>
-    <ReportsTable v-show="!isRunning && !reportError.message" class="mt-8" />
-    <ProgressScreen v-if="isRunning" :progress="progress">
+    <ReportsTable
+      v-show="!isRunning && !reportError.message"
+      class="mt-8"
+    />
+    <ProgressScreen
+      v-if="isRunning"
+      :progress="progress"
+    >
       <template #message>
-        <div v-if="processingState" class="medium text-h6 mb-4">
+        <div
+          v-if="processingState"
+          class="medium text-h6 mb-4"
+        >
           {{ processingState }}
         </div>
         {{ t('profit_loss_report.loading_message') }}
       </template>
       {{ t('profit_loss_report.loading_hint') }}
     </ProgressScreen>
-    <VDialog v-model="importDataDialog" max-width="600">
+    <VDialog
+      v-model="importDataDialog"
+      max-width="600"
+    >
       <RuiCard>
         <template #header>
           {{ t('profit_loss_reports.debug.import_data_dialog.title') }}

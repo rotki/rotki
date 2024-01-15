@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type Tag, type TagEvent } from '@/types/tags';
 import { toMessages } from '@/utils/validation';
+import type { Tag, TagEvent } from '@/types/tags';
 
 const props = defineProps<{
   tag: Tag;
@@ -26,49 +26,49 @@ const rules = {
   name: {
     required: helpers.withMessage(
       t('tag_creator.validation.empty_name'),
-      required
-    )
+      required,
+    ),
   },
   description: {
-    optional: () => true
-  }
+    optional: () => true,
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
     name,
-    description
+    description,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
-const changed = (event: TagEvent) => {
+function changed(event: TagEvent) {
   emit('update:tag', {
     ...props.tag,
-    ...event
+    ...event,
   });
-};
+}
 
-const save = async () => {
+async function save() {
   const v = get(v$);
-  if (!(await v.$validate())) {
+  if (!(await v.$validate()))
     return;
-  }
+
   emit('save', props.tag);
-};
+}
 
-const cancel = async () => {
+async function cancel() {
   emit('cancel');
-};
+}
 
-const randomize = () => {
+function randomize() {
   const backgroundColor = randomColor();
   changed({
     backgroundColor,
-    foregroundColor: invertColor(backgroundColor)
+    foregroundColor: invertColor(backgroundColor),
   });
-};
+}
 
 watch(tag, () => {
   get(v$).$reset();
@@ -78,7 +78,10 @@ watch(tag, () => {
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex items-center gap-4">
-      <TagIcon class="min-w-[7rem]" :tag="tag" />
+      <TagIcon
+        class="min-w-[7rem]"
+        :tag="tag"
+      />
       <RuiTooltip :popper="{ placement: 'bottom' }">
         <template #activator>
           <RuiButton
@@ -147,7 +150,11 @@ watch(tag, () => {
     </div>
 
     <div class="flex justify-end gap-4">
-      <RuiButton v-if="editMode" width="100" @click="cancel()">
+      <RuiButton
+        v-if="editMode"
+        width="100"
+        @click="cancel()"
+      >
         {{ t('common.actions.cancel') }}
       </RuiButton>
       <RuiButton

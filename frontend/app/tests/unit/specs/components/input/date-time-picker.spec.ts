@@ -1,7 +1,7 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -12,11 +12,11 @@ import VAutocompleteStub from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn().mockReturnValue({ other: {} })
-  })
+    setSettings: vi.fn().mockReturnValue({ other: {} }),
+  }),
 }));
 
-describe('DateTimePicker.vue', () => {
+describe('dateTimePicker.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<DateTimePicker>;
   let store: ReturnType<typeof useFrontendSettingsStore>;
@@ -38,15 +38,15 @@ describe('DateTimePicker.vue', () => {
       vuetify,
       stubs: {
         VMenu: {
-          template: '<span><slot name="activator"/><slot /></span>'
+          template: '<span><slot name="activator"/><slot /></span>',
         },
-        VAutocomplete: VAutocompleteStub
+        VAutocomplete: VAutocompleteStub,
       },
-      ...options
+      ...options,
     });
   };
 
-  test('should show indicator when format is wrong', async () => {
+  it('should show indicator when format is wrong', async () => {
     wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
@@ -63,7 +63,7 @@ describe('DateTimePicker.vue', () => {
     expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
   });
 
-  test('should allow seconds value to be optional', async () => {
+  it('should allow seconds value to be optional', async () => {
     wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
@@ -72,11 +72,11 @@ describe('DateTimePicker.vue', () => {
     expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
   });
 
-  test('should allow milliseconds value to be also inputted', async () => {
+  it('should allow milliseconds value to be also inputted', async () => {
     wrapper = createWrapper({
       propsData: {
-        milliseconds: true
-      }
+        milliseconds: true,
+      },
     });
     await wrapper.vm.$nextTick();
 
@@ -86,7 +86,7 @@ describe('DateTimePicker.vue', () => {
     expect(wrapper.emitted().input?.[0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
-  test('should show trim value when the length of the input exceed the max length allowed', async () => {
+  it('should show trim value when the length of the input exceed the max length allowed', async () => {
     wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
@@ -100,19 +100,19 @@ describe('DateTimePicker.vue', () => {
     await wrapper.find('input').trigger('focus');
     await wrapper.vm.$nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '12/12/2021 12:12:12'
+      '12/12/2021 12:12:12',
     );
     expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
   });
 
-  test('should not allow future datetime', async () => {
+  it('should not allow future datetime', async () => {
     const date = new Date(2023, 0, 1);
 
     vi.useFakeTimers();
     vi.setSystemTime(date);
 
     wrapper = createWrapper({
-      propsData: { limitNow: true }
+      propsData: { limitNow: true },
     });
     await wrapper.vm.$nextTick();
 
@@ -125,14 +125,14 @@ describe('DateTimePicker.vue', () => {
     expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
   });
 
-  test('should set now', async () => {
+  it('should set now', async () => {
     const date = new Date(2023, 0, 1, 1, 1, 1);
 
     vi.useFakeTimers();
     vi.setSystemTime(date);
 
     wrapper = createWrapper({
-      propsData: { limitNow: true }
+      propsData: { limitNow: true },
     });
     await wrapper.vm.$nextTick();
 
@@ -143,24 +143,24 @@ describe('DateTimePicker.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '01/01/2023 01:01:01'
+      '01/01/2023 01:01:01',
     );
     expect(wrapper.emitted().input?.[0]).toEqual(['01/01/2023 01:01:01']);
   });
 
-  test('should work with format YYYY-MM-DD', async () => {
+  it('should work with format YYYY-MM-DD', async () => {
     store = useFrontendSettingsStore(pinia);
     await store.updateSetting({
-      dateInputFormat: DateFormat.YearMonthDateHourMinuteSecond
+      dateInputFormat: DateFormat.YearMonthDateHourMinuteSecond,
     });
 
     wrapper = createWrapper({
-      propsData: { value: '12/12/2021 12:12:12' }
+      propsData: { value: '12/12/2021 12:12:12' },
     });
 
     await wrapper.vm.$nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '2021/12/12 12:12:12'
+      '2021/12/12 12:12:12',
     );
 
     await wrapper.find('input').setValue('2023/06/06 12:12:12');
@@ -174,13 +174,13 @@ describe('DateTimePicker.vue', () => {
     it('should render and emit the value correctly', async () => {
       wrapper = createWrapper({
         propsData: {
-          value: '12/12/2021 12:12:12'
-        }
+          value: '12/12/2021 12:12:12',
+        },
       });
 
       await wrapper.vm.$nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-        '12/12/2021 12:12:12'
+        '12/12/2021 12:12:12',
       );
 
       await wrapper
@@ -188,7 +188,7 @@ describe('DateTimePicker.vue', () => {
         .trigger('input', { value: 'Etc/GMT-7' });
       await wrapper.vm.$nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-        '12/12/2021 19:12:12'
+        '12/12/2021 19:12:12',
       );
 
       await wrapper.find('input').setValue('12/12/2021 23:59:59');
@@ -206,7 +206,7 @@ describe('DateTimePicker.vue', () => {
       vi.setSystemTime(date);
 
       wrapper = createWrapper({
-        propsData: { limitNow: true }
+        propsData: { limitNow: true },
       });
       await wrapper.vm.$nextTick();
 
@@ -234,14 +234,14 @@ describe('DateTimePicker.vue', () => {
       expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
     });
 
-    it('should not allow future datetime', async () => {
+    it('should set input in the correct timezone', async () => {
       const date = new Date(2023, 0, 1, 5, 5, 5);
 
       vi.useFakeTimers();
       vi.setSystemTime(date);
 
       wrapper = createWrapper({
-        propsData: { limitNow: true }
+        propsData: { limitNow: true },
       });
       await wrapper.vm.$nextTick();
 
@@ -257,7 +257,7 @@ describe('DateTimePicker.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-        '01/01/2023 06:05:05'
+        '01/01/2023 06:05:05',
       );
       expect(wrapper.emitted().input?.[0]).toEqual(['01/01/2023 05:05:05']);
     });

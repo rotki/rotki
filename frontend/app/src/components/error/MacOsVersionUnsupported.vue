@@ -9,7 +9,11 @@ const { closeApp } = useInterop();
     :header="t('macos_unsupported.header')"
     :alternative="t('macos_unsupported.message')"
   >
-    <RuiButton depressed color="primary" @click="closeApp()">
+    <RuiButton
+      depressed
+      color="primary"
+      @click="closeApp()"
+    >
       {{ t('common.actions.terminate') }}
     </RuiButton>
   </ErrorScreen>

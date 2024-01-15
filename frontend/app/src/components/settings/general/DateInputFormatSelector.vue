@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { DateFormat } from '@/types/date-format';
 
 const rootAttrs = useAttrs();
 
 const selections = [
   {
-    value: DateFormat.DateMonthYearHourMinuteSecond
+    value: DateFormat.DateMonthYearHourMinuteSecond,
   },
   {
-    value: DateFormat.MonthDateYearHourMinuteSecond
+    value: DateFormat.MonthDateYearHourMinuteSecond,
   },
   {
-    value: DateFormat.YearMonthDateHourMinuteSecond
-  }
+    value: DateFormat.YearMonthDateHourMinuteSecond,
+  },
 ];
 
-const dateInputFormatExample = (format: DateFormat): string =>
-  displayDateFormatter.format(new Date(), format);
+function dateInputFormatExample(format: DateFormat): string {
+  return displayDateFormatter.format(new Date(), format);
+}
 
 const { t } = useI18n();
 </script>
@@ -43,7 +44,7 @@ const { t } = useI18n();
         :title="item.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {
-            format: dateInputFormatExample(item.value)
+            format: dateInputFormatExample(item.value),
           })
         "
         v-on="on"

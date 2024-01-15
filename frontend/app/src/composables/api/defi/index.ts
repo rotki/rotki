@@ -1,15 +1,15 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import {
   fetchExternalAsync,
   handleResponse,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
-import { type SupportedModule } from '@/types/modules';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { PendingTask } from '@/types/task';
+import type { SupportedModule } from '@/types/modules';
 
-export const useDefiApi = () => {
+export function useDefiApi() {
   const fetchAllDefi = async (): Promise<PendingTask> =>
     fetchExternalAsync(api.instance, '/blockchains/eth/defi');
 
@@ -18,27 +18,27 @@ export const useDefiApi = () => {
       '/blockchains/eth/airdrops',
       {
         params: snakeCaseTransformer({
-          asyncQuery: true
+          asyncQuery: true,
         }),
-        validateStatus: validWithSessionAndExternalService
-      }
+        validateStatus: validWithSessionAndExternalService,
+      },
     );
 
     return handleResponse(response);
   };
 
   const fetchAirdropsMetadata = async (): Promise<SupportedModule[]> => {
-    const response =
-      await api.instance.get<ActionResult<SupportedModule[]>>(
-        '/airdrops/metadata'
+    const response
+      = await api.instance.get<ActionResult<SupportedModule[]>>(
+        '/airdrops/metadata',
       );
 
     return handleResponse(response);
   };
 
   const fetchDefiMetadata = async (): Promise<SupportedModule[]> => {
-    const response =
-      await api.instance.get<ActionResult<SupportedModule[]>>('/defi/metadata');
+    const response
+      = await api.instance.get<ActionResult<SupportedModule[]>>('/defi/metadata');
 
     return handleResponse(response);
   };
@@ -47,6 +47,6 @@ export const useDefiApi = () => {
     fetchAllDefi,
     fetchAirdrops,
     fetchAirdropsMetadata,
-    fetchDefiMetadata
+    fetchDefiMetadata,
   };
-};
+}

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import { type DataTableHeader } from 'vuetify';
-import { type Ref } from 'vue';
-import {
-  type AccountingRuleConflict,
-  type AccountingRuleConflictRequestPayload,
-  type AccountingRuleConflictResolution
+import type { DataTableHeader } from 'vuetify';
+import type { Ref } from 'vue';
+import type {
+  AccountingRuleConflict,
+  AccountingRuleConflictRequestPayload,
+  AccountingRuleConflictResolution,
 } from '@/types/settings/accounting';
-import { type Collection } from '@/types/collection';
-import { type ConflictResolution } from '@/types/asset';
-import { type ConflictResolutionStrategy } from '@/types/common';
+import type { Collection } from '@/types/collection';
+import type { ConflictResolution } from '@/types/asset';
+import type { ConflictResolutionStrategy } from '@/types/common';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -18,13 +18,13 @@ const emit = defineEmits<{
 
 const close = () => emit('close');
 
-const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } =
-  useAccountingSettings();
+const { getAccountingRulesConflicts, resolveAccountingRuleConflicts }
+  = useAccountingSettings();
 
 const { t } = useI18n();
 
-const { state, isLoading, options, fetchData, setOptions, setPage } =
-  usePaginationFilters<
+const { state, isLoading, options, fetchData, setOptions, setPage }
+  = usePaginationFilters<
     AccountingRuleConflict,
     AccountingRuleConflictRequestPayload,
     AccountingRuleConflict,
@@ -36,9 +36,9 @@ const { state, isLoading, options, fetchData, setOptions, setPage } =
       matchers: computed(() => []),
       filters: ref(undefined),
       updateFilter: () => {},
-      RouteFilterSchema: z.object({})
+      RouteFilterSchema: z.object({}),
     }),
-    getAccountingRulesConflicts
+    getAccountingRulesConflicts,
   );
 
 onMounted(() => {
@@ -48,28 +48,28 @@ onMounted(() => {
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
-      'accounting_settings.rule.labels.event_subtype'
+      'accounting_settings.rule.labels.event_subtype',
     )}`,
     value: 'eventTypeAndSubtype',
     class: 'whitespace-break-spaces',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('transactions.events.form.resulting_combination.label'),
     value: 'resultingCombination',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('accounting_settings.rule.labels.counterparty'),
     value: 'counterparty',
     class: 'border-r border-default',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('accounting_settings.rule.labels.taxable'),
     value: 'taxable',
     sortable: false,
-    class: 'px-2'
+    class: 'px-2',
   },
   {
     text: t('accounting_settings.rule.labels.count_entire_amount_spend'),
@@ -77,7 +77,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false,
     width: '120px',
     class: 'px-2',
-    align: 'center'
+    align: 'center',
   },
   {
     text: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
@@ -85,49 +85,49 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false,
     width: '120px',
     class: 'px-2',
-    align: 'center'
+    align: 'center',
   },
   {
     text: t('accounting_settings.rule.labels.accounting_treatment'),
     value: 'accountingTreatment',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('accounting_settings.rule.conflicts.labels.choose_version'),
     value: 'actions',
     align: 'center',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } =
-  useHistoryEventMappings();
+const { historyEventTypesData, historyEventSubTypesData, getEventTypeData }
+  = useHistoryEventMappings();
 
-const getHistoryEventTypeName = (eventType: string): string =>
-  get(historyEventTypesData).find(item => item.identifier === eventType)
+function getHistoryEventTypeName(eventType: string): string {
+  return get(historyEventTypesData).find(item => item.identifier === eventType)
     ?.label ?? toSentenceCase(eventType);
+}
 
-const getHistoryEventSubTypeName = (eventSubtype: string): string =>
-  get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
+function getHistoryEventSubTypeName(eventSubtype: string): string {
+  return get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
     ?.label ?? toSentenceCase(eventSubtype);
+}
 
-const getType = (eventType: string, eventSubtype: string) =>
-  get(
+function getType(eventType: string, eventSubtype: string) {
+  return get(
     getEventTypeData({
       eventType,
-      eventSubtype
-    })
+      eventSubtype,
+    }),
   );
+}
 
-const diffClass = (
-  localSetting: boolean | string,
-  remoteSetting: boolean | string
-) => {
-  if (localSetting !== remoteSetting) {
+function diffClass(localSetting: boolean | string, remoteSetting: boolean | string) {
+  if (localSetting !== remoteSetting)
     return 'bg-rui-error-lighter/[0.2]';
-  }
+
   return '';
-};
+}
 
 const resolution: Ref<ConflictResolution> = ref({});
 const resolutionLength = computed(() => Object.keys(get(resolution)).length);
@@ -147,7 +147,7 @@ const { setMessage } = useMessageStore();
 
 const loading: Ref<boolean> = ref(false);
 
-const save = async () => {
+async function save() {
   set(loading, true);
   const resolutionVal = get(resolution);
   const solveAllVal = get(solveAllUsing);
@@ -155,10 +155,11 @@ const save = async () => {
   let payload: AccountingRuleConflictResolution;
   if (solveAllVal) {
     payload = { solveAllUsing: solveAllVal };
-  } else {
+  }
+  else {
     const conflicts = Object.keys(resolutionVal).map(localId => ({
       localId,
-      solveUsing: resolutionVal[localId]
+      solveUsing: resolutionVal[localId],
     }));
 
     payload = { conflicts };
@@ -169,18 +170,19 @@ const save = async () => {
   if (result.success) {
     emit('refresh');
     close();
-  } else {
+  }
+  else {
     setMessage({
       title: t('accounting_settings.rule.conflicts.error.title'),
       description: t('accounting_settings.rule.conflicts.error.description', {
-        error: result.message
+        error: result.message,
       }),
-      success: false
+      success: false,
     });
   }
 
   set(loading, false);
-};
+}
 </script>
 
 <template>
@@ -214,10 +216,16 @@ const save = async () => {
         :disabled="!solveAllUsing"
       >
         <template #default>
-          <RuiButton value="local" @click="solveAllUsing = 'local'">
+          <RuiButton
+            value="local"
+            @click="solveAllUsing = 'local'"
+          >
             {{ t('conflict_dialog.keep_local') }}
           </RuiButton>
-          <RuiButton value="remote" @click="solveAllUsing = 'remote'">
+          <RuiButton
+            value="remote"
+            @click="solveAllUsing = 'remote'"
+          >
             {{ t('conflict_dialog.keep_remote') }}
           </RuiButton>
         </template>
@@ -225,7 +233,11 @@ const save = async () => {
     </div>
 
     <div class="text-caption pt-4 pb-1">
-      <i18n v-if="!solveAllUsing" path="conflict_dialog.hint" tag="span">
+      <i18n
+        v-if="!solveAllUsing"
+        path="conflict_dialog.hint"
+        tag="span"
+      >
         <template #conflicts>
           <span class="font-medium"> {{ total }} </span>
         </template>
@@ -233,7 +245,11 @@ const save = async () => {
           <span class="font-medium"> {{ remaining }} </span>
         </template>
       </i18n>
-      <i18n v-else path="conflict_dialog.resolve_all_hint" tag="span">
+      <i18n
+        v-else
+        path="conflict_dialog.resolve_all_hint"
+        tag="span"
+      >
         <template #source>
           <span class="font-medium">{{ solveAllUsing }}</span>
         </template>
@@ -265,7 +281,11 @@ const save = async () => {
             >
               <template #activator>
                 <div class="flex items-center text-left gap-2">
-                  <RuiIcon class="shrink-0" size="18" name="information-line" />
+                  <RuiIcon
+                    class="shrink-0"
+                    size="18"
+                    name="information-line"
+                  />
                   {{ t('accounting_settings.rule.labels.taxable') }}
                 </div>
               </template>
@@ -281,17 +301,21 @@ const save = async () => {
             >
               <template #activator>
                 <div class="flex items-center text-left gap-2">
-                  <RuiIcon class="shrink-0" size="18" name="information-line" />
+                  <RuiIcon
+                    class="shrink-0"
+                    size="18"
+                    name="information-line"
+                  />
                   {{
                     t(
-                      'accounting_settings.rule.labels.count_entire_amount_spend'
+                      'accounting_settings.rule.labels.count_entire_amount_spend',
                     )
                   }}
                 </div>
               </template>
               {{
                 t(
-                  'accounting_settings.rule.labels.count_entire_amount_spend_subtitle'
+                  'accounting_settings.rule.labels.count_entire_amount_spend_subtitle',
                 )
               }}
             </RuiTooltip>
@@ -305,7 +329,11 @@ const save = async () => {
             >
               <template #activator>
                 <div class="flex items-center text-left gap-2">
-                  <RuiIcon class="shrink-0" size="18" name="information-line" />
+                  <RuiIcon
+                    class="shrink-0"
+                    size="18"
+                    name="information-line"
+                  />
                   {{
                     t('accounting_settings.rule.labels.count_cost_basis_pnl')
                   }}
@@ -313,13 +341,16 @@ const save = async () => {
               </template>
               {{
                 t(
-                  'accounting_settings.rule.labels.count_cost_basis_pnl_subtitle'
+                  'accounting_settings.rule.labels.count_cost_basis_pnl_subtitle',
                 )
               }}
             </RuiTooltip>
           </template>
           <template #body="{ items }">
-            <tbody v-for="item in items" :key="item.localId">
+            <tbody
+              v-for="item in items"
+              :key="item.localId"
+            >
               <tr>
                 <td rowspan="2">
                   <div>
@@ -336,13 +367,16 @@ const save = async () => {
                     :type="
                       getType(
                         item.localData.eventType,
-                        item.localData.eventSubtype
+                        item.localData.eventSubtype,
                       )
                     "
                     show-label
                   />
                 </td>
-                <td rowspan="2" class="border-r border-default">
+                <td
+                  rowspan="2"
+                  class="border-r border-default"
+                >
                   <HistoryEventTypeCounterparty
                     v-if="item.localData.counterparty"
                     text
@@ -354,7 +388,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.taxable.value,
-                      item.remoteData.taxable.value
+                      item.remoteData.taxable.value,
                     )
                   "
                 >
@@ -367,7 +401,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.taxable.value,
-                      item.remoteData.taxable.value
+                      item.remoteData.taxable.value,
                     )
                   "
                 >
@@ -380,7 +414,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.countCostBasisPnl.value,
-                      item.remoteData.countCostBasisPnl.value
+                      item.remoteData.countCostBasisPnl.value,
                     )
                   "
                 >
@@ -393,7 +427,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.accountingTreatment,
-                      item.remoteData.accountingTreatment
+                      item.remoteData.accountingTreatment,
                     )
                   "
                 >
@@ -412,7 +446,10 @@ const save = async () => {
                     required
                   >
                     <template #default>
-                      <RuiButton value="local" class="w-full">
+                      <RuiButton
+                        value="local"
+                        class="w-full"
+                      >
                         {{ t('conflict_dialog.action.local') }}
                       </RuiButton>
                     </template>
@@ -424,7 +461,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.taxable.value,
-                      item.remoteData.taxable.value
+                      item.remoteData.taxable.value,
                     )
                   "
                 >
@@ -437,7 +474,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.countEntireAmountSpend.value,
-                      item.remoteData.countEntireAmountSpend.value
+                      item.remoteData.countEntireAmountSpend.value,
                     )
                   "
                 >
@@ -450,7 +487,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.countCostBasisPnl.value,
-                      item.remoteData.countCostBasisPnl.value
+                      item.remoteData.countCostBasisPnl.value,
                     )
                   "
                 >
@@ -463,7 +500,7 @@ const save = async () => {
                   :class="
                     diffClass(
                       item.localData.accountingTreatment,
-                      item.remoteData.accountingTreatment
+                      item.remoteData.accountingTreatment,
                     )
                   "
                 >
@@ -482,7 +519,10 @@ const save = async () => {
                     required
                   >
                     <template #default>
-                      <RuiButton value="remote" class="w-full">
+                      <RuiButton
+                        value="remote"
+                        class="w-full"
+                      >
                         {{ t('conflict_dialog.action.remote') }}
                       </RuiButton>
                     </template>

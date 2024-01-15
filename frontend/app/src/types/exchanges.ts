@@ -1,9 +1,9 @@
 import { AssetBalance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type Nullable } from '@/types';
-import { type AssetBalances } from '@/types/balances';
-import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection, CollectionCommonFields } from '@/types/collection';
+import type { Nullable } from '@/types';
+import type { AssetBalances } from '@/types/balances';
+import type { PaginationRequestPayload } from '@/types/common';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
@@ -12,7 +12,7 @@ export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 export const Exchange = z.object({
   location: z.string(),
   name: z.string(),
-  krakenAccountType: KrakenAccountType.optional()
+  krakenAccountType: KrakenAccountType.optional(),
 });
 
 export type Exchange = z.infer<typeof Exchange>;
@@ -52,7 +52,7 @@ export interface ExchangePayload {
 
 const ExchangeSavingsEvent = AssetBalance.extend({
   timestamp: z.number(),
-  location: z.string()
+  location: z.string(),
 });
 
 export type ExchangeSavingsEvent = z.infer<typeof ExchangeSavingsEvent>;
@@ -61,7 +61,7 @@ export const ExchangeSavingsCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(ExchangeSavingsEvent),
   totalUsdValue: NumericString,
   assets: z.array(z.string()),
-  received: z.array(AssetBalance)
+  received: z.array(AssetBalance),
 });
 
 export type ExchangeSavingsCollectionResponse = z.infer<

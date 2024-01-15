@@ -20,7 +20,11 @@ onMounted(async () => await load());
       <AppUpdatePopup />
       <AppCore />
     </AppMessages>
-    <VDialog v-if="showAbout" v-model="showAbout" max-width="500">
+    <VDialog
+      v-if="showAbout"
+      v-model="showAbout"
+      max-width="500"
+    >
       <About />
     </VDialog>
     <FrontendUpdateNotifier v-if="!isPackaged" />

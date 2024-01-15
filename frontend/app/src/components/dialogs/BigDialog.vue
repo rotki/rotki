@@ -22,8 +22,8 @@ const props = withDefaults(
     secondaryAction: () => null,
     confirmType: DialogType.INFO,
     maxWidth: '900px',
-    persistent: false
-  }
+    persistent: false,
+  },
 );
 const emit = defineEmits<{
   (event: 'confirm'): void;
@@ -35,10 +35,10 @@ const { t } = useI18n();
 const { subtitle, primaryAction, secondaryAction } = toRefs(props);
 
 const primary = computed(
-  () => get(primaryAction) || t('common.actions.confirm')
+  () => get(primaryAction) || t('common.actions.confirm'),
 );
 const secondary = computed(
-  () => get(secondaryAction) || t('common.actions.cancel')
+  () => get(secondaryAction) || t('common.actions.cancel'),
 );
 
 const confirm = () => emit('confirm');
@@ -60,9 +60,19 @@ const css = useCssModule();
     @keydown.esc.stop="!persistent && cancel()"
     @input="!persistent && cancel()"
   >
-    <RuiCard data-cy="bottom-dialog" class="!rounded-b-none">
-      <template #header> {{ title }}</template>
-      <template v-if="subtitle" #subheader> {{ subtitle }}</template>
+    <RuiCard
+      data-cy="bottom-dialog"
+      class="!rounded-b-none"
+    >
+      <template #header>
+        {{ title }}
+      </template>
+      <template
+        v-if="subtitle"
+        #subheader
+      >
+        {{ subtitle }}
+      </template>
       <div
         v-if="display"
         class="overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4"

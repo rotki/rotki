@@ -12,8 +12,8 @@ const props = withDefaults(
     truncate: false,
     text: '',
     custom: false,
-    premium: false
-  }
+    premium: false,
+  },
 );
 
 const { url, truncate, text } = toRefs(props);
@@ -22,7 +22,7 @@ const { isPackaged } = useInterop();
 const { href, linkTarget, onLinkClick } = useLinks(url);
 
 const displayText = computed(() =>
-  get(truncate) ? truncateAddress(get(text)) : get(text)
+  get(truncate) ? truncateAddress(get(text)) : get(text),
 );
 
 const attrs = useAttrs();

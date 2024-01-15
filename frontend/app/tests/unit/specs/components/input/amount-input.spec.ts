@@ -1,7 +1,7 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -10,11 +10,11 @@ import createCustomPinia from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn().mockReturnValue({ other: {} })
-  })
+    setSettings: vi.fn().mockReturnValue({ other: {} }),
+  }),
 }));
 
-describe('AmountInput.vue', () => {
+describe('amountInput.vue', () => {
   let wrapper: Wrapper<AmountInput>;
   let store: ReturnType<typeof useFrontendSettingsStore>;
   let pinia: Pinia;
@@ -33,11 +33,11 @@ describe('AmountInput.vue', () => {
     return mount(AmountInput, {
       pinia,
       vuetify,
-      ...options
+      ...options,
     });
   };
 
-  test('should format the numbers', async () => {
+  it('should format the numbers', async () => {
     wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
@@ -45,52 +45,52 @@ describe('AmountInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '100,000'
+      '100,000',
     );
 
     expect(wrapper.emitted().input?.[1]).toEqual(['100000']);
   });
 
-  test('should use prop value', async () => {
+  it('should use prop value', async () => {
     wrapper = createWrapper({
-      propsData: { value: '500000' }
+      propsData: { value: '500000' },
     });
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '500,000'
+      '500,000',
     );
 
     await wrapper.setProps({ value: '100000.123' });
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '100,000.123'
+      '100,000.123',
     );
   });
 
-  test('should works with different thousandSeparator and decimalSeparator', async () => {
+  it('should works with different thousandSeparator and decimalSeparator', async () => {
     store = useFrontendSettingsStore(pinia);
 
     await store.updateSetting({
       thousandSeparator: '.',
-      decimalSeparator: ','
+      decimalSeparator: ',',
     });
 
     wrapper = createWrapper({
-      propsData: { value: '500000' }
+      propsData: { value: '500000' },
     });
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '500.000'
+      '500.000',
     );
 
     await wrapper.setProps({ value: '100000.123' });
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '100.000,123'
+      '100.000,123',
     );
 
     await wrapper.find('input').setValue('');
@@ -102,13 +102,13 @@ describe('AmountInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '500.000,123'
+      '500.000,123',
     );
 
     expect(wrapper.emitted().input?.[3]).toEqual(['500000.123']);
   });
 
-  test('should emit correct value', async () => {
+  it('should emit correct value', async () => {
     wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
@@ -116,7 +116,7 @@ describe('AmountInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '100,000'
+      '100,000',
     );
 
     expect(wrapper.emitted().input?.[1]).toEqual(['100000']);
@@ -132,7 +132,7 @@ describe('AmountInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '5,555'
+      '5,555',
     );
 
     expect(wrapper.emitted().input?.[3]).toEqual(['5555']);

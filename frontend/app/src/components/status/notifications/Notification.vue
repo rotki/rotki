@@ -7,7 +7,7 @@ const props = withDefaults(
     notification: NotificationData;
     popup?: boolean;
   }>(),
-  { popup: false }
+  { popup: false },
 );
 
 const emit = defineEmits<{ (e: 'dismiss', id: number): void }>();
@@ -17,9 +17,10 @@ const { t } = useI18n();
 const { copy: copyToClipboard } = useClipboard();
 
 const { notification } = toRefs(props);
-const dismiss = (id: number) => {
+
+function dismiss(id: number) {
   emit('dismiss', id);
-};
+}
 
 const icon = computed(() => {
   switch (get(notification).severity) {
@@ -57,7 +58,7 @@ const circleBgClass = computed(() => {
 
 const date = computed(() => dayjs(get(notification).date).format('LLL'));
 
-const copy = async () => {
+async function copy() {
   const { message, i18nParam } = get(notification);
   let messageText = message;
 
@@ -65,17 +66,17 @@ const copy = async () => {
     messageText = t(i18nParam.message, {
       service: i18nParam.props.service,
       location: i18nParam.props.location,
-      url: i18nParam.props.url
+      url: i18nParam.props.url,
     }).toString();
   }
   await copyToClipboard(messageText);
-};
+}
 
-const action = async (notification: NotificationData) => {
+async function action(notification: NotificationData) {
   const action = notification.action?.action;
   action?.();
   dismiss(notification.id);
-};
+}
 </script>
 
 <template>
@@ -86,23 +87,38 @@ const action = async (notification: NotificationData) => {
         [css.action]: !!notification.action,
         [css['fixed-height']]: !popup,
         [css[`bg_${color}`]]: !!color,
-        ['!rounded-none']: popup
-      }
+        ['!rounded-none']: popup,
+      },
     ]"
     class="!p-2"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
-    <div :class="css.body" class="flex-col items-stretch p-0">
+    <div
+      :class="css.body"
+      class="flex-col items-stretch p-0"
+    >
       <div class="flex pb-1 items-center overflow-hidden">
-        <div class="mr-3 ml-1 my-0 rounded-full p-2" :class="circleBgClass">
-          <RuiIcon size="24" class="text-white" :name="icon" />
+        <div
+          class="mr-3 ml-1 my-0 rounded-full p-2"
+          :class="circleBgClass"
+        >
+          <RuiIcon
+            size="24"
+            class="text-white"
+            :name="icon"
+          />
         </div>
         <div class="flex-1 text-truncate">
-          <div class="font-medium text-truncate" :title="notification.title">
+          <div
+            class="font-medium text-truncate"
+            :title="notification.title"
+          >
             {{ notification.title }}
           </div>
-          <div class="text-caption text-rui-text-secondary">{{ date }}</div>
+          <div class="text-caption text-rui-text-secondary">
+            {{ date }}
+          </div>
         </div>
         <RuiTooltip
           :popper="{ placement: 'bottom', offsetDistance: 0 }"
@@ -110,7 +126,11 @@ const action = async (notification: NotificationData) => {
           class="z-[9999]"
         >
           <template #activator>
-            <RuiButton variant="text" icon @click="dismiss(notification.id)">
+            <RuiButton
+              variant="text"
+              icon
+              @click="dismiss(notification.id)"
+            >
               <RuiIcon name="close-line" />
             </RuiButton>
           </template>
@@ -125,13 +145,20 @@ const action = async (notification: NotificationData) => {
           v-if="notification.i18nParam"
           :params="notification.i18nParam"
         />
-        <div v-else :title="notification.message" class="h-full">
+        <div
+          v-else
+          :title="notification.message"
+          class="h-full"
+        >
           {{ notification.message }}
         </div>
       </div>
       <slot />
       <div class="flex mt-auto items-center mx-0.5">
-        <div v-if="notification.action" class="flex items-start mr-2">
+        <div
+          v-if="notification.action"
+          class="flex items-start mr-2"
+        >
           <RuiButton
             color="primary"
             variant="text"
@@ -140,7 +167,10 @@ const action = async (notification: NotificationData) => {
           >
             {{ notification.action.label }}
             <template #append>
-              <RuiIcon name="arrow-right-line" size="16" />
+              <RuiIcon
+                name="arrow-right-line"
+                size="16"
+              />
             </template>
           </RuiButton>
         </div>
@@ -150,10 +180,18 @@ const action = async (notification: NotificationData) => {
           class="z-[9999]"
         >
           <template #activator>
-            <RuiButton color="primary" variant="text" size="sm" @click="copy()">
+            <RuiButton
+              color="primary"
+              variant="text"
+              size="sm"
+              @click="copy()"
+            >
               {{ t('notification.copy') }}
               <template #append>
-                <RuiIcon name="file-copy-line" size="16" />
+                <RuiIcon
+                  name="file-copy-line"
+                  size="16"
+                />
               </template>
             </RuiButton>
           </template>

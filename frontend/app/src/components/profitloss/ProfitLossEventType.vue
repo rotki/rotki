@@ -13,7 +13,10 @@ const label = useRefMap(data, ({ label }) => label);
 
 <template>
   <span class="flex items-center flex-col text-no-wrap gap-1">
-    <RuiIcon :name="icon" color="secondary" />
+    <RuiIcon
+      :name="icon"
+      color="secondary"
+    />
     {{ label }}
   </span>
 </template>

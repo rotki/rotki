@@ -23,17 +23,17 @@ interface BlockieOptions {
 
 const randSeed = new Array(4); // Xorshift: [x, y, z, w] 32 bit values
 
-const seedRand = (seed: string) => {
-  for (let i = 0; i < randSeed.length; i++) {
+function seedRand(seed: string) {
+  for (let i = 0; i < randSeed.length; i++)
     randSeed[i] = 0;
-  }
-  for (let i = 0; i < seed.length; i++) {
-    randSeed[i % 4] =
-      (randSeed[i % 4] << 5) - randSeed[i % 4] + seed.charCodeAt(i);
-  }
-};
 
-const rand = () => {
+  for (let i = 0; i < seed.length; i++) {
+    randSeed[i % 4]
+      = (randSeed[i % 4] << 5) - randSeed[i % 4] + seed.charCodeAt(i);
+  }
+}
+
+function rand() {
   // based on Java's String.hashCode(), expanded to 4 32bit values
   const t = randSeed[0] ^ (randSeed[0] << 11);
 
@@ -43,20 +43,20 @@ const rand = () => {
   randSeed[3] = randSeed[3] ^ (randSeed[3] >> 19) ^ t ^ (t >> 8);
 
   return (randSeed[3] >>> 0) / ((1 << 31) >>> 0);
-};
+}
 
-const createColor = () => {
-  //saturation is the whole color spectrum
+function createColor() {
+  // saturation is the whole color spectrum
   const h = Math.floor(rand() * 360);
-  //saturation goes from 40 to 100, it avoids greyish colors
+  // saturation goes from 40 to 100, it avoids greyish colors
   const s = `${rand() * 60 + 40}%`;
-  //lightness can be anything from 0 to 100, but probabilities are a bell curve around 50%
+  // lightness can be anything from 0 to 100, but probabilities are a bell curve around 50%
   const l = `${(rand() + rand() + rand() + rand()) * 25}%`;
 
   return `hsl(${h},${s},${l})`;
-};
+}
 
-const createImageData = (size: number) => {
+function createImageData(size: number) {
   const width = size; // Only support square icons for now
   const height = size;
 
@@ -75,22 +75,20 @@ const createImageData = (size: number) => {
     r.reverse();
     row = row.concat(r);
 
-    for (const element of row) {
+    for (const element of row)
       data.push(element);
-    }
   }
 
   return data;
-};
+}
 
-const buildOpts = (opts: Partial<BlockieOptions>): BlockieOptions => {
+function buildOpts(opts: Partial<BlockieOptions>): BlockieOptions {
   const newOpts: Partial<BlockieOptions> = {};
 
   newOpts.seed = opts.seed || Math.floor(Math.random() * 10 ** 16).toString(16);
 
   seedRand(newOpts.seed);
 
-  // eslint-disable-next-line unicorn/explicit-length-check
   newOpts.size = opts.size || 8;
   newOpts.scale = opts.scale || 4;
   newOpts.color = opts.color || createColor();
@@ -98,12 +96,9 @@ const buildOpts = (opts: Partial<BlockieOptions>): BlockieOptions => {
   newOpts.spotColor = opts.spotColor || createColor();
 
   return newOpts as BlockieOptions;
-};
+}
 
-const renderIcon = (
-  opts: Partial<BlockieOptions>,
-  canvas: HTMLCanvasElement
-) => {
+function renderIcon(opts: Partial<BlockieOptions>, canvas: HTMLCanvasElement) {
   const newOpts: BlockieOptions = buildOpts(opts || {});
   const imageData = createImageData(newOpts.size);
   const width = Math.sqrt(imageData.length);
@@ -129,19 +124,19 @@ const renderIcon = (
           col * newOpts.scale,
           row * newOpts.scale,
           newOpts.scale,
-          newOpts.scale
+          newOpts.scale,
         );
       }
     }
   }
 
   return canvas;
-};
+}
 
-export const createBlockie = (opts: Partial<BlockieOptions>): string => {
+export function createBlockie(opts: Partial<BlockieOptions>): string {
   const canvas = document.createElement('canvas');
 
   renderIcon(opts, canvas);
 
   return canvas.toDataURL('image/jpeg');
-};
+}

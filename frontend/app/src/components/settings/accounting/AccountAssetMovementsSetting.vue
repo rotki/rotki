@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const accountForAssetsMovements = ref(false);
 const { accountForAssetsMovements: enabled } = storeToRefs(
-  useAccountingSettingsStore()
+  useAccountingSettingsStore(),
 );
 
 onMounted(() => {

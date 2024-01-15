@@ -1,52 +1,52 @@
 import {
   camelCaseTransformer,
   noRootCamelCaseTransformer,
-  snakeCaseTransformer
+  snakeCaseTransformer,
 } from '@/services/axios-tranformers';
 
 describe('axios transformers', () => {
-  test('transform json to camelCase', async () => {
-    const json =
-      '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
+  it('transform json to camelCase', async () => {
+    const json
+      = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
     expect(camelCaseTransformer(parsed)).toMatchObject({
       amount: '10',
       testLabel: 'label',
-      data: [{ amount: '2', usdValue: '10' }]
+      data: [{ amount: '2', usdValue: '10' }],
     });
   });
 
-  test('transform object to snake_case', async () => {
+  it('transform object to snake_case', async () => {
     const object = {
       data: [{ usdValue: bigNumberify(10) }, { usdValue: bigNumberify(11) }],
-      label: 'test'
+      label: 'test',
     };
 
     expect(JSON.stringify(snakeCaseTransformer(object))).toMatch(
-      '{"data":[{"usd_value":"10"},{"usd_value":"11"}],"label":"test"}'
+      '{"data":[{"usd_value":"10"},{"usd_value":"11"}],"label":"test"}',
     );
   });
 
-  test('transform capital to snake_case', async () => {
+  it('transform capital to snake_case', async () => {
     const object = {
       ETH: 1,
-      BTC: 2
+      BTC: 2,
     };
 
     expect(JSON.stringify(snakeCaseTransformer(object))).toMatch(
-      '{"ETH":1,"BTC":2}'
+      '{"ETH":1,"BTC":2}',
     );
   });
 
-  test('transformer no root', () => {
+  it('transformer no root', () => {
     const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
     const parsed = JSON.parse(json);
     const transformed = noRootCamelCaseTransformer(parsed);
     expect(transformed).toMatchObject({
       _amount_: {
         aCbc: '1',
-        aAbc: '2'
-      }
+        aAbc: '2',
+      },
     });
   });
 });

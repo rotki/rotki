@@ -9,28 +9,32 @@ const rules = {
   floatingPrecision: {
     required: helpers.withMessage(
       t('general_settings.validation.floating_precision.non_empty'),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { floatingPrecision: current } = storeToRefs(useGeneralSettingsStore());
 const v$ = useVuelidate(rules, { floatingPrecision }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const resetFloatingPrecision = () => {
+function resetFloatingPrecision() {
   set(floatingPrecision, get(current).toString());
-};
+}
 
 const transform = (value?: string) => (value ? Number.parseInt(value) : value);
-const errorMessage = (precision: string) =>
-  t('general_settings.validation.floating_precision.error', {
-    precision
+
+function errorMessage(precision: string) {
+  return t('general_settings.validation.floating_precision.error', {
+    precision,
   });
-const successMessage = (precision: string) =>
-  t('general_settings.validation.floating_precision.success', {
-    precision
+}
+
+function successMessage(precision: string) {
+  return t('general_settings.validation.floating_precision.success', {
+    precision,
   });
+}
 
 onMounted(() => {
   resetFloatingPrecision();

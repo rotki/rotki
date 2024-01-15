@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ExchangePayload } from '@/types/exchanges';
+import type { ExchangePayload } from '@/types/exchanges';
 
 defineProps<{
   editMode: boolean;
@@ -15,9 +15,9 @@ const { t } = useI18n();
 
 const { openDialog, submitting, trySubmit } = useExchangeApiKeysForm();
 
-const resetForm = () => {
+function resetForm() {
   emit('reset');
-};
+}
 </script>
 
 <template>

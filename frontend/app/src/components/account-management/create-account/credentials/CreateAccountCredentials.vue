@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { type Ref } from 'vue';
-import { type LoginCredentials } from '@/types/login';
+import type { Ref } from 'vue';
+import type { LoginCredentials } from '@/types/login';
 
 withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ withDefaults(
     userPrompted: boolean;
   }>(),
   {
-    syncDatabase: false
-  }
+    syncDatabase: false,
+  },
 );
 
 const emit = defineEmits<{

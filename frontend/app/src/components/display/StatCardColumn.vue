@@ -3,7 +3,7 @@ withDefaults(
   defineProps<{
     premiumOnly?: boolean;
   }>(),
-  { premiumOnly: false }
+  { premiumOnly: false },
 );
 
 const premium = usePremium();
@@ -16,7 +16,10 @@ const premium = usePremium();
     </dt>
     <dd class="text-rui-text text-h5 font-bold">
       <slot v-if="premium || !premiumOnly" />
-      <PremiumLock v-else size="sm" />
+      <PremiumLock
+        v-else
+        size="sm"
+      />
     </dd>
   </dl>
 </template>

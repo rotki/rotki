@@ -9,7 +9,7 @@ const LOG_LEVEL = 'info';
 /** @type {import('vite').InlineConfig} */
 const sharedConfig = {
   mode,
-  logLevel: LOG_LEVEL
+  logLevel: LOG_LEVEL,
 };
 
 // in some systems the virtualenv's python is not detected from inside electron and the
@@ -21,12 +21,12 @@ if (process.env.VIRTUAL_ENV) {
   process.env.PATH = process.env.VIRTUAL_ENV.concat(
     path.sep,
     process.platform === 'win32' ? 'Scripts;' : 'bin:',
-    process.env.PATH
+    process.env.PATH,
   );
 }
 
 module.exports = {
   mode,
   LOG_LEVEL,
-  sharedConfig
+  sharedConfig,
 };

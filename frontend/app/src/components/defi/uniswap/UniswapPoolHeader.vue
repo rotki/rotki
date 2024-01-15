@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { type LpType } from '@rotki/common/lib/defi';
+import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
+import type { LpType } from '@rotki/common/lib/defi';
 
 const props = defineProps<{
   item: XswapBalance;
@@ -14,7 +14,10 @@ const assets = computed(() => props.item.assets.map(({ asset }) => asset));
 <template>
   <LpPoolHeader>
     <template #icon>
-      <LpPoolIcon :assets="assets" :type="lpType" />
+      <LpPoolIcon
+        :assets="assets"
+        :type="lpType"
+      />
     </template>
     <template #name>
       {{ getPoolName(lpType, assets) }}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Suggestion } from '@/types/filtering';
 import { truncateAddress } from '@/utils/truncate';
+import type { Suggestion } from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -8,8 +8,8 @@ const props = withDefaults(
     chip?: boolean;
   }>(),
   {
-    chip: false
-  }
+    chip: false,
+  },
 );
 
 const { suggestion } = toRefs(props);
@@ -27,26 +27,21 @@ const displayValue = computed(() => {
   const item = get(suggestion);
   const value = item.value;
 
-  if (get(isBoolean)) {
+  if (get(isBoolean))
     return `${value}`;
-  }
 
-  if (!item.asset) {
+  if (!item.asset)
     return value;
-  }
 
   let usedAsset = value;
-  if (typeof usedAsset === 'string') {
+  if (typeof usedAsset === 'string')
     usedAsset = get(assetInfo(value));
-  }
 
-  if (!usedAsset) {
+  if (!usedAsset)
     return value;
-  }
 
-  if (usedAsset.evmChain) {
+  if (usedAsset.evmChain)
     return `${usedAsset.symbol} (${usedAsset.evmChain})`;
-  }
 
   return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
 });
@@ -63,7 +58,7 @@ const css = useCssModule();
       <span
         :class="{
           [css.comparator]: chip,
-          ['text-rui-primary']: !chip
+          ['text-rui-primary']: !chip,
         }"
         class="px-1"
       >

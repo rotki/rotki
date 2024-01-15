@@ -1,15 +1,17 @@
 import { CompoundBalances, CompoundStats } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { TaskMeta } from '@/types/task';
 
-const defaultCompoundStats = (): CompoundStats => ({
-  debtLoss: {},
-  interestProfit: {},
-  rewards: {},
-  liquidationProfit: {}
-});
+function defaultCompoundStats(): CompoundStats {
+  return {
+    debtLoss: {},
+    interestProfit: {},
+    rewards: {},
+    liquidationProfit: {},
+  };
+}
 
 export const useCompoundStore = defineStore('defi/compound', () => {
   const balances: Ref<CompoundBalances> = ref({});
@@ -23,26 +25,24 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { fetchCompoundBalances, fetchCompoundStats } = useCompoundApi();
 
   const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(
-    Section.DEFI_COMPOUND_BALANCES
+    Section.DEFI_COMPOUND_BALANCES,
   );
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() =>
-    toProfitLossModel(get(history).interestProfit)
+    toProfitLossModel(get(history).interestProfit),
   );
   const debtLoss = computed(() => toProfitLossModel(get(history).debtLoss));
   const liquidationProfit = computed(() =>
-    toProfitLossModel(get(history).liquidationProfit)
+    toProfitLossModel(get(history).liquidationProfit),
   );
 
   const fetchBalances = async (refresh = false): Promise<void> => {
-    if (!get(activeModules).includes(Module.COMPOUND)) {
+    if (!get(activeModules).includes(Module.COMPOUND))
       return;
-    }
 
-    if (fetchDisabled(refresh)) {
+    if (fetchDisabled(refresh))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
@@ -54,18 +54,19 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: t('actions.defi.compound.task.title')
-        }
+          title: t('actions.defi.compound.task.title'),
+        },
       );
       set(balances, CompoundBalances.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         notify({
           title: t('actions.defi.compound.error.title'),
           message: t('actions.defi.compound.error.description', {
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
     }
@@ -73,15 +74,13 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   };
 
   const fetchStats = async (refresh = false): Promise<void> => {
-    if (!get(activeModules).includes(Module.COMPOUND) || !get(premium)) {
+    if (!get(activeModules).includes(Module.COMPOUND) || !get(premium))
       return;
-    }
 
     const section = Section.DEFI_COMPOUND_STATS;
 
-    if (fetchDisabled(refresh, section)) {
+    if (fetchDisabled(refresh, section))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
@@ -93,20 +92,21 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: t('actions.defi.compound_history.task.title')
-        }
+          title: t('actions.defi.compound_history.task.title'),
+        },
       );
 
       set(history, CompoundStats.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
         notify({
           title: t('actions.defi.compound_history.error.title'),
           message: t('actions.defi.compound_history.error.description', {
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
     }
@@ -121,7 +121,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   };
 
   const addresses: ComputedRef<string[]> = computed(() =>
-    getProtocolAddresses(get(balances), get(history))
+    getProtocolAddresses(get(balances), get(history)),
   );
 
   return {
@@ -134,10 +134,9 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     addresses,
     fetchBalances,
     fetchStats,
-    reset
+    reset,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useCompoundStore, import.meta.hot));
-}

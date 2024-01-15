@@ -1,14 +1,14 @@
 import {
   AssetInfo,
   AssetInfoWithTransformer,
-  SupportedAsset
+  SupportedAsset,
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
-import {
-  type ConflictResolutionStrategy,
-  type PaginationRequestPayload
-} from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
+import type {
+  ConflictResolutionStrategy,
+  PaginationRequestPayload,
+} from '@/types/common';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -41,11 +41,11 @@ export interface AssetMergePayload {
 
 export const AssetInfoWithId = AssetInfo.merge(
   z.object({
-    identifier: z.string().min(1)
-  })
+    identifier: z.string().min(1),
+  }),
 ).transform((data: any) => ({
   ...data,
-  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
+  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
 }));
 
 export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
@@ -56,7 +56,7 @@ export type AssetsWithId = z.infer<typeof AssetsWithId>;
 
 export const AssetMap = z.object({
   assetCollections: z.record(AssetInfo),
-  assets: z.record(AssetInfoWithTransformer)
+  assets: z.record(AssetInfoWithTransformer),
 });
 
 export type AssetMap = z.infer<typeof AssetMap>;
@@ -78,13 +78,13 @@ export const CustomAsset = z.object({
   identifier: z.string(),
   name: z.string(),
   customAssetType: z.string(),
-  notes: z.string().nullable()
+  notes: z.string().nullable(),
 });
 
 export type CustomAsset = z.infer<typeof CustomAsset>;
 
 export const CustomAssets = CollectionCommonFields.extend({
-  entries: z.array(CustomAsset)
+  entries: z.array(CustomAsset),
 });
 
 export type CustomAssets = z.infer<typeof CustomAssets>;
@@ -99,7 +99,7 @@ export interface CustomAssetRequestPayload
 export const IgnoredAssetHandlingType = {
   NONE: 'none',
   EXCLUDE: 'exclude',
-  SHOW_ONLY: 'show_only'
+  SHOW_ONLY: 'show_only',
 } as const;
 
 export type IgnoredAssetsHandlingType =
@@ -107,8 +107,9 @@ export type IgnoredAssetsHandlingType =
 
 export const EvmNativeToken = ['ETH'];
 
-export const isEvmNativeToken = (asset: string) =>
-  EvmNativeToken.includes(asset);
+export function isEvmNativeToken(asset: string) {
+  return EvmNativeToken.includes(asset);
+}
 
 export interface AssetVersionUpdate {
   local: number;
@@ -135,7 +136,7 @@ export interface AssetUpdatePayload {
 }
 
 export const SupportedAssets = CollectionCommonFields.extend({
-  entries: z.array(SupportedAsset)
+  entries: z.array(SupportedAsset),
 });
 
 export type SupportedAssets = z.infer<typeof SupportedAssets>;

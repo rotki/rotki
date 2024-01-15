@@ -1,10 +1,10 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "es2020",
     "declaration": true,
     "declarationDir": "./lib",
-    "outDir": "./lib",
-    "target": "es2020"
+    "outDir": "./lib"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["lib/**", "node_modules/**", "**/.*"]

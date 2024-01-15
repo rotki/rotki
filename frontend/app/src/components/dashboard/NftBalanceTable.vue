@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
-import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import {
-  type NonFungibleBalance,
-  type NonFungibleBalanceWithLastPrice,
-  type NonFungibleBalancesRequestPayload
-} from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
+import type { BigNumber } from '@rotki/common';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type {
+  NonFungibleBalance,
+  NonFungibleBalanceWithLastPrice,
+  NonFungibleBalancesRequestPayload,
+} from '@/types/nfbalances';
 
 const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
 
@@ -24,15 +24,15 @@ const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
-const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
-  useNonFungibleBalancesStore();
+const { fetchNonFungibleBalances, refreshNonFungibleBalances }
+  = useNonFungibleBalancesStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'lastPrice',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
 const group = DashboardTableType.NFT;
@@ -43,7 +43,7 @@ const {
   options,
   fetchData,
   setPage,
-  setTableOptions
+  setTableOptions,
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
@@ -52,8 +52,8 @@ const {
   extraParams,
   defaultSortBy: {
     key: 'lastPrice',
-    ascending: [false]
-  }
+    ascending: [false],
+  },
 });
 
 const { isLoading: isSectionLoading } = useStatusStore();
@@ -68,25 +68,25 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'name',
       class: 'text-no-wrap w-full',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('nft_balance_table.column.price_in_asset'),
       key: 'priceInAsset',
       align: 'end',
       class: 'text-no-wrap',
-      cellClass: 'py-0'
+      cellClass: 'py-0',
     },
     {
       label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol)
+        symbol: get(currencySymbol),
       }),
       key: 'lastPrice',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
-      sortable: true
-    }
+      sortable: true,
+    },
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
@@ -95,7 +95,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'percentageOfTotalNetValue',
       align: 'end',
       class: 'text-no-wrap',
-      cellClass: 'py-0'
+      cellClass: 'py-0',
     });
   }
 
@@ -104,27 +104,29 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: t(
         'dashboard_asset_table.headers.percentage_of_total_current_group',
         {
-          group
-        }
+          group,
+        },
       ),
       key: 'percentageOfTotalCurrentGroup',
       align: 'end',
       class: 'text-no-wrap',
-      cellClass: 'py-0'
+      cellClass: 'py-0',
     });
   }
 
   return headers;
 });
 
-const percentageOfTotalNetValue = (value: BigNumber) =>
-  calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
+function percentageOfTotalNetValue(value: BigNumber) {
+  return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
+}
 
-const percentageOfCurrentGroup = (value: BigNumber) =>
-  calculatePercentage(value, get(totalUsdValue) as BigNumber);
+function percentageOfCurrentGroup(value: BigNumber) {
+  return calculatePercentage(value, get(totalUsdValue) as BigNumber);
+}
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
@@ -135,9 +137,8 @@ onMounted(async () => {
 });
 
 watch(loading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading) {
+  if (!isLoading && wasLoading)
     await fetchData();
-  }
 });
 </script>
 
@@ -151,7 +152,11 @@ watch(loading, async (isLoading, wasLoading) => {
       />
       {{ t('nft_balance_table.title') }}
       <RouterLink :to="nonFungibleRoute">
-        <RuiButton variant="text" icon class="ml-2">
+        <RuiButton
+          variant="text"
+          icon
+          class="ml-2"
+        >
           <RuiIcon name="arrow-right-s-line" />
         </RuiButton>
       </RouterLink>
@@ -187,7 +192,10 @@ watch(loading, async (isLoading, wasLoading) => {
       />
     </template>
 
-    <CollectionHandler :collection="balances" @set-page="setPage($event)">
+    <CollectionHandler
+      :collection="balances"
+      @set-page="setPage($event)"
+    >
       <template #default="{ data, itemLength }">
         <RuiDataTable
           :cols="tableHeaders"
@@ -197,7 +205,7 @@ watch(loading, async (isLoading, wasLoading) => {
           :pagination="{
             limit: options.itemsPerPage,
             page: options.page,
-            total: itemLength
+            total: itemLength,
           }"
           :pagination-modifiers="{ external: true }"
           :sort-modifiers="{ external: true }"

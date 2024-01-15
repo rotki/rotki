@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
   vault: MakerDAOVaultModel;
@@ -14,46 +14,61 @@ const { t } = useI18n();
 
 const valueLost = computed(() => {
   const makerVault = get(vault);
-  if (!('totalInterestOwed' in makerVault)) {
+  if (!('totalInterestOwed' in makerVault))
     return Zero;
-  }
+
   const { totalInterestOwed, totalLiquidated } = makerVault;
   return totalLiquidated.usdValue.plus(totalInterestOwed);
 });
 
 const liquidated = computed(() => {
   const makerVault = get(vault);
-  if (!('totalLiquidated' in makerVault)) {
+  if (!('totalLiquidated' in makerVault))
     return undefined;
-  }
+
   return makerVault.totalLiquidated;
 });
 
 const totalInterestOwed = computed(() => {
   const makerVault = get(vault);
-  if (!('totalInterestOwed' in makerVault)) {
+  if (!('totalInterestOwed' in makerVault))
     return Zero;
-  }
+
   return makerVault.totalInterestOwed;
 });
 const dai: string = assetSymbolToIdentifierMap.DAI;
 </script>
 
 <template>
-  <StatCard :title="t('loan_liquidation.title')" :class="$style.liquidation">
-    <div class="pb-5" :class="$style.upper">
+  <StatCard
+    :title="t('loan_liquidation.title')"
+    :class="$style.liquidation"
+  >
+    <div
+      class="pb-5"
+      :class="$style.upper"
+    >
       <LoanRow :title="t('loan_liquidation.liquidation_price')">
-        <AmountDisplay fiat-currency="USD" :value="vault.liquidationPrice" />
+        <AmountDisplay
+          fiat-currency="USD"
+          :value="vault.liquidationPrice"
+        />
       </LoanRow>
 
       <RuiDivider class="my-4" />
 
-      <LoanRow :title="t('loan_liquidation.minimum_ratio')" :medium="false">
+      <LoanRow
+        :title="t('loan_liquidation.minimum_ratio')"
+        :medium="false"
+      >
         <PercentageDisplay :value="vault.liquidationRatio" />
       </LoanRow>
     </div>
     <div>
-      <span :class="$style.header" class="text-rui-text">
+      <span
+        :class="$style.header"
+        class="text-rui-text"
+      >
         {{ t('loan_liquidation.liquidation_events') }}
       </span>
       <template v-if="premium">
@@ -98,9 +113,15 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
             />
           </LoanRow>
         </div>
-        <div v-else v-text="t('loan_liquidation.no_events')" />
+        <div
+          v-else
+          v-text="t('loan_liquidation.no_events')"
+        />
       </template>
-      <div v-else class="text-right">
+      <div
+        v-else
+        class="text-right"
+      >
         <PremiumLock />
       </div>
     </div>

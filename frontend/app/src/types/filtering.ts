@@ -1,17 +1,17 @@
-import { type AssetInfo } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
-import { type DateFormat } from '@/types/date-format';
+import type { AssetInfo } from '@rotki/common/lib/data';
+import type { DateFormat } from '@/types/date-format';
 
 export enum FilterBehaviour {
   INCLUDE = 'include',
-  EXCLUDE = 'exclude'
+  EXCLUDE = 'exclude',
 }
 
-export type FilterObjectWithBehaviour<T> = {
+export interface FilterObjectWithBehaviour<T> {
   behaviour?: FilterBehaviour;
   values: T;
-};
+}
 
 export type StringSuggestion = () => string[];
 
@@ -66,7 +66,7 @@ export type MatchedKeywordWithBehaviour<T extends string> = {
 export const BaseSuggestion = z.object({
   key: z.string(),
   value: AssetInfoWithId.or(z.string()).or(z.boolean()),
-  exclude: z.boolean().optional()
+  exclude: z.boolean().optional(),
 });
 
 export type BaseSuggestion = z.infer<typeof BaseSuggestion>;
@@ -74,7 +74,7 @@ export type BaseSuggestion = z.infer<typeof BaseSuggestion>;
 export const Suggestion = BaseSuggestion.extend({
   index: z.number(),
   total: z.number(),
-  asset: z.boolean()
+  asset: z.boolean(),
 });
 
 export type Suggestion = z.infer<typeof Suggestion>;
@@ -82,36 +82,38 @@ export type Suggestion = z.infer<typeof Suggestion>;
 export enum SavedFilterLocation {
   HISTORY_TRADES = 'historyTrades',
   HISTORY_DEPOSITS_WITHDRAWALS = 'historyDepositsWithdrawals',
-  HISTORY_EVENTS = 'historyEvents'
+  HISTORY_EVENTS = 'historyEvents',
 }
 
-export const assetSuggestions =
-  (assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>) =>
-  async (value: string) =>
+export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>) {
+  return async (value: string) =>
     await assetSearch(value, 5);
+}
 
-export const assetDeserializer =
-  (assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>) =>
-  (identifier: string): AssetInfoWithId | null => {
+export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>) {
+  return (identifier: string): AssetInfoWithId | null => {
     const asset = get(assetInfo(identifier));
-    if (!asset) {
+    if (!asset)
       return null;
-    }
 
     return {
       ...asset,
-      identifier
+      identifier,
     };
   };
+}
 
-export const dateValidator =
-  (dateInputFormat: Ref<DateFormat>) => (value: string) =>
+export function dateValidator(dateInputFormat: Ref<DateFormat>) {
+  return (value: string) =>
     value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
+}
 
-export const dateSerializer =
-  (dateInputFormat: Ref<DateFormat>) => (date: string) =>
+export function dateSerializer(dateInputFormat: Ref<DateFormat>) {
+  return (date: string) =>
     convertToTimestamp(date, get(dateInputFormat)).toString();
+}
 
-export const dateDeserializer =
-  (dateInputFormat: Ref<DateFormat>) => (timestamp: string) =>
+export function dateDeserializer(dateInputFormat: Ref<DateFormat>) {
+  return (timestamp: string) =>
     convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
+}

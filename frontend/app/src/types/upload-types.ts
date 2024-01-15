@@ -17,7 +17,7 @@ export const SOURCES = [
   'bitstamp',
   'rotki_events',
   'rotki_trades',
-  'bittrex'
+  'bittrex',
 ] as const;
 
 export type ImportSourceType = (typeof SOURCES)[number];

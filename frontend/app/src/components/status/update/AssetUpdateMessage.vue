@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import { type AssetVersionUpdate } from '@/types/asset';
+import type { Ref } from 'vue';
+import type { AssetVersionUpdate } from '@/types/asset';
 
 const props = defineProps<{
   headless: boolean;
@@ -24,32 +24,32 @@ const multiple = computed(() => {
   return remote - local > 1;
 });
 
-const onChange = (value: string) => {
+function onChange(value: string) {
   const number = Number.parseInt(value);
   const update = get(versions);
   const { local, remote } = update;
   let updatedUpToVersion: number = number;
-  if (isNaN(number)) {
+  if (isNaN(number))
     updatedUpToVersion = local + 1;
-  } else if (number < local) {
+  else if (number < local)
     updatedUpToVersion = local + 1;
-  } else if (number > remote) {
+  else if (number > remote)
     updatedUpToVersion = remote;
-  }
-  setUpdateVersion(updatedUpToVersion);
-};
 
-const setUpdateVersion = (version: number) => {
+  setUpdateVersion(updatedUpToVersion);
+}
+
+function setUpdateVersion(version: number) {
   set(upToVersion, version.toString());
   const update = get(versions);
 
   emit('update:versions', {
     ...update,
-    upToVersion: version
+    upToVersion: version,
   });
-};
+}
 
-watch(partial, partial => {
+watch(partial, (partial) => {
   if (!partial) {
     const remoteVersion = get(versions).remote;
     setUpdateVersion(remoteVersion);
@@ -64,9 +64,18 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard variant="flat" :class="{ 'bg-transparent': headless }">
-    <template #header> {{ t('asset_update.title') }} </template>
-    <i18n class="text-body-1" tag="div" path="asset_update.description">
+  <RuiCard
+    variant="flat"
+    :class="{ 'bg-transparent': headless }"
+  >
+    <template #header>
+      {{ t('asset_update.title') }}
+    </template>
+    <i18n
+      class="text-body-1"
+      tag="div"
+      path="asset_update.description"
+    >
       <template #remote>
         <span class="font-medium">{{ versions.remote }}</span>
       </template>
@@ -78,7 +87,10 @@ const { t } = useI18n();
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
 
-    <div v-if="multiple" class="font-medium text-body-1 mt-6">
+    <div
+      v-if="multiple"
+      class="font-medium text-body-1 mt-6"
+    >
       {{ t('asset_update.advanced') }}
     </div>
     <div v-if="multiple">
@@ -107,7 +119,11 @@ const { t } = useI18n();
       </div>
     </div>
     <div v-if="headless">
-      <RuiCheckbox v-model="skipUpdate" dense color="primary">
+      <RuiCheckbox
+        v-model="skipUpdate"
+        dense
+        color="primary"
+      >
         {{ t('asset_update.skip_notification') }}
       </RuiCheckbox>
     </div>
@@ -120,7 +136,10 @@ const { t } = useI18n();
       >
         {{ t('common.actions.skip') }}
       </RuiButton>
-      <RuiButton color="primary" @click="emit('confirm')">
+      <RuiButton
+        color="primary"
+        @click="emit('confirm')"
+      >
         {{ t('common.actions.update') }}
       </RuiButton>
     </template>

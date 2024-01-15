@@ -1,30 +1,30 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef, type Ref } from 'vue';
-import { type AssetInfo } from '../data';
-import { type LpType, type ProfitLossModel } from '../defi';
-import {
-  type BalancerBalance,
-  type BalancerProfitLoss
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
+import type { AssetInfo } from '../data';
+import type { LpType, ProfitLossModel } from '../defi';
+import type {
+  BalancerBalance,
+  BalancerProfitLoss,
 } from '../defi/balancer';
-import {
-  type XswapBalance,
-  type XswapPool,
-  type XswapPoolProfit
+import type {
+  XswapBalance,
+  XswapPool,
+  XswapPoolProfit,
 } from '../defi/xswap';
-import { type AssetBalanceWithPrice, type BigNumber } from '../index';
-import {
-  type DebugSettings,
-  type FrontendSettingsPayload,
-  type Theme,
-  type Themes,
-  type TimeUnit
+import type { AssetBalanceWithPrice, BigNumber } from '../index';
+import type {
+  DebugSettings,
+  FrontendSettingsPayload,
+  Theme,
+  Themes,
+  TimeUnit,
 } from '../settings';
-import {
-  type LocationData,
-  type NetValue,
-  type OwnedAssets,
-  type TimedAssetBalances,
-  type TimedBalances
+import type {
+  LocationData,
+  NetValue,
+  OwnedAssets,
+  TimedAssetBalances,
+  TimedBalances,
 } from '../statistics';
 
 export interface PremiumInterface {

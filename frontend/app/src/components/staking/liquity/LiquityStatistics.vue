@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {
-  type LiquityPoolDetailEntry,
-  type LiquityStatisticDetails
-} from '@rotki/common/lib/liquity';
-import { type ComputedRef } from 'vue';
-import { type AssetBalance, type Balance, type BigNumber } from '@rotki/common';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
+import type {
+  LiquityPoolDetailEntry,
+  LiquityStatisticDetails,
+} from '@rotki/common/lib/liquity';
+import type { ComputedRef } from 'vue';
+import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -15,8 +15,8 @@ const props = withDefaults(
   }>(),
   {
     statistic: null,
-    pool: null
-  }
+    pool: null,
+  },
 );
 
 const { statistic, pool } = toRefs(props);
@@ -31,17 +31,15 @@ const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
 
 const selection = ref<'historical' | 'current'>('historical');
 
-const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
-  computed(() => {
+const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null>
+  = computed(() => {
     const statisticVal = get(statistic);
 
-    if (!statisticVal) {
+    if (!statisticVal)
       return null;
-    }
 
-    if (get(selection) === 'historical') {
+    if (get(selection) === 'historical')
       return statisticVal;
-    }
 
     const stakingGains = statisticVal.stakingGains.map(
       (stakingGain: AssetBalance) => {
@@ -49,9 +47,9 @@ const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
 
         return {
           ...stakingGain,
-          usdValue: stakingGain.amount.multipliedBy(price)
+          usdValue: stakingGain.amount.multipliedBy(price),
         };
-      }
+      },
     );
 
     const stabilityPoolGains = statisticVal.stabilityPoolGains.map(
@@ -60,17 +58,17 @@ const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
 
         return {
           ...stabilityPoolGain,
-          usdValue: stabilityPoolGain.amount.multipliedBy(price)
+          usdValue: stabilityPoolGain.amount.multipliedBy(price),
         };
-      }
+      },
     );
 
     const totalUsdGainsStabilityPool = bigNumberSum(
-      stabilityPoolGains.map(({ usdValue }) => usdValue)
+      stabilityPoolGains.map(({ usdValue }) => usdValue),
     );
 
     const totalUsdGainsStaking = bigNumberSum(
-      stakingGains.map(({ usdValue }) => usdValue)
+      stakingGains.map(({ usdValue }) => usdValue),
     );
 
     return {
@@ -79,42 +77,40 @@ const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
       totalUsdGainsStaking,
       totalDepositedStabilityPoolUsdValue:
         statisticVal.totalDepositedStabilityPool.multipliedBy(
-          get(lusdPrice) ?? One
+          get(lusdPrice) ?? One,
         ),
       totalWithdrawnStabilityPoolUsdValue:
         statisticVal.totalWithdrawnStabilityPool.multipliedBy(
-          get(lusdPrice) ?? One
+          get(lusdPrice) ?? One,
         ),
       stakingGains,
-      stabilityPoolGains
+      stabilityPoolGains,
     };
   });
 
 const totalDepositedStabilityPoolBalance = useRefMap<
   LiquityStatisticDetails | null,
   Balance | null
->(statisticWithAdjustedPrice, data => {
-  if (!data) {
+>(statisticWithAdjustedPrice, (data) => {
+  if (!data)
     return null;
-  }
 
   return {
     amount: data.totalDepositedStabilityPool,
-    usdValue: data.totalDepositedStabilityPoolUsdValue
+    usdValue: data.totalDepositedStabilityPoolUsdValue,
   };
 });
 
 const totalWithdrawnStabilityPoolBalance = useRefMap<
   LiquityStatisticDetails | null,
   Balance | null
->(statisticWithAdjustedPrice, data => {
-  if (!data) {
+>(statisticWithAdjustedPrice, (data) => {
+  if (!data)
     return null;
-  }
 
   return {
     amount: data.totalWithdrawnStabilityPool,
-    usdValue: data.totalWithdrawnStabilityPoolUsdValue
+    usdValue: data.totalWithdrawnStabilityPoolUsdValue,
   };
 });
 
@@ -139,25 +135,18 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<
  * @param poolDeposited
  * @return BigNumber
  */
-const calculatePnl = (
-  totalDepositedStabilityPool: BigNumber,
-  totalWithdrawnStabilityPool: BigNumber,
-  totalUsdGainsStabilityPool: BigNumber,
-  poolGains: AssetBalance,
-  poolRewards: AssetBalance,
-  poolDeposited: AssetBalance
-): ComputedRef<BigNumber> =>
-  computed(() => {
+function calculatePnl(totalDepositedStabilityPool: BigNumber, totalWithdrawnStabilityPool: BigNumber, totalUsdGainsStabilityPool: BigNumber, poolGains: AssetBalance, poolRewards: AssetBalance, poolDeposited: AssetBalance): ComputedRef<BigNumber> {
+  return computed(() => {
     const expectedAmount = totalDepositedStabilityPool.minus(
-      totalWithdrawnStabilityPool
+      totalWithdrawnStabilityPool,
     );
 
     const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(
-      get(assetPrice(poolGains.asset)) ?? One
+      get(assetPrice(poolGains.asset)) ?? One,
     );
 
     const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(
-      get(assetPrice(poolRewards.asset)) ?? One
+      get(assetPrice(poolRewards.asset)) ?? One,
     );
 
     const totalWithdrawals = totalUsdGainsStabilityPool
@@ -167,19 +156,19 @@ const calculatePnl = (
     const diffDeposited = expectedAmount.minus(poolDeposited.amount);
 
     const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(
-      get(lusdPrice) ?? One
+      get(lusdPrice) ?? One,
     );
 
     return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
   });
+}
 
 const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
   const statisticVal = get(statistic);
   const poolVal = get(pool);
 
-  if (!statisticVal || !poolVal) {
+  if (!statisticVal || !poolVal)
     return null;
-  }
 
   return get(
     calculatePnl(
@@ -188,8 +177,8 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
       statisticVal.totalUsdGainsStabilityPool,
       poolVal.gains,
       poolVal.rewards,
-      poolVal.deposited
-    )
+      poolVal.deposited,
+    ),
   );
 });
 </script>
@@ -244,7 +233,10 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
         </div>
       </div>
 
-      <VExpansionPanels multiple class="pt-4">
+      <VExpansionPanels
+        multiple
+        class="pt-4"
+      >
         <VExpansionPanel elevation="0">
           <VExpansionPanelContent>
             <div class="grid md:grid-cols-2 md:gap-12">
@@ -302,7 +294,10 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                         />
                       </div>
                     </div>
-                    <div v-else class="text-rui-text-secondary pb-2">
+                    <div
+                      v-else
+                      class="text-rui-text-secondary pb-2"
+                    >
                       {{ t('liquity_statistic.no_stability_pool_gains') }}
                     </div>
                   </div>
@@ -358,7 +353,10 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
                         />
                       </div>
                     </div>
-                    <div v-else class="text-rui-text-secondary pb-2">
+                    <div
+                      v-else
+                      class="text-rui-text-secondary pb-2"
+                    >
                       {{ t('liquity_statistic.no_staking_gains') }}
                     </div>
                   </div>
@@ -381,7 +379,10 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
         </VExpansionPanel>
       </VExpansionPanels>
     </template>
-    <div v-else class="text-center text-rui-text-secondary pb-4">
+    <div
+      v-else
+      class="text-center text-rui-text-secondary pb-4"
+    >
       {{ t('liquity_statistic.no_statistics') }}
     </div>
   </RuiCard>

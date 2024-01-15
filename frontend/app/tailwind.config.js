@@ -5,11 +5,11 @@ module.exports = {
   content: [
     './src/components/**/*.vue',
     './src/layouts/**/*.vue',
-    './src/pages/**/*.vue'
+    './src/pages/**/*.vue',
   ],
   theme: {
-    extend: {}
+    extend: {},
   },
   safelist: ['!leading-7', 'lg:grid-cols-2'],
-  plugins: [require('@rotki/ui-library-compat/theme')]
+  plugins: [require('@rotki/ui-library-compat/theme')],
 };

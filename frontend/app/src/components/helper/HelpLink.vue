@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { toRefs } from 'vue';
 
 const props = withDefaults(
@@ -8,8 +8,8 @@ const props = withDefaults(
     small?: boolean;
   }>(),
   {
-    small: false
-  }
+    small: false,
+  },
 );
 
 const { url } = toRefs(props);
@@ -17,7 +17,10 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    :open-delay="400"
+  >
     <template #activator>
       <RuiButton
         type="button"
@@ -29,7 +32,10 @@ const { href, onLinkClick } = useLinks(url);
         tag="a"
         @click="onLinkClick()"
       >
-        <RuiIcon :size="small ? 20 : 24" name="question-line" />
+        <RuiIcon
+          :size="small ? 20 : 24"
+          name="question-line"
+        />
       </RuiButton>
     </template>
     {{ tooltip }}

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
-import {
-  type AddressBookEntry,
-  type AddressBookLocation,
-  type AddressBookPayload,
-  type AddressBookRequestPayload
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Ref } from 'vue';
+import type {
+  AddressBookEntry,
+  AddressBookLocation,
+  AddressBookPayload,
+  AddressBookRequestPayload,
 } from '@/types/eth-names';
-import { type Collection } from '@/types/collection';
-import { type Filters, type Matcher } from '@/composables/filters/address-book';
+import type { Collection } from '@/types/collection';
+import type { Filters, Matcher } from '@/composables/filters/address-book';
 
 const selectedChain: Ref<Blockchain | null> = ref(null);
 const enableForAllChains: Ref<boolean> = ref(false);
@@ -23,27 +23,28 @@ const emptyForm: () => AddressBookPayload = () => ({
   location: get(location),
   blockchain: get(selectedChain),
   address: '',
-  name: ''
+  name: '',
 });
 
 const { setSubmitFunc, setOpenDialog, closeDialog } = useAddressBookForm();
 
-const openForm = (item: AddressBookEntry | null = null) => {
+function openForm(item: AddressBookEntry | null = null) {
   set(editMode, !!item);
   if (item) {
     set(formPayload, {
       ...item,
-      location: get(location)
+      location: get(location),
     });
     set(enableForAllChains, !item.blockchain);
-  } else {
+  }
+  else {
     const newForm = emptyForm();
     set(formPayload, {
-      ...newForm
+      ...newForm,
     });
   }
   setOpenDialog(true);
-};
+}
 
 const resetForm = function () {
   closeDialog();
@@ -54,36 +55,35 @@ const resetForm = function () {
 const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
 
-const { getAddressBook, addAddressBook, updateAddressBook } =
-  useAddressesNamesStore();
+const { getAddressBook, addAddressBook, updateAddressBook }
+  = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
-const save = async () => {
+async function save() {
   try {
     const formVal = get(formPayload);
     const enableForAllChainsVal = get(enableForAllChains);
     const payload = {
       address: formVal.address.trim(),
       name: formVal.name,
-      blockchain: enableForAllChainsVal ? null : formVal.blockchain
+      blockchain: enableForAllChainsVal ? null : formVal.blockchain,
     };
     const location = formVal.location;
-    if (get(editMode)) {
+    if (get(editMode))
       await updateAddressBook(location, [payload]);
-    } else {
+    else
       await addAddressBook(location, [payload]);
-    }
 
     set(tab, location === 'global' ? 0 : 1);
-    if (!enableForAllChainsVal) {
+    if (!enableForAllChainsVal)
       set(selectedChain, formVal.blockchain);
-    }
 
     closeDialog();
     await fetchData();
     return true;
-  } catch (e: any) {
-    const values = { message: e.message };
+  }
+  catch (error: any) {
+    const values = { message: error.message };
     const title = get(editMode)
       ? t('address_book.actions.edit.error.title')
       : t('address_book.actions.add.error.title');
@@ -93,11 +93,11 @@ const save = async () => {
     setMessage({
       title,
       description,
-      success: false
+      success: false,
     });
     return false;
   }
-};
+}
 
 setSubmitFunc(save);
 
@@ -110,7 +110,7 @@ const {
   fetchData,
   setFilter,
   setPage,
-  setTableOptions
+  setTableOptions,
 } = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
@@ -125,9 +125,9 @@ const {
   filter => getAddressBook(get(location), filter),
   {
     extraParams: computed(() => ({
-      blockchain: get(selectedChain)
-    }))
-  }
+      blockchain: get(selectedChain),
+    })),
+  },
 );
 
 onMounted(async () => {
@@ -145,7 +145,10 @@ watch(location, async () => {
     :title="[t('navigation_menu.manage_address_book')]"
   >
     <template #buttons>
-      <RuiButton color="primary" @click="openForm()">
+      <RuiButton
+        color="primary"
+        @click="openForm()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
@@ -174,8 +177,15 @@ watch(location, async () => {
       </div>
 
       <div class="flex flex-row items-end gap-2">
-        <RuiTabs v-model="tab" color="primary">
-          <RuiTab v-for="loc in locations" :key="loc" class="capitalize">
+        <RuiTabs
+          v-model="tab"
+          color="primary"
+        >
+          <RuiTab
+            v-for="loc in locations"
+            :key="loc"
+            class="capitalize"
+          >
             {{ loc }}
           </RuiTab>
         </RuiTabs>
@@ -183,7 +193,10 @@ watch(location, async () => {
       </div>
 
       <RuiTabItems v-model="tab">
-        <RuiTabItem v-for="loc in locations" :key="loc">
+        <RuiTabItem
+          v-for="loc in locations"
+          :key="loc"
+        >
           <template #default>
             <AddressBookTable
               :collection="state"

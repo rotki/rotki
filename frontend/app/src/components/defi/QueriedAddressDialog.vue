@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { type CamelCase } from '@/types/common';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { Ref } from 'vue';
+import type { CamelCase } from '@/types/common';
 
 const props = defineProps<{ module: Module }>();
 
@@ -23,11 +23,11 @@ const { t } = useI18n();
 
 const currentModule = computed(() => {
   const currentModule = get(module);
-  if (!currentModule) {
+  if (!currentModule)
     return undefined;
-  }
+
   return SUPPORTED_MODULES.find(
-    ({ identifier }) => identifier === currentModule
+    ({ identifier }) => identifier === currentModule,
   );
 });
 
@@ -36,9 +36,9 @@ const moduleIcon = useRefMap(currentModule, m => m?.icon);
 
 const addresses = computed(() => {
   const currentModule = get(module);
-  if (!currentModule) {
+  if (!currentModule)
     return [];
-  }
+
   const addresses = get(queriedAddresses);
   const index = transformCase(currentModule, true) as CamelCase<Module>;
   return addresses[index] ?? [];
@@ -57,7 +57,7 @@ const usableAddresses = computed(() => {
   return accountList
     .filter(
       ({ chain, address }) =>
-        chain === ETH && !moduleAddresses.includes(address)
+        chain === ETH && !moduleAddresses.includes(address),
     )
     .map(({ address }) => address);
 });
@@ -68,21 +68,21 @@ const addAddress = async function () {
   assert(currentModule && currentAccount.length > 0);
   await addQueriedAddress({
     module: currentModule,
-    address: currentAccount[0].address
+    address: currentAccount[0].address,
   });
   set(selectedAccounts, []);
 };
 
-const getAccount = (address: string): GeneralAccount => {
+function getAccount(address: string): GeneralAccount {
   const account = get(accounts).find(value => value.address === address);
   assert(account);
   return account;
-};
+}
 
-const close = () => {
+function close() {
   set(selectedAccounts, []);
   emit('close');
-};
+}
 </script>
 
 <template>
@@ -96,7 +96,11 @@ const close = () => {
       <template #custom-header>
         <div class="flex items-center justify-between p-4 gap-4">
           <AdaptiveWrapper>
-            <AppImage size="24px" contain :src="moduleIcon" />
+            <AppImage
+              size="24px"
+              contain
+              :src="moduleIcon"
+            />
           </AdaptiveWrapper>
           <RuiCardHeader class="p-0">
             <template #header>
@@ -107,7 +111,12 @@ const close = () => {
             </template>
           </RuiCardHeader>
 
-          <RuiButton class="shrink-0" variant="text" icon @click="close()">
+          <RuiButton
+            class="shrink-0"
+            variant="text"
+            icon
+            @click="close()"
+          >
             <RuiIcon name="close-line" />
           </RuiButton>
         </div>
@@ -135,7 +144,10 @@ const close = () => {
           <RuiIcon name="add-line" />
         </RuiButton>
       </div>
-      <div v-if="addresses.length > 0" class="overflow-y-scroll mt-4 h-[16rem]">
+      <div
+        v-if="addresses.length > 0"
+        class="overflow-y-scroll mt-4 h-[16rem]"
+      >
         <div
           v-for="address in addresses"
           :key="address"
@@ -143,9 +155,15 @@ const close = () => {
         >
           <div class="flex-1">
             <LabeledAddressDisplay :account="getAccount(address)" />
-            <TagDisplay :tags="getAccount(address).tags" small />
+            <TagDisplay
+              :tags="getAccount(address).tags"
+              small
+            />
           </div>
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               <RuiButton
                 variant="text"
@@ -155,11 +173,14 @@ const close = () => {
                 @click="
                   deleteQueriedAddress({
                     module,
-                    address
+                    address,
                   })
                 "
               >
-                <RuiIcon size="16" name="delete-bin-line" />
+                <RuiIcon
+                  size="16"
+                  name="delete-bin-line"
+                />
               </RuiButton>
             </template>
 
@@ -173,7 +194,7 @@ const close = () => {
       >
         {{
           t('queried_address_dialog.all_address_queried', {
-            module: moduleName
+            module: moduleName,
           })
         }}
       </div>

@@ -4,7 +4,7 @@ import { type App, app } from 'electron';
 
 class AppSettingManager {
   private readonly _appSettings: AppSettings = {
-    displayTray: true
+    displayTray: true,
   };
 
   constructor(private app: App) {
@@ -25,14 +25,15 @@ class AppSettingManager {
     const json = JSON.stringify(settings);
     try {
       fs.writeFileSync(appConfig, json, { encoding: 'utf8' });
-    } catch (e: any) {
-      console.error(e, 'Could not write the app settings file');
+    }
+    catch (error: any) {
+      console.error(error, 'Could not write the app settings file');
     }
   }
 
   private readAppSettings(): AppSettings {
     const settings: AppSettings = {
-      displayTray: true
+      displayTray: true,
     };
     const appConfig = this.appConfigFile();
     if (fs.existsSync(appConfig)) {
@@ -41,12 +42,13 @@ class AppSettingManager {
         const loadedSettings = JSON.parse(file) as Partial<AppSettings>;
         for (const [key, value] of Object.entries(loadedSettings)) {
           if (typeof settings[key as keyof AppSettings] === typeof value) {
-            // @ts-ignore
+            // @ts-expect-error
             settings[key] = loadedSettings[key];
           }
         }
-      } catch (e: any) {
-        console.error(e);
+      }
+      catch (error: any) {
+        console.error(error);
       }
     }
 

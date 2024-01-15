@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
+import type { ComputedRef } from 'vue';
 
 const props = defineProps<{ visible: boolean }>();
 
@@ -10,16 +10,16 @@ const emit = defineEmits<{
 const display = useVModel(props, 'visible', emit);
 
 const ReportActionableCard = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportActionableCard.vue')
+  () => import('@/components/profitloss/ReportActionableCard.vue'),
 );
 
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
 const component: ComputedRef = computed(() => {
   const pinnedValue = get(pinned);
-  if (pinnedValue && pinnedValue.name === 'report-actionable-card') {
+  if (pinnedValue && pinnedValue.name === 'report-actionable-card')
     return ReportActionableCard;
-  }
+
   return null;
 });
 </script>

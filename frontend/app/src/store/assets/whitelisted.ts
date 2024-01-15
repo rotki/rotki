@@ -1,5 +1,5 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type ActionStatus } from '@/types/action';
+import type { MaybeRef } from '@vueuse/core';
+import type { ActionStatus } from '@/types/action';
 
 export const useWhitelistedAssetsStore = defineStore(
   'assets/whitelisted',
@@ -11,7 +11,7 @@ export const useWhitelistedAssetsStore = defineStore(
     const {
       getWhitelistedAssets,
       addAssetToWhitelist,
-      removeAssetFromWhitelist
+      removeAssetFromWhitelist,
     } = useAssetWhitelistApi();
 
     const { fetchIgnoredAssets } = useIgnoredAssetsStore();
@@ -20,15 +20,16 @@ export const useWhitelistedAssetsStore = defineStore(
       try {
         const whitelisted = await getWhitelistedAssets();
         set(whitelistedAssets, whitelisted);
-      } catch (e: any) {
+      }
+      catch (error: any) {
         const title = t('actions.session.whitelisted_assets.error.title');
         const message = t('actions.session.whitelisted_assets.error.message', {
-          error: e.message
+          error: error.message,
         });
         notify({
           title,
           message,
-          display: true
+          display: true,
         });
       }
     };
@@ -39,15 +40,16 @@ export const useWhitelistedAssetsStore = defineStore(
         await fetchWhitelistedAssets();
         await fetchIgnoredAssets();
         return { success: true };
-      } catch (e: any) {
+      }
+      catch (error: any) {
         notify({
           title: t('ignore.whitelist.failed.whitelist_title').toString(),
           message: t('ignore.whitelist.failed.whitelist_message', {
-            message: e.message
+            message: error.message,
           }).toString(),
-          display: true
+          display: true,
         });
-        return { success: false, message: e.message };
+        return { success: false, message: error.message };
       }
     };
 
@@ -57,15 +59,16 @@ export const useWhitelistedAssetsStore = defineStore(
         await fetchWhitelistedAssets();
         await fetchIgnoredAssets();
         return { success: true };
-      } catch (e: any) {
+      }
+      catch (error: any) {
         notify({
           title: t('ignore.whitelist.failed.unwhitelist_title').toString(),
           message: t('ignore.whitelist.failed.unwhitelist_message', {
-            message: e.message
+            message: error.message,
           }).toString(),
-          display: true
+          display: true,
         });
-        return { success: false, message: e.message };
+        return { success: false, message: error.message };
       }
     };
 
@@ -80,7 +83,7 @@ export const useWhitelistedAssetsStore = defineStore(
       fetchWhitelistedAssets,
       whitelistAsset,
       unWhitelistAsset,
-      isAssetWhitelisted
+      isAssetWhitelisted,
     };
-  }
+  },
 );

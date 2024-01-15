@@ -1,21 +1,21 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import {
   KrakenStakingEvents,
   type KrakenStakingPagination,
-  emptyPagination
+  emptyPagination,
 } from '@/types/staking';
-import { type PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { PendingTask } from '@/types/task';
 
-export const useKrakenApi = () => {
+export function useKrakenApi() {
   const internalKrakenStaking = async <T>(
     pagination: KrakenStakingPagination,
-    asyncQuery = false
+    asyncQuery = false,
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/staking/kraken',
@@ -23,11 +23,11 @@ export const useKrakenApi = () => {
         asyncQuery,
         ...pagination,
         orderByAttributes:
-          pagination.orderByAttributes?.map(item => transformCase(item)) ?? []
+          pagination.orderByAttributes?.map(item => transformCase(item)) ?? [],
       }),
       {
-        validateStatus: validWithSessionAndExternalService
-      }
+        validateStatus: validWithSessionAndExternalService,
+      },
     );
     return handleResponse(response);
   };
@@ -36,17 +36,17 @@ export const useKrakenApi = () => {
     await internalKrakenStaking(emptyPagination(), true);
 
   const fetchKrakenStakingEvents = async (
-    pagination: KrakenStakingPagination
+    pagination: KrakenStakingPagination,
   ): Promise<KrakenStakingEvents> => {
     const data = await internalKrakenStaking({
       ...pagination,
-      onlyCache: true
+      onlyCache: true,
     });
     return KrakenStakingEvents.parse(data);
   };
 
   return {
     refreshKrakenStaking,
-    fetchKrakenStakingEvents
+    fetchKrakenStakingEvents,
   };
-};
+}

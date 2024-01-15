@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type SystemVersion } from '@/electron-main/ipc';
-import { type WebVersion } from '@/types';
 import { externalAssets } from '@/data/external-links';
+import type { SystemVersion } from '@/electron-main/ipc';
+import type { WebVersion } from '@/types';
 
 const css = useCssModule();
 
@@ -11,43 +11,41 @@ const { t } = useI18n();
 
 const { version, dataDirectory } = toRefs(store);
 const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
-  getVersion()
+  getVersion(),
 );
 
 const premium = usePremium();
 const componentsVersion = computed(() => {
-  if (!get(premium)) {
+  if (!get(premium))
     return null;
-  }
 
-  // @ts-ignore
+  // @ts-expect-error
   const cmp = window.PremiumComponents;
-  if (!cmp) {
+  if (!cmp)
     return null;
-  }
+
   return {
     version: cmp.version as string,
-    build: cmp.build as number
+    build: cmp.build as number,
   };
 });
 
 const webVersion = computed<WebVersion | null>(() => {
   const info = get(versionInfo);
-  if (!info || !('userAgent' in info)) {
+  if (!info || !('userAgent' in info))
     return null;
-  }
+
   return info;
 });
 
 const electronVersion = computed<SystemVersion | null>(() => {
   const info = get(versionInfo);
-  if (!info || 'userAgent' in info) {
+  if (!info || 'userAgent' in info)
     return null;
-  }
+
   return info;
 });
 
-// eslint-disable-next-line no-undef
 const frontendVersion = __APP_VERSION__;
 
 const versionText = computed(() => {
@@ -66,7 +64,8 @@ const versionText = computed(() => {
     const userAgent = t('about.user_agent');
     versionText += `${platform} ${web.platform}\r\n`;
     versionText += `${userAgent} ${web.userAgent}\r\n`;
-  } else if (app) {
+  }
+  else if (app) {
     const electron = t('about.electron');
     versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
     versionText += `${electron} ${app.electron}\r\n`;
@@ -94,15 +93,22 @@ const { copy } = useClipboard({ source: versionText });
     <template #custom-header>
       <div class="p-6 bg-rui-primary text-white">
         <RuiLogo :custom-src="externalAssets.logo.about" />
-        <h4 class="text-h4">{{ t('app.name') }}</h4>
+        <h4 class="text-h4">
+          {{ t('app.name') }}
+        </h4>
         <span class="text-body-1">
           {{ t('app.moto') }}
         </span>
       </div>
     </template>
-    <div class="flex items-center justify-between" :class="css.version">
+    <div
+      class="flex items-center justify-between"
+      :class="css.version"
+    >
       <div class="flex items-center">
-        <div class="font-bold">{{ version.version }}</div>
+        <div class="font-bold">
+          {{ version.version }}
+        </div>
         <div class="ml-4">
           <ExternalLink
             :url="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
@@ -121,7 +127,10 @@ const { copy } = useClipboard({ source: versionText });
             </td>
             <td>
               <div class="flex flex-row justify-between">
-                <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+                <RuiTooltip
+                  :popper="{ placement: 'top' }"
+                  :open-delay="400"
+                >
                   <template #activator>
                     <div
                       class="text-truncate text-rui-text-secondary"
@@ -134,8 +143,14 @@ const { copy } = useClipboard({ source: versionText });
                     {{ dataDirectory }}
                   </span>
                 </RuiTooltip>
-                <div v-if="isPackaged" class="ml-2">
-                  <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+                <div
+                  v-if="isPackaged"
+                  class="ml-2"
+                >
+                  <RuiTooltip
+                    :popper="{ placement: 'top' }"
+                    :open-delay="400"
+                  >
                     <template #activator>
                       <RuiButton
                         icon
@@ -143,7 +158,10 @@ const { copy } = useClipboard({ source: versionText });
                         variant="text"
                         @click="openPath(dataDirectory)"
                       >
-                        <RuiIcon size="18" name="folder-open-line" />
+                        <RuiIcon
+                          size="18"
+                          name="folder-open-line"
+                        />
                       </RuiButton>
                     </template>
                     <span>{{ t('about.open_data_dir_tooltip') }}</span>
@@ -234,9 +252,15 @@ const { copy } = useClipboard({ source: versionText });
     </div>
     <template #footer>
       <div class="p-3 flex justify-end w-full">
-        <RuiButton color="primary" @click="copy()">
+        <RuiButton
+          color="primary"
+          @click="copy()"
+        >
           <template #prepend>
-            <RuiIcon size="20" name="file-copy-line" />
+            <RuiIcon
+              size="20"
+              name="file-copy-line"
+            />
           </template>
           {{ t('about.copy_information_tooltip') }}
         </RuiButton>

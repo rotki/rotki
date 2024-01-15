@@ -6,7 +6,7 @@ import {
   VBtnToggle,
   VColorPicker,
   VDialog,
-  VIcon
+  VIcon,
 } from 'vuetify/lib/components';
 import {
   RuiAlert,
@@ -18,7 +18,7 @@ import {
   RuiDivider,
   RuiIcon,
   RuiTextField,
-  RuiTooltip
+  RuiTooltip,
 } from '@rotki/ui-library-compat';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
@@ -56,16 +56,16 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 /**
  * Vuetify components that are used in the premium components
  */
-const vuetifyRegister = (): void => {
+function vuetifyRegister(): void {
   // version 17 - 1.24
   Vue.component('VIcon', VIcon);
   Vue.component('VBtn', VBtn);
   Vue.component('VBtnToggle', VBtnToggle);
   Vue.component('VDialog', VDialog);
   Vue.component('VColorPicker', VColorPicker);
-};
+}
 
-const ruiRegister = (): void => {
+function ruiRegister(): void {
   Vue.component('RuiAlert', RuiAlert);
   Vue.component('RuiIcon', RuiIcon);
   Vue.component('RuiButton', RuiButton);
@@ -76,7 +76,7 @@ const ruiRegister = (): void => {
   Vue.component('RuiDataTable', RuiDataTable);
   Vue.component('RuiDivider', RuiDivider);
   Vue.component('RuiChip', RuiChip);
-};
+}
 
 export function registerComponents(): void {
   // Globally registered components are also provided to the premium components.

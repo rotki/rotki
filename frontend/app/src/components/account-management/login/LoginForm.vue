@@ -2,8 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
-import { type LoginCredentials, type SyncApproval } from '@/types/login';
 import { externalLinks } from '@/data/external-links';
+import type { LoginCredentials, SyncApproval } from '@/types/login';
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +12,8 @@ const props = withDefaults(
     errors?: string[];
   }>(),
   {
-    errors: () => []
-  }
+    errors: () => [],
+  },
 );
 
 const emit = defineEmits<{
@@ -63,34 +63,34 @@ const rules = {
   username: {
     required: helpers.withMessage(
       t('login.validation.non_empty_username'),
-      required
+      required,
     ),
     isValidUsername: helpers.withMessage(
       t('login.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
-    )
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
+    ),
   },
   password: {
     required: helpers.withMessage(
       t('login.validation.non_empty_password'),
-      required
-    )
+      required,
+    ),
   },
   customBackendUrl: {
     required: helpers.withMessage(
       t('login.custom_backend.validation.non_empty'),
-      requiredIf(customBackendDisplay)
+      requiredIf(customBackendDisplay),
     ),
     isValidUrl: helpers.withMessage(
       t('login.custom_backend.validation.url'),
       (v: string): boolean =>
-        !get(customBackendDisplay) ||
-        (v.length < 300 &&
-          /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(
-            v
-          ))
-    )
-  }
+        !get(customBackendDisplay)
+        || (v.length < 300
+        && /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(
+          v,
+        )),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
@@ -98,11 +98,11 @@ const v$ = useVuelidate(
   {
     username,
     password,
-    customBackendUrl
+    customBackendUrl,
   },
   {
-    $autoDirty: true
-  }
+    $autoDirty: true,
+  },
 );
 
 const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
@@ -111,23 +111,20 @@ watch(
   [username, password],
   ([username, password], [oldUsername, oldPassword]) => {
     // touched should not be emitted when restoring from local storage
-    if (!oldUsername && username === get(savedUsername)) {
+    if (!oldUsername && username === get(savedUsername))
       return;
-    }
-    if (username !== oldUsername || password !== oldPassword) {
+
+    if (username !== oldUsername || password !== oldPassword)
       touched();
-    }
-  }
+  },
 );
 
 const isLoggedInError = useArraySome(errors, error =>
-  error.includes('is already logged in')
-);
+  error.includes('is already logged in'));
 
 const usernameError = useArrayFind(errors, error => error.startsWith('User '));
 const passwordError = useArrayFind(errors, error =>
-  error.startsWith('Wrong password ')
-);
+  error.startsWith('Wrong password '));
 
 const savedUsernames: Ref<string[]> = ref([]);
 
@@ -135,22 +132,21 @@ const orderedUsernamesList = computed(() => {
   const search = get(usernameSearch) || '';
   const usernames = get(savedUsernames);
 
-  if (!search) {
+  if (!search)
     return usernames;
-  }
+
   return usernames.sort((a, b) => compareTextByKeyword(a, b, search));
 });
 
 const hasServerError = computed(
-  () => !!get(usernameError) || !!get(passwordError)
+  () => !!get(usernameError) || !!get(passwordError),
 );
 
 const usernameErrors = computed(() => {
   const formErrors = [...toMessages(get(v$).username)];
   const serverError = get(usernameError);
-  if (serverError) {
+  if (serverError)
     formErrors.push(serverError);
-  }
 
   return formErrors;
 });
@@ -158,75 +154,72 @@ const usernameErrors = computed(() => {
 const passwordErrors = computed(() => {
   const formErrors = [...toMessages(get(v$).password)];
   const serverError = get(passwordError);
-  if (serverError) {
+  if (serverError)
     formErrors.push(serverError);
-  }
 
   return formErrors;
 });
 
-const logout = async () => {
+async function logout() {
   const { success } = await logoutRemoteSession();
-  if (success) {
+  if (success)
     touched();
-  }
-};
+}
 
 const serverColor = computed(() => {
-  if (get(customBackendSessionOnly)) {
+  if (get(customBackendSessionOnly))
     return 'primary';
-  } else if (get(customBackendSaved)) {
+  else if (get(customBackendSaved))
     return 'success';
-  }
 
   return undefined;
 });
 
-const focusElement = (element: any) => {
-  if (!element) {
+function focusElement(element: any) {
+  if (!element)
     return;
-  }
+
   const input = element.$el.querySelector(
-    'input:not([type=hidden])'
+    'input:not([type=hidden])',
   ) as HTMLInputElement;
   input.focus();
-};
+}
 
-const updateFocus = () => {
+function updateFocus() {
   nextTick(() => {
     focusElement(get(username) ? get(passwordRef) : get(usernameRef));
   });
-};
+}
 
-const saveCustomBackend = () => {
+function saveCustomBackend() {
   saveBackendUrl({
     url: get(customBackendUrl),
-    sessionOnly: get(customBackendSessionOnly)
+    sessionOnly: get(customBackendSessionOnly),
   });
   backendChanged(get(customBackendUrl));
   set(customBackendSaved, true);
   set(customBackendDisplay, false);
-};
+}
 
-const clearCustomBackend = () => {
+function clearCustomBackend() {
   set(customBackendUrl, '');
   set(customBackendSessionOnly, false);
   deleteBackendUrl();
   backendChanged(null);
   set(customBackendSaved, false);
   set(customBackendDisplay, false);
-};
+}
 
-const checkRememberUsername = () => {
+function checkRememberUsername() {
   set(
     rememberUsername,
-    !!get(savedRememberUsername) ||
-      !!get(savedRememberPassword) ||
-      !get(isDocker)
+    !!get(savedRememberUsername)
+    || !!get(savedRememberPassword)
+    || !get(isDocker),
   );
-};
+}
 
-const loadSettings = async () => {
+async function loadSettings() {
   set(rememberPassword, !!get(savedRememberPassword));
   checkRememberUsername();
   set(username, get(savedUsername));
@@ -243,7 +236,7 @@ const loadSettings = async () => {
       await login();
     }
   }
-};
+}
 
 const router = useRouter();
 
@@ -253,11 +246,10 @@ onBeforeMount(async () => {
   set(savedUsernames, profiles);
   if (profiles.length === 0) {
     const { currentRoute } = router;
-    if (!currentRoute.query.disableNoUserRedirection) {
+    if (!currentRoute.query.disableNoUserRedirection)
       newAccount();
-    } else {
+    else
       await router.replace({ query: {} });
-    }
   }
 });
 
@@ -266,58 +258,55 @@ onMounted(async () => {
 });
 
 watch(rememberUsername, (remember: boolean, previous: boolean) => {
-  if (remember === previous) {
+  if (remember === previous)
     return;
-  }
 
   if (!remember) {
     set(savedRememberUsername, null);
     set(savedUsername, null);
-  } else {
+  }
+  else {
     set(savedRememberUsername, 'true');
   }
 });
 
 watch(rememberPassword, async (remember: boolean, previous: boolean) => {
-  if (remember === previous) {
+  if (remember === previous)
     return;
-  }
 
   if (!remember) {
     set(savedRememberPassword, null);
-    if (isPackaged) {
+    if (isPackaged)
       await clearPassword();
-    }
-  } else {
+  }
+  else {
     set(savedRememberPassword, 'true');
   }
 
   checkRememberUsername();
 });
 
-const login = async (actions?: {
+async function login(actions?: {
   syncApproval?: SyncApproval;
   resumeFromBackup?: boolean;
-}) => {
+}) {
   const credentials: LoginCredentials = {
     username: get(username),
     password: get(password),
-    ...actions
+    ...actions,
   };
   emit('login', credentials);
-  if (get(rememberUsername)) {
+  if (get(rememberUsername))
     set(savedUsername, get(username));
-  }
 
-  if (get(rememberPassword) && isPackaged) {
+  if (get(rememberPassword) && isPackaged)
     await storePassword(get(username), get(password));
-  }
-};
+}
 
-const abortLogin = () => {
+function abortLogin() {
   resetSyncConflict();
   resetIncompleteUpgradeConflict();
-};
+}
 </script>
 
 <template>
@@ -337,8 +326,13 @@ const abortLogin = () => {
         </h4>
 
         <div class="text-body-1 text-rui-text-secondary mb-8">
-          <p class="mb-3">{{ t('login.description.welcome') }}</p>
-          <i18n path="login.description.more_details" tag="p">
+          <p class="mb-3">
+            {{ t('login.description.welcome') }}
+          </p>
+          <i18n
+            path="login.description.more_details"
+            tag="p"
+          >
             <template #documentation>
               <ExternalLink
                 :text="t('login.description.our_docs')"
@@ -349,7 +343,10 @@ const abortLogin = () => {
         </div>
 
         <div>
-          <form novalidate @submit.stop.prevent="login()">
+          <form
+            novalidate
+            @submit.stop.prevent="login()"
+          >
             <RuiTextField
               v-if="isDocker || isTest"
               ref="usernameRef"
@@ -453,7 +450,10 @@ const abortLogin = () => {
                     :text="t('login.remember_password_tooltip')"
                   >
                     <template #activator>
-                      <RuiIcon name="question-line" color="primary" />
+                      <RuiIcon
+                        name="question-line"
+                        color="primary"
+                      />
                     </template>
                   </RuiTooltip>
                 </div>
@@ -471,7 +471,10 @@ const abortLogin = () => {
                     icon
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
-                    <RuiIcon name="server-line" :color="serverColor" />
+                    <RuiIcon
+                      name="server-line"
+                      :color="serverColor"
+                    />
                     <template #append>
                       <RuiIcon
                         size="16"
@@ -512,7 +515,10 @@ const abortLogin = () => {
                   dense
                 >
                   <template #prepend>
-                    <RuiIcon name="server-line" :color="serverColor" />
+                    <RuiIcon
+                      name="server-line"
+                      :color="serverColor"
+                    />
                   </template>
                   <template #append>
                     <RuiButton
@@ -524,7 +530,11 @@ const abortLogin = () => {
                       icon
                       @click="saveCustomBackend()"
                     >
-                      <RuiIcon name="save-2-fill" color="primary" size="20" />
+                      <RuiIcon
+                        name="save-2-fill"
+                        color="primary"
+                        size="20"
+                      />
                     </RuiButton>
                     <RuiButton
                       v-else
@@ -569,10 +579,10 @@ const abortLogin = () => {
                 color="primary"
                 size="lg"
                 :disabled="
-                  v$.$invalid ||
-                  loading ||
-                  conflictExist ||
-                  customBackendDisplay
+                  v$.$invalid
+                    || loading
+                    || conflictExist
+                    || customBackendDisplay
                 "
                 :loading="loading"
                 type="submit"
@@ -639,7 +649,10 @@ const abortLogin = () => {
           </form>
         </div>
       </div>
-      <div v-if="errors.length > 0" class="mt-8 max-w-[41.25rem] mx-auto">
+      <div
+        v-if="errors.length > 0"
+        class="mt-8 max-w-[41.25rem] mx-auto"
+      >
         <RuiAlert
           v-if="hasServerError"
           :action-text="isLoggedInError ? t('login.logout') : ''"
@@ -658,14 +671,17 @@ const abortLogin = () => {
             </p>
           </template>
         </RuiAlert>
-        <RuiAlert v-else type="error">
+        <RuiAlert
+          v-else
+          type="error"
+        >
           <template #title>
             <p
               v-for="(error, i) in errors"
               :key="i"
               :class="{
                 'mb-2': i < errors.length - 1,
-                'mb-0': i === errors.length - 1
+                'mb-0': i === errors.length - 1,
               }"
             >
               {{ error }}

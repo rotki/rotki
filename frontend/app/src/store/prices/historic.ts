@@ -1,7 +1,7 @@
-import { type BigNumber } from '@rotki/common';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import type { BigNumber } from '@rotki/common';
+import type { TaskMeta } from '@/types/task';
 
 export const useHistoricCachePriceStore = defineStore(
   'prices/historic-cache',
@@ -17,7 +17,7 @@ export const useHistoricCachePriceStore = defineStore(
 
     const fetchHistoricPrices = async (keys: string[]) => {
       const taskType = TaskType.FETCH_HISTORIC_PRICE;
-      const assetsTimestamp = keys.map(key => {
+      const assetsTimestamp = keys.map((key) => {
         const [from, timestamp] = key.split('#');
 
         return [from, timestamp];
@@ -26,7 +26,7 @@ export const useHistoricCachePriceStore = defineStore(
 
       const { taskId } = await queryHistoricalRates({
         assetsTimestamp,
-        targetAsset
+        targetAsset,
       });
 
       let data = { targetAsset: '', assets: {} };
@@ -41,22 +41,23 @@ export const useHistoricCachePriceStore = defineStore(
               'actions.balances.historic_fetch_price.task.description',
               {
                 count: assetsTimestamp.length,
-                toAsset: targetAsset
+                toAsset: targetAsset,
               },
-              2
-            )
+              2,
+            ),
           },
-          true
+          true,
         );
         data = result;
-      } catch (e: any) {
-        if (!isTaskCancelled(e)) {
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
           notify({
             title: t('actions.balances.historic_fetch_price.task.title'),
             message: t('actions.balances.historic_fetch_price.error.message', {
-              message: e.message
+              message: error.message,
             }),
-            display: true
+            display: true,
           });
         }
       }
@@ -76,29 +77,28 @@ export const useHistoricCachePriceStore = defineStore(
 
     const historicPriceInCurrentCurrency = (
       fromAsset: string,
-      timestamp: number
+      timestamp: number,
     ): ComputedRef<BigNumber> =>
       computed(() => {
         const key = createKey(fromAsset, timestamp);
 
-        if (get(isPending(key))) {
+        if (get(isPending(key)))
           return NoPrice;
-        }
 
         return get(retrieve(key)) || NoPrice;
       });
 
-    const { cache, isPending, retrieve, reset, deleteCacheKey } =
-      useItemCache<BigNumber>(keys => fetchHistoricPrices(keys));
+    const { cache, isPending, retrieve, reset, deleteCacheKey }
+      = useItemCache<BigNumber>(keys => fetchHistoricPrices(keys));
 
     watch(currencySymbol, () => {
       reset();
     });
 
     const resetHistoricalPricesData = (
-      items: { fromAsset: string; timestamp: number }[]
+      items: { fromAsset: string; timestamp: number }[],
     ) => {
-      items.forEach(item => {
+      items.forEach((item) => {
         const key = createKey(item.fromAsset, item.timestamp);
         deleteCacheKey(key);
       });
@@ -111,13 +111,13 @@ export const useHistoricCachePriceStore = defineStore(
       reset,
       createKey,
       historicPriceInCurrentCurrency,
-      resetHistoricalPricesData
+      resetHistoricalPricesData,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useHistoricCachePriceStore, import.meta.hot)
+    acceptHMRUpdate(useHistoricCachePriceStore, import.meta.hot),
   );
 }

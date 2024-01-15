@@ -12,45 +12,45 @@ export const useDarkMode = createSharedComposable(() => {
 
   watchDeep(
     theme,
-    theme => {
-      // @ts-ignore
+    (theme) => {
+      // @ts-expect-error
       const themes = theme.parsedTheme;
       const defaultConfig = get(config)!;
       const newColors = {
         primary: {
           DEFAULT: hexToRgbPoints(themes.primary.base).join(', '),
           lighter: hexToRgbPoints(themes.primary.lighten2).join(', '),
-          darker: hexToRgbPoints(themes.primary.darken1).join(', ')
+          darker: hexToRgbPoints(themes.primary.darken1).join(', '),
         },
         secondary: {
           DEFAULT: hexToRgbPoints(themes.accent.base).join(', '),
           lighter: hexToRgbPoints(themes.accent.lighten2).join(', '),
-          darker: hexToRgbPoints(themes.accent.darken1).join(', ')
-        }
+          darker: hexToRgbPoints(themes.accent.darken1).join(', '),
+        },
       };
 
       const newConfig = {
         dark: {
           ...defaultConfig.dark,
-          ...newColors
+          ...newColors,
         },
         light: {
           ...defaultConfig.light,
-          ...newColors
-        }
+          ...newColors,
+        },
       };
 
       setThemeConfig(newConfig);
     },
-    { immediate: true }
+    { immediate: true },
   );
 
-  watchImmediate(darkModeEnabled, enabled => {
+  watchImmediate(darkModeEnabled, (enabled) => {
     switchThemeScheme(enabled ? ThemeMode.dark : ThemeMode.light);
   });
 
   return {
     darkModeEnabled,
-    updateDarkMode
+    updateDarkMode,
   };
 });

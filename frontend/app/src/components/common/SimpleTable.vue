@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue/types/jsx';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -12,19 +12,19 @@ const props = withDefaults(
   }>(),
   {
     variant: 'outlined',
-    height: undefined
-  }
+    height: undefined,
+  },
 );
 
 const css = useCssModule();
 const attrs = useAttrs();
 
 const style = computed<StyleValue | undefined>(() => {
-  if (!props.height) {
+  if (!props.height)
     return undefined;
-  }
+
   return {
-    height: toRem(props.height)
+    height: toRem(props.height),
   };
 });
 </script>
@@ -34,8 +34,8 @@ const style = computed<StyleValue | undefined>(() => {
     :class="[
       css.table,
       {
-        [css.outlined]: variant === 'outlined'
-      }
+        [css.outlined]: variant === 'outlined',
+      },
     ]"
     :style="style"
     v-bind="attrs"

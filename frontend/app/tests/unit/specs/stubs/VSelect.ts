@@ -5,8 +5,8 @@ const VSelectStub = {
     </div>
   `,
   props: {
-    value: { type: String }
-  }
+    value: { type: String },
+  },
 };
 
 export default VSelectStub;

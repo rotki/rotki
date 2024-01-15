@@ -1,14 +1,16 @@
-import { type BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { timeframes } from '@rotki/common/lib/settings/graphs';
-import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { CURRENCY_USD } from '@/types/currencies';
+import type { NetValue } from '@rotki/common/lib/statistics';
+import type { BigNumber } from '@rotki/common';
 
-const defaultNetValue = (): NetValue => ({
-  times: [],
-  data: []
-});
+function defaultNetValue(): NetValue {
+  return {
+    times: [],
+    data: [],
+  };
+}
 
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
@@ -17,7 +19,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { nftsInNetValue } = storeToRefs(settingsStore);
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(
-    useGeneralSettingsStore()
+    useGeneralSettingsStore(),
   );
   const { balances, liabilities } = useAggregatedBalances();
   const { nonFungibleTotalValue } = storeToRefs(useNonFungibleBalancesStore());
@@ -38,12 +40,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       const assetValue = aggregatedBalances.reduce(
         (sum, value) => sum.plus(value.usdValue),
-        Zero
+        Zero,
       );
 
       const liabilityValue = totalLiabilities.reduce(
         (sum, value) => sum.plus(value.usdValue),
-        Zero
+        Zero,
       );
 
       return assetValue
@@ -65,7 +67,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const rate = get(exchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) =>
-      dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
+      dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix(),
     );
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
 
@@ -88,12 +90,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const balanceDelta = totalNW.minus(starting);
     const percentage = balanceDelta.div(starting).multipliedBy(100);
 
-    let up: boolean | undefined = undefined;
-    if (balanceDelta.isGreaterThan(0)) {
+    let up: boolean | undefined;
+    if (balanceDelta.isGreaterThan(0))
       up = true;
-    } else if (balanceDelta.isLessThan(0)) {
+    else if (balanceDelta.isLessThan(0))
       up = false;
-    }
 
     const floatPrecision = get(floatingPrecision);
     const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
@@ -104,7 +105,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       netWorth: totalNW.toFormat(floatPrecision),
       delta,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
-      up
+      up,
     };
   });
 
@@ -112,13 +113,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const fetchNetValue = async (): Promise<void> => {
     try {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
-    } catch (e: any) {
+    }
+    catch (error: any) {
       notify({
         title: t('actions.statistics.net_value.error.title').toString(),
         message: t('actions.statistics.net_value.error.message', {
-          message: e.message
+          message: error.message,
         }).toString(),
-        display: false
+        display: false,
       });
     }
   };
@@ -141,23 +143,23 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
         return {
           times: [now - oneDayTimestamp, now],
-          data: [Zero, netWorth]
+          data: [Zero, netWorth],
         };
       }
 
       const nv: NetValue = { times: [], data: [] };
 
       for (const [i, time] of times.entries()) {
-        if (time < startingDate) {
+        if (time < startingDate)
           continue;
-        }
+
         nv.times.push(time);
         nv.data.push(convert(data[i]));
       }
 
       return {
         times: [...nv.times, now],
-        data: [...nv.data, netWorth]
+        data: [...nv.data, netWorth],
       };
     });
 
@@ -167,10 +169,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
     totalNetWorthUsd,
     overall,
     fetchNetValue,
-    getNetValue
+    getNetValue,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useStatisticsStore, import.meta.hot));
-}

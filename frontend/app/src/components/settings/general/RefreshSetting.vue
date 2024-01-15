@@ -15,30 +15,30 @@ const rules = {
   refreshPeriod: {
     required: helpers.withMessage(
       t('frontend_settings.validation.refresh_period.non_empty'),
-      required
+      required,
     ),
     between: helpers.withMessage(
       t('frontend_settings.validation.refresh_period.invalid_period', {
         start: minRefreshPeriod,
-        end: maxRefreshPeriod
+        end: maxRefreshPeriod,
       }),
-      between(minRefreshPeriod, maxRefreshPeriod)
-    )
-  }
+      between(minRefreshPeriod, maxRefreshPeriod),
+    ),
+  },
 };
 
 const v$ = useVuelidate(rules, { refreshPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 const { refreshPeriod: currentPeriod } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
-const resetRefreshPeriod = () => {
+function resetRefreshPeriod() {
   const period = get(currentPeriod);
   set(refreshEnabled, period > 0);
   set(refreshPeriod, get(refreshEnabled) ? period.toString() : '');
-};
+}
 
 const transform = (value: string) => (value ? Number.parseInt(value) : value);
 const transformSwitch = (value: boolean) => (value ? 30 : -1);

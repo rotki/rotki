@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type RestChains } from '@/types/blockchain/chains';
-import { type GeneralAccountData } from '@/types/blockchain/accounts';
+import type { RestChains } from '@/types/blockchain/chains';
+import type { GeneralAccountData } from '@/types/blockchain/accounts';
 
 export const useChainsAccountsStore = defineStore(
   'blockchain/accounts/chains',
@@ -26,43 +26,42 @@ export const useChainsAccountsStore = defineStore(
     };
 
     const update = (chain: RestChains, data: GeneralAccountData[]) => {
-      if (chain === Blockchain.KSM) {
+      if (chain === Blockchain.KSM)
         set(ksm, data);
-      } else if (chain === Blockchain.DOT) {
+      else if (chain === Blockchain.DOT)
         set(dot, data);
-      } else if (chain === Blockchain.AVAX) {
+      else if (chain === Blockchain.AVAX)
         set(avax, data);
-      } else if (chain === Blockchain.OPTIMISM) {
+      else if (chain === Blockchain.OPTIMISM)
         set(optimism, data);
-      } else if (chain === Blockchain.POLYGON_POS) {
+      else if (chain === Blockchain.POLYGON_POS)
         set(polygon, data);
-      } else if (chain === Blockchain.ARBITRUM_ONE) {
+      else if (chain === Blockchain.ARBITRUM_ONE)
         set(arbitrum, data);
-      } else if (chain === Blockchain.BASE) {
+      else if (chain === Blockchain.BASE)
         set(base, data);
-      } else if (chain === Blockchain.GNOSIS) {
+      else if (chain === Blockchain.GNOSIS)
         set(gnosis, data);
-      }
     };
 
     const optimismAddresses: ComputedRef<string[]> = computed(() =>
-      get(optimism).map(({ address }) => address)
+      get(optimism).map(({ address }) => address),
     );
 
     const polygonAddresses: ComputedRef<string[]> = computed(() =>
-      get(polygon).map(({ address }) => address)
+      get(polygon).map(({ address }) => address),
     );
 
     const arbitrumAddresses: ComputedRef<string[]> = computed(() =>
-      get(arbitrum).map(({ address }) => address)
+      get(arbitrum).map(({ address }) => address),
     );
 
     const baseAddresses: ComputedRef<string[]> = computed(() =>
-      get(base).map(({ address }) => address)
+      get(base).map(({ address }) => address),
     );
 
     const gnosisAddresses: ComputedRef<string[]> = computed(() =>
-      get(gnosis).map(({ address }) => address)
+      get(gnosis).map(({ address }) => address),
     );
 
     return {
@@ -80,13 +79,13 @@ export const useChainsAccountsStore = defineStore(
       baseAddresses,
       gnosisAddresses,
       update,
-      removeTag
+      removeTag,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useChainsAccountsStore, import.meta.hot)
+    acceptHMRUpdate(useChainsAccountsStore, import.meta.hot),
   );
 }

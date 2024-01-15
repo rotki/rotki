@@ -12,22 +12,22 @@ const props = withDefaults(
     location?: 'eth2' | 'liquity' | 'kraken' | null;
   }>(),
   {
-    location: null
-  }
+    location: null,
+  },
 );
 
 const imageSize = '64px';
 
 const pages = {
   eth2: defineAsyncComponent(
-    () => import('@/components/staking/eth/EthStakingPage.vue')
+    () => import('@/components/staking/eth/EthStakingPage.vue'),
   ),
   liquity: defineAsyncComponent(
-    () => import('@/components/staking/liquity/LiquityPage.vue')
+    () => import('@/components/staking/liquity/LiquityPage.vue'),
   ),
   kraken: defineAsyncComponent(
-    () => import('@/components/staking/kraken/KrakenPage.vue')
-  )
+    () => import('@/components/staking/kraken/KrakenPage.vue'),
+  ),
 };
 
 const { location } = toRefs(props);
@@ -38,18 +38,18 @@ const staking: ComputedRef<StakingInfo[]> = computed(() => [
   {
     id: 'eth2',
     image: './assets/images/protocols/ethereum.svg',
-    name: t('staking.eth2')
+    name: t('staking.eth2'),
   },
   {
     id: 'liquity',
     image: './assets/images/protocols/liquity.png',
-    name: t('staking.liquity')
+    name: t('staking.liquity'),
   },
   {
     id: 'kraken',
     image: './assets/images/protocols/kraken.svg',
-    name: t('staking.kraken')
-  }
+    name: t('staking.kraken'),
+  },
 ]);
 
 const router = useRouter();
@@ -61,17 +61,16 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-const updateLocation = async (location: string) => {
-  if (location) {
+async function updateLocation(location: string) {
+  if (location)
     set(lastLocation, location);
-  }
+
   await router.push(Routes.STAKING.replace(':location*', location));
-};
+}
 
 onBeforeMount(async () => {
-  if (get(lastLocation)) {
+  if (get(lastLocation))
     await updateLocation(get(lastLocation));
-  }
 });
 </script>
 
@@ -87,9 +86,19 @@ onBeforeMount(async () => {
         item-value="id"
         @change="updateLocation($event)"
       >
-        <template v-for="slot in ['item', 'selection']" #[slot]="data">
-          <div v-if="data.item" :key="slot" class="flex items-center gap-2">
-            <AdaptiveWrapper width="24" height="24">
+        <template
+          v-for="slot in ['item', 'selection']"
+          #[slot]="data"
+        >
+          <div
+            v-if="data.item"
+            :key="slot"
+            class="flex items-center gap-2"
+          >
+            <AdaptiveWrapper
+              width="24"
+              height="24"
+            >
               <AppImage
                 width="24px"
                 contain
@@ -103,14 +112,20 @@ onBeforeMount(async () => {
       </VSelect>
     </RuiCard>
 
-    <div v-if="page" class="pt-8">
+    <div
+      v-if="page"
+      class="pt-8"
+    >
       <Component :is="page" />
     </div>
     <div v-else>
       <div
         class="flex flex-row items-center justify-center justify-md-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
       >
-        <RuiIcon class="shrink-0" name="corner-left-up-line" />
+        <RuiIcon
+          class="shrink-0"
+          name="corner-left-up-line"
+        />
         <div class="pt-3">
           {{ t('staking_page.dropdown_hint') }}
         </div>
@@ -130,7 +145,11 @@ onBeforeMount(async () => {
                 <InternalLink
                   :to="Routes.STAKING.replace(':location*', item.id)"
                 >
-                  <AppImage :size="imageSize" contain :src="item.image" />
+                  <AppImage
+                    :size="imageSize"
+                    contain
+                    :src="item.image"
+                  />
                 </InternalLink>
               </template>
               {{ item.name }}

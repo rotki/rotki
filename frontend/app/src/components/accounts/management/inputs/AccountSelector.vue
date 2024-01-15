@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import Fragment from '@/components/helper/Fragment';
 import { isBtcChain } from '@/types/blockchain/chains';
-import { type InputMode } from '@/types/input-mode';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { InputMode } from '@/types/input-mode';
 
 const props = defineProps<{
   blockchain: Blockchain;
@@ -24,15 +24,15 @@ const isEvmChain = isEvm(blockchain);
 
 const showInputModeSelector = logicOr(
   computed(() => isBtcChain(get(blockchain))),
-  isEvmChain
+  isEvmChain,
 );
 
-const updateModelValue = (value: Blockchain | null) => {
-  if (!value) {
+function updateModelValue(value: Blockchain | null) {
+  if (!value)
     return;
-  }
+
   emit('update:blockchain', value);
-};
+}
 </script>
 
 <template>

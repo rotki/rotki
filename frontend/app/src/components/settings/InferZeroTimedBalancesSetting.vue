@@ -9,17 +9,17 @@ const updated = () => emit('updated');
 
 const inferZeroTimedBalances = ref<boolean>(false);
 const { inferZeroTimedBalances: enabled } = storeToRefs(
-  useGeneralSettingsStore()
+  useGeneralSettingsStore(),
 );
 
-const resetState = () => {
+function resetState() {
   set(inferZeroTimedBalances, get(enabled));
-};
+}
 
-const finished = () => {
+function finished() {
   resetState();
   updated();
-};
+}
 
 onMounted(() => {
   resetState();

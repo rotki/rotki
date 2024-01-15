@@ -1,6 +1,6 @@
 import {
   type HistoryEventsQueryData,
-  HistoryEventsQueryStatus
+  HistoryEventsQueryStatus,
 } from '@/types/websocket-messages';
 
 export const useEventsQueryStatusStore = defineStore(
@@ -15,7 +15,7 @@ export const useEventsQueryStatusStore = defineStore(
 
       status[key] = {
         ...status[key],
-        ...data
+        ...data,
       };
       set(queryStatus, status);
     };
@@ -23,8 +23,8 @@ export const useEventsQueryStatusStore = defineStore(
     const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
       item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;
 
-    const { queryStatus, isAllFinished, removeQueryStatus, resetQueryStatus } =
-      useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
+    const { queryStatus, isAllFinished, removeQueryStatus, resetQueryStatus }
+      = useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
 
     return {
       queryStatus,
@@ -32,13 +32,13 @@ export const useEventsQueryStatusStore = defineStore(
       isStatusFinished,
       setQueryStatus,
       removeQueryStatus,
-      resetQueryStatus
+      resetQueryStatus,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useEventsQueryStatusStore, import.meta.hot)
+    acceptHMRUpdate(useEventsQueryStatusStore, import.meta.hot),
   );
 }

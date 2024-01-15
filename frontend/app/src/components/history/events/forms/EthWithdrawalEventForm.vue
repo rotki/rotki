@@ -4,13 +4,13 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty } from 'lodash-es';
-import {
-  type EthWithdrawalEvent,
-  type NewEthWithdrawalEventPayload
-} from '@/types/history/events';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
+import type {
+  EthWithdrawalEvent,
+  NewEthWithdrawalEventPayload,
+} from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -19,8 +19,8 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    groupHeader: undefined
-  }
+    groupHeader: undefined,
+  },
 );
 
 const { t } = useI18n();
@@ -46,52 +46,52 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.event_identifier.validation.non_empty'
+        'transactions.events.form.event_identifier.validation.non_empty',
       ).toString(),
-      requiredIf(() => !!get(editableItem))
-    )
+      requiredIf(() => !!get(editableItem)),
+    ),
   },
   timestamp: { externalServerValidation: () => true },
   amount: {
     required: helpers.withMessage(
       t('transactions.events.form.amount.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol)
+        currency: get(currencySymbol),
       }).toString(),
-      required
-    )
+      required,
+    ),
   },
   validatorIndex: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.validator_index.validation.non_empty'
+        'transactions.events.form.validator_index.validation.non_empty',
       ).toString(),
-      required
-    )
+      required,
+    ),
   },
   withdrawalAddress: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.withdrawal_address.validation.non_empty'
+        'transactions.events.form.withdrawal_address.validation.non_empty',
       ).toString(),
-      required
+      required,
     ),
     isValid: helpers.withMessage(
       t(
-        'transactions.events.form.withdrawal_address.validation.valid'
+        'transactions.events.form.withdrawal_address.validation.valid',
       ).toString(),
-      (value: string) => isValidEthAddress(value)
-    )
-  }
+      (value: string) => isValidEthAddress(value),
+    ),
+  },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
-  useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler }
+  = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -101,23 +101,23 @@ const v$ = setValidation(
     amount,
     usdValue,
     validatorIndex,
-    withdrawalAddress
+    withdrawalAddress,
   },
   {
     $autoDirty: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 
-const reset = () => {
+function reset() {
   set(eventIdentifier, null);
   set(
     datetime,
     convertFromTimestamp(
       dayjs().valueOf(),
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(amount, '0');
   set(usdValue, '0');
@@ -127,26 +127,26 @@ const reset = () => {
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
-};
+}
 
-const applyEditableData = async (entry: EthWithdrawalEvent) => {
+async function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
   set(isExit, entry.isExit);
-};
+}
 
-const applyGroupHeaderData = async (entry: EthWithdrawalEvent) => {
+async function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
@@ -155,23 +155,22 @@ const applyGroupHeaderData = async (entry: EthWithdrawalEvent) => {
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(usdValue, '0');
-};
+}
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 
-const save = async (): Promise<boolean> => {
+async function save(): Promise<boolean> {
   const timestamp = convertToTimestamp(
     get(datetime),
     DateFormat.DateMonthYearHourMinuteSecond,
-    true
+    true,
   );
 
   const payload: NewEthWithdrawalEventPayload = {
@@ -180,11 +179,11 @@ const save = async (): Promise<boolean> => {
     timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
     validatorIndex: parseInt(get(validatorIndex)),
     withdrawalAddress: get(withdrawalAddress),
-    isExit: get(isExit)
+    isExit: get(isExit),
   };
 
   const edit = get(editableItem);
@@ -193,16 +192,16 @@ const save = async (): Promise<boolean> => {
     edit ? { ...payload, identifier: edit.identifier } : payload,
     assetPriceForm,
     errorMessages,
-    reset
+    reset,
   );
-};
+}
 
 setSubmitFunc(save);
 
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const checkPropsData = () => {
+function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
     applyEditableData(editable);
@@ -214,7 +213,7 @@ const checkPropsData = () => {
     return;
   }
   reset();
-};
+}
 
 watch([groupHeader, editableItem], checkPropsData);
 onMounted(() => {
@@ -226,7 +225,7 @@ const { accounts } = useAccountBalances();
 const withdrawalAddressSuggestions = computed(() =>
   get(accounts)
     .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address)
+    .map(item => item.address),
 );
 </script>
 
@@ -283,7 +282,11 @@ const withdrawalAddressSuggestions = computed(() =>
       @blur="v$.withdrawalAddress.$touch()"
     />
 
-    <RuiCheckbox v-model="isExit" color="primary" data-cy="isExited">
+    <RuiCheckbox
+      v-model="isExit"
+      color="primary"
+      data-cy="isExited"
+    >
       {{ t('transactions.events.form.is_exit.label') }}
     </RuiCheckbox>
 

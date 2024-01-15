@@ -1,15 +1,15 @@
 import { Routes } from '@/router/routes';
 import router from '@/router';
 
-export const useAppNavigation = () => {
+export function useAppNavigation() {
   const navigateToUserLogin = async (
-    disableNoUserRedirection: boolean = false
+    disableNoUserRedirection: boolean = false,
   ) => {
     await router.push({
       path: Routes.USER_LOGIN,
       ...(disableNoUserRedirection
         ? { query: { disableNoUserRedirection: '1' } }
-        : {})
+        : {}),
     });
   };
 
@@ -24,6 +24,6 @@ export const useAppNavigation = () => {
   return {
     navigateToDashboard,
     navigateToUserCreation,
-    navigateToUserLogin
+    navigateToUserLogin,
   };
-};
+}

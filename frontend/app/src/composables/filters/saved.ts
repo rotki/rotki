@@ -1,17 +1,14 @@
-import { type MaybeRef } from '@vueuse/core';
-import {
-  type BaseSuggestion,
-  type SavedFilterLocation,
-  type Suggestion
+import type { MaybeRef } from '@vueuse/core';
+import type {
+  BaseSuggestion,
+  SavedFilterLocation,
+  Suggestion,
 } from '@/types/filtering';
-import { type ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/types/action';
 
 const LIMIT_PER_LOCATION = 10;
 
-export const useSavedFilter = (
-  location: MaybeRef<SavedFilterLocation>,
-  isAsset: (key: string) => boolean
-) => {
+export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset: (key: string) => boolean) {
   const frontendStore = useFrontendSettingsStore();
   const { updateSetting } = frontendStore;
 
@@ -25,8 +22,8 @@ export const useSavedFilter = (
         ...suggestion,
         index: 0,
         total: 1,
-        asset: isAsset(suggestion.key)
-      }))
+        asset: isAsset(suggestion.key),
+      })),
     );
   });
 
@@ -37,9 +34,9 @@ export const useSavedFilter = (
     if (currentFilters.length >= LIMIT_PER_LOCATION) {
       return {
         message: t('table_filter.saved_filters.saving.limited', {
-          limit: LIMIT_PER_LOCATION
+          limit: LIMIT_PER_LOCATION,
         }).toString(),
-        success: false
+        success: false,
       };
     }
 
@@ -51,8 +48,8 @@ export const useSavedFilter = (
           !item.asset || typeof item.value === 'string'
             ? item.value
             : item.value.identifier,
-        exclude: item.exclude
-      }))
+        exclude: item.exclude,
+      })),
     ];
     return await saveFilters(newFilters);
   };
@@ -65,12 +62,12 @@ export const useSavedFilter = (
   };
 
   const saveFilters = async (
-    filters: BaseSuggestion[][]
+    filters: BaseSuggestion[][],
   ): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };
     allSaved[get(location)] = filters;
     return await updateSetting({
-      savedFilters: allSaved
+      savedFilters: allSaved,
     });
   };
 
@@ -78,6 +75,6 @@ export const useSavedFilter = (
     savedFilters,
     addFilter,
     deleteFilter,
-    saveFilters
+    saveFilters,
   };
-};
+}

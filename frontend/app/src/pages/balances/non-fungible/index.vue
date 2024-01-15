@@ -7,6 +7,12 @@ const enabled = isModuleEnabled(modules[0]);
 </script>
 
 <template>
-  <ModuleNotActive v-if="!enabled" :modules="modules" />
-  <NonFungibleBalances v-else :modules="modules" />
+  <ModuleNotActive
+    v-if="!enabled"
+    :modules="modules"
+  />
+  <NonFungibleBalances
+    v-else
+    :modules="modules"
+  />
 </template>

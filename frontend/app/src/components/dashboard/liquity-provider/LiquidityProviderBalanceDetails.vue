@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice } from '@rotki/common';
-import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
-import {
-  type DataTableColumn,
-  type DataTableSortData
+import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { XswapAsset } from '@rotki/common/lib/defi/xswap';
+import type {
+  DataTableColumn,
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
+import type { Ref } from 'vue';
 
 withDefaults(
   defineProps<{
@@ -13,8 +13,8 @@ withDefaults(
     premiumOnly?: boolean;
   }>(),
   {
-    premiumOnly: true
-  }
+    premiumOnly: true,
+  },
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -24,46 +24,47 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
-    cellClass: 'text-no-wrap'
+    cellClass: 'text-no-wrap',
   },
   {
     label: t('common.price', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdPrice',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
   },
   {
     label: t('common.amount'),
     key: 'amount',
-    align: 'end'
+    align: 'end',
   },
   {
     label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdValue',
     align: 'end',
-    class: 'text-no-wrap'
-  }
+    class: 'text-no-wrap',
+  },
 ]);
 
 const premium = usePremium();
 
 const { assetPrice } = useBalancePricesStore();
 
-const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
-  assets.map(item => ({
+function transformAssets(assets: XswapAsset[]): AssetBalanceWithPrice[] {
+  return assets.map(item => ({
     asset: item.asset,
     usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
     amount: item.userBalance.amount,
-    usdValue: item.userBalance.usdValue
+    usdValue: item.userBalance.usdValue,
   }));
+}
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 </script>
 
@@ -79,7 +80,10 @@ const sort: Ref<DataTableSortData> = ref({
     class="bg-white dark:bg-[#1E1E1E] my-2"
   >
     <template #item.asset="{ row }">
-      <AssetDetails opens-details :asset="row.asset" />
+      <AssetDetails
+        opens-details
+        :asset="row.asset"
+      />
     </template>
     <template #item.usdPrice="{ row }">
       <AmountDisplay
@@ -107,7 +111,11 @@ const sort: Ref<DataTableSortData> = ref({
       />
     </template>
   </RuiDataTable>
-  <RuiCard v-else dense variant="flat">
+  <RuiCard
+    v-else
+    dense
+    variant="flat"
+  >
     <div class="flex items-center gap-2 text-body-2">
       <PremiumLock />
       {{ t('uniswap.assets_non_premium') }}

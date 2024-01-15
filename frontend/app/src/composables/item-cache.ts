@@ -1,4 +1,4 @@
-import { type MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from '@vueuse/core';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;
@@ -17,13 +17,10 @@ interface CacheOptions {
   size: number;
 }
 
-export const useItemCache = <T>(
-  fetch: CacheFetch<T>,
-  options: CacheOptions = {
-    size: CACHE_SIZE,
-    expiry: CACHE_EXPIRY
-  }
-) => {
+export function useItemCache<T>(fetch: CacheFetch<T>, options: CacheOptions = {
+  size: CACHE_SIZE,
+  expiry: CACHE_EXPIRY,
+}) {
   const recent: Map<string, number> = new Map();
   const unknown: Map<string, number> = new Map();
   const cache: Ref<Record<string, T | null>> = ref({});
@@ -35,9 +32,8 @@ export const useItemCache = <T>(
     delete copy[key];
     set(cache, copy);
 
-    if (unknown.has(key)) {
+    if (unknown.has(key))
       unknown.delete(key);
-    }
   };
 
   const updateCacheKey = (key: string, value: T): void => {
@@ -48,9 +44,8 @@ export const useItemCache = <T>(
     set(pending, { ...get(pending), [key]: true });
 
     const currentBatch = get(batch);
-    if (!currentBatch.includes(key)) {
+    if (!currentBatch.includes(key))
       set(batch, [...currentBatch, key]);
-    }
   };
 
   const resetPending = (key: string): void => {
@@ -74,9 +69,9 @@ export const useItemCache = <T>(
 
   const fetchBatch = useDebounceFn(async () => {
     const currentBatch = get(batch);
-    if (currentBatch.length === 0) {
+    if (currentBatch.length === 0)
       return;
-    }
+
     set(batch, []);
     await processBatch(currentBatch);
   }, 800);
@@ -87,19 +82,21 @@ export const useItemCache = <T>(
       for (const { item, key } of batch()) {
         if (item) {
           put(key, item);
-        } else {
-          if (import.meta.env.VITE_VERBOSE_CACHE) {
+        }
+        else {
+          if (import.meta.env.VITE_VERBOSE_CACHE)
             logger.debug(`unknown key: ${key}`);
-          }
+
           unknown.set(key, Date.now() + options.expiry);
         }
       }
-    } catch (e) {
-      logger.error(e);
-    } finally {
-      for (const key of keys) {
+    }
+    catch (error) {
+      logger.error(error);
+    }
+    finally {
+      for (const key of keys)
         resetPending(key);
-      }
     }
   }
 
@@ -107,13 +104,12 @@ export const useItemCache = <T>(
 
   const queueIdentifier = (key: string): void => {
     const unknownExpiry = unknown.get(key);
-    if (unknownExpiry && unknownExpiry >= Date.now()) {
+    if (unknownExpiry && unknownExpiry >= Date.now())
       return;
-    }
 
-    if (unknown.has(key)) {
+    if (unknown.has(key))
       unknown.delete(key);
-    }
+
     setPending(key);
     startPromise(batchPromise());
   };
@@ -132,9 +128,8 @@ export const useItemCache = <T>(
       }
     }
 
-    if (!get(pending)[key] && !expired) {
+    if (!get(pending)[key] && !expired)
       queueIdentifier(key);
-    }
 
     return computed(() => get(cache)[key] ?? null);
   };
@@ -157,6 +152,6 @@ export const useItemCache = <T>(
     retrieve,
     reset,
     deleteCacheKey,
-    queueIdentifier
+    queueIdentifier,
   };
-};
+}

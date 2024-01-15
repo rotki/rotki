@@ -1,19 +1,19 @@
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
+import type { GeneralAccount } from '@rotki/common/lib/account';
 
 vi.mock('@/composables/api/assets/icon', () => ({
   useAssetIconApi: () => ({
-    assetImageUrl: vi.fn()
-  })
+    assetImageUrl: vi.fn(),
+  }),
 }));
 vi.mock('@/services/websocket/websocket-service');
 
-describe('AccountDisplay.vue', () => {
+describe('accountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
   let pinia: Pinia;
 
@@ -21,7 +21,7 @@ describe('AccountDisplay.vue', () => {
     chain: Blockchain.ETH,
     address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     label: 'Test Account',
-    tags: []
+    tags: [],
   };
 
   function createWrapper() {
@@ -30,11 +30,11 @@ describe('AccountDisplay.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        AssetIcon: true
+        AssetIcon: true,
       },
       propsData: {
-        account
-      }
+        account,
+      },
     });
   }
 
@@ -44,11 +44,11 @@ describe('AccountDisplay.vue', () => {
     wrapper = createWrapper();
   });
 
-  test('does not blur anything by default', async () => {
+  it('does not blur anything by default', async () => {
     expect(wrapper.find('.blur').exists()).toBe(false);
   });
 
-  test('blurs address on privacy mode', async () => {
+  it('blurs address on privacy mode', async () => {
     useSessionSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);

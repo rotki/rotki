@@ -5,6 +5,5 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 
 export default [
   http.post(`${backendUrl}/api/1/exchanges/binance/savings`, () =>
-    HttpResponse.json(binanceSavings, { status: 200 })
-  )
+    HttpResponse.json(binanceSavings, { status: 200 })),
 ];

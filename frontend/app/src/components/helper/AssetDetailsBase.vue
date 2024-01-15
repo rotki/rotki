@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
-import { type StyleValue } from 'vue/types/jsx';
 import { Routes } from '@/router/routes';
-import { type NftAsset } from '@/types/nfts';
+import type { ComputedRef } from 'vue';
+import type { StyleValue } from 'vue/types/jsx';
+import type { NftAsset } from '@/types/nfts';
 
 const props = withDefaults(
   defineProps<{
@@ -24,8 +24,8 @@ const props = withDefaults(
     dense: false,
     enableAssociation: true,
     showChain: true,
-    isCollectionParent: false
-  }
+    isCollectionParent: false,
+  },
 );
 
 const { asset, opensDetails, isCollectionParent } = toRefs(props);
@@ -35,10 +35,11 @@ const symbol: ComputedRef<string> = computed(() => get(asset).symbol ?? '');
 const name: ComputedRef<string> = computed(() => get(asset).name ?? '');
 
 const router = useRouter();
-const navigate = async () => {
-  if (!get(opensDetails)) {
+
+async function navigate() {
+  if (!get(opensDetails))
     return;
-  }
+
   const id = encodeURIComponent(get(asset).identifier);
   const collectionParent = get(isCollectionParent);
 
@@ -47,14 +48,14 @@ const navigate = async () => {
     query: !collectionParent
       ? {}
       : {
-          collectionParent: 'true'
-        }
+          collectionParent: 'true',
+        },
   });
-};
+}
 
 const { isPending } = useAssetCacheStore();
 const loading: ComputedRef<boolean> = computed(() =>
-  get(isPending(get(asset).identifier))
+  get(isPending(get(asset).identifier)),
 );
 </script>
 

@@ -2,8 +2,8 @@
 const name = 'covalent';
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete } =
-  useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete }
+  = useExternalApiKeys(t);
 
 const key = apiKey(name);
 const status = actionStatus(name);

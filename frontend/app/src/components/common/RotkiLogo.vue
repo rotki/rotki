@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
+import type { Ref } from 'vue';
 
 withDefaults(
   defineProps<{
@@ -10,8 +10,8 @@ withDefaults(
   {
     width: 'auto',
     height: 'auto',
-    url: undefined
-  }
+    url: undefined,
+  },
 );
 
 const error: Ref<boolean> = ref(false);

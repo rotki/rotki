@@ -1,5 +1,5 @@
-import { type EvmChainAndTxHash } from '@/types/history/events';
+import type { EvmChainAndTxHash } from '@/types/history/events';
 
 export const useHistoryTransactionsForm = createSharedComposable(
-  useForm<EvmChainAndTxHash | null>
+  useForm<EvmChainAndTxHash | null>,
 );

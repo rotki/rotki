@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export enum CurrencyLocation {
   BEFORE = 'before',
-  AFTER = 'after'
+  AFTER = 'after',
 }
 
 export const CurrencyLocationEnum = z.nativeEnum(CurrencyLocation);

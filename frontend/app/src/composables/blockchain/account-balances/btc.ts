@@ -1,21 +1,21 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type BlockchainTotal } from '@/types/blockchain';
 import { Section } from '@/types/status';
-import {
-  type AssetBreakdown,
-  type BlockchainAccountWithBalance
+import type { BlockchainTotal } from '@/types/blockchain';
+import type {
+  AssetBreakdown,
+  BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
 
-export const useBtcAccountBalances = () => {
+export function useBtcAccountBalances() {
   const { balances } = storeToRefs(useBtcBalancesStore());
   const { btc, bch } = storeToRefs(useBtcAccountsStore());
 
   const btcAccounts = computed<BlockchainAccountWithBalance[]>(() =>
-    btcAccountsWithBalances(get(btc), get(balances).btc, Blockchain.BTC)
+    btcAccountsWithBalances(get(btc), get(balances).btc, Blockchain.BTC),
   );
 
   const bchAccounts = computed<BlockchainAccountWithBalance[]>(() =>
-    btcAccountsWithBalances(get(bch), get(balances).bch, Blockchain.BCH)
+    btcAccountsWithBalances(get(bch), get(balances).bch, Blockchain.BCH),
   );
 
   const { shouldShowLoadingScreen } = useStatusStore();
@@ -24,14 +24,14 @@ export const useBtcAccountBalances = () => {
       chain: Blockchain.BTC,
       children: [],
       usdValue: sum(get(btcAccounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BTC))
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BTC)),
     },
     {
       chain: Blockchain.BCH,
       children: [],
       usdValue: sum(get(bchAccounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BCH))
-    }
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BCH)),
+    },
   ]);
 
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
@@ -41,13 +41,13 @@ export const useBtcAccountBalances = () => {
         : []),
       ...(asset === Blockchain.BCH.toUpperCase()
         ? getBtcBreakdown(Blockchain.BCH, get(balances).bch, get(bch))
-        : [])
+        : []),
     ]);
 
   return {
     btcAccounts,
     bchAccounts,
     bitcoinTotals,
-    getBreakdown
+    getBreakdown,
   };
-};
+}

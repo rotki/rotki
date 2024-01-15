@@ -46,7 +46,8 @@ export class LimitedParallelizationQueue {
         this.pendingTasks.delete(identifier);
         startPromise(this.run(identifier, promise));
       }
-    } else if (this.running === 0) {
+    }
+    else if (this.running === 0) {
       this.onCompletion?.();
     }
   }
@@ -63,12 +64,12 @@ export class LimitedParallelizationQueue {
    */
   queue(identifier: string, fn: Fn): void {
     if (this.runningTasks.size < this.parallelization) {
-      if (this.runningTasks.has(identifier)) {
+      if (this.runningTasks.has(identifier))
         this.pendingTasks.set(identifier, fn);
-      } else {
+      else
         startPromise(this.run(identifier, fn));
-      }
-    } else {
+    }
+    else {
       this.pendingTasks.set(identifier, fn);
     }
   }

@@ -1,4 +1,4 @@
-import { type DialogType } from '@/types/dialogs';
+import type { DialogType } from '@/types/dialogs';
 
 interface ConfirmationMessage {
   title: string;
@@ -17,12 +17,14 @@ type Func = VoidFunc | AwaitableFunc;
 
 const defaultFunc: Func = () => {};
 
-const defaultMessage = (): ConfirmationMessage => ({
-  title: '',
-  message: '',
-  type: 'warning',
-  singleAction: false
-});
+function defaultMessage(): ConfirmationMessage {
+  return {
+    title: '',
+    message: '',
+    type: 'warning',
+    singleAction: false,
+  };
+}
 
 export const useConfirmStore = defineStore('confirm', () => {
   const visible = ref(false);
@@ -35,19 +37,19 @@ export const useConfirmStore = defineStore('confirm', () => {
       set(confirmation, defaultMessage());
     },
     3000,
-    { immediate: false }
+    { immediate: false },
   );
 
   const show = (
     message: ConfirmationMessage,
     onConfirmFunc: Func,
-    onDismissFunc?: Func
+    onDismissFunc?: Func,
   ) => {
     set(confirmation, message);
     set(onConfirm, onConfirmFunc);
-    if (onDismissFunc) {
+    if (onDismissFunc)
       set(onDismiss, onDismissFunc);
-    }
+
     set(visible, true);
     stop();
   };
@@ -76,10 +78,9 @@ export const useConfirmStore = defineStore('confirm', () => {
     confirmation,
     confirm,
     show,
-    dismiss
+    dismiss,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useConfirmStore, import.meta.hot));
-}

@@ -2,22 +2,22 @@
   "compilerOptions": {
     // Target latest version of ECMAScript.
     "target": "ES2020",
+    "baseUrl": ".",
     "module": "commonjs",
     // Search under node_modules for non-relative imports.
     "moduleResolution": "node",
+    "typeRoots": ["node_modules/@types"],
     // Process & infer types from .js files.
     "allowJs": true,
-    // Don't emit; allow Babel to transform files.
-    "noEmit": true,
     // Enable strictest settings like strictNullChecks & noImplicitAny.
     "strict": true,
-    // Disallow features that require cross-file information for emit.
-    "isolatedModules": true,
+    // Don't emit; allow Babel to transform files.
+    "noEmit": true,
+    "sourceMap": true,
     // Import non-ES modules as default imports.
     "esModuleInterop": true,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "typeRoots": ["node_modules/@types"]
+    // Disallow features that require cross-file information for emit.
+    "isolatedModules": true
   },
   "include": ["src"],
   "exclude": ["node_modules/**", "**/.*"]

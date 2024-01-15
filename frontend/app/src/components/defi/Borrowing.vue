@@ -2,7 +2,7 @@
 import {
   type DefiProtocol,
   type Module,
-  isDefiProtocol
+  isDefiProtocol,
 } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -39,26 +39,26 @@ const summary = computed(() => {
 
 const refreshing = logicOr(
   isLoading(Section.DEFI_BORROWING),
-  isLoading(Section.DEFI_BORROWING_HISTORY)
+  isLoading(Section.DEFI_BORROWING_HISTORY),
 );
 
-const refresh = async () => {
+async function refresh() {
   await defiLending.fetchBorrowing(true);
-};
+}
 
 onMounted(async () => {
   const currentRoute = get(route);
-  const queryElement = currentRoute.query['protocol'];
-  if (isDefiProtocol(queryElement)) {
+  const queryElement = currentRoute.query.protocol;
+  if (isDefiProtocol(queryElement))
     set(protocol, queryElement);
-  }
+
   await defiLending.fetchBorrowing(false);
 });
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t('borrowing.header').toLocaleLowerCase()
-  })
+    title: t('borrowing.header').toLocaleLowerCase(),
+  }),
 );
 </script>
 
@@ -88,10 +88,15 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     </template>
 
     <ProgressScreen v-if="loading">
-      <template #message>{{ t('borrowing.loading') }}</template>
+      <template #message>
+        {{ t('borrowing.loading') }}
+      </template>
     </ProgressScreen>
 
-    <div v-else class="flex flex-col gap-4">
+    <div
+      v-else
+      class="flex flex-col gap-4"
+    >
       <StatCardWide>
         <StatCardColumn>
           <template #title>
@@ -142,10 +147,16 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
             {{ t('borrowing.select_loan_hint') }}
           </div>
         </RuiCard>
-        <DefiProtocolSelector v-model="protocol" liabilities />
+        <DefiProtocolSelector
+          v-model="protocol"
+          liabilities
+        />
       </div>
 
-      <LoanInfo v-if="loan" :loan="loan" />
+      <LoanInfo
+        v-if="loan"
+        :loan="loan"
+      />
 
       <FullSizeContent v-else>
         <div class="flex h-full text-h6 items-center justify-center">

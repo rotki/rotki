@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type VueConstructor } from 'vue';
+import type { VueConstructor } from 'vue';
 
 withDefaults(
   defineProps<{
@@ -19,8 +19,8 @@ withDefaults(
     iconComponent: null,
     active: false,
     subMenu: false,
-    parent: false
-  }
+    parent: false,
+  },
 );
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
@@ -29,12 +29,12 @@ const inner = ref<HTMLDivElement>();
 const { height: innerHeight } = useElementSize(inner);
 const subMenuExpanded: Ref<boolean> = ref(false);
 
-const expandParent = () => {
-  if (!get(parent)) {
+function expandParent() {
+  if (!get(parent))
     return;
-  }
+
   set(subMenuExpanded, !get(subMenuExpanded));
-};
+}
 
 const css = useCssModule();
 </script>
@@ -44,7 +44,7 @@ const css = useCssModule();
     <div
       :class="[
         css.wrapper,
-        { [css.active]: active, [css.mini]: mini, [css.submenu]: subMenu }
+        { [css.active]: active, [css.mini]: mini, [css.submenu]: subMenu },
       ]"
       @click="expandParent()"
     >
@@ -56,8 +56,8 @@ const css = useCssModule();
               ['mr-2']: subMenu && !mini,
               ['mr-3']: !subMenu && !mini,
               ['my-2']: subMenu,
-              ['my-3']: !subMenu
-            }
+              ['my-3']: !subMenu,
+            },
           ]"
         >
           <AppImage
@@ -72,7 +72,10 @@ const css = useCssModule();
             v-else-if="iconComponent"
             :active="active"
           />
-          <RuiIcon v-else :name="icon" />
+          <RuiIcon
+            v-else
+            :name="icon"
+          />
         </div>
       </DefineImage>
       <RuiTooltip
@@ -87,11 +90,14 @@ const css = useCssModule();
       </RuiTooltip>
       <template v-else>
         <ReuseImage />
-        <div class="flex grow py-0 text-capitalize navigation-menu-item__text">
+        <div class="flex grow py-0 capitalize navigation-menu-item__text">
           {{ text }}
         </div>
       </template>
-      <div v-if="parent" class="text-rui-text-secondary">
+      <div
+        v-if="parent"
+        class="text-rui-text-secondary"
+      >
         <RuiIcon
           name="arrow-down-s-line"
           class="transition-all transform"
@@ -104,8 +110,8 @@ const css = useCssModule();
       :class="[
         css['submenu-wrapper'],
         {
-          [`${css.expanded} submenu-wrapper__expanded`]: subMenuExpanded
-        }
+          [`${css.expanded} submenu-wrapper__expanded`]: subMenuExpanded,
+        },
       ]"
       class="submenu-wrapper"
     >

@@ -17,8 +17,14 @@ const { appBarColor } = useTheme();
     clipped
     app
   >
-    <div class="app__logo" :class="{ 'app__logo--mini': isMini }">
-      <RuiLogo :text="!isMini" :custom-src="externalLinks.logo.drawer" />
+    <div
+      class="app__logo"
+      :class="{ 'app__logo--mini': isMini }"
+    >
+      <RuiLogo
+        :text="!isMini"
+        :custom-src="externalLinks.logo.drawer"
+      />
     </div>
     <NavigationMenu :is-mini="isMini" />
     <div class="grow" />

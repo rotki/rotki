@@ -17,7 +17,11 @@ const css = useCssModule();
         </div>
       </div>
     </AppMessages>
-    <VDialog v-if="showAbout" v-model="showAbout" max-width="500">
+    <VDialog
+      v-if="showAbout"
+      v-model="showAbout"
+      max-width="500"
+    >
       <About />
     </VDialog>
   </AppHost>

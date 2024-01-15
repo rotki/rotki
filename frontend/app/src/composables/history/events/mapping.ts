@@ -1,13 +1,13 @@
-import { type MaybeRef } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import {
-  type HistoryEventCategoryDetailWithId,
-  type HistoryEventCategoryMapping,
-  type HistoryEventProductData,
-  type HistoryEventTypeData
+import type { MaybeRef } from '@vueuse/core';
+import type {
+  HistoryEventCategoryDetailWithId,
+  HistoryEventCategoryMapping,
+  HistoryEventProductData,
+  HistoryEventTypeData,
 } from '@/types/history/events/event-type';
-import { type ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry } from '@/types/action';
 
 type Event = MaybeRef<{
   eventType: string;
@@ -23,71 +23,71 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const {
     getTransactionTypeMappings,
     getHistoryEventCounterpartiesData,
-    getHistoryEventProductsData
+    getHistoryEventProductsData,
   } = useHistoryEventsApi();
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
     eventCategoryDetails: {},
     accountingEventsIcons: {},
-    entryTypeMappings: {}
+    entryTypeMappings: {},
   });
 
-  const historyEventTypeData: Ref<HistoryEventTypeData> =
-    asyncComputed<HistoryEventTypeData>(
+  const historyEventTypeData: Ref<HistoryEventTypeData>
+    = asyncComputed<HistoryEventTypeData>(
       () => getTransactionTypeMappings(),
       defaultHistoryEventTypeData(),
       {
-        lazy: true
-      }
+        lazy: true,
+      },
     );
 
   const historyEventCounterpartiesData: Ref<ActionDataEntry[]> = asyncComputed<
     ActionDataEntry[]
   >(() => getHistoryEventCounterpartiesData(), [], {
-    lazy: true
+    lazy: true,
   });
 
   const historyEventTypes: ComputedRef<string[]> = computed(() =>
-    Object.keys(get(historyEventTypeGlobalMapping))
+    Object.keys(get(historyEventTypeGlobalMapping)),
   );
 
-  const historyEventTypesData = useArrayMap(historyEventTypes, identifier => {
+  const historyEventTypesData = useArrayMap(historyEventTypes, (identifier) => {
     const translationId = identifier.split('_').join(' ');
     const translationKey = `backend_mappings.events.history_event_type.${translationId}`;
 
     return {
       identifier,
-      label: te(translationKey) ? t(translationKey) : toSentenceCase(identifier)
+      label: te(translationKey) ? t(translationKey) : toSentenceCase(identifier),
     };
   });
 
   const historyEventSubTypes: ComputedRef<string[]> = computed(() =>
     Object.values(get(historyEventTypeGlobalMapping))
       .flatMap(item => Object.keys(item))
-      .filter(uniqueStrings)
+      .filter(uniqueStrings),
   );
 
   const historyEventSubTypesData = useArrayMap(
     historyEventSubTypes,
-    identifier => {
+    (identifier) => {
       const translationId = toSnakeCase(identifier);
       const translationKey = `backend_mappings.events.history_event_subtype.${translationId}`;
       return {
         identifier,
         label: te(translationKey)
           ? t(translationKey)
-          : toSentenceCase(identifier)
+          : toSentenceCase(identifier),
       };
-    }
+    },
   );
 
-  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> =
-    useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
+  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping>
+    = useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
       const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
       for (const eventCategory in newEventCategoryDetails) {
-        const counterpartyMappings =
-          newEventCategoryDetails[eventCategory].counterpartyMappings;
+        const counterpartyMappings
+          = newEventCategoryDetails[eventCategory].counterpartyMappings;
         for (const counterparty in counterpartyMappings) {
           const label = counterpartyMappings[counterparty].label;
           const translationId = toSnakeCase(label);
@@ -102,12 +102,12 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const historyEventTypeGlobalMapping = useRefMap(
     historyEventTypeData,
-    ({ globalMappings }) => globalMappings
+    ({ globalMappings }) => globalMappings,
   );
 
   const historyEventTypeByEntryTypeMapping = useRefMap(
     historyEventTypeData,
-    ({ entryTypeMappings }) => entryTypeMappings
+    ({ entryTypeMappings }) => entryTypeMappings,
   );
 
   const getEventType = (event: Event): ComputedRef<string | undefined> =>
@@ -116,8 +116,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
       let byEntryType;
       if (
-        entryType &&
-        entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT
+        entryType
+        && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT
       ) {
         byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[
           eventType
@@ -125,15 +125,15 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       }
 
       return (
-        byEntryType ||
-        get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype]
+        byEntryType
+        || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype]
       );
     });
 
   function getFallbackData(
     showFallbackLabel: boolean,
     eventSubtype: string,
-    eventType: string
+    eventType: string,
   ): HistoryEventCategoryDetailWithId {
     const unknownLabel = t('backend_mappings.events.type.unknown');
     const label = showFallbackLabel
@@ -145,13 +145,13 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       label,
       icon: 'question-line',
       color: 'error',
-      direction: 'neutral'
+      direction: 'neutral',
     };
   }
 
   const getEventTypeData = (
     event: Event,
-    showFallbackLabel = true
+    showFallbackLabel = true,
   ): ComputedRef<HistoryEventCategoryDetailWithId> =>
     computed(() => {
       const defaultKey = 'default';
@@ -161,15 +161,15 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       const data = type && get(transactionEventTypesData)[type];
 
       if (type && data) {
-        const categoryDetail =
-          data.counterpartyMappings[counterpartyVal] ||
-          data.counterpartyMappings[defaultKey];
+        const categoryDetail
+          = data.counterpartyMappings[counterpartyVal]
+          || data.counterpartyMappings[defaultKey];
 
         if (categoryDetail) {
           return {
             ...categoryDetail,
             identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
-            direction: data.direction
+            direction: data.direction,
           };
         }
       }
@@ -180,30 +180,29 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { scrambleData, scrambleHex } = useScramble();
 
   const getEventCounterpartyData = (
-    event: MaybeRef<{ counterparty: string | null; address?: string | null }>
+    event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
   ): ComputedRef<ActionDataEntry | null> =>
     computed(() => {
       const { counterparty, address } = get(event);
       const excludedCounterparty = ['gas'];
 
-      if (counterparty && excludedCounterparty.includes(counterparty)) {
+      if (counterparty && excludedCounterparty.includes(counterparty))
         return null;
-      }
 
       if (counterparty && !isValidEthAddress(counterparty)) {
         const data = get(historyEventCounterpartiesData).find(
           ({ matcher, identifier }: ActionDataEntry) => {
-            if (matcher) {
+            if (matcher)
               return matcher(counterparty);
-            }
+
             return identifier.toLowerCase() === counterparty.toLowerCase();
-          }
+          },
         );
 
         if (data) {
           return {
             ...data,
-            label: counterparty.toUpperCase()
+            label: counterparty.toUpperCase(),
           };
         }
 
@@ -211,15 +210,14 @@ export const useHistoryEventMappings = createSharedComposable(() => {
           identifier: '',
           label: counterparty,
           icon: 'question-line',
-          color: 'error'
+          color: 'error',
         };
       }
 
       const usedLabel = counterparty || address;
 
-      if (!usedLabel) {
+      if (!usedLabel)
         return null;
-      }
 
       const counterpartyAddress = get(scrambleData)
         ? scrambleHex(usedLabel)
@@ -227,13 +225,13 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
       return {
         identifier: '',
-        label: counterpartyAddress || ''
+        label: counterpartyAddress || '',
       };
     });
 
   const counterparties = useArrayMap(
     historyEventCounterpartiesData,
-    ({ identifier }) => identifier
+    ({ identifier }) => identifier,
   );
 
   const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
@@ -248,49 +246,49 @@ export const useHistoryEventMappings = createSharedComposable(() => {
           icon,
           label: te(translationKey)
             ? t(translationKey)
-            : toCapitalCase(identifier)
+            : toCapitalCase(identifier),
         };
-      })
+      }),
   );
 
   const getAccountingEventTypeData = (
-    type: MaybeRef<string>
+    type: MaybeRef<string>,
   ): ComputedRef<ActionDataEntry> =>
     computed(() => {
       const typeVal = get(type);
       return (
         get(accountingEventsTypeData).find(
-          ({ identifier }) => identifier === typeVal
+          ({ identifier }) => identifier === typeVal,
         ) || {
           identifier: typeVal,
           icon: 'question-line',
-          label: toCapitalCase(typeVal)
+          label: toCapitalCase(typeVal),
         }
       );
     });
 
   const defaultHistoryEventProductsData = () => ({
     mappings: {},
-    products: []
+    products: [],
   });
 
-  const historyEventProductsData: Ref<HistoryEventProductData> =
-    asyncComputed<HistoryEventProductData>(
+  const historyEventProductsData: Ref<HistoryEventProductData>
+    = asyncComputed<HistoryEventProductData>(
       () => getHistoryEventProductsData(),
       defaultHistoryEventProductsData(),
       {
-        lazy: true
-      }
+        lazy: true,
+      },
     );
 
   const historyEventProductsMapping = useRefMap(
     historyEventProductsData,
-    ({ mappings }) => mappings
+    ({ mappings }) => mappings,
   );
 
   const historyEventProducts = useRefMap(
     historyEventProductsData,
-    ({ products }) => products
+    ({ products }) => products,
   );
 
   return {
@@ -310,6 +308,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     accountingEventsTypeData,
     getAccountingEventTypeData,
     historyEventProductsMapping,
-    historyEventProducts
+    historyEventProducts,
   };
 });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type UserNote } from '@/types/notes';
+import type { UserNote } from '@/types/notes';
 
 const props = defineProps<{
   value: Partial<UserNote>;
@@ -13,9 +13,9 @@ const emit = defineEmits<{
 
 const modelValue = useSimpleVModel(props, emit);
 
-const resetForm = () => {
+function resetForm() {
   emit('reset');
-};
+}
 
 const { openDialog, submitting, trySubmit } = useUserNotesForm();
 

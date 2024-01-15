@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
 import { some } from 'lodash-es';
-import { type ComputedRef, type Ref } from 'vue';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import {
-  type BlockchainAccountWithBalance,
-  type XpubAccountWithBalance,
-  type XpubPayload
-} from '@/types/blockchain/accounts';
 import { chainSection } from '@/types/blockchain';
+import type {
+  BlockchainAccountWithBalance,
+  XpubAccountWithBalance,
+  XpubPayload,
+} from '@/types/blockchain/accounts';
+import type { ComputedRef, Ref } from 'vue';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Balance } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -25,8 +25,8 @@ const props = withDefaults(
     loopring?: boolean;
   }>(),
   {
-    loopring: false
-  }
+    loopring: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -48,13 +48,13 @@ const rootAttrs = useAttrs();
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
-const { getEthDetectedTokensInfo, detectingTokens } =
-  useTokenDetection(blockchain);
+const { getEthDetectedTokensInfo, detectingTokens }
+  = useTokenDetection(blockchain);
 const { getNativeAsset, supportsTransactions } = useSupportedChains();
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const section = computed<Section>(() =>
-  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)]
+  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)],
 );
 
 const { isLoading } = useStatusStore();
@@ -65,23 +65,23 @@ const collapsedXpubs: Ref<XpubAccountWithBalance[]> = ref([]);
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
 const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 const isBtcNetwork = computed<boolean>(() =>
-  [Blockchain.BTC, Blockchain.BCH].includes(get(blockchain))
+  [Blockchain.BTC, Blockchain.BCH].includes(get(blockchain)),
 );
 
 const hasTokenDetection: ComputedRef<boolean> = computed(() =>
-  supportsTransactions(get(blockchain))
+  supportsTransactions(get(blockchain)),
 );
 
 const collapsedKeys = computed<string[]>(() =>
   get(collapsedXpubs).map(
-    ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`
-  )
+    ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`,
+  ),
 );
 
 const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
@@ -92,26 +92,24 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
       return !!address && selectedTags.every(tag => tags.includes(tag));
     })
     .map((item, index) => {
-      if (get(loopring)) {
+      if (get(loopring))
         return { ...item, index };
-      }
 
       const row = {
         ...item,
         display: item.label || item.address,
-        index
+        index,
       };
 
-      if (!get(hasTokenDetection)) {
+      if (!get(hasTokenDetection))
         return row;
-      }
 
       const {
         label,
         address,
         chain,
         display: displayText,
-        balance: chainBalance
+        balance: chainBalance,
       } = row;
 
       const { total } = get(getEthDetectedTokensInfo(blockchain, address));
@@ -121,26 +119,24 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
         ...row,
         label,
         display,
-        numOfDetectedTokens: total
+        numOfDetectedTokens: total,
       };
 
-      if (!get(isEth)) {
+      if (!get(isEth))
         return rowWithTokens;
-      }
 
       const assetBalances = get(getLoopringBalances(address));
 
-      if (assetBalances.length === 0) {
+      if (assetBalances.length === 0)
         return rowWithTokens;
-      }
 
-      const loopringEth =
-        assetBalances.find(
-          ({ asset }) => asset === Blockchain.ETH.toUpperCase()
+      const loopringEth
+        = assetBalances.find(
+          ({ asset }) => asset === Blockchain.ETH.toUpperCase(),
         )?.amount ?? Zero;
 
       const usdValue = bigNumberSum(
-        assetBalances.map(({ usdValue }) => usdValue)
+        assetBalances.map(({ usdValue }) => usdValue),
       ).plus(chainBalance.usdValue);
 
       const amount = chainBalance.amount.plus(loopringEth);
@@ -149,29 +145,29 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
         ...rowWithTokens,
         balance: { usdValue, amount },
         usdValue,
-        amount
+        amount,
       };
-    })
+    }),
 );
 
 const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
   get(rows)
     .filter(
       balance =>
-        !('xpub' in balance) ||
-        ('xpub' in balance &&
-          !get(collapsedKeys).includes(
-            `${balance.xpub}::${balance.derivationPath}`
-          ))
+        !('xpub' in balance)
+        || ('xpub' in balance
+        && !get(collapsedKeys).includes(
+            `${balance.xpub}::${balance.derivationPath}`,
+        )),
     )
     .concat(
       get(collapsedXpubs).map(({ derivationPath, xpub }) => {
         const xpubEntry = get(balances).find(
           balance =>
-            !balance.address &&
-            'xpub' in balance &&
-            balance.xpub === xpub &&
-            balance.derivationPath === derivationPath
+            !balance.address
+            && 'xpub' in balance
+            && balance.xpub === xpub
+            && balance.derivationPath === derivationPath,
         );
         return (
           xpubEntry ?? {
@@ -181,11 +177,11 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
             label: '',
             tags: [],
             balance: zeroBalance(),
-            chain: get(blockchain)
+            chain: get(blockchain),
           }
         );
-      })
-    )
+      }),
+    ),
 );
 
 const { addressNameSelector } = useAddressesNamesStore();
@@ -198,7 +194,7 @@ const collapsedXpubBalances = computed<Balance>(() => {
     .reduce(
       (previousValue, currentValue) =>
         balanceSum(previousValue, currentValue.balance),
-      balance
+      balance,
     );
 });
 
@@ -207,27 +203,27 @@ const total = computed<Balance>(() => {
   const collapsedAmount = get(collapsedXpubBalances).amount;
   const collapsedUsd = get(collapsedXpubBalances).usdValue;
   const amount = bigNumberSum(
-    balances.map(({ balance }) => balance.amount)
+    balances.map(({ balance }) => balance.amount),
   ).plus(collapsedAmount);
   const usdValue = bigNumberSum(
-    balances.map(({ balance }) => balance.usdValue)
+    balances.map(({ balance }) => balance.usdValue),
   ).plus(collapsedUsd);
 
   return {
     amount,
-    usdValue
+    usdValue,
   };
 });
 
 const asset: ComputedRef<string> = computed(() => {
   const chain = get(blockchain);
   const nativeAsset = getNativeAsset(chain);
-  if (get(isEth2)) {
+  if (get(isEth2))
     return Blockchain.ETH.toUpperCase();
-  }
-  if (nativeAsset === chain) {
+
+  if (nativeAsset === chain)
     return chain.toUpperCase();
-  }
+
   return get(assetSymbol(nativeAsset));
 });
 
@@ -247,22 +243,22 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: accountHeader,
       key: 'display',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     },
     {
       label: get(asset).toUpperCase(),
       key: 'amount',
       sortable: true,
       cellClass: 'py-0',
-      align: 'end'
+      align: 'end',
     },
     {
       label: currencyHeader.toString(),
       key: 'usdValue',
       sortable: true,
       cellClass: 'py-0',
-      align: 'end'
-    }
+      align: 'end',
+    },
   ];
 
   if (get(isEth2)) {
@@ -271,7 +267,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'ownershipPercentage',
       align: 'end',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     });
   }
 
@@ -281,7 +277,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'numOfDetectedTokens',
       cellClass: 'py-0',
       sortable: true,
-      align: 'end'
+      align: 'end',
     });
   }
 
@@ -290,7 +286,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: t('common.actions_text'),
       key: 'actions',
       cellClass: '!p-0',
-      align: 'start'
+      align: 'start',
     });
   }
 
@@ -300,57 +296,56 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
 const accountOperation = logicOr(
   isTaskRunning(TaskType.ADD_ACCOUNT),
   isTaskRunning(TaskType.REMOVE_ACCOUNT),
-  loading
+  loading,
 );
 
 const isAnyLoading = logicOr(accountOperation, detectingTokens);
 
-const editClick = (account: BlockchainAccountWithBalance) => {
+function editClick(account: BlockchainAccountWithBalance) {
   emit('edit-click', account);
-};
+}
 
-const deleteXpub = (payload: XpubPayload) => {
+function deleteXpub(payload: XpubPayload) {
   const chain = get(blockchain);
   assert(chain === Blockchain.BTC || chain === Blockchain.BCH);
   emit('delete-xpub', {
     ...payload,
-    blockchain: chain
+    blockchain: chain,
   });
-};
+}
 
-const addressesSelected = (selected: string[]) => {
+function addressesSelected(selected: string[]) {
   emit('update:selected', selected);
-};
+}
 
-const getItems = (xpub: string, derivationPath?: string) => {
+function getItems(xpub: string, derivationPath?: string) {
   const isXpub = (
-    value: BlockchainAccountWithBalance
+    value: BlockchainAccountWithBalance,
   ): value is XpubAccountWithBalance =>
-    'xpub' in value &&
-    xpub === value.xpub &&
-    derivationPath === value.derivationPath;
+    'xpub' in value
+    && xpub === value.xpub
+    && derivationPath === value.derivationPath;
 
   return get(balances).filter(isXpub);
-};
+}
 
-const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
+function removeCollapsed({ derivationPath, xpub }: XpubPayload) {
   const index = get(collapsedXpubs).findIndex(
-    row => row.derivationPath === derivationPath && row.xpub === xpub
+    row => row.derivationPath === derivationPath && row.xpub === xpub,
   );
 
-  if (index >= 0) {
+  if (index >= 0)
     get(collapsedXpubs).splice(index, 1);
-  }
-};
+}
 
 const isExpanded = (address: string) => some(get(expanded), { address });
 
-const expand = (item: BlockchainAccountWithBalance) => {
+function expand(item: BlockchainAccountWithBalance) {
   set(expanded, isExpanded(item.address) ? [] : [item]);
-};
+}
 
 defineExpose({
-  removeCollapsed
+  removeCollapsed,
 });
 </script>
 
@@ -384,11 +379,17 @@ defineExpose({
     <template #item.display="{ row }">
       <div class="py-2 account-balance-table__account">
         <LabeledAddressDisplay :account="row" />
-        <TagDisplay :tags="row.tags" small />
+        <TagDisplay
+          :tags="row.tags"
+          small
+        />
       </div>
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.balance.amount" :loading="loading" />
+      <AmountDisplay
+        :value="row.balance.amount"
+        :loading="loading"
+      />
     </template>
     <template #item.usdValue="{ row }">
       <AmountDisplay
@@ -398,7 +399,10 @@ defineExpose({
         :loading="loading"
       />
     </template>
-    <template v-if="isEth2" #item.ownershipPercentage="{ row }">
+    <template
+      v-if="isEth2"
+      #item.ownershipPercentage="{ row }"
+    >
       <PercentageDisplay :value="row.ownershipPercentage" />
     </template>
     <template
@@ -411,7 +415,10 @@ defineExpose({
         :blockchain="blockchain"
       />
     </template>
-    <template v-if="!loopring" #item.actions="{ row }">
+    <template
+      v-if="!loopring"
+      #item.actions="{ row }"
+    >
       <RowActions
         class="account-balance-table__actions"
         no-delete
@@ -420,7 +427,10 @@ defineExpose({
         @edit-click="editClick(row)"
       />
     </template>
-    <template v-if="balances.length > 0" #body.append>
+    <template
+      v-if="balances.length > 0"
+      #body.append
+    >
       <RowAppend
         :label="t('common.total')"
         :left-patch-colspan="1"
@@ -447,14 +457,20 @@ defineExpose({
         </template>
       </RowAppend>
     </template>
-    <template v-if="!isBtcNetwork" #expanded-item="{ row }">
+    <template
+      v-if="!isBtcNetwork"
+      #expanded-item="{ row }"
+    >
       <AccountBalanceDetails
         :blockchain="blockchain"
         :loopring="loopring"
         :address="row.address"
       />
     </template>
-    <template v-if="!isBtcNetwork" #item.expand="{ row }">
+    <template
+      v-if="!isBtcNetwork"
+      #item.expand="{ row }"
+    >
       <RuiTableRowExpander
         v-if="hasTokenDetection && (hasDetails(row.address) || loopring)"
         :expanded="isExpanded(row.address)"
@@ -472,7 +488,10 @@ defineExpose({
         @edit-clicked="editClick($event)"
       />
     </template>
-    <template v-if="isEth2" #body.prepend="{ colspan }">
+    <template
+      v-if="isEth2"
+      #body.prepend="{ colspan }"
+    >
       <Eth2ValidatorLimitRow :colspan="colspan" />
     </template>
   </RuiDataTable>

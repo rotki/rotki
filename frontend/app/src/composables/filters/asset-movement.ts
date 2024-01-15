@@ -6,7 +6,7 @@ import {
   assetSuggestions,
   dateDeserializer,
   dateSerializer,
-  dateValidator
+  dateValidator,
 } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/asset-movements';
 
@@ -15,7 +15,7 @@ enum AssetMovementFilterKeys {
   ACTION = 'action',
   ASSET = 'asset',
   START = 'start',
-  END = 'end'
+  END = 'end',
 }
 
 enum AssetMovementFilterValueKeys {
@@ -23,7 +23,7 @@ enum AssetMovementFilterValueKeys {
   ACTION = 'action',
   ASSET = 'asset',
   START = 'fromTimestamp',
-  END = 'toTimestamp'
+  END = 'toTimestamp',
 }
 
 export type Matcher = SearchMatcher<
@@ -33,7 +33,7 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 
-export const useAssetMovementFilters = () => {
+export function useAssetMovementFilters() {
   const filters: Ref<Filters> = ref({});
 
   const locationsStore = useHistoryStore();
@@ -52,7 +52,7 @@ export const useAssetMovementFilters = () => {
           description: t('deposit_withdrawals.filter.asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo)
+          deserializer: assetDeserializer(assetInfo),
         },
         {
           key: AssetMovementFilterKeys.ACTION,
@@ -61,7 +61,7 @@ export const useAssetMovementFilters = () => {
           string: true,
           suggestions: () => MovementCategory.options,
           validate: type =>
-            (MovementCategory.options as string[]).includes(type)
+            (MovementCategory.options as string[]).includes(type),
         },
         {
           key: AssetMovementFilterKeys.START,
@@ -69,25 +69,25 @@ export const useAssetMovementFilters = () => {
           description: t('deposit_withdrawals.filter.start_date'),
           string: true,
           hint: t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
+            format: getDateInputISOFormat(get(dateInputFormat)),
           }),
           suggestions: () => [],
           validate: dateValidator(dateInputFormat),
           serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat)
+          deserializer: dateDeserializer(dateInputFormat),
         },
         {
           key: AssetMovementFilterKeys.END,
           keyValue: AssetMovementFilterValueKeys.END,
           description: t('deposit_withdrawals.filter.end_date'),
           hint: t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
+            format: getDateInputISOFormat(get(dateInputFormat)),
           }),
           string: true,
           suggestions: () => [],
           validate: dateValidator(dateInputFormat),
           serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat)
+          deserializer: dateDeserializer(dateInputFormat),
         },
         {
           key: AssetMovementFilterKeys.LOCATION,
@@ -96,9 +96,9 @@ export const useAssetMovementFilters = () => {
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location =>
-            get(associatedLocations).includes(location as any)
-        }
-      ] satisfies Matcher[]
+            get(associatedLocations).includes(location),
+        },
+      ] satisfies Matcher[],
   );
 
   const updateFilter = (newFilters: Filters) => {
@@ -111,13 +111,13 @@ export const useAssetMovementFilters = () => {
     [AssetMovementFilterValueKeys.ACTION]: OptionalString,
     [AssetMovementFilterValueKeys.ASSET]: OptionalString,
     [AssetMovementFilterValueKeys.START]: OptionalString,
-    [AssetMovementFilterValueKeys.END]: OptionalString
+    [AssetMovementFilterValueKeys.END]: OptionalString,
   });
 
   return {
     filters,
     matchers,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

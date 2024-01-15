@@ -4,7 +4,10 @@ const { t } = useI18n();
 
 <template>
   <ImportSource source="binance">
-    <i18n tag="span" path="import_data.note">
+    <i18n
+      tag="span"
+      path="import_data.note"
+    >
       <strong>{{ t('import_data.binance.name') }}</strong>
     </i18n>
     <ul class="list-disc">

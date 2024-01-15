@@ -5,6 +5,5 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 
 export default [
   http.get(`${backendUrl}/api/1/nfts/balances`, () =>
-    HttpResponse.json(nfts, { status: 200 })
-  )
+    HttpResponse.json(nfts, { status: 200 })),
 ];

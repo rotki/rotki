@@ -1,10 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
 import {
   type Chains,
   type ExplorerUrls,
-  explorerUrls
+  explorerUrls,
 } from '@/types/asset/asset-urls';
 
 const props = withDefaults(
@@ -38,16 +38,16 @@ const props = withDefaults(
     truncateLength: 4,
     type: 'address',
     disableScramble: false,
-    hideAliasName: false
-  }
+    hideAliasName: false,
+  },
 );
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName } =
-  toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
-  useScramble();
+const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName }
+  = toRefs(props);
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier }
+  = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { getChain } = useSupportedChains();
@@ -56,21 +56,19 @@ const { addressNameSelector } = useAddressesNamesStore();
 const addressName = addressNameSelector(text, chain);
 
 const blockchain = computed(() => {
-  if (isDefined(evmChain)) {
+  if (isDefined(evmChain))
     return getChain(get(evmChain));
-  }
+
   return get(chain);
 });
 
 const aliasName = computed<string | null>(() => {
-  if (get(hideAliasName) || get(scrambleData) || get(type) !== 'address') {
+  if (get(hideAliasName) || get(scrambleData) || get(type) !== 'address')
     return null;
-  }
 
   const name = get(addressName);
-  if (!name) {
+  if (!name)
     return null;
-  }
 
   return truncateAddress(name, 10);
 });
@@ -79,40 +77,36 @@ const displayText = computed<string>(() => {
   const linkText = get(text);
   const linkType = get(type);
 
-  if (get(disableScramble)) {
+  if (get(disableScramble))
     return linkText;
-  }
 
-  if (linkType === 'block' || consistOfNumbers(linkText)) {
+  if (linkType === 'block' || consistOfNumbers(linkText))
     return scrambleIdentifier(linkText);
-  }
 
   return scrambleHex(linkText);
 });
 
 const base = computed<string>(() => {
-  if (isDefined(baseUrl)) {
+  if (isDefined(baseUrl))
     return get(baseUrl);
-  }
 
   const selectedChain = get(blockchain);
   const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
   const linkType = get(type);
-  let base: string | undefined = undefined;
+  let base: string | undefined;
 
   if (selectedChain === 'zksync') {
     base = defaultExplorer[linkType];
-  } else {
+  }
+  else {
     const explorerSetting = get(explorers)[selectedChain];
 
-    if (explorerSetting || defaultExplorer) {
+    if (explorerSetting || defaultExplorer)
       base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
-    }
   }
 
-  if (!base) {
+  if (!base)
     return '';
-  }
 
   return base.endsWith('/') ? base : `${base}/`;
 });
@@ -120,7 +114,7 @@ const base = computed<string>(() => {
 const url = computed<string>(() => get(base) + get(text));
 
 const displayUrl = computed<string>(
-  () => get(base) + truncateAddress(get(text), 10)
+  () => get(base) + truncateAddress(get(text), 10),
 );
 
 const { href, onLinkClick } = useLinks(url);
@@ -129,15 +123,26 @@ const { href, onLinkClick } = useLinks(url);
 <template>
   <div class="flex flex-row shrink items-center gap-1">
     <template v-if="showIcon && !linkOnly && type === 'address'">
-      <EnsAvatar :address="displayText" avatar size="22px" />
+      <EnsAvatar
+        :address="displayText"
+        avatar
+        size="22px"
+      />
     </template>
 
     <template v-if="!linkOnly && !buttons">
-      <span v-if="fullAddress" :class="{ blur: !shouldShowAmount }">
+      <span
+        v-if="fullAddress"
+        :class="{ blur: !shouldShowAmount }"
+      >
         {{ displayText }}
       </span>
 
-      <RuiTooltip v-else :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        v-else
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <span :class="{ blur: !shouldShowAmount }">
             <template v-if="aliasName">{{ aliasName }}</template>
@@ -165,7 +170,10 @@ const { href, onLinkClick } = useLinks(url);
             color="primary"
             @click="copy(text)"
           >
-            <RuiIcon name="file-copy-line" :size="size" />
+            <RuiIcon
+              name="file-copy-line"
+              :size="size"
+            />
           </RuiButton>
         </template>
 
@@ -190,7 +198,10 @@ const { href, onLinkClick } = useLinks(url);
             target="_blank"
             @click="onLinkClick()"
           >
-            <RuiIcon name="external-link-line" :size="size" />
+            <RuiIcon
+              name="external-link-line"
+              :size="size"
+            />
           </RuiButton>
         </template>
 

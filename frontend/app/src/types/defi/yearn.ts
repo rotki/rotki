@@ -12,12 +12,12 @@ const YearnVaultEvent = z.object({
   toValue: Balance,
   realizedPnl: Balance.nullable(),
   txHash: z.string(),
-  logIndex: z.number()
+  logIndex: z.number(),
 });
 
 const YearnVault = z.object({
   events: z.array(YearnVaultEvent),
-  profitLoss: Balance
+  profitLoss: Balance,
 });
 
 const AccountYearnVault = z.record(YearnVault);
@@ -37,7 +37,7 @@ const YearnVaultBalance = z.object({
   vaultToken: z.string(),
   underlyingValue: Balance,
   vaultValue: Balance,
-  roi: z.string().optional()
+  roi: z.string().optional(),
 });
 
 export type YearnVaultBalance = z.infer<typeof YearnVaultBalance>;
@@ -45,7 +45,7 @@ export type YearnVaultBalance = z.infer<typeof YearnVaultBalance>;
 const YearnVaultAsset = z
   .object({
     vault: z.string(),
-    version: z.nativeEnum(ProtocolVersion)
+    version: z.nativeEnum(ProtocolVersion),
   })
   .merge(YearnVaultBalance);
 

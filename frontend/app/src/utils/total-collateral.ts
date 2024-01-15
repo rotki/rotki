@@ -1,12 +1,11 @@
-import { type BigNumber } from '@rotki/common';
-import { type Collateral, type CollateralizedLoan } from '@/types/defi';
+import type { BigNumber } from '@rotki/common';
+import type { Collateral, CollateralizedLoan } from '@/types/defi';
 
-export const totalCollateral = (
-  loan: Ref<CollateralizedLoan<Collateral[]>>
-): ComputedRef<BigNumber> =>
-  computed(() =>
+export function totalCollateral(loan: Ref<CollateralizedLoan<Collateral[]>>): ComputedRef<BigNumber> {
+  return computed(() =>
     get(loan).collateral.reduce(
       (previous, current) => previous.plus(current.usdValue),
-      Zero
-    )
+      Zero,
+    ),
   );
+}

@@ -1,18 +1,18 @@
-import { type AssetBalanceWithPrice } from '@rotki/common';
-import { type MaybeRef } from '@vueuse/core';
 import { samePriceAssets } from '@/types/blockchain';
-import { type AssetPriceInfo } from '@/types/prices';
+import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type { AssetPriceInfo } from '@/types/prices';
 
-export const useAggregatedBalances = () => {
+export function useAggregatedBalances() {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = useBalancePricesStore();
-  const { totals, liabilities: chainLiabilities } =
-    useBlockchainAggregatedBalances();
+  const { totals, liabilities: chainLiabilities }
+    = useBlockchainAggregatedBalances();
   const { balances: exchangeBalances } = storeToRefs(
-    useExchangeBalancesStore()
+    useExchangeBalancesStore(),
   );
-  const { balances: manualBalances, liabilities: manualLiabilities } =
-    useManualAssetBalances();
+  const { balances: manualBalances, liabilities: manualLiabilities }
+    = useManualAssetBalances();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
@@ -20,35 +20,35 @@ export const useAggregatedBalances = () => {
 
   const balances = (
     hideIgnored = true,
-    groupMultiChain = true
+    groupMultiChain = true,
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed(() => {
       const ownedAssets = sumAssetBalances(
         [get(totals), get(exchangeBalances), get(manualBalances)],
-        getAssociatedAssetIdentifier
+        getAssociatedAssetIdentifier,
       );
 
       return toSortedAssetBalanceWithPrice(
         ownedAssets,
         asset => hideIgnored && get(isAssetIgnored(asset)),
         assetPrice,
-        groupMultiChain
+        groupMultiChain,
       );
     });
 
   const liabilities = (
-    hideIgnored = true
+    hideIgnored = true,
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed(() => {
       const liabilities = sumAssetBalances(
         [get(chainLiabilities), get(manualLiabilities)],
-        getAssociatedAssetIdentifier
+        getAssociatedAssetIdentifier,
       );
 
       return toSortedAssetBalanceWithPrice(
         liabilities,
         asset => hideIgnored && get(isAssetIgnored(asset)),
-        assetPrice
+        assetPrice,
       );
     });
 
@@ -58,17 +58,17 @@ export const useAggregatedBalances = () => {
       const liabilitiesAsset = get(liabilities(hideIgnored)).map(
         ({ asset }) => {
           const samePrices = samePriceAssets[asset];
-          if (samePrices) {
+          if (samePrices)
             additional.push(...samePrices);
-          }
+
           return asset;
-        }
+        },
       );
       const assets = get(balances(hideIgnored, false)).map(({ asset }) => {
         const samePrices = samePriceAssets[asset];
-        if (samePrices) {
+        if (samePrices)
           additional.push(...samePrices);
-        }
+
         return asset;
       });
 
@@ -83,18 +83,18 @@ export const useAggregatedBalances = () => {
 
   const assetPriceInfo = (
     identifier: MaybeRef<string>,
-    groupMultiChain: MaybeRef<boolean> = ref(false)
+    groupMultiChain: MaybeRef<boolean> = ref(false),
   ): ComputedRef<AssetPriceInfo> =>
     computed(() => {
       const id = get(identifier);
       const assetValue = get(balances(true, get(groupMultiChain))).find(
-        (value: AssetBalanceWithPrice) => value.asset === id
+        (value: AssetBalanceWithPrice) => value.asset === id,
       );
 
       return {
         usdPrice: assetValue?.usdPrice ?? Zero,
         amount: assetValue?.amount ?? Zero,
-        usdValue: assetValue?.usdValue ?? Zero
+        usdValue: assetValue?.usdValue ?? Zero,
       };
     });
 
@@ -102,6 +102,6 @@ export const useAggregatedBalances = () => {
     balances,
     liabilities,
     assetPriceInfo,
-    assets
+    assets,
   };
-};
+}

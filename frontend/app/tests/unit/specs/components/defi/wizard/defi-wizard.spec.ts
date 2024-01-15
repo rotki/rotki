@@ -7,11 +7,11 @@ import { FrontendSettings } from '@/types/settings/frontend-settings';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn()
-  })
+    setSettings: vi.fn(),
+  }),
 }));
 
-describe('DefiWizard.vue', () => {
+describe('defiWizard.vue', () => {
   let wrapper: Wrapper<any>;
   let settings: FrontendSettings;
   let api: ReturnType<typeof useSettingsApi>;
@@ -23,7 +23,7 @@ describe('DefiWizard.vue', () => {
     return mount(DefiWizard, {
       pinia,
       vuetify,
-      stubs: ['module-selector', 'module-address-selector', 'card']
+      stubs: ['module-selector', 'module-address-selector', 'card'],
     });
   };
 
@@ -34,18 +34,18 @@ describe('DefiWizard.vue', () => {
     api.setSettings = vi.fn();
   });
 
-  test('wizard completes when use default is pressed', async () => {
+  it('wizard completes when use default is pressed', async () => {
     expect.assertions(1);
     await wrapper.find('.defi-wizard__use-default').trigger('click');
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
-        snakeCaseTransformer({ ...settings, defiSetupDone: true })
-      )
+        snakeCaseTransformer({ ...settings, defiSetupDone: true }),
+      ),
     });
   });
 
-  test('wizard completes when complete is pressed', async () => {
+  it('wizard completes when complete is pressed', async () => {
     expect.assertions(1);
     await wrapper.find('.defi-wizard__select-modules').trigger('click');
     await wrapper.vm.$nextTick();
@@ -53,8 +53,8 @@ describe('DefiWizard.vue', () => {
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
-        snakeCaseTransformer({ ...settings, defiSetupDone: true })
-      )
+        snakeCaseTransformer({ ...settings, defiSetupDone: true }),
+      ),
     });
   });
 });

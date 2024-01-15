@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type BigNumber } from '@rotki/common';
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
-import { type AssetBreakdown } from '@/types/blockchain/accounts';
 import { isBlockchain } from '@/types/blockchain/chains';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { BigNumber } from '@rotki/common';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { ComputedRef } from 'vue';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 type AssetLocations = AssetLocation[];
 
@@ -26,7 +26,7 @@ const { identifier } = toRefs(props);
 
 const sort = ref<DataTableSortData>({
   column: 'amount',
-  direction: 'desc'
+  direction: 'desc',
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -39,17 +39,16 @@ const { assetBreakdown } = useBalancesBreakdown();
 const onlyTags = ref<string[]>([]);
 
 const totalUsdValue = computed<BigNumber>(
-  () => get(assetPriceInfo(identifier)).usdValue
+  () => get(assetPriceInfo(identifier)).usdValue,
 );
 
-const getAccount = (
-  item: AssetBreakdown
-): ComputedRef<GeneralAccount | undefined> =>
-  computed(() =>
+function getAccount(item: AssetBreakdown): ComputedRef<GeneralAccount | undefined> {
+  return computed(() =>
     item.location === Blockchain.ETH2
       ? get(getEth2Account(item.address))
-      : get(getAccountByAddress(item.address, item.location))
+      : get(getAccountByAddress(item.address, item.location)),
   );
+}
 
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));
@@ -58,7 +57,7 @@ const assetLocations = computed<AssetLocations>(() => {
     return {
       ...item,
       account,
-      label: account?.label ?? ''
+      label: account?.label ?? '',
     };
   });
 });
@@ -71,46 +70,44 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
     label:
       (isBlockchain(item.location)
         ? get(addressNameSelector(item.address, item.location))
-        : null) ||
-      item.label ||
-      item.address
+        : null)
+        || item.label
+        || item.address,
   }));
 
-  if (get(onlyTags).length === 0) {
+  if (get(onlyTags).length === 0)
     return locations;
-  }
 
-  return locations.filter(assetLocation => {
+  return locations.filter((assetLocation) => {
     const tags = assetLocation.tags ?? [];
     return get(onlyTags).every(tag => tags.includes(tag));
   });
 });
 
-const getPercentage = (usdValue: BigNumber): string => {
+function getPercentage(usdValue: BigNumber): string {
   const percentage = get(totalUsdValue).isZero()
     ? 0
     : usdValue.div(get(totalUsdValue)).multipliedBy(100);
 
   return percentage.toFixed(2);
-};
+}
 
 const headers = computed<DataTableColumn[]>(() => {
   const visibleItemsLength = get(visibleAssetLocations).length;
   const eth2Length = get(visibleAssetLocations).filter(
-    account => account?.location === Blockchain.ETH2
+    account => account?.location === Blockchain.ETH2,
   ).length;
 
   const labelAccount = t('common.account');
   const labelValidator = t('asset_locations.header.validator');
 
   let label: string;
-  if (eth2Length === 0) {
+  if (eth2Length === 0)
     label = labelAccount;
-  } else if (eth2Length === visibleItemsLength) {
+  else if (eth2Length === visibleItemsLength)
     label = labelValidator;
-  } else {
+  else
     label = `${labelAccount} / ${labelValidator}`;
-  }
 
   return [
     {
@@ -118,33 +115,33 @@ const headers = computed<DataTableColumn[]>(() => {
       key: 'location',
       align: 'center',
       cellClass: 'w-36',
-      sortable: true
+      sortable: true,
     },
     {
       label,
       key: 'label',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('common.amount'),
       key: 'amount',
       align: 'end',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD
+        symbol: get(currencySymbol) ?? CURRENCY_USD,
       }),
       key: 'usdValue',
       align: 'end',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('asset_locations.header.percentage'),
       key: 'percentage',
       sortable: false,
-      align: 'end'
-    }
+      align: 'end',
+    },
   ];
 });
 </script>
@@ -176,8 +173,14 @@ const headers = computed<DataTableColumn[]>(() => {
       </template>
       <template #item.label="{ row }">
         <div class="py-4">
-          <LabeledAddressDisplay v-if="row.account" :account="row.account" />
-          <TagDisplay :tags="row.tags" small />
+          <LabeledAddressDisplay
+            v-if="row.account"
+            :account="row.account"
+          />
+          <TagDisplay
+            :tags="row.tags"
+            small
+          />
         </div>
       </template>
       <template #item.amount="{ row }">

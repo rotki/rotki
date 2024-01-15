@@ -1,8 +1,8 @@
 import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
+import type { PendingTask } from '@/types/task';
 
-export const useBalancerApi = () => {
+export function useBalancerApi() {
   const fetchBalancerBalances = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/balancer/balances';
     return fetchExternalAsync(api.instance, url);
@@ -15,6 +15,6 @@ export const useBalancerApi = () => {
 
   return {
     fetchBalancerBalances,
-    fetchBalancerEvents
+    fetchBalancerEvents,
   };
-};
+}

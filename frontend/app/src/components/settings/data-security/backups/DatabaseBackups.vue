@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type WritableComputedRef } from 'vue';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { displayDateFormatter } from '@/data/date_formatter';
-import { type UserDbBackup, type UserDbBackupWithId } from '@/types/backup';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/utils/data';
+import type { WritableComputedRef } from 'vue';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const props = withDefaults(
   defineProps<{
@@ -16,8 +16,8 @@ const props = withDefaults(
     directory: string;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -29,7 +29,7 @@ const { t } = useI18n();
 
 const sort = ref<DataTableSortData>({
   column: 'size',
-  direction: 'desc'
+  direction: 'desc',
 });
 
 const selection = computed({
@@ -37,46 +37,46 @@ const selection = computed({
     return props.selected.map(x => x.id);
   },
   set(value?: number[]) {
-    if (!value) {
+    if (!value)
       return [];
-    }
+
     emit(
       'update:selected',
-      props.items.filter(x => value.includes(x.id))
+      props.items.filter(x => value.includes(x.id)),
     );
-  }
+  },
 }) as unknown as WritableComputedRef<string[]>; // TODO: remove after upgrading to vue 3
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     key: 'version',
     label: t('database_backups.column.version'),
-    sortable: true
+    sortable: true,
   },
   {
     key: 'time',
     label: t('common.datetime'),
-    sortable: true
+    sortable: true,
   },
   {
     key: 'size',
     align: 'end',
     label: t('database_backups.column.size'),
-    sortable: true
+    sortable: true,
   },
   {
     key: 'actions',
     align: 'end',
     sortable: false,
-    label: ''
-  }
+    label: '',
+  },
 ]);
 
 const { items, directory } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
 const totalSize = computed(() =>
-  size(get(items).reduce((sum, db) => sum + db.size, 0))
+  size(get(items).reduce((sum, db) => sum + db.size, 0)),
 );
 
 const { fileUrl } = useBackupApi();
@@ -84,32 +84,32 @@ const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: UserDbBackupWithId) => {
+function showDeleteConfirmation(item: UserDbBackupWithId) {
   const messageInfo = () => {
     if (item) {
       return {
         size: size(item.size),
         date: displayDateFormatter.format(
           new Date(item.time * 1000),
-          get(dateDisplayFormat)
-        )
+          get(dateDisplayFormat),
+        ),
       };
     }
 
     return {
       size: 0,
-      date: 0
+      date: 0,
     };
   };
 
   show(
     {
       title: t('database_backups.confirm.title'),
-      message: t('database_backups.confirm.message', { ...messageInfo })
+      message: t('database_backups.confirm.message', { ...messageInfo }),
     },
-    () => emit('remove', item)
+    () => emit('remove', item),
   );
-};
+}
 </script>
 
 <template>
@@ -131,7 +131,10 @@ const showDeleteConfirmation = (item: UserDbBackupWithId) => {
     </template>
 
     <template #item.actions="{ row }">
-      <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+      <RuiTooltip
+        :open-delay="400"
+        :popper="{ placement: 'top' }"
+      >
         <template #activator>
           <RuiButton
             variant="text"
@@ -139,12 +142,18 @@ const showDeleteConfirmation = (item: UserDbBackupWithId) => {
             icon
             @click="showDeleteConfirmation(row)"
           >
-            <RuiIcon size="16" name="delete-bin-line" />
+            <RuiIcon
+              size="16"
+              name="delete-bin-line"
+            />
           </RuiButton>
         </template>
         <span>{{ t('database_backups.action.delete') }}</span>
       </RuiTooltip>
-      <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
+      <RuiTooltip
+        :open-delay="400"
+        :popper="{ placement: 'top' }"
+      >
         <template #activator>
           <RuiButton
             variant="text"
@@ -155,7 +164,10 @@ const showDeleteConfirmation = (item: UserDbBackupWithId) => {
             tag="a"
             class="mx-1"
           >
-            <RuiIcon size="16" name="file-download-line" />
+            <RuiIcon
+              size="16"
+              name="file-download-line"
+            />
           </RuiButton>
         </template>
         <span>{{ t('database_backups.action.download') }}</span>

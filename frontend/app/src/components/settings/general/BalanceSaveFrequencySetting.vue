@@ -6,7 +6,7 @@ import { Constraints } from '@/data/constraints';
 const balanceSaveFrequency = ref<string>('0');
 
 const { balanceSaveFrequency: frequency } = storeToRefs(
-  useGeneralSettingsStore()
+  useGeneralSettingsStore(),
 );
 
 const { t } = useI18n();
@@ -16,29 +16,31 @@ const rules = {
   balanceSaveFrequency: {
     required: helpers.withMessage(
       t('general_settings.validation.balance_frequency.non_empty'),
-      required
+      required,
     ),
     between: helpers.withMessage(
       t('general_settings.validation.balance_frequency.invalid_frequency', {
         start: 1,
-        end: maxBalanceSaveFrequency
+        end: maxBalanceSaveFrequency,
       }),
-      between(1, maxBalanceSaveFrequency)
-    )
-  }
+      between(1, maxBalanceSaveFrequency),
+    ),
+  },
 };
 const v$ = useVuelidate(rules, { balanceSaveFrequency }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const resetBalanceSaveFrequency = () => {
+function resetBalanceSaveFrequency() {
   set(balanceSaveFrequency, get(frequency).toString());
-};
+}
 
 const transform = (value?: string) => (value ? Number.parseInt(value) : value);
-const successMessage = (frequency: string) =>
-  t('general_settings.validation.balance_frequency.success', {
-    frequency
+
+function successMessage(frequency: string) {
+  return t('general_settings.validation.balance_frequency.success', {
+    frequency,
   });
+}
 
 onMounted(() => {
   resetBalanceSaveFrequency();

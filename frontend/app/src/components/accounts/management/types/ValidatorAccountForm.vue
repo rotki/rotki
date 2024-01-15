@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Eth2Validator } from '@/types/balances';
-import { type ValidationErrors } from '@/types/api/errors';
-import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-import { type ActionStatus } from '@/types/action';
+import type { Eth2Validator } from '@/types/balances';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
+import type { ActionStatus } from '@/types/action';
 
 const { t } = useI18n();
 
@@ -17,7 +17,7 @@ const { setMessage } = useMessageStore();
 const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 
-const showMessage = (message: string, id: string, edit: boolean) => {
+function showMessage(message: string, id: string, edit: boolean) {
   let description: string;
   let title: string;
 
@@ -25,35 +25,35 @@ const showMessage = (message: string, id: string, edit: boolean) => {
     title = t('actions.edit_eth2_validator.error.title');
     description = t('actions.edit_eth2_validator.error.description', {
       id,
-      message
+      message,
     });
-  } else {
+  }
+  else {
     title = t('actions.add_eth2_validator.error.title');
     description = t('actions.add_eth2_validator.error.description', {
       id,
-      message
+      message,
     });
   }
 
   setMessage({
     description,
     title,
-    success: false
+    success: false,
   });
-};
+}
 
-const save = async () => {
+async function save() {
   set(pending, true);
   const payload = get(validator);
   assert(payload);
 
   let result: ActionStatus<ValidationErrors | string>;
   const isEdit = isDefined(accountToEdit);
-  if (isEdit) {
+  if (isEdit)
     result = await editEth2Validator(payload);
-  } else {
+  else
     result = await addEth2Validator(payload);
-  }
 
   if (result.success) {
     if (isDefined(accountToEdit)) {
@@ -65,52 +65,53 @@ const save = async () => {
       updateEthStakingOwnership(
         payload.publicKey,
         bigNumberify(newVar.ownershipPercentage),
-        bigNumberify(payload.ownershipPercentage)
+        bigNumberify(payload.ownershipPercentage),
       );
       startPromise(fetchAccounts(Blockchain.ETH2));
-    } else {
+    }
+    else {
       startPromise(refreshAccounts(Blockchain.ETH2));
     }
-  } else if (typeof result.message === 'string') {
+  }
+  else if (typeof result.message === 'string') {
     showMessage(
       result.message,
       payload.publicKey || payload.validatorIndex || '',
-      isEdit
+      isEdit,
     );
-  } else {
+  }
+  else {
     set(errorMessages, result.message);
   }
 
   set(pending, false);
   return result.success;
-};
+}
 
-const setValidator = (acc: BlockchainAccountWithBalance): void => {
+function setValidator(acc: BlockchainAccountWithBalance): void {
   assert('ownershipPercentage' in acc);
   set(validator, {
     publicKey: acc.address,
     validatorIndex: acc.label,
-    ownershipPercentage: acc.ownershipPercentage
+    ownershipPercentage: acc.ownershipPercentage,
   });
-};
+}
 
-watch(accountToEdit, edit => {
-  if (!edit) {
+watch(accountToEdit, (edit) => {
+  if (!edit)
     set(validator, null);
-  } else {
+  else
     setValidator(edit);
-  }
 });
 
 onMounted(() => {
   setSubmitFunc(save);
 
   const acc = get(accountToEdit);
-  if (acc) {
+  if (acc)
     setValidator(acc);
-  } else {
+  else
     set(validator, null);
-  }
 });
 </script>
 

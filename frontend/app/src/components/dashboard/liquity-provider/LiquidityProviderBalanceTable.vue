@@ -1,36 +1,33 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import {
-  type XswapAsset,
-  type XswapBalance
-} from '@rotki/common/lib/defi/xswap';
 import { isEqual } from 'lodash-es';
-import { type Ref } from 'vue';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
 import { Routes } from '@/router/routes';
 import {
   DashboardTableType,
-  type DashboardTablesVisibleColumns
+  type DashboardTablesVisibleColumns,
 } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type {
+  XswapAsset,
+  XswapBalance,
+} from '@rotki/common/lib/defi/xswap';
+import type { BigNumber } from '@rotki/common';
 
 const { t } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
-const createTableHeaders = (
-  currency: Ref<string>,
-  dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
-) =>
-  computed<DataTableColumn[]>(() => {
+function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>) {
+  return computed<DataTableColumn[]>(() => {
     const visibleColumns = get(dashboardTablesVisibleColumns)[
       LIQUIDITY_POSITION
     ];
@@ -39,16 +36,16 @@ const createTableHeaders = (
       {
         label: t('common.name'),
         key: 'name',
-        cellClass: 'text-no-wrap'
+        cellClass: 'text-no-wrap',
       },
       {
         label: t('common.value_in_symbol', {
-          symbol: get(currency)
+          symbol: get(currency),
         }),
         key: 'usdValue',
         align: 'end',
-        class: 'text-no-wrap'
-      }
+        class: 'text-no-wrap',
+      },
     ];
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
@@ -56,7 +53,7 @@ const createTableHeaders = (
         label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
         key: 'percentageOfTotalNetValue',
         align: 'end',
-        class: 'text-no-wrap'
+        class: 'text-no-wrap',
       });
     }
 
@@ -67,24 +64,25 @@ const createTableHeaders = (
         label: t(
           'dashboard_asset_table.headers.percentage_of_total_current_group',
           {
-            group: t('dashboard.liquidity_position.title')
-          }
+            group: t('dashboard.liquidity_position.title'),
+          },
         ),
         key: 'percentageOfTotalCurrentGroup',
         align: 'end',
-        class: 'text-no-wrap'
+        class: 'text-no-wrap',
       });
     }
 
     return headers;
   });
+}
 
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY;
 const expanded = ref<XswapBalance[]>([]);
 
 const {
   fetchV2Balances: fetchUniswapV2Balances,
-  fetchV3Balances: fetchUniswapV3Balances
+  fetchV3Balances: fetchUniswapV3Balances,
 } = useUniswapStore();
 
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
@@ -96,12 +94,12 @@ const totalInUsd = lpTotal(true);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const tableHeaders = createTableHeaders(
   currencySymbol,
-  dashboardTablesVisibleColumns
+  dashboardTablesVisibleColumns,
 );
 
 const { isLoading } = useStatusStore();
@@ -110,26 +108,27 @@ const loading = logicOr(
   isLoading(Section.DEFI_UNISWAP_V3_BALANCES),
   isLoading(Section.DEFI_UNISWAP_V2_BALANCES),
   isLoading(Section.DEFI_BALANCER_BALANCES),
-  isLoading(Section.DEFI_SUSHISWAP_BALANCES)
+  isLoading(Section.DEFI_SUSHISWAP_BALANCES),
 );
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 
-const percentageOfTotalNetValue = (value: BigNumber) => {
+function percentageOfTotalNetValue(value: BigNumber) {
   const netWorth = get(totalNetWorthUsd) as BigNumber;
   const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
   return calculatePercentage(value, total);
-};
+}
 
-const percentageOfCurrentGroup = (value: BigNumber) =>
-  calculatePercentage(value, get(totalInUsd));
+function percentageOfCurrentGroup(value: BigNumber) {
+  return calculatePercentage(value, get(totalInUsd));
+}
 
 const premium = usePremium();
 
 const { ethAddresses } = storeToRefs(useEthAccountsStore());
 
-const fetch = async (refresh = false) => {
+async function fetch(refresh = false) {
   if (get(ethAddresses).length > 0) {
     await fetchUniswapV3Balances(refresh);
     await fetchUniswapV2Balances(refresh);
@@ -139,22 +138,20 @@ const fetch = async (refresh = false) => {
       await fetchBalancerBalances(refresh);
     }
   }
-};
+}
 
 onBeforeMount(async () => {
   await fetch();
 });
 
 watch(ethAddresses, async (curr, prev) => {
-  if (!isEqual(curr, prev)) {
+  if (!isEqual(curr, prev))
     await fetch(true);
-  }
 });
 
 watch(premium, async (curr, prev) => {
-  if (prev !== curr) {
+  if (prev !== curr)
     await fetch(true);
-  }
 });
 
 const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
@@ -170,7 +167,11 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       />
       {{ t('dashboard.liquidity_position.title') }}
       <RouterLink :to="route">
-        <RuiButton variant="text" icon class="ml-2">
+        <RuiButton
+          variant="text"
+          icon
+          class="ml-2"
+        >
           <RuiIcon name="arrow-right-s-line" />
         </RuiButton>
       </RouterLink>
@@ -220,18 +221,30 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
     >
       <template #item.name="{ row }">
         <div v-if="row.type === 'nft'">
-          <NftDetails :identifier="row.asset" :styled="{ margin: '1px 4px' }" />
+          <NftDetails
+            :identifier="row.asset"
+            :styled="{ margin: '1px 4px' }"
+          />
         </div>
 
-        <div v-else class="flex items-center py-4">
-          <LpPoolIcon :type="row.lpType" :assets="getAssets(row.assets)" />
+        <div
+          v-else
+          class="flex items-center py-4"
+        >
+          <LpPoolIcon
+            :type="row.lpType"
+            :assets="getAssets(row.assets)"
+          />
           <div class="pl-4 font-medium">
             {{ getPoolName(row.lpType, getAssets(row.assets)) }}
           </div>
         </div>
       </template>
       <template #item.usdValue="{ row }">
-        <AmountDisplay :value="row.usdValue" fiat-currency="USD" />
+        <AmountDisplay
+          :value="row.usdValue"
+          fiat-currency="USD"
+        />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay :value="percentageOfTotalNetValue(row.usdValue)" />

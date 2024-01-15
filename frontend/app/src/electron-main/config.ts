@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { type BackendOptions } from '@/electron-main/ipc';
-import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
+import type { BackendOptions } from '@/electron-main/ipc';
+import type { Writeable } from '@/types';
 
 const CONFIG_FILE = 'rotki_config.json';
 
@@ -17,46 +17,40 @@ export function loadConfig(): Partial<BackendOptions> {
   const options: Writeable<Partial<BackendOptions>> = {};
   const filePath = CONFIG_FILE;
   const configExists = fs.existsSync(filePath);
-  if (!configExists) {
+  if (!configExists)
     return options;
-  }
+
   try {
     const configFile = fs.readFileSync(filePath);
     const config = JSON.parse(configFile.toString());
 
     if (LOGLEVEL in config) {
       const configLogLevel = config[LOGLEVEL];
-      if (Object.values(LogLevel).includes(configLogLevel)) {
+      if (Object.values(LogLevel).includes(configLogLevel))
         options.loglevel = configLogLevel;
-      }
     }
 
-    if (LOG_FROM_OTHER_MODULES in config) {
+    if (LOG_FROM_OTHER_MODULES in config)
       options.logFromOtherModules = config[LOG_FROM_OTHER_MODULES] === true;
-    }
 
-    if (LOGDIR in config) {
+    if (LOGDIR in config)
       options.logDirectory = config[LOGDIR];
-    }
 
-    if (DATA_DIR in config) {
+    if (DATA_DIR in config)
       options.dataDirectory = config[DATA_DIR];
-    }
 
-    if (MAX_LOG_SIZE in config) {
+    if (MAX_LOG_SIZE in config)
       options.maxSizeInMbAllLogs = Number.parseInt(config[MAX_LOG_SIZE]);
-    }
 
-    if (MAX_LOG_NUMBER in config) {
+    if (MAX_LOG_NUMBER in config)
       options.maxLogfilesNum = Number.parseInt(config[MAX_LOG_NUMBER]);
-    }
 
-    if (SQLITE_INSTRUCTIONS in config) {
+    if (SQLITE_INSTRUCTIONS in config)
       options.sqliteInstructions = Number.parseInt(config[SQLITE_INSTRUCTIONS]);
-    }
 
     return options;
-  } catch {
+  }
+  catch {
     return options;
   }
 }

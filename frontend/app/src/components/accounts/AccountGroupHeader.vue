@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Balance, type BigNumber } from '@rotki/common';
-import { type ComputedRef } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
+import type { Balance, BigNumber } from '@rotki/common';
+import type { ComputedRef } from 'vue';
+import type { XpubAccountWithBalance } from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{
@@ -11,7 +11,7 @@ const props = withDefaults(
     expanded: boolean;
     loading?: boolean;
   }>(),
-  { loading: false }
+  { loading: false },
 );
 
 const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
@@ -33,39 +33,46 @@ const label = computed<string>(() => get(xpub).label);
 const xpubTags = computed<string[]>(() => get(xpub).tags);
 
 const displayXpub = computed<string>(() =>
-  truncateAddress(get(xpub).xpub, truncationPoints[get(breakpoint)] ?? 4)
+  truncateAddress(get(xpub).xpub, truncationPoints[get(breakpoint)] ?? 4),
 );
 
 const sum = computed<BigNumber>(() =>
-  bigNumberSum(get(items).map(({ balance: { amount } }) => amount))
+  bigNumberSum(get(items).map(({ balance: { amount } }) => amount)),
 );
 
 const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
 
 const balance = computed<Balance>(() => ({
   amount: get(sum),
-  usdValue: get(usdSum)
+  usdValue: get(usdSum),
 }));
 
-const deleteClicked = (_payload: XpubAccountWithBalance) =>
-  emit('delete-clicked', _payload);
+function deleteClicked(_payload: XpubAccountWithBalance) {
+  return emit('delete-clicked', _payload);
+}
 
-const expandClicked = (_payload: XpubAccountWithBalance) =>
-  emit('expand-clicked', _payload);
+function expandClicked(_payload: XpubAccountWithBalance) {
+  return emit('expand-clicked', _payload);
+}
 
-const editClicked = (_payload: XpubAccountWithBalance) =>
-  emit('edit-clicked', _payload);
+function editClicked(_payload: XpubAccountWithBalance) {
+  return emit('edit-clicked', _payload);
+}
 </script>
 
 <template>
-  <td v-if="!group" class="font-medium text-subtitle-2 px-4 py-2" colspan="5">
+  <td
+    v-if="!group"
+    class="font-medium text-subtitle-2 px-4 py-2"
+    colspan="5"
+  >
     {{ t('account_group_header.standalone') }}
   </td>
   <Fragment v-else>
     <td
       colspan="2"
       :class="{
-        '!p-2': !xs
+        '!p-2': !xs,
       }"
     >
       <div class="pl-9">
@@ -79,14 +86,23 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           icon
           @click="expandClicked({ ...xpub, balance })"
         >
-          <RuiIcon v-if="expanded" name="arrow-up-s-line" />
-          <RuiIcon v-else name="arrow-down-s-line" />
+          <RuiIcon
+            v-if="expanded"
+            name="arrow-up-s-line"
+          />
+          <RuiIcon
+            v-else
+            name="arrow-down-s-line"
+          />
         </RuiButton>
         <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ blur: !shouldShowAmount }">
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               {{ displayXpub }}
             </template>
@@ -97,14 +113,20 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           :value="xpub.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
         />
-        <span v-if="xpub.derivationPath" :class="{ blur: !shouldShowAmount }">
+        <span
+          v-if="xpub.derivationPath"
+          :class="{ blur: !shouldShowAmount }"
+        >
           <span class="font-medium">
             {{ t('account_group_header.derivation_path') }}:
           </span>
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <TagDisplay wrapper-class="ml-9" :tags="xpubTags" />
+      <TagDisplay
+        wrapper-class="ml-9"
+        :tags="xpubTags"
+      />
     </td>
     <td class="text-end px-4">
       <AmountDisplay

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
-import { type LoginCredentials } from '@/types/login';
 import { toMessages } from '@/utils/validation';
+import type { LoginCredentials } from '@/types/login';
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +12,8 @@ const props = withDefaults(
     userPrompted: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -24,12 +24,13 @@ const emit = defineEmits<{
 }>();
 
 const { form, passwordConfirm, userPrompted } = toRefs(props);
-const input = (newInput: Partial<LoginCredentials>) => {
+
+function input(newInput: Partial<LoginCredentials>) {
   emit('update:form', {
     ...get(form),
-    ...newInput
+    ...newInput,
   });
-};
+}
 
 const { t } = useI18n();
 
@@ -37,37 +38,37 @@ const rules = {
   username: {
     required: helpers.withMessage(
       t('create_account.credentials.validation.non_empty_username'),
-      required
+      required,
     ),
     isValidUsername: helpers.withMessage(
       t('create_account.credentials.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
-    )
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
+    ),
   },
   password: {
     required: helpers.withMessage(
       t('create_account.credentials.validation.non_empty_password'),
-      required
-    )
+      required,
+    ),
   },
   passwordConfirm: {
     required: helpers.withMessage(
       t(
-        'create_account.credentials.validation.non_empty_password_confirmation'
+        'create_account.credentials.validation.non_empty_password_confirmation',
       ),
-      required
+      required,
     ),
     isMatch: helpers.withMessage(
       t('create_account.credentials.validation.password_confirmation_mismatch'),
-      sameAs(computed(() => get(form).password))
-    )
+      sameAs(computed(() => get(form).password)),
+    ),
   },
   userPrompted: {
     required: helpers.withMessage(
       t('create_account.credentials.validation.check_prompt'),
-      sameAs(true)
-    )
-  }
+      sameAs(true),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
@@ -76,11 +77,11 @@ const v$ = useVuelidate(
     username: computed(() => get(form).username),
     password: computed(() => get(form).password),
     passwordConfirm,
-    userPrompted
+    userPrompted,
   },
   {
-    $autoDirty: true
-  }
+    $autoDirty: true,
+  },
 );
 
 watchImmediate(v$, ({ $invalid }) => {
@@ -93,7 +94,7 @@ const username = computed({
   },
   set(value: string) {
     input({ username: value });
-  }
+  },
 });
 
 const password = computed({
@@ -102,7 +103,7 @@ const password = computed({
   },
   set(value: string) {
     input({ password: value });
-  }
+  },
 });
 
 const passwordConfirmModel = computed({
@@ -111,7 +112,7 @@ const passwordConfirmModel = computed({
   },
   set(value: string) {
     emit('update:password-confirm', value);
-  }
+  },
 });
 
 const userPromptedModel = computed({
@@ -120,7 +121,7 @@ const userPromptedModel = computed({
   },
   set(value: boolean) {
     emit('update:user-prompted', value);
-  }
+  },
 });
 </script>
 

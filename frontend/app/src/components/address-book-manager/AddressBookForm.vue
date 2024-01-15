@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import {
-  type AddressBookLocation,
-  type AddressBookPayload
-} from '@/types/eth-names';
 import { isValidEthAddress, toSentenceCase } from '@/utils/text';
 import { toMessages } from '@/utils/validation';
+import type {
+  AddressBookLocation,
+  AddressBookPayload,
+} from '@/types/eth-names';
 
 const props = withDefaults(
   defineProps<{
@@ -14,8 +14,8 @@ const props = withDefaults(
     enableForAllChains?: boolean;
   }>(),
   {
-    enableForAllChains: false
-  }
+    enableForAllChains: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -42,19 +42,19 @@ const rules = {
   address: {
     required: helpers.withMessage(
       t('address_book.form.validation.address'),
-      required
+      required,
     ),
     isValidEthAddress: helpers.withMessage(
       t('address_book.form.validation.valid'),
-      isValidEthAddress
-    )
+      isValidEthAddress,
+    ),
   },
   name: {
     required: helpers.withMessage(
       t('address_book.form.validation.name'),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation } = useAddressBookForm();
@@ -63,9 +63,9 @@ const v$ = setValidation(
   rules,
   {
     address,
-    name
+    name,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const { getBlockie } = useBlockie();
@@ -80,7 +80,9 @@ const { getBlockie } = useBlockie();
       :items="locations"
       :disabled="edit"
     >
-      <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
+      <template #item="{ item }">
+        {{ toSentenceCase(item) }}
+      </template>
       <template #selection="{ item }">
         {{ toSentenceCase(item) }}
       </template>
@@ -110,7 +112,11 @@ const { getBlockie } = useBlockie();
     >
       <template #prepend-inner>
         <span>
-          <VAvatar size="24" class="mr-2" color="grey">
+          <VAvatar
+            size="24"
+            class="mr-2"
+            color="grey"
+          >
             <AppImage
               v-if="value.address && isValidEthAddress(value.address)"
               :src="getBlockie(value.address)"
@@ -121,8 +127,14 @@ const { getBlockie } = useBlockie();
       </template>
       <template #item="{ item }">
         <span v-if="item">
-          <VAvatar size="24" class="mr-2">
-            <AppImage :src="getBlockie(item)" size="1.5rem" />
+          <VAvatar
+            size="24"
+            class="mr-2"
+          >
+            <AppImage
+              :src="getBlockie(item)"
+              size="1.5rem"
+            />
           </VAvatar>
         </span>
         {{ item }}

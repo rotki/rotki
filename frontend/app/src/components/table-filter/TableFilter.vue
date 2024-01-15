@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type AssetInfo } from '@rotki/common/lib/data';
-import { type ComputedRef } from 'vue';
-import {
-  type MatchedKeyword,
-  type MatchedKeywordWithBehaviour,
-  type SavedFilterLocation,
-  type SearchMatcher,
-  type Suggestion
+import type { AssetInfo } from '@rotki/common/lib/data';
+import type { ComputedRef } from 'vue';
+import type {
+  MatchedKeyword,
+  MatchedKeywordWithBehaviour,
+  SavedFilterLocation,
+  SearchMatcher,
+  Suggestion,
 } from '@/types/filtering';
 
 const props = withDefaults(
@@ -18,8 +18,8 @@ const props = withDefaults(
   }>(),
   {
     location: null,
-    disabled: false
-  }
+    disabled: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -37,7 +37,7 @@ const suggestedFilter = ref<Suggestion>({
   total: 0,
   asset: false,
   key: '',
-  value: ''
+  value: '',
 });
 const validKeys = computed(() => get(matchers).map(({ key }) => key));
 
@@ -49,24 +49,26 @@ const selectedMatcher = computed(() => {
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
-const removeSelection = (item: Suggestion) => {
+function removeSelection(item: Suggestion) {
   updateMatches(get(selection).filter(sel => sel !== item));
-};
+}
 
-const clickItem = (item: Suggestion) => {
+function clickItem(item: Suggestion) {
   if (typeof item.value !== 'boolean') {
     removeSelection(item);
     selectItem(item);
   }
-};
+}
 
-const matcherForKey = (searchKey: string | undefined) =>
-  get(matchers).find(({ key }) => key === searchKey);
+function matcherForKey(searchKey: string | undefined) {
+  return get(matchers).find(({ key }) => key === searchKey);
+}
 
-const matcherForKeyValue = (searchKey: string | undefined) =>
-  get(matchers).find(({ keyValue }) => keyValue === searchKey);
+function matcherForKeyValue(searchKey: string | undefined) {
+  return get(matchers).find(({ keyValue }) => keyValue === searchKey);
+}
 
-const setSearchToMatcherKey = (matcher: SearchMatcher<any>) => {
+function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
   const boolean = 'boolean' in matcher;
   if (boolean) {
     applyFilter({
@@ -74,7 +76,7 @@ const setSearchToMatcherKey = (matcher: SearchMatcher<any>) => {
       asset: false,
       value: true,
       index: 0,
-      total: 1
+      total: 1,
     });
     return;
   }
@@ -82,7 +84,7 @@ const setSearchToMatcherKey = (matcher: SearchMatcher<any>) => {
   const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
   set(search, filter);
   get(input).focus();
-};
+}
 
 function updateMatches(pairs: Suggestion[]) {
   const matched: Partial<MatchedKeyword<any>> = {};
@@ -91,45 +93,46 @@ function updateMatches(pairs: Suggestion[]) {
   for (const entry of pairs) {
     const key = entry.key;
     const matcher = matcherForKey(key);
-    if (!matcher) {
+    if (!matcher)
       continue;
-    }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
     let transformedKeyword: string | boolean = '';
 
     if ('string' in matcher) {
-      if (typeof entry.value !== 'string') {
+      if (typeof entry.value !== 'string')
         continue;
-      }
+
       if (matcher.validate(entry.value)) {
         transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
 
-        if (entry.exclude) {
+        if (entry.exclude)
           transformedKeyword = `!${transformedKeyword}`;
-        }
-      } else {
+      }
+      else {
         continue;
       }
-    } else if ('asset' in matcher) {
-      transformedKeyword =
-        typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
-    } else {
+    }
+    else if ('asset' in matcher) {
+      transformedKeyword
+        = typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
+    }
+    else {
       transformedKeyword = true;
     }
 
-    if (!transformedKeyword) {
+    if (!transformedKeyword)
       continue;
-    }
 
     validPairs.push(entry);
 
     if (matcher.multiple) {
-      if (!matched[valueKey]) {
+      if (!matched[valueKey])
         matched[valueKey] = [];
-      }
+
       (matched[valueKey] as (string | boolean)[]).push(transformedKeyword);
-    } else {
+    }
+    else {
       matched[valueKey] = transformedKeyword;
     }
   }
@@ -138,7 +141,7 @@ function updateMatches(pairs: Suggestion[]) {
   emit('update:matches', matched);
 }
 
-const applyFilter = (filter: Suggestion) => {
+function applyFilter(filter: Suggestion) {
   let newSelection = [...get(selection)];
   const key = filter.key;
   const index = newSelection.findIndex(value => value.key === key);
@@ -146,40 +149,40 @@ const applyFilter = (filter: Suggestion) => {
   assert(matcher);
 
   if (
-    index >= 0 &&
-    (!matcher.multiple || newSelection[index].exclude !== filter.exclude)
-  ) {
+    index >= 0
+    && (!matcher.multiple || newSelection[index].exclude !== filter.exclude)
+  )
     newSelection = newSelection.filter(item => item.key !== key);
-  }
 
   newSelection.push(filter);
 
   updateMatches(newSelection);
   set(search, '');
-};
+}
 
 const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() =>
   get(matchers).filter(
     ({ key, multiple }) =>
-      (!get(usedKeys).includes(key) || multiple) &&
-      getTextToken(key).includes(getTextToken(get(search)) || '')
-  )
+      (!get(usedKeys).includes(key) || multiple)
+      && getTextToken(key).includes(getTextToken(get(search)) || ''),
+  ),
 );
 
-const applySuggestion = async () => {
+async function applySuggestion() {
   const selectedIndex = get(selectedSuggestion);
   if (!get(selectedMatcher)) {
     const filteredMatchersVal = get(filteredMatchers);
-    if (filteredMatchersVal.length >= selectedIndex) {
+    if (filteredMatchersVal.length >= selectedIndex)
       setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
-    }
+
     return;
   }
 
   const filter = get(suggestedFilter);
   if (filter.value) {
     nextTick(() => applyFilter(filter));
-  } else {
+  }
+  else {
     const { key, value: keyword, exclude } = splitSearch(get(search));
 
     const matcher = matcherForKey(key);
@@ -188,20 +191,22 @@ const applySuggestion = async () => {
       let suggestedItems: (AssetInfo | string)[] = [];
       if ('string' in matcher) {
         suggestedItems = matcher.suggestions();
-      } else if ('asset' in matcher) {
+      }
+      else if ('asset' in matcher) {
         suggestedItems = await matcher.suggestions(keyword);
         asset = true;
-      } else if (!('boolean' in matcher)) {
+      }
+      else if (!('boolean' in matcher)) {
         logger.debug(
-          "Matcher doesn't have asset=true, string=true, or boolean=true.",
-          selectedMatcher
+          'Matcher doesn\'t have asset=true, string=true, or boolean=true.',
+          selectedMatcher,
         );
       }
 
       if (
-        suggestedItems.length === 0 &&
-        'validate' in matcher &&
-        matcher.validate(keyword)
+        suggestedItems.length === 0
+        && 'validate' in matcher
+        && matcher.validate(keyword)
       ) {
         nextTick(() =>
           applyFilter({
@@ -210,18 +215,17 @@ const applySuggestion = async () => {
             value: keyword,
             index: 0,
             total: 1,
-            exclude
-          })
+            exclude,
+          }),
         );
       }
     }
-    if (!key) {
+    if (!key)
       get(input).blur();
-    }
   }
   set(selectedSuggestion, 0);
   set(search, '');
-};
+}
 
 onMounted(() => {
   get(input).onTabDown = function (e: KeyboardEvent) {
@@ -239,7 +243,7 @@ watch(search, () => {
   set(selectedSuggestion, 0);
 });
 
-const moveSuggestion = (up: boolean) => {
+function moveSuggestion(up: boolean) {
   const total = get(selectedMatcher)
     ? get(suggestedFilter).total
     : get(filteredMatchers).length;
@@ -249,73 +253,70 @@ const moveSuggestion = (up: boolean) => {
 
   position += move;
 
-  if (position >= total) {
+  if (position >= total)
     set(selectedSuggestion, 0);
-  } else if (position < 0) {
+  else if (position < 0)
     set(selectedSuggestion, total - 1);
-  } else {
+  else
     set(selectedSuggestion, position);
-  }
-};
+}
 
 // TODO: This is too specific for custom asset, move it!
-const getDisplayValue = (suggestion: Suggestion) => {
+function getDisplayValue(suggestion: Suggestion) {
   const value = suggestion.value;
-  if (typeof value === 'string') {
+  if (typeof value === 'string')
     return value;
-  }
 
   return value.isCustomAsset ? value.name : value.symbol;
-};
+}
 
-const getSuggestionText = (suggestion: Suggestion) => {
+function getSuggestionText(suggestion: Suggestion) {
   const operator = suggestion.exclude ? '!=' : '=';
   return `${suggestion.key}${operator}${getDisplayValue(suggestion)}`;
-};
+}
 
-const selectItem = (suggestion: Suggestion) => {
+function selectItem(suggestion: Suggestion) {
   nextTick(() => {
     set(search, getSuggestionText(suggestion));
   });
-};
+}
 
-const restoreSelection = (matches: MatchedKeywordWithBehaviour<any>): void => {
+function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
   const oldSelection = get(selection);
   const newSelection: Suggestion[] = [];
   Object.entries(matches).forEach(([key, value]) => {
     const foundMatchers = matcherForKeyValue(key);
 
-    if (!(foundMatchers && value)) {
+    if (!(foundMatchers && value))
       return;
-    }
 
     const values = Array.isArray(value) ? value : [value];
     const asset = 'asset' in foundMatchers;
     const boolean = 'boolean' in foundMatchers;
 
-    values.forEach(value => {
+    values.forEach((value) => {
       let deserializedValue = null;
       if (asset) {
         const prevAssetSelection = oldSelection.find(
-          ({ key }) => key === foundMatchers.key
+          ({ key }) => key === foundMatchers.key,
         );
-        if (prevAssetSelection) {
+        if (prevAssetSelection)
           deserializedValue = prevAssetSelection.value;
-        }
       }
 
       let exclude = false;
       if (!deserializedValue) {
         if (boolean || typeof value === 'boolean') {
           deserializedValue = true;
-        } else if (typeof value === 'string') {
+        }
+        else if (typeof value === 'string') {
           let normalizedValue = value;
           if (!asset && value.startsWith('!')) {
             normalizedValue = value.substring(1);
             exclude = true;
           }
-          deserializedValue =
-            foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
+          deserializedValue
+            = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
         }
       }
 
@@ -325,19 +326,19 @@ const restoreSelection = (matches: MatchedKeywordWithBehaviour<any>): void => {
         asset,
         total: 1,
         index: 0,
-        exclude
+        exclude,
       });
     });
   });
 
   set(selection, newSelection);
-};
+}
 
 onMounted(() => {
   restoreSelection(get(matches));
 });
 
-watch(matches, matches => {
+watch(matches, (matches) => {
   restoreSelection(matches);
 });
 
@@ -355,7 +356,10 @@ const { t } = useI18n();
     tooltip-class="max-w-[12rem]"
   >
     <template #activator>
-      <div class="flex items-center gap-2" data-cy="table-filter">
+      <div
+        class="flex items-center gap-2"
+        data-cy="table-filter"
+      >
         <VCombobox
           ref="input"
           :value="selection"
@@ -391,7 +395,10 @@ const { t } = useI18n();
               @click:close="removeSelection(item)"
               @click="clickItem(item)"
             >
-              <SuggestedItem chip :suggestion="item" />
+              <SuggestedItem
+                chip
+                :suggestion="item"
+              />
             </RuiChip>
           </template>
           <template #no-data>
@@ -403,7 +410,7 @@ const { t } = useI18n();
               :selection="selection"
               :selected-suggestion="selectedSuggestion"
               :location="location"
-              @apply:filter="applyFilter($event)"
+              @apply-filter="applyFilter($event)"
               @suggest="suggestedFilter = $event"
               @click="setSearchToMatcherKey($event)"
             />

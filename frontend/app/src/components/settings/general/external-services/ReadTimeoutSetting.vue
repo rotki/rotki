@@ -1,11 +1,12 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const minValueMessage = (min: number) =>
-  t(
+function minValueMessage(min: number) {
+  return t(
     'general_settings.external_service_setting.validation.read_timeout.invalid_range',
-    { min }
+    { min },
   );
+}
 </script>
 
 <template>
@@ -13,7 +14,7 @@ const minValueMessage = (min: number) =>
     :min-value-message="minValueMessage"
     :required-message="
       t(
-        'general_settings.external_service_setting.validation.read_timeout.non_empty'
+        'general_settings.external_service_setting.validation.read_timeout.non_empty',
       )
     "
     setting="readTimeout"

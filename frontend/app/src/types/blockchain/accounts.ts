@@ -1,8 +1,8 @@
-import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type Balance, type HasBalance } from '@rotki/common';
-import { type GeneralAccount } from '@rotki/common/lib/account';
-import { type Section } from '@/types/status';
-import { type Module } from '@/types/modules';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Balance, HasBalance } from '@rotki/common';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { Section } from '@/types/status';
+import type { Module } from '@/types/modules';
 
 export interface GeneralAccountData {
   readonly address: string;
@@ -27,7 +27,7 @@ export enum XpubKeyType {
   P2TR = 'p2tr',
   XPUB = 'p2pkh',
   YPUB = 'p2sh_p2wpkh',
-  ZPUB = 'wpkh'
+  ZPUB = 'wpkh',
 }
 
 export interface XpubPayload {
@@ -46,7 +46,7 @@ export interface BasicBlockchainAccountPayload {
 
 export interface BlockchainAccountPayload
   extends BasicBlockchainAccountPayload,
-    AccountPayload {}
+  AccountPayload {}
 
 export interface AccountPayload {
   readonly address: string;
@@ -79,8 +79,8 @@ export interface FetchPricePayload {
 // todo: flatten balance
 export interface AccountWithBalance
   extends GeneralAccount,
-    HasBalance,
-    Partial<Balance> {
+  HasBalance,
+  Partial<Balance> {
   nativeAsset?: string;
 }
 
@@ -89,8 +89,8 @@ interface XpubAccount extends GeneralAccount, XpubPayload {}
 // todo: flatten balance
 export interface XpubAccountWithBalance
   extends XpubAccount,
-    HasBalance,
-    Partial<Balance> {}
+  HasBalance,
+  Partial<Balance> {}
 
 export interface AccountWithBalanceAndSharedOwnership
   extends AccountWithBalance {

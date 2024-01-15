@@ -1,4 +1,3 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import dayjs from 'dayjs';
 import { find, toArray } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
@@ -8,15 +7,16 @@ import {
   type TaskMap,
   type TaskMeta,
   TaskNotFoundError,
-  UserCancelledTaskError
+  UserCancelledTaskError,
 } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
+function unlockTask(lockedTasks: Ref<number[]>, taskId: number): number[] {
   const locked = [...get(lockedTasks)];
   const idIndex = locked.indexOf(taskId);
   locked.splice(idIndex, 1);
   return locked;
-};
+}
 
 type ErrorHandler = (
   task: Task<TaskMeta>,
@@ -25,20 +25,20 @@ type ErrorHandler = (
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 
-const useError = (): { error: ErrorHandler } => {
+function useError(): { error: ErrorHandler } {
   const { t } = useI18n();
   const error: ErrorHandler = (task, error) => ({
     result: {},
     message: t('task_manager.error', {
       taskId: task.id,
       title: task.meta.title,
-      error
-    })
+      error,
+    }),
   });
   return {
-    error
+    error,
   };
-};
+}
 
 interface TaskResponse<R, M extends TaskMeta> {
   result: R;
@@ -66,7 +66,7 @@ export const useTaskStore = defineStore('tasks', () => {
   const registerHandler = <R, M extends TaskMeta>(
     task: TaskType,
     handlerImpl: (actionResult: TaskActionResult<R>, meta: M) => void,
-    taskId?: string
+    taskId?: string,
   ): void => {
     const identifier = taskId ? `${task}-${taskId}` : task;
     handlers[identifier] = handlerImpl;
@@ -100,33 +100,32 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const isTaskRunning = (
     type: TaskType,
-    meta: Record<string, any> = {}
+    meta: Record<string, any> = {},
   ): ComputedRef<boolean> =>
     computed(
       () =>
-        !!find(get(tasks), item => {
+        !!find(get(tasks), (item) => {
           const sameType = item.type === type;
           const keys = Object.keys(meta);
-          if (keys.length === 0) {
+          if (keys.length === 0)
             return sameType;
-          }
 
           return (
-            sameType &&
-            keys.every(
+            sameType
+            && keys.every(
               key =>
-                // @ts-ignore
-                key in item.meta && item.meta[key] === meta[key]
+                // @ts-expect-error
+                key in item.meta && item.meta[key] === meta[key],
             )
           );
-        })
+        }),
     );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(get(tasks), item => item.type === type);
-    if (task) {
+    if (task)
       return task.meta as T;
-    }
+
     return undefined;
   };
 
@@ -137,27 +136,26 @@ export const useTaskStore = defineStore('tasks', () => {
   const addTask = <M extends TaskMeta>(
     id: number,
     type: TaskType,
-    meta: M
+    meta: M,
   ): void => {
     assert(
       !(id === null || id === undefined),
-      `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`
+      `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`,
     );
 
     add({
       id,
       type,
       meta,
-      time: dayjs().valueOf()
+      time: dayjs().valueOf(),
     });
   };
 
   const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
     const { id, type, meta } = task;
 
-    if (!get(isTaskRunning(type, meta))) {
+    if (!get(isTaskRunning(type, meta)))
       return false;
-    }
 
     try {
       const deleted = await api.cancelAsyncTask(id);
@@ -166,7 +164,8 @@ export const useTaskStore = defineStore('tasks', () => {
         const handler = handlers[type] ?? handlers[`${type}-${id}`];
         if (!handler) {
           remove(task.id);
-        } else {
+        }
+        else {
           lock(id);
           handleResult({ result: null, message: USER_CANCELLED_TASK }, task);
           unlock(id);
@@ -174,7 +173,8 @@ export const useTaskStore = defineStore('tasks', () => {
       }
 
       return deleted;
-    } catch {
+    }
+    catch {
       return false;
     }
   };
@@ -183,7 +183,7 @@ export const useTaskStore = defineStore('tasks', () => {
     id: number,
     type: TaskType,
     meta: M,
-    nonUnique = false
+    nonUnique = false,
   ): Promise<TaskResponse<R, M>> => {
     addTask(id, type, meta);
 
@@ -196,14 +196,15 @@ export const useTaskStore = defineStore('tasks', () => {
 
           if (actionResult.error) {
             reject(actionResult.error);
-          } else if (result === null) {
+          }
+          else if (result === null) {
             let errorMessage: string;
             if (message) {
               if (message === USER_CANCELLED_TASK) {
                 let msg = 'Request cancelled';
-                if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
+                if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
                   msg += ` ::dev_only_msg_part:: task_id: ${id}, task_type: ${TaskType[type]}`;
-                }
+
                 logger.debug(msg);
                 reject(new UserCancelledTaskError(msg));
                 return;
@@ -216,24 +217,26 @@ export const useTaskStore = defineStore('tasks', () => {
                 }, meta: ${JSON.stringify(meta)}`;
               }
               reject(new Error(errorMessage));
-            } else {
+            }
+            else {
               reject(
                 new BackendCancelledTaskError(
-                  `Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`
-                )
+                  `Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`,
+                ),
               );
             }
-          } else {
+          }
+          else {
             resolve({ result, meta, message });
           }
         },
-        nonUnique ? id.toString() : undefined
+        nonUnique ? id.toString() : undefined,
       );
     });
   };
 
   const filterTasks = (
-    taskIds: number[]
+    taskIds: number[],
   ): {
     ready: number[];
     unknown: number[];
@@ -243,19 +246,19 @@ export const useTaskStore = defineStore('tasks', () => {
     return {
       ready: taskIds.filter(
         id =>
-          !lockedTasks.includes(id) &&
-          pendingTasks[id] &&
-          pendingTasks[id].id !== null
+          !lockedTasks.includes(id)
+          && pendingTasks[id]
+          && pendingTasks[id].id !== null,
       ),
       unknown: taskIds.filter(
-        id => !lockedTasks.includes(id) && !pendingTasks[id]
-      )
+        id => !lockedTasks.includes(id) && !pendingTasks[id],
+      ),
     };
   };
 
   const handleResult = (
     result: TaskActionResult<any>,
-    task: Task<TaskMeta>
+    task: Task<TaskMeta>,
   ): void => {
     if (task.meta.ignoreResult) {
       remove(task.id);
@@ -267,9 +270,10 @@ export const useTaskStore = defineStore('tasks', () => {
     if (handler) {
       handler(result, task.meta);
       /* c8 ignore next 5 */
-    } else {
+    }
+    else {
       logger.warn(
-        `missing handler for ${TaskType[task.type]} with id ${task.id}`
+        `missing handler for ${TaskType[task.type]} with id ${task.id}`,
       );
     }
 
@@ -283,31 +287,33 @@ export const useTaskStore = defineStore('tasks', () => {
       const result = await api.queryTaskResult(task.id);
       assert(result !== null);
       handleResult(result, task);
-    } catch (e: any) {
-      logger.error('Task handling failed', e);
-      if (e instanceof TaskNotFoundError) {
+    }
+    catch (error_: any) {
+      logger.error('Task handling failed', error_);
+      if (error_ instanceof TaskNotFoundError) {
         remove(task.id);
-        handleResult(error(task, e.message), task);
-      } else {
-        handleResult({ message: e.message, result: null, error: e }, task);
+        handleResult(error(task, error_.message), task);
+      }
+      else {
+        handleResult({ message: error_.message, result: null, error: error_ }, task);
       }
     }
     unlock(task.id);
   };
 
   const handleTasks = async (
-    ids: number[]
+    ids: number[],
   ): Promise<PromiseSettledResult<void>[]> => {
     const taskMap = get(tasks);
     return Promise.allSettled(ids.map(id => processTask(taskMap[id])));
   };
 
   const consumeUnknownTasks = async (ids: number[]): Promise<void> => {
-    if (ids.length === 0) {
+    if (ids.length === 0)
       return;
-    }
+
     logger.warn(
-      `the following task ids were not known to the frontend ${ids.join(', ')}`
+      `the following task ids were not known to the frontend ${ids.join(', ')}`,
     );
 
     for (const id of ids) {
@@ -317,9 +323,8 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   const monitor = async (): Promise<void> => {
-    if (!get(hasRunningTasks) || isRunning) {
+    if (!get(hasRunningTasks) || isRunning)
       return;
-    }
 
     isRunning = true;
     try {
@@ -327,8 +332,9 @@ export const useTaskStore = defineStore('tasks', () => {
       const { ready, unknown } = filterTasks(completed);
       await handleTasks(ready);
       await consumeUnknownTasks(unknown);
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error_: any) {
+      logger.error(error_);
     }
 
     isRunning = false;
@@ -346,10 +352,9 @@ export const useTaskStore = defineStore('tasks', () => {
     metadata,
     addTask,
     awaitTask,
-    monitor
+    monitor,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useTaskStore, import.meta.hot));
-}

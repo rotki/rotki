@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type I18nParam } from '@rotki/common/lib/messages';
+import type { I18nParam } from '@rotki/common/lib/messages';
 
 defineProps<{
   params: I18nParam;
@@ -7,7 +7,11 @@ defineProps<{
 </script>
 
 <template>
-  <i18n :path="params.message" :plural="params.choice" tag="div">
+  <i18n
+    :path="params.message"
+    :plural="params.choice"
+    tag="div"
+  >
     <template #service>
       {{ params.props.service }}
     </template>
@@ -15,7 +19,10 @@ defineProps<{
       {{ params.props.location }}
     </template>
     <template #url>
-      <ExternalLink :url="params.props.url" :text="params.props.url" />
+      <ExternalLink
+        :url="params.props.url"
+        :text="params.props.url"
+      />
     </template>
   </i18n>
 </template>

@@ -5,10 +5,19 @@ const { mobile } = useDisplay();
 </script>
 
 <template>
-  <div v-if="!premium" class="mr-2">
-    <RuiTooltip :popper="{ placement: 'bottom' }" :disabled="!mobile">
+  <div
+    v-if="!premium"
+    class="mr-2"
+  >
+    <RuiTooltip
+      :popper="{ placement: 'bottom' }"
+      :disabled="!mobile"
+    >
       <template #activator>
-        <ExternalLink custom premium>
+        <ExternalLink
+          custom
+          premium
+        >
           <RuiButton
             icon
             class="lg:!py-2"

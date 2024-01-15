@@ -1,9 +1,9 @@
-import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { TaskMeta } from '@/types/task';
+import type { ProfitLossModel } from '@rotki/common/lib/defi';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
@@ -18,7 +18,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { fetchAaveBalances, fetchAaveHistory } = useAaveApi();
 
   const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(
-    Section.DEFI_AAVE_BALANCES
+    Section.DEFI_AAVE_BALANCES,
   );
 
   const aaveTotalEarned = (addresses: string[]) =>
@@ -27,9 +27,9 @@ export const useAaveStore = defineStore('defi/aave', () => {
       const aaveHistory = get(history);
 
       for (const address in aaveHistory) {
-        if (addresses.length > 0 && !addresses.includes(address)) {
+        if (addresses.length > 0 && !addresses.includes(address))
           continue;
-        }
+
         const totalEarned = aaveHistory[address].totalEarnedInterest;
         for (const asset in totalEarned) {
           const index = earned.findIndex(e => e.asset === asset);
@@ -37,12 +37,13 @@ export const useAaveStore = defineStore('defi/aave', () => {
             earned.push({
               address: '',
               asset,
-              value: totalEarned[asset]
+              value: totalEarned[asset],
             });
-          } else {
+          }
+          else {
             earned[index] = {
               ...earned[index],
-              value: balanceSum(earned[index].value, totalEarned[asset])
+              value: balanceSum(earned[index].value, totalEarned[asset]),
             };
           }
         }
@@ -51,12 +52,11 @@ export const useAaveStore = defineStore('defi/aave', () => {
     });
 
   const fetchBalances = async (refresh = false) => {
-    if (!get(activeModules).includes(Module.AAVE)) {
+    if (!get(activeModules).includes(Module.AAVE))
       return;
-    }
-    if (fetchDisabled(refresh)) {
+
+    if (fetchDisabled(refresh))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
@@ -68,20 +68,21 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: t('actions.defi.aave_balances.task.title')
-        }
+          title: t('actions.defi.aave_balances.task.title'),
+        },
       );
       set(balances, AaveBalances.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         const message = t('actions.defi.aave_balances.error.description', {
-          error: e.message
+          error: error.message,
         });
         const title = t('actions.defi.aave_balances.error.title');
         notify({
           title,
           message,
-          display: true
+          display: true,
         });
       }
     }
@@ -90,16 +91,14 @@ export const useAaveStore = defineStore('defi/aave', () => {
   };
 
   const fetchHistory = async (payload: { refresh?: boolean }) => {
-    if (!get(activeModules).includes(Module.AAVE) || !get(premium)) {
+    if (!get(activeModules).includes(Module.AAVE) || !get(premium))
       return;
-    }
 
     const section = Section.DEFI_AAVE_HISTORY;
     const refresh = payload?.refresh;
 
-    if (fetchDisabled(!!refresh, section)) {
+    if (fetchDisabled(!!refresh, section))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
@@ -111,23 +110,24 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: t('actions.defi.aave_history.task.title')
-        }
+          title: t('actions.defi.aave_history.task.title'),
+        },
       );
 
       set(history, AaveHistory.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
         const message = t('actions.defi.aave_history.error.description', {
-          error: e.message
+          error: error.message,
         });
         const title = t('actions.defi.aave_history.error.title');
 
         notify({
           title,
           message,
-          display: true
+          display: true,
         });
       }
     }
@@ -143,7 +143,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   };
 
   const addresses: ComputedRef<string[]> = computed(() =>
-    getProtocolAddresses(get(balances), get(history))
+    getProtocolAddresses(get(balances), get(history)),
   );
 
   return {
@@ -153,10 +153,9 @@ export const useAaveStore = defineStore('defi/aave', () => {
     aaveTotalEarned,
     fetchBalances,
     fetchHistory,
-    reset
+    reset,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useAaveStore, import.meta.hot));
-}

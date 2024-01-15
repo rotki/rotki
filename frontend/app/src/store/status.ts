@@ -1,21 +1,21 @@
 import { Section, Status, defiSections } from '@/types/status';
-import { type StatusPayload } from '@/types/action';
+import type { StatusPayload } from '@/types/action';
 
 export const useStatusStore = defineStore('status', () => {
   const status = ref<Partial<Record<Section, Status>>>({});
 
   const resetDefiStatus = (): void => {
     const newStatus = Status.NONE;
-    defiSections.forEach(section => {
+    defiSections.forEach((section) => {
       status.value[section] = newStatus;
     });
   };
 
   const setStatus = ({ section, status: newStatus }: StatusPayload): void => {
     const statuses = get(status);
-    if (statuses[section] === newStatus) {
+    if (statuses[section] === newStatus)
       return;
-    }
+
     set(status, { ...statuses, [section]: newStatus });
   };
 
@@ -26,9 +26,9 @@ export const useStatusStore = defineStore('status', () => {
     computed(() => {
       const status = get(getStatus(section));
       return (
-        status === Status.LOADING ||
-        status === Status.PARTIALLY_LOADED ||
-        status === Status.REFRESHING
+        status === Status.LOADING
+        || status === Status.PARTIALLY_LOADED
+        || status === Status.REFRESHING
       );
     });
 
@@ -36,9 +36,9 @@ export const useStatusStore = defineStore('status', () => {
     computed(() => {
       const status = get(getStatus(section));
       return (
-        status !== Status.LOADED &&
-        status !== Status.PARTIALLY_LOADED &&
-        status !== Status.REFRESHING
+        status !== Status.LOADED
+        && status !== Status.PARTIALLY_LOADED
+        && status !== Status.REFRESHING
       );
     });
 
@@ -48,7 +48,7 @@ export const useStatusStore = defineStore('status', () => {
     isLoading(Section.BLOCKCHAIN_KSM),
     isLoading(Section.BLOCKCHAIN_AVAX),
     isLoading(Section.EXCHANGES),
-    isLoading(Section.MANUAL_BALANCES)
+    isLoading(Section.MANUAL_BALANCES),
   );
 
   return {
@@ -58,10 +58,9 @@ export const useStatusStore = defineStore('status', () => {
     shouldShowLoadingScreen,
     resetDefiStatus,
     setStatus,
-    getStatus
+    getStatus,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useStatusStore, import.meta.hot));
-}

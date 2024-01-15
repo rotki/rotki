@@ -24,7 +24,7 @@ const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 const isTokenDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
 
 const isBlockchainLoading = computed<boolean>(
-  () => get(isQueryingBlockchain) || get(isLoopringLoading)
+  () => get(isQueryingBlockchain) || get(isLoopringLoading),
 );
 
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
@@ -36,7 +36,7 @@ const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
 const isAnyLoading = logicOr(
   isBlockchainLoading,
   isExchangeLoading,
-  isAllBalancesLoading
+  isAllBalancesLoading,
 );
 
 const { refreshBalance } = useRefresh();
@@ -47,13 +47,16 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
 const { dashboardMessage } = useDynamicMessages();
 const dismissedMessage = useSessionStorage(
   'rotki.messages.dash.dismissed',
-  false
+  false,
 );
 const Type = DashboardTableType;
 </script>
 
 <template>
-  <div class="pb-6" data-cy="dashboard">
+  <div
+    class="pb-6"
+    data-cy="dashboard"
+  >
     <DynamicMessageDisplay
       v-if="dashboardMessage && !dismissedMessage"
       class="!-mt-4"
@@ -80,7 +83,10 @@ const Type = DashboardTableType;
               >
                 {{ t('dashboard.exchange_balances.add') }}
               </SummaryCardCreateButton>
-              <div v-else data-cy="exchange-balances">
+              <div
+                v-else
+                data-cy="exchange-balances"
+              >
                 <ExchangeBox
                   v-for="exchange in exchanges"
                   :key="exchange.location"
@@ -107,7 +113,10 @@ const Type = DashboardTableType;
               >
                 {{ t('dashboard.blockchain_balances.add') }}
               </SummaryCardCreateButton>
-              <div v-else data-cy="blockchain-balances">
+              <div
+                v-else
+                data-cy="blockchain-balances"
+              >
                 <BlockchainBalanceCardList
                   v-for="total in blockchainTotals"
                   :key="total.chain"
@@ -131,7 +140,10 @@ const Type = DashboardTableType;
               >
                 {{ t('dashboard.manual_balances.add') }}
               </SummaryCardCreateButton>
-              <div v-else data-cy="manual-balances">
+              <div
+                v-else
+                data-cy="manual-balances"
+              >
                 <ManualBalanceCardList
                   v-for="manualBalance in manualBalanceByLocation"
                   :key="manualBalance.location"

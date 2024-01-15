@@ -14,8 +14,8 @@ const props = withDefaults(
   {
     min: 1,
     label: '',
-    hint: ''
-  }
+    hint: '',
+  },
 );
 
 const { min, setting, requiredMessage, minValueMessage } = toRefs(props);
@@ -25,15 +25,15 @@ const inputValue = ref<string>('');
 const rules = {
   inputValue: {
     required: helpers.withMessage(get(requiredMessage), required),
-    min: helpers.withMessage(get(minValueMessage)(get(min)), minValue(get(min)))
-  }
+    min: helpers.withMessage(get(minValueMessage)(get(min)), minValue(get(min))),
+  },
 };
 
 const { [get(setting)]: storeValue } = storeToRefs(useGeneralSettingsStore());
 
-const resetValue = () => {
+function resetValue() {
   set(inputValue, get(storeValue).toString());
-};
+}
 
 const v$ = useVuelidate(rules, { inputValue }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);

@@ -6,7 +6,7 @@ export const CollectionCommonFields = z.object({
   entriesLimit: z.number().default(-1),
   entriesTotal: z.number(),
   entriesFoundTotal: z.number().optional(),
-  totalUsdValue: NumericString.nullish()
+  totalUsdValue: NumericString.nullish(),
 });
 
 export interface Collection<T> {

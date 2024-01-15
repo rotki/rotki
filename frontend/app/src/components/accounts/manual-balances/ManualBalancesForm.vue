@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { type ManualBalance } from '@/types/manual-balances';
 import { toMessages } from '@/utils/validation';
 import { BalanceType } from '@/types/balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
+import type { ManualBalance } from '@/types/manual-balances';
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +12,8 @@ const props = withDefaults(
     context: BalanceType;
   }>(),
   {
-    edit: null
-  }
+    edit: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -34,21 +34,21 @@ const tags: Ref<string[]> = ref([]);
 const location: Ref<string> = ref(TRADE_LOCATION_EXTERNAL);
 const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
-const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null> =
-  ref(null);
+const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null>
+  = ref(null);
 
-const reset = () => {
+function reset() {
   get(form)?.reset();
   set(balanceType, get(context));
   set(errors, {});
-};
+}
 
-const clear = () => {
+function clear() {
   emit('clear');
   reset();
-};
+}
 
-const setBalance = (balance: ManualBalance) => {
+function setBalance(balance: ManualBalance) {
   set(identifier, balance.identifier);
   set(asset, balance.asset);
   set(label, balance.label);
@@ -56,22 +56,21 @@ const setBalance = (balance: ManualBalance) => {
   set(tags, balance.tags ?? []);
   set(location, balance.location);
   set(balanceType, balance.balanceType);
-};
+}
 
 watch(
   edit,
-  balance => {
-    if (!balance) {
+  (balance) => {
+    if (!balance)
       reset();
-    } else {
+    else
       setBalance(balance);
-    }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
-const { editManualBalance, addManualBalance, manualLabels } =
-  useManualBalancesStore();
+const { editManualBalance, addManualBalance, manualLabels }
+  = useManualBalancesStore();
 const { refreshPrices } = useBalances();
 const { setMessage } = useMessageStore();
 
@@ -81,24 +80,24 @@ const rules = {
   amount: {
     required: helpers.withMessage(
       t('manual_balances_form.validation.amount'),
-      required
-    )
+      required,
+    ),
   },
   label: {
     required: helpers.withMessage(
       t('manual_balances_form.validation.label_empty'),
-      required
-    )
+      required,
+    ),
   },
   asset: {
     required: helpers.withMessage(
       t('manual_balances_form.validation.asset'),
-      required
-    )
+      required,
+    ),
   },
   location: {
-    required
-  }
+    required,
+  },
 };
 
 const v$ = setValidation(
@@ -107,18 +106,18 @@ const v$ = setValidation(
     amount,
     asset,
     label,
-    location
+    location,
   },
-  { $autoDirty: true, $externalResults: errors }
+  { $autoDirty: true, $externalResults: errors },
 );
 
-const save = async () => {
+async function save() {
   const balance: Omit<ManualBalance, 'identifier' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
     tags: get(tags),
     location: get(location),
-    balanceType: get(balanceType)
+    balanceType: get(balanceType),
   };
 
   const usedAsset: string = get(asset);
@@ -144,39 +143,40 @@ const save = async () => {
     if (typeof status.message !== 'string') {
       set(errors, status.message);
       await get(v$).$validate();
-    } else {
+    }
+    else {
       const obj = { message: status.message };
       setMessage({
         description: isEdit
           ? t('actions.manual_balances.edit.error.description', obj)
-          : t('actions.manual_balances.add.error.description', obj)
+          : t('actions.manual_balances.add.error.description', obj),
       });
     }
   }
   return false;
-};
+}
 
 setSubmitFunc(save);
 
-watch(label, label => {
-  if (get(edit)) {
+watch(label, (label) => {
+  if (get(edit))
     return;
-  }
 
-  const validationErrors = get(errors)['label'];
+  const validationErrors = get(errors).label;
   if (get(manualLabels).includes(label)) {
-    if (validationErrors && validationErrors.length > 0) {
+    if (validationErrors && validationErrors.length > 0)
       return;
-    }
+
     set(errors, {
       ...get(errors),
       label: [
         t('manual_balances_form.validation.label_exists', {
-          label
-        }).toString()
-      ]
+          label,
+        }).toString(),
+      ],
     });
-  } else {
+  }
+  else {
     const { label, ...data } = get(errors);
     set(errors, data);
   }
@@ -186,9 +186,9 @@ watch(label, label => {
 
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 
-const postSubmit = (assetId: string) => {
+function postSubmit(assetId: string) {
   set(asset, assetId);
-};
+}
 
 setPostSubmitFunc(postSubmit);
 
@@ -196,24 +196,26 @@ const customAssetTypes = ref<string[]>([]);
 
 const { getCustomAssetTypes } = useAssetManagementApi();
 
-const openCustomAssetForm = async () => {
-  if (get(customAssetTypes).length === 0) {
+async function openCustomAssetForm() {
+  if (get(customAssetTypes).length === 0)
     set(customAssetTypes, await getCustomAssetTypes());
-  }
 
   setOpenDialog(true);
-};
+}
 
 onMounted(async () => {
   const editPayload = get(edit);
-  if (editPayload) {
+  if (editPayload)
     set(asset, editPayload.asset);
-  }
 });
 </script>
 
 <template>
-  <form ref="form" data-cy="manual-balance-form" class="flex flex-col gap-2">
+  <form
+    ref="form"
+    data-cy="manual-balance-form"
+    class="flex flex-col gap-2"
+  >
     <RuiTextField
       v-model="label"
       class="manual-balances-form__label"
@@ -241,7 +243,10 @@ onMounted(async () => {
         :disabled="submitting"
         @blur="v$.asset.$touch()"
       />
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="text"
@@ -254,7 +259,10 @@ onMounted(async () => {
           >
             <div class="flex">
               <RuiIcon name="server-line" />
-              <RuiIcon name="add-circle-line" class="-mt-4 -ml-2" />
+              <RuiIcon
+                name="add-circle-line"
+                class="-mt-4 -ml-2"
+              />
             </div>
           </RuiButton>
         </template>

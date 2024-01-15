@@ -1,8 +1,11 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
     "baseUrl": ".",
+    "rootDir": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "types": [
       "node",
       "vuetify",
@@ -10,10 +13,7 @@
       "vite/client",
       "vite-plugin-vue-layouts/client",
       "unplugin-vue-define-options/macros-global"
-    ],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    ]
   },
   "include": [
     "src/**/*.ts",

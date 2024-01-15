@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 
@@ -18,7 +18,10 @@ const { getChain } = useSupportedChains();
     </template>
     <template #address>
       <div class="font-bold px-2 text-no-wrap">
-        <HashLink :text="item.address" :chain="getChain(item.evmChain)" />
+        <HashLink
+          :text="item.address"
+          :chain="getChain(item.evmChain)"
+        />
       </div>
     </template>
     <template #start>

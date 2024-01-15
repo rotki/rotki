@@ -1,13 +1,13 @@
-﻿<script setup lang="ts">
-import { type RawLocation } from 'vue-router';
-import { type ComputedRef } from 'vue';
-import { type AssetBalanceWithPrice } from '@rotki/common';
+<script setup lang="ts">
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
+import type { RawLocation } from 'vue-router';
+import type { ComputedRef } from 'vue';
+import type { AssetBalanceWithPrice } from '@rotki/common';
 
 defineOptions({
-  name: 'AssetBreakdown'
+  name: 'AssetBreakdown',
 });
 
 const props = defineProps<{
@@ -16,35 +16,34 @@ const props = defineProps<{
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
-  useWhitelistedAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
+  = useWhitelistedAssetsStore();
 const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
 
-const toggleIgnoreAsset = async () => {
+async function toggleIgnoreAsset() {
   const id = get(identifier);
-  if (get(isIgnored)) {
+  if (get(isIgnored))
     await unignoreAsset(id);
-  } else {
+  else
     await ignoreAsset(id);
-  }
-};
+}
 
-const toggleWhitelistAsset = async () => {
+async function toggleWhitelistAsset() {
   const id = get(identifier);
-  if (get(isWhitelisted)) {
+  if (get(isWhitelisted))
     await unWhitelistAsset(id);
-  } else {
+  else
     await whitelistAsset(id);
-  }
+
   refetchAssetInfo(id);
-};
+}
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } =
-  useAssetInfoRetrieval();
+const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo }
+  = useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
@@ -52,9 +51,9 @@ const asset = assetInfo(identifier);
 const address = tokenAddress(identifier);
 const chain = computed(() => {
   const evmChain = get(asset)?.evmChain;
-  if (evmChain) {
+  if (evmChain)
     return getChain(evmChain);
-  }
+
   return undefined;
 });
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
@@ -66,15 +65,14 @@ const router = useRouter();
 
 const isCollectionParent: ComputedRef<boolean> = computed(() => {
   const currentRoute = get(route);
-  const collectionParent = currentRoute.query['collectionParent'];
+  const collectionParent = currentRoute.query.collectionParent;
 
   return !!collectionParent;
 });
 
 const collectionId: ComputedRef<number | undefined> = computed(() => {
-  if (!get(isCollectionParent)) {
+  if (!get(isCollectionParent))
     return undefined;
-  }
 
   const collectionId = get(asset)?.collectionId;
   return (collectionId && parseInt(collectionId)) || undefined;
@@ -85,41 +83,43 @@ const editRoute = computed<RawLocation>(() => ({
     ? Routes.ASSET_MANAGER_CUSTOM
     : Routes.ASSET_MANAGER_MANAGED,
   query: {
-    id: get(identifier)
-  }
+    id: get(identifier),
+  },
 }));
 
 const { balances } = useAggregatedBalances();
 const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
-  if (!get(isCollectionParent)) {
+  if (!get(isCollectionParent))
     return [];
-  }
 
   return (
-    get(balances()).find(data => data.asset === get(identifier))?.breakdown ||
-    []
+    get(balances()).find(data => data.asset === get(identifier))?.breakdown
+    || []
   );
 });
 
-const goToEdit = () => {
+function goToEdit() {
   router.push(get(editRoute));
-};
+}
 
 const isSpam = computed(() => get(asset)?.isSpam || false);
 
-const toggleSpam = async () => {
+async function toggleSpam() {
   const id = get(identifier);
-  if (get(isSpam)) {
+  if (get(isSpam))
     await removeAssetFromSpamList(id);
-  } else {
+  else
     await markAssetAsSpam(id);
-  }
+
   refetchAssetInfo(id);
-};
+}
 </script>
 
 <template>
-  <TablePageLayout class="p-4" hide-header>
+  <TablePageLayout
+    class="p-4"
+    hide-header
+  >
     <div class="flex flex-wrap justify-between w-full gap-4">
       <div class="flex gap-4 items-center">
         <AssetIcon
@@ -128,14 +128,20 @@ const toggleSpam = async () => {
           :show-chain="!isCollectionParent"
         />
 
-        <div v-if="!isCustomAsset" class="flex flex-col">
+        <div
+          v-if="!isCustomAsset"
+          class="flex flex-col"
+        >
           <span class="text-h5 font-medium">{{ symbol }}</span>
           <span class="text-body-2 text-rui-text-secondary">
             {{ name }}
           </span>
         </div>
 
-        <div v-else class="flex flex-col">
+        <div
+          v-else
+          class="flex flex-col"
+        >
           <span class="text-h5 font-medium">{{ name }}</span>
           <span class="text-body-2 text-rui-text-secondary">
             {{ asset?.customAssetType }}
@@ -203,7 +209,10 @@ const toggleSpam = async () => {
       :collection-id="collectionId"
     />
 
-    <AssetLocations v-if="!isCollectionParent" :identifier="identifier" />
+    <AssetLocations
+      v-if="!isCollectionParent"
+      :identifier="identifier"
+    />
 
     <RuiCard v-else>
       <template #header>

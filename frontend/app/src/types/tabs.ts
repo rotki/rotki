@@ -4,5 +4,6 @@ export interface TabContent {
   readonly route: string;
 }
 
-export const getClass = (route: string): string =>
-  route.toLowerCase().replace('/', '').replace(/\//g, '__');
+export function getClass(route: string): string {
+  return route.toLowerCase().replace('/', '').replace(/\//g, '__');
+}

@@ -11,8 +11,8 @@ const props = withDefaults(
     horizontal: false,
     icon: false,
     size: '24px',
-    noPadding: false
-  }
+    noPadding: false,
+  },
 );
 
 const emit = defineEmits<{ (e: 'click', location: string): void }>();
@@ -33,8 +33,8 @@ const css = useCssModule();
     :class="{
       'flex-row gap-2': horizontal,
       'flex-col gap-1': !horizontal,
-      skeleton: !location,
-      [css.wrapper]: icon
+      'skeleton': !location,
+      [css.wrapper]: icon,
     }"
     @click="emit('click', item)"
   >
@@ -56,9 +56,9 @@ const css = useCssModule();
       />
       <span
         v-if="!icon"
-        class="text-capitalize text-rui-text-secondary"
+        class="capitalize text-rui-text-secondary"
         :class="{
-          '-mb-1': !horizontal
+          '-mb-1': !horizontal,
         }"
       >
         {{ location.name }}

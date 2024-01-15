@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type HistoryEventEntry } from '@/types/history/events';
 import { toSentenceCase, toSnakeCase } from '@/utils/text';
+import type { ComputedRef } from 'vue';
+import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -11,13 +11,13 @@ const props = defineProps<{
 const { event } = toRefs(props);
 
 const translationKey: ComputedRef<string> = computed(
-  () => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`
+  () => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`,
 );
 
 const { getChain } = useSupportedChains();
 
 const evmOrDepositEvent = computed(
-  () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event))
+  () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)),
 );
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
@@ -27,23 +27,33 @@ const { xl } = useDisplay();
 </script>
 
 <template>
-  <i18n :path="translationKey" tag="span" class="flex items-center gap-2">
+  <i18n
+    :path="translationKey"
+    tag="span"
+    class="flex items-center gap-2"
+  >
     <template #location>
       {{ toSentenceCase(event.location) }}
     </template>
 
-    <template v-if="blockEvent" #blockNumber>
+    <template
+      v-if="blockEvent"
+      #blockNumber
+    >
       <HashLink
-        :class="css['address__content']"
+        :class="css.address__content"
         :text="blockEvent.blockNumber.toString()"
         :show-icon="false"
         type="block"
       />
     </template>
 
-    <template v-if="withdrawEvent" #validatorIndex>
+    <template
+      v-if="withdrawEvent"
+      #validatorIndex
+    >
       <HashLink
-        :class="css['address__content']"
+        :class="css.address__content"
         :text="withdrawEvent.validatorIndex.toString()"
         :show-icon="false"
         :chain="Blockchain.ETH2"
@@ -51,9 +61,12 @@ const { xl } = useDisplay();
       />
     </template>
 
-    <template v-if="evmOrDepositEvent" #txHash>
+    <template
+      v-if="evmOrDepositEvent"
+      #txHash
+    >
       <HashLink
-        :class="css['address__content']"
+        :class="css.address__content"
         :text="evmOrDepositEvent.txHash"
         :show-icon="false"
         type="transaction"

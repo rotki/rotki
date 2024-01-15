@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type IgnoredAssetsHandlingType } from '@/types/asset';
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
 
 const props = defineProps<{
   selected: string[];
@@ -21,12 +21,12 @@ const internalValue = computed({
   },
   set(value: IgnoredAssetsHandlingType) {
     emit('update:ignored-assets-handling', value);
-  }
+  },
 });
 
-const massIgnore = (ignored: boolean) => {
+function massIgnore(ignored: boolean) {
   emit('mass-ignore', ignored);
-};
+}
 
 const { t } = useI18n();
 </script>
@@ -38,10 +38,15 @@ const { t } = useI18n();
         :disabled="selected.length === 0"
         @ignore="massIgnore($event)"
       />
-      <div v-if="selected.length > 0" class="flex flex-row items-center gap-2">
-        <span class="text-body-2 text-rui-text-secondary">{{
-          t('asset_table.selected', { count: selected.length })
-        }}</span>
+      <div
+        v-if="selected.length > 0"
+        class="flex flex-row items-center gap-2"
+      >
+        <span class="text-body-2 text-rui-text-secondary">
+          {{
+            t('asset_table.selected', { count: selected.length })
+          }}
+        </span>
         <RuiButton
           size="sm"
           variant="outlined"
@@ -52,9 +57,16 @@ const { t } = useI18n();
       </div>
     </div>
     <div>
-      <VMenu offset-y left :close-on-content-click="false">
+      <VMenu
+        offset-y
+        left
+        :close-on-content-click="false"
+      >
         <template #activator="{ on }">
-          <RuiButton variant="outlined" v-on="on">
+          <RuiButton
+            variant="outlined"
+            v-on="on"
+          >
             <template #append>
               <RuiIcon name="arrow-down-s-line" />
             </template>
@@ -62,7 +74,7 @@ const { t } = useI18n();
           </RuiButton>
         </template>
         <div class="p-2">
-          <div class="font-bold text-uppercase p-2 text-sm">
+          <div class="font-bold uppercase p-2 text-sm">
             {{ t('asset_table.filter_by_ignored_status') }}
           </div>
           <div class="pb-2 px-3">

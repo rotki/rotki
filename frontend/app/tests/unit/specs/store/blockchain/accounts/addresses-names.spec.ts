@@ -1,11 +1,11 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
-import {
-  type AddressBookEntry,
-  type AddressBookSimplePayload
-} from '@/types/eth-names';
-import { type Collection } from '@/types/collection';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
+import type {
+  AddressBookEntry,
+  AddressBookSimplePayload,
+} from '@/types/eth-names';
+import type { Collection } from '@/types/collection';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
@@ -15,20 +15,20 @@ vi.mock('@/composables/api/blockchain/addresses-names', () => ({
     addAddressBook: vi.fn().mockResolvedValue(true),
     updateAddressBook: vi.fn().mockResolvedValue(true),
     deleteAddressBook: vi.fn().mockResolvedValue(true),
-    getAddressesNames: vi.fn().mockResolvedValue([])
-  })
+    getAddressesNames: vi.fn().mockResolvedValue([]),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/composables/info/chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
-    isEvm: vi.fn().mockReturnValue(ref(true))
-  })
+    isEvm: vi.fn().mockReturnValue(ref(true)),
+  }),
 }));
 
 describe('store::blockchain/accounts/addresses-names', () => {
@@ -47,39 +47,39 @@ describe('store::blockchain/accounts/addresses-names', () => {
     const addresses: AddressBookSimplePayload[] = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
-        blockchain: Blockchain.ETH
-      }
+        blockchain: Blockchain.ETH,
+      },
     ];
 
-    test('no addresses', async () => {
+    it('no addresses', async () => {
       await store.fetchEnsNames([]);
       expect(api.getEnsNames).not.toHaveBeenCalled();
     });
 
-    test('with addresses, forceUpdate=false', async () => {
+    it('with addresses, forceUpdate=false', async () => {
       await store.fetchEnsNames(addresses, false);
 
       expect(api.getEnsNames).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address)
+        addresses.map(({ address }) => address),
       );
     });
 
-    test('with same addresses, forceUpdate=true', async () => {
+    it('with same addresses, forceUpdate=true', async () => {
       await store.fetchEnsNames(addresses, true);
 
       expect(api.getEnsNamesTask).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address)
+        addresses.map(({ address }) => address),
       );
     });
 
-    test('filter invalid addresses, forceUpdate=true', async () => {
+    it('filter invalid addresses, forceUpdate=true', async () => {
       await store.fetchEnsNames(
         [...addresses, { address: '0xinvalid', blockchain: Blockchain.ETH }],
-        true
+        true,
       );
 
       expect(api.getEnsNamesTask).toHaveBeenCalledWith(
-        addresses.map(({ address }) => address)
+        addresses.map(({ address }) => address),
       );
     });
   });
@@ -89,24 +89,24 @@ describe('store::blockchain/accounts/addresses-names', () => {
     const payload = {
       address,
       limit: 10,
-      offset: 0
+      offset: 0,
     };
     const addressesWithEns: AddressBookEntry[] = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
         name: 'test.eth',
-        blockchain: Blockchain.ETH
-      }
+        blockchain: Blockchain.ETH,
+      },
     ];
 
     const collection: Collection<AddressBookEntry> = {
       data: addressesWithEns,
       limit: 0,
       found: 1,
-      total: 1
+      total: 1,
     };
 
-    test('location=global', async () => {
+    it('location=global', async () => {
       vi.mocked(api.fetchAddressBook).mockResolvedValue(collection);
 
       const result = await store.getAddressBook('global', payload);
@@ -116,7 +116,7 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(result).toEqual(collection);
     });
 
-    test('location=global', async () => {
+    it('location=private', async () => {
       vi.mocked(api.fetchAddressBook).mockResolvedValue(collection);
 
       const result = await store.getAddressBook('private', payload);
@@ -132,11 +132,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
         name: 'test_name',
-        blockchain: Blockchain.ETH
-      }
+        blockchain: Blockchain.ETH,
+      },
     ];
 
-    test('default', async () => {
+    it('default', async () => {
       await store.addAddressBook('global', entries);
 
       expect(api.addAddressBook).toHaveBeenCalledWith('global', entries);
@@ -152,11 +152,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
         name: 'test_name',
-        blockchain: Blockchain.ETH
-      }
+        blockchain: Blockchain.ETH,
+      },
     ];
 
-    test('default', async () => {
+    it('default', async () => {
       await store.updateAddressBook('global', entries);
 
       expect(api.updateAddressBook).toHaveBeenCalledWith('global', entries);
@@ -171,11 +171,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
     const addresses = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
-        blockchain: Blockchain.ETH
-      }
+        blockchain: Blockchain.ETH,
+      },
     ];
 
-    test('default', async () => {
+    it('default', async () => {
       await store.deleteAddressBook('global', addresses);
 
       expect(api.deleteAddressBook).toHaveBeenCalledWith('global', addresses);
@@ -191,28 +191,28 @@ describe('store::blockchain/accounts/addresses-names', () => {
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
         blockchain: Blockchain.ETH,
-        name: 'test_name'
+        name: 'test_name',
       },
       {
         address: '0x4585FE77225b41b697C938B01232131231231231',
         blockchain: Blockchain.ETH,
-        name: 'test1.eth'
-      }
+        name: 'test1.eth',
+      },
     ];
 
-    test('enableAliasNames=true', async () => {
+    it('enableAliasNames=true', async () => {
       useFrontendSettingsStore().update({
         ...FrontendSettings.parse({}),
-        enableAliasNames: true
+        enableAliasNames: true,
       });
 
       vi.mocked(api.getAddressesNames).mockResolvedValue(mockedResult);
       const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233'
+        '0x4585FE77225b41b697C938B01232131231231233',
       );
 
       const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231'
+        '0x4585FE77225b41b697C938B01232131231231231',
       );
 
       expect(get(firstAddressName)).toEqual(null);
@@ -227,13 +227,13 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(get(secondAddressName)).toEqual('test1.eth');
     });
 
-    test('use the value from cache if addresses names has been fetched before', async () => {
+    it('use the value from cache if addresses names has been fetched before', async () => {
       const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233'
+        '0x4585FE77225b41b697C938B01232131231231233',
       );
 
       const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231'
+        '0x4585FE77225b41b697C938B01232131231231231',
       );
 
       vi.advanceTimersByTime(2500);
@@ -245,18 +245,18 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(get(secondAddressName)).toEqual('test1.eth');
     });
 
-    test('enableAliasNames=false', async () => {
+    it('enableAliasNames=false', async () => {
       useFrontendSettingsStore().update({
         ...FrontendSettings.parse({}),
-        enableAliasNames: false
+        enableAliasNames: false,
       });
 
       const firstAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231233'
+        '0x4585FE77225b41b697C938B01232131231231233',
       );
 
       const secondAddressName = store.addressNameSelector(
-        '0x4585FE77225b41b697C938B01232131231231231'
+        '0x4585FE77225b41b697C938B01232131231231231',
       );
 
       vi.advanceTimersByTime(2500);

@@ -9,9 +9,9 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const { fetchPeriodicData } = useSessionApi();
 
   const check = async (): Promise<void> => {
-    if (get(periodicRunning)) {
+    if (get(periodicRunning))
       return;
-    }
+
     set(periodicRunning, true);
     try {
       const result = await backoff(3, () => fetchPeriodicData(), 10000);
@@ -23,27 +23,27 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
       const {
         lastBalanceSave: balance,
         lastDataUploadTs: upload,
-        connectedNodes: connected
+        connectedNodes: connected,
       } = result;
 
-      if (get(lastBalanceSave) !== balance) {
+      if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);
-      }
 
-      if (get(lastDataUpload) !== upload) {
+      if (get(lastDataUpload) !== upload)
         set(lastDataUpload, upload);
-      }
 
       set(connectedNodes, connected);
-    } catch (e: any) {
+    }
+    catch (error: any) {
       notify({
         title: t('actions.session.periodic_query.error.title').toString(),
         message: t('actions.session.periodic_query.error.message', {
-          message: e.message
+          message: error.message,
         }).toString(),
-        display: true
+        display: true,
       });
-    } finally {
+    }
+    finally {
       set(periodicRunning, false);
     }
   };
@@ -52,10 +52,9 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
     lastBalanceSave,
     lastDataUpload,
     connectedNodes,
-    check
+    check,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(usePeriodicStore, import.meta.hot));
-}

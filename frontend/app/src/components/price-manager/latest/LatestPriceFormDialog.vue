@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
@@ -9,28 +9,27 @@ const props = withDefaults(
   }>(),
   {
     disableFromAsset: false,
-    value: null
-  }
+    value: null,
+  },
 );
 
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
   toAsset: '',
-  price: '0'
+  price: '0',
 });
 
 const form: Ref<ManualPriceFormPayload> = ref(emptyPrice());
 
 const { value, editMode } = toRefs(props);
 
-watchImmediate(value, value => {
-  if (value) {
+watchImmediate(value, (value) => {
+  if (value)
     set(form, { ...emptyPrice(), ...value });
-  }
 });
 
-const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit } =
-  useLatestPriceForm();
+const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit }
+  = useLatestPriceForm();
 
 const { t } = useI18n();
 

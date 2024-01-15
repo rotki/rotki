@@ -15,32 +15,32 @@ const notificationStore = useNotificationsStore();
 const { prioritized: notifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
 
-const close = () => {
+function close() {
   emit('close');
-};
+}
 
-const input = (visible: boolean) => {
-  if (visible) {
+function input(visible: boolean) {
+  if (visible)
     return;
-  }
-  close();
-};
 
-const clear = () => {
+  close();
+}
+
+function clear() {
   notificationStore.$reset();
   close();
-};
+}
 
-const showConfirmation = () => {
+function showConfirmation() {
   show(
     {
       title: t('notification_sidebar.confirmation.title'),
       message: t('notification_sidebar.confirmation.message'),
-      type: 'info'
+      type: 'info',
     },
-    clear
+    clear,
   );
-};
+}
 
 const { mobile } = useDisplay();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
@@ -49,12 +49,12 @@ const itemHeight = 172;
 const margin = 8;
 
 const { list, containerProps, wrapperProps } = useVirtualList(notifications, {
-  itemHeight
+  itemHeight,
 });
 
 const notificationStyle = {
   height: `${itemHeight - margin}px`,
-  marginTop: `${margin}px`
+  marginTop: `${margin}px`,
 };
 </script>
 
@@ -71,24 +71,35 @@ const notificationStyle = {
     hide-overlay
     @input="input($event)"
   >
-    <div v-if="visible" class="h-full overflow-hidden">
+    <div
+      v-if="visible"
+      class="h-full overflow-hidden"
+    >
       <div class="flex items-center p-2 gap-1">
         <RuiTooltip :open-delay="400">
           <template #activator>
-            <RuiButton variant="text" icon class="!p-2" @click="close()">
-              <RuiIcon name="arrow-right-s-line" size="20" />
+            <RuiButton
+              variant="text"
+              icon
+              class="!p-2"
+              @click="close()"
+            >
+              <RuiIcon
+                name="arrow-right-s-line"
+                size="20"
+              />
             </RuiButton>
           </template>
           <span>{{ t('notification_sidebar.close_tooltip') }}</span>
         </RuiTooltip>
         <div
-          class="flex-1 text-uppercase text--secondary text-caption font-medium"
+          class="flex-1 uppercase text--secondary text-caption font-medium"
         >
           {{ t('notification_sidebar.title') }}
         </div>
         <RuiButton
           variant="text"
-          class="text-caption text-lowercase"
+          class="text-caption lowercase"
           color="secondary"
           :disabled="notifications.length === 0"
           @click="showConfirmation()"
@@ -100,12 +111,19 @@ const notificationStyle = {
         v-if="!hasRunningTasks && notifications.length === 0"
         :class="css['no-messages']"
       >
-        <RuiIcon size="64px" color="primary" name="information-line" />
+        <RuiIcon
+          size="64px"
+          color="primary"
+          name="information-line"
+        />
         <div class="text-rui-text text-lg mt-2">
           {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
-      <div v-else :class="css.messages">
+      <div
+        v-else
+        :class="css.messages"
+      >
         <PendingTasks />
         <div
           v-if="notifications.length > 0"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Module } from '@/types/modules';
-import {
-  type BlockchainAccountPayload,
-  type BlockchainAccountWithBalance
-} from '@/types/blockchain/accounts';
 import { ApiValidationError } from '@/types/api/errors';
+import type { Module } from '@/types/modules';
+import type {
+  BlockchainAccountPayload,
+  BlockchainAccountWithBalance,
+} from '@/types/blockchain/accounts';
 
 const props = defineProps<{
   blockchain: Blockchain;
@@ -31,14 +31,14 @@ const { t } = useI18n();
 
 const evmChain = isEvm(blockchain);
 
-const reset = () => {
+function reset() {
   set(addresses, []);
   set(label, '');
   set(tags, []);
   set(selectedModules, []);
-};
+}
 
-const save = async () => {
+async function save() {
   const edit = !!get(accountToEdit);
   const chain = get(blockchain);
   const isEth = chain === Blockchain.ETH;
@@ -52,15 +52,16 @@ const save = async () => {
         blockchain: chain,
         address,
         label: get(label),
-        tags: get(tags)
+        tags: get(tags),
       };
       await editAccount(payload);
       startPromise(fetchAccounts(chain));
-    } else {
+    }
+    else {
       const payload = entries.map(address => ({
         address,
         label: get(label),
-        tags: get(tags)
+        tags: get(tags),
       }));
 
       const modules = get(selectedModules);
@@ -68,64 +69,65 @@ const save = async () => {
       if (get(logicAnd(allEvmChains, isEvm(chain)))) {
         await addEvmAccounts({
           payload,
-          modules
+          modules,
         });
-      } else {
+      }
+      else {
         await addAccounts({
           blockchain: chain,
           payload,
-          modules: isEth ? modules : undefined
+          modules: isEth ? modules : undefined,
         });
       }
     }
-  } catch (e: any) {
-    let errors = e.message;
+  }
+  catch (error: any) {
+    let errors = error.message;
 
-    if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors({});
-    }
+    if (error instanceof ApiValidationError)
+      errors = error.getValidationErrors({});
 
     if (typeof errors === 'string') {
       setMessage({
         description: t('account_form.error.description', {
-          error: errors
+          error: errors,
         }).toString(),
         title: t('account_form.error.title'),
-        success: false
+        success: false,
       });
-    } else {
+    }
+    else {
       set(errorMessages, errors);
     }
 
     return false;
-  } finally {
+  }
+  finally {
     set(pending, false);
   }
   return true;
-};
+}
 
-const setAccount = (acc: BlockchainAccountWithBalance): void => {
+function setAccount(acc: BlockchainAccountWithBalance): void {
   set(addresses, [acc.address]);
   set(label, acc.label);
   set(tags, acc.tags);
-};
+}
 
-watch(accountToEdit, acc => {
-  if (!acc) {
+watch(accountToEdit, (acc) => {
+  if (!acc)
     reset();
-  } else {
+  else
     setAccount(acc);
-  }
 });
 
 onMounted(() => {
   setSubmitFunc(save);
   const acc = get(accountToEdit);
-  if (!acc) {
+  if (!acc)
     reset();
-  } else {
+  else
     setAccount(acc);
-  }
 });
 </script>
 

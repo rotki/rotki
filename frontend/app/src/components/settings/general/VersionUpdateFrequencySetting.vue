@@ -7,7 +7,7 @@ const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
 
 const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
@@ -17,39 +17,40 @@ const rules = {
   versionUpdateCheckFrequency: {
     required: helpers.withMessage(
       t('general_settings.validation.version_update_check_frequency.non_empty'),
-      required
+      required,
     ),
     between: helpers.withMessage(
       t(
         'general_settings.validation.version_update_check_frequency.invalid_frequency',
         {
           start: 1,
-          end: maxVersionUpdateCheckFrequency
-        }
+          end: maxVersionUpdateCheckFrequency,
+        },
       ),
-      between(1, Constraints.MAX_HOURS_DELAY)
-    )
-  }
+      between(1, Constraints.MAX_HOURS_DELAY),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   { versionUpdateCheckFrequency },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 const { callIfValid } = useValidation(v$);
 
-const resetVersionUpdateCheckFrequency = () => {
+function resetVersionUpdateCheckFrequency() {
   const frequency = get(existingFrequency);
   set(versionUpdateCheckEnabled, frequency > 0);
   set(
     versionUpdateCheckFrequency,
-    get(versionUpdateCheckEnabled) ? frequency.toString() : ''
+    get(versionUpdateCheckEnabled) ? frequency.toString() : '',
   );
-};
+}
 
-const frequencyTransform = (value: string) =>
-  value ? Number.parseInt(value) : value;
+function frequencyTransform(value: string) {
+  return value ? Number.parseInt(value) : value;
+}
 const switchTransform = (value: boolean) => (value ? 24 : -1);
 
 onMounted(() => {

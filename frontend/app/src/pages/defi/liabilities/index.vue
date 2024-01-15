@@ -5,7 +5,7 @@ const modules: Module[] = [
   Module.AAVE,
   Module.COMPOUND,
   Module.MAKERDAO_VAULTS,
-  Module.LIQUITY
+  Module.LIQUITY,
 ];
 
 const { isAnyModuleEnabled } = useModules();
@@ -13,6 +13,12 @@ const anyModuleEnabled = isAnyModuleEnabled(modules);
 </script>
 
 <template>
-  <ModuleNotActive v-if="!anyModuleEnabled" :modules="modules" />
-  <Borrowing v-else :modules="modules" />
+  <ModuleNotActive
+    v-if="!anyModuleEnabled"
+    :modules="modules"
+  />
+  <Borrowing
+    v-else
+    :modules="modules"
+  />
 </template>

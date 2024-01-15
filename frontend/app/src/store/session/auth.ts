@@ -1,10 +1,10 @@
-import {
-  type DataMigrationStatusData,
-  type DbUpgradeStatusData
+import type {
+  DataMigrationStatusData,
+  DbUpgradeStatusData,
 } from '@/types/websocket-messages';
-import {
-  type IncompleteUpgradeConflict,
-  type SyncConflict
+import type {
+  IncompleteUpgradeConflict,
+  SyncConflict,
 } from '@/types/login';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
@@ -13,14 +13,14 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const shouldFetchData: Ref<boolean> = ref(false);
   const username: Ref<string> = ref('');
   const syncConflict: Ref<SyncConflict | undefined> = ref();
-  const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined> =
-    ref();
+  const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined>
+    = ref();
   const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
   const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
 
   const upgradeVisible: ComputedRef<boolean> = logicOr(
     dbUpgradeStatus,
-    dataMigrationStatus
+    dataMigrationStatus,
   );
 
   const resetSyncConflict = (): void => {
@@ -45,7 +45,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   };
 
   const conflictExist: ComputedRef<boolean> = computed(
-    () => !!(get(syncConflict) || get(incompleteUpgradeConflict))
+    () => !!(get(syncConflict) || get(incompleteUpgradeConflict)),
   );
 
   return {
@@ -63,10 +63,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     resetIncompleteUpgradeConflict,
     updateDbUpgradeStatus,
     updateDataMigrationStatus,
-    clearUpgradeMessages
+    clearUpgradeMessages,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useSessionAuthStore, import.meta.hot));
-}

@@ -1,21 +1,18 @@
 import { BigNumber } from '@rotki/common';
-import { type PiniaPluginContext } from 'pinia';
+import type { PiniaPluginContext } from 'pinia';
 
 function convert(data: any): any {
-  if (Array.isArray(data)) {
+  if (Array.isArray(data))
     return data.map(entry => convert(entry));
-  }
 
-  if (!isObject(data)) {
+  if (!isObject(data))
     return data;
-  }
 
-  if (data instanceof BigNumber) {
+  if (data instanceof BigNumber)
     return `bn::${data.toString()}`;
-  }
 
   const converted: Record<string, any> = {};
-  Object.keys(data).map(key => {
+  Object.keys(data).map((key) => {
     const datum = data[key];
     converted[key] = convert(datum);
     return key;
@@ -24,32 +21,32 @@ function convert(data: any): any {
   return converted;
 }
 
-const isObject = (data: any): boolean =>
-  typeof data === 'object' &&
-  data !== null &&
-  !(data instanceof RegExp) &&
-  !(data instanceof Error) &&
-  !(data instanceof Date);
+function isObject(data: any): boolean {
+  return typeof data === 'object'
+    && data !== null
+    && !(data instanceof RegExp)
+    && !(data instanceof Error)
+    && !(data instanceof Date);
+}
 
 const storage = sessionStorage;
 
-const getState = (key: string) => {
+function getState(key: string) {
   const items = storage.getItem(key);
-  if (!items) {
+  if (!items)
     return null;
-  }
 
   return JSON.parse(items, (key1, value) => {
-    if (typeof value === 'string' && value.startsWith('bn::')) {
+    if (typeof value === 'string' && value.startsWith('bn::'))
       return bigNumberify(value.replace('bn::', ''));
-    }
+
     return value;
   });
-};
+}
 
-const setState = (key: string, state: any): void => {
+function setState(key: string, state: any): void {
   storage.setItem(key, JSON.stringify(convert(state)));
-};
+}
 
 function shouldPersistStore(): any {
   const debugSettings = window.interop?.debugSettings?.();
@@ -59,7 +56,7 @@ function shouldPersistStore(): any {
   return (menuEnabled || envEnabled) && !isTest;
 }
 
-export const storePiniaPlugins = (context: PiniaPluginContext) => {
+export function storePiniaPlugins(context: PiniaPluginContext) {
   const persistStore = shouldPersistStore();
 
   const { store } = context;
@@ -80,18 +77,20 @@ export const storePiniaPlugins = (context: PiniaPluginContext) => {
       }
       store.$patch(fromStorage);
     }
-  } catch (e) {
-    logger.error(e);
+  }
+  catch (error) {
+    logger.error(error);
   }
 
   store.$subscribe(
     (_, state) => {
       try {
         setState(storeId, state);
-      } catch (e) {
-        logger.error(e);
+      }
+      catch (error) {
+        logger.error(error);
       }
     },
-    { detached: true }
+    { detached: true },
   );
-};
+}

@@ -1,16 +1,18 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type BtcChains } from '@/types/blockchain/chains';
-import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import {
-  type BtcAccountData,
-  type XpubPayload
+import type { BtcChains } from '@/types/blockchain/chains';
+import type { BlockchainMetadata } from '@/types/task';
+import type {
+  BtcAccountData,
+  XpubPayload,
 } from '@/types/blockchain/accounts';
 
-const defaultAccountState = (): BtcAccountData => ({
-  standalone: [],
-  xpubs: []
-});
+function defaultAccountState(): BtcAccountData {
+  return {
+    standalone: [],
+    xpubs: [],
+  };
+}
 
 export const useBtcAccountsStore = defineStore(
   'blockchain/accounts/btc',
@@ -27,43 +29,43 @@ export const useBtcAccountsStore = defineStore(
     const deleteXpub = async (payload: XpubPayload) => {
       try {
         const taskType = TaskType.REMOVE_ACCOUNT;
-        if (get(isTaskRunning(taskType))) {
+        if (get(isTaskRunning(taskType)))
           return;
-        }
+
         const { taskId } = await deleteXpubCaller(payload);
         await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
           title: t('actions.balances.xpub_removal.task.title'),
           description: t('actions.balances.xpub_removal.task.description', {
-            xpub: payload.xpub
+            xpub: payload.xpub,
           }),
-          blockchain: payload.blockchain
+          blockchain: payload.blockchain,
         });
-      } catch (e: any) {
-        if (!isTaskCancelled(e)) {
-          logger.error(e);
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
+          logger.error(error);
           const title = t('actions.balances.xpub_removal.error.title');
           const description = t(
             'actions.balances.xpub_removal.error.description',
             {
               xpub: payload.xpub,
-              error: e.message
-            }
+              error: error.message,
+            },
           );
           notify({
             title,
             message: description,
-            display: true
+            display: true,
           });
         }
       }
     };
 
     const update = (chain: BtcChains, data: BtcAccountData) => {
-      if (chain === Blockchain.BTC) {
+      if (chain === Blockchain.BTC)
         set(btc, data);
-      } else {
+      else
         set(bch, data);
-      }
     };
 
     const removeTag = (tag: string) => {
@@ -76,11 +78,10 @@ export const useBtcAccountsStore = defineStore(
       bch,
       deleteXpub,
       removeTag,
-      update
+      update,
     };
-  }
+  },
 );
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useBtcAccountsStore, import.meta.hot));
-}

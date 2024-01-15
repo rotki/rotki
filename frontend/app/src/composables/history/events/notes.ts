@@ -1,6 +1,6 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import type { MaybeRef } from '@vueuse/core';
+import type { BigNumber } from '@rotki/common';
 
 export const NoteType = {
   ADDRESS: 'address',
@@ -8,7 +8,7 @@ export const NoteType = {
   BLOCK: 'block',
   AMOUNT: 'amount',
   WORD: 'word',
-  URL: 'url'
+  URL: 'url',
 } as const;
 
 export type NoteType = (typeof NoteType)[keyof typeof NoteType];
@@ -25,7 +25,7 @@ export interface NoteFormat {
   showHashLink?: boolean;
 }
 
-export const useHistoryEventNote = () => {
+export function useHistoryEventNote() {
   const { assetSymbol } = useAssetInfoRetrieval();
 
   const formatNotes = ({
@@ -34,7 +34,7 @@ export const useHistoryEventNote = () => {
     assetId,
     noTxHash,
     validatorIndex,
-    blockNumber
+    blockNumber,
   }: {
     notes: MaybeRef<string>;
     amount?: MaybeRef<BigNumber | undefined>;
@@ -47,9 +47,8 @@ export const useHistoryEventNote = () => {
       const asset = get(assetSymbol(assetId));
 
       const notesVal = get(notes);
-      if (!notesVal) {
+      if (!notesVal)
         return [];
-      }
 
       const formats: NoteFormat[] = [];
       let skip = false;
@@ -69,7 +68,7 @@ export const useHistoryEventNote = () => {
             type: NoteType.ADDRESS,
             address: word,
             showIcon: true,
-            showHashLink: true
+            showHashLink: true,
           });
           return;
         }
@@ -79,7 +78,7 @@ export const useHistoryEventNote = () => {
           formats.push({
             type: NoteType.TX,
             address: word,
-            showHashLink: true
+            showHashLink: true,
           });
           return;
         }
@@ -90,7 +89,7 @@ export const useHistoryEventNote = () => {
             type: NoteType.ADDRESS,
             address: word,
             chain: Blockchain.ETH2,
-            showHashLink: true
+            showHashLink: true,
           });
           return;
         }
@@ -100,26 +99,26 @@ export const useHistoryEventNote = () => {
           formats.push({
             type: NoteType.BLOCK,
             address: word,
-            showHashLink: true
+            showHashLink: true,
           });
           return;
         }
 
         const amountVal = get(amount);
 
-        const isAmount =
-          amountVal &&
-          !isNaN(Number.parseFloat(word)) &&
-          bigNumberify(word).eq(amountVal) &&
-          amountVal.gt(0) &&
-          index < words.length - 1 &&
-          words[index + 1] === asset;
+        const isAmount
+          = amountVal
+          && !isNaN(Number.parseFloat(word))
+          && bigNumberify(word).eq(amountVal)
+          && amountVal.gt(0)
+          && index < words.length - 1
+          && words[index + 1] === asset;
 
         if (isAmount) {
           formats.push({
             type: NoteType.AMOUNT,
             amount: amountVal,
-            asset: get(assetId)
+            asset: get(assetId),
           });
           skip = true;
           return;
@@ -139,7 +138,7 @@ export const useHistoryEventNote = () => {
             formats.push({
               type: NoteType.URL,
               word: text,
-              url
+              url,
             });
 
             return;
@@ -153,7 +152,7 @@ export const useHistoryEventNote = () => {
           formats.push({
             type: NoteType.URL,
             word,
-            url: word
+            url: word,
           });
 
           return;
@@ -166,6 +165,6 @@ export const useHistoryEventNote = () => {
     });
 
   return {
-    formatNotes
+    formatNotes,
   };
-};
+}

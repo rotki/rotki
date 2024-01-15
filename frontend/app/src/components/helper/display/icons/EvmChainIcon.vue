@@ -7,20 +7,21 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: '24px',
-  tooltip: false
+  tooltip: false,
 });
 
 const { chain } = toRefs(props);
 
-const getImageUrl = (evmChain: string): string =>
-  `./assets/images/protocols/${evmChain}.svg`;
+function getImageUrl(evmChain: string): string {
+  return `./assets/images/protocols/${evmChain}.svg`;
+}
 
 const chainData = computed(() => {
   const chainProp = get(chain);
 
   return {
     label: toCapitalCase(chainProp),
-    image: getImageUrl(chainProp)
+    image: getImageUrl(chainProp),
   };
 });
 </script>
@@ -32,7 +33,11 @@ const chainData = computed(() => {
     :open-delay="400"
   >
     <template #activator>
-      <AppImage :size="size" :src="chainData.image" :alt="chainData.label" />
+      <AppImage
+        :size="size"
+        :src="chainData.image"
+        :alt="chainData.label"
+      />
     </template>
     {{ chainData.label }}
   </RuiTooltip>

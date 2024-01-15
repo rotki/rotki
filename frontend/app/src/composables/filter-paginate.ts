@@ -1,23 +1,15 @@
 /* eslint-disable max-lines */
 import { Severity } from '@rotki/common/lib/messages';
-import { type DataTableOptions } from '@rotki/ui-library-compat';
-import { type MaybeRef } from '@vueuse/core';
-import { type AxiosError } from 'axios';
 import { isEmpty, isEqual } from 'lodash-es';
-import { type ZodSchema } from 'zod';
-import { type PaginationRequestPayload } from '@/types/common';
-import { type Collection } from '@/types/collection';
-import { type TablePagination } from '@/types/pagination';
-import {
-  type LocationQuery,
-  type RawLocationQuery,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
-import {
-  FilterBehaviour,
-  type MatchedKeywordWithBehaviour,
-  type SearchMatcher
-} from '@/types/filtering';
+import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
+import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
+import type { DataTableOptions } from '@rotki/ui-library-compat';
+import type { MaybeRef } from '@vueuse/core';
+import type { AxiosError } from 'axios';
+import type { ZodSchema } from 'zod';
+import type { PaginationRequestPayload } from '@/types/common';
+import type { Collection } from '@/types/collection';
+import type { TablePagination } from '@/types/pagination';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
@@ -37,36 +29,30 @@ interface FilterSchema<F, M> {
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
-export const usePaginationFilters = <
+export function usePaginationFilters<
   T extends NonNullable<unknown>,
   U = PaginationRequestPayload<T>,
   V extends NonNullable<unknown> = T,
   S extends Collection<V> = Collection<V>,
   W extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  X extends SearchMatcher<string, string> | void = undefined
->(
-  locationOverview: MaybeRef<string | null>,
-  mainPage: MaybeRef<boolean>,
-  filterSchema: () => FilterSchema<W, X>,
-  fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
-  options: {
-    onUpdateFilters?: (query: LocationQuery) => void;
-    extraParams?: ComputedRef<LocationQuery>;
-    customPageParams?: ComputedRef<Partial<U>>;
-    defaultParams?: ComputedRef<Partial<U> | undefined>;
-    defaultCollection?: () => S;
-    defaultSortBy?: {
-      key?: keyof V;
-      ascending?: boolean[];
-    };
-  } = {}
-) => {
+  X extends SearchMatcher<string, string> | void = undefined,
+>(locationOverview: MaybeRef<string | null>, mainPage: MaybeRef<boolean>, filterSchema: () => FilterSchema<W, X>, fetchAssetData: (payload: MaybeRef<U>) => Promise<S>, options: {
+  onUpdateFilters?: (query: LocationQuery) => void;
+  extraParams?: ComputedRef<LocationQuery>;
+  customPageParams?: ComputedRef<Partial<U>>;
+  defaultParams?: ComputedRef<Partial<U> | undefined>;
+  defaultCollection?: () => S;
+  defaultSortBy?: {
+    key?: keyof V;
+    ascending?: boolean[];
+  };
+} = {}) {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<V>> = ref(
-    defaultOptions<V>(options.defaultSortBy)
+    defaultOptions<V>(options.defaultSortBy),
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
@@ -82,7 +68,7 @@ export const usePaginationFilters = <
     extraParams,
     customPageParams,
     defaultParams,
-    defaultSortBy
+    defaultSortBy,
   } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
@@ -90,20 +76,18 @@ export const usePaginationFilters = <
   const transformFilters = (filters: W): W => {
     const matchersVal = get(matchers);
 
-    if (typeof filters !== 'object' || matchersVal.length === 0) {
+    if (typeof filters !== 'object' || matchersVal.length === 0)
       return filters;
-    }
 
     const newFilters = { ...filters };
 
-    matchersVal.forEach(matcher => {
+    matchersVal.forEach((matcher) => {
       if (
-        typeof matcher !== 'object' ||
-        !('string' in matcher) ||
-        !matcher.behaviourRequired
-      ) {
+        typeof matcher !== 'object'
+        || !('string' in matcher)
+        || !matcher.behaviourRequired
+      )
         return;
-      }
 
       const keyValue = matcher.keyValue;
       const key = matcher.key;
@@ -112,15 +96,14 @@ export const usePaginationFilters = <
 
       if (usedKey in filters) {
         const data = filters[usedKey];
-        if (!data) {
+        if (!data)
           return;
-        }
 
         if (typeof data === 'object' && !Array.isArray(data)) {
           if (data.values && usedKey in newFilters) {
             newFilters[usedKey] = {
               behaviour: data.behaviour ?? FilterBehaviour.INCLUDE,
-              values: data.values
+              values: data.values,
             };
           }
           return;
@@ -133,14 +116,15 @@ export const usePaginationFilters = <
           if (typeof data === 'string' && data.startsWith('!')) {
             exclude = true;
             formattedData = data.substring(1);
-          } else if (
-            Array.isArray(data) &&
-            data.length > 0 &&
-            data[0].startsWith('!')
+          }
+          else if (
+            Array.isArray(data)
+            && data.length > 0
+            && data[0].startsWith('!')
           ) {
             exclude = true;
             formattedData = data.map(item =>
-              item.startsWith('!') ? item.substring(1) : item
+              item.startsWith('!') ? item.substring(1) : item,
             );
           }
         }
@@ -149,7 +133,7 @@ export const usePaginationFilters = <
           behaviour: exclude
             ? FilterBehaviour.EXCLUDE
             : FilterBehaviour.INCLUDE,
-          values: formattedData
+          values: formattedData,
         };
       }
     });
@@ -157,48 +141,46 @@ export const usePaginationFilters = <
     return newFilters;
   };
 
-  const pageParams: ComputedRef<U> = computed(() => {
+  const pageParams: ComputedRef<U> = computed<U>(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
     const selectedFilters = get(filters);
     const location = get(locationOverview);
     if (
-      location &&
-      typeof selectedFilters === 'object' &&
-      'location' in selectedFilters
-    ) {
+      location
+      && typeof selectedFilters === 'object'
+      && 'location' in selectedFilters
+    )
       selectedFilters.location = location;
-    }
 
     const transformedFilters = {
       ...(get(defaultParams) ?? {}),
       ...selectedFilters,
       ...get(extraParams),
-      ...nonEmptyProperties(get(customPageParams) ?? {})
+      ...nonEmptyProperties(get(customPageParams) ?? {}),
     };
 
-    const orderByAttributes =
-      sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
+    const orderByAttributes
+      = sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       ...transformFilters(transformedFilters),
       limit: itemsPerPage,
       offset,
       orderByAttributes: orderByAttributes.map(item =>
-        typeof item === 'string' ? transformCase(item) : item
+        typeof item === 'string' ? transformCase(item) : item,
       ),
-      ascending:
-        sortBy?.length > 0
-          ? sortDesc.map(bool => !bool)
-          : defaultSortBy?.ascending ?? [false]
+      ascending: sortBy?.length > 0
+        ? sortDesc.map(bool => !bool)
+        : defaultSortBy?.ascending ?? [false],
     } as U; // todo: figure out a way to not typecast
   });
 
   const getCollectionDefault = (): S => {
-    if (defaultCollection) {
+    if (defaultCollection)
       return defaultCollection();
-    }
 
     return defaultCollectionState<V>() as S;
   };
@@ -226,11 +208,11 @@ export const usePaginationFilters = <
             title: t('error.generic.title'),
             message: t('error.generic.message', { code, message, path }),
             severity: Severity.ERROR,
-            display: true
+            display: true,
           });
         }
-      }
-    }
+      },
+    },
   );
 
   /**
@@ -238,9 +220,8 @@ export const usePaginationFilters = <
    * sets the pagination and filters values from route query
    */
   const applyRouteFilter = () => {
-    if (!get(mainPage)) {
+    if (!get(mainPage))
       return;
-    }
 
     const query = get(route).query;
 
@@ -259,7 +240,7 @@ export const usePaginationFilters = <
     updateFilter(parsedFilters);
     set(paginationOptions, {
       ...get(paginationOptions),
-      ...parsedOptions
+      ...parsedOptions,
     });
   };
 
@@ -276,18 +257,17 @@ export const usePaginationFilters = <
 
     const location = get(locationOverview);
     if (
-      location &&
-      typeof selectedFilters === 'object' &&
-      'location' in selectedFilters
-    ) {
+      location
+      && typeof selectedFilters === 'object'
+      && 'location' in selectedFilters
+    )
       selectedFilters.location = location;
-    }
 
     const extraParamsConverted = Object.fromEntries(
       Object.entries(get(extraParams) || {}).map(([key, value]) => [
         key,
-        value?.toString()
-      ])
+        value?.toString(),
+      ]),
     );
 
     return {
@@ -296,7 +276,7 @@ export const usePaginationFilters = <
       sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...extraParamsConverted
+      ...extraParamsConverted,
     };
   };
 
@@ -340,7 +320,7 @@ export const usePaginationFilters = <
         page: pagination?.page ?? page,
         itemsPerPage: pagination?.limit ?? itemsPerPage,
         sortBy: sort.map(col => col.column as keyof V).filter(key => !!key),
-        sortDesc: sort.map(col => col.direction === 'desc')
+        sortDesc: sort.map(col => col.direction === 'desc'),
       });
     }
 
@@ -348,7 +328,7 @@ export const usePaginationFilters = <
       page: pagination?.page ?? page,
       itemsPerPage: pagination?.limit ?? itemsPerPage,
       sortBy: sort?.column ? [sort.column as keyof V] : [],
-      sortDesc: sort?.column ? [sort.direction === 'desc'] : []
+      sortDesc: sort?.column ? [sort.direction === 'desc'] : [],
     });
   };
 
@@ -375,20 +355,19 @@ export const usePaginationFilters = <
     [filters, extraParams],
     async ([filters, extraParams], [oldFilters, oldExtraParams]) => {
       if (
-        isEqual(filters, oldFilters) &&
-        isEqual(extraParams, oldExtraParams)
-      ) {
+        isEqual(filters, oldFilters)
+        && isEqual(extraParams, oldExtraParams)
+      )
         return;
-      }
 
       set(paginationOptions, { ...get(paginationOptions), page: 1 });
-    }
+    },
   );
 
   watch(pageParams, async (params, op) => {
-    if (isEqual(params, op)) {
+    if (isEqual(params, op))
       return;
-    }
+
     if (get(userAction) && get(mainPage)) {
       // Route should only be updated on user action otherwise it messes with forward navigation.
       const query = getQuery();
@@ -423,6 +402,6 @@ export const usePaginationFilters = <
     setFilter,
     applyRouteFilter,
     updateFilter,
-    fetchData
+    fetchData,
   };
-};
+}

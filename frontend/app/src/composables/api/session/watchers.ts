@@ -1,34 +1,34 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type Watcher, Watchers } from '@/types/session';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useWatchersApi = () => {
+export function useWatchersApi() {
   const watchers = async (): Promise<Watchers> => {
     const response = await api.instance.get<ActionResult<Watchers>>(
       '/watchers',
       {
-        validateStatus: validWithSessionAndExternalService
-      }
+        validateStatus: validWithSessionAndExternalService,
+      },
     );
 
     return Watchers.parse(handleResponse(response));
   };
 
   const addWatcher = async (
-    watchers: Omit<Watcher, 'identifier'>[]
+    watchers: Omit<Watcher, 'identifier'>[],
   ): Promise<Watchers> => {
     const response = await api.instance.put<ActionResult<Watchers>>(
       '/watchers',
       snakeCaseTransformer({ watchers }),
       {
-        validateStatus: validWithParamsSessionAndExternalService
-      }
+        validateStatus: validWithParamsSessionAndExternalService,
+      },
     );
 
     return handleResponse(response);
@@ -39,8 +39,8 @@ export const useWatchersApi = () => {
       '/watchers',
       snakeCaseTransformer({ watchers }),
       {
-        validateStatus: validWithParamsSessionAndExternalService
-      }
+        validateStatus: validWithParamsSessionAndExternalService,
+      },
     );
 
     return handleResponse(response);
@@ -51,8 +51,8 @@ export const useWatchersApi = () => {
       '/watchers',
       {
         data: snakeCaseTransformer({ watchers: identifiers }),
-        validateStatus: validWithParamsSessionAndExternalService
-      }
+        validateStatus: validWithParamsSessionAndExternalService,
+      },
     );
 
     return handleResponse(response);
@@ -62,6 +62,6 @@ export const useWatchersApi = () => {
     watchers,
     addWatcher,
     editWatcher,
-    deleteWatcher
+    deleteWatcher,
   };
-};
+}

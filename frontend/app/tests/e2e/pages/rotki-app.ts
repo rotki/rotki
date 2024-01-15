@@ -6,7 +6,8 @@ export class RotkiApp {
     if (apiKey) {
       cy.log('Using CYPRESS_ETHERSCAN_API_KEY env variable');
       cy.addEtherscanKey(apiKey);
-    } else {
+    }
+    else {
       cy.log('CYPRESS_ETHERSCAN_API_KEY not set');
     }
   }
@@ -15,8 +16,8 @@ export class RotkiApp {
     cy.visit({
       url: '/#/user/login',
       qs: {
-        skip_update: '1'
-      }
+        skip_update: '1',
+      },
     });
   }
 
@@ -25,9 +26,9 @@ export class RotkiApp {
     cy.visit({
       url: '/#/user/create',
       qs: {
-        skip_update: '1'
+        skip_update: '1',
       },
-      timeout: 10000
+      timeout: 10000,
     });
     cy.get('[data-cy=connection-loading__content]').should('not.exist');
     cy.get('[data-cy=account-management-forms]').scrollIntoView();
@@ -38,12 +39,12 @@ export class RotkiApp {
     cy.get('[data-cy="create-account__fields__username"]').type(username);
     cy.get('[data-cy="create-account__fields__password"]').type(password);
     cy.get('[data-cy="create-account__fields__password-repeat"]').type(
-      password
+      password,
     );
     cy.get('[data-cy="create-account__boxes__user-prompted"] > label').click();
     cy.get('[data-cy="create-account__credentials__button__continue"]').click();
     cy.get(
-      '[data-cy="create-account__submit-analytics__button__continue"]'
+      '[data-cy="create-account__submit-analytics__button__continue"]',
     ).click();
     cy.get('[data-cy=account-management-forms]').should('not.exist');
     cy.updateAssets();
@@ -58,15 +59,15 @@ export class RotkiApp {
   fasterLogin(username: string, password = '1234', disableModules = false) {
     cy.logout();
     cy.createAccount(username, password);
-    if (disableModules) {
+    if (disableModules)
       cy.disableModules();
-    }
+
     this.loadEnv();
     cy.visit({
       url: '/',
       qs: {
-        skip_update: '1'
-      }
+        skip_update: '1',
+      },
     });
     this.login(username, password);
   }
@@ -114,7 +115,8 @@ export class RotkiApp {
     if (show) {
       cy.get('@menu').click();
       cy.get('[data-cy="privacy-mode-scramble__toggle"]');
-    } else {
+    }
+    else {
       cy.get('@menu').click({ force: true });
     }
   }
@@ -122,28 +124,29 @@ export class RotkiApp {
   changePrivacyMode(mode: number) {
     this.togglePrivacyMenu(true);
     cy.get(
-      '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container'
+      '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container',
     ).as('input');
 
     cy.get('@input').focus();
     cy.get('@input').type('{downArrow}'.repeat(2));
 
-    if (mode > 0) {
+    if (mode > 0)
       cy.get('@input').type('{upArrow}'.repeat(mode));
-    }
+
     this.togglePrivacyMenu();
   }
 
   toggleScrambler(enable: boolean) {
     cy.get(
-      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]'
+      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]',
     ).as('input');
 
     if (enable) {
       cy.get('@input').should('not.be.checked');
       cy.get('@input').check();
       cy.get('@input').should('be.checked');
-    } else {
+    }
+    else {
       cy.get('@input').should('be.checked');
       cy.get('@input').uncheck();
       cy.get('@input').should('not.be.checked');
@@ -171,7 +174,7 @@ export class RotkiApp {
    * @param {string} value
    */
   shouldHaveQueryParam(key: string, value: string) {
-    cy.location().should(loc => {
+    cy.location().should((loc) => {
       const query = new URLSearchParams(loc.href);
       expect(query.get(key)).to.equal(value);
     });
@@ -183,7 +186,7 @@ export class RotkiApp {
    * @param {string[]} values
    */
   shouldHaveQueryParams(key: string, values: string[]) {
-    cy.location().should(loc => {
+    cy.location().should((loc) => {
       const query = new URLSearchParams(loc.href);
       expect(query.getAll(key)).to.deep.equal(values);
     });
@@ -198,11 +201,10 @@ export class RotkiApp {
     };
 
     const menuClass = `.navigation__${menu}`;
-    cy.get(menuClass).then(menu => {
+    cy.get(menuClass).then((menu) => {
       const parent = menu.parent().parent();
-      if (!parent.hasClass('submenu-wrapper__expanded')) {
+      if (!parent.hasClass('submenu-wrapper__expanded'))
         click(menuClass);
-      }
 
       if (submenu) {
         cy.get(menuClass).find('.submenu-wrapper').scrollIntoView();

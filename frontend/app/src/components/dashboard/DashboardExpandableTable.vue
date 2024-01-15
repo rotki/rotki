@@ -9,7 +9,11 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
     <template #custom-header>
       <div class="flex justify-between items-center flex-wrap p-4 gap-2">
         <CardTitle>
-          <RuiButton variant="text" icon @click="expanded = !expanded">
+          <RuiButton
+            variant="text"
+            icon
+            @click="expanded = !expanded"
+          >
             <RuiIcon
               :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'"
             />
@@ -18,8 +22,14 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
         </CardTitle>
 
         <div class="flex items-center gap-2 grow justify-end">
-          <slot v-if="expanded" name="details" />
-          <slot v-else name="shortDetails" />
+          <slot
+            v-if="expanded"
+            name="details"
+          />
+          <slot
+            v-else
+            name="shortDetails"
+          />
         </div>
       </div>
     </template>

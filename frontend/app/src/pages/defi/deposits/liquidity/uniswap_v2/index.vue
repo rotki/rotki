@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
-import { type XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { type ComputedRef } from 'vue';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import type { ComputedRef } from 'vue';
+import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
+import type { GeneralAccount } from '@rotki/common/lib/account';
 
 const modules = [Module.UNISWAP];
 const chains = [Blockchain.ETH];
@@ -20,11 +20,11 @@ const {
   fetchEvents,
   fetchV2Balances: fetchBalances,
   uniswapV2Balances: uniswapBalances,
-  uniswapPoolProfit
+  uniswapPoolProfit,
 } = store;
 
-const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
-  storeToRefs(store);
+const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets }
+  = storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
@@ -61,9 +61,9 @@ const getIdentifier = (item: XswapBalance) => item.address;
 
 const lpType = LpType.UNISWAP_V2;
 
-const refresh = async (ignoreCache: boolean = false) => {
+async function refresh(ignoreCache: boolean = false) {
   await Promise.all([fetchBalances(ignoreCache), fetchEvents(ignoreCache)]);
-};
+}
 
 onMounted(async () => {
   await refresh();
@@ -72,21 +72,33 @@ onMounted(async () => {
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2'
-    ).toLocaleLowerCase()
-  })
+      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2',
+    ).toLocaleLowerCase(),
+  }),
 );
 </script>
 
 <template>
-  <ModuleNotActive v-if="!enabled" :modules="modules" />
+  <ModuleNotActive
+    v-if="!enabled"
+    :modules="modules"
+  />
   <ProgressScreen v-else-if="loading">
     <template #message>
       {{ t('uniswap.loading') }}
     </template>
-    <template v-if="!premium" #default>
-      <i18n tag="div" path="uniswap.loading_non_premium">
-        <ExternalLink :text="t('uniswap.premium')" premium />
+    <template
+      v-if="!premium"
+      #default
+    >
+      <i18n
+        tag="div"
+        path="uniswap.loading_non_premium"
+      >
+        <ExternalLink
+          :text="t('uniswap.premium')"
+          premium
+        />
       </i18n>
     </template>
   </ProgressScreen>
@@ -95,7 +107,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     :title="[
       t('navigation_menu.defi'),
       t('navigation_menu.defi_sub.deposits_sub.liquidity'),
-      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
+      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2'),
     ]"
   >
     <template #buttons>
@@ -147,7 +159,10 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       :items="balances"
     >
       <template #item="{ item }">
-        <UniswapPoolBalances :item="item" :lp-type="lpType" />
+        <UniswapPoolBalances
+          :item="item"
+          :lp-type="lpType"
+        />
       </template>
     </PaginatedCards>
 

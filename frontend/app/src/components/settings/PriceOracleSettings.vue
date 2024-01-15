@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   PrioritizedListData,
-  type PrioritizedListItemData
+  type PrioritizedListItemData,
 } from '@/types/settings/prioritized-list-data';
 import {
   COINGECKO_PRIO_LIST_ITEM,
@@ -11,57 +11,56 @@ import {
   MANUAL_PRIO_LIST_ITEM,
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
-  UNISWAP3_PRIO_LIST_ITEM
+  UNISWAP3_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);
 
 const { currentPriceOracles, historicalPriceOracles } = storeToRefs(
-  useGeneralSettingsStore()
+  useGeneralSettingsStore(),
 );
 
-const resetCurrentPriceOracles = () => {
+function resetCurrentPriceOracles() {
   set(currentOracles, get(currentPriceOracles));
-};
+}
 
 const baseAvailableOraclesTyped: Array<
   PrioritizedListItemData<PrioritizedListId>
 > = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
-  DEFILAMA_PRIO_LIST_ITEM
+  DEFILAMA_PRIO_LIST_ITEM,
 ];
 
-const availableCurrentOracles = (): PrioritizedListData<PrioritizedListId> => {
+function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
   const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
     ...baseAvailableOraclesTyped,
     UNISWAP2_PRIO_LIST_ITEM,
     UNISWAP3_PRIO_LIST_ITEM,
-    MANUALCURRENT_PRIO_LIST_ITEM
+    MANUALCURRENT_PRIO_LIST_ITEM,
   ];
 
   return new PrioritizedListData(itemData);
-};
+}
 
-const availableHistoricOracles = (): PrioritizedListData<PrioritizedListId> => {
+function availableHistoricOracles(): PrioritizedListData<PrioritizedListId> {
   const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
     ...baseAvailableOraclesTyped,
-    MANUAL_PRIO_LIST_ITEM
+    MANUAL_PRIO_LIST_ITEM,
   ];
 
   return new PrioritizedListData(itemData);
-};
+}
 
 const { reset: resetCachedHistoricalPrices } = useHistoricCachePriceStore();
 
-const resetHistoricalPriceOracles = (resetPrices: boolean = false) => {
+function resetHistoricalPriceOracles(resetPrices: boolean = false) {
   set(historicOracles, get(historicalPriceOracles));
 
-  if (resetPrices) {
+  if (resetPrices)
     resetCachedHistoricalPrices();
-  }
-};
+}
 
 onMounted(() => {
   resetCurrentPriceOracles();
@@ -122,7 +121,10 @@ const { t } = useI18n();
       {{ t('price_oracle_selection.hint') }}
     </div>
     <div class="mt-4">
-      <PriceRefresh class="mt-6" @click="resetCachedHistoricalPrices()" />
+      <PriceRefresh
+        class="mt-6"
+        @click="resetCachedHistoricalPrices()"
+      />
     </div>
   </SettingCategory>
 </template>

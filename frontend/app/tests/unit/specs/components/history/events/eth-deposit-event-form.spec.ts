@@ -1,21 +1,21 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type EthDepositEvent } from '@/types/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
+import type { EthDepositEvent } from '@/types/history/events';
 
 vi.mock('json-editor-vue', () => ({
-  template: '<input />'
+  template: '<input />',
 }));
 
-describe('EthDepositEventForm.vue', () => {
+describe('ethDepositEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EthDepositEventForm>;
 
@@ -30,7 +30,7 @@ describe('EthDepositEventForm.vue', () => {
     asset: 'ETH',
     balance: {
       amount: bigNumberify('3.2'),
-      usdValue: bigNumberify('5082.048')
+      usdValue: bigNumberify('5082.048'),
     },
     eventType: 'staking',
     eventSubtype: 'deposit asset',
@@ -41,7 +41,7 @@ describe('EthDepositEventForm.vue', () => {
     counterparty: 'eth2',
     product: 'staking',
     address: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
-    validatorIndex: 223
+    validatorIndex: 223,
   };
 
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
@@ -53,14 +53,14 @@ describe('EthDepositEventForm.vue', () => {
       vuetify,
       stubs: {
         VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub
+        VCombobox: VComboboxStub,
       },
-      ...options
+      ...options,
     });
   };
 
   describe('should prefill the fields based on the props', () => {
-    test('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
 
@@ -73,42 +73,42 @@ describe('EthDepositEventForm.vue', () => {
         (
           wrapper.find('[data-cy=validatorIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('');
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
-          .value
+          .value,
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=eventIdentifier] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=depositor] .input-value')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('0');
     });
 
-    test('`groupHeader` and `nextSequence` are passed', async () => {
+    it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
         propsData: {
           groupHeader,
-          nextSequence: '10'
-        }
+          nextSequence: '10',
+        },
       });
       await wrapper.vm.$nextTick();
 
@@ -121,47 +121,47 @@ describe('EthDepositEventForm.vue', () => {
         (
           wrapper.find('[data-cy=validatorIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.validatorIndex.toString());
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
-          .value
+          .value,
       ).toBe(groupHeader.txHash);
 
       expect(
         (
           wrapper.find('[data-cy=eventIdentifier] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.eventIdentifier);
 
       expect(
         (
           wrapper.find('[data-cy=depositor] .input-value')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.locationLabel);
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value
+          .value,
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('10');
     });
 
-    test('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
         propsData: {
           groupHeader,
-          editableItem: groupHeader
-        }
+          editableItem: groupHeader,
+        },
       });
       await wrapper.vm.$nextTick();
 
@@ -174,38 +174,38 @@ describe('EthDepositEventForm.vue', () => {
         (
           wrapper.find('[data-cy=validatorIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.validatorIndex.toString());
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
-          .value
+          .value,
       ).toBe(groupHeader.txHash);
 
       expect(
         (
           wrapper.find('[data-cy=eventIdentifier] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.eventIdentifier);
 
       expect(
         (
           wrapper.find('[data-cy=depositor] .input-value')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.locationLabel);
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value
+          .value,
       ).toBe(groupHeader.balance.amount.toString());
 
       expect(
         (
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
-        ).value.replace(',', '')
+        ).value.replace(',', ''),
       ).toBe(groupHeader.sequenceIndex.toString());
     });
   });

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import { required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import type { Ref } from 'vue';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
@@ -21,70 +21,70 @@ const edit: Ref<boolean> = ref(true);
 const $externalResults: Ref<Record<string, string[]>> = ref({});
 
 const mainActionText = computed(() => {
-  if (!get(premium)) {
+  if (!get(premium))
     return t('premium_settings.actions.setup');
-  } else if (!get(edit)) {
+  else if (!get(edit))
     return t('premium_settings.actions.replace');
-  }
+
   return t('common.actions.save');
 });
 
 const rules = {
   apiKey: { required },
-  apiSecret: { required }
+  apiSecret: { required },
 };
 
 const v$ = useVuelidate(
   rules,
   {
     apiKey,
-    apiSecret
+    apiSecret,
   },
-  { $autoDirty: true, $externalResults }
+  { $autoDirty: true, $externalResults },
 );
 
-const onSyncChange = async () => {
+async function onSyncChange() {
   await update({ premiumShouldSync: get(sync) });
-};
+}
 
-const cancelEdit = async () => {
+async function cancelEdit() {
   set(edit, false);
   set(apiKey, '');
   set(apiSecret, '');
   get(v$).$reset();
-};
+}
 
-const reset = () => {
+function reset() {
   set(apiSecret, '');
   set(apiKey, '');
   set(edit, false);
   get(v$).$reset();
-};
+}
 
-const setupPremium = async () => {
+async function setupPremium() {
   if (get(premium) && !get(edit)) {
     set(edit, true);
     return;
   }
 
   set($externalResults, {});
-  if (!(await get(v$).$validate())) {
+  if (!(await get(v$).$validate()))
     return;
-  }
 
   const result = await setup({
     username: get(username),
     apiKey: get(apiKey),
-    apiSecret: get(apiSecret)
+    apiSecret: get(apiSecret),
   });
 
   if (!result.success) {
     if (typeof result.message === 'string') {
       set($externalResults, {
         ...get($externalResults),
-        apiKey: [result.message ?? t('premium_settings.error.setting_failed')]
+        apiKey: [result.message ?? t('premium_settings.error.setting_failed')],
       });
-    } else {
+    }
+    else {
       set($externalResults, result.message);
     }
 
@@ -92,23 +92,23 @@ const setupPremium = async () => {
   }
   premiumUserLoggedIn(true);
   reset();
-};
+}
 
-const remove = async () => {
-  if (!get(premium)) {
+async function remove() {
+  if (!get(premium))
     return;
-  }
+
   const result = await deletePremium();
   if (!result.success) {
     set($externalResults, {
       ...get($externalResults),
-      apiKey: [result.message ?? t('premium_settings.error.removing_failed')]
+      apiKey: [result.message ?? t('premium_settings.error.removing_failed')],
     });
     return;
   }
   premiumUserLoggedIn(false);
   reset();
-};
+}
 
 onMounted(() => {
   set(sync, get(premiumSync));
@@ -117,17 +117,17 @@ onMounted(() => {
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = () => {
+function showDeleteConfirmation() {
   show(
     {
       title: t('premium_settings.delete_confirmation.title'),
       message: t('premium_settings.delete_confirmation.message'),
       primaryAction: t('common.actions.delete'),
-      secondaryAction: t('common.actions.cancel')
+      secondaryAction: t('common.actions.cancel'),
     },
-    remove
+    remove,
   );
-};
+}
 
 const css = useCssModule();
 </script>
@@ -136,15 +136,21 @@ const css = useCssModule();
   <TablePageLayout
     :title="[
       t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.premium')
+      t('navigation_menu.api_keys_sub.premium'),
     ]"
   >
     <RuiCard>
       <div class="flex flex-col gap-2">
         <div class="flex flex-row-reverse">
           <HintMenuIcon>
-            <i18n tag="div" path="premium_settings.subtitle">
-              <ExternalLink :text="t('premium_settings.title')" premium />
+            <i18n
+              tag="div"
+              path="premium_settings.subtitle"
+            >
+              <ExternalLink
+                :text="t('premium_settings.title')"
+                premium
+              />
             </i18n>
           </HintMenuIcon>
         </div>
@@ -172,8 +178,14 @@ const css = useCssModule();
         />
       </div>
 
-      <div v-if="premium" class="flex flex-row gap-2">
-        <RuiIcon name="checkbox-circle-line" color="success" />
+      <div
+        v-if="premium"
+        class="flex flex-row gap-2"
+      >
+        <RuiIcon
+          name="checkbox-circle-line"
+          color="success"
+        />
         {{ t('premium_settings.premium_active') }}
       </div>
 
@@ -186,7 +198,10 @@ const css = useCssModule();
       />
 
       <template #footer>
-        <div class="flex flex-row gap-2 pt-4" :class="css.buttons">
+        <div
+          class="flex flex-row gap-2 pt-4"
+          :class="css.buttons"
+        >
           <template v-if="premium">
             <RuiButton
               v-if="edit"

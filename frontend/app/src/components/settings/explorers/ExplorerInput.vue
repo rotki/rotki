@@ -16,17 +16,18 @@ const model = computed({
   },
   set(value) {
     emit('input', value);
-  }
+  },
 });
 
 const attrs = useAttrs();
 
-const isValid = (entry: string | null): boolean =>
-  !entry ? false : entry.length > 0;
+function isValid(entry: string | null): boolean {
+  return !entry ? false : entry.length > 0;
+}
 
-const saveData = (value?: string) => {
+function saveData(value?: string) {
   emit('save-data', value);
-};
+}
 </script>
 
 <template>

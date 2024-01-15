@@ -5,7 +5,7 @@ export const EvmAccountsResult = z.object({
   existed: z.record(z.array(z.string())).optional(),
   failed: z.record(z.array(z.string())).optional(),
   noActivity: z.record(z.array(z.string())).optional(),
-  ethContracts: z.array(z.string()).optional()
+  ethContracts: z.array(z.string()).optional(),
 });
 
 export type EvmAccountsResult = z.infer<typeof EvmAccountsResult>;

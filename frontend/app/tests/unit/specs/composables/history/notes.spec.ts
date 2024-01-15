@@ -3,14 +3,14 @@ import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetSymbol: vi.fn().mockImplementation(identifier => identifier)
-  })
+    assetSymbol: vi.fn().mockImplementation(identifier => identifier),
+  }),
 }));
 
 describe('composables::history/notes', () => {
   const { formatNotes } = useHistoryEventNote();
 
-  test('Normal text', () => {
+  it('normal text', () => {
     const notes = 'Normal text';
 
     const formatted = get(formatNotes({ notes }));
@@ -18,40 +18,40 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Normal'
+        word: 'Normal',
       },
       {
         type: NoteType.WORD,
-        word: 'text'
-      }
+        word: 'text',
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With amount and asset', () => {
+  it('with amount and asset', () => {
     const notes = 'Receive 100 ETH';
 
     const formatted = get(
-      formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' })
+      formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' }),
     );
 
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Receive'
+        word: 'Receive',
       },
       {
         type: NoteType.AMOUNT,
         amount: bigNumberify(100),
-        asset: 'ETH'
-      }
+        asset: 'ETH',
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With ETH address', () => {
+  it('with ETH address', () => {
     const address = '0xCb2286d9471cc185281c4f763d34A962ED212962';
     const notes = `Address ${address}`;
 
@@ -60,20 +60,20 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Address'
+        word: 'Address',
       },
       {
         type: NoteType.ADDRESS,
         address,
         showIcon: true,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With multiple ETH addresses', () => {
+  it('with multiple ETH addresses', () => {
     const address = '0xCb2286d9471cc185281c4f763d34A962ED212962';
     const notes = `Address ${address},${address}`;
 
@@ -82,28 +82,28 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Address'
+        word: 'Address',
       },
       {
         type: NoteType.ADDRESS,
         address,
         showIcon: true,
-        showHashLink: true
+        showHashLink: true,
       },
       {
         type: NoteType.ADDRESS,
         address,
         showIcon: true,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  describe('With TX Hash', () => {
-    const txHash =
-      '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
+  describe('with TX Hash', () => {
+    const txHash
+      = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `TxHash ${txHash}`;
 
     it('noTxHash = false', () => {
@@ -112,13 +112,13 @@ describe('composables::history/notes', () => {
       const expected: NoteFormat[] = [
         {
           type: NoteType.WORD,
-          word: 'TxHash'
+          word: 'TxHash',
         },
         {
           type: NoteType.TX,
           address: txHash,
-          showHashLink: true
-        }
+          showHashLink: true,
+        },
       ];
 
       expect(formatted).toMatchObject(expected);
@@ -126,33 +126,33 @@ describe('composables::history/notes', () => {
 
     it('multiple txHash', () => {
       const formatted = get(
-        formatNotes({ notes: `TxHash ${txHash},${txHash}, ${txHash}` })
+        formatNotes({ notes: `TxHash ${txHash},${txHash}, ${txHash}` }),
       );
 
       const expected: NoteFormat[] = [
         {
           type: NoteType.WORD,
-          word: 'TxHash'
+          word: 'TxHash',
         },
         {
           type: NoteType.TX,
           address: txHash,
-          showHashLink: true
+          showHashLink: true,
         },
         {
           type: NoteType.TX,
           address: txHash,
-          showHashLink: true
+          showHashLink: true,
         },
         {
           type: NoteType.WORD,
-          word: ''
+          word: '',
         },
         {
           type: NoteType.TX,
           address: txHash,
-          showHashLink: true
-        }
+          showHashLink: true,
+        },
       ];
 
       expect(formatted).toMatchObject(expected);
@@ -164,19 +164,19 @@ describe('composables::history/notes', () => {
       const expected: NoteFormat[] = [
         {
           type: NoteType.WORD,
-          word: 'TxHash'
+          word: 'TxHash',
         },
         {
           type: NoteType.WORD,
-          word: txHash
-        }
+          word: txHash,
+        },
       ];
 
       expect(formatted).toMatchObject(expected);
     });
   });
 
-  test('With Validator Index', () => {
+  it('with Validator Index', () => {
     const validatorIndex = 201670;
     const notes = `Validator ${validatorIndex}`;
 
@@ -185,20 +185,20 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Validator'
+        word: 'Validator',
       },
       {
         type: NoteType.ADDRESS,
         address: `${validatorIndex}`,
         chain: Blockchain.ETH2,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With Multiple Validator Indices', () => {
+  it('with Multiple Validator Indices', () => {
     const validatorIndex = 201670;
     const notes = `Validator ${validatorIndex},${validatorIndex}`;
 
@@ -207,26 +207,26 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Validator'
+        word: 'Validator',
       },
       {
         type: NoteType.ADDRESS,
         address: `${validatorIndex}`,
         chain: Blockchain.ETH2,
-        showHashLink: true
+        showHashLink: true,
       },
       {
         type: NoteType.ADDRESS,
         address: `${validatorIndex}`,
         chain: Blockchain.ETH2,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With Block Number', () => {
+  it('with Block Number', () => {
     const blockNumber = 17173975;
     const notes = `BlockNo ${blockNumber}`;
 
@@ -235,19 +235,19 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'BlockNo'
+        word: 'BlockNo',
       },
       {
         type: NoteType.BLOCK,
         address: `${blockNumber}`,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);
   });
 
-  test('With Multiple Block Numbers', () => {
+  it('with Multiple Block Numbers', () => {
     const blockNumber = 17173975;
     const notes = `BlockNo ${blockNumber},${blockNumber}`;
 
@@ -256,18 +256,18 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'BlockNo'
+        word: 'BlockNo',
       },
       {
         type: NoteType.BLOCK,
         address: `${blockNumber}`,
-        showHashLink: true
+        showHashLink: true,
       },
       {
         type: NoteType.BLOCK,
         address: `${blockNumber}`,
-        showHashLink: true
-      }
+        showHashLink: true,
+      },
     ];
 
     expect(formatted).toMatchObject(expected);

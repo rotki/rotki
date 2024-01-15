@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
-import { type Collection } from '@/types/collection';
-import {
-  type Filters,
-  type Matcher
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { Collection } from '@/types/collection';
+import type {
+  Filters,
+  Matcher,
 } from '@/composables/filters/accounting-rule';
-import {
-  type AccountingRuleEntry,
-  type AccountingRuleRequestPayload
+import type {
+  AccountingRuleEntry,
+  AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
 
 const { t } = useI18n();
 const router = useRouter();
 
-const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts } =
-  useAccountingSettings();
+const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts }
+  = useAccountingSettings();
 
 const {
   state,
@@ -26,7 +26,7 @@ const {
   filters,
   matchers,
   updateFilter,
-  editableItem
+  editableItem,
 } = usePaginationFilters<
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
@@ -38,104 +38,106 @@ const {
 
 const conflictsNumber: Ref<number> = ref(0);
 
-const checkConflicts = async () => {
+async function checkConflicts() {
   const { total } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
   set(conflictsNumber, total);
 
   const {
     currentRoute: {
-      query: { resolveConflicts }
-    }
+      query: { resolveConflicts },
+    },
   } = router;
 
   if (resolveConflicts) {
-    if (total > 0) {
+    if (total > 0)
       set(conflictsDialogOpen, true);
-    }
+
     await router.replace({ query: {} });
   }
-};
+}
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
-      'accounting_settings.rule.labels.event_subtype'
+      'accounting_settings.rule.labels.event_subtype',
     )}`,
     key: 'eventTypeAndSubtype',
     class: 'whitespace-pre-line',
     cellClass: 'py-4',
-    sortable: false
+    sortable: false,
   },
   {
     label: t('transactions.events.form.resulting_combination.label'),
     key: 'resultingCombination',
-    sortable: false
+    sortable: false,
   },
   {
     label: t('accounting_settings.rule.labels.counterparty'),
     key: 'counterparty',
     class: 'border-r border-default',
     cellClass: 'border-r border-default',
-    sortable: false
+    sortable: false,
   },
   {
     label: t('accounting_settings.rule.labels.taxable'),
     key: 'taxable',
     sortable: false,
     class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
-    align: 'center'
+    align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     key: 'countEntireAmountSpend',
     sortable: false,
     class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
-    align: 'center'
+    align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     key: 'countCostBasisPnl',
     sortable: false,
     class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
-    align: 'center'
+    align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.accounting_treatment'),
     key: 'accountingTreatment',
     class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
-    sortable: false
+    sortable: false,
   },
   {
     label: t('common.actions_text'),
     key: 'actions',
     align: 'center',
     sortable: false,
-    width: '1px'
-  }
+    width: '1px',
+  },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } =
-  useHistoryEventMappings();
+const { historyEventTypesData, historyEventSubTypesData, getEventTypeData }
+  = useHistoryEventMappings();
 
-const getHistoryEventTypeName = (eventType: string): string =>
-  get(historyEventTypesData).find(item => item.identifier === eventType)
+function getHistoryEventTypeName(eventType: string): string {
+  return get(historyEventTypesData).find(item => item.identifier === eventType)
     ?.label ?? toSentenceCase(eventType);
+}
 
-const getHistoryEventSubTypeName = (eventSubtype: string): string =>
-  get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
+function getHistoryEventSubTypeName(eventSubtype: string): string {
+  return get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
     ?.label ?? toSentenceCase(eventSubtype);
+}
 
 const { setOpenDialog, setPostSubmitFunc } = useAccountingRuleForm();
 
-const add = () => {
+function add() {
   set(editableItem, null);
   setOpenDialog(true);
-};
+}
 
-const edit = (rule: AccountingRuleEntry) => {
+function edit(rule: AccountingRuleEntry) {
   set(editableItem, rule);
   setOpenDialog(true);
-};
+}
 
 setPostSubmitFunc(fetchData);
 
@@ -144,41 +146,42 @@ const { setMessage } = useMessageStore();
 
 const { deleteAccountingRule: deleteAccountingRuleCaller } = useAccountingApi();
 
-const deleteAccountingRule = async (item: AccountingRuleEntry) => {
+async function deleteAccountingRule(item: AccountingRuleEntry) {
   try {
     const success = await deleteAccountingRuleCaller(item.identifier);
-    if (success) {
+    if (success)
       await fetchData();
-    }
-  } catch {
+  }
+  catch {
     setMessage({
-      description: t('accounting_settings.rule.delete_error')
+      description: t('accounting_settings.rule.delete_error'),
     });
   }
-};
+}
 
-const refresh = async () => {
+async function refresh() {
   await fetchData();
   await checkConflicts();
-};
+}
 
-const showDeleteConfirmation = (item: AccountingRuleEntry) => {
+function showDeleteConfirmation(item: AccountingRuleEntry) {
   show(
     {
       title: t('accounting_settings.rule.delete'),
-      message: t('accounting_settings.rule.confirm_delete')
+      message: t('accounting_settings.rule.confirm_delete'),
     },
-    async () => await deleteAccountingRule(item)
+    async () => await deleteAccountingRule(item),
   );
-};
+}
 
-const getType = (eventType: string, eventSubtype: string) =>
-  get(
+function getType(eventType: string, eventSubtype: string) {
+  return get(
     getEventTypeData({
       eventType,
-      eventSubtype
-    })
+      eventSubtype,
+    }),
   );
+}
 
 onMounted(async () => {
   const {
@@ -188,33 +191,34 @@ onMounted(async () => {
         'edit-rule': editRule,
         eventSubtype,
         eventType,
-        counterparty
-      }
-    }
+        counterparty,
+      },
+    },
   } = router;
 
   const ruleData = {
     eventSubtype: eventSubtype?.toString() ?? '',
     eventType: eventType?.toString() ?? '',
-    counterparty: counterparty?.toString() ?? null
+    counterparty: counterparty?.toString() ?? null,
   };
 
   if (addRule) {
     set(editableItem, {
       ...getPlaceholderRule(),
-      ...ruleData
+      ...ruleData,
     });
     setOpenDialog(true);
     await router.replace({ query: {} });
-  } else if (editRule) {
+  }
+  else if (editRule) {
     const rule = await getAccountingRule(
       {
         eventTypes: [ruleData.eventType],
         eventSubtypes: [ruleData.eventSubtype],
         limit: 2,
-        offset: 0
+        offset: 0,
       },
-      ruleData.counterparty
+      ruleData.counterparty,
     );
     set(editableItem, rule);
     setOpenDialog(!!rule);
@@ -227,7 +231,10 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
 </script>
 
 <template>
-  <TablePageLayout child :title="[t('accounting_settings.rule.title')]">
+  <TablePageLayout
+    child
+    :title="[t('accounting_settings.rule.title')]"
+  >
     <template #buttons>
       <div class="flex flex-row items-center justify-end gap-2">
         <RuiTooltip :open-delay="400">
@@ -246,7 +253,10 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
           </template>
           {{ t('accounting_settings.rule.refresh_tooltip') }}
         </RuiTooltip>
-        <RuiButton color="primary" @click="add()">
+        <RuiButton
+          color="primary"
+          @click="add()"
+        >
           <template #prepend>
             <RuiIcon name="add-line" />
           </template>
@@ -259,7 +269,10 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
       <template #custom-header>
         <div class="flex items-center justify-between p-4 pb-0 gap-4">
           <template v-if="conflictsNumber > 0">
-            <RuiButton color="warning" @click="conflictsDialogOpen = true">
+            <RuiButton
+              color="warning"
+              @click="conflictsDialogOpen = true"
+            >
               <template #prepend>
                 <RuiIcon name="error-warning-line" />
               </template>
@@ -292,7 +305,10 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
         </div>
       </template>
 
-      <CollectionHandler :collection="state" @set-page="setPage($event)">
+      <CollectionHandler
+        :collection="state"
+        @set-page="setPage($event)"
+      >
         <template #default="{ data, itemLength }">
           <RuiDataTable
             outlined
@@ -302,7 +318,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
             :pagination="{
               limit: options.itemsPerPage,
               page: options.page,
-              total: itemLength
+              total: itemLength,
             }"
             row-attr="identifier"
             :pagination-modifiers="{ external: true }"
@@ -344,14 +360,14 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
                     />
                     {{
                       t(
-                        'accounting_settings.rule.labels.count_entire_amount_spend'
+                        'accounting_settings.rule.labels.count_entire_amount_spend',
                       )
                     }}
                   </div>
                 </template>
                 {{
                   t(
-                    'accounting_settings.rule.labels.count_entire_amount_spend_subtitle'
+                    'accounting_settings.rule.labels.count_entire_amount_spend_subtitle',
                   )
                 }}
               </RuiTooltip>
@@ -377,7 +393,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
                 </template>
                 {{
                   t(
-                    'accounting_settings.rule.labels.count_cost_basis_pnl_subtitle'
+                    'accounting_settings.rule.labels.count_cost_basis_pnl_subtitle',
                   )
                 }}
               </RuiTooltip>

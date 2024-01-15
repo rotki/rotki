@@ -10,11 +10,11 @@ const { items } = toRefs(props);
 const { name: breakpoint } = useDisplay();
 const page = ref(1);
 const itemsPerPage = computed(() => {
-  if (get(breakpoint) === 'xs') {
+  if (get(breakpoint) === 'xs')
     return 1;
-  } else if (['sm', 'lg', 'md'].includes(get(breakpoint))) {
+  else if (['sm', 'lg', 'md'].includes(get(breakpoint)))
     return 4;
-  }
+
   return 6;
 });
 
@@ -30,10 +30,21 @@ watch(items, () => set(page, 1));
 
 <template>
   <div>
-    <VPagination v-if="pages > 1" v-model="page" :length="pages" class="mb-4" />
+    <VPagination
+      v-if="pages > 1"
+      v-model="page"
+      :length="pages"
+      class="mb-4"
+    />
     <div class="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">
-      <div v-for="item in visible" :key="identifier(item)">
-        <slot name="item" :item="item" />
+      <div
+        v-for="item in visible"
+        :key="identifier(item)"
+      >
+        <slot
+          name="item"
+          :item="item"
+        />
       </div>
     </div>
   </div>

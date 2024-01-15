@@ -4,5 +4,6 @@ function stringify(value: Record<string, any>): string {
     .join(', ');
 }
 
-export const mockT = (key: any, args?: any) =>
-  args ? `${key}::${stringify(args)}` : key;
+export function mockT(key: any, args?: any) {
+  return args ? `${key}::${stringify(args)}` : key;
+}

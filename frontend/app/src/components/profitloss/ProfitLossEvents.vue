@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type ProfitLossEvents, type SelectedReport } from '@/types/reports';
 import { isTransactionEvent } from '@/utils/report';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { ProfitLossEvents, SelectedReport } from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-    refreshing: false
-  }
+    refreshing: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -44,14 +44,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'group',
     sortable: false,
     class: 'px-0',
-    cellClass: 'px-0'
+    cellClass: 'px-0',
   },
   {
     text: t('common.type'),
     align: 'center',
     value: 'type',
     width: 110,
-    sortable: false
+    sortable: false,
   },
   {
     text: t('common.location'),
@@ -59,74 +59,74 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     width: '120px',
     align: 'center',
     cellClass: 'py-2',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('profit_loss_events.headers.tax_free_amount'),
     align: 'end',
     value: 'free_amount',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('profit_loss_events.headers.taxable_amount'),
     align: 'end',
     value: 'taxable_amount',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('common.price'),
     align: 'end',
     value: 'price',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('profit_loss_events.headers.pnl_free'),
     align: 'end',
     value: 'pnl_free',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('profit_loss_events.headers.pnl_taxable'),
     align: 'end',
     value: 'pnl_taxable',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('common.datetime'),
     value: 'time',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('common.notes'),
     value: 'notes',
-    sortable: false
+    sortable: false,
   },
   {
     text: t('common.actions_text'),
     value: 'actions',
     align: 'end',
     width: 140,
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
 const items = computed(() => {
   const entries = report.value.entries.map((value, index) => ({
     ...value,
-    id: index
+    id: index,
   }));
 
   return entries.map((entry, index) => ({
     ...entry,
-    groupLine: checkGroupLine(entries, index)
+    groupLine: checkGroupLine(entries, index),
   }));
 });
 
 const itemLength = computed(() => {
   const { entriesFound, entriesLimit } = report.value;
-  if (entriesLimit > 0 && entriesLimit <= entriesFound) {
+  if (entriesLimit > 0 && entriesLimit <= entriesFound)
     return entriesLimit;
-  }
+
   return entriesFound;
 });
 
@@ -134,13 +134,13 @@ const premium = usePremium();
 
 const showUpgradeMessage = computed(
   () =>
-    !premium.value && report.value.totalActions > report.value.processedActions
+    !premium.value && report.value.totalActions > report.value.processedActions,
 );
 
-const updatePagination = async (options: PaginationOptions | null) => {
-  if (!options) {
+async function updatePagination(options: PaginationOptions | null) {
+  if (!options)
     return;
-  }
+
   const { itemsPerPage, page } = options;
 
   const reportId = Number.parseInt(get(route).params.id as string);
@@ -148,29 +148,31 @@ const updatePagination = async (options: PaginationOptions | null) => {
   emit('update:page', {
     reportId,
     limit: itemsPerPage,
-    offset: itemsPerPage * (page - 1)
+    offset: itemsPerPage * (page - 1),
   });
-};
+}
 
 watch(options, updatePagination);
 
-const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
+function checkGroupLine(entries: ProfitLossEvents, index: number) {
   const current = entries[index];
   const prev = index - 1 >= 0 ? entries[index - 1] : null;
   const next = index + 1 < entries.length ? entries[index + 1] : null;
 
   return {
     top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
-    bottom: !!(current?.groupId && next && current?.groupId === next?.groupId)
+    bottom: !!(current?.groupId && next && current?.groupId === next?.groupId),
   };
-};
+}
 
 const css = useCssModule();
 </script>
 
 <template>
   <RuiCard>
-    <template #header>{{ t('common.events') }}</template>
+    <template #header>
+      {{ t('common.events') }}
+    </template>
     <DataTable
       :headers="tableHeaders"
       :items="items"
@@ -215,8 +217,16 @@ const css = useCssModule();
       </template>
       <template #item.free_amount="{ item }">
         <div class="flex items-center justify-between flex-nowrap gap-4">
-          <AssetLink v-if="item.asset" :asset="item.asset" link>
-            <AssetIcon class="flex" :identifier="item.asset" size="24px" />
+          <AssetLink
+            v-if="item.asset"
+            :asset="item.asset"
+            link
+          >
+            <AssetIcon
+              class="flex"
+              :identifier="item.asset"
+              size="24px"
+            />
           </AssetLink>
           <AmountDisplay
             force-currency
@@ -258,7 +268,10 @@ const css = useCssModule();
           :fiat-currency="report.settings.profitCurrency"
         />
       </template>
-      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
+      <template
+        v-if="showUpgradeMessage"
+        #body.prepend="{ headers }"
+      >
         <UpgradeRow
           events
           :total="report.totalActions"
@@ -280,7 +293,9 @@ const css = useCssModule();
             :asset="item.asset"
             :chain="getChain(item.location)"
           />
-          <template v-else>{{ item.notes }}</template>
+          <template v-else>
+            {{ item.notes }}
+          </template>
         </div>
       </template>
       <template #item.actions="{ item }">

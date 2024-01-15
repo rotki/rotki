@@ -1,8 +1,8 @@
 import { api } from '@/services/rotkehlchen-api';
-import { type Nullable } from '@/types';
-import { type LogLevel } from '@/utils/log-level';
-import { type Version } from '@/types/action';
-import { type DefaultBackendArguments } from '@/types/backend';
+import type { Nullable } from '@/types';
+import type { LogLevel } from '@/utils/log-level';
+import type { Version } from '@/types/action';
+import type { DefaultBackendArguments } from '@/types/backend';
 
 let intervalId: any = null;
 
@@ -16,7 +16,7 @@ export const useMainStore = defineStore('main', () => {
   const defaultBackendArguments: Ref<DefaultBackendArguments> = ref({
     maxLogfilesNum: 0,
     maxSizeInMbAllLogs: 0,
-    sqliteInstructions: 0
+    sqliteInstructions: 0,
   });
 
   const { info, ping } = useInfoApi();
@@ -47,7 +47,7 @@ export const useMainStore = defineStore('main', () => {
       set(version, {
         version: appVersion.ourVersion || '',
         latestVersion: appVersion.latestVersion || '',
-        downloadUrl: appVersion.downloadUrl || ''
+        downloadUrl: appVersion.downloadUrl || '',
       });
     }
   };
@@ -57,7 +57,7 @@ export const useMainStore = defineStore('main', () => {
       dataDirectory: appDataDirectory,
       logLevel: level,
       acceptDockerRisk,
-      backendDefaultArguments
+      backendDefaultArguments,
     } = await info(false);
 
     set(dataDirectory, appDataDirectory);
@@ -69,18 +69,17 @@ export const useMainStore = defineStore('main', () => {
 
   const connect = async (payload?: string | null): Promise<void> => {
     let count = 0;
-    if (intervalId) {
+    if (intervalId)
       clearInterval(intervalId);
-    }
 
     const updateApi = (payload?: Nullable<string>): void => {
       const interopBackendUrl = window.interop?.serverUrl();
       let backendUrl = api.defaultServerUrl;
-      if (payload) {
+      if (payload)
         backendUrl = payload;
-      } else if (interopBackendUrl) {
+      else if (interopBackendUrl)
         backendUrl = interopBackendUrl;
-      }
+
       api.setup(backendUrl);
     };
 
@@ -96,9 +95,11 @@ export const useMainStore = defineStore('main', () => {
           await getInfo();
           await getVersion();
         }
-      } catch (e: any) {
-        logger.error(e);
-      } finally {
+      }
+      catch (error: any) {
+        logger.error(error);
+      }
+      finally {
         count++;
         if (count > 20) {
           clearInterval(intervalId);
@@ -132,16 +133,17 @@ export const useMainStore = defineStore('main', () => {
     getVersion,
     getInfo,
     setConnected,
-    setConnectionFailure
+    setConnectionFailure,
   };
 });
 
-const defaultVersion = (): Version => ({
-  version: '',
-  latestVersion: '',
-  downloadUrl: ''
-});
-
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useMainStore, import.meta.hot));
+function defaultVersion(): Version {
+  return {
+    version: '',
+    latestVersion: '',
+    downloadUrl: '',
+  };
 }
+
+if (import.meta.hot)
+  import.meta.hot.accept(acceptHMRUpdate(useMainStore, import.meta.hot));

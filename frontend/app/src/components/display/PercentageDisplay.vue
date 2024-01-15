@@ -8,21 +8,19 @@ const props = withDefaults(
   {
     value: undefined,
     justify: 'end',
-    assetPadding: 0
-  }
+    assetPadding: 0,
+  },
 );
 
 const { assetPadding, value } = toRefs(props);
 const { shouldShowPercentage } = storeToRefs(useSessionSettingsStore());
 
 const displayValue = computed<string>(() => {
-  if (!get(shouldShowPercentage)) {
+  if (!get(shouldShowPercentage))
     return (Math.random() * 100 + 1).toFixed(2);
-  }
 
-  if (!isDefined(value)) {
+  if (!isDefined(value))
     return '-';
-  }
 
   return get(value).replace('%', '');
 });
@@ -30,12 +28,12 @@ const displayValue = computed<string>(() => {
 const assetStyle = computed<Record<string, string | undefined>>(() => {
   if (!get(assetPadding)) {
     return {
-      'max-width': '0ch'
+      'max-width': '0ch',
     };
   }
   return {
-    width: `${get(assetPadding) + 1}ch`,
-    'text-align': 'start'
+    'width': `${get(assetPadding) + 1}ch`,
+    'text-align': 'start',
   };
 });
 
@@ -47,15 +45,15 @@ const { t } = useI18n();
     class="flex percentage-display flex-nowrap"
     :class="{
       'justify-start': justify === 'start',
-      'justify-end': justify === 'end'
+      'justify-end': justify === 'end',
     }"
   >
     <div
       class="percentage-display__amount"
       :class="{
-        blur: !shouldShowPercentage,
+        'blur': !shouldShowPercentage,
         'text-end': justify === 'end',
-        'text-start': justify === 'start'
+        'text-start': justify === 'start',
       }"
     >
       {{ displayValue }}

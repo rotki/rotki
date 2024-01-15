@@ -14,26 +14,26 @@ const props = withDefaults(
     labelColspan: 1,
     leftPatchColspan: 0,
     rightPatchColspan: 0,
-    isMobile: false
-  }
+    isMobile: false,
+  },
 );
 
-const { className, isMobile, leftPatchColspan, rightPatchColspan } =
-  toRefs(props);
+const { className, isMobile, leftPatchColspan, rightPatchColspan }
+  = toRefs(props);
 
 const slots = useSlots();
 
 const formattedClassName = computed(() => {
-  const propClassName =
-    typeof className.value === 'object'
+  const propClassName
+    = typeof className.value === 'object'
       ? className.value
       : {
-          [className.value]: true
+          [className.value]: true,
         };
 
   return {
     'flex justify-between': isMobile.value,
-    ...propClassName
+    ...propClassName,
   };
 });
 
@@ -46,8 +46,14 @@ const rightColspan = useToNumber(rightPatchColspan);
     class="font-medium append-row hover:bg-transparent"
     :class="formattedClassName"
   >
-    <td v-if="leftColspan >= 1 && !isMobile" :colspan="leftColspan" />
-    <td :colspan="labelColspan" :class="{ 'flex align-center': isMobile }">
+    <td
+      v-if="leftColspan >= 1 && !isMobile"
+      :colspan="leftColspan"
+    />
+    <td
+      :colspan="labelColspan"
+      :class="{ 'flex align-center': isMobile }"
+    >
       <slot name="label">
         {{ label }}
       </slot>
@@ -60,6 +66,9 @@ const rightColspan = useToNumber(rightPatchColspan);
     >
       <slot />
     </td>
-    <td v-if="rightColspan >= 1 && !isMobile" :colspan="rightColspan" />
+    <td
+      v-if="rightColspan >= 1 && !isMobile"
+      :colspan="rightColspan"
+    />
   </tr>
 </template>

@@ -1,7 +1,4 @@
-export const useQueryStatusStore = <T>(
-  isStatusFinished: (item: T) => boolean,
-  createKey: (item: T) => string
-) => {
+export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, createKey: (item: T) => string) {
   const queryStatus: Ref<Record<string, T>> = ref({});
 
   const resetQueryStatus = (): void => {
@@ -13,7 +10,7 @@ export const useQueryStatusStore = <T>(
     const addresses = Object.keys(statuses);
 
     return addresses.every((address: string) =>
-      isStatusFinished(statuses[address])
+      isStatusFinished(statuses[address]),
     );
   });
 
@@ -23,9 +20,9 @@ export const useQueryStatusStore = <T>(
       queryStatus,
       Object.fromEntries(
         Object.entries(statuses).filter(
-          ([_, status]) => createKey(status) === key
-        )
-      )
+          ([_, status]) => createKey(status) === key,
+        ),
+      ),
     );
   };
 
@@ -33,6 +30,6 @@ export const useQueryStatusStore = <T>(
     queryStatus,
     isAllFinished,
     removeQueryStatus,
-    resetQueryStatus
+    resetQueryStatus,
   };
-};
+}

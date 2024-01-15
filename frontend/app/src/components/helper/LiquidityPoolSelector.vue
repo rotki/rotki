@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type LpType } from '@rotki/common/lib/defi';
-import { type XswapPool } from '@rotki/common/lib/defi/xswap';
+import type { LpType } from '@rotki/common/lib/defi';
+import type { XswapPool } from '@rotki/common/lib/defi/xswap';
 
 const props = withDefaults(
   defineProps<{
@@ -14,8 +14,8 @@ const props = withDefaults(
   {
     outlined: false,
     dense: false,
-    noPadding: false
-  }
+    noPadding: false,
+  },
 );
 
 const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
@@ -25,18 +25,18 @@ const input = (value: string[]) => emit('input', value);
 
 const { getPoolName } = useLiquidityPosition();
 
-const filter = (item: XswapPool, queryText: string) => {
+function filter(item: XswapPool, queryText: string) {
   const searchString = queryText.toLocaleLowerCase();
   const name = getPoolName(get(type), item.assets).toLowerCase();
   return name.includes(searchString);
-};
+}
 
-const remove = (asset: XswapPool) => {
+function remove(asset: XswapPool) {
   const addresses = [...get(value)];
   const index = addresses.indexOf(asset.address);
   addresses.splice(index, 1);
   input(addresses);
-};
+}
 
 const { t } = useI18n();
 </script>

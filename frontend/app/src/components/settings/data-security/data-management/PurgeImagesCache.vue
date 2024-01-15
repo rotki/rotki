@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
 import { PurgeableImageCache } from '@/types/session/purge';
+import type { ComputedRef, Ref } from 'vue';
 
 const { t } = useI18n();
 
 const purgable = [
   {
     id: PurgeableImageCache.ASSET_ICONS,
-    text: t('data_management.purge_images_cache.label.asset_icons')
+    text: t('data_management.purge_images_cache.label.asset_icons'),
   },
   {
     id: PurgeableImageCache.ENS_AVATARS,
-    text: t('data_management.purge_images_cache.label.ens_avatars')
-  }
+    text: t('data_management.purge_images_cache.label.ens_avatars'),
+  },
 ];
 
 const source: Ref<PurgeableImageCache> = ref(PurgeableImageCache.ASSET_ICONS);
@@ -23,7 +23,7 @@ const ensToClear: Ref<string[]> = ref([]);
 const { ensNames } = storeToRefs(useAddressesNamesStore());
 
 const ensNamesList: ComputedRef<string[]> = computed(
-  () => Object.values(get(ensNames)).filter(value => !!value) as string[]
+  () => Object.values(get(ensNames)).filter(value => !!value) as string[],
 );
 
 const { clearIconCache } = useAssetIconApi();
@@ -31,38 +31,39 @@ const { setLastRefreshedAssetIcon } = useAssetIcon();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
 const { setLastRefreshedAvatar } = useAddressesNamesStore();
 
-const purgeSource = async (source: PurgeableImageCache) => {
+async function purgeSource(source: PurgeableImageCache) {
   if (source === PurgeableImageCache.ASSET_ICONS) {
     const asset = get(assetToClear);
     await clearIconCache(asset ? [asset] : null);
     setLastRefreshedAssetIcon();
     set(assetToClear, '');
-  } else {
+  }
+  else {
     const ens = get(ensToClear);
     await clearEnsAvatarCache(ens.length > 0 ? ens : null);
     setLastRefreshedAvatar();
     set(ensToClear, []);
   }
-};
+}
 
-const { status, pending, showConfirmation } =
-  useCacheClear<PurgeableImageCache>(
+const { status, pending, showConfirmation }
+  = useCacheClear<PurgeableImageCache>(
     purgable,
     purgeSource,
     (source: string) => ({
       success: t('data_management.purge_images_cache.success', {
-        source
+        source,
       }),
       error: t('data_management.purge_images_cache.error', {
-        source
-      })
+        source,
+      }),
     }),
     (source: string) => ({
       title: t('data_management.purge_images_cache.confirm.title'),
       message: t('data_management.purge_images_cache.confirm.message', {
-        source
-      })
-    })
+        source,
+      }),
+    }),
   );
 
 const css = useCssModule();
@@ -137,7 +138,10 @@ const css = useCssModule();
       </RuiTooltip>
     </div>
 
-    <ActionStatusIndicator v-if="status" :status="status" />
+    <ActionStatusIndicator
+      v-if="status"
+      :status="status"
+    />
   </div>
 </template>
 

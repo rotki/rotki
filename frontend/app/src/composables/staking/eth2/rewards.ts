@@ -1,31 +1,31 @@
-import {
-  type Eth2StakingRewards,
-  type EthStakingPayload
+import type {
+  Eth2StakingRewards,
+  EthStakingPayload,
 } from '@rotki/common/lib/staking/eth2';
-import { type MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from '@vueuse/core';
 
-export const useEth2Rewards = () => {
+export function useEth2Rewards() {
   const { fetchStakingRewards } = useEth2StakingStore();
 
   const {
     state: rewards,
     execute,
-    isLoading: loading
+    isLoading: loading,
   } = useAsyncState<Eth2StakingRewards, MaybeRef<EthStakingPayload>[]>(
     fetchStakingRewards,
     {
       executionLayerRewards: Zero,
-      withdrawnConsensusLayerRewards: Zero
+      withdrawnConsensusLayerRewards: Zero,
     },
     {
       immediate: false,
       resetOnExecute: false,
-      delay: 0
-    }
+      delay: 0,
+    },
   );
 
   const fetchRewards = async (
-    payload: MaybeRef<EthStakingPayload>
+    payload: MaybeRef<EthStakingPayload>,
   ): Promise<void> => {
     await execute(0, payload);
   };
@@ -33,6 +33,6 @@ export const useEth2Rewards = () => {
   return {
     loading,
     rewards,
-    fetchRewards
+    fetchRewards,
   };
-};
+}

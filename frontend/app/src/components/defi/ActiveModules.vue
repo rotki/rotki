@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import { type Nullable } from '@/types';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import type { Ref } from 'vue';
+import type { Nullable } from '@/types';
 
 interface ModuleWithStatus {
   readonly identifier: Module;
@@ -27,44 +27,47 @@ const moduleStatus = computed(() => {
   return get(modules)
     .map(module => ({
       identifier: module,
-      enabled: active.includes(module)
+      enabled: active.includes(module),
     }))
     .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
 });
 
-const onModulePress = (module: ModuleWithStatus) => {
+function onModulePress(module: ModuleWithStatus) {
   if (module.enabled) {
     set(manageModule, module.identifier);
-  } else {
+  }
+  else {
     showConfirmation();
     set(confirmEnable, module.identifier);
   }
-};
+}
 
-const enableModule = async () => {
+async function enableModule() {
   const module = get(confirmEnable);
   assert(module !== null);
   await update({
-    activeModules: [...get(activeModules), module]
+    activeModules: [...get(activeModules), module],
   });
   set(confirmEnable, null);
-};
+}
 
-const name = (module: string): string => {
+function name(module: string): string {
   const data = supportedModules.find(value => value.identifier === module);
   return data?.name ?? '';
-};
+}
 
-const icon = (module: Module): string => {
+function icon(module: Module): string {
   const data = supportedModules.find(value => value.identifier === module);
   return data?.icon ?? '';
-};
+}
 
 const { t } = useI18n();
 
-const getName = (module: Nullable<Module>) => ({
-  name: module ? name(module) : ''
-});
+function getName(module: Nullable<Module>) {
+  return {
+    name: module ? name(module) : '',
+  };
+}
 
 onMounted(async () => {
   await fetchQueriedAddresses();
@@ -72,31 +75,37 @@ onMounted(async () => {
 
 const { show } = useConfirmStore();
 
-const showConfirmation = () => {
+function showConfirmation() {
   show(
     {
       title: t('active_modules.enable.title'),
       message: t(
         'active_modules.enable.description',
-        getName(get(confirmEnable))
+        getName(get(confirmEnable)),
       ),
-      type: 'info'
+      type: 'info',
     },
-    enableModule
+    enableModule,
   );
-};
+}
 </script>
 
 <template>
   <div>
-    <RuiCard no-padding class="px-1 py-0.5 bg-white dark:bg-rui-grey-900">
+    <RuiCard
+      no-padding
+      class="px-1 py-0.5 bg-white dark:bg-rui-grey-900"
+    >
       <div class="flex items-center justify-center">
         <div
           v-for="module in moduleStatus"
           :key="module.identifier"
           class="flex"
         >
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               <RuiButton
                 variant="text"

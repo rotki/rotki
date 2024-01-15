@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   PrioritizedListData,
-  type PrioritizedListItemData
+  type PrioritizedListItemData,
 } from '@/types/settings/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
@@ -10,35 +10,34 @@ import {
   GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM,
   HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
-  type PrioritizedListId
+  type PrioritizedListId,
 } from '@/types/settings/prioritized-list-id';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
 const { resetAddressesNames } = useAddressesNamesStore();
 
-const finishEditing = async () => {
+async function finishEditing() {
   resetCurrentAddressNamePriorities();
   resetAddressesNames();
-};
+}
 
-const resetCurrentAddressNamePriorities = () => {
+function resetCurrentAddressNamePriorities() {
   set(currentAddressNamePriorities, get(addressNamePriority));
-};
+}
 
-const availableCurrentAddressNamePriorities =
-  (): PrioritizedListData<PrioritizedListId> => {
-    const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
-      BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
-      ENS_NAMES_PRIO_LIST_ITEM,
-      ETHEREUM_TOKENS_PRIO_LIST_ITEM,
-      GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM,
-      HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
-      PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM
-    ];
+function availableCurrentAddressNamePriorities(): PrioritizedListData<PrioritizedListId> {
+  const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
+    BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
+    ENS_NAMES_PRIO_LIST_ITEM,
+    ETHEREUM_TOKENS_PRIO_LIST_ITEM,
+    GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM,
+    HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
+    PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
+  ];
 
-    return new PrioritizedListData(itemData);
-  };
+  return new PrioritizedListData(itemData);
+}
 
 onMounted(() => {
   resetCurrentAddressNamePriorities();

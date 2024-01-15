@@ -4,12 +4,12 @@ import {
   Eth2Details,
   type Eth2StakingRewards,
   type EthStakingPayload,
-  type EthStakingRewardsPayload
+  type EthStakingRewardsPayload,
 } from '@rotki/common/lib/staking/eth2';
-import { type MaybeRef } from '@vueuse/core';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { MaybeRef } from '@vueuse/core';
+import type { TaskMeta } from '@/types/task';
 
 export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const details: Ref<Eth2Details> = ref([]);
@@ -23,14 +23,13 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
   const fetchStakingDetails = async (
     refresh = false,
-    payload: EthStakingPayload = {}
+    payload: EthStakingPayload = {},
   ): Promise<void> => {
-    if (!get(premium)) {
+    if (!get(premium))
       return;
-    }
 
     const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-      Section.STAKING_ETH2
+      Section.STAKING_ETH2,
     );
 
     const ignoreCache = !fetchDisabled(refresh);
@@ -41,26 +40,27 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       const taskType = TaskType.STAKING_ETH2;
       const { taskId } = await api.fetchStakingDetails({
         ...payload,
-        ignoreCache
+        ignoreCache,
       });
       const { result } = await awaitTask<Eth2Details, TaskMeta>(
         taskId,
         taskType,
         {
-          title: t('actions.staking.eth2.task.title')
-        }
+          title: t('actions.staking.eth2.task.title'),
+        },
       );
 
       set(details, Eth2Details.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
         notify({
           title: t('actions.staking.eth2.error.title'),
           message: t('actions.staking.eth2.error.description', {
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
       resetStatus();
@@ -69,29 +69,28 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   const fetchStakingRewards = async (
-    payload: MaybeRef<EthStakingRewardsPayload> = {}
+    payload: MaybeRef<EthStakingRewardsPayload> = {},
   ): Promise<Eth2StakingRewards> => api.fetchStakingDetailRewards(get(payload));
 
   const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
-    if (!get(premium)) {
+    if (!get(premium))
       return false;
-    }
+
     const taskType = TaskType.STAKING_ETH2_STATS;
 
     const { fetchDisabled, setStatus } = useStatusUpdater(
-      Section.STAKING_ETH2_STATS
+      Section.STAKING_ETH2_STATS,
     );
 
-    if (fetchDisabled(userInitiated)) {
+    if (fetchDisabled(userInitiated))
       return false;
-    }
 
     const defaults: Eth2DailyStatsPayload = {
       limit: 0,
       offset: 0,
       ascending: [false],
       orderByAttributes: ['timestamp'],
-      onlyCache: false
+      onlyCache: false,
     };
 
     try {
@@ -99,27 +98,28 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       const taskMeta: TaskMeta = {
         title: t('actions.eth2_staking_stats.task.title').toString(),
-        description: t('actions.eth2_staking_stats.task.description').toString()
+        description: t('actions.eth2_staking_stats.task.description').toString(),
       };
 
       await awaitTask<Eth2DailyStats, TaskMeta>(
         taskId,
         taskType,
         taskMeta,
-        true
+        true,
       );
       setStatus(Status.LOADED);
       return true;
-    } catch (e: any) {
+    }
+    catch (error: any) {
       setStatus(Status.NONE);
 
-      if (!isTaskCancelled(e)) {
+      if (!isTaskCancelled(error)) {
         notify({
           title: t('actions.eth2_staking_stats.error.title').toString(),
           message: t('actions.eth2_staking_stats.error.message', {
-            message: e.message
+            message: error.message,
           }).toString(),
-          display: true
+          display: true,
         });
       }
     }
@@ -128,13 +128,13 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   const fetchStakingStats = async (
-    payload: MaybeRef<Eth2DailyStatsPayload>
+    payload: MaybeRef<Eth2DailyStatsPayload>,
   ): Promise<Eth2DailyStats> => {
     assert(get(premium));
 
     return await api.fetchStakingStats({
       ...get(payload),
-      onlyCache: true
+      onlyCache: true,
     });
   };
 
@@ -143,10 +143,9 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     fetchStakingDetails,
     fetchStakingRewards,
     fetchStakingStats,
-    syncStakingStats
+    syncStakingStats,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useEth2StakingStore, import.meta.hot));
-}

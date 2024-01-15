@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = withDefaults(
   defineProps<{
     onlyChains?: Blockchain[];
   }>(),
   {
-    onlyChains: () => []
-  }
+    onlyChains: () => [],
+  },
 );
 
 const { onlyChains } = toRefs(props);
 
 const { t } = useI18n();
 
-const { queryingLength, length, isAllFinished } =
-  useTransactionQueryStatus(onlyChains);
+const { queryingLength, length, isAllFinished }
+  = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
@@ -27,7 +27,7 @@ const { queryingLength, length, isAllFinished } =
     <template #running>
       {{
         t('transactions.query_status.group', {
-          length: queryingLength
+          length: queryingLength,
         })
       }}
     </template>

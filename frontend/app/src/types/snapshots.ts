@@ -7,7 +7,7 @@ export const BalanceSnapshot = z.object({
   category: z.nativeEnum(BalanceType),
   assetIdentifier: z.string(),
   amount: NumericString,
-  usdValue: NumericString
+  usdValue: NumericString,
 });
 
 export type BalanceSnapshot = z.infer<typeof BalanceSnapshot>;
@@ -23,7 +23,7 @@ export interface BalanceSnapshotPayload {
 export const LocationDataSnapshot = z.object({
   timestamp: z.number(),
   location: z.string(),
-  usdValue: NumericString
+  usdValue: NumericString,
 });
 
 export type LocationDataSnapshot = z.infer<typeof LocationDataSnapshot>;
@@ -36,7 +36,7 @@ export interface LocationDataSnapshotPayload {
 
 export const Snapshot = z.object({
   balancesSnapshot: z.array(BalanceSnapshot),
-  locationDataSnapshot: z.array(LocationDataSnapshot)
+  locationDataSnapshot: z.array(LocationDataSnapshot),
 });
 
 export type Snapshot = z.infer<typeof Snapshot>;

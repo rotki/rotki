@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { convertToTimestamp } from '@/utils/date';
-import { type HistoricalPriceFormPayload } from '@/types/prices';
 import { toMessages } from '@/utils/validation';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{
   value: HistoricalPriceFormPayload;
@@ -17,7 +17,7 @@ const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const date = computed(({ value }) =>
-  value.timestamp ? convertFromTimestamp(value.timestamp) : ''
+  value.timestamp ? convertFromTimestamp(value.timestamp) : '',
 );
 const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
 const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
@@ -25,15 +25,15 @@ const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
 const price = ref<string>('');
 const numericPrice = bigNumberifyFromRef(price);
 
-const input = (price: Partial<HistoricalPriceFormPayload>) => {
+function input(price: Partial<HistoricalPriceFormPayload>) {
   emit('input', { ...get(value), ...price });
-};
+}
 
-watch(value, val => {
+watch(value, (val) => {
   set(price, val.price);
 });
 
-watch(price, val => {
+watch(price, (val) => {
   input({ price: val });
 });
 
@@ -47,27 +47,27 @@ const rules = {
   fromAsset: {
     required: helpers.withMessage(
       t('price_form.from_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   toAsset: {
     required: helpers.withMessage(
       t('price_form.to_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   price: {
     required: helpers.withMessage(
       t('price_form.price_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   date: {
     required: helpers.withMessage(
       t('price_form.date_non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation } = useHistoricPriceForm();
@@ -78,9 +78,9 @@ const v$ = setValidation(
     fromAsset: computed(() => get(value).fromAsset),
     toAsset: computed(() => get(value).toAsset),
     price,
-    date
+    date,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 </script>
 
@@ -128,7 +128,10 @@ const v$ = setValidation(
       </template>
       <template #price>
         <strong>
-          <AmountDisplay :value="numericPrice" :tooltip="false" />
+          <AmountDisplay
+            :value="numericPrice"
+            :tooltip="false"
+          />
         </strong>
       </template>
     </i18n>

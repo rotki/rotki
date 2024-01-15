@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 const amountExample = bigNumberify(123456.789);
 const { t } = useI18n();
 </script>
@@ -39,7 +39,10 @@ const { t } = useI18n();
         <strong>
           {{ t('general_settings.amount.label.resulting_format') }}
         </strong>
-        <AmountDisplay :value="amountExample" show-currency="symbol" />
+        <AmountDisplay
+          :value="amountExample"
+          show-currency="symbol"
+        />
       </div>
 
       <RoundingSettings />

@@ -1,43 +1,42 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import { RefreshableCache } from '@/types/session/purge';
+import type { Ref } from 'vue';
 
 const { t } = useI18n();
 
 const refreshable = [
   {
     id: RefreshableCache.GENERAL_CACHE,
-    text: t('data_management.refresh_cache.label.general_cache')
-  }
+    text: t('data_management.refresh_cache.label.general_cache'),
+  },
 ];
 
 const source: Ref<RefreshableCache> = ref(RefreshableCache.GENERAL_CACHE);
 
 const { refreshGeneralCache } = useSessionPurge();
 
-const refreshSource = async (source: RefreshableCache) => {
-  if (source === RefreshableCache.GENERAL_CACHE) {
+async function refreshSource(source: RefreshableCache) {
+  if (source === RefreshableCache.GENERAL_CACHE)
     await refreshGeneralCache();
-  }
-};
+}
 
 const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
   refreshable,
   refreshSource,
   (source: string) => ({
     success: t('data_management.refresh_cache.success', {
-      source
+      source,
     }),
     error: t('data_management.refresh_cache.error', {
-      source
-    })
+      source,
+    }),
   }),
   (source: string) => ({
     title: t('data_management.refresh_cache.confirm.title'),
     message: t('data_management.refresh_cache.confirm.message', {
-      source
-    })
-  })
+      source,
+    }),
+  }),
 );
 </script>
 
@@ -65,7 +64,10 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
         :disabled="pending"
       />
 
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="text"
@@ -81,6 +83,9 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       </RuiTooltip>
     </div>
 
-    <ActionStatusIndicator v-if="status" :status="status" />
+    <ActionStatusIndicator
+      v-if="status"
+      :status="status"
+    />
   </div>
 </template>

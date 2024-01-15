@@ -2,7 +2,7 @@
 import {
   TimeFramePeriod,
   TimeFramePersist,
-  type TimeFrameSetting
+  type TimeFrameSetting,
 } from '@rotki/common/lib/settings/graphs';
 
 const props = defineProps<{
@@ -21,14 +21,15 @@ const internalValue = computed({
   },
   set(value: string) {
     assert(
-      isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value)
+      isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value),
     );
     emit('input', value);
-  }
+  },
 });
 
-const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
-  isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+function worksWithoutPremium(period: TimeFrameSetting): boolean {
+  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+}
 
 const { t } = useI18n();
 </script>

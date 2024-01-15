@@ -9,7 +9,10 @@ const { t } = useI18n();
     <template #hint>
       {{ t('import_data.cointracking.preferred') }}
     </template>
-    <i18n tag="span" path="import_data.note">
+    <i18n
+      tag="span"
+      path="import_data.note"
+    >
       <strong>{{ t('import_data.cointracking.name') }}</strong>
     </i18n>
     <ul class="list-disc">

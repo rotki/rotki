@@ -6,14 +6,14 @@ const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
 
 const { ksmRpcEndpoint: ksmRpc } = storeToRefs(useGeneralSettingsStore());
 
-const ksmSuccessMessage = (endpoint: string) => {
+function ksmSuccessMessage(endpoint: string) {
   if (endpoint) {
     return t('general_settings.validation.ksm_rpc.success_set', {
-      endpoint
+      endpoint,
     });
   }
   return t('general_settings.validation.ksm_rpc.success_unset');
-};
+}
 
 onBeforeMount(() => {
   set(ksmRpcEndpoint, get(ksmRpc) || Defaults.KSM_RPC_ENDPOINT);

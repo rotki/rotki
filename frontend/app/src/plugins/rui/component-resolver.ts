@@ -1,4 +1,4 @@
-import { type ComponentResolver } from 'unplugin-vue-components';
+import type { ComponentResolver } from 'unplugin-vue-components';
 
 export function RuiComponentResolver(): ComponentResolver {
   return {
@@ -8,9 +8,9 @@ export function RuiComponentResolver(): ComponentResolver {
       if (name.startsWith(prefix)) {
         return {
           name,
-          from: '@rotki/ui-library-compat/components'
+          from: '@rotki/ui-library-compat/components',
         };
       }
-    }
+    },
   };
 }

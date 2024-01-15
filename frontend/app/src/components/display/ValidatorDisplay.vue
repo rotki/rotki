@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { truncateAddress } from '@/utils/truncate';
+import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 
 const props = withDefaults(
   defineProps<{
@@ -8,8 +8,8 @@ const props = withDefaults(
     horizontal?: boolean;
   }>(),
   {
-    horizontal: false
-  }
+    horizontal: false,
+  },
 );
 
 const { horizontal } = toRefs(props);
@@ -24,15 +24,23 @@ const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
   <div
     :class="{
       flex: horizontal,
-      blur: !shouldShowAmount
+      blur: !shouldShowAmount,
     }"
   >
     <div class="font-medium text-truncate">
       {{ truncateAddress(scrambleHex(validator.publicKey), length) }}
     </div>
     <div>
-      <span v-if="horizontal" class="px-1"> - </span>
-      <span v-else class="text-caption">
+      <span
+        v-if="horizontal"
+        class="px-1"
+      >
+        -
+      </span>
+      <span
+        v-else
+        class="text-caption"
+      >
         {{ t('common.validator_index') }}:
       </span>
       {{ scrambleIdentifier(validator.validatorIndex) }}

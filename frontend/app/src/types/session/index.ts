@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { type TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { type Module } from '@/types/modules';
-import { type CamelCase } from '@/types/common';
+import type { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import type { Module } from '@/types/modules';
+import type { CamelCase } from '@/types/common';
 
 export const PeriodicClientQueryResult = z.object({
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
-  connectedNodes: z.record(z.array(z.string()))
+  connectedNodes: z.record(z.array(z.string())),
 });
 
 export type PeriodicClientQueryResult = z.infer<
@@ -15,7 +15,7 @@ export type PeriodicClientQueryResult = z.infer<
 
 export const Messages = z.object({
   warnings: z.array(z.string()),
-  errors: z.array(z.string())
+  errors: z.array(z.string()),
 });
 
 export type Messages = z.infer<typeof Messages>;
@@ -23,7 +23,7 @@ export type Messages = z.infer<typeof Messages>;
 export enum PrivacyMode {
   NORMAL = 0,
   SEMI_PRIVATE = 1,
-  PRIVATE = 2
+  PRIVATE = 2,
 }
 
 export interface Pinned {
@@ -57,18 +57,18 @@ export const WatcherOpTypes = z.enum(['lt', 'le', 'gt', 'ge']);
 export type WatcherOpTypes = z.infer<typeof WatcherOpTypes>;
 
 export const BaseWatcher = z.object({
-  identifier: z.string()
+  identifier: z.string(),
 });
 
 export const MakerVaultCollateralizationRatioArgs = z.object({
   ratio: z.string(),
   op: WatcherOpTypes,
-  vaultId: z.string()
+  vaultId: z.string(),
 });
 
 export const MakerVaultCollateralizationRatioWatcher = BaseWatcher.extend({
   type: z.literal(WatcherType),
-  args: MakerVaultCollateralizationRatioArgs
+  args: MakerVaultCollateralizationRatioArgs,
 });
 
 export const Watcher = MakerVaultCollateralizationRatioWatcher;

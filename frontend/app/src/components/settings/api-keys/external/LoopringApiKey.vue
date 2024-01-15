@@ -8,8 +8,8 @@ const { t } = useI18n();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { fetchLoopringBalances } = useEthBalancesStore();
-const { loading, apiKey, actionStatus, save, confirmDelete } =
-  useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete }
+  = useExternalApiKeys(t);
 
 const key = apiKey(name);
 const status = actionStatus(name);
@@ -40,12 +40,19 @@ const navigateToModules = () => useRouter().push(Routes.SETTINGS_MODULES);
       @save="save($event)"
       @delete-key="confirmDelete($event, refresh)"
     >
-      <RuiAlert v-if="key && !isLoopringActive" type="warning">
+      <RuiAlert
+        v-if="key && !isLoopringActive"
+        type="warning"
+      >
         <div class="flex gap-4 items-center">
           <div class="grow">
             {{ t('external_services.loopring.not_enabled') }}
           </div>
-          <RuiButton size="sm" color="primary" @click="navigateToModules()">
+          <RuiButton
+            size="sm"
+            color="primary"
+            @click="navigateToModules()"
+          >
             {{ t('external_services.loopring.settings') }}
           </RuiButton>
         </div>

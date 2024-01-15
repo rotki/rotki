@@ -11,13 +11,13 @@ beforeAll(() => {
   Vue.use(Vuetify);
   Vue.use(PiniaVuePlugin);
   server.listen({
-    onUnhandledRequest: 'warn'
+    onUnhandledRequest: 'warn',
   });
 
   vi.mock('@/composables/api/assets/info', () => ({
     useAssetInfoApi: vi.fn().mockReturnValue({
-      assetMapping: vi.fn().mockResolvedValue({})
-    })
+      assetMapping: vi.fn().mockResolvedValue({}),
+    }),
   }));
 
   vi.mock('@/composables/api/balances/price', () => ({
@@ -27,18 +27,18 @@ beforeAll(() => {
       deletePriceCache: vi.fn().mockResolvedValue(1),
       queryHistoricalRate: vi.fn().mockResolvedValue(1),
       queryFiatExchangeRates: vi.fn().mockResolvedValue(1),
-      queryPrices: vi.fn().mockResolvedValue(1)
-    })
+      queryPrices: vi.fn().mockResolvedValue(1),
+    }),
   }));
 
   vi.mock('@/composables/api/session/queried-addresses', () => ({
-    useQueriedAddressApi: vi.fn().mockReturnValue({})
+    useQueriedAddressApi: vi.fn().mockReturnValue({}),
   }));
 
   vi.mock('@/composables/api/backup', () => ({
     useBackupApi: vi.fn().mockReturnValue({
-      info: vi.fn().mockReturnValue({})
-    })
+      info: vi.fn().mockReturnValue({}),
+    }),
   }));
 
   vi.mock('vue', async () => {
@@ -48,20 +48,20 @@ beforeAll(() => {
     return {
       ...mod,
       useListeners: vi.fn(),
-      useCssModule: vi.fn().mockReturnValue({})
+      useCssModule: vi.fn().mockReturnValue({}),
     };
   });
 
   vi.mock('@vueuse/core', async () => {
-    const mod =
-      await vi.importActual<typeof import('@vueuse/core')>('@vueuse/core');
+    const mod
+      = await vi.importActual<typeof import('@vueuse/core')>('@vueuse/core');
 
     return {
       ...mod,
       useElementBounding: vi
         .fn()
         .mockReturnValue({ left: 0, right: 0, top: 0, bottom: 0 }),
-      useFocus: vi.fn().mockReturnValue({ focused: false })
+      useFocus: vi.fn().mockReturnValue({ focused: false }),
     };
   });
 
@@ -69,28 +69,28 @@ beforeAll(() => {
     useI18n: () => ({
       t: mockT,
       te: mockT,
-      locale: ref('')
-    })
+      locale: ref(''),
+    }),
   }));
 
   vi.mock('@/store/websocket', () => ({
     useWebsocketStore: () => ({
       connected: ref(false),
       connect: vi.fn(),
-      disconnect: vi.fn()
-    })
+      disconnect: vi.fn(),
+    }),
   }));
 
   vi.mock('@/utils/blockie', () => ({
     createBlockie: vi
       .fn()
-      .mockImplementation(({ seed }) => `${seed.toLowerCase()}face`)
+      .mockImplementation(({ seed }) => `${seed.toLowerCase()}face`),
   }));
 
-  global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
     unobserve: vi.fn(),
-    disconnect: vi.fn()
+    disconnect: vi.fn(),
   }));
 });
 

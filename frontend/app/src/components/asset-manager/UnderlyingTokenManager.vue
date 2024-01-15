@@ -22,75 +22,74 @@ const rules = {
   address: {
     required: helpers.withMessage(
       t('underlying_token_manager.validation.address_non_empty'),
-      required
+      required,
     ),
     isValidEthAddress: helpers.withMessage(
       t('underlying_token_manager.validation.valid'),
-      isValidEthAddress
-    )
+      isValidEthAddress,
+    ),
   },
   weight: {
     required: helpers.withMessage(
       t('underlying_token_manager.validation.non_empty'),
-      required
+      required,
     ),
     notNaN: helpers.withMessage(
       t('underlying_token_manager.validation.not_valid'),
-      numeric
+      numeric,
     ),
     minMax: helpers.withMessage(
       t('underlying_token_manager.validation.out_of_range'),
-      between(1, 100)
-    )
-  }
+      between(1, 100),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
     address: underlyingAddress,
-    weight: underlyingWeight
+    weight: underlyingWeight,
   },
-  { $autoDirty: true, $stopPropagation: true }
+  { $autoDirty: true, $stopPropagation: true },
 );
 
-const addToken = () => {
+function addToken() {
   const underlyingTokens = [...get(value)];
   const index = underlyingTokens.findIndex(
-    ({ address }) => address === get(underlyingAddress)
+    ({ address }) => address === get(underlyingAddress),
   );
 
   const token = {
     address: get(underlyingAddress),
     tokenKind: get(tokenKind),
-    weight: get(underlyingWeight)
+    weight: get(underlyingWeight),
   };
 
-  if (index >= 0) {
+  if (index >= 0)
     underlyingTokens[index] = token;
-  } else {
+  else
     underlyingTokens.push(token);
-  }
 
   get(v$).$reset();
   input(underlyingTokens);
-};
+}
 
-const editToken = (token: UnderlyingToken) => {
+function editToken(token: UnderlyingToken) {
   set(underlyingAddress, token.address);
   set(tokenKind, token.tokenKind);
   set(underlyingWeight, token.weight);
   deleteToken(token.address);
-};
+}
 
-const deleteToken = (address: string) => {
+function deleteToken(address: string) {
   const underlyingTokens = [...get(value)];
   input(
     underlyingTokens.filter(
-      ({ address: tokenAddress }) => tokenAddress !== address
-    )
+      ({ address: tokenAddress }) => tokenAddress !== address,
+    ),
   );
-};
+}
 </script>
 
 <template>
@@ -133,10 +132,21 @@ const deleteToken = (address: string) => {
           :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append>
-            <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+            <RuiTooltip
+              :popper="{ placement: 'top' }"
+              :open-delay="400"
+            >
               <template #activator>
-                <RuiButton type="button" variant="text" icon size="sm">
-                  <RuiIcon :size="20" name="question-line" />
+                <RuiButton
+                  type="button"
+                  variant="text"
+                  icon
+                  size="sm"
+                >
+                  <RuiIcon
+                    :size="20"
+                    name="question-line"
+                  />
                 </RuiButton>
               </template>
               {{ t('underlying_token_manager.hint') }}
@@ -158,7 +168,10 @@ const deleteToken = (address: string) => {
       </RuiButton>
     </div>
 
-    <SimpleTable height="200px" class="underlying-tokens">
+    <SimpleTable
+      height="200px"
+      class="underlying-tokens"
+    >
       <thead>
         <tr>
           <th>{{ t('common.address') }}</th>
@@ -168,13 +181,20 @@ const deleteToken = (address: string) => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="token in value" :key="token.address">
-          <td class="grow">{{ token.address }}</td>
-          <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
+        <tr
+          v-for="token in value"
+          :key="token.address"
+        >
+          <td class="grow">
+            {{ token.address }}
+          </td>
+          <td class="shrink">
+            {{ token.tokenKind.toUpperCase() }}
+          </td>
           <td class="shrink text-no-wrap">
             {{
               t('underlying_token_manager.tokens.weight_percentage', {
-                weight: token.weight
+                weight: token.weight,
               })
             }}
           </td>

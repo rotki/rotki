@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DefiProtocol } from '@/types/modules';
+import type { DefiProtocol } from '@/types/modules';
 
 interface DefiProtocolInfo {
   readonly identifier: string;
@@ -12,8 +12,9 @@ const props = defineProps<{
 }>();
 const { item } = toRefs(props);
 
-const getIcon = ({ protocol }: DefiProtocolInfo): string =>
-  protocol.startsWith('makerdao') ? 'makerdao' : protocol;
+function getIcon({ protocol }: DefiProtocolInfo): string {
+  return protocol.startsWith('makerdao') ? 'makerdao' : protocol;
+}
 </script>
 
 <template>

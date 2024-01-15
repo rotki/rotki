@@ -21,8 +21,8 @@ const props = withDefaults(
     disabled: false,
     singleAction: false,
     loading: false,
-    maxWidth: '500'
-  }
+    maxWidth: '500',
+  },
 );
 
 const emit = defineEmits<{
@@ -38,11 +38,11 @@ const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);
 
 const primaryText = computed(
-  () => get(primaryAction) || t('common.actions.confirm')
+  () => get(primaryAction) || t('common.actions.confirm'),
 );
 
 const secondaryText = computed(
-  () => get(secondaryAction) || t('common.actions.cancel')
+  () => get(secondaryAction) || t('common.actions.cancel'),
 );
 
 const css = useCssModule();
@@ -59,16 +59,26 @@ const css = useCssModule();
     >
       <RuiCard data-cy="confirm-dialog">
         <template #header>
-          <span class="text-h5" data-cy="dialog-title">
+          <span
+            class="text-h5"
+            data-cy="dialog-title"
+          >
             {{ title }}
           </span>
         </template>
 
         <div class="flex gap-4">
           <div>
-            <RuiIcon :color="color" size="36" :name="icon" />
+            <RuiIcon
+              :color="color"
+              size="36"
+              :name="icon"
+            />
           </div>
-          <div class="text-body-1 pt-1" :class="css.message">
+          <div
+            class="text-body-1 pt-1"
+            :class="css.message"
+          >
             {{ message }}
             <slot />
           </div>

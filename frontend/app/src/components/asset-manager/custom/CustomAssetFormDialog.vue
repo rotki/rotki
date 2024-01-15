@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type CustomAsset } from '@/types/asset';
+import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
   {
     subtitle: '',
     types: () => [],
-    editableItem: null
-  }
+    editableItem: null,
+  },
 );
 
 const { editableItem } = toRefs(props);
@@ -31,6 +31,9 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <CustomAssetForm :types="types" :editable-item="editableItem" />
+    <CustomAssetForm
+      :types="types"
+      :editable-item="editableItem"
+    />
   </BigDialog>
 </template>

@@ -2,7 +2,7 @@
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,
-  type SyncAction
+  type SyncAction,
 } from '@/types/session/sync';
 
 defineProps<{ pending: boolean }>();
@@ -17,14 +17,17 @@ const { premium } = storeToRefs(usePremiumStore());
 const UPLOAD: SyncAction = SYNC_UPLOAD;
 const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
 
-const action = (action: SyncAction) => {
+function action(action: SyncAction) {
   emit('action', action);
-};
+}
 </script>
 
 <template>
   <div class="flex flex-row justify-between gap-1">
-    <RuiTooltip :open-delay="400" class="w-full">
+    <RuiTooltip
+      :open-delay="400"
+      class="w-full"
+    >
       <template #activator>
         <RuiButton
           variant="outlined"
@@ -42,7 +45,10 @@ const action = (action: SyncAction) => {
       <span>{{ t('sync_buttons.upload_tooltip') }}</span>
     </RuiTooltip>
 
-    <RuiTooltip :open-delay="400" class="w-full">
+    <RuiTooltip
+      :open-delay="400"
+      class="w-full"
+    >
       <template #activator>
         <RuiButton
           variant="outlined"

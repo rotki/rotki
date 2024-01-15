@@ -14,16 +14,16 @@ const props = withDefaults(
     subtitle: '',
     noPadding: false,
     noHover: false,
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const avatarSizeClasses = computed(() => {
-  if (props.size === 'md') {
+  if (props.size === 'md')
     return 'w-10 h-10';
-  } else if (props.size === 'lg') {
+  else if (props.size === 'lg')
     return 'w-12 h-12';
-  }
+
   return 'w-8 h-8';
 });
 
@@ -38,8 +38,8 @@ const css = useCssModule();
       css.wrapper,
       {
         [css['with-padding']]: !noPadding,
-        'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover
-      }
+        'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
+      },
     ]"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api

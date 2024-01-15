@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Message } from '@rotki/common/lib/messages';
-import { type HistoryEventRequestPayload } from '@/types/history/events';
+import type { Message } from '@rotki/common/lib/messages';
+import type { HistoryEventRequestPayload } from '@/types/history/events';
 
 const props = defineProps<{
   filters: HistoryEventRequestPayload;
@@ -12,20 +12,20 @@ const { t } = useI18n();
 
 const { appSession, openDirectory } = useInterop();
 
-const { downloadHistoryEventsCSV, exportHistoryEventsCSV } =
-  useHistoryEventsApi();
+const { downloadHistoryEventsCSV, exportHistoryEventsCSV }
+  = useHistoryEventsApi();
 
 const { setMessage } = useMessageStore();
 
-const showExportCSVError = (description: string) => {
+function showExportCSVError(description: string) {
   setMessage({
     title: t('transactions.events.export.csv_export_error').toString(),
     description,
-    success: false
+    success: false,
   });
-};
+}
 
-const createCsv = async (path: string): Promise<void> => {
+async function createCsv(path: string): Promise<void> {
   let message: Message;
   try {
     const success = await exportHistoryEventsCSV(path, get(filters));
@@ -34,54 +34,57 @@ const createCsv = async (path: string): Promise<void> => {
       description: success
         ? t('actions.history_events_export.message.success').toString()
         : t('actions.history_events_export.message.failure').toString(),
-      success
+      success,
     };
-  } catch (e: any) {
+  }
+  catch (error: any) {
     message = {
       title: t('actions.history_events_export.title').toString(),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
   }
   setMessage(message);
-};
+}
 
-const exportCSV = async () => {
+async function exportCSV() {
   try {
     if (appSession) {
       const directory = await openDirectory(
-        t('common.select_directory').toString()
+        t('common.select_directory').toString(),
       );
-      if (!directory) {
+      if (!directory)
         return;
-      }
+
       await createCsv(directory);
-    } else {
+    }
+    else {
       const result = await downloadHistoryEventsCSV(get(filters));
       if (!result.success) {
         showExportCSVError(
-          result.message ??
-            t('transactions.events.export.download_failed').toString()
+          result.message
+          ?? t('transactions.events.export.download_failed').toString(),
         );
       }
     }
-  } catch (e: any) {
-    showExportCSVError(e.message);
   }
-};
+  catch (error: any) {
+    showExportCSVError(error.message);
+  }
+}
 
 const { show } = useConfirmStore();
 
-const showConfirmation = () => {
+function showConfirmation() {
   show(
     {
       title: t('common.actions.export_csv'),
       message: t('transactions.events.export.confirmation_message'),
-      type: 'info'
+      type: 'info',
     },
-    exportCSV
+    exportCSV,
   );
-};
+}
 </script>
 
 <template>

@@ -5,8 +5,8 @@ const props = withDefaults(
     text?: boolean;
   }>(),
   {
-    text: false
-  }
+    text: false,
+  },
 );
 
 const { event } = toRefs(props);
@@ -38,7 +38,11 @@ const [DefineText, ReuseText] = createReusableTemplate();
             size="20px"
           />
 
-          <EnsAvatar v-else size="20px" :address="counterparty.label" />
+          <EnsAvatar
+            v-else
+            size="20px"
+            :address="counterparty.label"
+          />
         </div>
         <EnsAvatar
           v-else-if="event.address"
@@ -60,7 +64,10 @@ const [DefineText, ReuseText] = createReusableTemplate();
         offset-y="4"
       >
         <template #icon>
-          <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
             <template #activator>
               <ReuseImage />
             </template>
@@ -69,7 +76,10 @@ const [DefineText, ReuseText] = createReusableTemplate();
         </template>
         <slot />
       </RuiBadge>
-      <div v-else class="flex items-center gap-2">
+      <div
+        v-else
+        class="flex items-center gap-2"
+      >
         <AdaptiveWrapper>
           <ReuseImage />
         </AdaptiveWrapper>

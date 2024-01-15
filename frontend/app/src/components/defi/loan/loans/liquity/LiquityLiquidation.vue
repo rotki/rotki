@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 defineProps<{
   price: BigNumber;
@@ -11,7 +11,10 @@ const { t } = useI18n();
 
 <template>
   <StatCard :title="t('loan_liquidation.title')">
-    <LoanRow medium :title="t('loan_collateral.liquidation_price')">
+    <LoanRow
+      medium
+      :title="t('loan_collateral.liquidation_price')"
+    >
       <AmountDisplay
         show-currency="ticker"
         fiat-currency="USD"

@@ -1,52 +1,50 @@
-import { type BigNumber } from '@rotki/common';
-import { type Collection, type CollectionResponse } from '@/types/collection';
-import { type TablePagination } from '@/types/pagination';
+import type { BigNumber } from '@rotki/common';
+import type { Collection, CollectionResponse } from '@/types/collection';
+import type { TablePagination } from '@/types/pagination';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 
-export const mapCollectionResponse = <T, C extends CollectionResponse<T>>(
-  response: C
-): Collection<T> & Omit<C, Entries> => {
-  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest } =
-    response;
+export function mapCollectionResponse<T, C extends CollectionResponse<T>>(response: C): Collection<T> & Omit<C, Entries> {
+  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest }
+    = response;
   return {
     data: entries,
     found: entriesFound,
     limit: entriesLimit,
     total: entriesTotal,
-    ...rest
+    ...rest,
   };
-};
+}
 
-export const defaultCollectionState = <T>(): Collection<T> => ({
-  found: 0,
-  limit: 0,
-  data: [],
-  total: 0,
-  totalUsdValue: Zero
-});
+export function defaultCollectionState<T>(): Collection<T> {
+  return {
+    found: 0,
+    limit: 0,
+    data: [],
+    total: 0,
+    totalUsdValue: Zero,
+  };
+}
 
 type TotalValue = BigNumber | undefined | null;
 
-export const getCollectionData = <T>(
-  collection: Ref<Collection<T>>
-): {
+export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   data: ComputedRef<T[]>;
   limit: ComputedRef<number>;
   found: ComputedRef<number>;
   total: ComputedRef<number>;
   entriesFoundTotal: ComputedRef<number | undefined>;
   totalUsdValue: ComputedRef<TotalValue>;
-} => {
+} {
   const data: ComputedRef<T[]> = computed(() => get(collection).data);
   const limit: ComputedRef<number> = computed(() => get(collection).limit);
   const found: ComputedRef<number> = computed(() => get(collection).found);
   const total: ComputedRef<number> = computed(() => get(collection).total);
   const entriesFoundTotal: ComputedRef<number | undefined> = computed(
-    () => get(collection).entriesFoundTotal
+    () => get(collection).entriesFoundTotal,
   );
   const totalUsdValue: ComputedRef<TotalValue> = computed(
-    () => get(collection).totalUsdValue
+    () => get(collection).totalUsdValue,
   );
 
   return {
@@ -55,19 +53,14 @@ export const getCollectionData = <T>(
     found,
     total,
     entriesFoundTotal,
-    totalUsdValue
+    totalUsdValue,
   };
-};
+}
 
-export const setupEntryLimit = (
-  limit: Ref<number>,
-  found: Ref<number>,
-  total: Ref<number>,
-  entryFoundTotal?: Ref<number | undefined>
-): {
+export function setupEntryLimit(limit: Ref<number>, found: Ref<number>, total: Ref<number>, entryFoundTotal?: Ref<number | undefined>): {
   itemLength: ComputedRef<number>;
   showUpgradeRow: ComputedRef<boolean>;
-} => {
+} {
   const premium = usePremium();
 
   const itemLength: ComputedRef<number> = computed(() => {
@@ -75,31 +68,29 @@ export const setupEntryLimit = (
     const totalFound = get(found);
     const entryLimit = get(limit);
 
-    if (isPremium || entryLimit === -1) {
+    if (isPremium || entryLimit === -1)
       return totalFound;
-    }
 
     return Math.min(totalFound, entryLimit);
   });
 
   const showUpgradeRow: ComputedRef<boolean> = computed(() => {
-    if (isDefined(entryFoundTotal)) {
+    if (isDefined(entryFoundTotal))
       return get(found) < get(entryFoundTotal)!;
-    }
 
     return get(limit) <= get(total) && get(limit) > 0;
   });
 
   return {
     itemLength,
-    showUpgradeRow
+    showUpgradeRow,
   };
-};
+}
 
-export const defaultOptions = <T extends NonNullable<unknown>>(defaultSortBy?: {
+export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
   key?: keyof T;
   ascending?: boolean[];
-}): TablePagination<T> => {
+}): TablePagination<T> {
   const { itemsPerPage } = useFrontendSettingsStore();
   return {
     page: 1,
@@ -109,6 +100,6 @@ export const defaultOptions = <T extends NonNullable<unknown>>(defaultSortBy?: {
       : ['timestamp' as keyof T],
     sortDesc: defaultSortBy?.ascending
       ? defaultSortBy?.ascending.map(bool => !bool)
-      : [true]
+      : [true],
   };
-};
+}

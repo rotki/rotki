@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DashboardMessage } from '@/types/dynamic-messages';
+import type { DashboardMessage } from '@/types/dynamic-messages';
 
 defineProps<{
   message: DashboardMessage;

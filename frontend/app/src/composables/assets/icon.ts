@@ -20,6 +20,6 @@ export const useAssetIcon = createSharedComposable(() => {
 
   return {
     getAssetImageUrl,
-    setLastRefreshedAssetIcon
+    setLastRefreshedAssetIcon,
   };
 });

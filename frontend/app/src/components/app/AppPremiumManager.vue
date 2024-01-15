@@ -9,25 +9,24 @@ async function setupComponents(): Promise<void> {
   await setupPremium();
   try {
     await loadLibrary();
-  } finally {
+  }
+  finally {
     set(componentsReady, true);
   }
 }
 
 onMounted(async () => {
   set(componentsReady, false);
-  if (get(premium)) {
+  if (get(premium))
     await setupComponents();
-  }
 });
 
-watch(premium, async premium => {
+watch(premium, async (premium) => {
   set(componentsReady, false);
-  if (!premium) {
+  if (!premium)
     status.resetDefiStatus();
-  } else {
+  else
     await setupComponents();
-  }
 });
 </script>
 

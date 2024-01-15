@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const includeFeesInCostBasis = ref(true);
 const { includeFeesInCostBasis: enabled } = storeToRefs(
-  useAccountingSettingsStore()
+  useAccountingSettingsStore(),
 );
 
 onMounted(() => {
@@ -10,10 +10,11 @@ onMounted(() => {
 
 const { t } = useI18n();
 
-const getSuccessMessage = (enabled: boolean) =>
-  enabled
+function getSuccessMessage(enabled: boolean) {
+  return enabled
     ? t('account_settings.messages.include_fees_in_cost_basis.enabled')
     : t('account_settings.messages.include_fees_in_cost_basis.disabled');
+}
 </script>
 
 <template>

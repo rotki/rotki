@@ -2,26 +2,26 @@ import {
   AssetEntry,
   type Balance,
   type BigNumber,
-  NumericString
+  NumericString,
 } from '@rotki/common';
 import { forEach } from 'lodash-es';
 import { z } from 'zod';
 import {
   type PriceOracle,
-  PriceOracleEnum
+  PriceOracleEnum,
 } from '@/types/settings/price-oracle';
 
 export const AssetPriceInput = z.tuple([
   NumericString,
   z.number(),
-  z.boolean()
+  z.boolean(),
 ]);
 
 export const AssetPrice = z.object({
   value: NumericString,
   usdPrice: NumericString.nullish(),
   isManualPrice: z.boolean(),
-  isCurrentCurrency: z.boolean()
+  isCurrentCurrency: z.boolean(),
 });
 
 export const AssetPrices = z.record(AssetPrice);
@@ -32,9 +32,9 @@ export const AssetPriceResponse = z
   .object({
     assets: z.record(AssetPriceInput),
     targetAsset: z.string(),
-    oracles: z.record(PriceOracleEnum, z.number())
+    oracles: z.record(PriceOracleEnum, z.number()),
   })
-  .transform(response => {
+  .transform((response) => {
     const mappedAssets: AssetPrices = {};
     const assets = response.assets;
     forEach(assets, (val, asset) => {
@@ -42,7 +42,7 @@ export const AssetPriceResponse = z
       mappedAssets[asset] = {
         value,
         isManualPrice: oracle === response.oracles.manualcurrent,
-        isCurrentCurrency
+        isCurrentCurrency,
       };
     });
 
@@ -53,7 +53,7 @@ export type AssetPriceResponse = z.infer<typeof AssetPriceResponse>;
 
 export const AssetPair = z.object({
   fromAsset: z.string(),
-  toAsset: z.string()
+  toAsset: z.string(),
 });
 
 export type AssetPair = z.infer<typeof AssetPair>;
@@ -73,7 +73,7 @@ const AssetTimedPrices = z.record(TimedPrices);
 
 export const HistoricPrices = z.object({
   assets: AssetTimedPrices,
-  targetAsset: z.string()
+  targetAsset: z.string(),
 });
 
 export type HistoricPrices = z.infer<typeof HistoricPrices>;
@@ -92,7 +92,7 @@ export interface AssetPriceInfo extends Balance {
 }
 
 export const ManualPrice = AssetPair.extend({
-  price: NumericString
+  price: NumericString,
 });
 
 export type ManualPrice = z.infer<typeof ManualPrice>;
@@ -102,7 +102,7 @@ export const ManualPrices = z.array(ManualPrice);
 export type ManualPrices = z.infer<typeof ManualPrices>;
 
 export const HistoricalPrice = ManualPrice.extend({
-  timestamp: z.number()
+  timestamp: z.number(),
 });
 
 export type HistoricalPrice = z.infer<typeof HistoricalPrice>;
@@ -112,13 +112,13 @@ export const HistoricalPrices = z.array(HistoricalPrice);
 export type HistoricalPrices = z.infer<typeof HistoricalPrices>;
 
 export const ManualPriceFormPayload = AssetPair.extend({
-  price: z.string()
+  price: z.string(),
 });
 
 export type ManualPriceFormPayload = z.infer<typeof ManualPriceFormPayload>;
 
 export const HistoricalPriceFormPayload = ManualPriceFormPayload.extend({
-  timestamp: z.number()
+  timestamp: z.number(),
 });
 
 export type HistoricalPriceFormPayload = z.infer<
@@ -126,7 +126,7 @@ export type HistoricalPriceFormPayload = z.infer<
 >;
 
 export const HistoricalPriceDeletePayload = AssetPair.extend({
-  timestamp: z.number()
+  timestamp: z.number(),
 });
 
 export type HistoricalPriceDeletePayload = z.infer<
@@ -142,7 +142,7 @@ export const PriceInformation = z.object({
   usdPrice: NumericString,
   manuallyInput: z.boolean(),
   priceAsset: z.string().nonempty(),
-  priceInAsset: NumericString
+  priceInAsset: NumericString,
 });
 
 export type PriceInformation = z.infer<typeof PriceInformation>;

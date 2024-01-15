@@ -4,7 +4,11 @@ const char = '.';
 
 <template>
   <div class="loading">
-    <span v-for="i in 3" :key="i" v-text="char" />
+    <span
+      v-for="i in 3"
+      :key="i"
+      v-text="char"
+    />
   </div>
 </template>
 

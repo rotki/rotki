@@ -5,11 +5,17 @@ const { t } = useI18n();
 <template>
   <ImportSource source="uphold_transactions">
     <template #upload-title>
-      <i18n tag="span" path="import_data.uphold.import">
+      <i18n
+        tag="span"
+        path="import_data.uphold.import"
+      >
         <strong>{{ t('import_data.uphold.import_trade') }}</strong>
       </i18n>
     </template>
-    <i18n tag="span" path="import_data.note">
+    <i18n
+      tag="span"
+      path="import_data.note"
+    >
       <strong>{{ t('import_data.uphold.name') }}</strong>
     </i18n>
     <ul class="list-disc">

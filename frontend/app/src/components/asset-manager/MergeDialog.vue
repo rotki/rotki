@@ -22,82 +22,90 @@ const pending = ref(false);
 const { mergeAssets } = useAssets();
 const { t } = useI18n();
 
-const reset = () => {
+function reset() {
   set(done, false);
   set(targetIdentifier, '');
   set(sourceIdentifier, '');
   set(pending, false);
   set(errorMessages, {});
   get(v$).$reset();
-};
+}
 
-const clearErrors = () => {
+function clearErrors() {
   set(done, false);
   set(errorMessages, {});
-};
+}
 
 async function merge() {
   set(pending, true);
   const result = await mergeAssets({
     sourceIdentifier: get(sourceIdentifier),
-    targetIdentifier: get(targetIdentifier)
+    targetIdentifier: get(targetIdentifier),
   });
 
   if (result.success) {
     reset();
     set(done, true);
-  } else {
+  }
+  else {
     set(
       errorMessages,
       typeof result.message === 'string'
         ? ({
-            sourceIdentifier: [result.message || t('merge_dialog.error')]
+            sourceIdentifier: [result.message || t('merge_dialog.error')],
           } satisfies Errors)
-        : result.message
+        : result.message,
     );
     await get(v$).$validate();
   }
   set(pending, false);
 }
 
-const input = (value: boolean) => {
+function input(value: boolean) {
   emit('input', value);
   setTimeout(() => reset(), 100);
-};
+}
 
 const rules = {
   sourceIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.source.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   targetIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.target.non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
     sourceIdentifier,
-    targetIdentifier
+    targetIdentifier,
   },
   {
     $autoDirty: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 </script>
 
 <template>
-  <VDialog v-model="display" max-width="500">
+  <VDialog
+    v-model="display"
+    max-width="500"
+  >
     <RuiCard>
-      <template #header>{{ t('merge_dialog.title') }}</template>
-      <template #subheader>{{ t('merge_dialog.subtitle') }}</template>
+      <template #header>
+        {{ t('merge_dialog.title') }}
+      </template>
+      <template #subheader>
+        {{ t('merge_dialog.subtitle') }}
+      </template>
       <div class="mb-4 text-body-2 text-rui-text-secondary">
         {{ t('merge_dialog.hint') }}
       </div>
@@ -130,12 +138,19 @@ const v$ = useVuelidate(
         />
       </form>
 
-      <RuiAlert v-if="done" type="success">
+      <RuiAlert
+        v-if="done"
+        type="success"
+      >
         {{ t('merge_dialog.done') }}
       </RuiAlert>
       <template #footer>
         <div class="grow" />
-        <RuiButton variant="text" color="primary" @click="input(false)">
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="input(false)"
+        >
           {{ t('common.actions.close') }}
         </RuiButton>
         <RuiButton

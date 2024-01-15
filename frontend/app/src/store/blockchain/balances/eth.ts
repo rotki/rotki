@@ -1,31 +1,35 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type MaybeRef } from '@vueuse/core';
-import { type BigNumber } from '@rotki/common';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
-import {
-  type BlockchainAssetBalances,
-  type BlockchainBalances
-} from '@/types/blockchain/balances';
 import { type EthChains, isEthChain } from '@/types/blockchain/chains';
 import { Module } from '@/types/modules';
-import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { MaybeRef } from '@vueuse/core';
+import type { BigNumber } from '@rotki/common';
+import type {
+  BlockchainAssetBalances,
+  BlockchainBalances,
+} from '@/types/blockchain/balances';
+import type { AssetPrices } from '@/types/prices';
+import type { TaskMeta } from '@/types/task';
 
 type Totals = Record<EthChains, AssetBalances>;
 
 type Balances = Record<EthChains, BlockchainAssetBalances>;
 
-const defaultTotals = (): Totals => ({
-  [Blockchain.ETH]: {},
-  [Blockchain.ETH2]: {}
-});
+function defaultTotals(): Totals {
+  return {
+    [Blockchain.ETH]: {},
+    [Blockchain.ETH2]: {},
+  };
+}
 
-const defaultBalances = (): Balances => ({
-  [Blockchain.ETH]: {},
-  [Blockchain.ETH2]: {}
-});
+function defaultBalances(): Balances {
+  return {
+    [Blockchain.ETH]: {},
+    [Blockchain.ETH2]: {},
+  };
+}
 
 export const useEthBalancesStore = defineStore('balances/eth', () => {
   const loopring: Ref<AccountAssetBalances> = ref({});
@@ -42,7 +46,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { t } = useI18n();
 
   const getLoopringAssetBalances = (
-    address: MaybeRef<string> = ref('')
+    address: MaybeRef<string> = ref(''),
   ): ComputedRef<AssetBalances> =>
     computed(() => {
       const ownedAssets: AssetBalances = {};
@@ -50,36 +54,33 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
 
       const balances = get(loopring);
       for (const [address, assets] of Object.entries(balances)) {
-        if (accountAddress && accountAddress !== address) {
+        if (accountAddress && accountAddress !== address)
           continue;
-        }
+
         for (const [asset, value] of Object.entries(assets)) {
           const identifier = getAssociatedAssetIdentifier(asset);
           const associatedAsset: string = get(identifier);
           const ownedAsset = ownedAssets[associatedAsset];
 
-          if (!ownedAsset) {
+          if (!ownedAsset)
             ownedAssets[associatedAsset] = { ...value };
-          } else {
+          else
             ownedAssets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
-          }
         }
       }
       return ownedAssets;
     });
 
   const fetchLoopringBalances = async (refresh: boolean) => {
-    if (!get(activeModules).includes(Module.LOOPRING)) {
+    if (!get(activeModules).includes(Module.LOOPRING))
       return;
-    }
 
     const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-      Section.L2_LOOPRING_BALANCES
+      Section.L2_LOOPRING_BALANCES,
     );
 
-    if (fetchDisabled(refresh)) {
+    if (fetchDisabled(refresh))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
@@ -90,20 +91,21 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
         taskId,
         taskType,
         {
-          title: t('actions.balances.loopring.task.title')
-        }
+          title: t('actions.balances.loopring.task.title'),
+        },
       );
 
       set(loopring, AccountAssetBalances.parse(result));
       setStatus(Status.LOADED);
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         notify({
           title: t('actions.balances.loopring.error.title'),
           message: t('actions.balances.loopring.error.description', {
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
       resetStatus();
@@ -112,25 +114,24 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
 
   const update = (
     chain: Blockchain,
-    { perAccount, totals: updatedTotals }: BlockchainBalances
+    { perAccount, totals: updatedTotals }: BlockchainBalances,
   ) => {
-    if (!isEthChain(chain)) {
+    if (!isEthChain(chain))
       return;
-    }
 
     set(balances, {
       ...get(balances),
-      [chain]: perAccount[chain] ?? {}
+      [chain]: perAccount[chain] ?? {},
     });
 
     set(totals, {
       ...get(totals),
-      [chain]: removeZeroAssets(updatedTotals.assets)
+      [chain]: removeZeroAssets(updatedTotals.assets),
     });
 
     set(liabilities, {
       ...get(liabilities),
-      [chain]: removeZeroAssets(updatedTotals.liabilities)
+      [chain]: removeZeroAssets(updatedTotals.liabilities),
     });
   };
 
@@ -151,12 +152,11 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const updateEthStakingOwnership = (
     publicKey: string,
     oldOwnershipPercentage: BigNumber,
-    newOwnershipPercentage: BigNumber
+    newOwnershipPercentage: BigNumber,
   ): void => {
     const { eth2 } = get(balances);
-    if (!eth2[publicKey]) {
+    if (!eth2[publicKey])
       return;
-    }
 
     const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
 
@@ -165,19 +165,19 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     const calc = (
       value: BigNumber,
       oldPercentage: BigNumber,
-      newPercentage: BigNumber
+      newPercentage: BigNumber,
     ): BigNumber => value.dividedBy(oldPercentage).multipliedBy(newPercentage);
 
     const newAmount = calc(
       amount,
       oldOwnershipPercentage,
-      newOwnershipPercentage
+      newOwnershipPercentage,
     );
 
     const newValue = calc(
       usdValue,
       oldOwnershipPercentage,
-      newOwnershipPercentage
+      newOwnershipPercentage,
     );
 
     const amountDiff = amount.minus(newAmount);
@@ -191,25 +191,25 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
           assets: {
             [ETH2_ASSET]: {
               amount: newAmount,
-              usdValue: newValue
-            }
-          }
-        }
-      }
+              usdValue: newValue,
+            },
+          },
+        },
+      },
     });
 
     const oldTotals = get(totals);
-    const { amount: oldTotalAmount, usdValue: oldTotalUsdValue } =
-      oldTotals[Blockchain.ETH2][ETH2_ASSET];
+    const { amount: oldTotalAmount, usdValue: oldTotalUsdValue }
+      = oldTotals[Blockchain.ETH2][ETH2_ASSET];
 
     set(totals, {
       ...oldTotals,
       [Blockchain.ETH2]: {
         [ETH2_ASSET]: {
           amount: oldTotalAmount.plus(amountDiff),
-          usdValue: oldTotalUsdValue.plus(valueDiff)
-        }
-      }
+          usdValue: oldTotalUsdValue.plus(valueDiff),
+        },
+      },
     });
   };
 
@@ -222,10 +222,9 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     updatePrices,
     getLoopringAssetBalances,
     fetchLoopringBalances,
-    updateEthStakingOwnership
+    updateEthStakingOwnership,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useEthBalancesStore, import.meta.hot));
-}

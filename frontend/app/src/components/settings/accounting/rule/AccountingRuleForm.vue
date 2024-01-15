@@ -3,7 +3,7 @@ import { required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import {
   type AccountingRuleEntry,
-  AccountingTreatment
+  AccountingTreatment,
 } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
@@ -13,8 +13,8 @@ const props = withDefaults(
     editableItem?: AccountingRuleEntry | null;
   }>(),
   {
-    editableItem: null
-  }
+    editableItem: null,
+  },
 );
 
 const { editableItem } = toRefs(props);
@@ -27,7 +27,7 @@ const rules = {
   eventType: { required },
   eventSubtype: { required },
   counterparty: { externalServerValidation },
-  accountingTreatment: { externalServerValidation }
+  accountingTreatment: { externalServerValidation },
 };
 
 const { t } = useI18n();
@@ -38,40 +38,37 @@ const errorMessages = ref<Record<string, string[] | string>>({});
 
 const v$ = setValidation(rules, state, {
   $autoDirty: true,
-  $externalResults: errorMessages
+  $externalResults: errorMessages,
 });
 
 onMounted(() => {
   const editable = get(editableItem);
-  if (editable) {
+  if (editable)
     reset(editable);
-  }
 });
 
-watch(editableItem, editableItem => {
-  if (editableItem) {
+watch(editableItem, (editableItem) => {
+  if (editableItem)
     reset(editableItem);
-  }
 });
 
-const reset = (newState?: AccountingRuleEntry) => {
-  if (newState) {
+function reset(newState?: AccountingRuleEntry) {
+  if (newState)
     set(state, { ...newState });
-  } else {
+  else
     set(state, getPlaceholderRule());
-  }
-};
+}
 
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
 const { setMessage } = useMessageStore();
 
-const save = async () => {
+async function save() {
   const editing = Number(get(editableItem)?.identifier) > 0;
   const stateVal = get(state);
 
   const payload = {
     ...stateVal,
-    counterparty: stateVal.counterparty || null
+    counterparty: stateVal.counterparty || null,
   };
 
   try {
@@ -79,34 +76,34 @@ const save = async () => {
       ? await editAccountingRule(payload)
       : await addAccountingRule(omit(payload, 'identifier'));
 
-    if (result) {
+    if (result)
       reset();
-    }
 
     return result;
-  } catch (e: any) {
+  }
+  catch (error: any) {
     const errorTitle = editing
       ? t('accounting_settings.rule.edit_error')
       : t('accounting_settings.rule.add_error');
 
-    let errors = e.message;
-    if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors(payload);
-    }
+    let errors = error.message;
+    if (error instanceof ApiValidationError)
+      errors = error.getValidationErrors(payload);
 
     if (typeof errors === 'string') {
       setMessage({
         title: errorTitle,
         description: errors,
-        success: false
+        success: false,
       });
-    } else {
+    }
+    else {
       set(errorMessages, errors);
     }
 
     return false;
   }
-};
+}
 
 setSubmitFunc(save);
 
@@ -115,8 +112,8 @@ const { counterparties } = useHistoryEventMappings();
 const accountingTreatments = Object.values(AccountingTreatment).map(
   identifier => ({
     identifier,
-    label: toSentenceCase(identifier)
-  })
+    label: toSentenceCase(identifier),
+  }),
 );
 </script>
 

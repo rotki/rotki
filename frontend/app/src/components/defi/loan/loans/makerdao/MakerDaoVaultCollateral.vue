@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
   vault: MakerDAOVaultModel;
@@ -9,7 +9,7 @@ const { vault } = toRefs(props);
 const { t } = useI18n();
 const ratio = computed(() => {
   const { collateralizationRatio } = get(vault);
-  return collateralizationRatio ? collateralizationRatio : null;
+  return collateralizationRatio || null;
 });
 </script>
 
@@ -28,6 +28,9 @@ const ratio = computed(() => {
       <PercentageDisplay :value="ratio ? ratio : undefined" />
     </LoanRow>
 
-    <ManageWatchers :vault="vault" class="mt-4" />
+    <ManageWatchers
+      :vault="vault"
+      class="mt-4"
+    />
   </StatCard>
 </template>

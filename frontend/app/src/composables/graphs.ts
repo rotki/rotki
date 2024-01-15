@@ -1,13 +1,13 @@
-import { type BigNumber } from '@rotki/common';
-import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { type TooltipModel } from 'chart.js';
+import type { BigNumber } from '@rotki/common';
+import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import type { TooltipModel } from 'chart.js';
 
-export const useGraph = (canvasId: string) => {
+export function useGraph(canvasId: string) {
   const getCanvasCtx = (): CanvasRenderingContext2D => {
     const canvas = document.getElementById(canvasId);
     assert(
       canvas && canvas instanceof HTMLCanvasElement,
-      'Canvas could not be found'
+      'Canvas could not be found',
     );
     const context = canvas.getContext('2d');
     assert(context, 'Context could not be found');
@@ -22,13 +22,13 @@ export const useGraph = (canvasId: string) => {
   const baseColor = computed(() => {
     const activeTheme = get(theme);
     const graphColor = activeTheme.currentTheme.graph;
-    return (graphColor ? graphColor : '#96DFD2') as string;
+    return (graphColor || '#96DFD2') as string;
   });
 
   const fadeColor = computed(() => {
     const activeTheme = get(theme);
     const graphFade = activeTheme.currentTheme.graphFade;
-    return (graphFade ? graphFade : white) as string;
+    return (graphFade || white) as string;
   });
 
   const gradient = computed(() => {
@@ -52,9 +52,9 @@ export const useGraph = (canvasId: string) => {
     secondaryColor,
     backgroundColor,
     fontColor,
-    gridColor
+    gridColor,
   };
-};
+}
 
 export interface TooltipContent {
   readonly time: string;
@@ -62,29 +62,29 @@ export interface TooltipContent {
   readonly currentBalance?: boolean;
 }
 
-export const useTooltip = (id: string) => {
+export function useTooltip(id: string) {
   const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => ({
     visible: false,
     left: 0,
     top: 0,
     xAlign: 'left',
     yAlign: 'center',
-    id
+    id,
   });
 
   const getDefaultTooltipContent = (): TooltipContent => ({
     time: '',
-    value: bigNumberify(0)
+    value: bigNumberify(0),
   });
 
   const tooltipDisplayOption = ref<TooltipDisplayOption>(
-    getDefaultTooltipDisplayOption()
+    getDefaultTooltipDisplayOption(),
   );
   const tooltipContent = ref<TooltipContent>(getDefaultTooltipContent());
 
   const calculateTooltipPosition = (
     element: HTMLElement,
-    tooltipModel: TooltipModel<'line'>
+    tooltipModel: TooltipModel<'line'>,
   ): Partial<TooltipDisplayOption> => {
     let { x, y } = tooltipModel;
     const { xAlign, yAlign } = tooltipModel;
@@ -92,30 +92,28 @@ export const useTooltip = (id: string) => {
     const elemWidth = element.clientWidth;
     const elemHeight = element.clientHeight;
 
-    if (tooltipModel.xAlign === 'center') {
+    if (tooltipModel.xAlign === 'center')
       x += (tooltipModel.width - elemWidth) / 2;
-    } else if (tooltipModel.xAlign === 'right') {
+    else if (tooltipModel.xAlign === 'right')
       x += tooltipModel.width - elemWidth;
-    }
 
-    if (tooltipModel.yAlign === 'center') {
+    if (tooltipModel.yAlign === 'center')
       y += (tooltipModel.height - elemHeight) / 2;
-    } else if (tooltipModel.yAlign === 'bottom') {
+    else if (tooltipModel.yAlign === 'bottom')
       y += tooltipModel.height - elemHeight;
-    }
 
     return {
       xAlign,
       yAlign,
       left: x,
       top: y,
-      visible: true
+      visible: true,
     };
   };
 
   return {
     tooltipDisplayOption,
     tooltipContent,
-    calculateTooltipPosition
+    calculateTooltipPosition,
   };
-};
+}

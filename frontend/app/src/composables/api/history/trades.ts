@@ -1,45 +1,45 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   paramsSerializer,
   validStatus,
-  validWithParamsSessionAndExternalService
+  validWithParamsSessionAndExternalService,
 } from '@/services/utils';
-import { type CollectionResponse } from '@/types/collection';
-import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type NewTrade,
   type Trade,
   TradeCollectionResponse,
-  type TradeRequestPayload
+  type TradeRequestPayload,
 } from '@/types/history/trade';
-import { type PendingTask } from '@/types/task';
+import type { CollectionResponse } from '@/types/collection';
+import type { EntryWithMeta } from '@/types/history/meta';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { PendingTask } from '@/types/task';
 
-export const useTradesApi = () => {
+export function useTradesApi() {
   const internalTrades = async <T>(
     payload: TradeRequestPayload,
-    asyncQuery: boolean
+    asyncQuery: boolean,
   ): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/trades', {
       params: snakeCaseTransformer({
         asyncQuery,
-        ...payload
+        ...payload,
       }),
       paramsSerializer,
-      validateStatus: validWithParamsSessionAndExternalService
+      validateStatus: validWithParamsSessionAndExternalService,
     });
 
     return handleResponse(response);
   };
 
   const getTradesTask = async (
-    payload: TradeRequestPayload
+    payload: TradeRequestPayload,
   ): Promise<PendingTask> => internalTrades<PendingTask>(payload, true);
 
   const getTrades = async (
-    payload: TradeRequestPayload
+    payload: TradeRequestPayload,
   ): Promise<CollectionResponse<EntryWithMeta<Trade>>> => {
     const response = await internalTrades<
       CollectionResponse<EntryWithMeta<Trade>>
@@ -53,8 +53,8 @@ export const useTradesApi = () => {
       '/trades',
       snakeCaseTransformer(trade),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -65,8 +65,8 @@ export const useTradesApi = () => {
       '/trades',
       snakeCaseTransformer(trade),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -77,8 +77,8 @@ export const useTradesApi = () => {
       '/trades',
       {
         data: snakeCaseTransformer({ tradesIds }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -89,6 +89,6 @@ export const useTradesApi = () => {
     getTrades,
     addExternalTrade,
     editExternalTrade,
-    deleteExternalTrade
+    deleteExternalTrade,
   };
-};
+}

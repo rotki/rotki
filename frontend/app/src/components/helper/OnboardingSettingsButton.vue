@@ -23,6 +23,9 @@ const { connected } = toRefs(useMainStore());
         </RuiButton>
       </template>
     </RuiTooltip>
-    <OnboardingSettings v-if="visible" @dismiss="visible = false" />
+    <OnboardingSettings
+      v-if="visible"
+      @dismiss="visible = false"
+    />
   </div>
 </template>

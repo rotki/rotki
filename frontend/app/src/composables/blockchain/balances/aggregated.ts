@@ -1,26 +1,26 @@
-import {
-  type AssetBalance,
-  type AssetBalanceWithPrice,
-  type BigNumber
+import type {
+  AssetBalance,
+  AssetBalanceWithPrice,
+  BigNumber,
 } from '@rotki/common';
-import { type MaybeRef } from '@vueuse/core';
-import { type AssetBalances } from '@/types/balances';
+import type { MaybeRef } from '@vueuse/core';
+import type { AssetBalances } from '@/types/balances';
 
-export const useBlockchainAggregatedBalances = () => {
+export function useBlockchainAggregatedBalances() {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const ethBalancesStore = useEthBalancesStore();
-  const { totals: ethTotals, liabilities: ethLiabilities } =
-    storeToRefs(ethBalancesStore);
+  const { totals: ethTotals, liabilities: ethLiabilities }
+    = storeToRefs(ethBalancesStore);
   const { totals: btcTotals, liabilities: btcLiabilities } = storeToRefs(
-    useBtcBalancesStore()
+    useBtcBalancesStore(),
   );
   const { totals: chainTotals, liabilities: chainLiabilities } = storeToRefs(
-    useChainBalancesStore()
+    useChainBalancesStore(),
   );
   const { assetPrice } = useBalancePricesStore();
-  const { toSortedAssetBalanceWithPrice, toSortedAssetBalanceArray } =
-    useBalanceSorting();
+  const { toSortedAssetBalanceWithPrice, toSortedAssetBalanceArray }
+    = useBalanceSorting();
 
   const totals: ComputedRef<AssetBalances> = computed(() => {
     const balances: AssetBalances = {};
@@ -29,16 +29,15 @@ export const useBlockchainAggregatedBalances = () => {
       ...get(ethTotals),
       ...get(btcTotals),
       ...get(chainTotals),
-      LOOPRING: { ...get(ethBalancesStore.getLoopringAssetBalances()) }
+      LOOPRING: { ...get(ethBalancesStore.getLoopringAssetBalances()) },
     };
 
     for (const value of Object.values(totals)) {
       for (const asset of Object.keys(value)) {
-        if (!balances[asset]) {
+        if (!balances[asset])
           balances[asset] = value[asset];
-        } else {
+        else
           balances[asset] = balanceSum(balances[asset], value[asset]);
-        }
       }
     }
 
@@ -50,16 +49,15 @@ export const useBlockchainAggregatedBalances = () => {
     const liabilities = {
       ...get(ethLiabilities),
       ...get(btcLiabilities),
-      ...get(chainLiabilities)
+      ...get(chainLiabilities),
     };
 
     for (const value of Object.values(liabilities)) {
       for (const asset of Object.keys(value)) {
-        if (!balances[asset]) {
+        if (!balances[asset])
           balances[asset] = value[asset];
-        } else {
+        else
           balances[asset] = balanceSum(balances[asset], value[asset]);
-        }
       }
     }
 
@@ -67,43 +65,42 @@ export const useBlockchainAggregatedBalances = () => {
   });
 
   const getTotals = (
-    hideIgnored: MaybeRef<boolean> = ref(true)
+    hideIgnored: MaybeRef<boolean> = ref(true),
   ): ComputedRef<AssetBalance[]> =>
     computed(() => {
       const ownedAssets = mergeAssociatedAssets(
         totals,
-        getAssociatedAssetIdentifier
+        getAssociatedAssetIdentifier,
       );
 
       return toSortedAssetBalanceArray(
         get(ownedAssets),
-        asset => hideIgnored && get(isAssetIgnored(asset))
+        asset => hideIgnored && get(isAssetIgnored(asset)),
       );
     });
 
   const blockchainTotal: ComputedRef<BigNumber> = computed(() =>
-    bigNumberSum(get(getTotals()).map(asset => asset.usdValue))
+    bigNumberSum(get(getTotals()).map(asset => asset.usdValue)),
   );
 
   const blockchainAssets: ComputedRef<AssetBalanceWithPrice[]> = computed(
     () => {
       const ownedAssets = mergeAssociatedAssets(
         totals,
-        getAssociatedAssetIdentifier
+        getAssociatedAssetIdentifier,
       );
       return toSortedAssetBalanceWithPrice(
         get(ownedAssets),
         asset => get(isAssetIgnored(asset)),
-        assetPrice
+        assetPrice,
       );
-    }
+    },
   );
 
   const locationBreakdown: ComputedRef<AssetBalances> = computed(() => {
     const assets: AssetBalances = {};
-    for (const asset of get(getTotals())) {
+    for (const asset of get(getTotals()))
       appendAssetBalance(asset, assets, getAssociatedAssetIdentifier);
-    }
 
     return assets;
   });
@@ -114,6 +111,6 @@ export const useBlockchainAggregatedBalances = () => {
     blockchainTotal,
     blockchainAssets,
     getTotals,
-    locationBreakdown
+    locationBreakdown,
   };
-};
+}

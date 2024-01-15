@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Balance } from '@rotki/common';
-import { type ReceivedAmount } from '@/types/staking';
+import type { Balance } from '@rotki/common';
+import type { ReceivedAmount } from '@/types/staking';
 
 defineProps<{
   received: ReceivedAmount[];
@@ -9,7 +9,8 @@ defineProps<{
 const { prices } = storeToRefs(useBalancePricesStore());
 const selection: Ref<'current' | 'historical'> = ref('current');
 const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
-const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
+
+function getBalance({ amount, asset, usdValue }: ReceivedAmount): Balance {
   const assetPrices = get(prices);
 
   const currentPrice = assetPrices[asset]
@@ -17,15 +18,18 @@ const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
     : Zero;
   return {
     amount,
-    usdValue: get(selection) === 'current' ? currentPrice : usdValue
+    usdValue: get(selection) === 'current' ? currentPrice : usdValue,
   };
-};
+}
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard no-padding class="mb-4">
+  <RuiCard
+    no-padding
+    class="mb-4"
+  >
     <template #custom-header>
       <div class="flex items-center justify-between p-4">
         <h6 class="text-h6">
@@ -54,7 +58,10 @@ const { t } = useI18n();
         :key="item.asset"
         class="flex items-center justify-between"
       >
-        <AssetDetails :asset="item.asset" dense />
+        <AssetDetails
+          :asset="item.asset"
+          dense
+        />
         <div class="flex items-center gap-3">
           <ValueAccuracyHint v-if="selection === 'historical'" />
           <BalanceDisplay

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
+import type { Ref } from 'vue';
+import type { ManualBalance } from '@/types/manual-balances';
 
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);
 const loading = ref(false);
@@ -21,36 +21,36 @@ const {
   setOpenDialog,
   trySubmit,
   closeDialog,
-  setPostSubmitFunc
+  setPostSubmitFunc,
 } = useManualBalancesForm();
 
-const add = () => {
+function add() {
   set(dialogTitle, t('manual_balances.dialog.add.title').toString());
   set(dialogSubtitle, '');
   setOpenDialog(true);
-};
+}
 
-const edit = (balance: ManualBalance) => {
+function edit(balance: ManualBalance) {
   set(balanceToEdit, balance);
   set(dialogTitle, t('manual_balances.dialog.edit.title').toString());
   set(dialogSubtitle, t('manual_balances.dialog.edit.subtitle').toString());
   setOpenDialog(true);
-};
+}
 
-const cancelForm = () => {
+function cancelForm() {
   closeDialog();
   set(balanceToEdit, null);
-};
+}
 
-const refresh = async () => {
+async function refresh() {
   set(loading, true);
   await fetchManualBalances();
   set(loading, false);
-};
+}
 
-const postSubmit = async () => {
+async function postSubmit() {
   set(balanceToEdit, null);
-};
+}
 
 setPostSubmitFunc(postSubmit);
 
@@ -65,24 +65,21 @@ onMounted(async () => {
 
 const intersections = ref({
   [BalanceType.ASSET]: false,
-  [BalanceType.LIABILITY]: false
+  [BalanceType.LIABILITY]: false,
 });
 
-const updateWhenRatio = (
-  entries: IntersectionObserverEntry[],
-  value: BalanceType
-) => {
+function updateWhenRatio(entries: IntersectionObserverEntry[], value: BalanceType) {
   set(intersections, {
     ...get(intersections),
-    [value]: entries[0].isIntersecting
+    [value]: entries[0].isIntersecting,
   });
-};
+}
 
 const observers = {
   [BalanceType.ASSET]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, BalanceType.ASSET),
   [BalanceType.LIABILITY]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, BalanceType.LIABILITY)
+    updateWhenRatio(entries, BalanceType.LIABILITY),
 };
 
 const context = computed(() => {
@@ -97,7 +94,7 @@ const threshold = [1];
   <TablePageLayout
     :title="[
       t('navigation_menu.accounts_balances'),
-      t('navigation_menu.accounts_balances_sub.manual_balances')
+      t('navigation_menu.accounts_balances_sub.manual_balances'),
     ]"
   >
     <template #buttons>
@@ -119,8 +116,8 @@ const threshold = [1];
       v-intersect="{
         handler: observers.asset,
         options: {
-          threshold
-        }
+          threshold,
+        },
       }"
       data-cy="manual-balances"
       :title="t('manual_balances.balances')"
@@ -133,8 +130,8 @@ const threshold = [1];
       v-intersect="{
         handler: observers.liability,
         options: {
-          threshold
-        }
+          threshold,
+        },
       }"
       data-cy="manual-liabilities"
       :title="t('manual_balances.liabilities')"
@@ -153,7 +150,10 @@ const threshold = [1];
       @confirm="trySubmit()"
       @cancel="cancelForm()"
     >
-      <ManualBalancesForm :edit="balanceToEdit" :context="context" />
+      <ManualBalancesForm
+        :edit="balanceToEdit"
+        :context="context"
+      />
     </BigDialog>
   </TablePageLayout>
 </template>

@@ -1,25 +1,25 @@
-import { type SemiPartial } from '../index';
+import type { SemiPartial } from '../index';
 
 export enum Severity {
   WARNING = 'warning',
   ERROR = 'error',
-  INFO = 'info'
+  INFO = 'info',
 }
 
 export enum Priority {
   BULK,
   NORMAL,
   HIGH,
-  ACTION
+  ACTION,
 }
 
 export enum NotificationGroup {
-  NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS'
+  NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
 }
 
 export const NotificationCategory = {
   DEFAULT: 'default',
-  ADDRESS_MIGRATION: 'address_migration'
+  ADDRESS_MIGRATION: 'address_migration',
 } as const;
 
 export type NotificationCategory =

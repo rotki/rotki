@@ -1,15 +1,12 @@
-import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
+import type { MaybeRef } from '@vueuse/core';
 
-export const useTokenDetection = (
-  chain: MaybeRef<Blockchain>,
-  accountAddress: MaybeRef<string | null> = null
-) => {
+export function useTokenDetection(chain: MaybeRef<Blockchain>, accountAddress: MaybeRef<string | null> = null) {
   const { isTaskRunning } = useTaskStore();
   const {
     getEthDetectedTokensInfo,
-    fetchDetectedTokens: fetchDetectedTokensCaller
+    fetchDetectedTokens: fetchDetectedTokensCaller,
   } = useBlockchainTokensStore();
 
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
@@ -18,7 +15,7 @@ export const useTokenDetection = (
     polygonAddresses,
     arbitrumAddresses,
     baseAddresses,
-    gnosisAddresses
+    gnosisAddresses,
   } = storeToRefs(useChainsAccountsStore());
   const { supportsTransactions } = useSupportedChains();
 
@@ -28,8 +25,8 @@ export const useTokenDetection = (
     return get(
       isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
         chain: blockchain,
-        ...(address ? { address } : {})
-      })
+        ...(address ? { address } : {}),
+      }),
     );
   });
 
@@ -44,32 +41,30 @@ export const useTokenDetection = (
   const detectTokens = async (addresses: string[] = []) => {
     const address = get(accountAddress);
     assert(address || addresses.length > 0);
-    if (address) {
+    if (address)
       await fetchDetectedTokens(address);
-    } else {
+    else
       await Promise.allSettled(addresses.map(fetchDetectedTokens));
-    }
   };
 
   const detectTokensOfAllAddresses = async () => {
     const blockchain = get(chain);
     let addresses: string[] = [];
-    if (blockchain === Blockchain.OPTIMISM) {
+    if (blockchain === Blockchain.OPTIMISM)
       addresses = get(optimismAddresses);
-    } else if (blockchain === Blockchain.ETH) {
+    else if (blockchain === Blockchain.ETH)
       addresses = get(ethAddresses);
-    } else if (blockchain === Blockchain.POLYGON_POS) {
+    else if (blockchain === Blockchain.POLYGON_POS)
       addresses = get(polygonAddresses);
-    } else if (blockchain === Blockchain.ARBITRUM_ONE) {
+    else if (blockchain === Blockchain.ARBITRUM_ONE)
       addresses = get(arbitrumAddresses);
-    } else if (blockchain === Blockchain.BASE) {
+    else if (blockchain === Blockchain.BASE)
       addresses = get(baseAddresses);
-    } else if (blockchain === Blockchain.GNOSIS) {
+    else if (blockchain === Blockchain.GNOSIS)
       addresses = get(gnosisAddresses);
-    }
-    if (addresses.length > 0) {
+
+    if (addresses.length > 0)
       await detectTokens(addresses);
-    }
   };
 
   return {
@@ -77,6 +72,6 @@ export const useTokenDetection = (
     detectedTokens,
     getEthDetectedTokensInfo,
     detectTokens,
-    detectTokensOfAllAddresses
+    detectTokensOfAllAddresses,
   };
-};
+}

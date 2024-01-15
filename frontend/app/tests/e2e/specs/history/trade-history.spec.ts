@@ -1,7 +1,7 @@
 import { TradeHistoryPage } from '../../pages/history-page/trade-history-page';
 import { RotkiApp } from '../../pages/rotki-app';
-import { type ExternalTrade } from '../../support/types';
 import { createUser } from '../../utils/user';
+import type { ExternalTrade } from '../../support/types';
 
 describe('trade history', () => {
   let username: string;
@@ -12,7 +12,7 @@ describe('trade history', () => {
   before(() => {
     app = new RotkiApp();
     tradeHistoryPage = new TradeHistoryPage();
-    cy.fixture('history/trades.json').then(trade => {
+    cy.fixture('history/trades.json').then((trade) => {
       externalTrades = trade;
     });
   });
@@ -44,7 +44,7 @@ describe('trade history', () => {
       tradeHistoryPage.editTrade(0, '123.2');
       tradeHistoryPage.tradeIsVisible(0, {
         ...externalTrades[0],
-        amount: '123.2'
+        amount: '123.2',
       });
     });
 
@@ -52,7 +52,7 @@ describe('trade history', () => {
       tradeHistoryPage.visibleEntries(2);
       tradeHistoryPage.tradeIsVisible(0, {
         ...externalTrades[0],
-        amount: '123.2'
+        amount: '123.2',
       });
       tradeHistoryPage.deleteTrade(0);
       tradeHistoryPage.confirmDelete();
@@ -68,11 +68,11 @@ describe('trade history', () => {
       const time = `08/10/2015 10:50:5${i}`;
       cy.addExternalTrade({
         ...externalTrades[0],
-        time
+        time,
       });
       cy.addExternalTrade({
         ...externalTrades[1],
-        time
+        time,
       });
     }
 

@@ -1,19 +1,19 @@
-import { type AssetInfo } from '@rotki/common/lib/data';
+import type { AssetInfo } from '@rotki/common/lib/data';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});
 
   const { assetMapping } = useAssetInfoApi();
 
-  const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier } =
-    useItemCache<AssetInfo>(async (keys: string[]) => {
+  const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier }
+    = useItemCache<AssetInfo>(async (keys: string[]) => {
       const response = await assetMapping(keys);
       return function* () {
         for (const key of keys) {
           const { assetCollections, assets } = response;
           set(fetchedAssetCollections, {
             ...get(fetchedAssetCollections),
-            ...assetCollections
+            ...assetCollections,
           });
 
           const item = assets[transformCase(key, true)];
@@ -29,10 +29,9 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     retrieve,
     reset,
     deleteCacheKey,
-    queueIdentifier
+    queueIdentifier,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useAssetCacheStore, import.meta.hot));
-}

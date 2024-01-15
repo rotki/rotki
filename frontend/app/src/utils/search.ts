@@ -1,4 +1,4 @@
-import { type Nullable } from '@rotki/common';
+import type { Nullable } from '@rotki/common';
 
 interface SplitResult {
   key: string;
@@ -6,20 +6,22 @@ interface SplitResult {
   exclude?: boolean;
 }
 
-const defaultSplitResult = () => ({
-  key: '',
-  value: '',
-  exclude: undefined
-});
+function defaultSplitResult() {
+  return {
+    key: '',
+    value: '',
+    exclude: undefined,
+  };
+}
 
-export const splitSearch = (keyword: Nullable<string>): SplitResult => {
-  if (!keyword) {
+export function splitSearch(keyword: Nullable<string>): SplitResult {
+  if (!keyword)
     return defaultSplitResult();
-  }
+
   const negateOperatorIndex = keyword.indexOf('!=');
   const equalOperatorIndex = Math.max(
     keyword.indexOf('='),
-    keyword.indexOf(':')
+    keyword.indexOf(':'),
   );
 
   const exclude = negateOperatorIndex > -1;
@@ -28,7 +30,7 @@ export const splitSearch = (keyword: Nullable<string>): SplitResult => {
     return {
       key: keyword.trim(),
       value: '',
-      exclude: undefined
+      exclude: undefined,
     };
   }
 
@@ -43,6 +45,6 @@ export const splitSearch = (keyword: Nullable<string>): SplitResult => {
   return {
     key,
     value,
-    exclude
+    exclude,
   };
-};
+}

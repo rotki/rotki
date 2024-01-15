@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type BigNumber, NumericString } from '@rotki/common';
-import { type AssetInfoWithId } from '@/types/asset';
+import type { AssetInfoWithId } from '@/types/asset';
 
 /**
  * It is like {@link AssetInfoWithId} but with two extra properties for
@@ -16,7 +16,7 @@ const NftCollectionInfo = z.object({
   bannerImage: z.string().nullable(),
   description: z.string().nullable(),
   name: z.string().nullable(),
-  largeImage: z.string().nullable()
+  largeImage: z.string().nullable(),
 });
 
 const Nft = z.object({
@@ -31,7 +31,7 @@ const Nft = z.object({
     .transform(item => item || undefined),
   permalink: z.string().nullable(),
   priceEth: NumericString,
-  priceUsd: NumericString
+  priceUsd: NumericString,
 });
 
 export type Nft = z.infer<typeof Nft>;
@@ -49,7 +49,7 @@ export type Nfts = z.infer<typeof Nfts>;
 export const NftResponse = z.object({
   addresses: Nfts,
   entriesFound: z.number(),
-  entriesLimit: z.number()
+  entriesLimit: z.number(),
 });
 
 export type NftResponse = z.infer<typeof NftResponse>;

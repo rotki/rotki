@@ -1,72 +1,75 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type ActionStatus } from '@/types/action';
+import type { MaybeRef } from '@vueuse/core';
+import type { ActionStatus } from '@/types/action';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const ignoredAssets: Ref<string[]> = ref([]);
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets } =
-    useAssetIgnoreApi();
+  const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets }
+    = useAssetIgnoreApi();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
       const ignored = await getIgnoredAssets();
       set(ignoredAssets, ignored);
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const title = t('actions.session.ignored_assets.error.title');
       const message = t('actions.session.ignored_assets.error.message', {
-        error: e.message
+        error: error.message,
       });
       notify({
         title,
         message,
-        display: true
+        display: true,
       });
     }
   };
 
   const ignoreAsset = async (
-    assets: string[] | string
+    assets: string[] | string,
   ): Promise<ActionStatus> => {
     try {
       const ignored = await addIgnoredAssets(
-        Array.isArray(assets) ? assets : [assets]
+        Array.isArray(assets) ? assets : [assets],
       );
       set(ignoredAssets, ignored);
       return { success: true };
-    } catch (e: any) {
+    }
+    catch (error: any) {
       notify({
         title: t('ignore.failed.ignore_title').toString(),
         message: t('ignore.failed.ignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
-          message: e.message
+          message: error.message,
         }).toString(),
-        display: true
+        display: true,
       });
-      return { success: false, message: e.message };
+      return { success: false, message: error.message };
     }
   };
 
   const unignoreAsset = async (
-    assets: string[] | string
+    assets: string[] | string,
   ): Promise<ActionStatus> => {
     try {
       const ignored = await removeIgnoredAssets(
-        Array.isArray(assets) ? assets : [assets]
+        Array.isArray(assets) ? assets : [assets],
       );
       set(ignoredAssets, ignored);
       return { success: true };
-    } catch (e: any) {
+    }
+    catch (error: any) {
       notify({
         title: t('ignore.failed.unignore_title').toString(),
         message: t('ignore.failed.unignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
-          message: e.message
+          message: error.message,
         }).toString(),
-        display: true
+        display: true,
       });
-      return { success: false, message: e.message };
+      return { success: false, message: error.message };
     }
   };
 
@@ -78,9 +81,8 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
 
   const addIgnoredAsset = (asset: string) => {
     const ignored = get(ignoredAssets);
-    if (!ignored.includes(asset)) {
+    if (!ignored.includes(asset))
       set(ignoredAssets, [...ignored, asset]);
-    }
   };
 
   return {
@@ -89,12 +91,12 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     ignoreAsset,
     unignoreAsset,
     isAssetIgnored,
-    addIgnoredAsset
+    addIgnoredAsset,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useIgnoredAssetsStore, import.meta.hot)
+    acceptHMRUpdate(useIgnoredAssetsStore, import.meta.hot),
   );
 }

@@ -18,7 +18,7 @@ export type OwnedAssets = z.infer<typeof OwnedAssets>;
 const LocationDataItem = z.object({
   time: z.number().positive(),
   location: z.string().nonempty(),
-  usdValue: NumericString
+  usdValue: NumericString,
 });
 
 export const LocationData = z.array(LocationDataItem);
@@ -33,7 +33,7 @@ export type TimedAssetBalances = z.infer<typeof TimedAssetBalances>;
 
 export const NetValue = z.object({
   times: z.array(z.number()),
-  data: z.array(NumericString)
+  data: z.array(NumericString),
 });
 
 export type NetValue = z.infer<typeof NetValue>;

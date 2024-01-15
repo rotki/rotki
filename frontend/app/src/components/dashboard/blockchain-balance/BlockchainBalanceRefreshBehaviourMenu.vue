@@ -2,7 +2,7 @@
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 
 const { blockchainRefreshButtonBehaviour } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const { t } = useI18n();
@@ -10,7 +10,7 @@ const { t } = useI18n();
 
 <template>
   <div class="p-2">
-    <div class="font-bold text-uppercase p-2 text-sm">
+    <div class="font-bold uppercase p-2 text-sm">
       {{ t('dashboard.blockchain_balances.behaviour.title') }}:
     </div>
     <div class="pb-2 px-3">

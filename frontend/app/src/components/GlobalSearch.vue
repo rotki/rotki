@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
-import { type Ref } from 'vue';
 import { useAppRoutes } from '@/router/routes';
-import { type Exchange } from '@/types/exchanges';
-import { type TradeLocationData } from '@/types/history/trade/location';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { Ref } from 'vue';
+import type { Exchange } from '@/types/exchanges';
+import type { TradeLocationData } from '@/types/history/trade/location';
 
 interface SearchItem {
   value: number;
@@ -47,7 +47,7 @@ const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();
 
-const getItemText = (item: SearchItemWithoutValue): string => {
+function getItemText(item: SearchItemWithoutValue): string {
   const text = item.texts ? item.texts.join(' ') : item.text;
   return (
     text
@@ -55,163 +55,160 @@ const getItemText = (item: SearchItemWithoutValue): string => {
       .replace(/\s+/g, ' ')
       .trim() ?? ''
   );
-};
+}
 
-const filterItems = (
-  items: SearchItemWithoutValue[],
-  keyword: string
-): SearchItemWithoutValue[] =>
-  items
-    .filter(item => {
+function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
+  return items
+    .filter((item) => {
       let matchedPoints = 0;
       for (const word of keyword.trim().split(' ')) {
         const indexOf = getItemText(item).toLowerCase().indexOf(word);
-        if (indexOf > -1) {
+        if (indexOf > -1)
           matchedPoints++;
-        }
-        if (indexOf === 0) {
+
+        if (indexOf === 0)
           matchedPoints += 0.5;
-        }
       }
       item.matchedPoints = matchedPoints;
       return matchedPoints > 0;
     })
     .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
+}
 
-const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
+function getRoutes(keyword: string): SearchItemWithoutValue[] {
   const routeItems: SearchItemWithoutValue[] = [
     { ...Routes.DASHBOARD },
     {
       ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       texts: [
         Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text
-      ]
+        Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text,
+      ],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
       texts: [
         Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_EXCHANGE.text
-      ]
+        Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
+      ],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_MANUAL,
       texts: [
         Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_MANUAL.text
-      ]
+        Routes.ACCOUNTS_BALANCES_MANUAL.text,
+      ],
     },
     {
       ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
       texts: [
         Routes.ACCOUNTS_BALANCES.text,
-        Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text
-      ]
+        Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text,
+      ],
     },
     { ...Routes.NFTS },
     {
       ...Routes.HISTORY_TRADES,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text]
+      texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text],
     },
     {
       ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text]
+      texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text],
     },
     {
       ...Routes.HISTORY_EVENTS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text]
+      texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text],
     },
     {
       ...Routes.DEFI_OVERVIEW,
-      texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text]
+      texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text],
     },
     {
       ...Routes.DEFI_DEPOSITS_PROTOCOLS,
       texts: [
         Routes.DEFI.text,
         Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_PROTOCOLS.text
-      ]
+        Routes.DEFI_DEPOSITS_PROTOCOLS.text,
+      ],
     },
     {
       ...Routes.DEFI_DEPOSITS_LIQUIDITY,
       texts: [
         Routes.DEFI.text,
         Routes.DEFI_DEPOSITS.text,
-        Routes.DEFI_DEPOSITS_LIQUIDITY.text
-      ]
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+      ],
     },
     {
       ...Routes.DEFI_LIABILITIES,
-      texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text]
+      texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text],
     },
     {
       ...Routes.DEFI_AIRDROPS,
-      texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text]
+      texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text],
     },
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },
     { ...Routes.PROFIT_LOSS_REPORTS },
     {
       ...Routes.ASSET_MANAGER_MANAGED,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_MANAGED.text]
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_MANAGED.text],
     },
     {
       ...Routes.ASSET_MANAGER_CUSTOM,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CUSTOM.text]
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CUSTOM.text],
     },
     {
       ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
       texts: [
         Routes.ASSET_MANAGER.text,
-        Routes.ASSET_MANAGER_NEWLY_DETECTED.text
-      ]
+        Routes.ASSET_MANAGER_NEWLY_DETECTED.text,
+      ],
     },
     {
       ...Routes.PRICE_MANAGER_LATEST,
-      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_LATEST.text]
+      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_LATEST.text],
     },
     {
       ...Routes.PRICE_MANAGER_HISTORIC,
-      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_HISTORIC.text]
+      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_HISTORIC.text],
     },
     { ...Routes.ADDRESS_BOOK_MANAGER },
     {
       ...Routes.API_KEYS_ROTKI_PREMIUM,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text]
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text],
     },
     {
       ...Routes.API_KEYS_EXCHANGES,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXCHANGES.text]
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXCHANGES.text],
     },
     {
       ...Routes.API_KEYS_EXTERNAL_SERVICES,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXTERNAL_SERVICES.text]
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXTERNAL_SERVICES.text],
     },
     { ...Routes.IMPORT },
     {
       ...Routes.SETTINGS_GENERAL,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text]
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text],
     },
     {
       ...Routes.SETTINGS_ACCOUNTING,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text]
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text],
     },
     {
       ...Routes.SETTINGS_DATA_SECURITY,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATA_SECURITY.text]
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATA_SECURITY.text],
     },
     {
       ...Routes.SETTINGS_MODULES,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text]
-    }
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text],
+    },
   ];
 
   return filterItems(routeItems, keyword);
-};
+}
 
-const getExchanges = (keyword: string): SearchItemWithoutValue[] => {
+function getExchanges(keyword: string): SearchItemWithoutValue[] {
   const exchanges = get(connectedExchanges);
   const exchangeItems: SearchItemWithoutValue[] = exchanges.map(
     (exchange: Exchange) => {
@@ -224,107 +221,107 @@ const getExchanges = (keyword: string): SearchItemWithoutValue[] => {
         texts: [
           Routes.ACCOUNTS_BALANCES.text,
           Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
-          name
-        ]
+          name,
+        ],
       };
-    }
+    },
   );
 
   return filterItems(exchangeItems, keyword);
-};
+}
 
-const getActions = (keyword: string): SearchItemWithoutValue[] => {
+function getActions(keyword: string): SearchItemWithoutValue[] {
   const actionItems: SearchItemWithoutValue[] = [
     {
       text: t('exchange_settings.dialog.add.title').toString(),
-      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`
+      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
     },
     {
       text: t('blockchain_balances.form_dialog.add_title').toString(),
-      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`
+      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
     },
     {
       text: t('manual_balances.dialog.add.title').toString(),
-      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`
+      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
     },
     {
       text: t('closed_trades.dialog.add.title').toString(),
-      route: `${Routes.HISTORY_TRADES.route}?add=true`
+      route: `${Routes.HISTORY_TRADES.route}?add=true`,
     },
     {
       text: t('asset_management.add_title').toString(),
-      route: `${Routes.ASSET_MANAGER.route}?add=true`
+      route: `${Routes.ASSET_MANAGER.route}?add=true`,
     },
     {
       text: t('price_management.latest.add_title').toString(),
-      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`
+      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
     },
     {
       text: t('price_management.historic.add_title').toString(),
-      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`
-    }
+      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
+    },
   ].map(item => ({ ...item, icon: 'add-circle-line' }));
 
   return filterItems(actionItems, keyword);
-};
+}
 
-const getAssets = async (
-  keyword: string
-): Promise<SearchItemWithoutValue[]> => {
+async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
   try {
     const matches = await assetSearch(keyword, 5);
     const assetBalances = get(balances()) as AssetBalanceWithPrice[];
     const map: Record<string, string> = {};
-    for (const match of matches) {
+    for (const match of matches)
       map[match.identifier] = match.symbol ?? match.name ?? '';
-    }
+
     const ids = matches.map(({ identifier }) => identifier);
 
     return assetBalances
       .filter(balance => ids.includes(balance.asset))
-      .map(balance => {
+      .map((balance) => {
         const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
         const asset = balance.asset;
 
         return {
           route: Routes.ASSETS.route.replace(
             ':identifier',
-            encodeURIComponent(asset)
+            encodeURIComponent(asset),
           ),
           texts: [t('common.asset').toString(), map[asset] ?? ''],
           price,
-          asset
+          asset,
         };
       });
-  } catch {
+  }
+  catch {
     return [];
   }
-};
+}
 
 function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
   const locationBalances = get(balancesByLocation);
 
   for (const identifier in locationBalances) {
     const location = getLocationData(identifier);
-    if (!location) {
+    if (!location)
       continue;
-    }
+
     const total = locationBalances[identifier];
     yield {
       route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),
       texts: [t('common.location').toString(), location.name],
       location,
-      total
+      total,
     } satisfies SearchItemWithoutValue;
   }
 }
 
-const getLocations = (keyword: string) =>
-  filterItems([...transformLocations()], keyword);
+function getLocations(keyword: string) {
+  return filterItems([...transformLocations()], keyword);
+}
 
 watchDebounced(
   search,
-  async keyword => {
+  async (keyword) => {
     if (!keyword) {
       set(visibleItems, []);
       return;
@@ -339,26 +336,26 @@ watchDebounced(
         ...getExchanges(search),
         ...getActions(search),
         ...(await getAssets(search)),
-        ...getLocations(search)
+        ...getLocations(search),
       ].map((item, index) => ({
         ...item,
         value: index,
-        text: getItemText(item)
-      }))
+        text: getItemText(item),
+      })),
     );
 
     set(loading, false);
   },
   {
-    debounce: 800
-  }
+    debounce: 800,
+  },
 );
 
-watch(search, search => {
+watch(search, (search) => {
   set(loading, !!search);
 });
 
-watch(open, open => {
+watch(open, (open) => {
   nextTick(() => {
     if (open) {
       setTimeout(() => {
@@ -370,29 +367,28 @@ watch(open, open => {
   });
 });
 
-const change = async (index: number) => {
+async function change(index: number) {
   const item: SearchItem = get(visibleItems)[index];
   if (item) {
-    if (item.route) {
+    if (item.route)
       await router.push(item.route);
-    }
+
     item?.action?.();
     set(open, false);
   }
-};
+}
 
 const interop = useInterop();
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 
-  window.addEventListener('keydown', async event => {
+  window.addEventListener('keydown', async (event) => {
     // Mac use Command, Others use Control
     if (
-      ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) &&
-      event.key === key
-    ) {
+      ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey))
+      && event.key === key
+    )
       set(open, true);
-    }
   });
 });
 </script>
@@ -412,7 +408,7 @@ onBeforeMount(async () => {
         :tooltip="
           t('global_search.menu_tooltip', {
             modifier,
-            key
+            key,
           }).toString()
         "
         v-on="on"
@@ -439,7 +435,11 @@ onBeforeMount(async () => {
       >
         <template #item="{ item }">
           <div class="flex items-center text-body-2 w-full">
-            <AssetIcon v-if="item.asset" size="30px" :identifier="item.asset" />
+            <AssetIcon
+              v-if="item.asset"
+              size="30px"
+              :identifier="item.asset"
+            />
             <template v-else>
               <LocationIcon
                 v-if="item.location"
@@ -457,9 +457,15 @@ onBeforeMount(async () => {
             </template>
             <span class="ml-3">
               <template v-if="item.texts">
-                <span v-for="(text, index) in item.texts" :key="text + index">
+                <span
+                  v-for="(text, index) in item.texts"
+                  :key="text + index"
+                >
                   <span v-if="index === item.texts.length - 1">{{ text }}</span>
-                  <span v-else class="text-rui-text-secondary">
+                  <span
+                    v-else
+                    class="text-rui-text-secondary"
+                  >
                     {{ text }}
                     <RuiIcon
                       class="d-inline mr-2"
@@ -474,16 +480,26 @@ onBeforeMount(async () => {
               </template>
             </span>
             <div class="grow" />
-            <div v-if="item.price" class="text-right">
-              <div class="text-caption">{{ t('common.price') }}:</div>
+            <div
+              v-if="item.price"
+              class="text-right"
+            >
+              <div class="text-caption">
+                {{ t('common.price') }}:
+              </div>
               <AmountDisplay
                 class="font-bold"
                 :fiat-currency="currencySymbol"
                 :value="item.price"
               />
             </div>
-            <div v-if="item.total" class="text-right">
-              <div class="text-caption">{{ t('common.total') }}:</div>
+            <div
+              v-if="item.total"
+              class="text-right"
+            >
+              <div class="text-caption">
+                {{ t('common.total') }}:
+              </div>
               <AmountDisplay
                 class="font-bold"
                 :fiat-currency="currencySymbol"
@@ -493,7 +509,10 @@ onBeforeMount(async () => {
           </div>
         </template>
         <template #append>
-          <div v-if="loading" class="mt-n1 h-full flex items-center">
+          <div
+            v-if="loading"
+            class="mt-n1 h-full flex items-center"
+          >
             <RuiProgress
               class="asset-select__loading"
               circular

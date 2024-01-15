@@ -1,19 +1,21 @@
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
 
 const useLastLanguageShared = createSharedComposable(useLocalStorage);
-const useForceUpdateMachineLanguageShared =
-  createSharedComposable(useLocalStorage);
+const useForceUpdateMachineLanguageShared
+  = createSharedComposable(useLocalStorage);
 const lastLanguage = useLastLanguageShared(
   'rotki.last_language',
-  SupportedLanguage.EN
+  SupportedLanguage.EN,
 );
 
 const forceUpdateMachineLanguage = useForceUpdateMachineLanguageShared(
   'rotki.force_update_machine_language',
-  'true'
+  'true',
 );
 
-export const useLastLanguage = () => ({
-  lastLanguage,
-  forceUpdateMachineLanguage
-});
+export function useLastLanguage() {
+  return {
+    lastLanguage,
+    forceUpdateMachineLanguage,
+  };
+}

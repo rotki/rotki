@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const showGraphRangeSelector = ref<boolean>(true);
 const { showGraphRangeSelector: enabled } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 onMounted(() => {

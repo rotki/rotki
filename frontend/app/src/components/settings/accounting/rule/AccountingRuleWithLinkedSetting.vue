@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
+import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
 
 const props = defineProps<{
   identifier: string;
@@ -16,9 +16,9 @@ const { identifier, value } = toRefs(props);
 
 const { t } = useI18n();
 
-const input = (newValue: AccountingRuleWithLinkedProperty) => {
+function input(newValue: AccountingRuleWithLinkedProperty) {
   emit('input', newValue);
-};
+}
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
@@ -32,14 +32,15 @@ const linkedModel = computed({
     if (newValue) {
       input({
         value: get(value).value,
-        linkedSetting: get(linkableSettingOptions)[0]?.identifier || ''
-      });
-    } else {
-      input({
-        value: get(value).value
+        linkedSetting: get(linkableSettingOptions)[0]?.identifier || '',
       });
     }
-  }
+    else {
+      input({
+        value: get(value).value,
+      });
+    }
+  },
 });
 
 const linkedSettingModel = computed({
@@ -49,23 +50,22 @@ const linkedSettingModel = computed({
   set(newLinkedSetting: string | undefined) {
     input({
       value: get(value).value,
-      ...(newLinkedSetting ? { linkedSetting: newLinkedSetting } : {})
+      ...(newLinkedSetting ? { linkedSetting: newLinkedSetting } : {}),
     });
-  }
+  },
 });
 
 const linkedPropertyValue = computed(() => {
   const property = get(value).linkedSetting;
-  if (!property) {
+  if (!property)
     return null;
-  }
+
   const item = get(linkableSettingOptions).find(
-    item => item.identifier === property
+    item => item.identifier === property,
   );
 
-  if (!item) {
+  if (!item)
     return null;
-  }
 
   return get(item.state);
 });
@@ -75,9 +75,16 @@ const elemID = computed(() => `${get(identifier)}-switch`);
 
 <template>
   <div class="flex gap-2 py-4">
-    <VSwitch :id="elemID" v-model="value.value" :disabled="linkedModel" />
+    <VSwitch
+      :id="elemID"
+      v-model="value.value"
+      :disabled="linkedModel"
+    />
     <div class="w-full">
-      <label :for="elemID" class="cursor-pointer">
+      <label
+        :for="elemID"
+        class="cursor-pointer"
+      >
         <div class="text-body-1 text-rui-text">
           {{ label }}
         </div>
@@ -85,12 +92,20 @@ const elemID = computed(() => `${get(identifier)}-switch`);
           {{ hint }}
         </div>
       </label>
-      <RuiCheckbox v-model="linkedModel" size="sm" color="primary" hide-details>
+      <RuiCheckbox
+        v-model="linkedModel"
+        size="sm"
+        color="primary"
+        hide-details
+      >
         <span class="text-caption">
           {{ t('accounting_settings.rule.overwrite_by_setting') }}
         </span>
       </RuiCheckbox>
-      <div v-if="linkedModel" class="ml-7 mt-1 md:w-1/2">
+      <div
+        v-if="linkedModel"
+        class="ml-7 mt-1 md:w-1/2"
+      >
         <VAutocomplete
           v-model="linkedSettingModel"
           outlined

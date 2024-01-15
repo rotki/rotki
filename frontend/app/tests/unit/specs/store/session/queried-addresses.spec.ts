@@ -1,7 +1,7 @@
 import { Module } from '@/types/modules';
-import {
-  type QueriedAddressPayload,
-  type QueriedAddresses
+import type {
+  QueriedAddressPayload,
+  QueriedAddresses,
 } from '@/types/session';
 
 describe('session:queried addresses store', () => {
@@ -14,11 +14,11 @@ describe('session:queried addresses store', () => {
     api = useQueriedAddressApi();
   });
 
-  test('fetchQueriedAddresses', async () => {
+  it('fetchQueriedAddresses', async () => {
     expect.assertions(2);
 
     const response: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
+      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
 
     api.queriedAddresses = vi.fn().mockResolvedValue(response);
@@ -27,7 +27,7 @@ describe('session:queried addresses store', () => {
     expect(store.queriedAddresses).toMatchObject(response);
   });
 
-  test('fetchQueriedAddresses fails', async () => {
+  it('fetchQueriedAddresses fails', async () => {
     expect.assertions(3);
     const messageStore = useMessageStore();
     api.queriedAddresses = vi.fn().mockRejectedValue(new Error('failed'));
@@ -37,14 +37,14 @@ describe('session:queried addresses store', () => {
     expect(messageStore.message.description).toBeTruthy();
   });
 
-  test('addQueriedAddress', async () => {
+  it('addQueriedAddress', async () => {
     expect.assertions(2);
     const payload: QueriedAddressPayload = {
       module: Module.MAKERDAO_DSR,
-      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
+      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     };
     const response: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
+      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     api.addQueriedAddress = vi.fn().mockResolvedValue(response);
     await store.addQueriedAddress(payload);
@@ -52,12 +52,12 @@ describe('session:queried addresses store', () => {
     expect(store.queriedAddresses).toMatchObject(response);
   });
 
-  test('addQueriedAddress fails', async () => {
+  it('addQueriedAddress fails', async () => {
     expect.assertions(3);
     const messageStore = useMessageStore();
     const payload: QueriedAddressPayload = {
       module: Module.MAKERDAO_DSR,
-      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
+      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     };
 
     api.addQueriedAddress = vi.fn().mockRejectedValue(new Error('failed'));
@@ -67,16 +67,16 @@ describe('session:queried addresses store', () => {
     expect(messageStore.message.description).toBeTruthy();
   });
 
-  test('deletedQueriedAddress', async () => {
+  it('deletedQueriedAddress', async () => {
     expect.assertions(2);
 
     const originalState: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
+      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     Object.assign(store.queriedAddresses, originalState);
     const payload: QueriedAddressPayload = {
       module: Module.MAKERDAO_DSR,
-      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
+      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     };
 
     api.deleteQueriedAddress = vi.fn().mockResolvedValue({});
@@ -85,17 +85,17 @@ describe('session:queried addresses store', () => {
     expect(store.queriedAddresses).toMatchObject({});
   });
 
-  test('deletedQueriedAddress failed', async () => {
+  it('deletedQueriedAddress failed', async () => {
     expect.assertions(3);
     const messageStore = useMessageStore();
 
     const originalState: QueriedAddresses = {
-      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
+      makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
     };
     Object.assign(store.queriedAddresses, originalState);
     const payload: QueriedAddressPayload = {
       module: Module.MAKERDAO_DSR,
-      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
+      address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     };
 
     api.deleteQueriedAddress = vi.fn().mockRejectedValue(new Error('failed'));

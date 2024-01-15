@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type MaybeRef } from '@vueuse/core';
-import { type FrontendSettingsPayload } from '@/types/settings/frontend-settings';
-import { type SettingsUpdate } from '@/types/user';
-import { type SessionSettings } from '@/types/session';
+import type { MaybeRef } from '@vueuse/core';
+import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
+import type { SettingsUpdate } from '@/types/user';
+import type { SessionSettings } from '@/types/session';
 
 type TransformMessageCallback<T = any> = (value: any) => T;
 
@@ -23,8 +23,8 @@ const props = withDefaults(
     sessionSetting: false,
     transform: null,
     successMessage: '',
-    errorMessage: ''
-  }
+    errorMessage: '',
+  },
 );
 
 const emit = defineEmits(['updated', 'finished']);
@@ -35,26 +35,23 @@ const {
   sessionSetting,
   successMessage,
   errorMessage,
-  transform
+  transform,
 } = toRefs(props);
-const { error, success, clear, wait, stop, setSuccess, setError } =
-  useClearableMessages();
+const { error, success, clear, wait, stop, setSuccess, setError }
+  = useClearableMessages();
 const { updateSetting } = useSettings();
 
 const loading = ref(false);
 
-const getMessage = (
-  ref: MaybeRef<string | TransformMessageCallback<string>>,
-  value: any
-) => {
+function getMessage(ref: MaybeRef<string | TransformMessageCallback<string>>, value: any) {
   const message = get(ref);
-  if (typeof message === 'string') {
+  if (typeof message === 'string')
     return message;
-  }
-  return message(value);
-};
 
-const updateImmediate = async (newValue: any) => {
+  return message(value);
+}
+
+async function updateImmediate(newValue: any) {
   stop();
   clear();
   set(loading, true);
@@ -65,12 +62,12 @@ const updateImmediate = async (newValue: any) => {
   const location = get(sessionSetting)
     ? SettingLocation.SESSION
     : get(frontendSetting)
-    ? SettingLocation.FRONTEND
-    : SettingLocation.GENERAL;
+      ? SettingLocation.FRONTEND
+      : SettingLocation.GENERAL;
 
   const result = await updateSetting(settingKey, settingValue, location, {
     success: getMessage(successMessage, newValue),
-    error: getMessage(errorMessage, newValue)
+    error: getMessage(errorMessage, newValue),
   });
 
   set(loading, false);
@@ -79,11 +76,12 @@ const updateImmediate = async (newValue: any) => {
   if ('success' in result) {
     emit('updated');
     setSuccess(result.success);
-  } else {
+  }
+  else {
     setError(result.error);
   }
   emit('finished');
-};
+}
 
 const update = useDebounceFn(updateImmediate, 1500);
 </script>

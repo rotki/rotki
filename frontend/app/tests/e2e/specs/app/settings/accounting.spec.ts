@@ -22,7 +22,7 @@ describe('settings::accounting', () => {
   it('change gas costs switch & validate UI message', () => {
     pageAccounting.changeSwitch(
       '.accounting-settings__include-gas-costs',
-      false
+      false,
     );
   });
 
@@ -34,11 +34,11 @@ describe('settings::accounting', () => {
   it('change cost basis fee settings & validate UI message', () => {
     pageAccounting.verifySwitchState(
       '.accounting-settings__include-fees-in-cost-basis',
-      true
+      true,
     );
     pageAccounting.changeSwitch(
       '.accounting-settings__include-fees-in-cost-basis',
-      false
+      false,
     );
   });
 
@@ -48,19 +48,19 @@ describe('settings::accounting', () => {
     pageAccounting.visit();
     pageAccounting.verifySwitchState(
       '.accounting-settings__crypto2crypto',
-      false
+      false,
     );
     pageAccounting.verifySwitchState(
       '.accounting-settings__include-gas-costs',
-      false
+      false,
     );
     pageAccounting.verifySwitchState(
       '.accounting-settings__taxfree-period',
-      false
+      false,
     );
     pageAccounting.verifySwitchState(
       '.accounting-settings__include-fees-in-cost-basis',
-      false
+      false,
     );
   });
 });

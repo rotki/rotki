@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 
@@ -14,7 +14,7 @@ const tx = ref<string>('');
 const block = ref<string>('');
 
 const defaultUrls: ComputedRef<ExplorerUrls> = computed(
-  () => explorerUrls[get(selection)]
+  () => explorerUrls[get(selection)],
 );
 
 const userUrls = computed(() => {
@@ -25,61 +25,60 @@ const userUrls = computed(() => {
 
 const addressUrl = useValueOrDefault(
   useRefMap(userUrls, setting => setting?.address),
-  useRefMap(defaultUrls, ({ address }) => address || null)
+  useRefMap(defaultUrls, ({ address }) => address || null),
 );
 
 const txUrl = useValueOrDefault(
   useRefMap(userUrls, setting => setting?.transaction),
-  useRefMap(defaultUrls, ({ transaction }) => transaction || null)
+  useRefMap(defaultUrls, ({ transaction }) => transaction || null),
 );
 
 const blockUrl = useValueOrDefault(
   useRefMap(userUrls, setting => setting?.block),
-  useRefMap(defaultUrls, ({ block }) => block || null)
+  useRefMap(defaultUrls, ({ block }) => block || null),
 );
 
-const onChange = () => {
+function onChange() {
   const setting = get(userUrls);
   set(address, setting?.address ?? '');
   set(tx, setting?.transaction ?? '');
   set(block, setting?.block ?? '');
-};
+}
 
 onMounted(() => {
   onChange();
 });
 
-const save = async (type: keyof ExplorerUrls, newValue?: string) => {
+async function save(type: keyof ExplorerUrls, newValue?: string) {
   const setting = get(userUrls);
 
   const updated = {
     ...setting,
-    [type]: newValue
+    [type]: newValue,
   };
 
-  if (!newValue) {
+  if (!newValue)
     delete updated[type];
-  }
 
   await store.updateSetting({
     explorers: {
       ...get(explorers),
-      [get(selection)]: updated
-    }
+      [get(selection)]: updated,
+    },
   });
-};
+}
 
-const saveAddress = async (newAddress?: string) => {
+async function saveAddress(newAddress?: string) {
   await save('address', newAddress);
-};
+}
 
-const saveTransaction = async (newTransaction?: string) => {
+async function saveTransaction(newTransaction?: string) {
   await save('transaction', newTransaction);
-};
+}
 
-const saveBlock = async (newBlock?: string) => {
+async function saveBlock(newBlock?: string) {
   await save('block', newBlock);
-};
+}
 
 const { t } = useI18n();
 </script>
@@ -106,12 +105,24 @@ const { t } = useI18n();
         @change="onChange()"
       >
         <template #item="{ item }">
-          <ChainDisplay v-if="!additional.includes(item)" :chain="item" />
-          <AssetDetails v-else :asset="item" />
+          <ChainDisplay
+            v-if="!additional.includes(item)"
+            :chain="item"
+          />
+          <AssetDetails
+            v-else
+            :asset="item"
+          />
         </template>
         <template #selection="{ item }">
-          <ChainDisplay v-if="!additional.includes(item)" :chain="item" />
-          <AssetDetails v-else :asset="item" />
+          <ChainDisplay
+            v-if="!additional.includes(item)"
+            :chain="item"
+          />
+          <AssetDetails
+            v-else
+            :asset="item"
+          />
         </template>
       </VSelect>
 

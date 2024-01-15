@@ -9,8 +9,8 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-    persistent: false
-  }
+    persistent: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -29,7 +29,7 @@ const balanceFile = computed<File | null>({
   },
   set(value) {
     emit('update:balance-file', value);
-  }
+  },
 });
 
 const locationFile = computed<File | null>({
@@ -38,16 +38,24 @@ const locationFile = computed<File | null>({
   },
   set(value) {
     emit('update:location-file', value);
-  }
+  },
 });
 
 const complete = logicOr(balanceFile, locationFile);
 </script>
 
 <template>
-  <VDialog v-model="visible" max-width="600" :persistent="persistent">
+  <VDialog
+    v-model="visible"
+    max-width="600"
+    :persistent="persistent"
+  >
     <template #activator="{ on }">
-      <RuiButton color="primary" variant="outlined" v-on="on">
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        v-on="on"
+      >
         <template #prepend>
           <RuiIcon name="folder-received-line" />
         </template>
@@ -66,7 +74,10 @@ const complete = logicOr(balanceFile, locationFile);
             {{ t('snapshot_import_dialog.balance_snapshot_file') }}
           </div>
           <div class="py-2">
-            <FileUpload v-model="balanceFile" source="csv" />
+            <FileUpload
+              v-model="balanceFile"
+              source="csv"
+            />
           </div>
           <div class="text-caption">
             {{ t('snapshot_import_dialog.balance_snapshot_file_suggested') }}
@@ -77,7 +88,10 @@ const complete = logicOr(balanceFile, locationFile);
             {{ t('snapshot_import_dialog.location_data_snapshot_file') }}
           </div>
           <div class="py-2">
-            <FileUpload v-model="locationFile" source="csv" />
+            <FileUpload
+              v-model="locationFile"
+              source="csv"
+            />
           </div>
           <div class="text-caption">
             {{ t('snapshot_import_dialog.location_data_snapshot_suggested') }}
@@ -87,7 +101,11 @@ const complete = logicOr(balanceFile, locationFile);
 
       <template #footer>
         <div class="w-full" />
-        <RuiButton color="primary" variant="text" @click="visible = false">
+        <RuiButton
+          color="primary"
+          variant="text"
+          @click="visible = false"
+        >
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton

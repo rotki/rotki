@@ -4,7 +4,7 @@ const abbreviationList = [
   [12, 'T'],
   [9, 'B'],
   [6, 'M'],
-  [3, 'k']
+  [3, 'k'],
 ] as const;
 
 export class AmountFormatter {
@@ -14,23 +14,23 @@ export class AmountFormatter {
     thousandSeparator: string,
     decimalSeparator: string,
     roundingMode?: BigNumber.RoundingMode,
-    abbreviateNumber?: boolean
+    abbreviateNumber?: boolean,
   ) {
-    const usedRoundingMode =
-      roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
+    const usedRoundingMode
+      = roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
 
     if (abbreviateNumber) {
       const usedAbbreviation = abbreviationList.find(([digitNum, _]) =>
-        amount.abs().gte((10 ** digitNum) as number)
+        amount.abs().gte((10 ** digitNum)),
       );
 
       if (usedAbbreviation) {
         return `${amount
-          .dividedBy((10 ** usedAbbreviation[0]) as number)
+          .dividedBy((10 ** usedAbbreviation[0]))
           .toFormat(
             precision,
             usedRoundingMode,
-            getBnFormat(thousandSeparator, decimalSeparator)
+            getBnFormat(thousandSeparator, decimalSeparator),
           )} ${usedAbbreviation[1]}`;
       }
     }
@@ -38,18 +38,17 @@ export class AmountFormatter {
     return amount.toFormat(
       precision,
       usedRoundingMode,
-      getBnFormat(thousandSeparator, decimalSeparator)
+      getBnFormat(thousandSeparator, decimalSeparator),
     );
   }
 }
 
 export const displayAmountFormatter = new AmountFormatter();
 
-export const getBnFormat = (
-  thousandSeparator: string,
-  decimalSeparator: string
-) => ({
-  groupSize: 3,
-  groupSeparator: thousandSeparator,
-  decimalSeparator
-});
+export function getBnFormat(thousandSeparator: string, decimalSeparator: string) {
+  return {
+    groupSize: 3,
+    groupSeparator: thousandSeparator,
+    decimalSeparator,
+  };
+}

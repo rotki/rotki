@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({
-  name: 'LocationBreakdown'
+  name: 'LocationBreakdown',
 });
 
 const props = defineProps<{
@@ -14,8 +14,15 @@ const location = locationData(identifier);
 
 <template>
   <div class="flex flex-col gap-4 mx-4">
-    <div v-if="location" class="flex flex-row items-center my-4 gap-2">
-      <LocationIcon :item="identifier" icon size="48px" />
+    <div
+      v-if="location"
+      class="flex flex-row items-center my-4 gap-2"
+    >
+      <LocationIcon
+        :item="identifier"
+        icon
+        size="48px"
+      />
       <span class="text-h5 font-medium">
         {{ location.name }}
       </span>

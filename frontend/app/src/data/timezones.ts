@@ -595,5 +595,5 @@ export const timezones: string[] = [
   'Universal',
   'W-SU',
   'WET',
-  'Zulu'
+  'Zulu',
 ];

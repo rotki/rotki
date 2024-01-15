@@ -1,50 +1,50 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
-  validWithSessionStatus
+  validWithSessionStatus,
 } from '@/services/utils';
-import {
-  type QueriedAddressPayload,
-  type QueriedAddresses
+import type { ActionResult } from '@rotki/common/lib/data';
+import type {
+  QueriedAddressPayload,
+  QueriedAddresses,
 } from '@/types/session';
 
-export const useQueriedAddressApi = () => {
+export function useQueriedAddressApi() {
   const queriedAddresses = async (): Promise<QueriedAddresses> => {
     const response = await api.instance.get<ActionResult<QueriedAddresses>>(
       '/queried_addresses',
       {
-        validateStatus: validWithSessionStatus
-      }
+        validateStatus: validWithSessionStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const addQueriedAddress = async (
-    payload: QueriedAddressPayload
+    payload: QueriedAddressPayload,
   ): Promise<QueriedAddresses> => {
     const response = await api.instance.put<ActionResult<QueriedAddresses>>(
       '/queried_addresses',
       payload,
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const deleteQueriedAddress = async (
-    payload: QueriedAddressPayload
+    payload: QueriedAddressPayload,
   ): Promise<QueriedAddresses> => {
     const response = await api.instance.delete<ActionResult<QueriedAddresses>>(
       '/queried_addresses',
       {
         data: payload,
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -53,6 +53,6 @@ export const useQueriedAddressApi = () => {
   return {
     queriedAddresses,
     addQueriedAddress,
-    deleteQueriedAddress
+    deleteQueriedAddress,
   };
-};
+}

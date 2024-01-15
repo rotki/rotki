@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import Fragment from '@/components/helper/Fragment';
-import {
-  type DatabaseInfo,
-  type UserDbBackup,
-  type UserDbBackupWithId
+import type {
+  DatabaseInfo,
+  UserDbBackup,
+  UserDbBackupWithId,
 } from '@/types/backup';
 
 const { t } = useI18n();
@@ -17,22 +17,21 @@ const saving = ref(false);
 const backups = useRefMap(
   backupInfo,
   info =>
-    info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? []
+    info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
 );
 
 const { notify } = useNotificationsStore();
 
 const directory = computed(() => {
   const info = get(backupInfo);
-  if (!info) {
+  if (!info)
     return '';
-  }
+
   const { filepath } = info.userdb.info;
 
   let index = filepath.lastIndexOf('/');
-  if (index === -1) {
+  if (index === -1)
     index = filepath.lastIndexOf('\\');
-  }
 
   return filepath.slice(0, index + 1);
 });
@@ -41,7 +40,7 @@ const userDb = computed(() => {
   const info = get(backupInfo);
   return {
     size: info ? size(info.userdb.info.size) : '0',
-    version: info ? info.userdb.info.version.toString() : '0'
+    version: info ? info.userdb.info.version.toString() : '0',
   };
 });
 
@@ -49,35 +48,39 @@ const globalDb = computed(() => {
   const info = get(backupInfo);
   return {
     schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
-    assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0'
+    assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0',
   };
 });
 
 const { info, createBackup, deleteBackup } = useBackupApi();
 
-const loadInfo = async () => {
+async function loadInfo() {
   try {
     set(loading, true);
     set(backupInfo, await info());
-  } catch (e: any) {
-    logger.error(e);
+  }
+  catch (error: any) {
+    logger.error(error);
     notify({
       display: true,
       title: t('database_backups.load_error.title'),
       message: t('database_backups.load_error.message', {
-        message: e.message
-      })
+        message: error.message,
+      }),
     });
-  } finally {
+  }
+  finally {
     set(loading, false);
   }
-};
-const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) =>
-  firstDb.version === secondDb.version &&
-  firstDb.time === secondDb.time &&
-  firstDb.size === secondDb.size;
+}
 
-const massRemove = async () => {
+function isSameEntry(firstDb: UserDbBackup, secondDb: UserDbBackup) {
+  return firstDb.version === secondDb.version
+    && firstDb.time === secondDb.time
+    && firstDb.size === secondDb.size;
+}
+
+async function massRemove() {
   const currentSelection = get(selected);
   const filepaths = currentSelection.map(db => getFilepath(db, directory));
   try {
@@ -87,26 +90,27 @@ const massRemove = async () => {
       const info: DatabaseInfo = { ...backups };
       currentSelection.forEach((db: UserDbBackup) => {
         const index = info.userdb.backups.findIndex(backup =>
-          isSameEntry(backup, db)
+          isSameEntry(backup, db),
         );
         info.userdb.backups.splice(index, 1);
       });
       set(backupInfo, info);
     }
     set(selected, []);
-  } catch (e: any) {
-    logger.error(e);
+  }
+  catch (error: any) {
+    logger.error(error);
     notify({
       display: true,
       title: t('database_backups.delete_error.title'),
       message: t('database_backups.delete_error.mass_message', {
-        message: e.message
-      })
+        message: error.message,
+      }),
     });
   }
-};
+}
 
-const remove = async (db: UserDbBackup) => {
+async function remove(db: UserDbBackup) {
   const filepath = getFilepath(db, directory);
   try {
     await deleteBackup([filepath]);
@@ -114,7 +118,7 @@ const remove = async (db: UserDbBackup) => {
     if (backups) {
       const info: DatabaseInfo = { ...backups };
       const index = info.userdb.backups.findIndex(backup =>
-        isSameEntry(backup, db)
+        isSameEntry(backup, db),
       );
       info.userdb.backups.splice(index, 1);
       set(backupInfo, info);
@@ -123,24 +127,25 @@ const remove = async (db: UserDbBackup) => {
       if (currentSelection.length > 0) {
         set(
           selected,
-          currentSelection.filter(item => !isSameEntry(item, db))
+          currentSelection.filter(item => !isSameEntry(item, db)),
         );
       }
     }
-  } catch (e: any) {
-    logger.error(e);
+  }
+  catch (error: any) {
+    logger.error(error);
     notify({
       display: true,
       title: t('database_backups.delete_error.title'),
       message: t('database_backups.delete_error.message', {
         file: filepath,
-        message: e.message
-      })
+        message: error.message,
+      }),
     });
   }
-};
+}
 
-const backup = async () => {
+async function backup() {
   try {
     set(saving, true);
     const filepath = await createBackup();
@@ -149,38 +154,40 @@ const backup = async () => {
       severity: Severity.INFO,
       title: t('database_backups.backup.title'),
       message: t('database_backups.backup.message', {
-        filepath
-      })
+        filepath,
+      }),
     });
 
     await loadInfo();
-  } catch (e: any) {
-    logger.error(e);
+  }
+  catch (error: any) {
+    logger.error(error);
     notify({
       display: true,
       title: t('database_backups.backup_error.title'),
       message: t('database_backups.backup_error.message', {
-        message: e.message
-      })
+        message: error.message,
+      }),
     });
-  } finally {
+  }
+  finally {
     set(saving, false);
   }
-};
+}
 
 const { show } = useConfirmStore();
 
-const showMassDeleteConfirmation = () => {
+function showMassDeleteConfirmation() {
   show(
     {
       title: t('database_backups.confirm.title'),
       message: t('database_backups.confirm.mass_message', {
-        length: get(selected).length
-      })
+        length: get(selected).length,
+      }),
     },
-    massRemove
+    massRemove,
   );
-};
+}
 
 onMounted(loadInfo);
 </script>

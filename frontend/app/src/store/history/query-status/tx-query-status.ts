@@ -1,6 +1,6 @@
 import {
   type EvmTransactionQueryData,
-  EvmTransactionsQueryStatus
+  EvmTransactionsQueryStatus,
 } from '@/types/websocket-messages';
 
 export const useTxQueryStatusStore = defineStore(
@@ -8,7 +8,7 @@ export const useTxQueryStatusStore = defineStore(
   () => {
     const createKey = ({
       address,
-      evmChain
+      evmChain,
     }: {
       address: string;
       evmChain: string;
@@ -18,18 +18,18 @@ export const useTxQueryStatusStore = defineStore(
       const status = { ...get(queryStatus) };
       const key = createKey(data);
 
-      if (data.status === EvmTransactionsQueryStatus.ACCOUNT_CHANGE) {
+      if (data.status === EvmTransactionsQueryStatus.ACCOUNT_CHANGE)
         return;
-      }
 
       if (
         data.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
       ) {
         status[key] = {
           ...data,
-          status: EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS
+          status: EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS,
         };
-      } else {
+      }
+      else {
         status[key] = data;
       }
 
@@ -43,10 +43,10 @@ export const useTxQueryStatusStore = defineStore(
       queryStatus,
       isAllFinished,
       removeQueryStatus: remove,
-      resetQueryStatus
+      resetQueryStatus,
     } = useQueryStatusStore<EvmTransactionQueryData>(
       isStatusFinished,
-      createKey
+      createKey,
     );
 
     const removeQueryStatus = (data: { address: string; evmChain: string }) => {
@@ -59,13 +59,13 @@ export const useTxQueryStatusStore = defineStore(
       isStatusFinished,
       setQueryStatus,
       removeQueryStatus,
-      resetQueryStatus
+      resetQueryStatus,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useTxQueryStatusStore, import.meta.hot)
+    acceptHMRUpdate(useTxQueryStatusStore, import.meta.hot),
   );
 }

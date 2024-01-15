@@ -15,45 +15,42 @@ import { RuiComponentResolver } from './src/plugins/rui/component-resolver';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
-const publicPath = envPath ? envPath : '/';
+const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
 
-if (isTest) {
+if (isTest)
   console.log('Running in test mode. Enabling Coverage');
-}
 
-if (envPath) {
+if (envPath)
   console.log(`A custom publicPath has been specified, using ${envPath}`);
-}
 
-if (!hmrEnabled) {
+if (!hmrEnabled)
   console.info('HMR is disabled');
-}
 
 export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(PACKAGE_ROOT, 'src'),
-      '~@': resolve(PACKAGE_ROOT, 'src')
+      '~@': resolve(PACKAGE_ROOT, 'src'),
     },
-    dedupe: ['vue']
+    dedupe: ['vue'],
   },
   test: {
     globals: true,
     environment: 'jsdom',
     server: {
       deps: {
-        inline: ['@rotki/ui-library-compat']
-      }
+        inline: ['@rotki/ui-library-compat'],
+      },
     },
     deps: {
       optimizer: {
         web: {
-          include: ['vuetify']
-        }
-      }
+          include: ['vuetify'],
+        },
+      },
     },
     setupFiles: ['tests/unit/setup-files/setup.ts'],
     coverage: {
@@ -61,25 +58,25 @@ export default defineConfig({
       reportsDirectory: 'tests/unit/coverage',
       reporter: ['json'],
       include: ['src/*'],
-      exclude: ['node_modules', 'tests/', '**/*.d.ts']
-    }
+      exclude: ['node_modules', 'tests/', '**/*.d.ts'],
+    },
   },
   base: publicPath,
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   plugins: [
     splitVendorChunkPlugin(),
     vue(),
     checker({
-      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST)
+      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
     }),
     AutoImport({
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
         /\.vue$/,
         /\.vue\?vue/, // .vue
-        /\.md$/ // .md
+        /\.md$/, // .md
       ],
       imports: [
         'vue',
@@ -94,22 +91,22 @@ export default defineConfig({
             'useRouter',
             'useLink',
             'onBeforeRouteUpdate',
-            'onBeforeRouteLeave'
-          ]
-        }
+            'onBeforeRouteLeave',
+          ],
+        },
       ],
       dts: 'src/auto-imports.d.ts',
       dirs: [
         'src/composables/**',
         'src/api/**',
         'src/store/**',
-        'src/utils/**'
+        'src/utils/**',
       ],
       vueTemplate: true,
       eslintrc: {
-        enabled: true
+        enabled: true,
       },
-      injectAtEnd: true
+      injectAtEnd: true,
     }),
     Components({
       dts: true,
@@ -118,36 +115,36 @@ export default defineConfig({
       types: [
         {
           from: 'vue-router',
-          names: ['RouterLink', 'RouterView']
-        }
-      ]
+          names: ['RouterLink', 'RouterView'],
+        },
+      ],
     }),
     DefineOptions(),
     Layouts({
       layoutsDirs: ['src/layouts'],
-      defaultLayout: 'default'
+      defaultLayout: 'default',
     }),
     ...(isTest
       ? [
           istanbul({
             include: 'src/*',
             exclude: ['node_modules', 'tests/', '**/*.d.ts'],
-            extension: ['.ts', '.vue']
-          })
+            extension: ['.ts', '.vue'],
+          }),
         ]
       : []),
     VitePWA({
       base: publicPath,
       registerType: 'prompt',
-      manifest: false
-    })
+      manifest: false,
+    }),
   ],
   server: {
     port: 8080,
     hmr: hmrEnabled,
     watch: {
-      ignored: ['**/.e2e/**', '**/.nyc_output/**']
-    }
+      ignored: ['**/.e2e/**', '**/.nyc_output/**'],
+    },
   },
   build: {
     sourcemap: isDevelopment || isTest,
@@ -158,10 +155,10 @@ export default defineConfig({
       external: [
         'electron',
         'electron-devtools-installer',
-        ...builtinModules.flatMap(p => [p, `node:${p}`])
+        ...builtinModules.flatMap(p => [p, `node:${p}`]),
       ],
-      input: join(PACKAGE_ROOT, 'index.html')
+      input: join(PACKAGE_ROOT, 'index.html'),
     },
-    emptyOutDir: false
-  }
+    emptyOutDir: false,
+  },
 });

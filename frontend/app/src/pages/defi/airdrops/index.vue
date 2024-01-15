@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
-import { type DataTableColumn } from '@rotki/ui-library-compat';
 import {
   AIRDROP_POAP,
   type Airdrop,
   type AirdropDetail,
   Airdrops,
-  type PoapDelivery
+  type PoapDelivery,
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { Ref } from 'vue';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { TaskMeta } from '@/types/task';
 
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
@@ -24,15 +24,15 @@ const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.unclaimed'), value: false },
-  { text: t('common.claimed'), value: true }
+  { text: t('common.claimed'), value: true },
 ]);
 const status: Ref<boolean> = ref(false);
 const loading: Ref<boolean> = ref(false);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t('airdrops.title').toLocaleLowerCase()
-  })
+    title: t('airdrops.title').toLocaleLowerCase(),
+  }),
 );
 const airdrops: Ref<Airdrops> = ref({});
 
@@ -45,7 +45,7 @@ const entries = computed(() => {
     .filter(airdrop => airdrop.claimed === get(status))
     .map((value, index) => ({
       ...value,
-      index
+      index,
     }));
 });
 
@@ -53,31 +53,31 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('airdrops.headers.source'),
     key: 'source',
-    width: '200px'
+    width: '200px',
   },
   {
     label: t('common.address'),
-    key: 'address'
+    key: 'address',
   },
   {
     label: t('common.amount'),
     key: 'amount',
-    align: 'end'
+    align: 'end',
   },
   {
     label: t('common.status'),
-    key: 'claimed'
-  }
+    key: 'claimed',
+  },
 ]);
 
-const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
-  computed(() => {
+function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
+  return computed(() => {
     const result: Airdrop[] = [];
     const data = get(airdrops);
     for (const address in data) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
+      if (addresses.length > 0 && !addresses.includes(address))
         continue;
-      }
+
       const airdrop = data[address];
       for (const source in airdrop) {
         const element = airdrop[source];
@@ -91,10 +91,11 @@ const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
               link,
               name,
               event,
-              claimed: false
-            }))
+              claimed: false,
+            })),
           });
-        } else {
+        }
+        else {
           const { amount, asset, link, claimed } = element as AirdropDetail;
           result.push({
             address,
@@ -102,15 +103,16 @@ const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
             link,
             source,
             asset,
-            claimed
+            claimed,
           });
         }
       }
     }
     return result;
   });
+}
 
-const fetchAirdrops = async () => {
+async function fetchAirdrops() {
   set(loading, true);
   try {
     const { taskId } = await fetchAirdropsCaller();
@@ -118,31 +120,33 @@ const fetchAirdrops = async () => {
       taskId,
       TaskType.DEFI_AIRDROPS,
       {
-        title: t('actions.defi.airdrops.task.title').toString()
-      }
+        title: t('actions.defi.airdrops.task.title').toString(),
+      },
     );
     set(airdrops, Airdrops.parse(result));
-  } catch (e: any) {
-    if (!isTaskCancelled(e)) {
-      logger.error(e);
+  }
+  catch (error: any) {
+    if (!isTaskCancelled(error)) {
+      logger.error(error);
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),
         message: t('actions.defi.airdrops.error.description', {
-          error: e.message
+          error: error.message,
         }).toString(),
-        display: true
+        display: true,
       });
     }
-  } finally {
+  }
+  finally {
     set(loading, false);
   }
-};
+}
 
 const hasDetails = (source: string): boolean => [AIRDROP_POAP].includes(source);
 
-const expand = (item: Airdrop) => {
+function expand(item: Airdrop) {
   set(expanded, get(expanded).includes(item) ? [] : [item]);
-};
+}
 
 onMounted(async () => {
   await fetchAirdrops();
@@ -217,7 +221,10 @@ onMounted(async () => {
           <span v-else>{{ row.details.length }}</span>
         </template>
         <template #item.claimed="{ row: { claimed } }">
-          <RuiChip :color="claimed ? 'success' : 'grey'" size="sm">
+          <RuiChip
+            :color="claimed ? 'success' : 'grey'"
+            size="sm"
+          >
             {{ claimed ? t('common.claimed') : t('common.unclaimed') }}
           </RuiChip>
         </template>
@@ -225,9 +232,20 @@ onMounted(async () => {
           <AirdropDisplay :source="row.source" />
         </template>
         <template #item.expand="{ row }">
-          <ExternalLink v-if="!hasDetails(row.source)" :url="row.link" custom>
-            <RuiButton variant="text" color="primary" icon>
-              <RuiIcon size="16" name="external-link-line" />
+          <ExternalLink
+            v-if="!hasDetails(row.source)"
+            :url="row.link"
+            custom
+          >
+            <RuiButton
+              variant="text"
+              color="primary"
+              icon
+            >
+              <RuiIcon
+                size="16"
+                name="external-link-line"
+              />
             </RuiButton>
           </ExternalLink>
           <RowExpander

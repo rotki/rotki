@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { helpers, required } from '@vuelidate/validators';
-import {
-  type AddTransactionHashPayload,
-  type EvmChainAndTxHash
-} from '@/types/history/events';
 import { toMessages } from '@/utils/validation';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type {
+  AddTransactionHashPayload,
+  EvmChainAndTxHash,
+} from '@/types/history/events';
 
 const { t } = useI18n();
 
@@ -14,28 +14,28 @@ const accounts = ref<GeneralAccount[]>([]);
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const reset = () => {
+function reset() {
   set(txHash, '');
   set(accounts, []);
-};
+}
 
 const rules = {
   txHash: {
     required: helpers.withMessage(
       t('transactions.form.tx_hash.validation.non_empty').toString(),
-      required
+      required,
     ),
     isValidTxHash: helpers.withMessage(
       t('transactions.form.tx_hash.validation.valid').toString(),
-      isValidTxHash
-    )
+      isValidTxHash,
+    ),
   },
   associatedAddress: {
     required: helpers.withMessage(
       t('transactions.form.account.validation.non_empty').toString(),
-      (accounts: GeneralAccount[]) => accounts.length > 0
-    )
-  }
+      (accounts: GeneralAccount[]) => accounts.length > 0,
+    ),
+  },
 };
 
 const { setValidation, setSubmitFunc } = useHistoryTransactionsForm();
@@ -44,13 +44,13 @@ const v$ = setValidation(
   rules,
   {
     txHash,
-    associatedAddress: accounts
+    associatedAddress: accounts,
   },
 
   {
     $autoDirty: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 
 const { txEvmChains, getEvmChainName } = useSupportedChains();
@@ -59,11 +59,10 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
 const { setMessage } = useMessageStore();
 const { addTransactionHash } = useHistoryTransactions();
 
-const save = async (): Promise<EvmChainAndTxHash | null> => {
+async function save(): Promise<EvmChainAndTxHash | null> {
   const accountsVal = get(accounts);
-  if (accountsVal.length === 0) {
+  if (accountsVal.length === 0)
     return null;
-  }
 
   const evmChain = getEvmChainName(accountsVal[0].chain);
   assert(evmChain);
@@ -73,7 +72,7 @@ const save = async (): Promise<EvmChainAndTxHash | null> => {
   const payload: AddTransactionHashPayload = {
     txHash: txHashVal,
     associatedAddress: accountsVal[0].address,
-    evmChain
+    evmChain,
   };
 
   const result = await addTransactionHash(payload);
@@ -82,23 +81,24 @@ const save = async (): Promise<EvmChainAndTxHash | null> => {
     reset();
     return {
       evmChain,
-      txHash: txHashVal
+      txHash: txHashVal,
     };
   }
 
   if (result.message) {
     if (typeof result.message === 'string') {
       setMessage({
-        description: result.message
+        description: result.message,
       });
-    } else {
+    }
+    else {
       set(errorMessages, result.message);
       await get(v$).$validate();
     }
   }
 
   return null;
-};
+}
 
 setSubmitFunc(save);
 </script>

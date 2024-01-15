@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type HistoryEventEntry } from '@/types/history/events';
 import { CURRENCY_USD } from '@/types/currencies';
+import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -29,8 +29,14 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
       :identifier="event.asset"
       @click="navigateToDetails()"
     />
-    <div v-if="showBalance" class="flex flex-col">
-      <AmountDisplay :value="event.balance.amount" :asset="event.asset" />
+    <div
+      v-if="showBalance"
+      class="flex flex-col"
+    >
+      <AmountDisplay
+        :value="event.balance.amount"
+        :asset="event.asset"
+      />
       <AmountDisplay
         :key="event.timestamp"
         :amount="event.balance.amount"

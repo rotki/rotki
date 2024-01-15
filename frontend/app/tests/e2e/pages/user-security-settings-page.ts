@@ -10,19 +10,19 @@ export class UserSecuritySettingsPage {
   changePassword(currentPassword: string, newPassword: string) {
     cy.get('.user-security-settings__fields__current-password input').clear();
     cy.get('.user-security-settings__fields__current-password input').type(
-      currentPassword
+      currentPassword,
     );
 
     cy.get('.user-security-settings__fields__new-password input').clear();
     cy.get('.user-security-settings__fields__new-password input').type(
-      newPassword
+      newPassword,
     );
 
     cy.get(
-      '.user-security-settings__fields__new-password-confirm input'
+      '.user-security-settings__fields__new-password-confirm input',
     ).clear();
     cy.get('.user-security-settings__fields__new-password-confirm input').type(
-      newPassword
+      newPassword,
     );
 
     cy.get('.user-security-settings__buttons__change-password').click();

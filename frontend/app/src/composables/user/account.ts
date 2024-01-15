@@ -1,9 +1,9 @@
-import {
-  type CreateAccountPayload,
-  type LoginCredentials
+import type {
+  CreateAccountPayload,
+  LoginCredentials,
 } from '@/types/login';
 
-export const useAccountManagement = () => {
+export function useAccountManagement() {
   const { t } = useI18n();
   const loading: Ref<boolean> = ref(false);
   const error: Ref<string> = ref('');
@@ -35,16 +35,17 @@ export const useAccountManagement = () => {
     const duration = (Date.now() - start) / 1000;
 
     if (result.success) {
-      if (get(upgradeVisible) && duration < 10) {
+      if (get(upgradeVisible) && duration < 10)
         await wait(3000);
-      }
+
       if (get(logged)) {
         clearUpgradeMessages();
         showGetPremiumButton();
         set(canRequestData, true);
         await navigateToDashboard();
       }
-    } else {
+    }
+    else {
       set(error, result.message ?? t('account_management.creation.error'));
     }
 
@@ -55,7 +56,7 @@ export const useAccountManagement = () => {
     username,
     password,
     syncApproval,
-    resumeFromBackup
+    resumeFromBackup,
   }: LoginCredentials): Promise<void> => {
     set(loading, true);
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
@@ -67,12 +68,12 @@ export const useAccountManagement = () => {
       username,
       password,
       syncApproval: syncApproval || 'unknown',
-      resumeFromBackup: resumeFromBackup || false
+      resumeFromBackup: resumeFromBackup || false,
     });
 
-    if (!result.success && result.message) {
+    if (!result.success && result.message)
       set(errors, [result.message]);
-    }
+
     set(loading, false);
     if (get(logged)) {
       clearUpgradeMessages();
@@ -87,11 +88,11 @@ export const useAccountManagement = () => {
     error,
     errors,
     createNewAccount,
-    userLogin
+    userLogin,
   };
-};
+}
 
-export const useAutoLogin = () => {
+export function useAutoLogin() {
   const autolog: Ref<boolean> = ref(false);
 
   const sessionStore = useSessionStore();
@@ -102,10 +103,9 @@ export const useAutoLogin = () => {
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumReminder();
 
-  watch(connected, async connected => {
-    if (!connected) {
+  watch(connected, async (connected) => {
+    if (!connected)
       return;
-    }
 
     await resetSessionBackend();
 
@@ -123,6 +123,6 @@ export const useAutoLogin = () => {
   });
 
   return {
-    autolog
+    autolog,
   };
-};
+}

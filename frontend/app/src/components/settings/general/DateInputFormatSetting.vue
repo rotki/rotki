@@ -1,42 +1,44 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const { t } = useI18n();
 
-const containsValidDirectives = (v: string) =>
-  displayDateFormatter.containsValidDirectives(v);
+function containsValidDirectives(v: string) {
+  return displayDateFormatter.containsValidDirectives(v);
+}
 
 const rules = {
   dateInputFormat: {
     required: helpers.withMessage(
       t('general_settings.date_display.validation.empty'),
-      required
+      required,
     ),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
-      containsValidDirectives
-    )
-  }
+      containsValidDirectives,
+    ),
+  },
 };
 
 const v$ = useVuelidate(rules, { dateInputFormat }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const resetDateInputFormat = () => {
+function resetDateInputFormat() {
   set(dateInputFormat, get(inputFormat));
-};
+}
 
-const successMessage = (dateFormat: string) =>
-  t('general_settings.validation.date_input_format.success', {
-    dateFormat
+function successMessage(dateFormat: string) {
+  return t('general_settings.validation.date_input_format.success', {
+    dateFormat,
   });
+}
 
 onMounted(() => {
   resetDateInputFormat();

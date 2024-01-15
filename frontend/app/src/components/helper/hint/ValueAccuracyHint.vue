@@ -16,7 +16,10 @@ const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
     tooltip-class="max-w-[10rem]"
   >
     <template #activator>
-      <RuiIcon size="20" name="information-line" />
+      <RuiIcon
+        size="20"
+        name="information-line"
+      />
     </template>
     <span>{{ t('price_accuracy_hint.tooltip') }}</span>
   </RuiTooltip>

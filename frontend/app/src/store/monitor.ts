@@ -14,7 +14,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { autoRefresh } = useBalances();
 
   const { queryPeriod, refreshPeriod } = storeToRefs(
-    useFrontendSettingsStore()
+    useFrontendSettingsStore(),
   );
 
   const ws = useWebsocketStore();
@@ -22,13 +22,11 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connect, disconnect } = ws;
 
   const fetch = (): void => {
-    if (get(canRequestData)) {
+    if (get(canRequestData))
       startPromise(check());
-    }
 
-    if (!get(connected)) {
+    if (!get(connected))
       startPromise(consume());
-    }
   };
 
   const connectWebSocket = async (restarting: boolean): Promise<void> => {
@@ -36,15 +34,15 @@ export const useMonitorStore = defineStore('monitor', () => {
       await connect();
       const activeMonitors = get(monitors);
       if (!activeMonitors[PERIODIC]) {
-        if (!restarting) {
+        if (!restarting)
           fetch();
-        }
 
         activeMonitors[PERIODIC] = setInterval(fetch, get(queryPeriod) * 1000);
         set(monitors, activeMonitors);
       }
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
     }
   };
 
@@ -52,9 +50,9 @@ export const useMonitorStore = defineStore('monitor', () => {
     const activeMonitors = get(monitors);
 
     if (!activeMonitors[TASK]) {
-      if (!restarting) {
+      if (!restarting)
         startPromise(monitor());
-      }
+
       activeMonitors[TASK] = setInterval(() => startPromise(monitor()), 2000);
       set(monitors, activeMonitors);
     }
@@ -63,15 +61,15 @@ export const useMonitorStore = defineStore('monitor', () => {
   const startWatcherMonitoring = (restarting: boolean): void => {
     const activeMonitors = get(monitors);
     if (!activeMonitors[WATCHER]) {
-      if (!restarting && get(canRequestData)) {
+      if (!restarting && get(canRequestData))
         startPromise(fetchWatchers());
-      }
+
       // check for watchers every 6 minutes (approx. half the firing time
       // of the server-side watchers)
       activeMonitors[WATCHER] = setInterval(() => {
-        if (!get(canRequestData)) {
+        if (!get(canRequestData))
           return;
-        }
+
         startPromise(fetchWatchers());
       }, 360000);
       set(monitors, activeMonitors);
@@ -83,9 +81,8 @@ export const useMonitorStore = defineStore('monitor', () => {
     const activeMonitors = get(monitors);
     if (!activeMonitors[BALANCES] && period > 0) {
       activeMonitors[BALANCES] = setInterval(() => {
-        if (get(canRequestData)) {
+        if (get(canRequestData))
           startPromise(autoRefresh());
-        }
       }, period);
       set(monitors, activeMonitors);
     }
@@ -120,10 +117,9 @@ export const useMonitorStore = defineStore('monitor', () => {
   return {
     start,
     stop,
-    restart
+    restart,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useMonitorStore, import.meta.hot));
-}

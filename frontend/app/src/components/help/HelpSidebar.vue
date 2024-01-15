@@ -27,42 +27,42 @@ const entries: Entry[] = [
     icon: 'book-open-line',
     title: t('help_sidebar.user_guide.title').toString(),
     subtitle: t('help_sidebar.user_guide.subtitle').toString(),
-    link: externalLinks.usageGuide
+    link: externalLinks.usageGuide,
   },
   {
     icon: 'questionnaire-line',
     title: t('help_sidebar.faq.title').toString(),
     subtitle: t('help_sidebar.faq.subtitle').toString(),
-    link: externalLinks.faq
+    link: externalLinks.faq,
   },
   {
     icon: 'discord-line',
     title: t('help_sidebar.support.title').toString(),
     subtitle: t('help_sidebar.support.subtitle').toString(),
-    link: externalLinks.discord
+    link: externalLinks.discord,
   },
   {
     icon: 'github-line',
     title: t('help_sidebar.github.title').toString(),
     subtitle: t('help_sidebar.github.subtitle').toString(),
-    link: externalLinks.github
+    link: externalLinks.github,
   },
   {
     icon: 'twitter-x-line',
     title: t('help_sidebar.twitter.title').toString(),
     subtitle: t('help_sidebar.twitter.subtitle').toString(),
-    link: TWITTER_URL
-  }
+    link: TWITTER_URL,
+  },
 ];
 
 const interop = useInterop();
 
-const openAbout = () => {
+function openAbout() {
   set(display, false);
   emit('about');
-};
+}
 
-const downloadBrowserLog = async () => {
+async function downloadBrowserLog() {
   const loggerDb = new IndexedDb('db', 1, 'logs');
 
   await loggerDb.getAll((data: any) => {
@@ -71,14 +71,14 @@ const downloadBrowserLog = async () => {
       notify({
         title: t('help_sidebar.browser_log.error.empty.title').toString(),
         message: t('help_sidebar.browser_log.error.empty.message').toString(),
-        display: true
+        display: true,
       });
       return;
     }
     const messages = data.map((item: any) => item.message).join('\n');
     downloadFileByTextContent(messages, 'frontend_log.txt');
   });
-};
+}
 
 const { smAndDown } = useDisplay();
 </script>
@@ -96,8 +96,14 @@ const { smAndDown } = useDisplay();
     hide-overlay
   >
     <div class="flex justify-between items-center pa-4">
-      <div class="text-h6">{{ t('help_sidebar.title') }}</div>
-      <RuiButton variant="text" icon @click="display = false">
+      <div class="text-h6">
+        {{ t('help_sidebar.title') }}
+      </div>
+      <RuiButton
+        variant="text"
+        icon
+        @click="display = false"
+      >
         <RuiIcon name="close-line" />
       </RuiButton>
     </div>
@@ -111,7 +117,10 @@ const { smAndDown } = useDisplay();
         :class="{ 'border-t border-default': index > 0 }"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
-        <RuiIcon class="text-rui-text-secondary" :name="item.icon" />
+        <RuiIcon
+          class="text-rui-text-secondary"
+          :name="item.icon"
+        />
 
         <div class="gap-1">
           <div class="text-rui-text font-medium">{{ item.title }}</div>
@@ -125,7 +134,10 @@ const { smAndDown } = useDisplay();
           class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
           @click="openAbout()"
         >
-          <RuiIcon class="text-rui-text-secondary" name="information-line" />
+          <RuiIcon
+            class="text-rui-text-secondary"
+            name="information-line"
+          />
 
           <div class="gap-1">
             <div class="text-rui-text font-medium">
@@ -141,7 +153,10 @@ const { smAndDown } = useDisplay();
           class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
           @click="downloadBrowserLog()"
         >
-          <RuiIcon class="text-rui-text-secondary" name="file-download-line" />
+          <RuiIcon
+            class="text-rui-text-secondary"
+            name="file-download-line"
+          />
 
           <div class="gap-1">
             <div class="text-rui-text font-medium">

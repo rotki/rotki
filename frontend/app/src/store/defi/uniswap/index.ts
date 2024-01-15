@@ -2,13 +2,13 @@ import {
   type XswapBalance,
   XswapBalances,
   XswapEvents,
-  type XswapPoolProfit
+  type XswapPoolProfit,
 } from '@rotki/common/lib/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type OnError } from '@/types/fetch';
+import type { TaskMeta } from '@/types/task';
+import type { OnError } from '@/types/fetch';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances: Ref<XswapBalances> = ref<XswapBalances>({});
@@ -19,21 +19,21 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   const isPremium = usePremium();
   const { t } = useI18n();
 
-  const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents } =
-    useUniswapApi();
+  const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents }
+    = useUniswapApi();
 
   const uniswapV2Balances = (
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(v2Balances), addresses));
 
   const uniswapV3Balances = (
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(v3Balances), addresses, false));
 
   const uniswapPoolProfit = (
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events), addresses));
 
@@ -66,7 +66,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchV2Balances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString()
+      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
     };
 
     const onError: OnError = {
@@ -74,8 +74,8 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       error: message =>
         t('actions.defi.uniswap.error.description', {
           error: message,
-          v: 2
-        }).toString()
+          v: 2,
+        }).toString(),
     };
 
     await fetchDataAsync(
@@ -86,26 +86,26 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           meta,
           query: async () => await fetchUniswapV2Balances(),
           parser: data => XswapBalances.parse(data),
-          onError
+          onError,
         },
         state: {
           isPremium,
-          activeModules
+          activeModules,
         },
         requires: {
           premium: false,
-          module: Module.UNISWAP
+          module: Module.UNISWAP,
         },
-        refresh
+        refresh,
       },
-      v2Balances
+      v2Balances,
     );
   };
 
   const fetchV3Balances = async (refresh = false): Promise<void> => {
     const meta = {
       title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
-      premium: get(isPremium)
+      premium: get(isPremium),
     };
 
     const onError: OnError = {
@@ -113,8 +113,8 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       error: message =>
         t('actions.defi.uniswap.error.description', {
           error: message,
-          v: 3
-        }).toString()
+          v: 3,
+        }).toString(),
     };
 
     await fetchDataAsync(
@@ -126,33 +126,33 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           query: async () => await fetchUniswapV3Balances(),
           parser: data => XswapBalances.parse(data),
           onError,
-          checkLoading: { premium: get(isPremium) }
+          checkLoading: { premium: get(isPremium) },
         },
         state: {
           isPremium,
-          activeModules
+          activeModules,
         },
         requires: {
           premium: false,
-          module: Module.UNISWAP
+          module: Module.UNISWAP,
         },
-        refresh
+        refresh,
       },
-      v3Balances
+      v3Balances,
     );
   };
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.uniswap_events.task.title')
+      title: t('actions.defi.uniswap_events.task.title'),
     };
 
     const onError: OnError = {
       title: t('actions.defi.uniswap_events.error.title'),
       error: message =>
         t('actions.defi.uniswap_events.error.description', {
-          error: message
-        })
+          error: message,
+        }),
     };
 
     await fetchDataAsync(
@@ -163,19 +163,19 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           meta,
           query: async () => await fetchUniswapEvents(),
           parser: XswapEvents.parse,
-          onError
+          onError,
         },
         state: {
           isPremium,
-          activeModules
+          activeModules,
         },
         requires: {
           premium: true,
-          module: Module.UNISWAP
+          module: Module.UNISWAP,
         },
-        refresh
+        refresh,
       },
-      events
+      events,
     );
   };
 
@@ -204,10 +204,9 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     fetchV2Balances,
     fetchV3Balances,
     fetchEvents,
-    reset
+    reset,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useUniswapStore, import.meta.hot));
-}

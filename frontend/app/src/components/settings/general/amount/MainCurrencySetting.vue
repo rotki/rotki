@@ -6,19 +6,20 @@ const selectedCurrency = ref<Currency>(get(currencies)[0]);
 const { currency } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const successMessage = (symbol: string) =>
-  t('general_settings.validation.currency.success', {
-    symbol
+function successMessage(symbol: string) {
+  return t('general_settings.validation.currency.success', {
+    symbol,
   });
+}
 
 onMounted(() => {
   set(selectedCurrency, get(currency));
 });
 
-const calculateFontSize = (symbol: string) => {
+function calculateFontSize(symbol: string) {
   const length = symbol.length;
   return `${2.4 - length * 0.4}em`;
-};
+}
 </script>
 
 <template>

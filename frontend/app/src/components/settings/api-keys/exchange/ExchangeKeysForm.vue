@@ -21,7 +21,7 @@ const name = computed({
   },
   set(value?: string) {
     input({ ...props.exchange, newName: value ?? null });
-  }
+  },
 });
 
 const apiKey = computed({
@@ -30,7 +30,7 @@ const apiKey = computed({
   },
   set(value?: string) {
     input({ ...props.exchange, apiKey: value ?? null });
-  }
+  },
 });
 
 const apiSecret = computed({
@@ -39,7 +39,7 @@ const apiSecret = computed({
   },
   set(value?: string) {
     input({ ...props.exchange, apiSecret: value ?? null });
-  }
+  },
 });
 
 const passphrase = computed({
@@ -48,7 +48,7 @@ const passphrase = computed({
   },
   set(value?: string) {
     input({ ...props.exchange, passphrase: value ?? null });
-  }
+  },
 });
 
 const { getExchangeNonce } = useExchangesStore();
@@ -78,19 +78,19 @@ const suggestedName = function (exchange: string): string {
   return location ? `${location.name} ${nonce}` : '';
 };
 
-const toggleEdit = () => {
+function toggleEdit() {
   set(editKeys, !get(editKeys));
 
   if (!get(editKeys)) {
     input({
       ...get(exchange),
       apiSecret: null,
-      apiKey: null
+      apiKey: null,
     });
   }
-};
+}
 
-const onExchangeChange = (exchange: string) => {
+function onExchangeChange(exchange: string) {
   input({
     name: suggestedName(exchange),
     newName: null,
@@ -99,40 +99,40 @@ const onExchangeChange = (exchange: string) => {
     apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
     passphrase: null,
     krakenAccountType: exchange === 'kraken' ? 'starter' : null,
-    binanceMarkets: null
+    binanceMarkets: null,
   });
 
   nextTick(() => {
     get(v$).$reset();
   });
-};
+}
 
-const input = (payload: ExchangePayload) => {
+function input(payload: ExchangePayload) {
   emit('input', payload);
-};
+}
 
 onMounted(() => {
-  if (get(editMode)) {
+  if (get(editMode))
     return;
-  }
+
   input({
     ...get(exchange),
-    name: suggestedName(get(exchange).location)
+    name: suggestedName(get(exchange).location),
   });
 });
 
-const krakenAccountTypes = KrakenAccountType.options.map(item => {
+const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
   const label = te(translationKey) ? t(translationKey) : toSentenceCase(item);
 
   return {
     identifier: item,
-    label
+    label,
   };
 });
 
-const { exchangesWithKey, exchangesWithPassphrase, exchangesWithoutApiSecret } =
-  storeToRefs(useLocationStore());
+const { exchangesWithKey, exchangesWithPassphrase, exchangesWithoutApiSecret }
+  = storeToRefs(useLocationStore());
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
@@ -140,33 +140,33 @@ const rules = {
   name: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
-      requiredUnless(editMode)
-    )
+      requiredUnless(editMode),
+    ),
   },
   newName: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
-      requiredIf(editMode)
-    )
+      requiredIf(editMode),
+    ),
   },
   apiKey: {
     required: helpers.withMessage(
       t('exchange_keys_form.api_key.non_empty'),
-      requiredIf(sensitiveFieldEditable)
-    )
+      requiredIf(sensitiveFieldEditable),
+    ),
   },
   apiSecret: {
     required: helpers.withMessage(
       t('exchange_keys_form.api_secret.non_empty'),
-      requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret))
-    )
+      requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
+    ),
   },
   passphrase: {
     required: helpers.withMessage(
       t('exchange_keys_form.passphrase.non_empty'),
-      requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase))
-    )
-  }
+      requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase)),
+    ),
+  },
 };
 
 const { setValidation } = useExchangeApiKeysForm();
@@ -175,7 +175,10 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
 </script>
 
 <template>
-  <div data-cy="exchange-keys" class="flex flex-col gap-2">
+  <div
+    data-cy="exchange-keys"
+    class="flex flex-col gap-2"
+  >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <VAutocomplete
         outlined
@@ -239,11 +242,22 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       @change="input({ ...exchange, krakenAccountType: $event })"
     />
 
-    <div v-if="editMode" class="flex items-center gap-2 text-subtitle-2 pb-4">
+    <div
+      v-if="editMode"
+      class="flex items-center gap-2 text-subtitle-2 pb-4"
+    >
       {{ t('exchange_settings.keys') }}
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
-          <RuiButton variant="text" class="!p-2" icon @click="toggleEdit()">
+          <RuiButton
+            variant="text"
+            class="!p-2"
+            icon
+            @click="toggleEdit()"
+          >
             <RuiIcon
               size="20"
               :name="!editKeys ? 'pencil-line' : 'close-line'"

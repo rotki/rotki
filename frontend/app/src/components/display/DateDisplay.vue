@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
   {
     showTimezone: false,
     noTime: false,
-    milliseconds: false
-  }
+    milliseconds: false,
+  },
 );
 
 const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
@@ -24,9 +24,9 @@ const dateFormat = computed<string>(() => {
     ? get(dateDisplayFormat)
     : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
 
-  if (get(noTime)) {
+  if (get(noTime))
     return display.split(' ')[0];
-  }
+
   return display;
 });
 
@@ -40,8 +40,9 @@ const date = computed(() => {
   return new Date(get(milliseconds) ? display : display * 1000);
 });
 
-const format = (date: Ref<Date>, format: Ref<string>) =>
-  computed(() => displayDateFormatter.format(get(date), get(format)));
+function format(date: Ref<Date>, format: Ref<string>) {
+  return computed(() => displayDateFormatter.format(get(date), get(format)));
+}
 
 const formattedDate = format(date, dateFormat);
 const formattedDateWithTimezone = format(date, dateDisplayFormat);
@@ -53,7 +54,7 @@ const showTooltip = computed(() => {
 });
 
 const splittedByMillisecondsPart = computed(() =>
-  get(formattedDate).split('.')
+  get(formattedDate).split('.'),
 );
 
 const { copy, copied } = useCopy(formattedDate);
@@ -68,7 +69,10 @@ const { copy, copied } = useCopy(formattedDate);
     @click="copy()"
   >
     {{ splittedByMillisecondsPart[0] }}
-    <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
+    <span
+      v-if="splittedByMillisecondsPart[1]"
+      class="text-[0.625rem]"
+    >
       .{{ splittedByMillisecondsPart[1] }}
     </span>
   </CopyTooltip>

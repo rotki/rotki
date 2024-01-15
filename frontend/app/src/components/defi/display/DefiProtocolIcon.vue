@@ -7,32 +7,32 @@ const props = withDefaults(
     protocol: DefiProtocol;
     mode?: 'icon' | 'label' | 'both';
   }>(),
-  { mode: 'both' }
+  { mode: 'both' },
 );
 const protocol = toRef(props, 'protocol');
 
 const icon = computed(() => {
   const defiProtocol = get(protocol);
-  if (defiProtocol.endsWith('_v2')) {
+  if (defiProtocol.endsWith('_v2'))
     return defiProtocol.replace('_v2', '');
-  }
-  if (defiProtocol.startsWith('makerdao')) {
+
+  if (defiProtocol.startsWith('makerdao'))
     return 'makerdao';
-  }
+
   return defiProtocol;
 });
 
 const name = computed(() => {
   const defiProtocol = get(protocol);
-  if (defiProtocol === DefiProtocol.MAKERDAO_DSR) {
+  if (defiProtocol === DefiProtocol.MAKERDAO_DSR)
     return 'MakerDAO DSR';
-  } else if (defiProtocol === DefiProtocol.MAKERDAO_VAULTS) {
+  else if (defiProtocol === DefiProtocol.MAKERDAO_VAULTS)
     return 'MakerDAO Vaults';
-  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS) {
+  else if (defiProtocol === DefiProtocol.YEARN_VAULTS)
     return 'yearn.finance Vaults';
-  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS_V2) {
+  else if (defiProtocol === DefiProtocol.YEARN_VAULTS_V2)
     return 'yearn.finance Vaults v2';
-  }
+
   return defiProtocol;
 });
 
@@ -57,7 +57,7 @@ const css = useCssModule();
           max-height="32px"
           :class="{
             'mr-2': mode !== 'icon',
-            [css.icon]: true
+            [css.icon]: true,
           }"
           :src="`./assets/images/protocols/${icon}.svg`"
         />

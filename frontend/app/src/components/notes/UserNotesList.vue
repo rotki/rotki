@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { type Collection } from '@/types/collection';
-import { type UserNote, type UserNotesFilter } from '@/types/notes';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
+import type { Collection } from '@/types/collection';
+import type { UserNote, UserNotesFilter } from '@/types/notes';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
-  location: ''
+  location: '',
 });
 
-const getDefaultForm = () => ({
-  title: '',
-  content: '',
-  isPinned: false,
-  location: ''
-});
+function getDefaultForm() {
+  return {
+    title: '',
+    content: '',
+    isPinned: false,
+    location: '',
+  };
+}
 
 const { location } = toRefs(props);
 const wrapper = ref<any>(null);
@@ -35,27 +37,26 @@ const filter = ref<UserNotesFilter>({
   titleSubstring: '',
   location: get(location),
   orderByAttributes: ['is_pinned', 'last_update_timestamp'],
-  ascending: [false, false]
+  ascending: [false, false],
 });
 
 const { t } = useI18n();
 
 const api = useUserNotesApi();
 
-const fetchNotes = async (loadingIndicator = false) => {
-  if (loadingIndicator) {
+async function fetchNotes(loadingIndicator = false) {
+  if (loadingIndicator)
     set(loading, true);
-  }
+
   set(notes, await api.fetchUserNotes(get(filter)));
-  if (loadingIndicator) {
+  if (loadingIndicator)
     set(loading, false);
-  }
+
   nextTick(() => {
-    if (get(wrapper)) {
+    if (get(wrapper))
       get(wrapper).scrollTop = 0;
-    }
   });
-};
+}
 
 const page = computed<number>(() => {
   const offset = get(filter).offset;
@@ -76,90 +77,90 @@ const totalPage = computed<number>(() => {
 });
 
 watch([page, totalPage], ([page, totalPage]) => {
-  if (page > 1 && page > totalPage) {
+  if (page > 1 && page > totalPage)
     changePage(page - 1);
-  }
 });
 
-const togglePin = async (note: UserNote) => {
+async function togglePin(note: UserNote) {
   const payload = {
     ...note,
-    isPinned: !note.isPinned
+    isPinned: !note.isPinned,
   };
 
   await callUpdateNote(payload);
-};
+}
 
-const resetForm = () => {
+function resetForm() {
   set(editMode, false);
   set(form, getDefaultForm());
   closeDialog();
-};
+}
 
 const { closeDialog, setOpenDialog, setSubmitFunc } = useUserNotesForm();
 
-const addNote = () => {
+function addNote() {
   resetForm();
   setOpenDialog(true);
-};
+}
 
-const editNote = (note: UserNote) => {
+function editNote(note: UserNote) {
   set(editMode, true);
   set(form, { ...note });
   setOpenDialog(true);
-};
+}
 
-const callUpdateNote = async (payload: Partial<UserNote>) => {
+async function callUpdateNote(payload: Partial<UserNote>) {
   await api.updateUserNote(payload);
   await fetchNotes();
-};
+}
 
-const save = async () => {
+async function save() {
   try {
     if (get(editMode)) {
       await callUpdateNote(get(form));
-    } else {
+    }
+    else {
       await api.addUserNote({ ...get(form), location: get(location) });
       await fetchNotes();
     }
     resetForm();
-  } catch (e) {
-    logger.error(e);
   }
-};
+  catch (error) {
+    logger.error(error);
+  }
+}
 setSubmitFunc(save);
 
-const deleteNote = async (identifier: number) => {
+async function deleteNote(identifier: number) {
   set(showDeleteConfirmation, true);
   set(idToDelete, identifier);
-};
+}
 
-const clearDeleteDialog = () => {
+function clearDeleteDialog() {
   set(showDeleteConfirmation, false);
   set(idToDelete, null);
   set(animateDelete, false);
-};
+}
 
-const confirmDelete = async () => {
+async function confirmDelete() {
   const id = get(idToDelete);
-  if (id === null) {
+  if (id === null)
     return;
-  }
+
   set(animateDelete, true);
   setTimeout(async () => {
     await api.deleteUserNote(id);
     clearDeleteDialog();
     await fetchNotes();
   }, 200);
-};
+}
 
 const premium = usePremium();
 const { logged } = storeToRefs(useSessionAuthStore());
 
 watch([filter, premium], async () => {
-  if (get(logged)) {
+  if (get(logged))
     await fetchNotes();
-  }
 });
 
 debouncedWatch(
@@ -168,18 +169,18 @@ debouncedWatch(
     set(filter, {
       ...get(filter),
       titleSubstring: get(search),
-      offset: 0
+      offset: 0,
     });
   },
-  { debounce: 400 }
+  { debounce: 400 },
 );
 
-const changePage = (page: number) => {
+function changePage(page: number) {
   set(filter, {
     ...get(filter),
-    offset: (page - 1) * itemsPerPage
+    offset: (page - 1) * itemsPerPage,
   });
-};
+}
 
 onMounted(async () => {
   await fetchNotes(true);
@@ -212,18 +213,35 @@ onMounted(async () => {
       </RuiButton>
     </div>
 
-    <div v-if="loading" class="note__wrapper flex flex-col gap-3 px-4 pb-4">
-      <RuiCard v-for="n in 10" :key="n" class="[&>div]:flex [&>div]:flex-col">
+    <div
+      v-if="loading"
+      class="note__wrapper flex flex-col gap-3 px-4 pb-4"
+    >
+      <RuiCard
+        v-for="n in 10"
+        :key="n"
+        class="[&>div]:flex [&>div]:flex-col"
+      >
         <RuiSkeletonLoader class="w-20 mb-3" />
         <RuiSkeletonLoader class="w-24 mb-6" />
         <RuiSkeletonLoader class="w-16 self-end" />
       </RuiCard>
     </div>
 
-    <div v-else ref="wrapper" class="px-4 pb-4 note__wrapper">
-      <RuiAlert v-if="showUpgradeRow" type="warning" class="mb-4">
+    <div
+      v-else
+      ref="wrapper"
+      class="px-4 pb-4 note__wrapper"
+    >
+      <RuiAlert
+        v-if="showUpgradeRow"
+        type="warning"
+        class="mb-4"
+      >
         <i18n path="notes_menu.limit_warning">
-          <template #limit>{{ itemsPerPage }}</template>
+          <template #limit>
+            {{ itemsPerPage }}
+          </template>
           <template #link>
             <ExternalLink
               :text="t('upgrade_row.rotki_premium')"
@@ -243,7 +261,7 @@ onMounted(async () => {
               class="note__item"
               :class="{
                 'note__item--deleting':
-                  animateDelete && idToDelete === note.identifier
+                  animateDelete && idToDelete === note.identifier,
               }"
             >
               <div class="flex justify-between items-center">
@@ -261,7 +279,11 @@ onMounted(async () => {
                     color="primary"
                     name="pushpin-line"
                   />
-                  <RuiIcon v-else size="20" name="unpin-line" />
+                  <RuiIcon
+                    v-else
+                    size="20"
+                    name="unpin-line"
+                  />
                 </RuiButton>
               </div>
 
@@ -283,7 +305,11 @@ onMounted(async () => {
                   color="error"
                   @click="clearDeleteDialog()"
                 >
-                  <RuiIcon size="16" color="error" name="close-line" />
+                  <RuiIcon
+                    size="16"
+                    color="error"
+                    name="close-line"
+                  />
                 </RuiButton>
 
                 <RuiButton
@@ -292,10 +318,17 @@ onMounted(async () => {
                   size="sm"
                   @click="confirmDelete()"
                 >
-                  <RuiIcon size="16" color="success" name="check-line" />
+                  <RuiIcon
+                    size="16"
+                    color="success"
+                    name="check-line"
+                  />
                 </RuiButton>
               </div>
-              <div v-else class="flex justify-between items-center pt-2">
+              <div
+                v-else
+                class="flex justify-between items-center pt-2"
+              >
                 <i18n
                   path="notes_menu.last_updated"
                   class="note__datetime text--secondary font-italic flex-1"
@@ -310,7 +343,10 @@ onMounted(async () => {
                   size="sm"
                   @click="editNote(note)"
                 >
-                  <RuiIcon size="16" name="pencil-line" />
+                  <RuiIcon
+                    size="16"
+                    name="pencil-line"
+                  />
                 </RuiButton>
 
                 <RuiButton
@@ -319,14 +355,20 @@ onMounted(async () => {
                   size="sm"
                   @click="deleteNote(note.identifier)"
                 >
-                  <RuiIcon size="16" name="delete-bin-line" />
+                  <RuiIcon
+                    size="16"
+                    name="delete-bin-line"
+                  />
                 </RuiButton>
               </div>
             </RuiCard>
           </template>
         </div>
 
-        <div v-if="totalPage > 1" class="mt-4">
+        <div
+          v-if="totalPage > 1"
+          class="mt-4"
+        >
           <VPagination
             :value="page"
             :length="totalPage"
@@ -335,7 +377,10 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-else class="note__empty text-rui-text">
+      <div
+        v-else
+        class="note__empty text-rui-text"
+      >
         {{ t('notes_menu.empty_notes') }}
       </div>
     </div>

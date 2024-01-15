@@ -18,9 +18,9 @@ const secondaryRefreshing = isLoading(secondSection);
 const loading = shouldShowLoadingScreen(section);
 const isEnabled = isModuleEnabled(modules[0]);
 
-const refresh = async (ignoreCache: boolean = false) => {
+async function refresh(ignoreCache: boolean = false) {
   await Promise.all([fetchBalances(ignoreCache), fetchEvents(ignoreCache)]);
-};
+}
 
 onMounted(async () => {
   await refresh();
@@ -29,15 +29,21 @@ onMounted(async () => {
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap'
-    ).toLocaleLowerCase()
-  })
+      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap',
+    ).toLocaleLowerCase(),
+  }),
 );
 </script>
 
 <template>
-  <NoPremiumPlaceholder v-if="!premium" :text="t('sushiswap.premium')" />
-  <ModuleNotActive v-else-if="!isEnabled" :modules="modules" />
+  <NoPremiumPlaceholder
+    v-if="!premium"
+    :text="t('sushiswap.premium')"
+  />
+  <ModuleNotActive
+    v-else-if="!isEnabled"
+    :modules="modules"
+  />
   <ProgressScreen v-else-if="loading">
     <template #message>
       {{ t('sushiswap.loading') }}
@@ -48,7 +54,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     :title="[
       t('navigation_menu.defi'),
       t('navigation_menu.defi_sub.deposits_sub.liquidity'),
-      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
+      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap'),
     ]"
   >
     <template #buttons>

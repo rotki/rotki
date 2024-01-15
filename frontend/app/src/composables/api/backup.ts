@@ -4,34 +4,32 @@ import {
   CreateDatabaseResponse,
   type DatabaseInfo,
   DatabaseInfoResponse,
-  DeleteDatabaseResponse
+  DeleteDatabaseResponse,
 } from '@/types/backup';
 
-export const useBackupApi = () => {
+export function useBackupApi() {
   const info = async (): Promise<DatabaseInfo> => {
     const response = await api.instance.get<DatabaseInfoResponse>(
       '/database/info',
       {
-        validateStatus: validWithSessionStatus
-      }
+        validateStatus: validWithSessionStatus,
+      },
     );
 
     return handleResponse(response, response =>
-      DatabaseInfoResponse.parse(response.data)
-    );
+      DatabaseInfoResponse.parse(response.data));
   };
 
   const createBackup = async (): Promise<string> => {
     const response = await api.instance.put<CreateDatabaseResponse>(
       '/database/backups',
       {
-        validateStatus: validWithSessionStatus
-      }
+        validateStatus: validWithSessionStatus,
+      },
     );
 
     return handleResponse(response, response =>
-      CreateDatabaseResponse.parse(response.data)
-    );
+      CreateDatabaseResponse.parse(response.data));
   };
 
   const deleteBackup = async (files: string[]): Promise<boolean> => {
@@ -39,15 +37,14 @@ export const useBackupApi = () => {
       '/database/backups',
       {
         data: {
-          files
+          files,
         },
-        validateStatus: validWithSessionStatus
-      }
+        validateStatus: validWithSessionStatus,
+      },
     );
 
     return handleResponse(response, response =>
-      DeleteDatabaseResponse.parse(response.data)
-    );
+      DeleteDatabaseResponse.parse(response.data));
   };
 
   function fileUrl(file: string): string {
@@ -57,6 +54,6 @@ export const useBackupApi = () => {
     info,
     createBackup,
     deleteBackup,
-    fileUrl
+    fileUrl,
   };
-};
+}

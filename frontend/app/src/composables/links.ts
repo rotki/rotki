@@ -1,6 +1,6 @@
 import { externalLinks } from '@/data/external-links';
 
-export const useLinks = (url?: Ref<string | undefined>) => {
+export function useLinks(url?: Ref<string | undefined>) {
   const { isPackaged, openUrl } = useInterop();
   const targetUrl = computed(() => get(url) ?? externalLinks.premium);
   const href = computed(() => (isPackaged ? undefined : get(targetUrl)));
@@ -19,6 +19,6 @@ export const useLinks = (url?: Ref<string | undefined>) => {
     href,
     hasLink,
     linkTarget,
-    onLinkClick
+    onLinkClick,
   };
-};
+}

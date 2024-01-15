@@ -1,10 +1,10 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import Vuetify from 'vuetify';
-import { type SearchMatcher } from '@/types/filtering';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
+import type { SearchMatcher } from '@/types/filtering';
 
 vi.mocked(useCssModule).mockReturnValue({
-  selected: 'selected'
+  selected: 'selected',
 });
 
 describe('table-filter/FilterEntry.vue', () => {
@@ -17,8 +17,8 @@ describe('table-filter/FilterEntry.vue', () => {
     return mount(FilterEntry, {
       vuetify,
       propsData: {
-        ...props
-      }
+        ...props,
+      },
     });
   };
 
@@ -27,13 +27,13 @@ describe('table-filter/FilterEntry.vue', () => {
     description: 'filter by start date',
     string: true,
     suggestions: () => [],
-    validate: () => true
+    validate: () => true,
   };
 
-  it('Common case', () => {
+  it('common case', () => {
     wrapper = createWrapper({ matcher, active: false });
     expect(wrapper.find('button').text()).toBe(
-      `${matcher.key}:  ${matcher.description}`
+      `${matcher.key}:  ${matcher.description}`,
     );
     expect(wrapper.find('.selected').exists()).toBeFalsy();
   });

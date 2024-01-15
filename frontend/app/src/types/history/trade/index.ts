@@ -1,15 +1,15 @@
 // Trades
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
+import type { PaginationRequestPayload } from '@/types/common';
 
 export const TradeType = z.enum([
   'buy',
   'sell',
   'settlement buy',
-  'settlement sell'
+  'settlement sell',
 ]);
 
 export type TradeType = z.infer<typeof TradeType>;
@@ -26,7 +26,7 @@ export const Trade = z.object({
   fee: NumericString.nullable(),
   feeCurrency: z.string().nullable(),
   link: z.string().nullable(),
-  notes: z.string().nullable()
+  notes: z.string().nullable(),
 });
 
 export type Trade = z.infer<typeof Trade>;
@@ -35,10 +35,10 @@ export const TradeCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
       .object({
-        entry: Trade
+        entry: Trade,
       })
-      .merge(EntryMeta)
-  )
+      .merge(EntryMeta),
+  ),
 });
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;

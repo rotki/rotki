@@ -20,16 +20,19 @@ const { t } = useI18n();
       <slot />
     </template>
 
-    <div class="text-center" data-cy="display-full-value">
+    <div
+      class="text-center"
+      data-cy="display-full-value"
+    >
       <template v-if="tooltip">
         {{ tooltip }}
       </template>
       <div
-        class="text-uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200"
+        class="uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200"
       >
         <div
           :class="{
-            '-mt-5': copied
+            '-mt-5': copied,
           }"
         >
           {{ t('amount_display.click_to_copy') }}

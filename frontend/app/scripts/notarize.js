@@ -1,11 +1,10 @@
 require('dotenv').config();
 const { notarize } = require('@electron/notarize');
 
-exports.default = async context => {
+exports.default = async (context) => {
   const { electronPlatformName, appOutDir } = context;
-  if (electronPlatformName !== 'darwin') {
+  if (electronPlatformName !== 'darwin')
     return;
-  }
 
   if (!process.env.APPLEID) {
     console.info('APPLEID is not set, notarization will be skipped');
@@ -24,11 +23,12 @@ exports.default = async context => {
       appleId: process.env.APPLEID,
       appleIdPassword: process.env.APPLEIDPASS,
       teamId: process.env.IDENTITY,
-      tool: 'notarytool'
+      tool: 'notarytool',
     });
     console.info(`\nNotarization of ${appPath} was complete\n`);
-  } catch (e) {
-    console.error(e);
+  }
+  catch (error) {
+    console.error(error);
     process.exit(1);
   }
 };

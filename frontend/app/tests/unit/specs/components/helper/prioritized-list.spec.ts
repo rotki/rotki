@@ -2,7 +2,7 @@ import {
   type ThisTypedMountOptions,
   type Wrapper,
   type WrapperArray,
-  mount
+  mount,
 } from '@vue/test-utils';
 import { PiniaVuePlugin } from 'pinia';
 import { expect } from 'vitest';
@@ -16,7 +16,7 @@ import '../../../i18n';
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
-describe('PrioritizedList.vue', () => {
+describe('prioritizedList.vue', () => {
   let wrapper: Wrapper<any>;
 
   const createWrapper = (options: ThisTypedMountOptions<any>) => {
@@ -27,7 +27,7 @@ describe('PrioritizedList.vue', () => {
       pinia,
       vuetify,
       stubs: ['action-status-indicator'],
-      ...options
+      ...options,
     });
   };
 
@@ -36,7 +36,7 @@ describe('PrioritizedList.vue', () => {
       { identifier: 'value1' },
       { identifier: 'value2' },
       { identifier: 'value3' },
-      { identifier: 'value4' }
+      { identifier: 'value4' },
     ]);
     wrapper = createWrapper({
       propsData: {
@@ -47,52 +47,52 @@ describe('PrioritizedList.vue', () => {
         disableDelete: false,
         status: {
           success: 'success message',
-          error: 'error message'
-        }
-      }
+          error: 'error message',
+        },
+      },
     });
   });
 
-  test('show all three items in correct order', () => {
+  it('show all three items in correct order', () => {
     const elements = wrapper.findAllComponents(PrioritizedListEntry);
     expect(elements.length).toBe(3);
     expect(entryOrderOf(elements)).toStrictEqual([
       'value1',
       'value2',
-      'value3'
+      'value3',
     ]);
   });
 
-  test('show "first up" and "last down" buttons disabled', () => {
+  it('show "first up" and "last down" buttons disabled', () => {
     const firstUp = wrapper.find('#move-up-value1');
     expect(firstUp.element.disabled).toBe(true);
     const lastDown = wrapper.find('#move-down-value3');
     expect(lastDown.element.disabled).toBe(true);
   });
 
-  test('move entry up', async () => {
+  it('move entry up', async () => {
     const button = wrapper.find('#move-up-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
     expect(emittedInputEventItems()).toStrictEqual([
       'value2',
       'value1',
-      'value3'
+      'value3',
     ]);
   });
 
-  test('move entry down', async () => {
+  it('move entry down', async () => {
     const button = wrapper.find('#move-down-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
     expect(emittedInputEventItems()).toStrictEqual([
       'value1',
       'value3',
-      'value2'
+      'value2',
     ]);
   });
 
-  test('delete entry', async () => {
+  it('delete entry', async () => {
     const button = wrapper.find('#delete-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
@@ -101,21 +101,21 @@ describe('PrioritizedList.vue', () => {
   });
 
   const entryOrderOf = (
-    entries: WrapperArray<PrioritizedListEntry>
+    entries: WrapperArray<PrioritizedListEntry>,
   ): string[] => {
     const entryIds: string[] = [];
     entries.wrappers.forEach(
       (wrapper: Wrapper<PrioritizedListEntry, Element>) => {
         entryIds.push(wrapper.props().data.identifier);
-      }
+      },
     );
     return entryIds;
   };
 
   const emittedInputEventItems = (): string[] => {
-    // @ts-ignore
+    // @ts-expect-error
     expect(wrapper.emitted().input.length).toBe(1);
-    // @ts-ignore
+    // @ts-expect-error
     const emitted = wrapper.emitted().input[0];
     return emitted[0];
   };

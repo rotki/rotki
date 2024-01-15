@@ -17,15 +17,14 @@ export const useBlockie = createSharedComposable(() => {
   };
 
   const getBlockie = (address: string | null = '') => {
-    if (!address) {
+    if (!address)
       return '';
-    }
 
     const formatted = address.toLowerCase();
 
     if (!cache.has(formatted)) {
       const blockie = createBlockie({
-        seed: formatted
+        seed: formatted,
       });
 
       put(formatted, blockie);
@@ -36,6 +35,6 @@ export const useBlockie = createSharedComposable(() => {
 
   return {
     cache,
-    getBlockie
+    getBlockie,
   };
 });

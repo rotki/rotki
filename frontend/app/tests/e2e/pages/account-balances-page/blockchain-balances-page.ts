@@ -27,22 +27,20 @@ export class BlockchainBalancesPage {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
     cy.get('[data-cy="account-blockchain-field"]').type(
-      `{selectall}{backspace}${balance.chainName}`
+      `{selectall}{backspace}${balance.chainName}`,
     );
     cy.get('[data-cy="account-blockchain-field"]').type('{enter}');
     cy.get('[data-cy="input-mode-manual"]').click();
 
-    if (balance.blockchain === Blockchain.ETH) {
+    if (balance.blockchain === Blockchain.ETH)
       setCheckBox('[data-cy="account-all-evm-chains"]', false);
-    }
 
     cy.get('[data-cy="account-address-field"]').should('not.be.disabled');
     cy.get('[data-cy="account-address-field"]').type(balance.address);
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 
-    for (const tag of balance.tags) {
+    for (const tag of balance.tags)
       cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
-    }
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
 
@@ -50,14 +48,14 @@ export class BlockchainBalancesPage {
       waitForAsyncQuery(
         {
           method: 'POST',
-          url: '/api/1/assets/prices/latest'
+          url: '/api/1/assets/prices/latest',
         },
-        240000
+        240000,
       );
     }
 
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible'
+      'not.be.visible',
     );
   }
 
@@ -65,7 +63,7 @@ export class BlockchainBalancesPage {
     // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
-      timeout: 120000
+      timeout: 120000,
     }).as('blockchain-section');
 
     cy.get('@blockchain-section').should('exist');
@@ -94,9 +92,8 @@ export class BlockchainBalancesPage {
       .find('div[role=tooltip-content]')
       .contains(balance.address);
 
-    for (const tag of balance.tags) {
+    for (const tag of balance.tags)
       cy.get('@row').find('.tag').contains(tag).should('be.visible');
-    }
 
     cy.get('@row')
       .find('[data-cy="labeled-address-display"]')
@@ -111,19 +108,19 @@ export class BlockchainBalancesPage {
     cy.get(
       '[data-cy=blockchain-asset-balances] > tbody > [class*=_tr__empty]',
       {
-        timeout: 300000
-      }
+        timeout: 300000,
+      },
     ).should('not.exist');
 
     cy.get('[data-cy=account-table]').each($element =>
-      this.updateTableBalance($element, balances)
+      this.updateTableBalance($element, balances),
     );
 
     return cy.wrap(balances);
   }
 
   getTotals() {
-    return this.getBalances().then($balances => {
+    return this.getBalances().then(($balances) => {
       let total = new BigNumber(0);
       const balances: { blockchain: string; value: BigNumber }[] = [];
 
@@ -134,14 +131,14 @@ export class BlockchainBalancesPage {
 
       return cy.wrap({
         total,
-        balances
+        balances,
       });
     });
   }
 
   private updateTableBalance(
     $element: JQuery<HTMLElement>,
-    balances: Map<string, BigNumber>
+    balances: Map<string, BigNumber>,
   ) {
     const blockchain = $element.attr('data-location');
 
@@ -154,15 +151,15 @@ export class BlockchainBalancesPage {
     cy.get(`@${blockchain}-table`).scrollIntoView();
     cy.get(`@${blockchain}-table`)
       .find('> thead > th div[role=progressbar]', {
-        timeout: 240000
+        timeout: 240000,
       })
       .should('not.be.exist');
 
     cy.get(`@${blockchain}-table`)
       .find(
-        `> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`
+        `> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`,
       )
-      .then(el => {
+      .then((el) => {
         updateLocationBalance(el.text(), balances, blockchain);
       });
   }
@@ -170,7 +167,7 @@ export class BlockchainBalancesPage {
   editBalance(
     balance: FixtureBlockchainBalance,
     position: number,
-    label: string
+    label: string,
   ) {
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
@@ -187,7 +184,7 @@ export class BlockchainBalancesPage {
     cy.get('@account-label').type(label);
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible'
+      'not.be.visible',
     );
   }
 
@@ -205,7 +202,7 @@ export class BlockchainBalancesPage {
     this.confirmDelete();
 
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
-      timeout: 120000
+      timeout: 120000,
     }).should('not.be.exist');
   }
 

@@ -5,11 +5,11 @@ import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('@/services/backup', () => ({
   useBackupApi: () => ({
-    info: vi.fn()
-  })
+    info: vi.fn(),
+  }),
 }));
 
-describe('UserSecuritySettings.vue', () => {
+describe('userSecuritySettings.vue', () => {
   let wrapper: Wrapper<any>;
 
   function createWrapper() {
@@ -26,9 +26,9 @@ describe('UserSecuritySettings.vue', () => {
         'asset-update',
         'confirm-dialog',
         'data-table',
-        'card'
+        'card',
       ],
-      provide: libraryDefaults
+      provide: libraryDefaults,
     });
   }
 
@@ -36,11 +36,11 @@ describe('UserSecuritySettings.vue', () => {
     wrapper = createWrapper();
   });
 
-  test('displays no warning by default', async () => {
+  it('displays no warning by default', async () => {
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(false);
   });
 
-  test('displays warning if premium sync enabled', async () => {
+  it('displays warning if premium sync enabled', async () => {
     const { premiumSync } = storeToRefs(usePremiumStore());
     set(premiumSync, true);
     await wrapper.vm.$nextTick();

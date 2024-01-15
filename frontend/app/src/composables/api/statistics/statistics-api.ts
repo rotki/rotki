@@ -1,24 +1,24 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import {
   LocationData,
   NetValue,
   TimedAssetBalances,
-  TimedBalances
+  TimedBalances,
 } from '@rotki/common/lib/statistics';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useStatisticsApi = () => {
+export function useStatisticsApi() {
   const queryNetValueData = async (includeNfts: boolean): Promise<NetValue> => {
     const response = await api.instance.get<ActionResult<NetValue>>(
       '/statistics/netvalue',
       {
         params: snakeCaseTransformer({
-          includeNfts
+          includeNfts,
         }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return NetValue.parse(handleResponse(response));
@@ -28,43 +28,43 @@ export const useStatisticsApi = () => {
     asset: string,
     fromTimestamp: number,
     toTimestamp: number,
-    collectionId?: number
+    collectionId?: number,
   ): Promise<TimedBalances> => {
     const payload = {
       fromTimestamp,
       toTimestamp,
-      ...(isDefined(collectionId) ? { collectionId } : { asset })
+      ...(isDefined(collectionId) ? { collectionId } : { asset }),
     };
     const balances = await api.instance.post<ActionResult<TimedBalances>>(
       `/statistics/balance`,
       snakeCaseTransformer(payload),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return TimedBalances.parse(handleResponse(balances));
   };
 
-  const queryLatestLocationValueDistribution =
-    async (): Promise<LocationData> => {
+  const queryLatestLocationValueDistribution
+    = async (): Promise<LocationData> => {
       const statistics = await api.instance.get<ActionResult<LocationData>>(
         '/statistics/value_distribution',
         {
           params: snakeCaseTransformer({ distributionBy: 'location' }),
-          validateStatus: validStatus
-        }
+          validateStatus: validStatus,
+        },
       );
       return LocationData.parse(handleResponse(statistics));
     };
 
-  const queryLatestAssetValueDistribution =
-    async (): Promise<TimedAssetBalances> => {
+  const queryLatestAssetValueDistribution
+    = async (): Promise<TimedAssetBalances> => {
       const statistics = await api.instance.get<
         ActionResult<TimedAssetBalances>
       >('/statistics/value_distribution', {
         params: snakeCaseTransformer({ distributionBy: 'asset' }),
-        validateStatus: validStatus
+        validateStatus: validStatus,
       });
       return TimedAssetBalances.parse(handleResponse(statistics));
     };
@@ -73,8 +73,8 @@ export const useStatisticsApi = () => {
     const response = await api.instance.get<ActionResult<string>>(
       '/statistics/renderer',
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -85,6 +85,6 @@ export const useStatisticsApi = () => {
     queryTimedBalancesData,
     queryLatestLocationValueDistribution,
     queryLatestAssetValueDistribution,
-    queryStatisticsRenderer
+    queryStatisticsRenderer,
   };
-};
+}

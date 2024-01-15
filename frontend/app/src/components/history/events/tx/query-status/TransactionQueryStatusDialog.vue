@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = withDefaults(
   defineProps<{
     onlyChains?: Blockchain[];
   }>(),
   {
-    onlyChains: () => []
-  }
+    onlyChains: () => [],
+  },
 );
 
 const { onlyChains } = toRefs(props);
@@ -18,7 +18,10 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
-  <QueryStatusDialog :items="sortedQueryStatus" :get-key="getKey">
+  <QueryStatusDialog
+    :items="sortedQueryStatus"
+    :get-key="getKey"
+  >
     <template #title>
       {{ t('transactions.query_status.title') }}
     </template>
@@ -29,9 +32,15 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
 
     <template #item="{ item }">
       <AdaptiveWrapper>
-        <EvmChainIcon :chain="item.evmChain" size="20px" />
+        <EvmChainIcon
+          :chain="item.evmChain"
+          size="20px"
+        />
       </AdaptiveWrapper>
-      <TransactionQueryStatusLine :item="item" class="ms-2" />
+      <TransactionQueryStatusLine
+        :item="item"
+        class="ms-2"
+      />
     </template>
 
     <template #tooltip="{ item }">

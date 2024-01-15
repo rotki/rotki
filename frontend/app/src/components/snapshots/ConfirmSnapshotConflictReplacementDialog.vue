@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
 import { isNft } from '@/utils/nft';
 import NftDetails from '@/components/helper/NftDetails.vue';
-import { type BalanceSnapshot } from '@/types/snapshots';
+import type { ComputedRef } from 'vue';
+import type { BalanceSnapshot } from '@/types/snapshots';
 
 const props = defineProps<{
   snapshot: BalanceSnapshot | null;
@@ -19,7 +19,7 @@ const { snapshot } = toRefs(props);
 const display: ComputedRef<boolean> = computed(() => !!get(snapshot));
 
 const asset: ComputedRef<string> = computed(
-  () => get(snapshot)?.assetIdentifier ?? ''
+  () => get(snapshot)?.assetIdentifier ?? '',
 );
 </script>
 
@@ -34,9 +34,14 @@ const asset: ComputedRef<string> = computed(
     @confirm="emit('confirm')"
   >
     <div
-      class="flex justify-center align-center gap-4 mt-4 border border-default rounded px-4"
+      class="flex justify-center items-center gap-4 mt-4 border border-default rounded px-4"
     >
-      <BalanceDisplay :asset="asset" :value="snapshot" class="mr-4" no-icon />
+      <BalanceDisplay
+        :asset="asset"
+        :value="snapshot"
+        class="mr-4"
+        no-icon
+      />
       <AssetDetails
         v-if="!isNft(asset)"
         :class="css.asset"
@@ -45,7 +50,10 @@ const asset: ComputedRef<string> = computed(
         :enable-association="false"
       />
       <div v-else>
-        <NftDetails :identifier="asset" :class="css.asset" />
+        <NftDetails
+          :identifier="asset"
+          :class="css.asset"
+        />
       </div>
     </div>
   </ConfirmDialog>

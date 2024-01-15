@@ -11,19 +11,24 @@ const emit = defineEmits<{
 }>();
 
 const { sortDesc: sortDescending } = toRefs(props);
-const updateSortBy = (value: string) => {
+
+function updateSortBy(value: string) {
   emit('update:sort-by', value);
-};
-const updateSortDesc = () => {
+}
+
+function updateSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
-};
+}
 
 const { t } = useI18n();
 </script>
 
 <template>
   <div class="flex">
-    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
       <template #activator>
         <RuiButton
           variant="text"

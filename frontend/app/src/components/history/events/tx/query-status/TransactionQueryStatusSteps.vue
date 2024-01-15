@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
 
@@ -11,21 +11,22 @@ const steps = computed(() => {
   const steps = [
     t('transactions.query_status.statuses.querying_transactions'),
     t('transactions.query_status.statuses.querying_internal_transactions'),
-    t('transactions.query_status.statuses.querying_evm_tokens_transactions')
+    t('transactions.query_status.statuses.querying_evm_tokens_transactions'),
   ];
 
   const itemVal = get(item);
 
   return steps.map((step, index) => ({
     title: toSentenceCase(step),
-    loading: isStepInProgress(itemVal, index)
+    loading: isStepInProgress(itemVal, index),
   }));
 });
 
 const { getStatusData } = useTransactionQueryStatus();
 
-const isStepInProgress = (item: EvmTransactionQueryData, stepIndex: number) =>
-  getStatusData(item).index === stepIndex + 1;
+function isStepInProgress(item: EvmTransactionQueryData, stepIndex: number) {
+  return getStatusData(item).index === stepIndex + 1;
+}
 </script>
 
 <template>

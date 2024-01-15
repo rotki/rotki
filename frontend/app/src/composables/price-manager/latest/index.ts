@@ -1,24 +1,21 @@
 import {
   NotificationCategory,
   type NotificationPayload,
-  Severity
+  Severity,
 } from '@rotki/common/lib/messages';
 import { omit } from 'lodash-es';
-import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
+import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
 
-export const useLatestPrices = (
-  t: ReturnType<typeof useI18n>['t'],
-  filter?: Ref<string | undefined>
-) => {
+export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref<string | undefined>) {
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = ref(false);
   const refreshing = ref(false);
 
-  const { deleteLatestPrice, fetchLatestPrices, addLatestPrice } =
-    useAssetPricesApi();
+  const { deleteLatestPrice, fetchLatestPrices, addLatestPrice }
+    = useAssetPricesApi();
   const { assetPrice } = useBalancePricesStore();
   const { assets } = useAggregatedBalances();
   const { refreshPrices } = useBalances();
@@ -29,7 +26,7 @@ export const useLatestPrices = (
   const latestAssets: ComputedRef<string[]> = computed(() =>
     get(latestPrices)
       .flatMap(({ fromAsset, toAsset }) => [fromAsset, toAsset])
-      .filter(asset => asset !== CURRENCY_USD)
+      .filter(asset => asset !== CURRENCY_USD),
   );
 
   const items = computed(() => {
@@ -44,7 +41,7 @@ export const useLatestPrices = (
       ...item,
       usdPrice: !isNft(item.fromAsset)
         ? get(assetPrice(item.fromAsset))
-        : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)
+        : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price),
     }));
   });
 
@@ -52,30 +49,33 @@ export const useLatestPrices = (
     set(loading, true);
     try {
       set(latestPrices, await fetchLatestPrices());
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const notification: NotificationPayload = {
         title: t('price_table.fetch.failure.title'),
         message: t('price_table.fetch.failure.message', {
-          message: e.message
+          message: error.message,
         }),
         display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT
+        category: NotificationCategory.DEFAULT,
       };
       notify(notification);
-    } finally {
+    }
+    finally {
       set(loading, false);
     }
   };
 
   const save = async (
     data: ManualPriceFormPayload,
-    update: boolean
+    update: boolean,
   ): Promise<boolean> => {
     try {
       return await addLatestPrice(omit(data, 'usdPrice'));
-    } catch (e: any) {
-      const values = { message: e.message };
+    }
+    catch (error: any) {
+      const values = { message: error.message };
       const title = update
         ? t('price_management.edit.error.title')
         : t('price_management.add.error.title');
@@ -86,7 +86,7 @@ export const useLatestPrices = (
       setMessage({
         title,
         description,
-        success: false
+        success: false,
       });
       return false;
     }
@@ -94,23 +94,24 @@ export const useLatestPrices = (
 
   const deletePrice = async (
     { fromAsset }: { fromAsset: string },
-    refetch: boolean = false
+    refetch: boolean = false,
   ) => {
     try {
       await deleteLatestPrice(fromAsset);
-      if (refetch) {
+      if (refetch)
         await getLatestPrices();
-      }
+
       await refreshCurrentPrices(true);
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const notification: NotificationPayload = {
         title: t('price_table.delete.failure.title'),
         message: t('price_table.delete.failure.message', {
-          message: e.message
+          message: error.message,
         }),
         display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT
+        category: NotificationCategory.DEFAULT,
       };
       notify(notification);
     }
@@ -119,9 +120,9 @@ export const useLatestPrices = (
   const refreshCurrentPrices = async (refreshAll: boolean = false) => {
     set(refreshing, true);
     const assetToRefresh = [...get(latestAssets)];
-    if (refreshAll) {
+    if (refreshAll)
       assetToRefresh.push(...get(assets()));
-    }
+
     await refreshPrices(false, assetToRefresh);
     resetStatus();
     set(refreshing, false);
@@ -134,6 +135,6 @@ export const useLatestPrices = (
     getLatestPrices,
     save,
     refreshCurrentPrices,
-    deletePrice
+    deletePrice,
   };
-};
+}

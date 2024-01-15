@@ -6,8 +6,8 @@ withDefaults(
   }>(),
   {
     success: false,
-    size: 20
-  }
+    size: 20,
+  },
 );
 </script>
 

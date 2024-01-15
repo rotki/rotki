@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
 const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(
-  useAccountingSettingsStore()
+  useAccountingSettingsStore(),
 );
 
 onMounted(() => {
@@ -10,14 +10,15 @@ onMounted(() => {
 
 const { t } = useI18n();
 
-const getSuccessMessage = (enabled: boolean) =>
-  enabled
+function getSuccessMessage(enabled: boolean) {
+  return enabled
     ? t(
-        'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled'
-      )
+      'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled',
+    )
     : t(
-        'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled'
-      );
+      'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled',
+    );
+}
 </script>
 
 <template>
@@ -36,7 +37,7 @@ const getSuccessMessage = (enabled: boolean) =>
       :error-messages="error"
       :label="
         t(
-          'accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled'
+          'accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled',
         )
       "
       color="primary"

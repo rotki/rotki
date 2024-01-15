@@ -1,6 +1,6 @@
-import { type ExternalTrade } from '../../support/types';
 import { selectAsset } from '../../support/utils';
 import { HistoryPage } from './index';
+import type { ExternalTrade } from '../../support/types';
 
 export class TradeHistoryPage {
   page = new HistoryPage();
@@ -11,7 +11,7 @@ export class TradeHistoryPage {
   createWaitForTrades() {
     cy.intercept({
       method: 'GET',
-      url: '/api/1/trades**'
+      url: '/api/1/trades**',
     }).as('apiCall');
 
     return () => {
@@ -31,7 +31,7 @@ export class TradeHistoryPage {
 
     cy.intercept({
       method: 'GET',
-      url: '/api/1/tasks/*'
+      url: '/api/1/tasks/*',
     }).as('priceTask');
 
     cy.get(`[data-cy=trade-input-${trade.trade_type}] input`).click();
@@ -49,22 +49,23 @@ export class TradeHistoryPage {
     if (trade.quote_amount) {
       cy.get('[data-cy=grouped-amount-input__swap-button]').click();
       cy.get('[data-cy=trade-rate] [data-cy=secondary] input').type(
-        `{selectall}{backspace}${trade.quote_amount}`
+        `{selectall}{backspace}${trade.quote_amount}`,
       );
       cy.get('[data-cy=trade-rate] [data-cy=primary] input').should(
         'have.value',
-        trade.rate
+        trade.rate,
       );
-    } else {
+    }
+    else {
       cy.get('[data-cy=trade-rate] [data-cy=primary] input').type(
-        `{selectall}{backspace}${trade.rate}`
+        `{selectall}{backspace}${trade.rate}`,
       );
     }
     cy.get('[data-cy=fee] input').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
     cy.get('[data-cy=notes] textarea:not([aria-hidden="true"])').type(
-      trade.notes
+      trade.notes,
     );
     const waitForTrades = this.createWaitForTrades();
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
@@ -85,7 +86,7 @@ export class TradeHistoryPage {
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child',
     ).should('contain.text', total);
   }
 
@@ -160,7 +161,7 @@ export class TradeHistoryPage {
 
   nextPage() {
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__icons-after button:first-child'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__icons-after button:first-child',
     ).click();
   }
 
@@ -168,7 +169,7 @@ export class TradeHistoryPage {
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input',
     ).should('have.value', page);
   }
 }

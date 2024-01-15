@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
-import { type ExplorerUrls } from '@/types/asset/asset-urls';
+import type { BigNumber } from '@rotki/common';
+import type { ComputedRef } from 'vue';
+import type { ExplorerUrls } from '@/types/asset/asset-urls';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -26,12 +26,12 @@ const props = withDefaults(
     chain: Blockchain.ETH,
     noTxHash: false,
     validatorIndex: undefined,
-    blockNumber: undefined
-  }
+    blockNumber: undefined,
+  },
 );
 
-const { notes, amount, asset, noTxHash, validatorIndex, blockNumber } =
-  toRefs(props);
+const { notes, amount, asset, noTxHash, validatorIndex, blockNumber }
+  = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
 
@@ -41,13 +41,14 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   assetId: asset,
   noTxHash,
   validatorIndex,
-  blockNumber
+  blockNumber,
 });
 
 const css = useCssModule();
 
-const isLinkType = (t: any): t is keyof ExplorerUrls =>
-  [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
+function isLinkType(t: any): t is keyof ExplorerUrls {
+  return [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
+}
 </script>
 
 <template>
@@ -58,9 +59,9 @@ const isLinkType = (t: any): t is keyof ExplorerUrls =>
         :key="index"
         class="inline-flex"
         :class="{
-          [css['address__content']]: true,
+          [css.address__content]: true,
           'pl-2': !note.showIcon,
-          [css.address]: true
+          [css.address]: true,
         }"
         :text="note.address"
         :type="note.type"

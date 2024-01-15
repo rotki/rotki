@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type MaybeRef } from '@vueuse/core';
 import {
   type MatchedKeywordWithBehaviour,
   type SearchMatcher,
@@ -8,8 +7,9 @@ import {
   assetSuggestions,
   dateDeserializer,
   dateSerializer,
-  dateValidator
+  dateValidator,
 } from '@/types/filtering';
+import type { MaybeRef } from '@vueuse/core';
 
 enum HistoryEventFilterKeys {
   START = 'start',
@@ -23,7 +23,7 @@ enum HistoryEventFilterKeys {
   ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
-  ADDRESSES = 'address'
+  ADDRESSES = 'address',
 }
 
 enum HistoryEventFilterValueKeys {
@@ -38,7 +38,7 @@ enum HistoryEventFilterValueKeys {
   ENTRY_TYPE = 'entryTypes',
   TX_HASHES = 'txHashes',
   VALIDATOR_INDICES = 'validatorIndices',
-  ADDRESSES = 'addresses'
+  ADDRESSES = 'addresses',
 }
 
 export type Matcher = SearchMatcher<
@@ -48,18 +48,15 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
-export const useHistoryEventFilter = (
-  disabled: {
-    protocols?: boolean;
-    products?: boolean;
-    locations?: boolean;
-    period?: boolean;
-    validators?: boolean;
-    eventTypes?: boolean;
-    eventSubtypes?: boolean;
-  },
-  entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>
-) => {
+export function useHistoryEventFilter(disabled: {
+  protocols?: boolean;
+  products?: boolean;
+  locations?: boolean;
+  period?: boolean;
+  validators?: boolean;
+  eventTypes?: boolean;
+  eventSubtypes?: boolean;
+}, entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>) {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -67,7 +64,7 @@ export const useHistoryEventFilter = (
     counterparties,
     historyEventTypes,
     historyEventTypeGlobalMapping,
-    historyEventProducts
+    historyEventProducts,
   } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
@@ -85,12 +82,12 @@ export const useHistoryEventFilter = (
               description: t('transactions.filter.start_date'),
               string: true,
               hint: t('transactions.filter.date_hint', {
-                format: getDateInputISOFormat(get(dateInputFormat))
+                format: getDateInputISOFormat(get(dateInputFormat)),
               }),
               suggestions: () => [],
               validate: dateValidator(dateInputFormat),
               serializer: dateSerializer(dateInputFormat),
-              deserializer: dateDeserializer(dateInputFormat)
+              deserializer: dateDeserializer(dateInputFormat),
             },
             {
               key: HistoryEventFilterKeys.END,
@@ -98,13 +95,13 @@ export const useHistoryEventFilter = (
               description: t('transactions.filter.end_date'),
               string: true,
               hint: t('transactions.filter.date_hint', {
-                format: getDateInputISOFormat(get(dateInputFormat))
+                format: getDateInputISOFormat(get(dateInputFormat)),
               }),
               suggestions: () => [],
               validate: dateValidator(dateInputFormat),
               serializer: dateSerializer(dateInputFormat),
-              deserializer: dateDeserializer(dateInputFormat)
-            }
+              deserializer: dateDeserializer(dateInputFormat),
+            },
           ] satisfies Matcher[])),
       {
         key: HistoryEventFilterKeys.ASSET,
@@ -112,30 +109,30 @@ export const useHistoryEventFilter = (
         description: t('transactions.filter.asset'),
         asset: true,
         suggestions: assetSuggestions(assetSearch),
-        deserializer: assetDeserializer(assetInfo)
-      }
+        deserializer: assetDeserializer(assetInfo),
+      },
     ];
 
     const entryTypesVal = get(entryTypes);
-    const evmOrEthDepositEventsIncluded =
-      !entryTypesVal ||
-      entryTypesVal.some(
-        type => isEvmEventType(type) || isEthDepositEventType(type)
+    const evmOrEthDepositEventsIncluded
+      = !entryTypesVal
+      || entryTypesVal.some(
+        type => isEvmEventType(type) || isEthDepositEventType(type),
       );
 
-    const evmOrOnlineEventsIncluded =
-      !entryTypesVal ||
-      entryTypesVal.some(
-        type => isEvmEventType(type) || isOnlineHistoryEventType(type)
+    const evmOrOnlineEventsIncluded
+      = !entryTypesVal
+      || entryTypesVal.some(
+        type => isEvmEventType(type) || isOnlineHistoryEventType(type),
       );
 
-    const eventsWithValidatorIndexIncluded =
-      !entryTypesVal ||
-      entryTypesVal.some(
+    const eventsWithValidatorIndexIncluded
+      = !entryTypesVal
+      || entryTypesVal.some(
         type =>
-          isWithdrawalEventType(type) ||
-          isEthBlockEventType(type) ||
-          isEthDepositEventType(type)
+          isWithdrawalEventType(type)
+          || isEthBlockEventType(type)
+          || isEthDepositEventType(type),
       );
 
     if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
@@ -147,7 +144,7 @@ export const useHistoryEventFilter = (
         multiple: true,
         string: true,
         suggestions: () => counterpartiesVal,
-        validate: (protocol: string) => !!protocol
+        validate: (protocol: string) => !!protocol,
       });
     }
 
@@ -158,7 +155,7 @@ export const useHistoryEventFilter = (
         description: t('transactions.filter.location'),
         string: true,
         suggestions: () => get(associatedLocations),
-        validate: location => !!location
+        validate: location => !!location,
       });
     }
 
@@ -170,7 +167,7 @@ export const useHistoryEventFilter = (
         description: t('transactions.filter.product'),
         string: true,
         suggestions: () => products,
-        validate: product => !!product
+        validate: product => !!product,
       });
     }
 
@@ -185,7 +182,7 @@ export const useHistoryEventFilter = (
           entryTypesVal ?? Object.values(HistoryEventEntryType),
         validate: (type: string) => !!type,
         allowExclusion: true,
-        behaviourRequired: true
+        behaviourRequired: true,
       });
     }
 
@@ -198,23 +195,22 @@ export const useHistoryEventFilter = (
           string: true,
           multiple: true,
           suggestions: () => get(historyEventTypes),
-          validate: (type: string) => !!type
+          validate: (type: string) => !!type,
         });
       }
 
       let selectedEventTypes = get(filters)?.eventTypes || [];
-      if (!Array.isArray(selectedEventTypes)) {
+      if (!Array.isArray(selectedEventTypes))
         selectedEventTypes = [`${selectedEventTypes}`];
-      }
+
       if (!disabled.eventSubtypes && selectedEventTypes.length > 0) {
         const globalMapping = get(historyEventTypeGlobalMapping);
 
         const globalMappingKeys: string[] = [];
-        selectedEventTypes.forEach(selectedEventType => {
+        selectedEventTypes.forEach((selectedEventType) => {
           const globalMappingFound = globalMapping[selectedEventType];
-          if (globalMappingFound) {
+          if (globalMappingFound)
             globalMappingKeys.push(...Object.keys(globalMappingFound));
-          }
         });
 
         data.push({
@@ -224,7 +220,7 @@ export const useHistoryEventFilter = (
           string: true,
           multiple: true,
           suggestions: () => get(globalMappingKeys),
-          validate: (type: string) => get(globalMappingKeys).includes(type)
+          validate: (type: string) => get(globalMappingKeys).includes(type),
         });
       }
     }
@@ -238,7 +234,7 @@ export const useHistoryEventFilter = (
           string: true,
           multiple: true,
           suggestions: () => [],
-          validate: (txHash: string) => isValidTxHash(txHash)
+          validate: (txHash: string) => isValidTxHash(txHash),
         },
         {
           key: HistoryEventFilterKeys.ADDRESSES,
@@ -247,8 +243,8 @@ export const useHistoryEventFilter = (
           string: true,
           multiple: true,
           suggestions: () => [],
-          validate: (address: string) => isValidEthAddress(address)
-        }
+          validate: (address: string) => isValidEthAddress(address),
+        },
       );
     }
 
@@ -260,7 +256,7 @@ export const useHistoryEventFilter = (
         string: true,
         multiple: true,
         suggestions: () => [],
-        validate: (validatorIndex: string) => !!validatorIndex
+        validate: (validatorIndex: string) => !!validatorIndex,
       });
     }
 
@@ -269,7 +265,7 @@ export const useHistoryEventFilter = (
 
   const updateFilter = (newFilters: Filters) => {
     set(filters, {
-      ...newFilters
+      ...newFilters,
     });
   };
 
@@ -292,13 +288,13 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
+    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
   });
 
   return {
     matchers,
     filters,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

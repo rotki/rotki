@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
-import { type Nullable } from '@/types';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { Nullable } from '@/types';
 
 const props = withDefaults(
   defineProps<{
     exchange?: Nullable<string>;
   }>(),
   {
-    exchange: null
-  }
+    exchange: null,
+  },
 );
 
 const { t } = useI18n();
@@ -18,22 +18,22 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
-const { getBalances, refreshExchangeSavings, fetchExchangeSavings } =
-  useExchangeBalancesStore();
+const { getBalances, refreshExchangeSavings, fetchExchangeSavings }
+  = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 
 const { refreshBalance } = useRefresh();
 
-const refreshExchangeBalances = async () => {
+async function refreshExchangeBalances() {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
   await checkSavingsData();
-};
+}
 
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<string[]>(() =>
   get(connectedExchanges)
     .map(({ location }) => location)
-    .filter(uniqueStrings)
+    .filter(uniqueStrings),
 );
 
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
@@ -41,9 +41,9 @@ const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 const router = useRouter();
 const route = useRoute();
 
-const setSelectedExchange = () => {
+function setSelectedExchange() {
   set(selectedExchange, get(route).params.exchange);
-};
+}
 
 onMounted(() => {
   setSelectedExchange();
@@ -53,35 +53,36 @@ watch(route, () => {
   setSelectedExchange();
 });
 
-const exchangeBalance = (exchange: string): BigNumber => {
+function exchangeBalance(exchange: string): BigNumber {
   const balances = get(getBalances(exchange));
   return balances.reduce(
     (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
-    Zero
+    Zero,
   );
-};
+}
 
-const openExchangeDetails = async () => {
+async function openExchangeDetails() {
   await router.push({
-    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`
+    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`,
   });
-};
+}
 
 const balances = computed(() => {
   const currentExchange = get(exchange);
-  if (!currentExchange) {
+  if (!currentExchange)
     return [];
-  }
+
   return get(getBalances(currentExchange));
 });
 
 const vueRouter = useRouter();
-const navigate = () => {
+
+function navigate() {
   vueRouter.push({
     path: Routes.API_KEYS_EXCHANGES,
-    query: { add: 'true' }
+    query: { add: 'true' },
   });
-};
+}
 
 const exchangeSavingsExist: Ref<boolean> = ref(false);
 const exchangeDetailTabs: Ref<number> = ref(0);
@@ -91,36 +92,36 @@ watch(exchange, () => {
   checkSavingsData();
 });
 
-const checkSavingsData = async () => {
+async function checkSavingsData() {
   const exchangeVal = get(exchange);
   if (isBinance(exchangeVal)) {
     const { total } = await fetchExchangeSavings({
       limit: 1,
       offset: 0,
-      location: exchangeVal
+      location: exchangeVal,
     });
 
     set(exchangeSavingsExist, !!total);
-  } else {
+  }
+  else {
     set(exchangeSavingsExist, false);
   }
-};
+}
 
 onMounted(() => {
   refreshExchangeSavings();
 });
 
-const isBinance = (
-  exchange: string | null
-): exchange is 'binance' | 'binanceus' =>
-  !!exchange && ['binance', 'binanceus'].includes(exchange);
+function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus' {
+  return !!exchange && ['binance', 'binanceus'].includes(exchange);
+}
 </script>
 
 <template>
   <TablePageLayout
     :title="[
       t('navigation_menu.accounts_balances'),
-      t('exchange_balances.title')
+      t('exchange_balances.title'),
     ]"
   >
     <template #buttons>
@@ -142,7 +143,11 @@ const isBinance = (
         </template>
         {{ t('exchange_balances.refresh_tooltip') }}
       </RuiTooltip>
-      <RuiButton v-blur color="primary" @click="navigate()">
+      <RuiButton
+        v-blur
+        color="primary"
+        @click="navigate()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
@@ -150,7 +155,10 @@ const isBinance = (
       </RuiButton>
     </template>
     <RuiCard class="exchange-balances">
-      <div v-if="usedExchanges.length > 0" class="flex flex-col md:flex-row">
+      <div
+        v-if="usedExchanges.length > 0"
+        class="flex flex-col md:flex-row"
+      >
         <div class="md:hidden mb-2">
           <VSelect
             v-model="selectedExchange"
@@ -176,7 +184,11 @@ const isBinance = (
           </VSelect>
         </div>
         <div class="hidden md:block w-1/6 border-r border-default">
-          <RuiTabs v-model="selectedTab" vertical color="primary">
+          <RuiTabs
+            v-model="selectedTab"
+            vertical
+            color="primary"
+          >
             <template #default>
               <RuiTab
                 v-for="(usedExchange, i) in usedExchanges"
@@ -203,7 +215,10 @@ const isBinance = (
         </div>
         <div class="flex-1">
           <div v-if="exchange">
-            <RuiTabs v-model="exchangeDetailTabs" color="primary">
+            <RuiTabs
+              v-model="exchangeDetailTabs"
+              color="primary"
+            >
               <template #default>
                 <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
                 <RuiTab v-if="exchangeSavingsExist">
@@ -234,12 +249,18 @@ const isBinance = (
             </RuiTabItems>
           </div>
 
-          <div v-else class="p-4">
+          <div
+            v-else
+            class="p-4"
+          >
             {{ t('exchange_balances.select_hint') }}
           </div>
         </div>
       </div>
-      <div v-else class="px-4 py-8">
+      <div
+        v-else
+        class="px-4 py-8"
+      >
         <i18n path="exchange_balances.no_connected_exchanges">
           <InternalLink
             :to="Routes.API_KEYS_EXCHANGES"

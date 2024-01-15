@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
-import { type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
+import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
     size?: string;
   }>(),
   {
-    size: '40px'
-  }
+    size: '40px',
+  },
 );
 
 const { data } = toRefs(props);
@@ -24,22 +24,22 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3').toString(),
   [PriceOracle.MANUALCURRENT]: t('oracles.manual_latest').toString(),
   [AddressNamePriority.BLOCKCHAIN_ACCOUNT]: t(
-    'address_book.hint.priority.list.blockchain_account_labels'
+    'address_book.hint.priority.list.blockchain_account_labels',
   ).toString(),
   [AddressNamePriority.ENS_NAMES]: t(
-    'address_book.hint.priority.list.ens_names'
+    'address_book.hint.priority.list.ens_names',
   ).toString(),
   [AddressNamePriority.ETHEREUM_TOKENS]: t(
-    'address_book.hint.priority.list.ethereum_tokens'
+    'address_book.hint.priority.list.ethereum_tokens',
   ).toString(),
   [AddressNamePriority.GLOBAL_ADDRESSBOOK]: t(
-    'address_book.hint.priority.list.global_address_book'
+    'address_book.hint.priority.list.global_address_book',
   ).toString(),
   [AddressNamePriority.HARDCODED_MAPPINGS]: t(
-    'address_book.hint.priority.list.hardcoded_mappings'
+    'address_book.hint.priority.list.hardcoded_mappings',
   ).toString(),
   [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t(
-    'address_book.hint.priority.list.private_address_book'
+    'address_book.hint.priority.list.private_address_book',
   ).toString(),
   blockchain: '',
   coingecko: '',
@@ -47,7 +47,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   fiat: '',
   manual: '',
   defillama: '',
-  empty_list_id: ''
+  empty_list_id: '',
 };
 </script>
 

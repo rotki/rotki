@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type LiquityPoolDetailEntry,
-  type LiquityPoolDetails,
-  type LiquityStakingDetailEntry,
-  type LiquityStakingDetails,
-  type LiquityStatisticDetails
-} from '@rotki/common/lib/liquity';
-import { type ComputedRef, type Ref } from 'vue';
-import { type AssetBalance, type Balance } from '@rotki/common';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { Section } from '@/types/status';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type {
+  LiquityPoolDetailEntry,
+  LiquityPoolDetails,
+  LiquityStakingDetailEntry,
+  LiquityStakingDetails,
+  LiquityStatisticDetails,
+} from '@rotki/common/lib/liquity';
+import type { ComputedRef, Ref } from 'vue';
+import type { AssetBalance, Balance } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;
@@ -32,7 +32,7 @@ const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(
   () => {
     const allStakes: LiquityStakingDetails = get(staking);
     const selectedAddresses = get(selectedAccounts).map(
-      ({ address }) => address
+      ({ address }) => address,
     );
 
     const filteredStakes: LiquityStakingDetailEntry[] = [];
@@ -40,46 +40,44 @@ const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(
     for (const address in allStakes) {
       const stake = allStakes[address];
       if (
-        selectedAddresses.length > 0 &&
-        !selectedAddresses.includes(address)
-      ) {
+        selectedAddresses.length > 0
+        && !selectedAddresses.includes(address)
+      )
         continue;
-      }
 
-      if (stake.balances) {
+      if (stake.balances)
         filteredStakes.push(stake.balances);
-      }
 
-      if (stake.proxies) {
+      if (stake.proxies)
         filteredStakes.push(...Object.values(stake.proxies));
-      }
     }
 
     let stakes: LiquityStakingDetailEntry | null = null;
 
-    filteredStakes.forEach(stake => {
+    filteredStakes.forEach((stake) => {
       if (stakes === null) {
         stakes = { ...stake };
-      } else {
+      }
+      else {
         let key: keyof LiquityStakingDetailEntry;
         for (key in stakes) {
           stakes[key] = {
             ...stakes[key],
-            ...balanceSum(stakes[key], stake[key])
+            ...balanceSum(stakes[key], stake[key]),
           };
         }
       }
     });
     return stakes;
-  }
+  },
 );
 
-const aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null> =
-  computed(() => {
+const aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null>
+  = computed(() => {
     const allPools: LiquityPoolDetails = get(stakingPools);
 
     const selectedAddresses = get(selectedAccounts).map(
-      ({ address }) => address
+      ({ address }) => address,
     );
 
     const filteredPools: LiquityPoolDetailEntry[] = [];
@@ -87,31 +85,29 @@ const aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null> =
     for (const address in allPools) {
       const pool = allPools[address];
       if (
-        selectedAddresses.length > 0 &&
-        !selectedAddresses.includes(address)
-      ) {
+        selectedAddresses.length > 0
+        && !selectedAddresses.includes(address)
+      )
         continue;
-      }
 
-      if (pool.balances) {
+      if (pool.balances)
         filteredPools.push(pool.balances);
-      }
 
-      if (pool.proxies) {
+      if (pool.proxies)
         filteredPools.push(...Object.values(pool.proxies));
-      }
     }
 
     let pools: LiquityPoolDetailEntry | null = null;
-    filteredPools.forEach(pool => {
+    filteredPools.forEach((pool) => {
       if (pools === null) {
         pools = { ...pool };
-      } else {
+      }
+      else {
         let key: keyof LiquityPoolDetailEntry;
         for (key in pools) {
           pools[key] = {
             ...pools[key],
-            ...balanceSum(pools[key], pool[key])
+            ...balanceSum(pools[key], pool[key]),
           };
         }
       }
@@ -127,89 +123,84 @@ const proxyInformation: ComputedRef<Record<string, string[]> | null> = computed(
     const allPools: LiquityPoolDetails = get(stakingPools);
 
     const selectedAddresses = get(selectedAccounts).map(
-      ({ address }) => address
+      ({ address }) => address,
     );
 
     const addToProxies = (mainAddress: string, proxyAddresses: string[]) => {
       if (!proxies[mainAddress]) {
         proxies[mainAddress] = proxyAddresses;
-      } else {
+      }
+      else {
         proxies[mainAddress] = [
           ...proxies[mainAddress],
-          ...proxyAddresses
+          ...proxyAddresses,
         ].filter(uniqueStrings);
       }
     };
 
-    selectedAddresses.forEach(address => {
+    selectedAddresses.forEach((address) => {
       const pool = allPools[address];
       if (pool && pool.proxies) {
         const poolProxies = Object.keys(pool.proxies);
-        if (poolProxies.length > 0) {
+        if (poolProxies.length > 0)
           addToProxies(address, poolProxies);
-        }
       }
 
       const stake = allStakes[address];
       if (stake && stake.proxies) {
         const stakeProxies = Object.keys(stake.proxies);
-        if (stakeProxies.length > 0) {
+        if (stakeProxies.length > 0)
           addToProxies(address, stakeProxies);
-        }
       }
     });
 
-    if (Object.keys(proxies).length === 0) {
+    if (Object.keys(proxies).length === 0)
       return null;
-    }
 
     return proxies;
-  }
+  },
 );
 
-const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
-  computed(() => {
+const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null>
+  = computed(() => {
     const allStatistics = get(statistics);
 
-    if (!allStatistics) {
+    if (!allStatistics)
       return null;
-    }
 
     const selectedAddresses = get(selectedAccounts).map(
-      ({ address }) => address
+      ({ address }) => address,
     );
 
-    if (selectedAddresses.length === 0) {
+    if (selectedAddresses.length === 0)
       return allStatistics.globalStats ?? null;
-    }
 
-    if (!allStatistics.byAddress) {
+    if (!allStatistics.byAddress)
       return null;
-    }
 
     let aggregatedStatistic: LiquityStatisticDetails | null = null;
     for (const address in allStatistics.byAddress) {
-      if (!selectedAddresses.includes(address)) {
+      if (!selectedAddresses.includes(address))
         continue;
-      }
 
       const statistic = allStatistics.byAddress[address];
       if (aggregatedStatistic === null) {
         aggregatedStatistic = { ...statistic };
-      } else {
+      }
+      else {
         const { stakingGains, stabilityPoolGains, ...remaining } = statistic;
 
         let key: keyof typeof remaining;
 
         for (key in remaining) {
           aggregatedStatistic[key] = aggregatedStatistic[key].plus(
-            remaining[key]
+            remaining[key],
           );
         }
 
         const mergeAssetBalances = (
           items1: AssetBalance[],
-          items2: AssetBalance[]
+          items2: AssetBalance[],
         ) => {
           const aggregated = [...items1, ...items2];
 
@@ -224,18 +215,18 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
               .reduce(
                 (previous: Balance, current: Balance) =>
                   balanceSum(previous, current),
-                zeroBalance()
-              )
+                zeroBalance(),
+              ),
           }));
         };
 
         aggregatedStatistic.stakingGains = mergeAssetBalances(
           aggregatedStatistic.stakingGains,
-          stakingGains
+          stakingGains,
         );
         aggregatedStatistic.stabilityPoolGains = mergeAssetBalances(
           aggregatedStatistic.stabilityPoolGains,
-          stabilityPoolGains
+          stabilityPoolGains,
         );
       }
     }
@@ -245,13 +236,13 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
 
 const availableAddresses = computed(() =>
   [...Object.keys(get(staking)), ...Object.keys(get(stakingPools))].filter(
-    uniqueStrings
-  )
+    uniqueStrings,
+  ),
 );
 
-const refresh = async () => {
+async function refresh() {
   emit('refresh', true);
-};
+}
 
 const css = useCssModule();
 const slots = useSlots();
@@ -299,25 +290,42 @@ const slots = useSlots();
         :usable-addresses="availableAddresses"
       />
 
-      <VMenu v-if="proxyInformation" offset-x nudge-right="8" min-width="410">
+      <VMenu
+        v-if="proxyInformation"
+        offset-x
+        nudge-right="8"
+        min-width="410"
+      >
         <template #activator="{ on, attrs }">
-          <RuiButton variant="text" class="!p-2" icon v-bind="attrs" v-on="on">
+          <RuiButton
+            variant="text"
+            class="!p-2"
+            icon
+            v-bind="attrs"
+            v-on="on"
+          >
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
         <div class="pa-4">
-          <div v-for="(proxies, key, index) in proxyInformation" :key="key">
+          <div
+            v-for="(proxies, key, index) in proxyInformation"
+            :key="key"
+          >
             <div class="flex flex-row items-center gap-2">
               <RuiChip>
                 <HashLink :text="key" />
               </RuiChip>
               {{
                 t('liquity_staking_details.has_proxy_addresses', {
-                  length: proxies.length
+                  length: proxies.length,
                 })
               }}
             </div>
-            <div class="ml-4 pl-4 pt-2" :class="css['proxies-wrapper']">
+            <div
+              class="ml-4 pl-4 pt-2"
+              :class="css['proxies-wrapper']"
+            >
               <div
                 v-for="proxy in proxies"
                 :key="proxy"
@@ -339,8 +347,14 @@ const slots = useSlots();
     </div>
 
     <div class="flex flex-row flex-wrap gap-4">
-      <LiquityPools class="flex-1" :pool="aggregatedStakingPool" />
-      <LiquityStake class="flex-1" :stake="aggregatedStake" />
+      <LiquityPools
+        class="flex-1"
+        :pool="aggregatedStakingPool"
+      />
+      <LiquityStake
+        class="flex-1"
+        :stake="aggregatedStake"
+      />
     </div>
 
     <LiquityStatistics

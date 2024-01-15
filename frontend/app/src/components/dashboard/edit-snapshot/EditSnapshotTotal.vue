@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
 import { helpers, required } from '@vuelidate/validators';
 import { CURRENCY_USD } from '@/types/currencies';
-import {
-  type BalanceSnapshot,
-  type LocationDataSnapshot
-} from '@/types/snapshots';
 import { toMessages } from '@/utils/validation';
+import type {
+  BalanceSnapshot,
+  LocationDataSnapshot,
+} from '@/types/snapshots';
+import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
   value: LocationDataSnapshot[];
@@ -27,14 +27,14 @@ const { t } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(
-  () => get(exchangeRate(get(currencySymbol))) ?? One
+  () => get(exchangeRate(get(currencySymbol))) ?? One,
 );
 
 const assetTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
-    if (item.category === 'asset') {
+    if (item.category === 'asset')
       return item.usdValue;
-    }
+
     return item.usdValue.negated();
   });
 
@@ -43,9 +43,9 @@ const assetTotal = computed<BigNumber>(() => {
 
 const locationTotal = computed<BigNumber>(() => {
   const numbers = get(value).map((item: LocationDataSnapshot) => {
-    if (item.location === 'total') {
+    if (item.location === 'total')
       return Zero;
-    }
+
     return item.usdValue;
   });
 
@@ -54,12 +54,12 @@ const locationTotal = computed<BigNumber>(() => {
 
 const nftsTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
-    if (!isNft(item.assetIdentifier)) {
+    if (!isNft(item.assetIdentifier))
       return Zero;
-    }
-    if (item.category === 'asset') {
+
+    if (item.category === 'asset')
       return item.usdValue;
-    }
+
     return item.usdValue.negated();
   });
 
@@ -69,9 +69,8 @@ const nftsTotal = computed<BigNumber>(() => {
 const numericTotal = computed<BigNumber>(() => {
   const value = get(total);
 
-  if (value === '') {
+  if (value === '')
     return Zero;
-  }
 
   return get(currencySymbol) === CURRENCY_USD
     ? bigNumberify(value)
@@ -79,7 +78,7 @@ const numericTotal = computed<BigNumber>(() => {
 });
 
 const nftsExcludedTotal = computed<BigNumber>(() =>
-  get(numericTotal).minus(get(nftsTotal))
+  get(numericTotal).minus(get(nftsTotal)),
 );
 
 const suggestions = computed(() => {
@@ -88,12 +87,12 @@ const suggestions = computed(() => {
 
   if (assetTotalValue.minus(locationTotalValue).abs().lt(1e-8)) {
     return {
-      total: assetTotalValue
+      total: assetTotalValue,
     };
   }
   return {
     asset: assetTotalValue,
-    location: locationTotalValue
+    location: locationTotalValue,
   };
 });
 
@@ -101,8 +100,8 @@ onBeforeMount(() => {
   const totalEntry = get(value).find(item => item.location === 'total');
 
   if (totalEntry) {
-    const convertedFiatValue =
-      get(currencySymbol) === CURRENCY_USD
+    const convertedFiatValue
+      = get(currencySymbol) === CURRENCY_USD
         ? totalEntry.usdValue.toFixed()
         : totalEntry.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
@@ -110,27 +109,27 @@ onBeforeMount(() => {
   }
 });
 
-const input = (value: LocationDataSnapshot[]) => {
+function input(value: LocationDataSnapshot[]) {
   emit('input', value);
-};
+}
 
-const updateStep = (step: number) => {
+function updateStep(step: number) {
   emit('update:step', step);
-};
+}
 
-const setTotal = (number?: BigNumber) => {
+function setTotal(number?: BigNumber) {
   assert(number);
-  const convertedFiatValue =
-    get(currencySymbol) === CURRENCY_USD
+  const convertedFiatValue
+    = get(currencySymbol) === CURRENCY_USD
       ? number.toFixed()
       : number.multipliedBy(get(fiatExchangeRate)).toFixed();
 
   set(total, convertedFiatValue);
-};
+}
 
 const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
 
-const save = async () => {
+async function save() {
   const val = get(value);
   const index = val.findIndex(item => item.location === 'total')!;
 
@@ -139,7 +138,7 @@ const save = async () => {
   newValue[index].usdValue = get(numericTotal);
 
   input(newValue);
-};
+}
 
 setSubmitFunc(save);
 
@@ -147,27 +146,27 @@ const rules = {
   total: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.total.rules.total'),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const v$ = setValidation(
   rules,
   {
-    total
+    total,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const suggestionsLabel = computed(() => ({
   total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
   asset: t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
-    length: get(balancesSnapshot).length
+    length: get(balancesSnapshot).length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
-    length: get(value).length
-  })
+    length: get(value).length,
+  }),
 }));
 </script>
 
@@ -187,13 +186,19 @@ const suggestionsLabel = computed(() => ({
         <div class="text--secondary text-caption">
           <i18n path="dashboard.snapshot.edit.dialog.total.warning">
             <template #amount>
-              <AmountDisplay :value="nftsExcludedTotal" fiat-currency="USD" />
+              <AmountDisplay
+                :value="nftsExcludedTotal"
+                fiat-currency="USD"
+              />
             </template>
           </i18n>
         </div>
       </div>
       <div>
-        <div v-for="(number, key) in suggestions" :key="key">
+        <div
+          v-for="(number, key) in suggestions"
+          :key="key"
+        >
           <RuiButton
             color="primary"
             class="mb-4 w-full"
@@ -212,7 +217,10 @@ const suggestionsLabel = computed(() => ({
             </div>
           </RuiButton>
 
-          <div v-if="key === 'location'" class="text--secondary text-caption">
+          <div
+            v-if="key === 'location'"
+            class="text--secondary text-caption"
+          >
             {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
           </div>
         </div>
@@ -222,13 +230,19 @@ const suggestionsLabel = computed(() => ({
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex justify-end p-2 gap-2"
     >
-      <RuiButton variant="text" @click="updateStep(2)">
+      <RuiButton
+        variant="text"
+        @click="updateStep(2)"
+      >
         <template #prepend>
           <RuiIcon name="arrow-left-line" />
         </template>
         {{ t('common.actions.back') }}
       </RuiButton>
-      <RuiButton color="primary" @click="trySubmit()">
+      <RuiButton
+        color="primary"
+        @click="trySubmit()"
+      >
         {{ t('common.actions.finish') }}
         <template #append>
           <RuiIcon name="arrow-right-line" />

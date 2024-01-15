@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {
-  type EthStakingFilter,
-  type EthStakingFilterType,
-  type EthStakingPeriod
+import type {
+  EthStakingFilter,
+  EthStakingFilterType,
+  EthStakingPeriod,
 } from '@rotki/common/lib/staking/eth2';
 
 defineProps<{
@@ -17,8 +17,7 @@ const emit = defineEmits<{
 const filterType: Ref<EthStakingFilterType> = ref('validator');
 
 watch(filterType, type =>
-  emit('input', type === 'validator' ? { validators: [] } : { accounts: [] })
-);
+  emit('input', type === 'validator' ? { validators: [] } : { accounts: [] }));
 
 const { t } = useI18n();
 </script>
@@ -38,10 +37,16 @@ const { t } = useI18n();
           color="primary"
         >
           <template #default>
-            <RuiButton value="validator" class="!py-2">
+            <RuiButton
+              value="validator"
+              class="!py-2"
+            >
               {{ t('eth2_page.toggle.key') }}
             </RuiButton>
-            <RuiButton value="address" class="!py-2">
+            <RuiButton
+              value="address"
+              class="!py-2"
+            >
               {{ t('eth2_page.toggle.depositor') }}
             </RuiButton>
           </template>

@@ -5,8 +5,8 @@ const props = withDefaults(
     disabled?: boolean;
   }>(),
   {
-    disabled: false
-  }
+    disabled: false,
+  },
 );
 
 const emit = defineEmits<{

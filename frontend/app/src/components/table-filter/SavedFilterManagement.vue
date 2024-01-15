@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { type Ref } from 'vue';
-import {
-  type SavedFilterLocation,
-  type SearchMatcher,
-  type Suggestion
+import type { Ref } from 'vue';
+import type {
+  SavedFilterLocation,
+  SearchMatcher,
+  Suggestion,
 } from '@/types/filtering';
 
 const props = defineProps<{
@@ -21,10 +21,10 @@ const { selection, location, matchers } = toRefs(props);
 
 const open: Ref<boolean> = ref(false);
 
-const applyFilter = (filter: Suggestion[]) => {
+function applyFilter(filter: Suggestion[]) {
   emit('update:matches', filter);
   set(open, false);
-};
+}
 
 const added: Ref<boolean> = ref(false);
 const { start, stop, isPending } = useTimeoutFn(
@@ -32,7 +32,7 @@ const { start, stop, isPending } = useTimeoutFn(
     set(added, false);
   },
   4000,
-  { immediate: false }
+  { immediate: false },
 );
 
 const { start: startAnimation } = useTimeoutFn(
@@ -41,21 +41,22 @@ const { start: startAnimation } = useTimeoutFn(
     start();
   },
   100,
-  { immediate: false }
+  { immediate: false },
 );
 
-const isAsset = (searchKey: string): boolean => {
+function isAsset(searchKey: string): boolean {
   const found = get(matchers).find(({ key }) => key === searchKey);
   return !!found && 'asset' in found;
-};
+}
 
 const { savedFilters, addFilter, deleteFilter } = useSavedFilter(
   location,
-  isAsset
+  isAsset,
 );
 
 const { setMessage } = useMessageStore();
-const addToSavedFilter = async () => {
+
+async function addToSavedFilter() {
   const status = await addFilter(get(selection));
   if (status.success) {
     if (get(isPending)) {
@@ -63,14 +64,15 @@ const addToSavedFilter = async () => {
       set(added, false);
     }
     startAnimation();
-  } else {
+  }
+  else {
     setMessage({
       title: t('table_filter.saved_filters.saving.title').toString(),
       description: status.message,
-      success: false
+      success: false,
     });
   }
-};
+}
 
 const { t } = useI18n();
 const css = useCssModule();
@@ -91,11 +93,20 @@ const css = useCssModule();
           :disabled="disabled || selection.length === 0"
           @click="addToSavedFilter()"
         >
-          <RuiIcon size="20" name="play-list-add-line" />
+          <RuiIcon
+            size="20"
+            name="play-list-add-line"
+          />
         </RuiButton>
       </template>
-      <div class="text-center" :class="css['add-tooltip']">
-        <div class="h-4 transition-all" :class="{ '-mt-4': added }">
+      <div
+        class="text-center"
+        :class="css['add-tooltip']"
+      >
+        <div
+          class="h-4 transition-all"
+          :class="{ '-mt-4': added }"
+        >
           <div>
             {{ t('table_filter.saved_filters.actions.add') }}
           </div>
@@ -128,15 +139,27 @@ const css = useCssModule();
               icon
               v-on="on"
             >
-              <RuiIcon size="20" name="filter-line" />
+              <RuiIcon
+                size="20"
+                name="filter-line"
+              />
             </RuiButton>
           </template>
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
         </RuiTooltip>
       </template>
-      <div v-if="savedFilters.length > 0" class="py-4">
-        <div v-for="(filters, index) in savedFilters" :key="index">
-          <RuiDivider v-if="index > 0" class="my-3" />
+      <div
+        v-if="savedFilters.length > 0"
+        class="py-4"
+      >
+        <div
+          v-for="(filters, index) in savedFilters"
+          :key="index"
+        >
+          <RuiDivider
+            v-if="index > 0"
+            class="my-3"
+          />
           <div class="flex px-4">
             <div class="flex flex-wrap pr-4 gap-1">
               <RuiChip
@@ -146,11 +169,17 @@ const css = useCssModule();
                 size="sm"
                 class="font-medium !py-0"
               >
-                <SuggestedItem chip :suggestion="filter" />
+                <SuggestedItem
+                  chip
+                  :suggestion="filter"
+                />
               </RuiChip>
             </div>
             <div class="flex items-center gap-1">
-              <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+              >
                 <template #activator>
                   <RuiButton
                     color="primary"
@@ -160,7 +189,10 @@ const css = useCssModule();
                     icon
                     @click="applyFilter(filters)"
                   >
-                    <RuiIcon size="16" name="corner-left-up-line" />
+                    <RuiIcon
+                      size="16"
+                      name="corner-left-up-line"
+                    />
                   </RuiButton>
                 </template>
                 <span>
@@ -168,7 +200,10 @@ const css = useCssModule();
                 </span>
               </RuiTooltip>
 
-              <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+              >
                 <template #activator>
                   <RuiButton
                     color="primary"
@@ -178,7 +213,10 @@ const css = useCssModule();
                     icon
                     @click="deleteFilter(index)"
                   >
-                    <RuiIcon size="16" name="delete-bin-5-line" />
+                    <RuiIcon
+                      size="16"
+                      name="delete-bin-5-line"
+                    />
                   </RuiButton>
                 </template>
                 <span>
@@ -189,7 +227,10 @@ const css = useCssModule();
           </div>
         </div>
       </div>
-      <div v-else class="p-4">
+      <div
+        v-else
+        class="p-4"
+      >
         <i18n path="table_filter.saved_filters.empty">
           <template #button>
             <RuiButton
@@ -199,7 +240,10 @@ const css = useCssModule();
               disabled
               class="inline-flex"
             >
-              <RuiIcon size="16" name="play-list-add-line" />
+              <RuiIcon
+                size="16"
+                name="play-list-add-line"
+              />
             </RuiButton>
           </template>
         </i18n>

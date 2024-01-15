@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
 import { isNft } from '@/utils/nft';
-import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
 
 const { t } = useI18n();
 
@@ -21,35 +21,35 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
-    key: 'isWorth'
+    key: 'isWorth',
   },
   {
     label: t('common.price'),
     key: 'price',
     align: 'end',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('price_table.headers.to_asset'),
     key: 'toAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     key: 'usdPrice',
     align: 'end',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
     key: 'actions',
     class: 'w-[3rem]',
-    align: 'end'
-  }
+    align: 'end',
+  },
 ]);
 
 const router = useRouter();
@@ -60,41 +60,42 @@ const {
   refreshing,
   deletePrice,
   refreshCurrentPrices,
-  getLatestPrices
+  getLatestPrices,
 } = useLatestPrices(t, filter);
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: ManualPrice) => {
+function showDeleteConfirmation(item: ManualPrice) {
   show(
     {
       title: t('price_table.delete.dialog.title'),
-      message: t('price_table.delete.dialog.message')
+      message: t('price_table.delete.dialog.message'),
     },
-    () => deletePrice(item, true)
+    () => deletePrice(item, true),
   );
-};
+}
 
-const openForm = (selectedEntry: ManualPrice | null = null) => {
+function openForm(selectedEntry: ManualPrice | null = null) {
   set(editMode, !!selectedEntry);
   if (selectedEntry) {
     set(price, {
       ...selectedEntry,
-      price: selectedEntry.price.toFixed() ?? ''
+      price: selectedEntry.price.toFixed() ?? '',
     });
-  } else {
+  }
+  else {
     set(price, {
-      fromAsset: get(filter) ?? ''
+      fromAsset: get(filter) ?? '',
     });
   }
   setOpenDialog(true);
-};
+}
 
-const refreshDataAndPrices = async (refresh = false) => {
+async function refreshDataAndPrices(refresh = false) {
   await getLatestPrices();
   await refreshCurrentPrices(refresh);
-};
+}
 
 onMounted(async () => {
   await refreshDataAndPrices();
@@ -113,7 +114,7 @@ onMounted(async () => {
   <TablePageLayout
     :title="[
       t('navigation_menu.manage_prices'),
-      t('navigation_menu.manage_prices_sub.latest_prices')
+      t('navigation_menu.manage_prices_sub.latest_prices'),
     ]"
   >
     <template #buttons>
@@ -134,7 +135,10 @@ onMounted(async () => {
         {{ t('price_table.refresh_tooltip') }}
       </RuiTooltip>
 
-      <RuiButton color="primary" @click="openForm()">
+      <RuiButton
+        color="primary"
+        @click="openForm()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
@@ -154,7 +158,10 @@ onMounted(async () => {
           hide-details
         >
           <template #prepend>
-            <RuiIcon size="20" name="filter-line" />
+            <RuiIcon
+              size="20"
+              name="filter-line"
+            />
           </template>
         </AssetSelect>
       </div>
@@ -168,7 +175,10 @@ onMounted(async () => {
         :sort.sync="sort"
       >
         <template #item.fromAsset="{ row }">
-          <NftDetails v-if="isNft(row.fromAsset)" :identifier="row.fromAsset" />
+          <NftDetails
+            v-if="isNft(row.fromAsset)"
+            :identifier="row.fromAsset"
+          />
           <AssetDetails
             v-else
             class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
@@ -206,6 +216,9 @@ onMounted(async () => {
       </RuiDataTable>
     </RuiCard>
 
-    <LatestPriceFormDialog :value="price" :edit-mode="editMode" />
+    <LatestPriceFormDialog
+      :value="price"
+      :edit-mode="editMode"
+    />
   </TablePageLayout>
 </template>

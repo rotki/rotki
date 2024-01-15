@@ -9,17 +9,17 @@ const { t } = useI18n();
 const balanceTypes = computed(() => [
   {
     value: BalanceType.ASSET,
-    text: t('common.asset')
+    text: t('common.asset'),
   },
   {
     value: BalanceType.LIABILITY,
-    text: t('manual_balances_form.type.liability')
-  }
+    text: t('manual_balances_form.type.liability'),
+  },
 ]);
 
-const input = (value: BalanceType) => {
+function input(value: BalanceType) {
   emit('input', value);
-};
+}
 </script>
 
 <template>

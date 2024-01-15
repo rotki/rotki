@@ -12,7 +12,7 @@ onMounted(async () => {
     data-cy="external-keys"
     :title="[
       t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.external_services')
+      t('navigation_menu.api_keys_sub.external_services'),
     ]"
   >
     <template #buttons>

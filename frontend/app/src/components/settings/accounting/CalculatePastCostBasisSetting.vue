@@ -1,13 +1,15 @@
 <script setup lang="ts">
 const calculatePastCostBasis = ref(false);
 const { calculatePastCostBasis: enabled } = storeToRefs(
-  useAccountingSettingsStore()
+  useAccountingSettingsStore(),
 );
 const { t } = useI18n();
-const switchSuccessMessage = (enabled: boolean) =>
-  enabled
+
+function switchSuccessMessage(enabled: boolean) {
+  return enabled
     ? t('account_settings.messages.cost_basis.enabled')
     : t('account_settings.messages.cost_basis.disabled');
+}
 
 onMounted(() => {
   set(calculatePastCostBasis, get(enabled));

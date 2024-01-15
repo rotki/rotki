@@ -1,8 +1,8 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type AccountPayload,
-  type BasicBlockchainAccountPayload,
-  type BlockchainAccountPayload
+import type {
+  AccountPayload,
+  BasicBlockchainAccountPayload,
+  BlockchainAccountPayload,
 } from '@/types/blockchain/accounts';
 
 vi.mock('@/composables/api/blockchain/accounts', () => ({
@@ -13,50 +13,50 @@ vi.mock('@/composables/api/blockchain/accounts', () => ({
     editBtcAccount: vi.fn().mockResolvedValue({ standalone: [], xpubs: [] }),
     queryAccounts: vi.fn().mockResolvedValue([]),
     queryBtcAccounts: vi.fn().mockResolvedValue({ standalone: [], xpubs: [] }),
-    getEth2Validators: vi.fn().mockResolvedValue([])
-  })
+    getEth2Validators: vi.fn().mockResolvedValue([]),
+  }),
 }));
 
 vi.mock('@/store/notifications/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn().mockReturnValue({})
-  })
+    notify: vi.fn().mockReturnValue({}),
+  }),
 }));
 
 vi.mock('@/store/blockchain/accounts/btc', () => ({
   useBtcAccountsStore: vi.fn().mockReturnValue({
     removeTag: vi.fn(),
-    update: vi.fn()
-  })
+    update: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/blockchain/accounts/eth', () => ({
   useEthAccountsStore: vi.fn().mockReturnValue({
     removeTag: vi.fn(),
     updateEth: vi.fn(),
-    fetchEth2Validators: vi.fn()
-  })
+    fetchEth2Validators: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/blockchain/accounts/chains', () => ({
   useChainsAccountsStore: vi.fn().mockReturnValue({
     removeTag: vi.fn(),
     updateEth: vi.fn(),
-    update: vi.fn()
-  })
+    update: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 describe('store::blockchain/accounts/index', () => {
   setActivePinia(createPinia());
   let store: ReturnType<typeof useBlockchainAccounts> = useBlockchainAccounts();
-  let api: ReturnType<typeof useBlockchainAccountsApi> =
-    useBlockchainAccountsApi();
+  let api: ReturnType<typeof useBlockchainAccountsApi>
+    = useBlockchainAccountsApi();
 
   beforeEach(() => {
     store = useBlockchainAccounts();
@@ -65,25 +65,25 @@ describe('store::blockchain/accounts/index', () => {
   });
 
   describe('addAccount', () => {
-    test('default', async () => {
+    it('default', async () => {
       const blockchain = Blockchain.ETH;
       const payload: AccountPayload = {
         address: '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea',
         label: 'ETH test address',
         tags: null,
-        xpub: undefined
+        xpub: undefined,
       };
 
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: [payload.address],
-        meta: { title: '' }
+        meta: { title: '' },
       });
 
       const returnValue = await store.addAccount(blockchain, payload);
 
       expect(api.addBlockchainAccount).toHaveBeenCalledWith({
         blockchain,
-        ...payload
+        ...payload,
       });
 
       expect(returnValue).toEqual(payload.address);
@@ -91,11 +91,11 @@ describe('store::blockchain/accounts/index', () => {
   });
 
   describe('editAccount', () => {
-    test('for BTC account', async () => {
+    it('for BTC account', async () => {
       const payload: BlockchainAccountPayload = {
         blockchain: Blockchain.BTC,
         address: '3PFo18vaPMSXFTt6zUDGk3UoPjD56QLXjh',
-        tags: null
+        tags: null,
       };
 
       await store.editAccount(payload);
@@ -103,11 +103,11 @@ describe('store::blockchain/accounts/index', () => {
       expect(api.editBtcAccount).toHaveBeenCalledWith(payload);
     });
 
-    test('for ETH account', async () => {
+    it('for ETH account', async () => {
       const payload: BlockchainAccountPayload = {
         blockchain: Blockchain.ETH,
         address: '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea',
-        tags: null
+        tags: null,
       };
 
       await store.editAccount(payload);
@@ -117,37 +117,37 @@ describe('store::blockchain/accounts/index', () => {
   });
 
   describe('removeAccount', () => {
-    test('success', async () => {
+    it('success', async () => {
       const payload: BasicBlockchainAccountPayload = {
         blockchain: Blockchain.ETH,
-        accounts: ['0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea']
+        accounts: ['0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea'],
       };
 
       await store.removeAccount(payload);
 
       expect(api.removeBlockchainAccount).toHaveBeenCalledWith(
         payload.blockchain,
-        payload.accounts
+        payload.accounts,
       );
 
       expect(useNotificationsStore().notify).not.toHaveBeenCalled();
     });
 
-    test('error', async () => {
+    it('error', async () => {
       const payload: BasicBlockchainAccountPayload = {
         blockchain: Blockchain.ETH,
-        accounts: ['0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea']
+        accounts: ['0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea'],
       };
 
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       await store.removeAccount(payload);
 
       expect(api.removeBlockchainAccount).toHaveBeenCalledWith(
         payload.blockchain,
-        payload.accounts
+        payload.accounts,
       );
 
       expect(useNotificationsStore().notify).toHaveBeenCalled();
@@ -155,53 +155,53 @@ describe('store::blockchain/accounts/index', () => {
   });
 
   describe('fetch', () => {
-    test('fetch BTC chain', async () => {
+    it('fetch BTC chain', async () => {
       await store.fetch(Blockchain.BTC);
       expect(useBlockchainAccountsApi().queryBtcAccounts).toHaveBeenCalledWith(
-        Blockchain.BTC
+        Blockchain.BTC,
       );
 
       await store.fetch(Blockchain.BCH);
       expect(useBlockchainAccountsApi().queryBtcAccounts).toHaveBeenCalledWith(
-        Blockchain.BCH
+        Blockchain.BCH,
       );
     });
 
-    test('fetch ETH2 validators', async () => {
+    it('fetch ETH2 validators', async () => {
       await store.fetch(Blockchain.ETH2);
       expect(useEthAccountsStore().fetchEth2Validators).toHaveBeenCalledOnce();
     });
 
-    test('fetch rest chains / ETH', async () => {
+    it('fetch rest chains / ETH', async () => {
       await store.fetch(Blockchain.ETH);
       expect(useBlockchainAccountsApi().queryAccounts).toHaveBeenCalledWith(
-        Blockchain.ETH
+        Blockchain.ETH,
       );
 
       await store.fetch(Blockchain.KSM);
       expect(useBlockchainAccountsApi().queryAccounts).toHaveBeenCalledWith(
-        Blockchain.KSM
+        Blockchain.KSM,
       );
 
       await store.fetch(Blockchain.DOT);
       expect(useBlockchainAccountsApi().queryAccounts).toHaveBeenCalledWith(
-        Blockchain.DOT
+        Blockchain.DOT,
       );
 
       await store.fetch(Blockchain.AVAX);
       expect(useBlockchainAccountsApi().queryAccounts).toHaveBeenCalledWith(
-        Blockchain.AVAX
+        Blockchain.AVAX,
       );
 
       await store.fetch(Blockchain.OPTIMISM);
       expect(useBlockchainAccountsApi().queryAccounts).toHaveBeenCalledWith(
-        Blockchain.OPTIMISM
+        Blockchain.OPTIMISM,
       );
     });
   });
 
   describe('removeTag', () => {
-    test('default', () => {
+    it('default', () => {
       const tag = 'tag_1';
       store.removeTag(tag);
 

@@ -1,24 +1,24 @@
-import { type MaybeRef } from '@vueuse/core';
 import flushPromises from 'flush-promises';
-import {
-  type ExchangeSavingsCollection,
-  type ExchangeSavingsEvent,
-  type ExchangeSavingsRequestPayload
+import type { MaybeRef } from '@vueuse/core';
+import type {
+  ExchangeSavingsCollection,
+  ExchangeSavingsEvent,
+  ExchangeSavingsRequestPayload,
 } from '@/types/exchanges';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
     reactive({
-      query: {}
-    })
+      query: {},
+    }),
   ),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(({ query }) => {
       useRoute().query = query;
       return true;
-    })
-  })
+    }),
+  }),
 }));
 
 vi.mock('vue', async () => {
@@ -26,7 +26,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn()
+    onBeforeMount: vi.fn(),
   };
 });
 
@@ -50,7 +50,7 @@ describe('composables::history/filter-paginate', () => {
 
   describe('components::exchanges/BinanceSavingDetail.vue', () => {
     const extraParams = computed(() => ({
-      location: get(exchange).toString()
+      location: get(exchange).toString(),
     }));
 
     const defaultCollectionState = (): ExchangeSavingsCollection => ({
@@ -60,14 +60,14 @@ describe('composables::history/filter-paginate', () => {
       total: 0,
       totalUsdValue: Zero,
       assets: [],
-      received: []
+      received: [],
     });
 
     beforeEach(() => {
       set(mainPage, true);
     });
 
-    test('initialize composable correctly', async () => {
+    it('initialize composable correctly', async () => {
       const {
         userAction,
         filters,
@@ -75,7 +75,7 @@ describe('composables::history/filter-paginate', () => {
         state,
         fetchData,
         applyRouteFilter,
-        isLoading
+        isLoading,
       } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
@@ -85,8 +85,8 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          ascending: [true]
-        }
+          ascending: [true],
+        },
       });
 
       expect(get(userAction)).toBe(false);
@@ -110,7 +110,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(260);
     });
 
-    test('check the return types', async () => {
+    it('check the return types', async () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
@@ -120,8 +120,8 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          ascending: [true]
-        }
+          ascending: [true],
+        },
       });
 
       expect(get(isLoading)).toBe(false);
@@ -133,7 +133,7 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(matchers)).toEqualTypeOf<undefined[]>();
     });
 
-    test('modify filters and fetch data correctly', async () => {
+    it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortDesc: ['false'] };
 
@@ -146,12 +146,12 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          ascending: [false]
-        }
+          ascending: [false],
+        },
       });
 
       await router.push({
-        query
+        query,
       });
 
       expect(pushSpy).toHaveBeenCalledOnce();

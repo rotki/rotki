@@ -48,7 +48,6 @@ declare global {
   const checkBeforeSubmission: typeof import('./utils/validation')['checkBeforeSubmission']
   const checkIfDevelopment: typeof import('./utils/env-utils')['checkIfDevelopment']
   const chunkArray: typeof import('./utils/data')['chunkArray']
-  const compareSymbols: typeof import('./utils/assets')['compareSymbols']
   const compareTextByKeyword: typeof import('./utils/assets')['compareTextByKeyword']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
@@ -145,7 +144,6 @@ declare global {
   const isEthDepositEventType: typeof import('./utils/history/events')['isEthDepositEventType']
   const isEventAccountingRuleProcessed: typeof import('./utils/history/events')['isEventAccountingRuleProcessed']
   const isEventMissingAccountingRule: typeof import('./utils/history/events')['isEventMissingAccountingRule']
-  const isEventMissingAccountingRuleType: typeof import('./utils/history/events')['isEventMissingAccountingRuleType']
   const isEvmEvent: typeof import('./utils/history/events')['isEvmEvent']
   const isEvmEventRef: typeof import('./utils/history/events')['isEvmEventRef']
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
@@ -280,8 +278,6 @@ declare global {
   const toRem: typeof import('./utils/data')['toRem']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
   const toSnakeCase: typeof import('./utils/text')['toSnakeCase']
-  const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
-  const toSortedAssetBalanceWithPrice: typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']
   const toUnit: typeof import('./utils/calculation')['toUnit']
   const toValue: typeof import('vue')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
@@ -736,7 +732,6 @@ declare global {
   const watchTriggerable: typeof import('@vueuse/core')['watchTriggerable']
   const watchWithFilter: typeof import('@vueuse/core')['watchWithFilter']
   const whenever: typeof import('@vueuse/core')['whenever']
-  const xpubToPayload: typeof import('./utils/xpub')['xpubToPayload']
   const zeroBalance: typeof import('./utils/bignumbers')['zeroBalance']
 }
 // for type re-export
@@ -1476,7 +1471,6 @@ declare module 'vue' {
     readonly watchTriggerable: UnwrapRef<typeof import('@vueuse/core')['watchTriggerable']>
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
-    readonly xpubToPayload: UnwrapRef<typeof import('./utils/xpub')['xpubToPayload']>
     readonly zeroBalance: UnwrapRef<typeof import('./utils/bignumbers')['zeroBalance']>
   }
 }
@@ -2209,7 +2203,6 @@ declare module '@vue/runtime-core' {
     readonly watchTriggerable: UnwrapRef<typeof import('@vueuse/core')['watchTriggerable']>
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
-    readonly xpubToPayload: UnwrapRef<typeof import('./utils/xpub')['xpubToPayload']>
     readonly zeroBalance: UnwrapRef<typeof import('./utils/bignumbers')['zeroBalance']>
   }
 }

@@ -1,21 +1,23 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { PrivacyMode, type SessionSettings } from '@/types/session';
-import { type ActionStatus } from '@/types/action';
-import { type Exchange } from '@/types/exchanges';
+import type { ActionStatus } from '@/types/action';
+import type { Exchange } from '@/types/exchanges';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage(
   'rotki.animations_enabled',
-  true
+  true,
 );
 
-const defaultSessionSettings = (): SessionSettings => ({
-  privacyMode: PrivacyMode.NORMAL,
-  scrambleData: false,
-  scrambleMultiplier: generateRandomScrambleMultiplier(),
-  timeframe: TimeFramePeriod.ALL,
-  animationsEnabled: get(isAnimationEnabledSetting)
-});
+function defaultSessionSettings(): SessionSettings {
+  return {
+    privacyMode: PrivacyMode.NORMAL,
+    scrambleData: false,
+    scrambleMultiplier: generateRandomScrambleMultiplier(),
+    timeframe: TimeFramePeriod.ALL,
+    animationsEnabled: get(isAnimationEnabledSetting),
+  };
+}
 
 export const useSessionSettingsStore = defineStore('settings/session', () => {
   const settings = reactive(defaultSessionSettings());
@@ -32,11 +34,11 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   };
 
   const shouldShowAmount = computed(
-    () => settings.privacyMode < PrivacyMode.SEMI_PRIVATE
+    () => settings.privacyMode < PrivacyMode.SEMI_PRIVATE,
   );
 
   const shouldShowPercentage = computed(
-    () => settings.privacyMode < PrivacyMode.PRIVATE
+    () => settings.privacyMode < PrivacyMode.PRIVATE,
   );
 
   const setAnimationsEnabled = (enabled: boolean): void => {
@@ -47,7 +49,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const update = (sessionSettings: Partial<SessionSettings>): ActionStatus => {
     Object.assign(settings, sessionSettings);
     return {
-      success: true
+      success: true,
     };
   };
 
@@ -64,12 +66,12 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     ...(checkIfDevelopment() ? { settings } : {}),
     setAnimationsEnabled,
     setConnectedExchanges,
-    update
+    update,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useSessionSettingsStore, import.meta.hot)
+    acceptHMRUpdate(useSessionSettingsStore, import.meta.hot),
   );
 }

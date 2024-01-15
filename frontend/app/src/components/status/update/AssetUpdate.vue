@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import {
-  type AssetUpdateConflictResult,
-  type AssetVersionUpdate,
-  type ConflictResolution
+import type { Ref } from 'vue';
+import type {
+  AssetUpdateConflictResult,
+  AssetVersionUpdate,
+  ConflictResolution,
 } from '@/types/asset';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
-  headless: false
+  headless: false,
 });
 
 const emit = defineEmits<{ (e: 'skip'): void; (e: 'complete'): void }>();
@@ -24,18 +24,17 @@ const changes: Ref<AssetVersionUpdate> = ref({
   local: 0,
   remote: 0,
   changes: 0,
-  upToVersion: 0
+  upToVersion: 0,
 });
 
 const skipped = useLocalStorage('rotki_skip_asset_db_version', 0);
 
 const status = computed(() => {
-  if (get(checking)) {
+  if (get(checking))
     return 'checking';
-  }
-  if (get(applying)) {
+
+  if (get(applying))
     return 'applying';
-  }
 
   return null;
 });
@@ -48,7 +47,7 @@ const { restartBackend } = useBackendManagement();
 const { t } = useI18n();
 const { setMessage } = useMessageStore();
 
-const check = async () => {
+async function check() {
   set(checking, true);
   const checkResult = await checkForUpdate();
   set(checking, false);
@@ -65,10 +64,11 @@ const check = async () => {
   if (!checkResult.updateAvailable) {
     if (get(headless)) {
       emit('skip');
-    } else {
+    }
+    else {
       setMessage({
         description: t('asset_update.up_to_date'),
-        success: true
+        success: true,
       });
     }
   }
@@ -78,21 +78,21 @@ const check = async () => {
       local: versions.local,
       remote: versions.remote,
       changes: versions.newChanges,
-      upToVersion: versions.remote
+      upToVersion: versions.remote,
     });
   }
-};
+}
 
-const skip = (skipUpdate: boolean) => {
+function skip(skipUpdate: boolean) {
   set(showUpdateDialog, false);
   set(showConflictDialog, false);
-  if (skipUpdate) {
+  if (skipUpdate)
     set(skipped, get(changes).remote);
-  }
-  emit('skip');
-};
 
-const updateAssets = async (resolution?: ConflictResolution) => {
+  emit('skip');
+}
+
+async function updateAssets(resolution?: ConflictResolution) {
   set(showUpdateDialog, false);
   set(showConflictDialog, false);
   const version = get(changes).upToVersion;
@@ -102,52 +102,53 @@ const updateAssets = async (resolution?: ConflictResolution) => {
   if (updateResult.done) {
     set(skipped, 0);
     showDoneConfirmation();
-  } else if (updateResult.conflicts) {
+  }
+  else if (updateResult.conflicts) {
     set(conflicts, updateResult.conflicts);
     set(showConflictDialog, true);
   }
-};
+}
 
 const restarting: Ref<boolean> = ref(false);
-const updateComplete = async () => {
-  if (get(restarting)) {
+
+async function updateComplete() {
+  if (get(restarting))
     return;
-  }
 
   set(restarting, true);
   const headlessVal = get(headless);
   await logout(!headlessVal);
 
-  if (headlessVal) {
+  if (headlessVal)
     emit('complete');
-  }
 
   setConnected(false);
   await restartBackend();
   await connect();
   set(restarting, false);
-};
+}
 
 const { show } = useConfirmStore();
 
-const showDoneConfirmation = () => {
+function showDoneConfirmation() {
   if (get(headless)) {
     set(inlineConfirm, true);
-  } else {
+  }
+  else {
     show(
       {
         title: t('asset_update.success.title'),
         message: t('asset_update.success.description', {
-          remoteVersion: get(changes).upToVersion
+          remoteVersion: get(changes).upToVersion,
         }),
         primaryAction: t('common.actions.ok'),
         singleAction: true,
-        type: 'success'
+        type: 'success',
       },
-      updateComplete
+      updateComplete,
     );
   }
-};
+}
 
 onMounted(async () => {
   const skipUpdate = sessionStorage.getItem('skip_update');
@@ -156,9 +157,8 @@ onMounted(async () => {
     return;
   }
 
-  if (get(headless)) {
+  if (get(headless))
     await check();
-  }
 });
 </script>
 

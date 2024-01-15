@@ -1,29 +1,29 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import {
   setupTransformer,
-  snakeCaseTransformer
+  snakeCaseTransformer,
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validAccountOperationStatus,
   validAuthorizedStatus,
-  validStatus
+  validStatus,
 } from '@/services/utils';
 import {
   AccountSession,
   type CreateAccountPayload,
-  type LoginCredentials
+  type LoginCredentials,
 } from '@/types/login';
-import { type PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { PendingTask } from '@/types/task';
 
-export const useUsersApi = () => {
+export function useUsersApi() {
   const getUsers = async (): Promise<AccountSession> => {
     const response = await api.instance.get<ActionResult<AccountSession>>(
       `/users`,
       {
-        transformResponse: setupTransformer(true)
-      }
+        transformResponse: setupTransformer(true),
+      },
     );
     return AccountSession.parse(handleResponse(response));
   };
@@ -38,9 +38,9 @@ export const useUsersApi = () => {
     const result: AccountSession = await getUsers();
     const loggedUsers: string[] = [];
     for (const user in result) {
-      if (result[user] !== 'loggedin') {
+      if (result[user] !== 'loggedin')
         continue;
-      }
+
       loggedUsers.push(user);
     }
     return loggedUsers;
@@ -50,9 +50,9 @@ export const useUsersApi = () => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/users/${username}`,
       {
-        action: 'logout'
+        action: 'logout',
       },
-      { validateStatus: validAccountOperationStatus }
+      { validateStatus: validAccountOperationStatus },
     );
 
     const success = response.status === 409 ? true : handleResponse(response);
@@ -61,7 +61,7 @@ export const useUsersApi = () => {
   };
 
   const createAccount = async (
-    payload: CreateAccountPayload
+    payload: CreateAccountPayload,
   ): Promise<PendingTask> => {
     const { credentials, premiumSetup, initialSettings } = payload;
     const { username, password } = credentials;
@@ -75,11 +75,11 @@ export const useUsersApi = () => {
         premiumApiSecret: premiumSetup?.apiSecret,
         initialSettings,
         syncDatabase: premiumSetup?.syncDatabase,
-        asyncQuery: true
+        asyncQuery: true,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -90,11 +90,11 @@ export const useUsersApi = () => {
       `/users/${username}`,
       snakeCaseTransformer({
         ...otherFields,
-        asyncQuery: true
+        asyncQuery: true,
       }),
       {
-        validateStatus: validAccountOperationStatus
-      }
+        validateStatus: validAccountOperationStatus,
+      },
     );
 
     return handleResponse(response);
@@ -103,18 +103,18 @@ export const useUsersApi = () => {
   const changeUserPassword = async (
     username: string,
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<true> => {
     const response = await api.instance.patch<ActionResult<true>>(
       `/users/${username}/password`,
       {
         name: username,
         current_password: currentPassword,
-        new_password: newPassword
+        new_password: newPassword,
       },
       {
-        validateStatus: validAuthorizedStatus
-      }
+        validateStatus: validAuthorizedStatus,
+      },
     );
 
     return handleResponse(response);
@@ -127,6 +127,6 @@ export const useUsersApi = () => {
     loggedUsers,
     getUserProfiles,
     logout,
-    changeUserPassword
+    changeUserPassword,
   };
-};
+}

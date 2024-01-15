@@ -1,13 +1,13 @@
-import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Routes } from '@/router/routes';
 import {
   L2_LOOPRING,
-  type SupportedSubBlockchainProtocol
+  type SupportedSubBlockchainProtocol,
 } from '@/types/protocols';
 import { Section } from '@/types/status';
-import { type ActionDataEntry } from '@/types/action';
-import { type ChainSections } from '@/types/blockchain/accounts';
+import type { BigNumber } from '@rotki/common';
+import type { ActionDataEntry } from '@/types/action';
+import type { ChainSections } from '@/types/blockchain/accounts';
 
 export const chainSection: ChainSections = {
   [Blockchain.BTC]: Section.BLOCKCHAIN_BTC,
@@ -21,11 +21,11 @@ export const chainSection: ChainSections = {
   [Blockchain.POLYGON_POS]: Section.BLOCKCHAIN_POLYGON,
   [Blockchain.ARBITRUM_ONE]: Section.BLOCKCHAIN_ARBITRUM,
   [Blockchain.BASE]: Section.BLOCKCHAIN_BASE,
-  [Blockchain.GNOSIS]: Section.BLOCKCHAIN_GNOSIS
+  [Blockchain.GNOSIS]: Section.BLOCKCHAIN_GNOSIS,
 };
 
 export const samePriceAssets: Record<string, string[]> = {
-  ETH: ['ETH2']
+  ETH: ['ETH2'],
 };
 
 export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
@@ -33,8 +33,8 @@ export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
     identifier: L2_LOOPRING,
     label: 'Loopring',
     icon: './assets/images/protocols/loopring.svg',
-    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-LRC`
-  }
+    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-LRC`,
+  },
 ];
 
 export interface SubBlockchainTotal {

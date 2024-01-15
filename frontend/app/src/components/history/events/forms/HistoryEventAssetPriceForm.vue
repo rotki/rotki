@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type Validation } from '@vuelidate/core';
-import { type BigNumber } from '@rotki/common';
 import { toMessages } from '@/utils/validation';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
-import { type HistoricalPriceFormPayload } from '@/types/prices';
-import { type NewHistoryEventPayload } from '@/types/history/events';
-import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { DateFormat } from '@/types/date-format';
+import type { Validation } from '@vuelidate/core';
+import type { BigNumber } from '@rotki/common';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { NewHistoryEventPayload } from '@/types/history/events';
+import type { ActionStatus } from '@/types/action';
 
 const props = withDefaults(
   defineProps<{
@@ -20,8 +20,8 @@ const props = withDefaults(
     v$: Validation;
   }>(),
   {
-    disableAsset: false
-  }
+    disableAsset: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -37,11 +37,11 @@ const assetModel = computed({
     return get(asset);
   },
   set(asset: string) {
-    if (get(disableAsset)) {
+    if (get(disableAsset))
       return;
-    }
+
     emit('update:asset', asset);
-  }
+  },
 });
 
 const amountModel = computed({
@@ -50,7 +50,7 @@ const amountModel = computed({
   },
   set(amount: string) {
     emit('update:amount', amount);
-  }
+  },
 });
 
 const usdValueModel = computed({
@@ -59,7 +59,7 @@ const usdValueModel = computed({
   },
   set(usdValue: string) {
     emit('update:usd-value', usdValue);
-  }
+  },
 });
 
 const { t } = useI18n();
@@ -67,7 +67,7 @@ const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
-  () => get(currencySymbol) === CURRENCY_USD
+  () => get(currencySymbol) === CURRENCY_USD,
 );
 
 const fiatValue: Ref<string> = ref('');
@@ -88,10 +88,10 @@ const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
 
-const savePrice = async (payload: HistoricalPriceFormPayload) => {
+async function savePrice(payload: HistoricalPriceFormPayload) {
   await addHistoricalPrice(payload);
   resetHistoricalPricesData([payload]);
-};
+}
 
 const numericAssetToUsdPrice = bigNumberifyFromRef(assetToUsdPrice);
 const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
@@ -100,74 +100,73 @@ const numericFiatValue = bigNumberifyFromRef(fiatValue);
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const onAssetToUsdPriceChange = (forceUpdate = false) => {
+function onAssetToUsdPriceChange(forceUpdate = false) {
   if (
-    get(amount) &&
-    get(assetToUsdPrice) &&
-    (!get(fiatValueFocused) || forceUpdate)
+    get(amount)
+    && get(assetToUsdPrice)
+    && (!get(fiatValueFocused) || forceUpdate)
   ) {
     set(
       usdValueModel,
-      get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed()
+      get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed(),
     );
   }
-};
+}
 
-const onAssetToFiatPriceChanged = (forceUpdate = false) => {
+function onAssetToFiatPriceChanged(forceUpdate = false) {
   if (
-    get(amount) &&
-    get(assetToFiatPrice) &&
-    (!get(fiatValueFocused) || forceUpdate)
+    get(amount)
+    && get(assetToFiatPrice)
+    && (!get(fiatValueFocused) || forceUpdate)
   ) {
     set(
       fiatValue,
-      get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed()
+      get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed(),
     );
   }
-};
+}
 
-const onUsdValueChange = () => {
+function onUsdValueChange() {
   if (get(amount) && get(fiatValueFocused)) {
     set(
       assetToUsdPrice,
-      get(numericUsdValue).div(get(numericAmount)).toFixed()
+      get(numericUsdValue).div(get(numericAmount)).toFixed(),
     );
   }
-};
+}
 
-const onFiatValueChange = () => {
+function onFiatValueChange() {
   if (get(amount) && get(fiatValueFocused)) {
     set(
       assetToFiatPrice,
-      get(numericFiatValue).div(get(numericAmount)).toFixed()
+      get(numericFiatValue).div(get(numericAmount)).toFixed(),
     );
   }
-};
+}
 
-const fetchHistoricPrices = async () => {
+async function fetchHistoricPrices() {
   const datetimeVal = get(datetime);
   const assetVal = get(asset);
-  if (!datetimeVal || !assetVal) {
+  if (!datetimeVal || !assetVal)
     return;
-  }
 
   const timestamp = convertToTimestamp(
     get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond
+    DateFormat.DateMonthYearHourMinuteSecond,
   );
 
   if (assetVal === CURRENCY_USD) {
     set(fetchedAssetToUsdPrice, '1');
-  } else {
+  }
+  else {
     const price: BigNumber = await getHistoricPrice({
       timestamp,
       fromAsset: assetVal,
-      toAsset: CURRENCY_USD
+      toAsset: CURRENCY_USD,
     });
 
-    if (price.gt(0)) {
+    if (price.gt(0))
       set(fetchedAssetToUsdPrice, price.toFixed());
-    }
   }
 
   if (!get(isCurrentCurrencyUsd)) {
@@ -181,20 +180,19 @@ const fetchHistoricPrices = async () => {
     const price = await getHistoricPrice({
       timestamp,
       fromAsset: assetVal,
-      toAsset: currentCurrency
+      toAsset: currentCurrency,
     });
 
-    if (price.gt(0)) {
+    if (price.gt(0))
       set(fetchedAssetToFiatPrice, price.toFixed());
-    }
   }
-};
+}
 
 watch([datetime, asset], async () => {
   await fetchHistoricPrices();
 });
 
-watch(fetchedAssetToUsdPrice, price => {
+watch(fetchedAssetToUsdPrice, (price) => {
   set(assetToUsdPrice, price);
   onAssetToUsdPriceChange(true);
 });
@@ -207,7 +205,7 @@ watch(usdValue, () => {
   onUsdValueChange();
 });
 
-watch(fetchedAssetToFiatPrice, price => {
+watch(fetchedAssetToFiatPrice, (price) => {
   set(assetToFiatPrice, price);
   onAssetToFiatPriceChanged(true);
 });
@@ -224,19 +222,18 @@ watch(amount, () => {
   if (get(isCurrentCurrencyUsd)) {
     onAssetToUsdPriceChange();
     onUsdValueChange();
-  } else {
+  }
+  else {
     onAssetToFiatPriceChanged();
     onFiatValueChange();
   }
 });
 
-const submitPrice = async (
-  payload: NewHistoryEventPayload
-): Promise<ActionStatus<ValidationErrors | string>> => {
+async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
   const assetVal = get(asset);
   const timestamp = convertToTimestamp(
     get(datetime),
-    DateFormat.DateMonthYearHourMinuteSecond
+    DateFormat.DateMonthYearHourMinuteSecond,
   );
 
   try {
@@ -246,42 +243,47 @@ const submitPrice = async (
           fromAsset: assetVal,
           toAsset: CURRENCY_USD,
           timestamp,
-          price: get(assetToUsdPrice)
+          price: get(assetToUsdPrice),
         });
       }
-    } else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
+    }
+    else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
       await savePrice({
         fromAsset: assetVal,
         toAsset: get(currencySymbol),
         timestamp,
-        price: get(assetToFiatPrice)
+        price: get(assetToFiatPrice),
       });
     }
 
     return { success: true };
-  } catch (e: any) {
-    let message: ValidationErrors | string = e.message;
-    if (e instanceof ApiValidationError) {
-      message = e.getValidationErrors(payload);
-    }
+  }
+  catch (error: any) {
+    let message: ValidationErrors | string = error.message;
+    if (error instanceof ApiValidationError)
+      message = error.getValidationErrors(payload);
+
     return { success: false, message };
   }
-};
+}
 
-const reset = () => {
+function reset() {
   set(fetchedAssetToUsdPrice, '');
   set(fetchedAssetToFiatPrice, '');
-};
+}
 
 defineExpose({
   submitPrice,
-  reset
+  reset,
 });
 </script>
 
 <template>
   <div>
-    <div v-if="v$" class="grid md:grid-cols-2 gap-4">
+    <div
+      v-if="v$"
+      class="grid md:grid-cols-2 gap-4"
+    >
       <AssetSelect
         v-model="assetModel"
         outlined
@@ -311,15 +313,15 @@ defineExpose({
       :disabled="fetching"
       :label="{
         primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol
+          symbol: currencySymbol,
         }),
         secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol
-        })
+          symbol: currencySymbol,
+        }),
       }"
       :error-messages="{
         primary: toMessages(v$.usdValue),
-        secondary: toMessages(v$.usdValue)
+        secondary: toMessages(v$.usdValue),
       }"
       :hint="t('transactions.events.form.asset_price.hint')"
       @update:reversed="fiatValueFocused = $event"
@@ -334,11 +336,11 @@ defineExpose({
       :disabled="fetching"
       :label="{
         primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol
+          symbol: currencySymbol,
         }),
         secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol
-        })
+          symbol: currencySymbol,
+        }),
       }"
       @update:reversed="fiatValueFocused = $event"
     />

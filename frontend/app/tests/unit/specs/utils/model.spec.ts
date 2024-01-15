@@ -2,12 +2,12 @@ import { describe } from 'vitest';
 
 describe('model utilities', () => {
   describe('useSimplePropVModel', () => {
-    test('setting the value updates emits the proper event and updates the proper value property', () => {
+    it('setting the value updates emits the proper event and updates the proper value property', () => {
       const props = {
         value: {
           counter: 1,
-          name: 'test'
-        }
+          name: 'test',
+        },
       };
       const emit = vi.fn();
       const model = useSimplePropVModel(props, 'counter', emit);
@@ -16,18 +16,18 @@ describe('model utilities', () => {
 
       expect(emit).toHaveBeenCalledWith('input', {
         counter: 12,
-        name: 'test'
+        name: 'test',
       });
     });
   });
 
   describe('usePropVModel', () => {
-    test('setting the value emits the proper event and update the only the proper value property', () => {
+    it('setting the value emits the proper event and update the only the proper value property', () => {
       const props = {
         model: {
           name: 'model',
-          counter: 1
-        }
+          counter: 1,
+        },
       };
       const emit = vi.fn();
       const model = usePropVModel(props, 'model', 'counter', emit);
@@ -36,16 +36,16 @@ describe('model utilities', () => {
 
       expect(emit).toHaveBeenCalledWith('update:model', {
         name: 'model',
-        counter: 12
+        counter: 12,
       });
     });
 
-    test('setting the value emits the kebab case event on camel case prop', () => {
+    it('setting the value emits the kebab case event on camel case prop', () => {
       const props = {
         testModel: {
           name: 'model',
-          counter: 1
-        }
+          counter: 1,
+        },
       };
       const emit = vi.fn();
       const model = usePropVModel(props, 'testModel', 'counter', emit);
@@ -54,14 +54,14 @@ describe('model utilities', () => {
 
       expect(emit).toHaveBeenCalledWith('update:test-model', {
         name: 'model',
-        counter: 12
+        counter: 12,
       });
     });
   });
 
-  test('useVModel wrapper emits the proper event', () => {
+  it('useVModel wrapper emits the proper event', () => {
     const props = {
-      value: 'name'
+      value: 'name',
     };
 
     const emit = vi.fn();
@@ -72,9 +72,9 @@ describe('model utilities', () => {
     expect(emit).toHaveBeenCalledWith('input', 'test');
   });
 
-  test('useKebabVModel emits kebab-case events', () => {
+  it('useKebabVModel emits kebab-case events', () => {
     const props = {
-      modelValue: '1'
+      modelValue: '1',
     };
 
     const emit = vi.fn();
@@ -83,10 +83,10 @@ describe('model utilities', () => {
     expect(emit).toHaveBeenCalledWith('update:model-value', '2');
   });
 
-  test('properly map computed property to parent ref', () => {
+  it('properly map computed property to parent ref', () => {
     const objRef = ref({
       title: 'title',
-      value: 'value'
+      value: 'value',
     });
 
     const prop = useRefPropVModel(objRef, 'value');

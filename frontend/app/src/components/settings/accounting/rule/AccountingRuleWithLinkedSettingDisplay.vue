@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
+import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
 
 const props = defineProps<{
   identifier: string;
@@ -19,12 +19,11 @@ const selectedLinkableSetting = computed(() => {
   const linkedProperty = itemVal.linkedSetting;
   if (linkedProperty) {
     const foundItem = get(linkableSettingOptions).find(
-      item => item.identifier === linkedProperty
+      item => item.identifier === linkedProperty,
     );
 
-    if (foundItem) {
+    if (foundItem)
       return foundItem;
-    }
   }
 
   return null;
@@ -32,9 +31,8 @@ const selectedLinkableSetting = computed(() => {
 
 const value: ComputedRef<boolean> = computed(() => {
   const selectedLinkableSettingVal = get(selectedLinkableSetting);
-  if (selectedLinkableSettingVal) {
+  if (selectedLinkableSettingVal)
     return get(selectedLinkableSettingVal).state;
-  }
 
   return get(item).value;
 });
@@ -55,12 +53,20 @@ const value: ComputedRef<boolean> = computed(() => {
         :open-delay="400"
       >
         <template #activator>
-          <RuiIcon size="12" name="links-line" />
+          <RuiIcon
+            size="12"
+            name="links-line"
+          />
         </template>
         <div>{{ t('accounting_settings.rule.value_overwritten') }}</div>
-        <div class="font-bold">{{ selectedLinkableSetting.label }}</div>
+        <div class="font-bold">
+          {{ selectedLinkableSetting.label }}
+        </div>
       </RuiTooltip>
     </template>
-    <SuccessDisplay size="28" :success="value" />
+    <SuccessDisplay
+      size="28"
+      :success="value"
+    />
   </RuiBadge>
 </template>

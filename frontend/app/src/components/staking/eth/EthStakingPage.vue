@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import {
-  type Eth2DailyStatsPayload,
-  type EthStakingFilter,
-  type EthStakingPayload,
-  type EthStakingPeriod
-} from '@rotki/common/lib/staking/eth2';
-import { type ComputedRef } from 'vue';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
+import type { ComputedRef } from 'vue';
+import type {
+  Eth2DailyStatsPayload,
+  EthStakingFilter,
+  EthStakingPayload,
+  EthStakingPeriod,
+} from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const section = Section.STAKING_ETH2;
 
 const period: Ref<EthStakingPeriod> = ref({});
 const selection: Ref<EthStakingFilter> = ref({
-  validators: []
+  validators: [],
 });
 
 const store = useEth2StakingStore();
@@ -30,7 +30,7 @@ const {
   fetchDailyStats,
   syncStakingStats,
   dailyStatsLoading,
-  pagination
+  pagination,
 } = useEth2DailyStats();
 const { rewards, fetchRewards, loading: rewardsLoading } = useEth2Rewards();
 
@@ -44,9 +44,9 @@ const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const ownership = computed(() => {
   const ownership: Record<string, string> = {};
   for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
-    .entries) {
+    .entries)
     ownership[validatorIndex] = ownershipPercentage;
-  }
+
   return ownership;
 });
 
@@ -55,14 +55,14 @@ const validatorFilter: ComputedRef<EthStakingPayload> = computed(() => {
 
   if ('accounts' in filter) {
     return {
-      addresses: filter.accounts.map(({ address }) => address)
+      addresses: filter.accounts.map(({ address }) => address),
     };
   }
 
   return {
     validatorIndices: filter.validators.map(
-      ({ validatorIndex }) => validatorIndex
-    )
+      ({ validatorIndex }) => validatorIndex,
+    ),
   };
 });
 
@@ -72,71 +72,76 @@ const dailyStatsPayload: ComputedRef<Eth2DailyStatsPayload> = computed(() => {
   return {
     ...payload,
     fromTimestamp,
-    toTimestamp
+    toTimestamp,
   };
 });
 
 const premium = usePremium();
 const { t } = useI18n();
 
-const refreshStats = async (userInitiated: boolean): Promise<void> => {
+async function refreshStats(userInitiated: boolean): Promise<void> {
   await fetchDailyStats(get(dailyStatsPayload));
   const success = await syncStakingStats(userInitiated);
   if (success) {
     // We unref here to make sure that we use the latest pagination
     await fetchDailyStats(get(dailyStatsPayload));
   }
-};
+}
 
-const refresh = async (userInitiated = false): Promise<void> => {
+async function refresh(userInitiated = false): Promise<void> {
   const filterBy = get(validatorFilter);
   await Promise.allSettled([
     refreshStats(userInitiated),
     fetchRewards(filterBy),
-    fetchStakingDetails(userInitiated, { ...filterBy, ...get(period) })
+    fetchStakingDetails(userInitiated, { ...filterBy, ...get(period) }),
   ]);
-};
+}
 
 onMounted(async () => {
-  if (get(enabled)) {
+  if (get(enabled))
     await refresh(false);
-  }
 });
 
 onUnmounted(() => {
   store.$reset();
   setStatus({
     section,
-    status: Status.NONE
+    status: Status.NONE,
   });
 });
 
-watch(validatorFilter, async filter => {
+watch(validatorFilter, async (filter) => {
   await Promise.allSettled([
     fetchRewards({ ...filter, ...get(period) }),
-    fetchStakingDetails(false, filter)
+    fetchStakingDetails(false, filter),
   ]);
 });
 
-watch(period, async period => {
+watch(period, async (period) => {
   await fetchRewards({ ...get(validatorFilter), ...period });
 });
 
-const refreshClick = async () => {
+async function refreshClick() {
   await refresh();
   if (isDefined(pagination)) {
     set(pagination, {
       ...get(pagination),
-      onlyCache: false
+      onlyCache: false,
     });
   }
-};
+}
 </script>
 
 <template>
   <div>
-    <NoPremiumPlaceholder v-if="!premium" :text="t('eth2_page.no_premium')" />
-    <ModuleNotActive v-else-if="!enabled" :modules="[module]" />
+    <NoPremiumPlaceholder
+      v-if="!premium"
+      :text="t('eth2_page.no_premium')"
+    />
+    <ModuleNotActive
+      v-else-if="!enabled"
+      :modules="[module]"
+    />
 
     <TablePageLayout
       v-else

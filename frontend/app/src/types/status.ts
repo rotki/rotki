@@ -3,7 +3,7 @@ export enum Status {
   LOADING,
   REFRESHING,
   PARTIALLY_LOADED,
-  LOADED
+  LOADED,
 }
 
 export enum Section {
@@ -61,7 +61,7 @@ export enum Section {
   DEFI_LIQUITY_STAKING,
   DEFI_LIQUITY_STAKING_POOLS,
   DEFI_LIQUITY_STATISTICS,
-  NON_FUNGIBLE_BALANCES
+  NON_FUNGIBLE_BALANCES,
 }
 
 export const defiSections: Section[] = [
@@ -88,5 +88,5 @@ export const defiSections: Section[] = [
   Section.DEFI_UNISWAP_V3_BALANCES,
   Section.DEFI_UNISWAP_EVENTS,
   Section.DEFI_SUSHISWAP_BALANCES,
-  Section.DEFI_SUSHISWAP_EVENTS
+  Section.DEFI_SUSHISWAP_EVENTS,
 ];

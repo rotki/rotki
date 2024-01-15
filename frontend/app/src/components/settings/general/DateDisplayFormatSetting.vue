@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
 
 const dateDisplayFormat = ref<string>('');
@@ -9,8 +9,9 @@ const formatHelp = ref<boolean>(false);
 const now = new Date();
 const defaultDateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
 
-const containsValidDirectives = (v: string) =>
-  displayDateFormatter.containsValidDirectives(v);
+function containsValidDirectives(v: string) {
+  return displayDateFormatter.containsValidDirectives(v);
+}
 
 const { t } = useI18n();
 
@@ -18,13 +19,13 @@ const rules = {
   dateDisplayFormat: {
     required: helpers.withMessage(
       t('general_settings.date_display.validation.empty'),
-      required
+      required,
     ),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
-      containsValidDirectives
-    )
-  }
+      containsValidDirectives,
+    ),
+  },
 };
 
 const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
@@ -33,17 +34,18 @@ const { callIfValid } = useValidation(v$);
 const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
 
 const dateDisplayFormatExample = computed<string>(() =>
-  displayDateFormatter.format(now, get(dateDisplayFormat))
+  displayDateFormatter.format(now, get(dateDisplayFormat)),
 );
 
-const resetDateDisplayFormat = () => {
+function resetDateDisplayFormat() {
   set(dateDisplayFormat, get(format));
-};
+}
 
-const successMessage = (dateFormat: string) =>
-  t('general_settings.validation.date_display_format.success', {
-    dateFormat
+function successMessage(dateFormat: string) {
+  return t('general_settings.validation.date_display_format.success', {
+    dateFormat,
   });
+}
 
 onMounted(() => {
   resetDateDisplayFormat();
@@ -76,18 +78,26 @@ onMounted(() => {
         "
         :hint="
           t('general_settings.date_display_format_hint', {
-            format: dateDisplayFormatExample
+            format: dateDisplayFormatExample,
           })
         "
         @input="callIfValid($event, update)"
       >
         <template #append>
-          <RuiButton size="sm" variant="text" icon @click="formatHelp = true">
+          <RuiButton
+            size="sm"
+            variant="text"
+            icon
+            @click="formatHelp = true"
+          >
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
       </RuiTextField>
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             class="general-settings__date-restore mt-1"

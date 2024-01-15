@@ -3,16 +3,16 @@ import {
   BalancerBalances,
   type BalancerEvent,
   BalancerEvents,
-  type BalancerProfitLoss
+  type BalancerProfitLoss,
 } from '@rotki/common/lib/defi/balancer';
-import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import { cloneDeep } from 'lodash-es';
-import { type Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type OnError } from '@/types/fetch';
+import type { TaskMeta } from '@/types/task';
+import type { Writeable } from '@/types';
+import type { XswapPool } from '@rotki/common/lib/defi/xswap';
+import type { OnError } from '@/types/fetch';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
@@ -32,49 +32,50 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
 
       for (const account in perAddressBalances) {
-        if (addresses.length > 0 && !addresses.includes(account)) {
+        if (addresses.length > 0 && !addresses.includes(account))
           continue;
-        }
+
         const accountBalances = cloneDeep(perAddressBalances)[account];
-        if (!accountBalances || accountBalances.length === 0) {
+        if (!accountBalances || accountBalances.length === 0)
           continue;
-        }
 
         for (const {
           address,
           tokens,
           totalAmount,
-          userBalance
+          userBalance,
         } of accountBalances) {
           const balance = aggregatedBalances[address];
           if (balance) {
             const oldBalance = balance.userBalance;
             balance.userBalance = balanceSum(oldBalance, userBalance);
 
-            tokens.forEach(token => {
+            tokens.forEach((token) => {
               const index = balance.tokens.findIndex(
-                item => item.token === token.token
+                item => item.token === token.token,
               );
               if (index > -1) {
                 const existingAssetData = balance.tokens[index];
                 const userBalance = balanceSum(
                   existingAssetData.userBalance,
-                  token.userBalance
+                  token.userBalance,
                 );
                 balance.tokens[index] = {
                   ...existingAssetData,
-                  userBalance
+                  userBalance,
                 };
-              } else {
+              }
+              else {
                 balance.tokens.push(token);
               }
             });
-          } else {
+          }
+          else {
             aggregatedBalances[address] = {
               address,
               tokens,
               totalAmount,
-              userBalance
+              userBalance,
             };
           }
         }
@@ -89,24 +90,24 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     const balances = get(balancerBalances([]));
 
     for (const { address, tokens } of balances) {
-      if (pools[address]) {
+      if (pools[address])
         continue;
-      }
+
       const assets = tokens.map(token => token.token);
       pools[address] = {
         assets,
-        address
+        address,
       };
     }
 
     for (const event of events) {
       const pool = event.pool;
-      if (!pool || pools[pool.address]) {
+      if (!pool || pools[pool.address])
         continue;
-      }
+
       pools[pool.address] = {
         assets: pool.assets,
-        address: pool.address
+        address: pool.address,
       };
     }
     return Object.values(pools);
@@ -115,18 +116,18 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   const profitLoss = (addresses: string[] = []) =>
     computed(() => {
       const balancerProfitLoss: Record<string, BalancerProfitLoss> = {};
-      filterAddresses(get(events), addresses, item => {
+      filterAddresses(get(events), addresses, (item) => {
         for (const entry of item) {
           if (!balancerProfitLoss[entry.poolAddress]) {
             const assets = entry.poolTokens.map(token => token.token);
             balancerProfitLoss[entry.poolAddress] = {
               pool: {
                 address: entry.poolAddress,
-                assets
+                assets,
               },
               tokens: assets,
               profitLossAmount: entry.profitLossAmounts,
-              usdProfitLoss: entry.usdProfitLoss
+              usdProfitLoss: entry.usdProfitLoss,
             };
           }
         }
@@ -138,7 +139,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     computed(() => {
       const result: BalancerEvent[] = [];
       const perAddressEvents = get(events);
-      filterAddresses(perAddressEvents, addresses, item => {
+      filterAddresses(perAddressEvents, addresses, (item) => {
         for (const poolDetail of item) {
           const assets = poolDetail.poolTokens.map(pool => pool.token);
           result.push(
@@ -146,9 +147,9 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
               ...value,
               pool: {
                 assets,
-                address: poolDetail.poolAddress
-              }
-            }))
+                address: poolDetail.poolAddress,
+              },
+            })),
           );
         }
       });
@@ -157,15 +158,15 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const fetchBalances = async (refresh = false) => {
     const meta: TaskMeta = {
-      title: t('actions.defi.balancer_balances.task.title').toString()
+      title: t('actions.defi.balancer_balances.task.title').toString(),
     };
 
     const onError: OnError = {
       title: t('actions.defi.balancer_balances.error.title').toString(),
       error: message =>
         t('actions.defi.balancer_balances.error.description', {
-          message
-        }).toString()
+          message,
+        }).toString(),
     };
 
     await fetchDataAsync(
@@ -176,33 +177,33 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           query: async () => await fetchBalancerBalances(),
           parser: data => BalancerBalances.parse(data),
           meta,
-          onError
+          onError,
         },
         requires: {
           premium: true,
-          module: Module.BALANCER
+          module: Module.BALANCER,
         },
         state: {
           isPremium,
-          activeModules
+          activeModules,
         },
-        refresh
+        refresh,
       },
-      balances
+      balances,
     );
   };
 
   const fetchEvents = async (refresh = false) => {
     const meta: TaskMeta = {
-      title: t('actions.defi.balancer_events.task.title').toString()
+      title: t('actions.defi.balancer_events.task.title').toString(),
     };
 
     const onError: OnError = {
       title: t('actions.defi.balancer_events.error.title').toString(),
       error: message =>
         t('actions.defi.balancer_events.error.description', {
-          message
-        }).toString()
+          message,
+        }).toString(),
     };
 
     await fetchDataAsync(
@@ -213,19 +214,19 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           query: async () => await fetchBalancerEvents(),
           parser: data => BalancerEvents.parse(data),
           meta,
-          onError
+          onError,
         },
         requires: {
           premium: true,
-          module: Module.BALANCER
+          module: Module.BALANCER,
         },
         state: {
           isPremium,
-          activeModules
+          activeModules,
         },
-        refresh
+        refresh,
       },
-      events
+      events,
     );
   };
 
@@ -247,10 +248,9 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     profitLoss,
     fetchBalances,
     fetchEvents,
-    reset
+    reset,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useBalancerStore, import.meta.hot));
-}

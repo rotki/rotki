@@ -1,7 +1,7 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import { type Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/types/filtering';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
@@ -10,13 +10,13 @@ vi.mock('@/composables/assets/retrieval', () => ({
       evmChain: 'ethereum',
       symbol: 'SYMBOL 2',
       isCustomAsset: false,
-      name: 'Name 2'
-    }))
-  })
+      name: 'Name 2',
+    })),
+  }),
 }));
 
 vi.mocked(useCssModule).mockReturnValue({
-  comparator: 'comparator'
+  comparator: 'comparator',
 });
 
 describe('table-filter/SuggestedItem.vue', () => {
@@ -29,8 +29,8 @@ describe('table-filter/SuggestedItem.vue', () => {
     return mount(SuggestedItem, {
       vuetify,
       propsData: {
-        ...props
-      }
+        ...props,
+      },
     });
   };
 
@@ -42,17 +42,17 @@ describe('table-filter/SuggestedItem.vue', () => {
     evmChain: 'optimism',
     symbol: 'SYMBOL 1',
     isCustomAsset: false,
-    name: 'Name 1'
+    name: 'Name 1',
   };
 
-  describe('Check if suggestion type is asset', () => {
+  describe('check if suggestion type is asset', () => {
     it('asset = false', () => {
       const suggestion = {
         index: 0,
         total: 1,
         asset: false,
         key,
-        value
+        value,
       };
       wrapper = createWrapper({ suggestion });
 
@@ -62,7 +62,7 @@ describe('table-filter/SuggestedItem.vue', () => {
         wrapper
           .find('span > span:nth-child(2)')
           .classes()
-          .includes('comparator')
+          .includes('comparator'),
       ).toBe(false);
       expect(wrapper.find('span > span:nth-child(3)').text()).toBe(value);
     });
@@ -73,13 +73,13 @@ describe('table-filter/SuggestedItem.vue', () => {
         total: 1,
         asset: true,
         key,
-        value: asset
+        value: asset,
       };
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
       expect(wrapper.find('span > span:nth-child(3)').text()).toBe(
-        `${asset.symbol} (${asset.evmChain})`
+        `${asset.symbol} (${asset.evmChain})`,
       );
     });
 
@@ -89,13 +89,13 @@ describe('table-filter/SuggestedItem.vue', () => {
         total: 1,
         asset: true,
         key,
-        value: assetId
+        value: assetId,
       };
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
       expect(wrapper.find('span > span:nth-child(3)').text()).toBe(
-        'SYMBOL 2 (ethereum)'
+        'SYMBOL 2 (ethereum)',
       );
     });
   });
@@ -107,7 +107,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       asset: false,
       exclude: true,
       key,
-      value
+      value,
     };
     wrapper = createWrapper({ suggestion });
 
@@ -120,12 +120,12 @@ describe('table-filter/SuggestedItem.vue', () => {
       total: 1,
       asset: false,
       key,
-      value
+      value,
     };
     wrapper = createWrapper({ suggestion, chip: true });
 
     expect(
-      wrapper.find('span > span:nth-child(2)').classes().includes('comparator')
+      wrapper.find('span > span:nth-child(2)').classes().includes('comparator'),
     ).toBe(true);
   });
 
@@ -135,7 +135,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       total: 1,
       asset: false,
       key,
-      value: true
+      value: true,
     };
     wrapper = createWrapper({ suggestion });
 

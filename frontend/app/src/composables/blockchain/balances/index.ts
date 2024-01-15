@@ -1,32 +1,32 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type MaybeRef } from '@vueuse/core';
 import { chainSection } from '@/types/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
-import { type AssetPrices } from '@/types/prices';
 import { Status } from '@/types/status';
-import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import type { AssetPrices } from '@/types/prices';
+import type { BlockchainMetadata } from '@/types/task';
+import type { MaybeRef } from '@vueuse/core';
+import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
-export const useBlockchainBalances = () => {
+export function useBlockchainBalances() {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
-  const { update: updateEth, updatePrices: updateEthPrices } =
-    useEthBalancesStore();
-  const { update: updateBtc, updatePrices: updateBtcPrices } =
-    useBtcBalancesStore();
-  const { update: updateChains, updatePrices: updateChainPrices } =
-    useChainBalancesStore();
+  const { update: updateEth, updatePrices: updateEthPrices }
+    = useEthBalancesStore();
+  const { update: updateBtc, updatePrices: updateBtcPrices }
+    = useBtcBalancesStore();
+  const { update: updateChains, updatePrices: updateChainPrices }
+    = useChainBalancesStore();
   const { getChainName } = useSupportedChains();
   const { t } = useI18n();
 
   const handleFetch = async (
     blockchain: Blockchain,
-    ignoreCache = false
+    ignoreCache = false,
   ): Promise<void> => {
     const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
-      chainSection[blockchain]
+      chainSection[blockchain],
     );
 
     try {
@@ -43,25 +43,26 @@ export const useBlockchainBalances = () => {
         {
           blockchain,
           title: t('actions.balances.blockchain.task.title', {
-            chain: get(getChainName(blockchain))
-          })
+            chain: get(getChainName(blockchain)),
+          }),
         },
-        true
+        true,
       );
       const balances = BlockchainBalances.parse(result);
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
         notify({
           title: t('actions.balances.blockchain.error.title'),
           message: t('actions.balances.blockchain.error.description', {
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
       resetStatus();
@@ -71,7 +72,7 @@ export const useBlockchainBalances = () => {
   const fetch = async (
     blockchain: Blockchain,
     ignoreCache = false,
-    periodic = false
+    periodic = false,
   ): Promise<void> => {
     const { isLoading } = useStatusStore();
     const loading = isLoading(chainSection[blockchain]);
@@ -79,9 +80,8 @@ export const useBlockchainBalances = () => {
     const call = () => handleFetch(blockchain, ignoreCache);
 
     if (get(loading)) {
-      if (periodic) {
+      if (periodic)
         return;
-      }
 
       await until(loading).toBe(false);
     }
@@ -91,9 +91,9 @@ export const useBlockchainBalances = () => {
 
   const fetchBlockchainBalances = async (
     payload: BlockchainBalancePayload = {
-      ignoreCache: false
+      ignoreCache: false,
     },
-    periodic = false
+    periodic = false,
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
@@ -103,17 +103,18 @@ export const useBlockchainBalances = () => {
 
     try {
       await Promise.allSettled(
-        chains.map(chain => fetch(chain, ignoreCache, periodic))
+        chains.map(chain => fetch(chain, ignoreCache, periodic)),
       );
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
       const message = t('actions.balances.blockchain.error.description', {
-        error: e.message
+        error: error.message,
       });
       notify({
         title: t('actions.balances.blockchain.error.title'),
         message,
-        display: true
+        display: true,
       });
     }
   };
@@ -126,6 +127,6 @@ export const useBlockchainBalances = () => {
 
   return {
     fetchBlockchainBalances,
-    updatePrices
+    updatePrices,
   };
-};
+}

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
 import { externalLinks } from '@/data/external-links';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
   blockchain: Blockchain;
@@ -22,7 +22,7 @@ const internalValue = computed({
   set(value: string) {
     assert(isOfEnum(InputMode)(value));
     emit('update:input-mode', value);
-  }
+  },
 });
 
 const { isEvm } = useSupportedChains();
@@ -34,11 +34,11 @@ const isXpub = computed(() => get(inputMode) === InputMode.XPUB_ADD);
 
 const { metamaskDownload } = externalLinks;
 
-const copyPageUrl = async () => {
+async function copyPageUrl() {
   const pageUrl = window.location.href;
   const { copy } = useClipboard({ source: pageUrl });
   await copy();
-};
+}
 
 const { t } = useI18n();
 const { isPackaged } = useInterop();
@@ -47,13 +47,12 @@ const loading = isAccountOperationRunning();
 
 const invalidCombination = logicOr(
   logicAnd(logicNot(isSupportedEvmChain), isMetaMask),
-  logicAnd(logicNot(isBitcoin), isXpub)
+  logicAnd(logicNot(isBitcoin), isXpub),
 );
 
-watch(invalidCombination, invalid => {
-  if (invalid) {
+watch(invalidCombination, (invalid) => {
+  if (invalid)
     emit('update:input-mode', InputMode.MANUAL_ADD);
-  }
 });
 
 onUnmounted(() => {
@@ -95,14 +94,18 @@ onUnmounted(() => {
             <AppImage
               contain
               max-width="24px"
-              :src="`./assets/images/metamask-fox.svg`"
+              src="./assets/images/metamask-fox.svg"
             />
           </template>
           <span class="hidden md:block">
             {{ t('input_mode_select.metamask_import.label') }}
           </span>
         </RuiButton>
-        <RuiButton v-if="isBitcoin" type="button" :value="InputMode.XPUB_ADD">
+        <RuiButton
+          v-if="isBitcoin"
+          type="button"
+          :value="InputMode.XPUB_ADD"
+        >
           <template #prepend>
             <RuiIcon name="key-line" />
           </template>
@@ -123,10 +126,19 @@ onUnmounted(() => {
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
-      <VMenu open-on-hover right offset-x :close-delay="400" max-width="300">
+      <VMenu
+        open-on-hover
+        right
+        offset-x
+        :close-delay="400"
+        max-width="300"
+      >
         <template #activator="{ on }">
           <div v-on="on">
-            <RuiIcon class="px-1" name="question-line" />
+            <RuiIcon
+              class="px-1"
+              name="question-line"
+            />
           </div>
         </template>
         <div class="pa-4 text-caption">
@@ -139,7 +151,10 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownload" color="primary">
+                  <ExternalLink
+                    :url="metamaskDownload"
+                    color="primary"
+                  >
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
@@ -148,7 +163,7 @@ onUnmounted(() => {
             <li>
               {{
                 t(
-                  'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled'
+                  'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled',
                 )
               }}
             </li>
@@ -157,7 +172,10 @@ onUnmounted(() => {
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
-                  <ExternalLink :url="metamaskDownload" color="primary">
+                  <ExternalLink
+                    :url="metamaskDownload"
+                    color="primary"
+                  >
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
@@ -171,7 +189,7 @@ onUnmounted(() => {
                   >
                     {{
                       t(
-                        'input_mode_select.metamask_import.missing_tooltip.copy_url'
+                        'input_mode_select.metamask_import.missing_tooltip.copy_url',
                       )
                     }}
                   </RuiButton>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type ProfitLossReportPeriod } from '@/types/reports';
 import { Routes } from '@/router/routes';
+import type { ProfitLossReportPeriod } from '@/types/reports';
 
 const emit = defineEmits<{
   (e: 'generate', data: ProfitLossReportPeriod): void;
@@ -14,28 +14,28 @@ const range = ref({ start: '', end: '' });
 const valid = ref<boolean>(false);
 
 const startTimestamp = computed<number>(() =>
-  convertToTimestamp(get(range).start)
+  convertToTimestamp(get(range).start),
 );
 
 const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
 
-const generate = () => {
+function generate() {
   emit('generate', {
     start: get(startTimestamp),
-    end: get(endTimestamp)
+    end: get(endTimestamp),
   });
-};
+}
 
-const exportReportData = () => {
+function exportReportData() {
   emit('export-data', {
     start: get(startTimestamp),
-    end: get(endTimestamp)
+    end: get(endTimestamp),
   });
-};
+}
 
-const importReportData = () => {
+function importReportData() {
   emit('import-data');
-};
+}
 
 const isDevelopment = checkIfDevelopment();
 const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
@@ -48,10 +48,17 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
         <CardTitle>
           {{ t('common.actions.generate') }}
         </CardTitle>
-        <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
           <template #activator>
             <RouterLink :to="accountSettingsRoute">
-              <RuiButton variant="text" icon color="primary">
+              <RuiButton
+                variant="text"
+                icon
+                color="primary"
+              >
                 <RuiIcon name="settings-3-line" />
               </RuiButton>
             </RouterLink>
@@ -60,7 +67,10 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
         </RuiTooltip>
       </div>
     </template>
-    <RangeSelector v-model="range" @update:valid="valid = $event" />
+    <RangeSelector
+      v-model="range"
+      @update:valid="valid = $event"
+    />
     <template #footer>
       <div class="flex gap-4 w-full">
         <div class="grow">
@@ -78,9 +88,16 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
           </RuiButton>
         </div>
         <div>
-          <VMenu v-if="isDevelopment" offset-y left>
+          <VMenu
+            v-if="isDevelopment"
+            offset-y
+            left
+          >
             <template #activator="{ on }">
-              <RuiButton size="lg" v-on="on">
+              <RuiButton
+                size="lg"
+                v-on="on"
+              >
                 <template #prepend>
                   <RuiIcon name="file-settings-line" />
                 </template>
@@ -88,13 +105,19 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
               </RuiButton>
             </template>
             <div class="py-2">
-              <RuiButton variant="list" @click="exportReportData()">
+              <RuiButton
+                variant="list"
+                @click="exportReportData()"
+              >
                 <template #prepend>
                   <RuiIcon name="file-download-line" />
                 </template>
                 {{ t('profit_loss_reports.debug.export_data') }}
               </RuiButton>
-              <RuiButton variant="list" @click="importReportData()">
+              <RuiButton
+                variant="list"
+                @click="importReportData()"
+              >
                 <template #prepend>
                   <RuiIcon name="file-upload-line" />
                 </template>
@@ -102,7 +125,11 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
               </RuiButton>
             </div>
           </VMenu>
-          <RuiButton v-else size="lg" @click="exportReportData()">
+          <RuiButton
+            v-else
+            size="lg"
+            @click="exportReportData()"
+          >
             <template #prepend>
               <RuiIcon name="file-download-line" />
             </template>

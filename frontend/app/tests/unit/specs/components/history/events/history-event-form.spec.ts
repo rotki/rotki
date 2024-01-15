@@ -6,10 +6,10 @@ import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import VSelectStub from '../../../stubs/VSelect';
 
 vi.mock('json-editor-vue', () => ({
-  template: '<input />'
+  template: '<input />',
 }));
 
-describe('HistoryEventForm.vue', () => {
+describe('historyEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<HistoryEventForm>;
 
@@ -21,12 +21,12 @@ describe('HistoryEventForm.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VSelect: VSelectStub
-      }
+        VSelect: VSelectStub,
+      },
     });
   };
 
-  test('should show correct form based on the entryType', () => {
+  it('should show correct form based on the entryType', () => {
     wrapper = createWrapper();
 
     const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
@@ -35,9 +35,9 @@ describe('HistoryEventForm.vue', () => {
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
 
-    Object.values(HistoryEventEntryType).forEach(async item => {
+    Object.values(HistoryEventEntryType).forEach(async (item) => {
       await entryTypeInput.trigger('input', {
-        value: item
+        value: item,
       });
       nextTick(() => {
         const id = item.split(/ /g).join('-');

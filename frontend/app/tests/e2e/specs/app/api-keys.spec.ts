@@ -2,7 +2,7 @@ import { ApiKeysPage } from '../../pages/api-keys-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { createUser } from '../../utils/user';
 
-describe('API keys', () => {
+describe('aPI keys', () => {
   let username: string;
   let app: RotkiApp;
   let page: ApiKeysPage;

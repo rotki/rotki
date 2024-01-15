@@ -7,9 +7,10 @@ const props = defineProps<{
 const emit = defineEmits(['input']);
 
 const { value } = toRefs(props);
-const input = () => {
+
+function input() {
   emit('input', !get(value));
-};
+}
 
 const { t } = useI18n();
 </script>
@@ -30,9 +31,20 @@ const { t } = useI18n();
     </div>
 
     <div>
-      <RuiButton variant="text" icon size="sm" @click="input()">
-        <RuiIcon v-if="value" name="arrow-up-s-line" />
-        <RuiIcon v-else name="arrow-down-s-line" />
+      <RuiButton
+        variant="text"
+        icon
+        size="sm"
+        @click="input()"
+      >
+        <RuiIcon
+          v-if="value"
+          name="arrow-up-s-line"
+        />
+        <RuiIcon
+          v-else
+          name="arrow-down-s-line"
+        />
       </RuiButton>
     </div>
   </div>

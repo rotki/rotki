@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ButtonProps } from '@rotki/ui-library-compat';
+import type { ButtonProps } from '@rotki/ui-library-compat';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 withDefaults(
@@ -19,8 +19,8 @@ withDefaults(
     className: '',
     variant: 'text',
     size: undefined,
-    href: undefined
-  }
+    href: undefined,
+  },
 );
 </script>
 

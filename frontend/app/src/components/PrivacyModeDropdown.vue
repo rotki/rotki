@@ -4,28 +4,28 @@ const { t } = useI18n();
 const tickLabels: string[] = [
   t('user_dropdown.change_privacy_mode.normal_mode.label').toString(),
   t('user_dropdown.change_privacy_mode.semi_private_mode.label').toString(),
-  t('user_dropdown.change_privacy_mode.private_mode.label').toString()
+  t('user_dropdown.change_privacy_mode.private_mode.label').toString(),
 ];
 
 // TODO: Remove css variable for tick description in Vue3 and use State Driven Dynamic CSS
 // https://v3.vuejs.org/api/sfc-style.html#state-driven-dynamic-css
 const sliderWrapperStyle: Record<string, string> = {
   '--tick-description-3': `'${t(
-    'user_dropdown.change_privacy_mode.normal_mode.description'
+    'user_dropdown.change_privacy_mode.normal_mode.description',
   ).toString()}'`,
   '--tick-description-2': `'${t(
-    'user_dropdown.change_privacy_mode.semi_private_mode.description'
+    'user_dropdown.change_privacy_mode.semi_private_mode.description',
   ).toString()}'`,
   '--tick-description-1': `'${t(
-    'user_dropdown.change_privacy_mode.private_mode.description'
-  ).toString()}'`
+    'user_dropdown.change_privacy_mode.private_mode.description',
+  ).toString()}'`,
 };
 
-const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
-  usePrivacyMode();
+const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode }
+  = usePrivacyMode();
 
 const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(
-  useSessionSettingsStore()
+  useSessionSettingsStore(),
 );
 
 const scrambleData = ref<boolean>(false);
@@ -33,10 +33,10 @@ const scrambleMultiplier = ref<string>('0');
 
 const randomMultiplier = () => generateRandomScrambleMultiplier().toString();
 
-const setData = () => {
+function setData() {
   set(scrambleData, get(enabled));
   set(scrambleMultiplier, get(multiplier).toString());
-};
+}
 
 onMounted(setData);
 
@@ -78,11 +78,17 @@ watch([enabled, multiplier], setData);
           size="sm"
           v-on="on"
         >
-          <RuiIcon size="16" name="arrow-down-s-line" />
+          <RuiIcon
+            size="16"
+            name="arrow-down-s-line"
+          />
         </RuiButton>
       </template>
       <RuiCard no-padding>
-        <div class="slider-wrapper" :style="sliderWrapperStyle">
+        <div
+          class="slider-wrapper"
+          :style="sliderWrapperStyle"
+        >
           <VSlider
             :value="privacyMode"
             data-cy="privacy-mode-dropdown__input"

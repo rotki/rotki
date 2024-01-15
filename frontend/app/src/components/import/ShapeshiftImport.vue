@@ -5,11 +5,17 @@ const { t } = useI18n();
 <template>
   <ImportSource source="shapeshift_trades">
     <template #upload-title>
-      <i18n tag="span" path="import_data.shapeshift.import">
+      <i18n
+        tag="span"
+        path="import_data.shapeshift.import"
+      >
         <strong>{{ t('import_data.shapeshift.import_trade') }}</strong>
       </i18n>
     </template>
-    <i18n tag="span" path="import_data.note">
+    <i18n
+      tag="span"
+      path="import_data.note"
+    >
       <strong>{{ t('import_data.shapeshift.name') }}</strong>
     </i18n>
     <ul class="list-disc">

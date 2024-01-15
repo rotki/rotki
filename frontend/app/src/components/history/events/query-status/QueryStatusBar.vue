@@ -15,8 +15,14 @@ const css = useCssModule();
 </script>
 
 <template>
-  <tr v-if="items.length > 0" :class="css.tr">
-    <td :colspan="colspan" class="py-2">
+  <tr
+    v-if="items.length > 0"
+    :class="css.tr"
+  >
+    <td
+      :colspan="colspan"
+      class="py-2"
+    >
       <div class="flex items-start gap-3">
         <RuiButton
           v-if="finished"
@@ -36,8 +42,14 @@ const css = useCssModule();
           variant="text"
           @click="openStatusDropdown = !openStatusDropdown"
         >
-          <RuiIcon v-if="openStatusDropdown" name="arrow-up-s-line" />
-          <RuiIcon v-else name="arrow-down-s-line" />
+          <RuiIcon
+            v-if="openStatusDropdown"
+            name="arrow-up-s-line"
+          />
+          <RuiIcon
+            v-else
+            name="arrow-down-s-line"
+          />
         </RuiButton>
 
         <div
@@ -54,7 +66,11 @@ const css = useCssModule();
               circular
             />
 
-            <SuccessDisplay v-else size="20" success />
+            <SuccessDisplay
+              v-else
+              size="20"
+              success
+            />
           </div>
 
           <slot name="current" />
@@ -74,10 +90,17 @@ const css = useCssModule();
                 variant="indeterminate"
                 circular
               />
-              <SuccessDisplay v-else size="20" success />
+              <SuccessDisplay
+                v-else
+                size="20"
+                success
+              />
             </div>
 
-            <slot name="item" :item="item" />
+            <slot
+              name="item"
+              :item="item"
+            />
           </div>
         </div>
         <div class="grow" />

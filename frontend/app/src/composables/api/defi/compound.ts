@@ -1,8 +1,8 @@
 import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
+import type { PendingTask } from '@/types/task';
 
-export const useCompoundApi = () => {
+export function useCompoundApi() {
   const fetchCompoundBalances = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/compound/balances';
     return fetchExternalAsync(api.instance, url);
@@ -15,6 +15,6 @@ export const useCompoundApi = () => {
 
   return {
     fetchCompoundBalances,
-    fetchCompoundStats
+    fetchCompoundStats,
   };
-};
+}

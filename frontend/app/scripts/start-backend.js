@@ -12,33 +12,29 @@ const dataDir = path.join(testDir, 'data');
 
 process.stdout.write(`Using ${dataDir} to start tests\n`);
 
-const cleanupData = () => {
+function cleanupData() {
   const contents = fs.readdirSync(dataDir);
   for (const name of contents) {
-    if (['images', 'global'].includes(name)) {
+    if (['images', 'global'].includes(name))
       continue;
-    }
 
     const currentPath = path.join(dataDir, name);
-    if (fs.statSync(currentPath).isDirectory()) {
+    if (fs.statSync(currentPath).isDirectory())
       fs.rmSync(currentPath, { recursive: true });
-    }
   }
-};
-
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-} else {
-  cleanupData();
 }
+
+if (!fs.existsSync(dataDir))
+  fs.mkdirSync(dataDir, { recursive: true });
+else
+  cleanupData();
 
 const logDir = path.join(testDir, 'logs');
 
 process.stdout.write(`Using ${logDir} to output backend logs\n`);
 
-if (!fs.existsSync(logDir)) {
+if (!fs.existsSync(logDir))
   fs.mkdirSync(logDir, { recursive: true });
-}
 
 const args = [
   '-m',
@@ -52,15 +48,15 @@ const args = [
   '--data-dir',
   dataDir,
   '--logfile',
-  `${path.join(logDir, 'e2e.log')}`
+  `${path.join(logDir, 'e2e.log')}`,
 ];
 
 let backend;
 
 process.on('SIGTERM', () => {
-  if (backend) {
+  if (backend)
     backend.kill();
-  }
+
   cleanupData();
   process.stdout.write('Cleanup: complete\n');
   process.exit(0);
@@ -68,5 +64,5 @@ process.on('SIGTERM', () => {
 
 backend = spawn('python', args, {
   stdio: [process.stdin, process.stdout, process.stderr],
-  cwd: path.join('..', '..')
+  cwd: path.join('..', '..'),
 });

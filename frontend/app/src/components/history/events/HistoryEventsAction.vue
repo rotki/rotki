@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {
-  type EvmChainAndTxHash,
-  type EvmHistoryEvent,
-  type HistoryEventEntry
-} from '@/types/history/events';
 import { toEvmChainAndTxHash } from '@/utils/history';
+import type {
+  EvmChainAndTxHash,
+  EvmHistoryEvent,
+  HistoryEventEntry,
+} from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -40,18 +40,36 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       offset-y
     >
       <template #activator="{ on }">
-        <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
-          <RuiIcon name="more-2-fill" size="20" />
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          class="!p-2"
+          v-on="on"
+        >
+          <RuiIcon
+            name="more-2-fill"
+            size="20"
+          />
         </RuiButton>
       </template>
       <div class="py-2">
-        <RuiButton variant="list" @click="addEvent(event)">
+        <RuiButton
+          variant="list"
+          @click="addEvent(event)"
+        >
           <template #prepend>
-            <RuiIcon class="text-rui-text-secondary" name="add-line" />
+            <RuiIcon
+              class="text-rui-text-secondary"
+              name="add-line"
+            />
           </template>
           {{ t('transactions.actions.add_event_here') }}
         </RuiButton>
-        <RuiButton variant="list" @click="toggleIgnore(event)">
+        <RuiButton
+          variant="list"
+          @click="toggleIgnore(event)"
+        >
           <template #prepend>
             <RuiIcon
               class="text-rui-text-secondary"
@@ -71,7 +89,10 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
             <template #prepend>
-              <RuiIcon class="text-rui-text-secondary" name="restart-line" />
+              <RuiIcon
+                class="text-rui-text-secondary"
+                name="restart-line"
+              />
             </template>
             {{ t('transactions.actions.redecode_events') }}
           </RuiButton>
@@ -81,7 +102,10 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             @click="resetEvent(evmEvent)"
           >
             <template #prepend>
-              <RuiIcon class="text-rui-text-secondary" name="file-edit-line" />
+              <RuiIcon
+                class="text-rui-text-secondary"
+                name="file-edit-line"
+              />
             </template>
             {{ t('transactions.actions.reset_customized_events') }}
           </RuiButton>

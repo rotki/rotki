@@ -1,4 +1,5 @@
-import { type MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from '@vueuse/core';
 
-export const refIsTruthy = <T>(ref: MaybeRef<T>): ComputedRef<boolean> =>
-  computed(() => !!get(ref));
+export function refIsTruthy<T>(ref: MaybeRef<T>): ComputedRef<boolean> {
+  return computed(() => !!get(ref));
+}

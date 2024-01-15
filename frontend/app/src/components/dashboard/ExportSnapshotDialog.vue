@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
+import type { BigNumber } from '@rotki/common';
+import type { Message } from '@rotki/common/lib/messages';
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +12,8 @@ const props = withDefaults(
   {
     value: false,
     timestamp: 0,
-    balance: 0
-  }
+    balance: 0,
+  },
 );
 
 const emit = defineEmits<{
@@ -27,14 +27,13 @@ const editMode = ref<boolean>(false);
 const display = useSimpleVModel(props, emit);
 
 const formattedSelectedBalance = computed<BigNumber | null>(() => {
-  if (get(balance)) {
+  if (get(balance))
     return get(bigNumberifyFromRef(balance));
-  }
 
   return null;
 });
 
-const downloadSnapshot = async () => {
+async function downloadSnapshot() {
   const response = await snapshotApi.downloadSnapshot(get(timestamp));
 
   const date = dayjs(get(timestamp) * 1000).format('YYYYDDMMHHmmss');
@@ -43,7 +42,7 @@ const downloadSnapshot = async () => {
   downloadFileByBlobResponse(response, fileName);
 
   set(display, false);
-};
+}
 
 const { setMessage } = useMessageStore();
 
@@ -52,20 +51,19 @@ const { t } = useI18n();
 const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();
 
-const exportSnapshotCSV = async () => {
+async function exportSnapshotCSV() {
   let message: Message | null = null;
 
   try {
     if (appSession) {
       const path = await openDirectory(t('common.select_directory').toString());
 
-      if (!path) {
+      if (!path)
         return;
-      }
 
       const success = await snapshotApi.exportSnapshotCSV({
         path,
-        timestamp: get(timestamp)
+        timestamp: get(timestamp),
       });
 
       message = {
@@ -73,42 +71,42 @@ const exportSnapshotCSV = async () => {
         description: success
           ? t('dashboard.snapshot.download.message.success').toString()
           : t('dashboard.snapshot.download.message.failure').toString(),
-        success
+        success,
       };
 
       set(display, false);
-    } else {
+    }
+    else {
       await downloadSnapshot();
     }
-  } catch (e: any) {
+  }
+  catch (error: any) {
     message = {
       title: t('dashboard.snapshot.download.message.title').toString(),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
   }
 
-  if (message) {
+  if (message)
     setMessage(message);
-  }
-};
+}
 
-const exportSnapshot = async () => {
-  if (appSession) {
+async function exportSnapshot() {
+  if (appSession)
     await exportSnapshotCSV();
-  } else {
+  else
     await downloadSnapshot();
-  }
-};
+}
 
 const { fetchNetValue } = useStatisticsStore();
 
-const deleteSnapshot = async () => {
+async function deleteSnapshot() {
   let message: Message | null;
 
   try {
     const success = await snapshotApi.deleteSnapshot({
-      timestamp: get(timestamp)
+      timestamp: get(timestamp),
     });
 
     message = {
@@ -116,42 +114,46 @@ const deleteSnapshot = async () => {
       description: success
         ? t('dashboard.snapshot.delete.message.success').toString()
         : t('dashboard.snapshot.delete.message.failure').toString(),
-      success
+      success,
     };
 
     set(display, false);
     await fetchNetValue();
-  } catch (e: any) {
+  }
+  catch (error: any) {
     message = {
       title: t('dashboard.snapshot.download.message.title').toString(),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
   }
 
   setMessage(message);
-};
+}
 
-const finish = () => {
+function finish() {
   set(display, false);
   set(editMode, false);
-};
+}
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = () => {
+function showDeleteConfirmation() {
   show(
     {
       title: t('dashboard.snapshot.delete.dialog.title'),
-      message: t('dashboard.snapshot.delete.dialog.message')
+      message: t('dashboard.snapshot.delete.dialog.message'),
     },
-    deleteSnapshot
+    deleteSnapshot,
   );
-};
+}
 </script>
 
 <template>
-  <VDialog v-model="display" max-width="600">
+  <VDialog
+    v-model="display"
+    max-width="600"
+  >
     <RuiCard>
       <template #header>
         {{ t('dashboard.snapshot.export_database_snapshot') }}
@@ -160,11 +162,18 @@ const showDeleteConfirmation = () => {
         {{ t('dashboard.snapshot.subtitle') }}
       </template>
       <div>
-        <div class="text-rui-text-secondary">{{ t('common.datetime') }}:</div>
-        <DateDisplay :timestamp="timestamp" class="font-bold" />
+        <div class="text-rui-text-secondary">
+          {{ t('common.datetime') }}:
+        </div>
+        <DateDisplay
+          :timestamp="timestamp"
+          class="font-bold"
+        />
       </div>
       <div class="pt-2">
-        <div class="text-rui-text-secondary">{{ t('common.balance') }}:</div>
+        <div class="text-rui-text-secondary">
+          {{ t('common.balance') }}:
+        </div>
         <AmountDisplay
           v-if="formattedSelectedBalance"
           :value="formattedSelectedBalance"
@@ -173,20 +182,29 @@ const showDeleteConfirmation = () => {
         />
       </div>
       <template #footer>
-        <RuiButton color="primary" @click="editMode = true">
+        <RuiButton
+          color="primary"
+          @click="editMode = true"
+        >
           <template #prepend>
             <RuiIcon name="edit-line" />
           </template>
           {{ t('common.actions.edit') }}
         </RuiButton>
-        <RuiButton color="error" @click="showDeleteConfirmation()">
+        <RuiButton
+          color="error"
+          @click="showDeleteConfirmation()"
+        >
           <template #prepend>
             <RuiIcon name="delete-bin-5-line" />
           </template>
           {{ t('common.actions.delete') }}
         </RuiButton>
         <div class="grow" />
-        <RuiButton color="primary" @click="exportSnapshot()">
+        <RuiButton
+          color="primary"
+          @click="exportSnapshot()"
+        >
           <template #prepend>
             <RuiIcon name="file-download-line" />
           </template>

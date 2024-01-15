@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { type Location } from 'vue-router/types/router';
+import type { Location } from 'vue-router/types/router';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -17,8 +17,8 @@ const props = withDefaults(
     exact: false,
     replace: false,
     activeClass: '',
-    exactActiveClass: ''
-  }
+    exactActiveClass: '',
+  },
 );
 
 const rootAttrs = useAttrs();
@@ -33,7 +33,7 @@ const rootAttrs = useAttrs();
     <a
       :class="{
         [`${activeClass}`]: isActive,
-        [`${exactActiveClass}`]: isExactActive
+        [`${exactActiveClass}`]: isExactActive,
       }"
       :href="href"
       v-bind="rootAttrs"

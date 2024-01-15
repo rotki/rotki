@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
   balance: BigNumber;
@@ -10,9 +10,9 @@ const { exchange } = toRefs(props);
 const { exchangeName } = useLocations();
 
 const name = computed<string>(() => {
-  if (!get(exchange)) {
+  if (!get(exchange))
     return '';
-  }
+
   return exchangeName(exchange);
 });
 </script>

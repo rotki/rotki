@@ -2,9 +2,9 @@ import { Purgeable } from '@/types/session/purge';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/types/task';
 
-export const useSessionPurge = () => {
+export function useSessionPurge() {
   const { resetState } = useDefiStore();
   const { reset } = useStaking();
 
@@ -23,19 +23,21 @@ export const useSessionPurge = () => {
 
   const purgeCache = async (
     purgeable: Purgeable,
-    value: string
+    value: string,
   ): Promise<void> => {
     if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
-      if (!value) {
+      if (!value)
         await purgeExchange();
-      }
-    } else if (purgeable === Purgeable.DECENTRALIZED_EXCHANGES) {
+    }
+    else if (purgeable === Purgeable.DECENTRALIZED_EXCHANGES) {
       resetState((value as Module) || Purgeable.DECENTRALIZED_EXCHANGES);
-    } else if (purgeable === Purgeable.DEFI_MODULES) {
+    }
+    else if (purgeable === Purgeable.DEFI_MODULES) {
       const isEth2 = value === Module.ETH2;
       reset(isEth2 ? value : undefined);
       resetState((value as Module) || Purgeable.DEFI_MODULES);
-    } else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
+    }
+    else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
       await purgeTransactions();
     }
   };
@@ -49,16 +51,17 @@ export const useSessionPurge = () => {
     const { taskId } = await refreshGeneralCacheTask();
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.refresh_general_cache.task.title')
+        title: t('actions.session.refresh_general_cache.task.title'),
       });
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         notify({
           title: t('actions.session.refresh_general_cache.task.title'),
           message: t('actions.session.refresh_general_cache.error.message', {
-            message: e.message
+            message: error.message,
           }),
-          display: true
+          display: true,
         });
       }
     }
@@ -66,6 +69,6 @@ export const useSessionPurge = () => {
 
   return {
     purgeCache,
-    refreshGeneralCache
+    refreshGeneralCache,
   };
-};
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { MissingAcquisition, SelectedReport } from '@/types/reports';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 
@@ -25,23 +25,23 @@ const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};
 
   get(items).forEach((item: MissingAcquisition) => {
-    if (grouped[item.asset]) {
+    if (grouped[item.asset])
       grouped[item.asset].push(item);
-    } else {
+    else
       grouped[item.asset] = [item];
-    }
   });
 
-  return Object.keys(grouped).map(key => {
+  return Object.keys(grouped).map((key) => {
     const sortedAcquisitions = grouped[key].sort((a, b) => a.time - b.time);
     const startDate = sortedAcquisitions[0].time;
-    const endDate = sortedAcquisitions[sortedAcquisitions.length - 1].time;
+    const endDate = sortedAcquisitions.at(-1)?.time;
+    assert(endDate, 'end date is missing');
 
     return {
       asset: key,
       startDate,
       endDate,
-      acquisitions: sortedAcquisitions
+      acquisitions: sortedAcquisitions,
     };
   });
 });
@@ -60,36 +60,36 @@ const headers = computed<DataTableHeader[]>(() => {
   return [
     {
       text: t('common.asset').toString(),
-      value: 'asset'
+      value: 'asset',
     },
     {
       text: t('common.datetime').toString(),
       value: 'startDate',
-      ...pinnedClass
+      ...pinnedClass,
     },
     {
       text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'
+        'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions',
       ).toString(),
       value: 'total_missing_acquisition',
       sortable: false,
-      ...pinnedClass
+      ...pinnedClass,
     },
     {
       text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action'
+        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action',
       ).toString(),
       value: 'action',
       sortable: false,
-      ...pinnedClass
+      ...pinnedClass,
     },
     {
       text: '',
       value: 'expand',
       align: 'end',
       sortable: false,
-      ...pinnedClass
-    }
+      ...pinnedClass,
+    },
   ];
 });
 
@@ -100,22 +100,22 @@ const childHeaders = computed<DataTableHeader[]>(() => {
     {
       text: t('common.datetime').toString(),
       value: 'time',
-      ...pinnedClass
+      ...pinnedClass,
     },
     {
       text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.found_amount'
+        'profit_loss_report.actionable.missing_acquisitions.headers.found_amount',
       ).toString(),
       value: 'foundAmount',
-      ...pinnedClass
+      ...pinnedClass,
     },
     {
       text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'
+        'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount',
       ).toString(),
       value: 'missingAmount',
-      ...pinnedClass
-    }
+      ...pinnedClass,
+    },
   ];
 });
 
@@ -128,7 +128,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned
+        [$style['table--pinned']]: isPinned,
       }"
       :headers="headers"
       :items="groupedMissingAcquisitions"
@@ -143,7 +143,10 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       flat
     >
       <template #item.asset="{ item }">
-        <AssetDetails :asset="item.asset" link />
+        <AssetDetails
+          :asset="item.asset"
+          link
+        />
       </template>
       <template #item.startDate="{ item }">
         <DateDisplay :timestamp="item.startDate" />
@@ -162,12 +165,23 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         <div class="flex flex-col items-center gap-1">
           <VMenu offset-y>
             <template #activator="{ on }">
-              <RuiButton size="sm" variant="text" icon v-on="on">
-                <RuiIcon size="20" name="more-2-fill" />
+              <RuiButton
+                size="sm"
+                variant="text"
+                icon
+                v-on="on"
+              >
+                <RuiIcon
+                  size="20"
+                  name="more-2-fill"
+                />
               </RuiButton>
             </template>
             <div class="py-2">
-              <RuiButton variant="list" @click="ignoreAsset(item.asset)">
+              <RuiButton
+                variant="list"
+                @click="ignoreAsset(item.asset)"
+              >
                 <template #prepend>
                   <RuiIcon name="eye-off-line" />
                   {{ t('assets.ignore') }}
@@ -176,15 +190,24 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             </div>
           </VMenu>
 
-          <RuiTooltip v-if="isIgnored(item.asset)" :open-delay="400">
+          <RuiTooltip
+            v-if="isIgnored(item.asset)"
+            :open-delay="400"
+          >
             <template #activator>
-              <BadgeDisplay color="grey" class="py-1">
-                <RuiIcon size="18" name="eye-off-line" />
+              <BadgeDisplay
+                color="grey"
+                class="py-1"
+              >
+                <RuiIcon
+                  size="18"
+                  name="eye-off-line"
+                />
               </BadgeDisplay>
             </template>
             {{
               t(
-                'profit_loss_report.actionable.missing_acquisitions.asset_is_ignored'
+                'profit_loss_report.actionable.missing_acquisitions.asset_is_ignored',
               )
             }}
           </RuiTooltip>
@@ -197,7 +220,11 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         />
       </template>
       <template #expanded-item="{ item }">
-        <TableExpandContainer no-padding visible :colspan="headers.length">
+        <TableExpandContainer
+          no-padding
+          visible
+          :colspan="headers.length"
+        >
           <DataTable
             flat
             :headers="childHeaders"
@@ -209,10 +236,16 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
               <DateDisplay :timestamp="childItem.time" />
             </template>
             <template #item.foundAmount="{ item: childItem }">
-              <AmountDisplay pnl :value="childItem.foundAmount" />
+              <AmountDisplay
+                pnl
+                :value="childItem.foundAmount"
+              />
             </template>
             <template #item.missingAmount="{ item: childItem }">
-              <AmountDisplay pnl :value="childItem.missingAmount" />
+              <AmountDisplay
+                pnl
+                :value="childItem.missingAmount"
+              />
             </template>
           </DataTable>
         </TableExpandContainer>

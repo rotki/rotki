@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { type HistoryEvent } from '@/types/history/events';
+import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -12,21 +12,21 @@ const props = withDefaults(
     editableItem: undefined,
     nextSequence: undefined,
     loading: false,
-    groupHeader: undefined
-  }
+    groupHeader: undefined,
+  },
 );
 
 const { editableItem, groupHeader } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit } =
-  useHistoryEventsForm();
+const { openDialog, submitting, closeDialog, trySubmit }
+  = useHistoryEventsForm();
 
 const { t } = useI18n();
 
 const title: ComputedRef<string> = computed(() =>
   get(editableItem)
     ? t('transactions.events.dialog.edit.title')
-    : t('transactions.events.dialog.add.title')
+    : t('transactions.events.dialog.add.title'),
 );
 </script>
 

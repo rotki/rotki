@@ -1,19 +1,19 @@
-import { type MaybeRef } from '@vueuse/core';
 import { omit } from 'lodash-es';
-import { type Collection } from '@/types/collection';
-import {
-  type EditHistoryEventPayload,
-  type HistoryEventEntry,
-  type HistoryEventEntryWithMeta,
-  type HistoryEventRequestPayload,
-  type HistoryEventsCollectionResponse,
-  type NewHistoryEventPayload
-} from '@/types/history/events';
-import { type AddressBookSimplePayload } from '@/types/eth-names';
-import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import type {
+  EditHistoryEventPayload,
+  HistoryEventEntry,
+  HistoryEventEntryWithMeta,
+  HistoryEventRequestPayload,
+  HistoryEventsCollectionResponse,
+  NewHistoryEventPayload,
+} from '@/types/history/events';
+import type { AddressBookSimplePayload } from '@/types/eth-names';
+import type { ActionStatus } from '@/types/action';
 
-export const useHistoryEvents = () => {
+export function useHistoryEvents() {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
@@ -21,7 +21,7 @@ export const useHistoryEvents = () => {
     fetchHistoryEvents: fetchHistoryEventsCaller,
     deleteHistoryEvent: deleteHistoryEventCaller,
     addHistoryEvent: addHistoryEventCaller,
-    editHistoryEvent: editHistoryEventCaller
+    editHistoryEvent: editHistoryEventCaller,
   } = useHistoryEventsApi();
 
   const { fetchEnsNames } = useAddressesNamesStore();
@@ -29,11 +29,11 @@ export const useHistoryEvents = () => {
   const { getChain } = useSupportedChains();
 
   const fetchHistoryEvents = async (
-    payload: MaybeRef<HistoryEventRequestPayload>
+    payload: MaybeRef<HistoryEventRequestPayload>,
   ): Promise<Collection<HistoryEventEntry>> => {
     try {
       const result = await fetchHistoryEventsCaller(
-        omit(get(payload), 'accounts')
+        omit(get(payload), 'accounts'),
       );
 
       const { data, ...other } = mapCollectionResponse<
@@ -50,69 +50,69 @@ export const useHistoryEvents = () => {
           addressesNamesPayload.push(
             ...addresses.map(address => ({
               address,
-              blockchain: getChain(entry.location)
-            }))
+              blockchain: getChain(entry.location),
+            })),
           );
         }
 
         return {
           ...entry,
-          ...entriesMeta
+          ...entriesMeta,
         };
       });
 
-      if (addressesNamesPayload.length > 0) {
+      if (addressesNamesPayload.length > 0)
         startPromise(fetchEnsNames(addressesNamesPayload));
-      }
 
       return {
         ...other,
-        data: mappedData
+        data: mappedData,
       };
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
       notify({
         title: t('actions.history_events.error.title').toString(),
         message: t('actions.history_events.error.description', {
-          error: e
+          error,
         }).toString(),
-        display: true
+        display: true,
       });
       return defaultCollectionState();
     }
   };
 
   const addHistoryEvent = async (
-    event: NewHistoryEventPayload
+    event: NewHistoryEventPayload,
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {
       await addHistoryEventCaller(event);
       success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
+    }
+    catch (error: any) {
+      message = error.message;
+      if (error instanceof ApiValidationError)
+        message = error.getValidationErrors(event);
     }
 
     return { success, message };
   };
 
   const editHistoryEvent = async (
-    event: EditHistoryEventPayload
+    event: EditHistoryEventPayload,
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {
       await editHistoryEventCaller(event);
       success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
+    }
+    catch (error: any) {
+      message = error.message;
+      if (error instanceof ApiValidationError)
+        message = error.getValidationErrors(event);
     }
 
     return { success, message };
@@ -120,14 +120,15 @@ export const useHistoryEvents = () => {
 
   const deleteHistoryEvent = async (
     eventIds: number[],
-    forceDelete = false
+    forceDelete = false,
   ): Promise<ActionStatus> => {
     let success = false;
     let message = '';
     try {
       success = await deleteHistoryEventCaller(eventIds, forceDelete);
-    } catch (e: any) {
-      message = e.message;
+    }
+    catch (error: any) {
+      message = error.message;
     }
 
     return { success, message };
@@ -137,6 +138,6 @@ export const useHistoryEvents = () => {
     fetchHistoryEvents,
     addHistoryEvent,
     editHistoryEvent,
-    deleteHistoryEvent
+    deleteHistoryEvent,
   };
-};
+}

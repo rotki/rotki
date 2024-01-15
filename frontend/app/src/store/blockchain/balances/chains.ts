@@ -1,39 +1,43 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type MaybeRef } from '@vueuse/core';
 import { camelCase } from 'lodash-es';
-import { type AssetBalances } from '@/types/balances';
-import {
-  type BlockchainAssetBalances,
-  type BlockchainBalances
-} from '@/types/blockchain/balances';
 import { type RestChains, isRestChain } from '@/types/blockchain/chains';
-import { type AssetPrices } from '@/types/prices';
+import type { MaybeRef } from '@vueuse/core';
+import type { AssetBalances } from '@/types/balances';
+import type {
+  BlockchainAssetBalances,
+  BlockchainBalances,
+} from '@/types/blockchain/balances';
+import type { AssetPrices } from '@/types/prices';
 
 type Totals = Record<RestChains, AssetBalances>;
 
 type Balances = Record<RestChains, BlockchainAssetBalances>;
 
-const defaultTotals = (): Totals => ({
-  [Blockchain.KSM]: {},
-  [Blockchain.DOT]: {},
-  [Blockchain.AVAX]: {},
-  [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {},
-  [Blockchain.ARBITRUM_ONE]: {},
-  [Blockchain.BASE]: {},
-  [Blockchain.GNOSIS]: {}
-});
+function defaultTotals(): Totals {
+  return {
+    [Blockchain.KSM]: {},
+    [Blockchain.DOT]: {},
+    [Blockchain.AVAX]: {},
+    [Blockchain.OPTIMISM]: {},
+    [Blockchain.POLYGON_POS]: {},
+    [Blockchain.ARBITRUM_ONE]: {},
+    [Blockchain.BASE]: {},
+    [Blockchain.GNOSIS]: {},
+  };
+}
 
-const defaultBalances = (): Balances => ({
-  [Blockchain.KSM]: {},
-  [Blockchain.DOT]: {},
-  [Blockchain.AVAX]: {},
-  [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {},
-  [Blockchain.ARBITRUM_ONE]: {},
-  [Blockchain.BASE]: {},
-  [Blockchain.GNOSIS]: {}
-});
+function defaultBalances(): Balances {
+  return {
+    [Blockchain.KSM]: {},
+    [Blockchain.DOT]: {},
+    [Blockchain.AVAX]: {},
+    [Blockchain.OPTIMISM]: {},
+    [Blockchain.POLYGON_POS]: {},
+    [Blockchain.ARBITRUM_ONE]: {},
+    [Blockchain.BASE]: {},
+    [Blockchain.GNOSIS]: {},
+  };
+}
 
 export const useChainBalancesStore = defineStore('balances/chain', () => {
   const balances: Ref<Balances> = ref(defaultBalances());
@@ -42,25 +46,24 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
 
   const update = (
     chain: Blockchain,
-    { perAccount, totals: updatedTotals }: BlockchainBalances
+    { perAccount, totals: updatedTotals }: BlockchainBalances,
   ) => {
-    if (!isRestChain(chain)) {
+    if (!isRestChain(chain))
       return;
-    }
 
     set(balances, {
       ...get(balances),
-      [chain]: perAccount[camelCase(chain)] ?? {}
+      [chain]: perAccount[camelCase(chain)] ?? {},
     });
 
     set(totals, {
       ...get(totals),
-      [chain]: removeZeroAssets(updatedTotals.assets)
+      [chain]: removeZeroAssets(updatedTotals.assets),
     });
 
     set(liabilities, {
       ...get(liabilities),
-      [chain]: removeZeroAssets(updatedTotals.liabilities)
+      [chain]: removeZeroAssets(updatedTotals.liabilities),
     });
   };
 
@@ -75,12 +78,12 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
     totals,
     liabilities,
     update,
-    updatePrices
+    updatePrices,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useChainBalancesStore, import.meta.hot)
+    acceptHMRUpdate(useChainBalancesStore, import.meta.hot),
   );
 }

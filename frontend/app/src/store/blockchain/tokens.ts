@@ -1,31 +1,35 @@
-import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEqual } from 'lodash-es';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import {
-  type EthDetectedTokensInfo,
-  type EvmTokensRecord
-} from '@/types/balances';
-import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { isRestChain } from '@/types/blockchain/chains';
+import type { MaybeRef } from '@vueuse/core';
+import type { TaskMeta } from '@/types/task';
+import type {
+  EthDetectedTokensInfo,
+  EvmTokensRecord,
+} from '@/types/balances';
+import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
-const noTokens = (): EthDetectedTokensInfo => ({
-  tokens: [],
-  total: 0,
-  timestamp: null
-});
+function noTokens(): EthDetectedTokensInfo {
+  return {
+    tokens: [],
+    total: 0,
+    timestamp: null,
+  };
+}
 
 type Tokens = Record<string, EvmTokensRecord>;
 
-const defaultTokens = (): Tokens => ({
-  [Blockchain.ETH]: {},
-  [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {},
-  [Blockchain.ARBITRUM_ONE]: {},
-  [Blockchain.BASE]: {},
-  [Blockchain.GNOSIS]: {}
-});
+function defaultTokens(): Tokens {
+  return {
+    [Blockchain.ETH]: {},
+    [Blockchain.OPTIMISM]: {},
+    [Blockchain.POLYGON_POS]: {},
+    [Blockchain.ARBITRUM_ONE]: {},
+    [Blockchain.BASE]: {},
+    [Blockchain.GNOSIS]: {},
+  };
+}
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const tokensState: Ref<Tokens> = ref(defaultTokens());
@@ -40,11 +44,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     polygonAddresses,
     arbitrumAddresses,
     baseAddresses,
-    gnosisAddresses
+    gnosisAddresses,
   } = storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
-    fetchDetectedTokens: fetchDetectedTokensCaller
+    fetchDetectedTokens: fetchDetectedTokensCaller,
   } = useBlockchainBalancesApi();
   const { supportsTransactions } = useSupportedChains();
 
@@ -53,10 +57,10 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const fetchDetected = async (
     chain: Blockchain,
-    addresses: string[]
+    addresses: string[],
   ): Promise<void> => {
     await Promise.allSettled(
-      addresses.map(address => fetchDetectedTokens(chain, address))
+      addresses.map(address => fetchDetectedTokens(chain, address)),
     );
   };
 
@@ -66,14 +70,14 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       ...tokensVal,
       [chain]: {
         ...tokensVal[chain],
-        ...data
-      }
+        ...data,
+      },
     });
   };
 
   const fetchDetectedTokens = async (
     chain: Blockchain,
-    address: string | null = null
+    address: string | null = null,
   ) => {
     try {
       if (address) {
@@ -86,28 +90,29 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           title: t('actions.balances.detect_tokens.task.title'),
           description: t('actions.balances.detect_tokens.task.description', {
             address,
-            chain
+            chain,
           }),
           address,
-          chain
+          chain,
         };
 
         const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(
           taskId,
           taskType,
           taskMeta,
-          true
+          true,
         );
 
         setState(chain, result);
-      } else {
+      }
+      else {
         const result = await fetchDetectedTokensCaller(chain, null);
         setState(chain, result);
       }
-    } catch (e) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
-      }
+    }
+    catch (error) {
+      if (!isTaskCancelled(error))
+        logger.error(error);
     }
   };
 
@@ -118,81 +123,78 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const getEthDetectedTokensInfo = (
     chain: MaybeRef<Blockchain>,
-    address: MaybeRef<string | null>
+    address: MaybeRef<string | null>,
   ): ComputedRef<EthDetectedTokensInfo> =>
     computed(() => {
       const blockchain = get(chain);
-      if (!supportsTransactions(blockchain)) {
+      if (!supportsTransactions(blockchain))
         return noTokens();
-      }
+
       const state = get(tokensState);
       const detected: EvmTokensRecord | undefined = state[blockchain];
       const addr = get(address);
 
-      if (!addr) {
+      if (!addr)
         return noTokens();
-      }
 
       const info = detected?.[addr];
-      if (!info) {
+      if (!info)
         return noTokens();
-      }
 
       let tokens: string[];
-      if (blockchain === Blockchain.ETH) {
+      if (blockchain === Blockchain.ETH)
         tokens = getTokens(get(ethBalances)[blockchain], addr);
-      } else if (isRestChain(blockchain)) {
+      else if (isRestChain(blockchain))
         tokens = getTokens(get(chainBalances)[blockchain], addr);
-      } else {
+      else
         tokens = info.tokens?.filter(id => !get(isAssetIgnored(id))) ?? [];
-      }
 
       return {
         tokens,
         total: tokens.length,
-        timestamp: info.lastUpdateTimestamp || null
+        timestamp: info.lastUpdateTimestamp || null,
       };
     });
 
   watch(ethAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.ETH);
   });
 
   watch(optimismAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.OPTIMISM);
   });
 
   watch(polygonAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.POLYGON_POS);
   });
 
   watch(arbitrumAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.ARBITRUM_ONE);
   });
 
   watch(baseAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.BASE);
   });
 
   watch(gnosisAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev))
       return;
-    }
+
     await fetchDetectedTokens(Blockchain.GNOSIS);
   });
 
@@ -200,74 +202,74 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.ETH
+    chain: Blockchain.ETH,
   });
 
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.ETH,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
 
   const isOptimismDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.OPTIMISM
+    chain: Blockchain.OPTIMISM,
   });
   watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.OPTIMISM,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
 
   const isPolygonDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.POLYGON_POS
+    chain: Blockchain.POLYGON_POS,
   });
   watch(isPolygonDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.POLYGON_POS,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
 
   const isArbitrumDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.ARBITRUM_ONE
+    chain: Blockchain.ARBITRUM_ONE,
   });
   watch(isArbitrumDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.ARBITRUM_ONE,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
 
   const isBaseDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.BASE
+    chain: Blockchain.BASE,
   });
   watch(isBaseDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.BASE,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
 
   const isGnosisDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.GNOSIS
+    chain: Blockchain.GNOSIS,
   });
   watch(isGnosisDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.GNOSIS,
-        ignoreCache: true
+        ignoreCache: true,
       });
     }
   });
@@ -276,12 +278,12 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     shouldRefreshBalances,
     fetchDetected,
     fetchDetectedTokens,
-    getEthDetectedTokensInfo
+    getEthDetectedTokensInfo,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useBlockchainTokensStore, import.meta.hot)
+    acceptHMRUpdate(useBlockchainTokensStore, import.meta.hot),
   );
 }

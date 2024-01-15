@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Validation } from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { type ActionDataEntry } from '@/types/action';
+import type { Validation } from '@vuelidate/core';
+import type { ActionDataEntry } from '@/types/action';
 
 const props = withDefaults(
   defineProps<{
@@ -13,8 +13,8 @@ const props = withDefaults(
   }>(),
   {
     disableWarning: false,
-    counterparty: null
-  }
+    counterparty: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -30,7 +30,7 @@ const eventTypeModel = computed({
   },
   set(newValue: string | null) {
     emit('update:event-type', newValue || '');
-  }
+  },
 });
 
 const eventSubtypeModel = computed({
@@ -39,13 +39,13 @@ const eventSubtypeModel = computed({
   },
   set(newValue: string | null) {
     emit('update:event-subtype', newValue || '');
-  }
+  },
 });
 const {
   getEventTypeData,
   historyEventTypesData,
   historyEventSubTypesData,
-  historyEventTypeGlobalMapping
+  historyEventTypeGlobalMapping,
 } = useHistoryEventMappings();
 
 const historyTypeCombination = computed(() =>
@@ -54,41 +54,38 @@ const historyTypeCombination = computed(() =>
       {
         eventType: get(eventType),
         eventSubtype: get(eventSubtype),
-        counterparty: get(counterparty)
+        counterparty: get(counterparty),
       },
-      false
-    )
-  )
+      false,
+    ),
+  ),
 );
 
 const showHistoryEventTypeCombinationWarning = computed(() => {
   const validator = get(v$);
-  if (!validator.eventType.$dirty && !validator.eventSubtype.$dirty) {
+  if (!validator.eventType.$dirty && !validator.eventSubtype.$dirty)
     return false;
-  }
 
   return !get(historyTypeCombination).identifier;
 });
 
-const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
-  computed(() => {
+const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]>
+  = computed(() => {
     const eventTypeVal = get(eventType);
     const allData = get(historyEventSubTypesData);
     const globalMapping = get(historyEventTypeGlobalMapping);
 
-    if (!eventTypeVal) {
+    if (!eventTypeVal)
       return allData;
-    }
 
     let globalMappingKeys: string[] = [];
 
     const globalMappingFound = globalMapping[eventTypeVal];
-    if (globalMappingFound) {
+    if (globalMappingFound)
       globalMappingKeys = Object.keys(globalMappingFound);
-    }
 
     return allData.filter((data: ActionDataEntry) =>
-      globalMappingKeys.includes(data.identifier)
+      globalMappingKeys.includes(data.identifier),
     );
   });
 

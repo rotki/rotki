@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import type { ComputedRef } from 'vue';
 
 const emit = defineEmits<{
   (e: 'click'): void;
@@ -16,21 +16,21 @@ const { t } = useI18n();
 
 const loadingData = computed<boolean>(
   () =>
-    get(isTaskRunning(TaskType.QUERY_BALANCES)) ||
-    get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) ||
-    get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) ||
-    get(isTaskRunning(TaskType.MANUAL_BALANCES))
+    get(isTaskRunning(TaskType.QUERY_BALANCES))
+    || get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES))
+    || get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES))
+    || get(isTaskRunning(TaskType.MANUAL_BALANCES)),
 );
 
 const { assets } = useAggregatedBalances();
 
-const refresh = async () => {
+async function refresh() {
   emit('click');
   await refreshPrices(true, get(assets()));
-};
+}
 
 const disabled: ComputedRef<boolean> = computed(
-  () => get(refreshing) || get(loadingData)
+  () => get(refreshing) || get(loadingData),
 );
 </script>
 

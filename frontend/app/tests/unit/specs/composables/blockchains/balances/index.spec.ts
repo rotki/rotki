@@ -4,28 +4,28 @@ import { chainSection } from '@/types/blockchain';
 vi.mock('@/store/blockchain/balances/eth', () => ({
   useEthBalancesStore: vi.fn().mockReturnValue({
     updatePrices: vi.fn(),
-    update: vi.fn()
-  })
+    update: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/blockchain/balances/btc', () => ({
   useBtcBalancesStore: vi.fn().mockReturnValue({
     updatePrices: vi.fn(),
-    update: vi.fn()
-  })
+    update: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/blockchain/balances/chains', () => ({
   useChainBalancesStore: vi.fn().mockReturnValue({
     updatePrices: vi.fn(),
-    update: vi.fn()
-  })
+    update: vi.fn(),
+  }),
 }));
 
 vi.mock('@/composables/api/balances/blockchain', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
-    queryBlockchainBalances: vi.fn().mockResolvedValue(1)
-  })
+    queryBlockchainBalances: vi.fn().mockResolvedValue(1),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
@@ -35,21 +35,21 @@ vi.mock('@/store/tasks', () => ({
         perAccount: {},
         totals: {
           assets: {},
-          liabilities: {}
-        }
+          liabilities: {},
+        },
       },
-      meta: { title: '' }
+      meta: { title: '' },
     }),
-    isTaskRunning: vi.fn()
-  })
+    isTaskRunning: vi.fn(),
+  }),
 }));
 
 describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());
-  let api: ReturnType<typeof useBlockchainBalancesApi> =
-    useBlockchainBalancesApi();
-  let blockchainBalances: ReturnType<typeof useBlockchainBalances> =
-    useBlockchainBalances();
+  let api: ReturnType<typeof useBlockchainBalancesApi>
+    = useBlockchainBalancesApi();
+  let blockchainBalances: ReturnType<typeof useBlockchainBalances>
+    = useBlockchainBalances();
 
   beforeEach(() => {
     api = useBlockchainBalancesApi();
@@ -62,7 +62,7 @@ describe('composables::blockchain/balances/index', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(
-        Object.values(Blockchain).length
+        Object.values(Blockchain).length,
       );
     });
 
@@ -71,9 +71,9 @@ describe('composables::blockchain/balances/index', () => {
         await blockchainBalances.fetchBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
-            ignoreCache: true
+            ignoreCache: true,
           },
-          periodic
+          periodic,
         );
       };
 
@@ -81,7 +81,7 @@ describe('composables::blockchain/balances/index', () => {
         expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
         expect(api.queryBlockchainBalances).toHaveBeenCalledWith(
           true,
-          Blockchain.ETH
+          Blockchain.ETH,
         );
       };
 
@@ -124,19 +124,19 @@ describe('composables::blockchain/balances/index', () => {
           value: bigNumberify(1000),
           usdPrice: null,
           isManualPrice: false,
-          isCurrentCurrency: true
-        }
+          isCurrentCurrency: true,
+        },
       };
       blockchainBalances.updatePrices(assetPrices);
 
       expect(useEthBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices
+        assetPrices,
       );
       expect(useBtcBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices
+        assetPrices,
       );
       expect(useChainBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices
+        assetPrices,
       );
     });
   });

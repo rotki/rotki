@@ -1,9 +1,9 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
-import { type TaskMeta } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { TaskMeta } from '@/types/task';
 
-export const useNfts = () => {
+export function useNfts() {
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
 
@@ -11,11 +11,11 @@ export const useNfts = () => {
 
   const {
     renderAllNftImages: renderAll,
-    whitelistedDomainsForNftImages: whitelist
+    whitelistedDomainsForNftImages: whitelist,
   } = storeToRefs(useFrontendSettingsStore());
 
   const fetchNfts = async (
-    ignoreCache: boolean
+    ignoreCache: boolean,
   ): Promise<ActionResult<NftResponse | null>> => {
     try {
       const taskType = TaskType.FETCH_NFTS;
@@ -24,25 +24,25 @@ export const useNfts = () => {
         taskId,
         taskType,
         {
-          title: t('actions.session.fetch_nfts.task.title').toString()
-        }
+          title: t('actions.session.fetch_nfts.task.title').toString(),
+        },
       );
       return {
         result: NftResponse.parse(result),
-        message: ''
+        message: '',
       };
-    } catch (e: any) {
+    }
+    catch (error: any) {
       return {
         result: null,
-        message: e.message
+        message: error.message,
       };
     }
   };
 
   const shouldRenderImage = (url: string) => {
-    if (get(renderAll)) {
+    if (get(renderAll))
       return true;
-    }
 
     const domain = getDomain(url);
     return get(whitelist).includes(domain);
@@ -50,6 +50,6 @@ export const useNfts = () => {
 
   return {
     fetchNfts,
-    shouldRenderImage
+    shouldRenderImage,
   };
-};
+}
