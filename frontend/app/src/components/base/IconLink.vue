@@ -6,7 +6,7 @@ const props = withDefaults(
     text?: string;
     url: string;
   }>(),
-  { text: '' }
+  { text: '' },
 );
 
 const { url } = toRefs(props);
@@ -15,7 +15,10 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    :open-delay="400"
+  >
     <template #activator>
       <RuiButton
         size="sm"
@@ -30,7 +33,10 @@ const { href, onLinkClick } = useLinks(url);
       >
         <span v-if="text">{{ text }}</span>
         <template #append>
-          <RuiIcon name="external-link-line" :size="16" />
+          <RuiIcon
+            name="external-link-line"
+            :size="16"
+          />
         </template>
       </RuiButton>
     </template>

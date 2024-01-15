@@ -5,8 +5,8 @@ const props = withDefaults(
     items: string[];
   }>(),
   {
-    value: null
-  }
+    value: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -31,13 +31,21 @@ const { t } = useI18n();
     dense
   >
     <template #selection="{ item }">
-      <RuiChip tile size="sm" class="font-medium text-caption">
+      <RuiChip
+        tile
+        size="sm"
+        class="font-medium text-caption"
+      >
         {{ item }}
       </RuiChip>
     </template>
 
     <template #item="{ item }">
-      <RuiChip tile size="sm" class="font-medium text-caption">
+      <RuiChip
+        tile
+        size="sm"
+        class="font-medium text-caption"
+      >
         {{ item }}
       </RuiChip>
     </template>

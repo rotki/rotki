@@ -11,9 +11,9 @@ const emit = defineEmits<{
 
 const { sortDesc: sortDescending } = toRefs(props);
 
-const toggleSortDesc = () => {
+function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
-};
+}
 
 const sortByModel = useVModel(props, 'sortBy', emit);
 
@@ -22,22 +22,25 @@ const { t } = useI18n();
 const sortProperties = [
   {
     text: t('common.name'),
-    value: 'name'
+    value: 'name',
   },
   {
     text: t('common.price'),
-    value: 'priceUsd'
+    value: 'priceUsd',
   },
   {
     text: t('nft_gallery.sort.collection'),
-    value: 'collection'
-  }
+    value: 'collection',
+  },
 ];
 </script>
 
 <template>
   <div class="flex">
-    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
       <template #activator>
         <RuiButton
           color="secondary"
