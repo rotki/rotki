@@ -1,9 +1,5 @@
 import fs from 'node:fs';
-import http, {
-  type IncomingMessage,
-  type OutgoingHttpHeaders,
-  type Server,
-  type ServerResponse
+import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse,
 } from 'node:http';
 import path from 'node:path';
 import { assert } from '@/utils/assertions';
@@ -25,20 +21,21 @@ const FILE_WHITELIST = [
   'metamask/img/done.svg',
   'metamask/img/mm-logo.svg',
   'metamask/img/rotki.svg',
-  'apple-touch-icon.png'
+  'apple-touch-icon.png',
 ];
 
 let server: Server;
 
-const error = (message: string) =>
-  JSON.stringify({
-    message
+function error(message: string) {
+  return JSON.stringify({
+    message,
   });
+}
 
 function invalidRequest(
   res: ServerResponse,
   message: string,
-  status: number = STATUS_BAD_REQUEST
+  status: number = STATUS_BAD_REQUEST,
 ) {
   res.writeHead(status, headerJson);
   res.write(error(message));
@@ -48,7 +45,7 @@ function invalidRequest(
 function okResponse(
   res: ServerResponse,
   body: Buffer | string,
-  headers?: OutgoingHttpHeaders
+  headers?: OutgoingHttpHeaders,
 ) {
   res.writeHead(STATUS_OK, headers);
   res.write(body);
@@ -58,14 +55,14 @@ function okResponse(
 function handleAddresses(
   req: IncomingMessage,
   res: ServerResponse,
-  cb: Callback
+  cb: Callback,
 ) {
   if (req.headers['content-type'] !== applicationJson) {
     invalidRequest(res, `Invalid content type: ${req.headers['content-type']}`);
     return;
   }
   let data = '';
-  req.on('data', chunk => {
+  req.on('data', (chunk) => {
     data += chunk;
   });
   req.on('end', () => {
@@ -78,7 +75,8 @@ function handleAddresses(
       cb(payload.addresses);
       res.writeHead(STATUS_OK);
       res.end();
-    } catch {
+    }
+    catch {
       invalidRequest(res, 'Malformed JSON');
     }
   });
@@ -93,15 +91,15 @@ function serveFile(res: ServerResponse, paths: string, url: string) {
   const filePath = path.join(paths, requestedPath);
   const extension = path.extname(filePath);
   let contentType = null;
-  if (extension.includes('svg')) {
+  if (extension.includes('svg'))
     contentType = 'image/svg+xml';
-  } else if (extension.includes('ico')) {
+  else if (extension.includes('ico'))
     contentType = 'image/vnd.microsoft.icon';
-  }
+
   okResponse(
     res,
     fs.readFileSync(filePath),
-    contentType ? { 'Content-Type': contentType } : undefined
+    contentType ? { 'Content-Type': contentType } : undefined,
   );
 }
 
@@ -115,9 +113,9 @@ function sanitize(requestedPath: string): string {
 
 function isAllowed(basePath: string, servePath: string): boolean {
   const requestedPath = sanitize(servePath);
-  if (!FILE_WHITELIST.includes(requestedPath)) {
+  if (!FILE_WHITELIST.includes(requestedPath))
     return false;
-  }
+
   const filePath = path.join(basePath, requestedPath);
   return fs.existsSync(filePath);
 }
@@ -125,7 +123,7 @@ function isAllowed(basePath: string, servePath: string): boolean {
 function handleRequests(
   req: IncomingMessage,
   res: ServerResponse,
-  cb: Callback
+  cb: Callback,
 ) {
   const contentLengthHeader = req.headers['content-length'];
   if (contentLengthHeader) {
@@ -135,15 +133,16 @@ function handleRequests(
         invalidRequest(
           res,
           'Only requests up to 0.5MB are allowed',
-          STATUS_BAD_REQUEST
+          STATUS_BAD_REQUEST,
         );
         return;
       }
-    } catch {
+    }
+    catch {
       invalidRequest(
         res,
         'No valid content length',
-        STATUS_CONTENT_LENGTH_REQUIRED
+        STATUS_CONTENT_LENGTH_REQUIRED,
       );
       return;
     }
@@ -156,14 +155,17 @@ function handleRequests(
     okResponse(
       res,
       fs.readFileSync(path.join(basePath, 'metamask/import.html')),
-      headersHtml
+      headersHtml,
     );
-  } else if (url === '/import' && req.method === 'POST') {
+  }
+  else if (url === '/import' && req.method === 'POST') {
     handleAddresses(req, res, cb);
     stopHttp();
-  } else if (isAllowed(basePath, url)) {
+  }
+  else if (isAllowed(basePath, url)) {
     serveFile(res, basePath, url);
-  } else {
+  }
+  else {
     invalidRequest(res, `${req.url} was not found on server`, STATUS_NOT_FOUND);
   }
 }
@@ -172,7 +174,7 @@ export function startHttp(cb: Callback, port = 43432): number {
   if (!(server && server.listening)) {
     // eslint-disable-next-line no-console
     console.log(
-      `Metamask Import Server: Listening at: http://localhost:${port}`
+      `Metamask Import Server: Listening at: http://localhost:${port}`,
     );
     server = http.createServer((req, resp) => handleRequests(req, resp, cb));
     server.listen(port);
@@ -186,7 +188,6 @@ export function startHttp(cb: Callback, port = 43432): number {
 export function stopHttp() {
   // eslint-disable-next-line no-console
   console.log('Metamask Import Server: Stopped');
-  if (server && server.listening) {
+  if (server && server.listening)
     server.close();
-  }
 }

@@ -5,8 +5,8 @@ withDefaults(
     loading?: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -26,8 +26,14 @@ const css = useCssModule();
     :tooltip="tooltip"
     @refresh="refresh()"
   />
-  <div v-else class="relative pr-1">
-    <VMenu offset-y :close-on-content-click="false">
+  <div
+    v-else
+    class="relative pr-1"
+  >
+    <VMenu
+      offset-y
+      :close-on-content-click="false"
+    >
       <template #activator="{ on }">
         <RefreshButton
           :loading="loading"
@@ -41,7 +47,10 @@ const css = useCssModule();
           size="sm"
           v-on="on"
         >
-          <RuiIcon size="16" name="arrow-down-s-line" />
+          <RuiIcon
+            size="16"
+            name="arrow-down-s-line"
+          />
         </RuiButton>
       </template>
       <slot name="refreshMenu" />

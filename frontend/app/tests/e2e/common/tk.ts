@@ -32,5 +32,5 @@ export const TK = [
   'V',
   'M',
   'M',
-  'R'
+  'R',
 ];

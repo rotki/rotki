@@ -1,5 +1,5 @@
 import { api } from '@/services/rotkehlchen-api';
-import { type Nullable } from '@/types';
+import type { Nullable } from '@/types';
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection: Ref<Nullable<WebSocket>> = ref(null);
@@ -12,13 +12,14 @@ export const useWebsocketStore = defineStore('websocket', () => {
     try {
       await connect();
       logger.debug('websocket reconnection complete');
-    } catch (e: any) {
-      logger.debug(e, 'Reconnect failed');
+    }
+    catch (error: any) {
+      logger.debug(error, 'Reconnect failed');
     }
   };
 
   async function connect(): Promise<boolean> {
-    return new Promise<boolean>(resolve => {
+    return new Promise<boolean>((resolve) => {
       if (get(connected)) {
         resolve(true);
         return;
@@ -27,18 +28,17 @@ export const useWebsocketStore = defineStore('websocket', () => {
       let protocol = 'ws';
       const location = window.location;
       if (
-        serverUrl?.startsWith('https') ||
-        location.protocol.startsWith('https')
-      ) {
+        serverUrl?.startsWith('https')
+        || location.protocol.startsWith('https')
+      )
         protocol = 'wss';
-      }
+
       const urlSegments = serverUrl.split('://');
       let baseUrl: string;
-      if (urlSegments.length > 1) {
+      if (urlSegments.length > 1)
         baseUrl = urlSegments[1];
-      } else {
+      else
         baseUrl = `${location.host}${location.pathname}`;
-      }
 
       const url = `${protocol}://${baseUrl}/ws/`;
       logger.debug(`preparing to connect to ${url}`);
@@ -59,9 +59,8 @@ export const useWebsocketStore = defineStore('websocket', () => {
       ws.addEventListener('close', (event): void => {
         logger.debug('websocket connection closed');
         set(connected, false);
-        if (!event.wasClean) {
+        if (!event.wasClean)
           startPromise(reconnect());
-        }
       });
     });
   }
@@ -79,10 +78,9 @@ export const useWebsocketStore = defineStore('websocket', () => {
   return {
     connected,
     connect,
-    disconnect
+    disconnect,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useWebsocketStore, import.meta.hot));
-}

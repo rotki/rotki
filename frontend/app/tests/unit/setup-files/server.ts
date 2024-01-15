@@ -20,7 +20,7 @@ const server = setupServer(
   ...supportedChains,
   ...historyTypeMappingHandlers,
   ...historyEventCounterpartiesHandlers,
-  ...historyEventProductsHandlers
+  ...historyEventProductsHandlers,
 );
 
 export { server };

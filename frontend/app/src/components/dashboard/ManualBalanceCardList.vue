@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
 import { toSentenceCase } from '@/utils/text';
 import { Routes } from '@/router/routes';
+import type { BigNumber } from '@rotki/common';
 
 defineProps<{
   name: string;
@@ -22,7 +22,11 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
     >
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">
-          <LocationDisplay :identifier="name" icon size="24px" />
+          <LocationDisplay
+            :identifier="name"
+            icon
+            size="24px"
+          />
         </div>
       </template>
       <div class="flex flex-wrap justify-between gap-1 text-rui-text">

@@ -1,14 +1,15 @@
 import {
   type Notification,
   NotificationCategory,
-  Severity
+  Severity,
 } from '@rotki/common/lib/messages';
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
-import { type MigratedAddresses } from '@/types/websocket-messages';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { MigratedAddresses } from '@/types/websocket-messages';
 
-const setupMigrationSessionCache = (username: string): Ref<MigratedAddresses> =>
-  useSessionStorage(`rotki.migrated_addresses.${username}`, []);
+function setupMigrationSessionCache(username: string): Ref<MigratedAddresses> {
+  return useSessionStorage(`rotki.migrated_addresses.${username}`, []);
+}
 
 export const useAccountMigrationStore = defineStore(
   'blockchain/accounts/migration',
@@ -34,17 +35,15 @@ export const useAccountMigrationStore = defineStore(
       const addresses: Record<string, string[]> = {};
       const migrated: MigratedAddresses | null = get(migratedAddresses);
 
-      if (migrated === null || migrated.length === 0) {
+      if (migrated === null || migrated.length === 0)
         return;
-      }
 
       migrated.forEach(({ address, evmChain }) => {
         if (tokenChains.includes(evmChain)) {
-          if (!addresses[evmChain]) {
+          if (!addresses[evmChain])
             addresses[evmChain] = [address];
-          } else {
+          else
             addresses[evmChain].push(address);
-          }
         }
       });
 
@@ -56,26 +55,26 @@ export const useAccountMigrationStore = defineStore(
         const chainName = get(getChainName(chain as Blockchain));
         promises.push(
           fetchAccounts(blockchain),
-          useTokenDetection(blockchain).detectTokens(chainAddresses)
+          useTokenDetection(blockchain).detectTokens(chainAddresses),
         );
         notifications.push({
           title: t(
             'notification_messages.address_migration.title',
             { chain: chainName },
-            chainAddresses.length
+            chainAddresses.length,
           ),
           message: t(
             'notification_messages.address_migration.message',
             {
               chain: chainName,
-              addresses: chainAddresses.join(', ')
+              addresses: chainAddresses.join(', '),
             },
-            chainAddresses.length
+            chainAddresses.length,
           ),
           severity: Severity.INFO,
           display: true,
           category: NotificationCategory.ADDRESS_MIGRATION,
-          duration: -1
+          duration: -1,
         });
       }
 
@@ -87,9 +86,8 @@ export const useAccountMigrationStore = defineStore(
 
     const runMigrationIfPossible = (canRequestData: MaybeRef<boolean>) => {
       const migrated = get(migratedAddresses);
-      if (get(canRequestData) && migrated.length > 0) {
+      if (get(canRequestData) && migrated.length > 0)
         handleMigratedAccounts();
-      }
     };
 
     const setupCache = (username: string): void => {
@@ -101,13 +99,13 @@ export const useAccountMigrationStore = defineStore(
     return {
       migratedAddresses,
       setupCache,
-      setUpgradedAddresses: upgradeMigratedAddresses
+      setUpgradedAddresses: upgradeMigratedAddresses,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useAccountMigrationStore, import.meta.hot)
+    acceptHMRUpdate(useAccountMigrationStore, import.meta.hot),
   );
 }

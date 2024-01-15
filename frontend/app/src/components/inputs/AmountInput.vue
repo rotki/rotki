@@ -8,8 +8,8 @@ const props = withDefaults(
   }>(),
   {
     integer: false,
-    value: ''
-  }
+    value: '',
+  },
 );
 
 const emit = defineEmits<{
@@ -19,14 +19,16 @@ const emit = defineEmits<{
 const attrs = useAttrs();
 const slots = useSlots();
 
-const filteredListeners = (listeners: any) => ({
-  ...listeners,
-  input: () => {}
-});
+function filteredListeners(listeners: any) {
+  return {
+    ...listeners,
+    input: () => {},
+  };
+}
 
 const { integer, value } = toRefs(props);
 const { thousandSeparator, decimalSeparator } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const textInput: Ref<any> = ref(null);
@@ -41,7 +43,7 @@ onMounted(() => {
     mask: Number,
     thousandsSeparator: get(thousandSeparator),
     radix: get(decimalSeparator),
-    scale: get(integer) ? 0 : 100
+    scale: get(integer) ? 0 : 100,
   });
 
   const propValue = get(value);
@@ -53,7 +55,7 @@ onMounted(() => {
   set(imask, newImask);
 });
 
-watch(value, value => {
+watch(value, (value) => {
   const imaskVal = get(imask);
   if (imaskVal) {
     imaskVal.unmaskedValue = value;
@@ -63,39 +65,38 @@ watch(value, value => {
 
 watch(
   () => get(imask)?.unmaskedValue,
-  unmasked => {
+  (unmasked) => {
     const value = get(imask)?.value || '';
     set(currentValue, value);
     emit('input', unmasked || '');
-  }
+  },
 );
 
 watch(
   () => get(imask)?.value,
-  value => {
+  (value) => {
     set(currentValue, value);
-  }
+  },
 );
 
-const focus = () => {
+function focus() {
   const inputWrapper = get(textInput) as any;
-  if (inputWrapper) {
+  if (inputWrapper)
     inputWrapper.focus();
-  }
-};
+}
 
 defineExpose({
-  focus
+  focus,
 });
 
-const onFocus = () => {
+function onFocus() {
   const inputWrapper = get(textInput)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
   nextTick(() => {
     input.value = get(currentValue);
   });
-};
+}
 </script>
 
 <template>
@@ -110,11 +111,21 @@ const onFocus = () => {
     @focus="onFocus()"
   >
     <!-- Pass on all named slots -->
-    <slot v-for="slot in Object.keys(slots)" :slot="slot" :name="slot" />
+    <slot
+      v-for="slot in Object.keys(slots)"
+      :slot="slot"
+      :name="slot"
+    />
 
     <!-- Pass on all scoped slots -->
-    <template v-for="slot in Object.keys($scopedSlots)" #[slot]="scope">
-      <slot v-bind="scope" :name="slot" />
+    <template
+      v-for="slot in Object.keys($scopedSlots)"
+      #[slot]="scope"
+    >
+      <slot
+        v-bind="scope"
+        :name="slot"
+      />
     </template>
   </VTextField>
 </template>

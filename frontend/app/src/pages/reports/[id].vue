@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
 import { Routes } from '@/router/routes';
-import { type SelectedReport } from '@/types/reports';
+import type { ComputedRef } from 'vue';
+import type { SelectedReport } from '@/types/reports';
 
 defineOptions({
-  name: 'ReportDetail'
+  name: 'ReportDetail',
 });
 
 const loading = ref(true);
@@ -29,13 +29,12 @@ const latest = isLatestReport(reportId);
 const { t } = useI18n();
 
 onMounted(async () => {
-  if (get(reports).entries.length === 0) {
+  if (get(reports).entries.length === 0)
     await fetchReports();
-  }
+
   const success = await fetchReport(reportId);
-  if (!success) {
+  if (!success)
     await router.push(Routes.PROFIT_LOSS_REPORTS);
-  }
 
   if (get(route).query.openReportActionable) {
     set(initialOpenReportActionable, true);
@@ -46,21 +45,21 @@ onMounted(async () => {
 
 const showUpgradeMessage = computed(
   () =>
-    get(report).entriesLimit > 0 &&
-    get(report).entriesLimit < get(report).entriesFound
+    get(report).entriesLimit > 0
+    && get(report).entriesLimit < get(report).entriesFound,
 );
 
 onUnmounted(() => clearReport());
 
-const onPage = async ({
+async function onPage({
   limit,
   offset,
-  reportId
+  reportId,
 }: {
   reportId: number;
   limit: number;
   offset: number;
-}) => {
+}) {
   if (firstPage) {
     firstPage = false;
     return;
@@ -68,29 +67,35 @@ const onPage = async ({
   set(refreshing, true);
   await fetchReport(reportId, { limit, offset });
   set(refreshing, false);
-};
+}
 
-const regenerateReport = async () => {
+async function regenerateReport() {
   const { start, end } = get(report);
   await router.push({
     path: Routes.PROFIT_LOSS_REPORTS,
     query: {
       regenerate: 'true',
       start: start.toString(),
-      end: end.toString()
-    }
+      end: end.toString(),
+    },
   });
-};
+}
 </script>
 
 <template>
   <ProgressScreen v-if="loading">
     {{ t('profit_loss_report.loading') }}
   </ProgressScreen>
-  <div v-else class="container">
+  <div
+    v-else
+    class="container"
+  >
     <div class="flex flex-col gap-8">
       <ReportHeader :period="report" />
-      <RuiAlert v-if="showUpgradeMessage" type="warning">
+      <RuiAlert
+        v-if="showUpgradeMessage"
+        type="warning"
+      >
         <i18n
           tag="div"
           path="profit_loss_report.upgrade"
@@ -106,9 +111,15 @@ const regenerateReport = async () => {
             />
           </template>
         </i18n>
-        <i18n tag="div" path="profit_loss_report.upgrade2">
+        <i18n
+          tag="div"
+          path="profit_loss_report.upgrade2"
+        >
           <template #link>
-            <ExternalLink :text="t('upgrade_row.rotki_premium')" premium />
+            <ExternalLink
+              :text="t('upgrade_row.rotki_premium')"
+              premium
+            />
           </template>
         </i18n>
       </RuiAlert>

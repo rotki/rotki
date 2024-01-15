@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Tag } from '@/types/tags';
+import type { Tag } from '@/types/tags';
 
 withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ withDefaults(
     small?: boolean;
   }>(),
   {
-    small: false
-  }
+    small: false,
+  },
 );
 </script>
 

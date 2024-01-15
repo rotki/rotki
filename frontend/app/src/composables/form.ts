@@ -1,18 +1,15 @@
-import useVuelidate, {
-  type GlobalConfig,
-  type Validation,
-  type ValidationArgs
+import useVuelidate, { type GlobalConfig, type Validation, type ValidationArgs,
 } from '@vuelidate/core';
-import { type MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from '@vueuse/core';
 
 /**
  * Create a common composable for form
  * @template T - T is type of data that return from the submit function.
  */
-export const useForm = <T = void>() => {
+export function useForm<T = void>() {
   const openDialog: Ref<boolean> = ref(false);
   const valid: Ref<boolean> = ref(true);
-  let v$: Ref<Validation> | undefined = undefined;
+  let v$: Ref<Validation> | undefined;
   const submitFunc: Ref<() => Promise<T> | void> = ref(() => {});
   const postSubmitFunc: Ref<(result: T | void) => void> = ref(() => {});
   const submitting: Ref<boolean> = ref(false);
@@ -20,14 +17,13 @@ export const useForm = <T = void>() => {
   const setValidation = (
     validationsArgs: ValidationArgs,
     states: Record<string, MaybeRef<any>>,
-    config?: GlobalConfig
+    config?: GlobalConfig,
   ): Ref<Validation> => {
     v$ = useVuelidate(validationsArgs, states, config);
 
     watch(v$, ({ $invalid, $dirty }) => {
-      if ($dirty) {
+      if ($dirty)
         set(valid, !$invalid);
-      }
     });
 
     return v$;
@@ -73,6 +69,6 @@ export const useForm = <T = void>() => {
     setSubmitFunc,
     setPostSubmitFunc,
     setValidation,
-    trySubmit
+    trySubmit,
   };
-};
+}

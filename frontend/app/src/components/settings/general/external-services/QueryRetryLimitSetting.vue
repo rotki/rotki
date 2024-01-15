@@ -1,11 +1,12 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const minValueMessage = (min: number) =>
-  t(
+function minValueMessage(min: number) {
+  return t(
     'general_settings.external_service_setting.validation.query_retry_limit.invalid_range',
-    { min }
+    { min },
   );
+}
 </script>
 
 <template>
@@ -13,7 +14,7 @@ const minValueMessage = (min: number) =>
     :min-value-message="minValueMessage"
     :required-message="
       t(
-        'general_settings.external_service_setting.validation.query_retry_limit.non_empty'
+        'general_settings.external_service_setting.validation.query_retry_limit.non_empty',
       )
     "
     setting="queryRetryLimit"
@@ -22,7 +23,7 @@ const minValueMessage = (min: number) =>
     "
     :hint="
       t(
-        'general_settings.external_service_setting.label.query_retry_limit_hint'
+        'general_settings.external_service_setting.label.query_retry_limit_hint',
       )
     "
   />

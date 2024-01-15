@@ -9,25 +9,25 @@ export type Balances = z.infer<typeof Balances>;
 
 const BlockchainTotals = z.object({
   assets: Balances,
-  liabilities: Balances
+  liabilities: Balances,
 });
 
 const XpubBalance = z.object({
   xpub: z.string(),
   derivationPath: z.string().nullable(),
-  addresses: z.record(Balance)
+  addresses: z.record(Balance),
 });
 
 const BtcBalances = z.object({
   standalone: Balances.optional(),
-  xpubs: z.array(XpubBalance).optional()
+  xpubs: z.array(XpubBalance).optional(),
 });
 
 export type BtcBalances = z.infer<typeof BtcBalances>;
 
 const EthBalance = z.object({
   assets: Balances,
-  liabilities: Balances
+  liabilities: Balances,
 });
 
 const BlockchainAssetBalances = z.record(EthBalance);
@@ -47,12 +47,12 @@ const PerAccountBalances = z.object({
   [camelCase(Blockchain.POLYGON_POS)]: BlockchainAssetBalances.optional(),
   [camelCase(Blockchain.ARBITRUM_ONE)]: BlockchainAssetBalances.optional(),
   [Blockchain.BASE]: BlockchainAssetBalances.optional(),
-  [Blockchain.GNOSIS]: BlockchainAssetBalances.optional()
+  [Blockchain.GNOSIS]: BlockchainAssetBalances.optional(),
 });
 
 export const BlockchainBalances = z.object({
   perAccount: PerAccountBalances,
-  totals: BlockchainTotals
+  totals: BlockchainTotals,
 });
 
 export type BlockchainBalances = z.infer<typeof BlockchainBalances>;

@@ -1,10 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import {
-  type Interop,
-  type Listeners,
-  type TrayUpdate
-} from '@/electron-main/ipc';
-import {
   IPC_ABOUT,
   IPC_BACKEND_PROCESS_DETECTED,
   IPC_CHECK_FOR_UPDATES,
@@ -30,12 +25,17 @@ import {
   IPC_STORE_PASSWORD,
   IPC_THEME,
   IPC_TRAY_UPDATE,
-  IPC_VERSION
+  IPC_VERSION,
 } from '@/electron-main/ipc-commands';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import type {
+  Interop,
+  Listeners,
+  TrayUpdate,
+} from '@/electron-main/ipc';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     ipcRenderer.once(message, (event, args) => {
       resolve(args);
     });
@@ -89,7 +89,7 @@ contextBridge.exposeInMainWorld('interop', {
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
-  downloadUpdate: progress => {
+  downloadUpdate: (progress) => {
     ipcRenderer.on(IPC_DOWNLOAD_PROGRESS, (event, args) => {
       progress(args);
     });
@@ -109,5 +109,5 @@ contextBridge.exposeInMainWorld('interop', {
   storePassword: (username: string, password: string) =>
     ipcAction(IPC_STORE_PASSWORD, { username, password }),
   getPassword: (username: string) => ipcAction(IPC_GET_PASSWORD, username),
-  clearPassword: () => ipcAction(IPC_CLEAR_PASSWORD)
+  clearPassword: () => ipcAction(IPC_CLEAR_PASSWORD),
 } as Interop);

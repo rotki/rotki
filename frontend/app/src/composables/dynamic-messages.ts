@@ -3,13 +3,13 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   DashboardSchema,
   type VisibilityPeriod,
-  WelcomeSchema
+  WelcomeSchema,
 } from '@/types/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 
 const serializer = {
   read: (v: any) => (v ? JSON.parse(v) : null),
-  write: (v: any) => JSON.stringify(v)
+  write: (v: any) => JSON.stringify(v),
 };
 
 export const useDynamicMessages = createSharedComposable(() => {
@@ -18,79 +18,76 @@ export const useDynamicMessages = createSharedComposable(() => {
     'rotki.messages.welcome',
     null,
     {
-      serializer
-    }
+      serializer,
+    },
   );
   const dashboardMessages = useSessionStorage<DashboardSchema>(
     'rotki.messages.dashboard',
     null,
     {
-      serializer
-    }
+      serializer,
+    },
   );
 
   const welcomeHeader = computed(() => {
-    if (!isDefined(welcomeMessages)) {
+    if (!isDefined(welcomeMessages))
       return null;
-    }
 
     const { header, text } = get(welcomeMessages);
 
     return {
       header,
-      text
+      text,
     };
   });
 
   const welcomeMessage = computed(() => {
-    if (!isDefined(welcomeMessages)) {
+    if (!isDefined(welcomeMessages))
       return null;
-    }
 
     const { messages } = get(welcomeMessages);
     return getFirstValidMessage(messages);
   });
 
   const dashboardMessage = computed(() => {
-    if (!isDefined(dashboardMessages)) {
+    if (!isDefined(dashboardMessages))
       return null;
-    }
 
     return getFirstValidMessage(get(dashboardMessages));
   });
 
   const getFirstValidMessage = <T extends { period: VisibilityPeriod }>(
-    messages: T[]
+    messages: T[],
   ): T | null => {
     const now = Date.now() / 1000;
 
     const validMessages = messages.filter(
-      x => x.period.start <= now && x.period.end > now
+      x => x.period.start <= now && x.period.end > now,
     );
-    if (validMessages.length === 0) {
+    if (validMessages.length === 0)
       return null;
-    }
 
     return validMessages[0];
   };
 
   const getData = <T>(response: AxiosResponse<T>) => {
-    if (typeof response.data === 'string') {
+    if (typeof response.data === 'string')
       return camelCaseTransformer(JSON.parse(response.data));
-    }
+
     return response.data;
   };
 
   const getWelcomeData = async (): Promise<WelcomeSchema | null> => {
     try {
       const response = await api.instance.get<WelcomeSchema>(
-        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/welcome.json`
+        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/welcome.json`,
       );
       return WelcomeSchema.parse(getData(response));
-    } catch (e: any) {
-      if (!(e instanceof AxiosError)) {
-        logger.error(e);
-      }
+    }
+    catch (error: any) {
+      if (!(error instanceof AxiosError))
+        logger.error(error);
+
       return null;
     }
   };
@@ -98,13 +95,13 @@ export const useDynamicMessages = createSharedComposable(() => {
   const getDashboardData = async (): Promise<DashboardSchema | null> => {
     try {
       const response = await api.instance.get<DashboardSchema>(
-        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/dashboard.json`
+        `https://raw.githubusercontent.com/rotki/data/${branch}/messages/dashboard.json`,
       );
       return DashboardSchema.parse(getData(response));
-    } catch (e: any) {
-      if (!(e instanceof AxiosError)) {
-        logger.error(e);
-      }
+    }
+    catch (error: any) {
+      if (!(error instanceof AxiosError))
+        logger.error(error);
 
       return null;
     }
@@ -119,6 +116,6 @@ export const useDynamicMessages = createSharedComposable(() => {
     fetchMessages,
     welcomeHeader,
     welcomeMessage,
-    dashboardMessage
+    dashboardMessage,
   };
 });

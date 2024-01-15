@@ -13,7 +13,10 @@ const { t } = useI18n();
     </template>
     <template #subheader>
       {{ t('loan_header.owned_by') }}
-      <HashLink :text="owner" class="font-medium mt-3" />
+      <HashLink
+        :text="owner"
+        class="font-medium mt-3"
+      />
     </template>
   </RuiCard>
 </template>

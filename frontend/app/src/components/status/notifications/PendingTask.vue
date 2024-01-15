@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { Task, TaskMeta } from '@/types/task';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
 const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();
@@ -42,7 +42,10 @@ const progress = useToNumber(taskProgress);
       :show-label="isHistory"
       thickness="2"
     />
-    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
       <template #activator>
         <RuiButton
           variant="text"

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type Collection } from '@/types/collection';
 import { Routes } from '@/router/routes';
-import {
-  type Trade,
-  type TradeEntry,
-  type TradeRequestPayload
-} from '@/types/history/trade';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import type {
+  Trade,
+  TradeEntry,
+  TradeRequestPayload,
+} from '@/types/history/trade';
+import type { Collection } from '@/types/collection';
+import type { DataTableHeader } from '@/types/vuetify';
 import type { Filters, Matcher } from '@/composables/filters/trades';
 
 const props = withDefaults(
@@ -19,8 +19,8 @@ const props = withDefaults(
   }>(),
   {
     locationOverview: '',
-    mainPage: false
-  }
+    mainPage: false,
+  },
 );
 
 const { t } = useI18n();
@@ -41,59 +41,59 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       value: 'ignoredInAccounting',
       sortable: false,
       class: !overview ? 'pa-0' : 'pr-0',
-      cellClass: !overview ? 'pa-0' : 'pr-0'
+      cellClass: !overview ? 'pa-0' : 'pr-0',
     },
     {
       text: t('common.location'),
       value: 'location',
       width: '120px',
-      align: 'center'
+      align: 'center',
     },
     {
       text: t('closed_trades.headers.action'),
       value: 'type',
       align: overview ? 'start' : 'center',
       class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
-      cellClass: overview ? 'pl-0' : ''
+      cellClass: overview ? 'pl-0' : '',
     },
     {
       text: t('common.amount'),
       value: 'amount',
-      align: 'end'
+      align: 'end',
     },
     {
       text: t('closed_trades.headers.base'),
       value: 'baseAsset',
-      sortable: false
+      sortable: false,
     },
     {
       text: '',
       value: 'description',
       sortable: false,
-      width: '40px'
+      width: '40px',
     },
     {
       text: t('closed_trades.headers.quote'),
       value: 'quoteAsset',
-      sortable: false
+      sortable: false,
     },
     {
       text: t('closed_trades.headers.rate'),
       value: 'rate',
-      align: 'end'
+      align: 'end',
     },
     {
       text: t('common.datetime'),
-      value: 'timestamp'
+      value: 'timestamp',
     },
     {
       text: t('common.actions_text'),
       value: 'actions',
       align: 'center',
       sortable: false,
-      width: '1px'
+      width: '1px',
     },
-    { text: '', value: 'data-table-expand', sortable: false }
+    { text: '', value: 'data-table-expand', sortable: false },
   ];
 
   if (overview) {
@@ -106,7 +106,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
 const extraParams = computed(() => ({
   includeIgnoredTrades: !get(hideIgnoredTrades),
-  excludeIgnoredAssets: !get(showIgnoredAssets)
+  excludeIgnoredAssets: !get(showIgnoredAssets),
 }));
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
@@ -128,7 +128,7 @@ const {
   setPage,
   setOptions,
   setFilter,
-  fetchData
+  fetchData,
 } = usePaginationFilters<
   Trade,
   TradeRequestPayload,
@@ -141,7 +141,7 @@ const {
     set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
-  extraParams
+  extraParams,
 });
 
 useHistoryAutoRefresh(fetchData);
@@ -150,19 +150,19 @@ const { setOpenDialog, setPostSubmitFunc } = useTradesForm();
 
 setPostSubmitFunc(fetchData);
 
-const newExternalTrade = () => {
+function newExternalTrade() {
   set(editableItem, null);
   setOpenDialog(true);
-};
+}
 
-const editTradeHandler = (trade: TradeEntry) => {
+function editTradeHandler(trade: TradeEntry) {
   set(editableItem, trade);
   setOpenDialog(true);
-};
+}
 
 const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const promptForDelete = (trade: TradeEntry) => {
+function promptForDelete(trade: TradeEntry) {
   const prep = (
     trade.tradeType === 'buy'
       ? t('closed_trades.description.with')
@@ -176,14 +176,14 @@ const promptForDelete = (trade: TradeEntry) => {
     t('closed_trades.confirmation.message', {
       pair: `${base} ${prep} ${quote}`,
       action: trade.tradeType,
-      amount: trade.amount.toFormat(get(floatingPrecision))
-    })
+      amount: trade.amount.toFormat(get(floatingPrecision)),
+    }),
   );
   set(tradesToDelete, [trade]);
   showDeleteConfirmation();
-};
+}
 
-const massDelete = () => {
+function massDelete() {
   const selectedVal = get(selected);
   if (selectedVal.length === 1) {
     promptForDelete(selectedVal[0]);
@@ -195,25 +195,23 @@ const massDelete = () => {
   set(
     confirmationMessage,
     t('closed_trades.confirmation.multiple_message', {
-      length: get(tradesToDelete).length
-    })
+      length: get(tradesToDelete).length,
+    }),
   );
 
   showDeleteConfirmation();
-};
+}
 
-const deleteTradeHandler = async () => {
+async function deleteTradeHandler() {
   const tradesToDeleteVal = get(tradesToDelete);
-  if (tradesToDeleteVal.length === 0) {
+  if (tradesToDeleteVal.length === 0)
     return;
-  }
 
   const ids = tradesToDeleteVal.map(trade => trade.tradeId);
   const { success } = await deleteExternalTrade(ids);
 
-  if (!success) {
+  if (!success)
     return;
-  }
 
   set(tradesToDelete, []);
   set(confirmationMessage, '');
@@ -221,38 +219,39 @@ const deleteTradeHandler = async () => {
   const selectedVal = [...get(selected)];
   set(
     selected,
-    selectedVal.filter(trade => !ids.includes(trade.tradeId))
+    selectedVal.filter(trade => !ids.includes(trade.tradeId)),
   );
 
   await fetchData();
-};
+}
 
 const { ignore } = useIgnore(
   {
     actionType: IgnoreActionType.TRADES,
-    toData: (item: TradeEntry) => item.tradeId
+    toData: (item: TradeEntry) => item.tradeId,
   },
   selected,
-  () => fetchData()
+  () => fetchData(),
 );
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = () => {
+function showDeleteConfirmation() {
   show(
     {
       title: t('closed_trades.confirmation.title'),
-      message: get(confirmationMessage)
+      message: get(confirmationMessage),
     },
-    deleteTradeHandler
+    deleteTradeHandler,
   );
-};
+}
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TRADES);
 
-const getItemClass = (item: TradeEntry) =>
-  item.ignoredInAccounting ? 'darken-row' : '';
+function getItemClass(item: TradeEntry) {
+  return item.ignoredInAccounting ? 'darken-row' : '';
+}
 
 const pageRoute = Routes.HISTORY_TRADES;
 
@@ -262,16 +261,16 @@ onMounted(async () => {
   if (query.add) {
     newExternalTrade();
     await router.replace({ query: {} });
-  } else {
+  }
+  else {
     await fetchData();
     await refreshTrades();
   }
 });
 
 watch(loading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading) {
+  if (!isLoading && wasLoading)
     await fetchData();
-  }
 });
 </script>
 
@@ -311,7 +310,10 @@ watch(loading, async (isLoading, wasLoading) => {
     </template>
 
     <RuiCard>
-      <template v-if="!!locationOverview" #header>
+      <template
+        v-if="!!locationOverview"
+        #header
+      >
         <CardTitle>
           <NavigatorLink :to="{ path: pageRoute }">
             {{ t('closed_trades.title') }}
@@ -365,13 +367,19 @@ watch(loading, async (isLoading, wasLoading) => {
           class="flex flex-row items-center gap-2"
         >
           {{ t('closed_trades.selected', { count: selected.length }) }}
-          <RuiButton variant="text" @click="selected = []">
+          <RuiButton
+            variant="text"
+            @click="selected = []"
+          >
             {{ t('common.actions.clear_selection') }}
           </RuiButton>
         </div>
       </HistoryTableActions>
 
-      <CollectionHandler :collection="trades" @set-page="setPage($event)">
+      <CollectionHandler
+        :collection="trades"
+        @set-page="setPage($event)"
+      >
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
           <DataTable
             v-model="selected"
@@ -463,9 +471,15 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #expanded-item="{ headers, item }">
-              <TradeDetails :span="headers.length" :item="item" />
+              <TradeDetails
+                :span="headers.length"
+                :item="item"
+              />
             </template>
-            <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+            <template
+              v-if="showUpgradeRow"
+              #body.prepend="{ headers }"
+            >
               <UpgradeRow
                 :limit="limit"
                 :total="total"

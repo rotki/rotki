@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 
 withDefaults(
   defineProps<{
     tooltipOption?: TooltipDisplayOption;
   }>(),
   {
-    tooltipOption: undefined
-  }
+    tooltipOption: undefined,
+  },
 );
 </script>
 
@@ -17,14 +17,14 @@ withDefaults(
     :id="tooltipOption.id"
     :class="{
       [$style.tooltip]: true,
-      [$style['tooltip__show']]: tooltipOption.visible
+      [$style.tooltip__show]: tooltipOption.visible,
     }"
     class="bg-white dark:bg-black"
     :data-align-x="tooltipOption.xAlign"
     :data-align-y="tooltipOption.yAlign"
     :style="{
       left: `${tooltipOption.left}px`,
-      top: `${tooltipOption.top}px`
+      top: `${tooltipOption.top}px`,
     }"
   >
     <slot name="content" />

@@ -1,27 +1,27 @@
-import { type MaybeRef } from '@vueuse/core';
 import flushPromises from 'flush-promises';
-import { type Collection } from '@/types/collection';
-import { type LocationQuery } from '@/types/route';
+import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import type { LocationQuery } from '@/types/route';
 import type { Filters, Matcher } from '@/composables/filters/trades';
 import type {
   Trade,
   TradeEntry,
-  TradeRequestPayload
+  TradeRequestPayload,
 } from '@/types/history/trade';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
     reactive({
-      query: {}
-    })
+      query: {},
+    }),
   ),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(({ query }) => {
       useRoute().query = query;
       return true;
-    })
-  })
+    }),
+  }),
 }));
 
 vi.mock('vue', async () => {
@@ -29,7 +29,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn()
+    onBeforeMount: vi.fn(),
   };
 });
 
@@ -55,7 +55,7 @@ describe('composables::history/filter-paginate', () => {
     set(locationOverview, '');
     const hideIgnoredTrades = ref(false);
     const extraParams = computed(() => ({
-      includeIgnoredTrades: (!get(hideIgnoredTrades)).toString()
+      includeIgnoredTrades: (!get(hideIgnoredTrades)).toString(),
     }));
 
     const onUpdateFilters = (query: LocationQuery) => {
@@ -66,7 +66,7 @@ describe('composables::history/filter-paginate', () => {
       set(mainPage, true);
     });
 
-    test('initialize composable correctly', async () => {
+    it('initialize composable correctly', async () => {
       const {
         userAction,
         filters,
@@ -74,7 +74,7 @@ describe('composables::history/filter-paginate', () => {
         state,
         fetchData,
         applyRouteFilter,
-        isLoading
+        isLoading,
       } = usePaginationFilters<
         Trade,
         TradeRequestPayload,
@@ -84,7 +84,7 @@ describe('composables::history/filter-paginate', () => {
         Matcher
       >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
         onUpdateFilters,
-        extraParams
+        extraParams,
       });
 
       expect(get(userAction)).toBe(false);
@@ -103,7 +103,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(210);
     });
 
-    test('check the return types', async () => {
+    it('check the return types', async () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         Trade,
         TradeRequestPayload,
@@ -113,7 +113,7 @@ describe('composables::history/filter-paginate', () => {
         Matcher
       >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
         onUpdateFilters,
-        extraParams
+        extraParams,
       });
 
       expect(get(isLoading)).toBe(false);
@@ -125,7 +125,7 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
     });
 
-    test('modify filters and fetch data correctly', async () => {
+    it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['type'], sortDesc: ['true'] };
 
@@ -138,11 +138,11 @@ describe('composables::history/filter-paginate', () => {
         Matcher
       >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
         onUpdateFilters,
-        extraParams
+        extraParams,
       });
 
       await router.push({
-        query
+        query,
       });
 
       expect(pushSpy).toHaveBeenCalledOnce();

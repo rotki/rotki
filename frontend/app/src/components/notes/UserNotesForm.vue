@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { type UserNote } from '@/types/notes';
 import { toMessages } from '@/utils/validation';
+import type { UserNote } from '@/types/notes';
 
 const props = defineProps<{
   value: Partial<UserNote>;
@@ -23,15 +23,15 @@ const rules = {
   content: {
     required: helpers.withMessage(
       t('notes_menu.rules.content.non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const v$ = setValidation(
   rules,
   { content: computed(() => get(value).content) },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 </script>
 

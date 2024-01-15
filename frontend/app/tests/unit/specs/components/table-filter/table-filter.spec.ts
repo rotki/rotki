@@ -1,16 +1,16 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
-import { type StringSuggestionMatcher } from '@/types/filtering';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import createCustomPinia from '../../../utils/create-pinia';
+import type { StringSuggestionMatcher } from '@/types/filtering';
 
 vi.mocked(useCssModule).mockReturnValue({
-  suggestions: 'suggestions'
+  suggestions: 'suggestions',
 });
 
 describe('table-filter/FilterDropdown.vue', () => {
@@ -35,11 +35,11 @@ describe('table-filter/FilterDropdown.vue', () => {
           `,
           props: {
             value: { type: Array },
-            searchInput: { type: String }
-          }
-        }
+            searchInput: { type: String },
+          },
+        },
       },
-      ...options
+      ...options,
     });
   };
 
@@ -50,7 +50,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       description: 'filter by start date',
       string: true,
       suggestions: () => [],
-      validate: () => true
+      validate: () => true,
     },
     {
       key: 'type',
@@ -60,20 +60,20 @@ describe('table-filter/FilterDropdown.vue', () => {
       allowExclusion: true,
       multiple: true,
       suggestions: () => ['type 1', 'type 2', 'type 3'],
-      validate: () => true
-    }
+      validate: () => true,
+    },
   ];
 
-  it('Filter matchers', async () => {
+  it('filter matchers', async () => {
     const propsData = {
       matchers,
-      matches: {}
+      matches: {},
     };
 
     wrapper = createWrapper({ propsData });
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
-      matchers.length
+      matchers.length,
     );
 
     await wrapper.find('.search-input').trigger('input', { value: 'ty' });
@@ -82,14 +82,14 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(1);
     expect(wrapper.find('.suggestions > button:first-child').text()).toBe(
-      `${matchers[1].key}:  ${matchers[1].description}`
+      `${matchers[1].key}:  ${matchers[1].description}`,
     );
   });
 
-  it('Choose suggestions', async () => {
+  it('choose suggestions', async () => {
     const propsData = {
       matchers,
-      matches: {}
+      matches: {},
     };
 
     wrapper = createWrapper({ propsData });
@@ -102,12 +102,12 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
-      suggestions.length
+      suggestions.length,
     );
 
     suggestions.forEach((item, index) => {
       expect(
-        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text()
+        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text(),
       ).toBe(`type = ${item}`);
     });
 
@@ -119,11 +119,11 @@ describe('table-filter/FilterDropdown.vue', () => {
     expect(
       wrapper
         .find('.selections > span:nth-child(1) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type = type 1');
 
     expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
-      { type: ['type 1'] }
+      { type: ['type 1'] },
     ]);
 
     // Choose second suggestion (type 2)
@@ -140,11 +140,11 @@ describe('table-filter/FilterDropdown.vue', () => {
     expect(
       wrapper
         .find('.selections > span:nth-child(2) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type = type 2');
 
     expect(wrapper.emitted()['update:matches']?.[1]).toEqual([
-      { type: ['type 1', 'type 2'] }
+      { type: ['type 1', 'type 2'] },
     ]);
 
     // Remove first selected item (type 1)
@@ -155,7 +155,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[2]).toEqual([
-      { type: ['type 2'] }
+      { type: ['type 2'] },
     ]);
 
     // Click selected item remains (type 2), set it to text field
@@ -167,14 +167,14 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(wrapper.emitted()['update:matches']?.[3]).toEqual([{}]);
     expect(
-      (wrapper.find('.search-input').element as HTMLInputElement).value
+      (wrapper.find('.search-input').element as HTMLInputElement).value,
     ).toBe('type=type 2');
   });
 
-  it('Choose suggestions with exclusion', async () => {
+  it('choose suggestions with exclusion', async () => {
     const propsData = {
       matchers,
-      matches: {}
+      matches: {},
     };
 
     wrapper = createWrapper({ propsData });
@@ -187,12 +187,12 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
-      suggestions.length
+      suggestions.length,
     );
 
     suggestions.forEach((item, index) => {
       expect(
-        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text()
+        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text(),
       ).toBe(`type != ${item}`);
     });
 
@@ -204,20 +204,20 @@ describe('table-filter/FilterDropdown.vue', () => {
     expect(
       wrapper
         .find('.selections > span:nth-child(1) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type != type 1');
 
     expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
-      { type: ['!type 1'] }
+      { type: ['!type 1'] },
     ]);
   });
 
-  it('Restore selection', async () => {
+  it('restore selection', async () => {
     const propsData = {
       matchers,
       matches: {
-        type: ['type 1', 'type 2']
-      }
+        type: ['type 1', 'type 2'],
+      },
     };
 
     wrapper = createWrapper({ propsData });
@@ -227,21 +227,21 @@ describe('table-filter/FilterDropdown.vue', () => {
     expect(
       wrapper
         .find('.selections > span:nth-child(1) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type = type 1');
     expect(
       wrapper
         .find('.selections > span:nth-child(2) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type = type 2');
   });
 
-  it('Restore selection with exclusion', async () => {
+  it('restore selection with exclusion', async () => {
     const propsData = {
       matchers,
       matches: {
-        type: '!type 1'
-      }
+        type: '!type 1',
+      },
     };
 
     wrapper = createWrapper({ propsData });
@@ -251,7 +251,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     expect(
       wrapper
         .find('.selections > span:nth-child(1) div[role=button] span')
-        .text()
+        .text(),
     ).toBe('type != type 1');
   });
 });

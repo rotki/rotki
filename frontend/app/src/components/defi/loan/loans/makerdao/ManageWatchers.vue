@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
   vault: MakerDAOVaultModel;
@@ -17,26 +17,25 @@ const premium = usePremium();
 
 const watchers = computed(() => {
   const { identifier } = get(vault);
-  return get(loanWatchers).filter(watcher => {
+  return get(loanWatchers).filter((watcher) => {
     const watcherArgs = watcher.args;
     return watcherArgs.vaultId.includes(identifier);
   });
 });
 
-const openWatcherDialog = () => {
-  if (!get(premium)) {
+function openWatcherDialog() {
+  if (!get(premium))
     return;
-  }
 
   const { collateralizationRatio, identifier, liquidationRatio } = get(vault);
   const params = {
     collateralizationRatio,
     identifier,
-    liquidationRatio
+    liquidationRatio,
   };
   set(showWatcherDialog, true);
   set(watcherMessage, t('loan_collateral.watchers.dialog.message', params));
-};
+}
 </script>
 
 <template>
@@ -51,7 +50,10 @@ const openWatcherDialog = () => {
       @click="openWatcherDialog()"
     >
       <template #prepend>
-        <RuiIcon class="my-1" name="notification-line" />
+        <RuiIcon
+          class="my-1"
+          name="notification-line"
+        />
       </template>
 
       <template v-if="watchers.length > 0">
@@ -59,9 +61,9 @@ const openWatcherDialog = () => {
           t(
             'loan_collateral.watchers.edit',
             {
-              n: watchers.length
+              n: watchers.length,
             },
-            watchers.length
+            watchers.length,
           )
         }}
       </template>

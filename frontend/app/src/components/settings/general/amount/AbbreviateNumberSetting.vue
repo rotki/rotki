@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
+import type { Ref } from 'vue';
 
 const abbreviate: Ref<boolean> = ref(false);
 const { abbreviateNumber } = storeToRefs(useFrontendSettingsStore());

@@ -180,7 +180,7 @@ import {
   RiWifiOffLine,
   type RuiOptions,
   ThemeMode,
-  createRui
+  createRui,
 } from '@rotki/ui-library-compat';
 import '@rotki/ui-library-compat/style.css';
 
@@ -373,8 +373,8 @@ export default (defaults: Partial<RuiOptions['defaults']>) =>
         RiLayoutGridLine,
         RiSettings2Line,
         RiWaterPercentLine,
-        RiEqualizerLine
-      ]
+        RiEqualizerLine,
+      ],
     },
-    defaults
+    defaults,
   });

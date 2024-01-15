@@ -19,7 +19,7 @@ describe('settings::general', () => {
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as 'after' | 'before',
-    rpcEndpoint: 'http://localhost:8545'
+    rpcEndpoint: 'http://localhost:8545',
   };
 
   before(() => {
@@ -34,7 +34,7 @@ describe('settings::general', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     pageGeneral.confirmInlineSuccess(
       '.general-settings__fields__floating-precision .details',
-      settings.floatingPrecision
+      settings.floatingPrecision,
     );
   });
 
@@ -46,7 +46,7 @@ describe('settings::general', () => {
     pageGeneral.selectCurrency(settings.currency);
     pageGeneral.confirmInlineSuccess(
       '.general-settings__fields__currency-selector .v-messages__message',
-      settings.currency
+      settings.currency,
     );
   });
 
@@ -54,7 +54,7 @@ describe('settings::general', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
     pageGeneral.confirmInlineSuccess(
       '.general-settings__fields__balance-save-frequency .details',
-      settings.balanceSaveFrequency
+      settings.balanceSaveFrequency,
     );
   });
 
@@ -62,7 +62,7 @@ describe('settings::general', () => {
     pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
     pageGeneral.confirmInlineSuccess(
       '.general-settings__fields__date-display-format .details',
-      settings.dateDisplayFormat
+      settings.dateDisplayFormat,
     );
   });
 
@@ -79,7 +79,7 @@ describe('settings::general', () => {
     pageGeneral.confirmRPCAddition(name, endpoint);
   });
 
-  it('verify changed settings', () => {
+  it('verify changed settings after changing rpc', () => {
     pageGeneral.navigateAway();
     pageGeneral.visit();
     pageGeneral.verify(settings);

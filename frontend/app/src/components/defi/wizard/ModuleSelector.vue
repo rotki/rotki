@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
 import {
   Module,
   SUPPORTED_MODULES,
-  type SupportedModule
+  type SupportedModule,
 } from '@/types/modules';
 import { Section } from '@/types/status';
-import { type CamelCase } from '@/types/common';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { CamelCase } from '@/types/common';
 
 const { t } = useI18n();
 
@@ -27,18 +27,18 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.name'),
     key: 'name',
-    class: 'w-full'
+    class: 'w-full',
   },
   {
     label: t('module_selector.table.select_accounts'),
-    key: 'selectedAccounts'
+    key: 'selectedAccounts',
   },
   {
     label: t('module_selector.table.enabled'),
     key: 'enabled',
     align: 'end',
-    cellClass: 'flex justify-end align-center'
-  }
+    cellClass: 'flex justify-end align-center',
+  },
 ]);
 
 const modules = computed<(SupportedModule & { enabled: boolean })[]>(() => {
@@ -49,71 +49,67 @@ const modules = computed<(SupportedModule & { enabled: boolean })[]>(() => {
     : supportedModules;
   return filteredModules.map(module => ({
     ...module,
-    enabled: active.includes(module.identifier)
+    enabled: active.includes(module.identifier),
   }));
 });
 
 const { start: fetch } = useTimeoutFn(() => resetStatus(), 800, {
-  immediate: false
+  immediate: false,
 });
 const { start: clearNfBalances } = useTimeoutFn(
   () => balancesStore.$reset(),
   800,
-  { immediate: false }
+  { immediate: false },
 );
 
-const update = async (activeModules: Module[]) => {
+async function update(activeModules: Module[]) {
   set(loading, true);
   await updateSettings({ activeModules });
   set(loading, false);
-};
+}
 
-const switchModule = async (module: Module, enabled: boolean) => {
+async function switchModule(module: Module, enabled: boolean) {
   const active = get(activeModules);
   let modules: Module[];
-  if (enabled) {
+  if (enabled)
     modules = [...active, module];
-  } else {
+  else
     modules = active.filter(m => m !== module);
-  }
 
   await update(modules);
   if (module === Module.NFTS) {
-    if (enabled) {
+    if (enabled)
       fetch();
-    } else {
+    else
       clearNfBalances();
-    }
   }
-};
+}
 
-const enableAll = async () => {
+async function enableAll() {
   const allModules = supportedModules.map(x => x.identifier);
   const active = get(activeModules);
   const activatedModules = allModules.filter(m => !active.includes(m));
   await update(allModules);
 
-  if (activatedModules.includes(Module.NFTS)) {
+  if (activatedModules.includes(Module.NFTS))
     fetch();
-  }
-};
+}
 
-const disableAll = async () => {
+async function disableAll() {
   const active = get(activeModules);
   await update([]);
-  if (active.includes(Module.NFTS)) {
+  if (active.includes(Module.NFTS))
     clearNfBalances();
-  }
-};
+}
 
-const selected = (identifier: Module) => {
+function selected(identifier: Module) {
   const index = transformCase(identifier, true) as CamelCase<Module>;
   const addresses = get(queriedAddresses)[index];
-  if (!addresses || addresses.length === 0) {
+  if (!addresses || addresses.length === 0)
     return t('module_selector.all_accounts');
-  }
+
   return addresses.length.toString();
-};
+}
 
 onMounted(async () => {
   await queriedAddressStore.fetchQueriedAddresses();
@@ -170,14 +166,19 @@ onMounted(async () => {
             width="26px"
             height="26px"
           >
-            <AppImage width="26px" contain max-height="24px" :src="row.icon" />
+            <AppImage
+              width="26px"
+              contain
+              max-height="24px"
+              :src="row.icon"
+            />
           </AdaptiveWrapper>
           <span> {{ row.name }}</span>
         </div>
       </template>
 
       <template #item.selectedAccounts="{ row }">
-        <div class="flex align-center text-no-wrap">
+        <div class="flex items-center text-no-wrap">
           <RowActions
             no-delete
             class="px-4"

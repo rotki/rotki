@@ -1,16 +1,16 @@
-import {
-  type Eth2DailyStats,
-  type Eth2DailyStatsPayload
+import type {
+  Eth2DailyStats,
+  Eth2DailyStatsPayload,
 } from '@rotki/common/lib/staking/eth2';
-import { type MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from '@vueuse/core';
 
-export const useEth2DailyStats = () => {
+export function useEth2DailyStats() {
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const defaultPagination = (): Eth2DailyStatsPayload => ({
     limit: get(itemsPerPage),
     offset: 0,
     orderByAttributes: ['timestamp'],
-    ascending: [false]
+    ascending: [false],
   });
 
   const pagination: Ref<Eth2DailyStatsPayload> = ref(defaultPagination());
@@ -20,24 +20,24 @@ export const useEth2DailyStats = () => {
   const {
     state: dailyStats,
     execute,
-    isLoading: dailyStatsLoading
+    isLoading: dailyStatsLoading,
   } = useAsyncState<Eth2DailyStats, MaybeRef<Eth2DailyStatsPayload>[]>(
     fetchStakingStats,
     {
       entries: [],
       entriesFound: 0,
       entriesTotal: 0,
-      sumPnl: Zero
+      sumPnl: Zero,
     },
     {
       immediate: false,
       resetOnExecute: false,
-      delay: 0
-    }
+      delay: 0,
+    },
   );
 
   const fetchDailyStats = async (
-    payload: Eth2DailyStatsPayload
+    payload: Eth2DailyStatsPayload,
   ): Promise<void> => {
     await execute(0, payload);
   };
@@ -49,6 +49,6 @@ export const useEth2DailyStats = () => {
     dailyStats,
     dailyStatsLoading,
     fetchDailyStats,
-    syncStakingStats
+    syncStakingStats,
   };
-};
+}

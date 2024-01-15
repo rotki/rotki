@@ -19,14 +19,14 @@ export class GeneralSettingsPage {
   setFloatingPrecision(value: string) {
     this.setInputFieldValue(
       '.general-settings__fields__floating-precision input',
-      value
+      value,
     );
   }
 
   changeAnonymousUsageStatistics() {
     cy.get('.general-settings__fields__anonymous-usage-statistics').click();
     this.confirmInlineSuccess(
-      '.general-settings__fields__anonymous-usage-statistics .v-messages__message'
+      '.general-settings__fields__anonymous-usage-statistics .v-messages__message',
     );
   }
 
@@ -38,14 +38,14 @@ export class GeneralSettingsPage {
   setBalanceSaveFrequency(value: string) {
     this.setInputFieldValue(
       '.general-settings__fields__balance-save-frequency input',
-      value
+      value,
     );
   }
 
   setDateDisplayFormat(value: string) {
     this.setInputFieldValue(
       '.general-settings__fields__date-display-format input',
-      value
+      value,
     );
   }
 
@@ -55,48 +55,47 @@ export class GeneralSettingsPage {
 
   changePassword(currentPassword: string, newPassword: string) {
     cy.get(
-      '.general-settings__account-and-security__fields__current-password input'
+      '.general-settings__account-and-security__fields__current-password input',
     ).clear();
     cy.get(
-      '.general-settings__account-and-security__fields__current-password input'
+      '.general-settings__account-and-security__fields__current-password input',
     ).type(currentPassword);
 
     cy.get(
-      '.general-settings__account-and-security__fields__new-password input'
+      '.general-settings__account-and-security__fields__new-password input',
     ).clear();
     cy.get(
-      '.general-settings__account-and-security__fields__new-password input'
+      '.general-settings__account-and-security__fields__new-password input',
     ).type(newPassword);
 
     cy.get(
-      '.general-settings__account-and-security__fields__new-password-confirm input'
+      '.general-settings__account-and-security__fields__new-password-confirm input',
     ).clear();
     cy.get(
-      '.general-settings__account-and-security__fields__new-password-confirm input'
+      '.general-settings__account-and-security__fields__new-password-confirm input',
     ).type(newPassword);
 
     cy.get(
-      '.general-settings__account-and-security__buttons__change-password'
+      '.general-settings__account-and-security__buttons__change-password',
     ).click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
     cy.get(target).as('message');
     cy.get('@message').should('include.text', 'Setting saved');
-    if (messageContains) {
+    if (messageContains)
       cy.get('@message').should('include.text', messageContains);
-    }
   }
 
   confirmInlineFailure(target: string, messageContains?: string) {
     cy.get(`${target} .v-messages__message`).should(
       'include.text',
-      'Setting not saved'
+      'Setting not saved',
     );
     if (messageContains) {
       cy.get(`${target} .v-messages__message`).should(
         'include.text',
-        messageContains
+        messageContains,
       );
     }
   }
@@ -114,37 +113,37 @@ export class GeneralSettingsPage {
   }) {
     cy.get('.general-settings__fields__floating-precision input').should(
       'have.value',
-      settings.floatingPrecision
+      settings.floatingPrecision,
     );
     cy.get('.general-settings__fields__anonymous-usage-statistics input')
       .should('have.attr', 'aria-checked')
       .and('include', `${settings.anonymousUsageStatistics}`);
     cy.get(
-      '.general-settings__fields__currency-selector .v-select__selection'
+      '.general-settings__fields__currency-selector .v-select__selection',
     ).should('have.text', settings.currency);
     cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
-      settings.balanceSaveFrequency
+      settings.balanceSaveFrequency,
     );
     cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',
-      settings.dateDisplayFormat
+      settings.dateDisplayFormat,
     );
     cy.get('.general-settings__fields__thousand-separator input').should(
       'have.value',
-      settings.thousandSeparator
+      settings.thousandSeparator,
     );
     cy.get('.general-settings__fields__decimal-separator input').should(
       'have.value',
-      settings.decimalSeparator
+      settings.decimalSeparator,
     );
     cy.get('.general-settings__fields__currency-location input').should(
       'have.length',
-      2
+      2,
     );
     cy.get(`.general-settings__fields__currency-location input:checked`).should(
       'have.value',
-      settings.currencyLocation
+      settings.currencyLocation,
     );
   }
 

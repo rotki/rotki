@@ -1,12 +1,12 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { api } from '@/services/rotkehlchen-api';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,
-  type SyncAction
+  type SyncAction,
 } from '@/types/session/sync';
+import type { TaskMeta } from '@/types/task';
 
 export const useSync = createSharedComposable(() => {
   const { isTaskRunning, awaitTask } = useTaskStore();
@@ -28,36 +28,35 @@ export const useSync = createSharedComposable(() => {
 
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
     const taskType = TaskType.FORCE_SYNC;
-    if (get(isTaskRunning(taskType))) {
+    if (get(isTaskRunning(taskType)))
       return;
-    }
 
     const notifyFailure = (error: string): void => {
       const title = t('actions.session.force_sync.error.title');
       const message = t('actions.session.force_sync.error.message', {
-        error
+        error,
       });
 
       notify({
         title,
         message,
-        display: true
+        display: true,
       });
     };
 
     try {
       api.cancel();
       const action = get(syncAction);
-      if (action === SYNC_UPLOAD) {
+      if (action === SYNC_UPLOAD)
         set(displaySyncConfirmation, false);
-      }
+
       const { taskId } = await useSyncApi().forceSync(action);
       const { result, message } = await awaitTask<boolean, TaskMeta>(
         taskId,
         taskType,
         {
-          title: t('actions.session.force_sync.task.title')
-        }
+          title: t('actions.session.force_sync.task.title'),
+        },
       );
 
       if (result) {
@@ -68,19 +67,19 @@ export const useSync = createSharedComposable(() => {
           title,
           message,
           severity: Severity.INFO,
-          display: true
+          display: true,
         });
 
-        if (action === SYNC_DOWNLOAD) {
+        if (action === SYNC_DOWNLOAD)
           await logout();
-        }
-      } else {
+      }
+      else {
         notifyFailure(message ?? '');
       }
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        notifyFailure(e.message);
-      }
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error))
+        notifyFailure(error.message);
     }
   };
 
@@ -90,6 +89,6 @@ export const useSync = createSharedComposable(() => {
     displaySyncConfirmation,
     forceSync,
     cancelSync,
-    showSyncConfirmation
+    showSyncConfirmation,
   };
 });

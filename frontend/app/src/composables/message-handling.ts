@@ -1,9 +1,8 @@
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type Notification,
   NotificationGroup,
   Priority,
-  Severity
+  Severity,
 } from '@rotki/common/lib/messages';
 import {
   type AccountingRuleConflictData,
@@ -17,19 +16,20 @@ import {
   type NewDetectedToken,
   type PremiumStatusUpdateData,
   SocketMessageType,
-  WebsocketMessage
+  WebsocketMessage,
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import router from '@/router';
 import { SYNC_UPLOAD } from '@/types/session/sync';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
-export const useMessageHandling = () => {
+export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { setEvmUndecodedTransactions } = useHistoryStore();
-  const { updateDataMigrationStatus, updateDbUpgradeStatus } =
-    useSessionAuthStore();
+  const { updateDataMigrationStatus, updateDbUpgradeStatus }
+    = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
@@ -43,7 +43,7 @@ export const useMessageHandling = () => {
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
     title: t('notification_messages.snapshot_failed.title'),
     message: t('notification_messages.snapshot_failed.message', data),
-    display: true
+    display: true,
   });
 
   const handleEvmTransactionsStatus = (data: EvmTransactionQueryData): void => {
@@ -51,7 +51,7 @@ export const useMessageHandling = () => {
   };
 
   const handleEvmUndecodedTransaction = (
-    data: EvmUndecodedTransactionsData
+    data: EvmUndecodedTransactionsData,
   ): void => {
     setEvmUndecodedTransactions(data);
   };
@@ -62,17 +62,17 @@ export const useMessageHandling = () => {
 
   const handleLegacyMessage = (
     message: string,
-    isWarning: boolean
+    isWarning: boolean,
   ): Notification => ({
     title: t('notification_messages.backend.title'),
     message,
     display: !isWarning,
     severity: isWarning ? Severity.WARNING : Severity.ERROR,
-    priority: Priority.BULK
+    priority: Priority.BULK,
   });
 
   const handlePremiumStatusUpdate = (
-    data: PremiumStatusUpdateData
+    data: PremiumStatusUpdateData,
   ): Notification | null => {
     const { isPremiumActive: active, expired } = data;
     const premium = usePremium();
@@ -84,16 +84,17 @@ export const useMessageHandling = () => {
         title: t('notification_messages.premium.active.title'),
         message: t('notification_messages.premium.active.message'),
         display: true,
-        severity: Severity.INFO
+        severity: Severity.INFO,
       };
-    } else if (!active && isPremium) {
+    }
+    else if (!active && isPremium) {
       return {
         title: t('notification_messages.premium.inactive.title'),
         message: expired
           ? t('notification_messages.premium.inactive.expired_message')
           : t('notification_messages.premium.inactive.network_problem_message'),
         display: true,
-        severity: Severity.ERROR
+        severity: Severity.ERROR,
       };
     }
 
@@ -104,18 +105,17 @@ export const useMessageHandling = () => {
   const { getChainName } = useSupportedChains();
 
   const handleNewTokenDetectedMessage = (
-    data: NewDetectedToken
+    data: NewDetectedToken,
   ): Notification | null => {
     const notification = get(notifications).find(
-      ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS
+      ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS,
     );
 
     const countAdded = addNewDetectedToken(data);
     const count = (notification?.groupCount || 0) + +countAdded;
 
-    if (count === 0) {
+    if (count === 0)
       return null;
-    }
 
     return {
       title: t('notification_messages.new_detected_token.title', count),
@@ -123,19 +123,19 @@ export const useMessageHandling = () => {
         'notification_messages.new_detected_token.message',
         {
           identifier: data.tokenIdentifier,
-          count
+          count,
         },
-        count
+        count,
       ),
       display: true,
       severity: Severity.INFO,
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.new_detected_token.action'),
-        action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED)
+        action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
       },
       group: NotificationGroup.NEW_DETECTED_TOKENS,
-      groupCount: count
+      groupCount: count,
     };
   };
 
@@ -147,7 +147,7 @@ export const useMessageHandling = () => {
     return {
       title: t('notification_messages.missing_api_key.title', {
         service: toHumanReadable(service, 'capitalize'),
-        location: toHumanReadable(locationName, 'capitalize')
+        location: toHumanReadable(locationName, 'capitalize'),
       }),
       message: '',
       i18nParam: {
@@ -157,8 +157,8 @@ export const useMessageHandling = () => {
           service: toHumanReadable(service, 'capitalize'),
           location: toHumanReadable(locationName, 'capitalize'),
           key: location,
-          url: external ?? ''
-        }
+          url: external ?? '',
+        },
       },
       severity: Severity.WARNING,
       priority: Priority.ACTION,
@@ -166,41 +166,40 @@ export const useMessageHandling = () => {
         ? undefined
         : {
             label: t('notification_messages.missing_api_key.action'),
-            action: () => router.push(route)
-          }
+            action: () => router.push(route),
+          },
     };
   };
 
   const handleDbUploadMessage = (data: DbUploadResult): Notification | null => {
     const { actionable, message, uploaded } = data;
 
-    if (!actionable || uploaded) {
+    if (!actionable || uploaded)
       return null;
-    }
 
     return {
       title: t('notification_messages.db_upload_result.title'),
       message: t('notification_messages.db_upload_result.message', {
-        reason: message
+        reason: message,
       }),
       severity: Severity.WARNING,
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.db_upload_result.action'),
-        action: () => showSyncConfirmation(SYNC_UPLOAD)
-      }
+        action: () => showSyncConfirmation(SYNC_UPLOAD),
+      },
     };
   };
 
   const handleAccountingRuleConflictMessage = (
-    data: AccountingRuleConflictData
+    data: AccountingRuleConflictData,
   ): Notification => {
     const { numOfConflicts } = data;
 
     return {
       title: t('notification_messages.accounting_rule_conflict.title'),
       message: t('notification_messages.accounting_rule_conflict.message', {
-        conflicts: numOfConflicts
+        conflicts: numOfConflicts,
       }),
       display: true,
       severity: Severity.WARNING,
@@ -210,60 +209,73 @@ export const useMessageHandling = () => {
         action: () =>
           router.push({
             path: Routes.SETTINGS_ACCOUNTING,
-            query: { resolveConflicts: 'true' }
-          })
-      }
+            query: { resolveConflicts: 'true' },
+          }),
+      },
     };
   };
 
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
-      camelCaseTransformer(JSON.parse(data))
+      camelCaseTransformer(JSON.parse(data)),
     );
     const type = message.type;
 
     const notifications: Notification[] = [];
 
     const addNotification = (notification: Notification | null) => {
-      if (notification) {
+      if (notification)
         notifications.push(notification);
-      }
     };
 
     if (type === SocketMessageType.MISSING_API_KEY) {
       notifications.push(handleMissingApiKeyMessage(message.data));
-    } else if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
+    }
+    else if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
       notifications.push(handleSnapshotError(message.data));
-    } else if (type === SocketMessageType.LEGACY) {
+    }
+    else if (type === SocketMessageType.LEGACY) {
       const data = message.data;
       const isWarning = data.verbosity === MESSAGE_WARNING;
       notifications.push(handleLegacyMessage(data.value, isWarning));
-    } else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
+    }
+    else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
       handleEvmTransactionsStatus(message.data);
-    } else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
+    }
+    else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
       handleEvmUndecodedTransaction(message.data);
-    } else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
+    }
+    else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       handleHistoryEventsStatus(message.data);
-    } else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
+    }
+    else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
       addNotification(handlePremiumStatusUpdate(message.data));
-    } else if (type === SocketMessageType.DB_UPGRADE_STATUS) {
+    }
+    else if (type === SocketMessageType.DB_UPGRADE_STATUS) {
       updateDbUpgradeStatus(message.data);
-    } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
+    }
+    else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
       updateDataMigrationStatus(message.data);
-    } else if (type === SocketMessageType.EVM_ACCOUNTS_DETECTION) {
+    }
+    else if (type === SocketMessageType.EVM_ACCOUNTS_DETECTION) {
       setUpgradedAddresses(message.data);
-    } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
+    }
+    else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       addNotification(handleNewTokenDetectedMessage(message.data));
-    } else if (type === SocketMessageType.REFRESH_BALANCES) {
+    }
+    else if (type === SocketMessageType.REFRESH_BALANCES) {
       await fetchBlockchainBalances({
         blockchain: message.data.blockchain,
-        ignoreCache: true
+        ignoreCache: true,
       });
-    } else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
+    }
+    else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
       addNotification(handleDbUploadMessage(message.data));
-    } else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
+    }
+    else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
-    } else {
+    }
+    else {
       logger.warn(`Unsupported socket message received: '${type}'`);
     }
 
@@ -275,31 +287,30 @@ export const useMessageHandling = () => {
 
     try {
       const object = JSON.parse(message);
-      if (!object.type) {
+      if (!object.type)
         notifications.push(handleLegacyMessage(message, isWarning));
-      } else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
+      else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
-      } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
+      else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
         await handleEvmTransactionsStatus(object);
-      } else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
+      else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
         await handleEvmUndecodedTransaction(object);
-      } else if (object.type === SocketMessageType.DB_UPGRADE_STATUS) {
+      else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         await updateDbUpgradeStatus(object);
-      } else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS) {
+      else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
         await updateDataMigrationStatus(object);
-      } else {
+      else
         logger.error('unsupported message:', message);
-      }
-    } catch {
+    }
+    catch {
       notifications.push(handleLegacyMessage(message, isWarning));
     }
     notifications.forEach(notify);
   };
 
   const consume = async (): Promise<void> => {
-    if (isRunning) {
+    if (isRunning)
       return;
-    }
 
     isRunning = true;
     const title = t('actions.notifications.consume.message_title');
@@ -315,20 +326,22 @@ export const useMessageHandling = () => {
         .filter(uniqueStrings)
         .filter(warning => !existing.includes(warning))
         .forEach(message => handlePollingMessage(message, true));
-    } catch (e: any) {
-      const message = e.message || e;
+    }
+    catch (error: any) {
+      const message = error.message || error;
       notify({
         title,
         message,
-        display: true
+        display: true,
       });
-    } finally {
+    }
+    finally {
       isRunning = false;
     }
   };
 
   return {
     handleMessage,
-    consume
+    consume,
   };
-};
+}

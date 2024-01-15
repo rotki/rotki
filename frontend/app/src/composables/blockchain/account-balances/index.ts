@@ -1,12 +1,12 @@
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type BlockchainTotal } from '@/types/blockchain';
-import {
-  type AssetBreakdown,
-  type BlockchainAccountWithBalance
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { BlockchainTotal } from '@/types/blockchain';
+import type {
+  AssetBreakdown,
+  BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
 
-export const useAccountBalances = () => {
+export function useAccountBalances() {
   const ethStore = useEthAccountBalances();
   const btcStore = useBtcAccountBalances();
   const chainStore = useChainAccountBalances();
@@ -21,7 +21,7 @@ export const useAccountBalances = () => {
     arbitrumAccounts,
     baseAccounts,
     gnosisAccounts,
-    chainTotals
+    chainTotals,
   } = chainStore;
 
   const accounts: ComputedRef<GeneralAccount[]> = computed(() =>
@@ -41,18 +41,18 @@ export const useAccountBalances = () => {
         chain: account.chain,
         address: account.address,
         label: account.label,
-        tags: account.tags
-      }))
+        tags: account.tags,
+      })),
   );
 
   const getAccountByAddress = (
     address: string,
-    location: string
+    location: string,
   ): ComputedRef<GeneralAccount | undefined> =>
     computed(() =>
       get(accounts).find(
-        acc => acc.address === address && acc.chain === location
-      )
+        acc => acc.address === address && acc.chain === location,
+      ),
     );
 
   const getAccountsByChain = (blockchain: Blockchain): string[] => {
@@ -68,16 +68,16 @@ export const useAccountBalances = () => {
       [Blockchain.POLYGON_POS]: polygonAccounts,
       [Blockchain.ARBITRUM_ONE]: arbitrumAccounts,
       [Blockchain.BASE]: baseAccounts,
-      [Blockchain.GNOSIS]: gnosisAccounts
+      [Blockchain.GNOSIS]: gnosisAccounts,
     };
 
     const accounts = get(mapping[blockchain]);
     return accounts
-      .flatMap(account => {
+      .flatMap((account) => {
         const acc = [account.address.toLocaleLowerCase()];
-        if ('xpub' in account) {
+        if ('xpub' in account)
           acc.push(account.xpub);
-        }
+
         return acc;
       })
       .filter(uniqueStrings);
@@ -88,7 +88,7 @@ export const useAccountBalances = () => {
       .concat(get(bitcoinTotals))
       .concat(get(chainTotals))
       .filter(item => item.usdValue.gt(0))
-      .sort((a, b) => sortDesc(a.usdValue, b.usdValue))
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue)),
   );
 
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
@@ -96,7 +96,7 @@ export const useAccountBalances = () => {
       get(ethStore.getBreakdown(asset))
         .concat(get(btcStore.getBreakdown(asset)))
         .concat(get(chainStore.getBreakdown(asset)))
-        .filter(item => !item.balance.amount.isZero())
+        .filter(item => !item.balance.amount.isZero()),
     );
 
   return {
@@ -104,6 +104,6 @@ export const useAccountBalances = () => {
     blockchainTotals,
     getAccountByAddress,
     getAccountsByChain,
-    getBreakdown
+    getBreakdown,
   };
-};
+}

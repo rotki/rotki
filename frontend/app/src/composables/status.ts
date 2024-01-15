@@ -1,21 +1,21 @@
 import { type Section, Status } from '@/types/status';
 
-export const useStatusUpdater = (section: Section, ignore = false) => {
+export function useStatusUpdater(section: Section, ignore = false) {
   const { setStatus, getStatus, isLoading } = useStatusStore();
   const updateStatus = (status: Status, otherSection?: Section) => {
-    if (ignore) {
+    if (ignore)
       return;
-    }
+
     setStatus({
       section: otherSection ?? section,
-      status
+      status,
     });
   };
 
   const resetStatus = (otherSection?: Section) => {
     setStatus({
       section: otherSection ?? section,
-      status: Status.NONE
+      status: Status.NONE,
     });
   };
 
@@ -37,6 +37,6 @@ export const useStatusUpdater = (section: Section, ignore = false) => {
     setStatus: updateStatus,
     getStatus: getSectionStatus,
     fetchDisabled,
-    resetStatus
+    resetStatus,
   };
-};
+}

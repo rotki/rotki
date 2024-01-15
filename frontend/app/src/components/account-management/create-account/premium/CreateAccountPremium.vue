@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { type PremiumSetup } from '@/types/login';
+import type { PremiumSetup } from '@/types/login';
 
 const props = defineProps<{
   loading: boolean;
@@ -22,7 +22,7 @@ const valid: Ref<boolean> = ref(false);
 
 const premiumSelectionButtons = computed(() => [
   { value: false, text: t('common.actions.no') },
-  { value: true, text: t('create_account.premium.button_premium_approve') }
+  { value: true, text: t('create_account.premium.button_premium_approve') },
 ]);
 </script>
 
@@ -34,7 +34,10 @@ const premiumSelectionButtons = computed(() => [
       class="text-center text-rui-text-secondary whitespace-break-spaces"
     >
       <template #premiumLink>
-        <ExternalLink :text="t('common.here')" premium />.
+        <ExternalLink
+          :text="t('common.here')"
+          premium
+        />.
       </template>
     </i18n>
     <div class="mt-8 flex justify-center gap-5">

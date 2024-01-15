@@ -1,23 +1,23 @@
-import { beforeAll, describe, test, vi } from 'vitest';
+import { beforeAll, describe, it, vi } from 'vitest';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn(),
   useRouter: vi.fn().mockReturnValue({
-    push: vi.fn()
-  })
+    push: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/session', () => ({
   useSessionStore: vi.fn().mockReturnValue({
     login: vi.fn(),
-    createAccount: vi.fn()
-  })
+    createAccount: vi.fn(),
+  }),
 }));
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
-    premiumUserLoggedIn: vi.fn()
-  })
+    premiumUserLoggedIn: vi.fn(),
+  }),
 }));
 
 describe('composables::user/account', () => {
@@ -29,11 +29,11 @@ describe('composables::user/account', () => {
   describe('existing account', () => {
     const { login } = useSessionStore();
 
-    test('login success, should not show error message', async () => {
+    it('login success, should not show error message', async () => {
       const { userLogin, errors } = useAccountManagement();
 
       vi.mocked(login).mockResolvedValue({
-        success: true
+        success: true,
       });
 
       await userLogin({ username: 'test', password: '1234' });
@@ -41,12 +41,12 @@ describe('composables::user/account', () => {
       expect(get(errors)).toStrictEqual([]);
     });
 
-    test('login failed, should show error message', async () => {
+    it('login failed, should show error message', async () => {
       const { userLogin, errors } = useAccountManagement();
 
       vi.mocked(login).mockResolvedValue({
         success: false,
-        message: 'errors'
+        message: 'errors',
       });
 
       await userLogin({ username: 'test', password: '1234' });
@@ -58,71 +58,71 @@ describe('composables::user/account', () => {
   describe('new account', () => {
     const { createAccount } = useSessionStore();
 
-    test('create account success, should not show error message', async () => {
+    it('create account success, should not show error message', async () => {
       const { createNewAccount, error } = useAccountManagement();
 
       vi.mocked(createAccount).mockResolvedValue({
-        success: true
+        success: true,
       });
 
       await createNewAccount({
-        credentials: { username: 'test', password: '1234' }
+        credentials: { username: 'test', password: '1234' },
       });
 
       expect(get(error)).toStrictEqual('');
     });
 
-    test('login failed, should show error message', async () => {
+    it('login failed, should show error message', async () => {
       const { createNewAccount, error } = useAccountManagement();
 
       vi.mocked(createAccount).mockResolvedValue({
         success: false,
-        message: 'errors'
+        message: 'errors',
       });
 
       await createNewAccount({
         credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: true }
+        initialSettings: { submitUsageAnalytics: true },
       });
 
       expect(get(error)).toStrictEqual('errors');
     });
 
-    test('create account with submitUsageAnalytics true', async () => {
+    it('create account with submitUsageAnalytics true', async () => {
       const { createNewAccount } = useAccountManagement();
       vi.clearAllMocks();
       vi.mocked(createAccount).mockResolvedValue({
         success: false,
-        message: 'errors'
+        message: 'errors',
       });
 
       await createNewAccount({
         credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: true }
+        initialSettings: { submitUsageAnalytics: true },
       });
 
       expect(createAccount).toHaveBeenCalledWith({
         credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: true }
+        initialSettings: { submitUsageAnalytics: true },
       });
     });
 
-    test('create account with submitUsageAnalytics false', async () => {
+    it('create account with submitUsageAnalytics false', async () => {
       const { createNewAccount } = useAccountManagement();
       vi.clearAllMocks();
       vi.mocked(createAccount).mockResolvedValue({
         success: false,
-        message: 'errors'
+        message: 'errors',
       });
 
       await createNewAccount({
         credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false }
+        initialSettings: { submitUsageAnalytics: false },
       });
 
       expect(createAccount).toHaveBeenCalledWith({
         credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false }
+        initialSettings: { submitUsageAnalytics: false },
       });
     });
   });

@@ -5,19 +5,19 @@ import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
-    premiumUserLoggedIn: vi.fn()
+    premiumUserLoggedIn: vi.fn(),
   };
   return {
     useInterop: vi.fn().mockReturnValue(mockInterop),
-    interop: mockInterop
+    interop: mockInterop,
   };
 });
 
 vi.mock('@/composables/api/session/premium-credentials', () => ({
-  usePremiumCredentialsApi: vi.fn().mockReturnValue({})
+  usePremiumCredentialsApi: vi.fn().mockReturnValue({}),
 }));
 
-describe('PremiumSettings.vue', () => {
+describe('premiumSettings.vue', () => {
   let wrapper: Wrapper<PremiumSettings>;
   let api: ReturnType<typeof usePremiumCredentialsApi>;
 
@@ -28,7 +28,7 @@ describe('PremiumSettings.vue', () => {
     return mount(PremiumSettings, {
       pinia,
       vuetify,
-      stubs: ['v-dialog', 'i18n', 'card-title']
+      stubs: ['v-dialog', 'i18n', 'card-title'],
     });
   }
 
@@ -38,7 +38,7 @@ describe('PremiumSettings.vue', () => {
     api = usePremiumCredentialsApi();
   });
 
-  test('updates premium status upon setting keys', async () => {
+  it('updates premium status upon setting keys', async () => {
     api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
     const apiKey = wrapper.find('[data-cy=premium__api-key] input');
     const apiSecret = wrapper.find('[data-cy=premium__api-secret] input');
@@ -55,7 +55,7 @@ describe('PremiumSettings.vue', () => {
     expect(premiumUserLoggedIn).toHaveBeenCalledWith(true);
   });
 
-  test('updates premium status upon removing keys', async () => {
+  it('updates premium status upon removing keys', async () => {
     const { premium } = storeToRefs(usePremiumStore());
     set(premium, true);
 

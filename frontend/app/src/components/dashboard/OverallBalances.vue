@@ -4,14 +4,14 @@ import {
   TimeFramePeriod,
   TimeFramePersist,
   type TimeFrameSetting,
-  timeframes
+  timeframes,
 } from '@rotki/common/lib/settings/graphs';
 import dayjs from 'dayjs';
 import { Section } from '@/types/status';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(
-  useGeneralSettingsStore()
+  useGeneralSettingsStore(),
 );
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;
@@ -27,7 +27,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 
 const isLoading = logicOr(
   isSectionLoading(Section.BLOCKCHAIN_ETH),
-  isSectionLoading(Section.BLOCKCHAIN_BTC)
+  isSectionLoading(Section.BLOCKCHAIN_BTC),
 );
 
 const startingValue = computed(() => {
@@ -57,12 +57,12 @@ const adjustedTotalNetWorthFontSize = computed(() => {
 
 const allTimeframes = computed(() =>
   timeframes((unit, amount) =>
-    dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
-  )
+    dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix(),
+  ),
 );
 
 const balanceDelta = computed(() =>
-  get(totalNetWorth).minus(get(startingValue))
+  get(totalNetWorth).minus(get(startingValue)),
 );
 
 const timeframeData = computed(() => {
@@ -80,46 +80,44 @@ const percentage = computed(() => {
 
 const indicator = computed(() => {
   const delta = get(balanceDelta);
-  if (delta.isNegative()) {
+  if (delta.isNegative())
     return 'arrow-down-line';
-  }
-  if (delta.isZero()) {
+
+  if (delta.isZero())
     return 'git-commit-line';
-  }
+
   return 'arrow-up-line';
 });
 
 const balanceClass = computed(() => {
   const delta = get(balanceDelta);
-  if (delta.isNegative()) {
+  if (delta.isNegative())
     return 'bg-rui-error-lighter';
-  }
-  if (delta.isZero()) {
+
+  if (delta.isZero())
     return 'bg-rui-grey-500';
-  }
+
   return 'bg-rui-success';
 });
 
-const setTimeframe = async (value: TimeFrameSetting) => {
+async function setTimeframe(value: TimeFrameSetting) {
   assert(value !== TimeFramePersist.REMEMBER);
   sessionStore.update({ timeframe: value });
   await frontendStore.updateSetting({ lastKnownTimeframe: value });
-};
+}
 
 const { logged } = storeToRefs(useSessionAuthStore());
 
 watch(premium, async () => {
-  if (get(logged)) {
+  if (get(logged))
     await fetchNetValue();
-  }
 });
 
 onMounted(() => {
   const isPremium = get(premium);
   const selectedTimeframe = get(timeframe);
-  if (!isPremium && !isPeriodAllowed(selectedTimeframe)) {
+  if (!isPremium && !isPeriodAllowed(selectedTimeframe))
     update({ timeframe: TimeFramePeriod.TWO_WEEKS });
-  }
 });
 
 const { showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
@@ -196,7 +194,11 @@ const { dark } = useTheme();
           v-else
           class="overall-balances__net-worth-chart__loader flex h-full flex flex-col text-center justify-center items-center"
         >
-          <RuiProgress circular variant="indeterminate" color="primary" />
+          <RuiProgress
+            circular
+            variant="indeterminate"
+            color="primary"
+          />
           <div class="pt-5 text-caption">
             {{ t('overall_balances.loading') }}
           </div>

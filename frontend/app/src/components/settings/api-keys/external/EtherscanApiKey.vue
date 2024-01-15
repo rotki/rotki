@@ -5,8 +5,8 @@ const { evmChain } = toRefs(props);
 const name = 'etherscan';
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete, getName } =
-  useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete, getName }
+  = useExternalApiKeys(t);
 
 const key = apiKey(name, evmChain);
 const status = actionStatus(name, evmChain);
@@ -17,19 +17,18 @@ const { remove: removeNotification, prioritized } = useNotificationsStore();
 /**
  * After an api key is added, remove the etherscan notification for that location
  */
-const removeEtherscanNotification = () => {
+function removeEtherscanNotification() {
   // using prioritized list here, because the actionable notifications are always on top (index 0|1)
   // so it is faster to find
   const notification = prioritized.find(
-    data => data.i18nParam?.props?.key === get(evmChain)
+    data => data.i18nParam?.props?.key === get(evmChain),
   );
 
-  if (!notification) {
+  if (!notification)
     return;
-  }
 
   removeNotification(notification.id);
-};
+}
 </script>
 
 <template>
@@ -40,13 +39,13 @@ const removeEtherscanNotification = () => {
     :label="t('external_services.api_key')"
     :hint="
       t('external_services.etherscan.hint', {
-        chain: chainName
+        chain: chainName,
       })
     "
     :loading="loading"
     :tooltip="
       t('external_services.etherscan.delete_tooltip', {
-        chain: chainName
+        chain: chainName,
       })
     "
     :status="status"

@@ -9,7 +9,7 @@ describe('accounts', () => {
     [1280, 720, 'HD Ready'],
     [1000, 660, 'Cypress default viewport'],
     [800, 600, 'Rotki minimum supported resolution'],
-    [640, 480, 'Small res to simulate high app scaling or zoom']
+    [640, 480, 'Small res to simulate high app scaling or zoom'],
   ];
 
   before(() => {
@@ -17,7 +17,7 @@ describe('accounts', () => {
     app.visit();
   });
 
-  viewPortSizes.forEach(size => {
+  viewPortSizes.forEach((size) => {
     context(`Viewport: ${size[2]} (${size[0]}x${size[1]})`, () => {
       before(() => {
         cy.viewport(Number(size[0]), Number(size[1]));

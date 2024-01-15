@@ -3,14 +3,14 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
-import {
-  type NewOnlineHistoryEventPayload,
-  type OnlineHistoryEvent
-} from '@/types/history/events';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
+import type {
+  NewOnlineHistoryEventPayload,
+  OnlineHistoryEvent,
+} from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -21,8 +21,8 @@ const props = withDefaults(
   {
     editableItem: undefined,
     nextSequence: '',
-    groupHeader: undefined
-  }
+    groupHeader: undefined,
+  },
 );
 
 const { t } = useI18n();
@@ -33,7 +33,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const lastLocation = useLocalStorage(
   'rotki.history_event.location',
-  TRADE_LOCATION_EXTERNAL
+  TRADE_LOCATION_EXTERNAL,
 );
 
 const assetPriceForm: Ref<InstanceType<
@@ -63,63 +63,63 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.event_identifier.validation.non_empty'
+        'transactions.events.form.event_identifier.validation.non_empty',
       ).toString(),
-      required
-    )
+      required,
+    ),
   },
   location: {
     required: helpers.withMessage(
       t('transactions.events.form.location.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   asset: {
     required: helpers.withMessage(
       t('transactions.events.form.asset.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   amount: {
     required: helpers.withMessage(
       t('transactions.events.form.amount.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol)
+        currency: get(currencySymbol),
       }).toString(),
-      required
-    )
+      required,
+    ),
   },
   sequenceIndex: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.sequence_index.validation.non_empty'
+        'transactions.events.form.sequence_index.validation.non_empty',
       ).toString(),
-      required
-    )
+      required,
+    ),
   },
   eventType: {
     required: helpers.withMessage(
       t('transactions.events.form.event_type.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   eventSubtype: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.event_subtype.validation.non_empty'
+        'transactions.events.form.event_subtype.validation.non_empty',
       ).toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
-  useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler }
+  = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -134,15 +134,15 @@ const v$ = setValidation(
     usdValue,
     sequenceIndex,
     eventType,
-    eventSubtype
+    eventSubtype,
   },
   {
     $autoDirty: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 
-const reset = () => {
+function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, '');
   set(
@@ -150,8 +150,8 @@ const reset = () => {
     convertFromTimestamp(
       dayjs().valueOf(),
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(location, get(lastLocation));
   set(locationLabel, '');
@@ -164,9 +164,9 @@ const reset = () => {
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
-};
+}
 
-const applyEditableData = async (entry: OnlineHistoryEvent) => {
+async function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(eventIdentifier, entry.eventIdentifier);
   set(
@@ -174,8 +174,8 @@ const applyEditableData = async (entry: OnlineHistoryEvent) => {
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -185,9 +185,9 @@ const applyEditableData = async (entry: OnlineHistoryEvent) => {
   set(usdValue, entry.balance.usdValue.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
-};
+}
 
-const applyGroupHeaderData = async (entry: OnlineHistoryEvent) => {
+async function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
@@ -197,23 +197,22 @@ const applyGroupHeaderData = async (entry: OnlineHistoryEvent) => {
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(usdValue, '0');
-};
+}
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 
-const save = async (): Promise<boolean> => {
+async function save(): Promise<boolean> {
   const timestamp = convertToTimestamp(
     get(datetime),
     DateFormat.DateMonthYearHourMinuteSecond,
-    true
+    true,
   );
 
   const payload: NewOnlineHistoryEventPayload = {
@@ -226,11 +225,11 @@ const save = async (): Promise<boolean> => {
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || undefined
+    notes: get(notes) || undefined,
   };
 
   const edit = get(editableItem);
@@ -239,9 +238,9 @@ const save = async (): Promise<boolean> => {
     edit ? { ...payload, identifier: edit.identifier } : payload,
     assetPriceForm,
     errorMessages,
-    reset
+    reset,
   );
-};
+}
 
 setSubmitFunc(save);
 
@@ -249,12 +248,11 @@ const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 watch(location, (location: string) => {
-  if (location) {
+  if (location)
     set(lastLocation, location);
-  }
 });
 
-const checkPropsData = () => {
+function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
     applyEditableData(editable);
@@ -266,7 +264,7 @@ const checkPropsData = () => {
     return;
   }
   reset();
-};
+}
 
 watch([groupHeader, editableItem], checkPropsData);
 onMounted(() => {
@@ -277,7 +275,7 @@ const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const locationLabelSuggestions = computed(() =>
   get(connectedExchanges)
     .map(item => item.name)
-    .filter(item => !!item)
+    .filter(item => !!item),
 );
 </script>
 

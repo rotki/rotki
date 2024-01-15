@@ -3,14 +3,14 @@ const props = withDefaults(
   defineProps<{
     progress?: string;
   }>(),
-  { progress: '' }
+  { progress: '' },
 );
 
 const progress = computed(() => {
   const currentProgress = props.progress;
-  if (!currentProgress) {
+  if (!currentProgress)
     return 0;
-  }
+
   const number = Number.parseFloat(currentProgress);
   return Number.isNaN(number) ? 0 : number.toFixed(2);
 });

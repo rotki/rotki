@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ImportSourceType } from '@/types/upload-types';
+import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{
@@ -14,8 +14,8 @@ const props = withDefaults(
     loading: false,
     fileFilter: '.csv',
     uploaded: false,
-    errorMessage: ''
-  }
+    errorMessage: '',
+  },
 );
 
 const emit = defineEmits<{
@@ -33,70 +33,65 @@ const select = ref<HTMLInputElement>();
 const { count, inc, dec, reset } = useCounter(0, { min: 0 });
 const { t } = useI18n();
 
-const onDrop = (event: DragEvent) => {
+function onDrop(event: DragEvent) {
   event.preventDefault();
   set(active, false);
-  if (!event.dataTransfer?.files?.length) {
+  if (!event.dataTransfer?.files?.length)
     return;
-  }
 
-  if (get(source) !== 'icon') {
+  if (get(source) !== 'icon')
     check(event.dataTransfer.files);
-  } else {
+  else
     selected(event.dataTransfer.files[0]);
-  }
-};
+}
 
-const onEnter = (event: DragEvent) => {
+function onEnter(event: DragEvent) {
   event.preventDefault();
   inc();
   set(active, true);
-};
+}
 
-const onLeave = (event: DragEvent) => {
+function onLeave(event: DragEvent) {
   event.preventDefault();
   dec();
-  if (get(count) === 0) {
+  if (get(count) === 0)
     set(active, false);
-  }
-};
+}
 
-const onSelect = (event: Event) => {
+function onSelect(event: Event) {
   const target = event.target as HTMLInputElement;
-  if (!target || !target.files) {
+  if (!target || !target.files)
     return;
-  }
-  if (!['icon', 'zip', 'csv', 'json'].includes(get(source))) {
-    check(target.files);
-  } else {
-    selected(target.files[0]);
-  }
-};
 
-const onError = (message: string) => {
+  if (!['icon', 'zip', 'csv', 'json'].includes(get(source)))
+    check(target.files);
+  else
+    selected(target.files[0]);
+}
+
+function onError(message: string) {
   set(error, message);
   reset();
   set(active, false);
   removeFile();
-};
+}
 
-const clearError = () => {
+function clearError() {
   set(error, '');
   emit('update:error-message', '');
-};
+}
 
-const removeFile = () => {
+function removeFile() {
   const inputFile = get(select);
-  if (inputFile) {
+  if (inputFile)
     inputFile.value = '';
-  }
-  set(file, null);
-};
 
-const check = (files: FileList) => {
-  if (get(error) || get(uploaded)) {
+  set(file, null);
+}
+
+function check(files: FileList) {
+  if (get(error) || get(uploaded))
     return;
-  }
 
   if (files.length !== 1) {
     onError(t('file_upload.many_files_selected').toString());
@@ -106,31 +101,31 @@ const check = (files: FileList) => {
   if (!files[0].name.endsWith(get(fileFilter))) {
     onError(
       t('file_upload.only_files', {
-        fileFilter: get(fileFilter)
-      }).toString()
+        fileFilter: get(fileFilter),
+      }).toString(),
     );
     return;
   }
 
   set(file, files[0]);
-};
+}
 
-const selected = (selected: File | null) => {
+function selected(selected: File | null) {
   set(file, selected);
-};
+}
 
-const updateUploaded = (value: boolean) => {
+function updateUploaded(value: boolean) {
   emit('update:uploaded', value);
-};
+}
 
-const clickSelect = () => {
+function clickSelect() {
   get(select)?.click();
-};
+}
 
-watch(uploaded, uploaded => {
-  if (!uploaded) {
+watch(uploaded, (uploaded) => {
+  if (!uploaded)
     return;
-  }
+
   set(file, null);
   setTimeout(() => {
     updateUploaded(false);
@@ -161,7 +156,11 @@ watch(errorMessage, message => onError(message));
           >
             <RuiIcon name="close-line" />
           </RuiButton>
-          <RuiIcon size="48" name="error-warning-line" color="error" />
+          <RuiIcon
+            size="48"
+            name="error-warning-line"
+            color="error"
+          />
           <span class="text-rui-error mt-2">{{ error }}</span>
         </template>
 
@@ -179,7 +178,10 @@ watch(errorMessage, message => onError(message));
         </template>
 
         <template v-else-if="!uploaded">
-          <RuiIcon name="file-upload-line" color="primary" />
+          <RuiIcon
+            name="file-upload-line"
+            color="primary"
+          />
           <input
             ref="select"
             type="file"
@@ -191,7 +193,10 @@ watch(errorMessage, message => onError(message));
             class="flex flex-col mt-2 text-center justify-center text-caption text--secondary w-full"
           >
             <template v-if="file">
-              <i18n path="file_upload.selected_file" tag="div">
+              <i18n
+                path="file_upload.selected_file"
+                tag="div"
+              >
                 <template #name>
                   <div class="font-bold text-truncate">
                     {{ file.name }}
@@ -225,8 +230,14 @@ watch(errorMessage, message => onError(message));
         </template>
 
         <template v-else>
-          <RuiIcon name="checkbox-circle-line" color="primary" />
-          <div class="mt-2" v-text="t('file_upload.import_complete')" />
+          <RuiIcon
+            name="checkbox-circle-line"
+            color="primary"
+          />
+          <div
+            class="mt-2"
+            v-text="t('file_upload.import_complete')"
+          />
         </template>
       </div>
     </div>

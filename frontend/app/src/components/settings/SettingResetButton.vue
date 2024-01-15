@@ -11,7 +11,11 @@ const { t } = useI18n();
       tooltip-class="max-w-[12rem]"
     >
       <template #activator>
-        <RuiButton variant="text" icon @click="emit('click')">
+        <RuiButton
+          variant="text"
+          icon
+          @click="emit('click')"
+        >
           <RuiIcon name="loop-left-line" />
         </RuiButton>
       </template>

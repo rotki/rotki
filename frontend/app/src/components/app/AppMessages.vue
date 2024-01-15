@@ -4,7 +4,7 @@ import Fragment from '@/components/helper/Fragment';
 const {
   startupErrorMessage,
   isMacOsVersionUnsupported,
-  isWinVersionUnsupported
+  isWinVersionUnsupported,
 } = storeToRefs(useBackendMessagesStore());
 const store = useMessageStore();
 const { message } = storeToRefs(store);

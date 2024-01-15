@@ -1,8 +1,8 @@
 import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
+import type { PendingTask } from '@/types/task';
 
-export const useMakerDaoApi = () => {
+export function useMakerDaoApi() {
   const fetchDsrBalances = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/makerdao/dsrbalance';
     return fetchExternalAsync(api.instance, url);
@@ -27,6 +27,6 @@ export const useMakerDaoApi = () => {
     fetchDsrBalances,
     fetchDsrHistories,
     fetchMakerDAOVaults,
-    fetchMakerDAOVaultDetails
+    fetchMakerDAOVaultDetails,
   };
-};
+}

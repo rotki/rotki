@@ -1,4 +1,4 @@
-export const useFooterProps = () => {
+export function useFooterProps() {
   const { t } = useI18n();
   const footerProps = computed(() => ({
     itemsPerPageText: t('data_table.rows_per_page'),
@@ -7,9 +7,9 @@ export const useFooterProps = () => {
     lastIcon: 'mdi-chevron-double-right',
     prevIcon: 'mdi-chevron-left',
     nextIcon: 'mdi-chevron-right',
-    itemsPerPageOptions: [10, 25, 50, 100]
+    itemsPerPageOptions: [10, 25, 50, 100],
   }));
   return {
-    footerProps
+    footerProps,
   };
-};
+}

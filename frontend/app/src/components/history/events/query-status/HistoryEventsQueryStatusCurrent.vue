@@ -4,16 +4,16 @@ const props = withDefaults(
     locations?: string[];
   }>(),
   {
-    locations: () => []
-  }
+    locations: () => [],
+  },
 );
 
 const { locations } = toRefs(props);
 
 const { t } = useI18n();
 
-const { queryingLength, length, isAllFinished } =
-  useEventsQueryStatus(locations);
+const { queryingLength, length, isAllFinished }
+  = useEventsQueryStatus(locations);
 </script>
 
 <template>
@@ -25,7 +25,7 @@ const { queryingLength, length, isAllFinished } =
     <template #running>
       {{
         t('transactions.query_status_events.group', {
-          length: queryingLength
+          length: queryingLength,
         })
       }}
     </template>

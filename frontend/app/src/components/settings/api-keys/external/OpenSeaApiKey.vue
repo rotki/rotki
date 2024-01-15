@@ -5,8 +5,8 @@ const { t } = useI18n();
 
 const name = 'opensea';
 
-const { loading, apiKey, actionStatus, save, confirmDelete } =
-  useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete }
+  = useExternalApiKeys(t);
 
 const key = apiKey(name);
 const status = actionStatus(name);
@@ -33,7 +33,10 @@ const status = actionStatus(name);
       @save="save($event)"
       @delete-key="confirmDelete($event)"
     >
-      <i18n tag="div" path="external_services.opensea.link">
+      <i18n
+        tag="div"
+        path="external_services.opensea.link"
+      >
         <template #link>
           <ExternalLink
             color="primary"

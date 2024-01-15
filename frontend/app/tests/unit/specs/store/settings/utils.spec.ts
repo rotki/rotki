@@ -3,11 +3,11 @@ import {
   DARK_THEME,
   LIGHT_THEME,
   SELECTED_THEME,
-  Theme
+  Theme,
 } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
-  TimeFramePersist
+  TimeFramePersist,
 } from '@rotki/common/lib/settings/graphs';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -15,7 +15,7 @@ import {
   BlockchainRefreshButtonBehaviour,
   FrontendSettings,
   Quarter,
-  SupportedLanguage
+  SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 
 describe('settings:utils', () => {
@@ -23,16 +23,16 @@ describe('settings:utils', () => {
     vi.resetAllMocks();
   });
 
-  test('restore nothing is the loaded value has an unexpected type', async () => {
+  it('restore nothing is the loaded value has an unexpected type', async () => {
     expect.assertions(1);
     expect(() => FrontendSettings.parse({ defiSetupDone: 1 })).toThrow();
   });
 
-  test('restore valid properties', async () => {
+  it('restore valid properties', async () => {
     expect.assertions(1);
     const frontendSettings = FrontendSettings.parse({
       defiSetupDone: true,
-      invalid: 2
+      invalid: 2,
     });
 
     expect(frontendSettings).toMatchObject({
@@ -43,7 +43,7 @@ describe('settings:utils', () => {
       queryPeriod: 5,
       profitLossReportPeriod: {
         year: new Date().getFullYear().toString(),
-        quarter: Quarter.ALL
+        quarter: Quarter.ALL,
       },
       thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
       decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
@@ -65,7 +65,7 @@ describe('settings:utils', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour:
         BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      savedFilters: {}
+      savedFilters: {},
     });
   });
 });

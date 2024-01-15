@@ -1,8 +1,8 @@
 import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
+import type { PendingTask } from '@/types/task';
 
-export const useLiquityApi = () => {
+export function useLiquityApi() {
   const fetchLiquityBalances = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/balances';
     return fetchExternalAsync(api.instance, url);
@@ -27,6 +27,6 @@ export const useLiquityApi = () => {
     fetchLiquityBalances,
     fetchLiquityStaking,
     fetchLiquityStakingPools,
-    fetchLiquityStatistics
+    fetchLiquityStatistics,
   };
-};
+}

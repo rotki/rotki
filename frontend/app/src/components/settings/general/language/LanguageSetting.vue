@@ -12,8 +12,8 @@ const props = withDefaults(
   {
     dense: false,
     showLabel: true,
-    useLocalSetting: false
-  }
+    useLocalSetting: false,
+  },
 );
 
 const { useLocalSetting } = toRefs(props);
@@ -22,23 +22,19 @@ const language = ref<string>(SupportedLanguage.EN);
 
 const { lastLanguage } = useLastLanguage();
 
-const updateSetting = async (
-  value: string,
-  update: (newValue: any) => Promise<void>
-) => {
-  if (get(useLocalSetting)) {
+async function updateSetting(value: string, update: (newValue: any) => Promise<void>) {
+  if (get(useLocalSetting))
     set(lastLanguage, value);
-  } else {
+  else
     await update(value);
-  }
-};
+}
 
 const { forceUpdateMachineLanguage } = useLastLanguage();
 const { adaptiveLanguage } = storeToRefs(useSessionStore());
 
-const updateForceUpdateMachineLanguage = (event: boolean | null) => {
+function updateForceUpdateMachineLanguage(event: boolean | null) {
   set(forceUpdateMachineLanguage, event ? 'true' : 'false');
-};
+}
 
 onMounted(() => {
   set(language, get(adaptiveLanguage));
@@ -91,8 +87,14 @@ const rootAttrs = useAttrs();
         tooltip-class="max-w-[25rem]"
       >
         <template #activator>
-          <ExternalLink :url="externalLinks.contributeSection.language" custom>
-            <RuiButton variant="text" icon>
+          <ExternalLink
+            :url="externalLinks.contributeSection.language"
+            custom
+          >
+            <RuiButton
+              variant="text"
+              icon
+            >
               <RuiIcon name="file-edit-line" />
             </RuiButton>
           </ExternalLink>
@@ -112,7 +114,7 @@ const rootAttrs = useAttrs();
     >
       {{
         t(
-          'general_settings.labels.force_saved_language_setting_in_machine_hint'
+          'general_settings.labels.force_saved_language_setting_in_machine_hint',
         )
       }}
     </RuiCheckbox>

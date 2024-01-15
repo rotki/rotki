@@ -10,7 +10,7 @@ export class AssetsManagerPage {
     return cy
       .get('[data-cy=asset-filter-show_only]')
       .invoke('text')
-      .then(text => {
+      .then((text) => {
         cy.get('[data-cy=status-filter]').click();
         cy.wrap(text.replace(/[^\d.]/g, ''));
       });
@@ -21,7 +21,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=asset-filter-menu]').should('be.visible');
     cy.get('[data-cy=asset-filter-show_only]').should(
       'include.text',
-      number.toString()
+      number.toString(),
     );
     cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
@@ -29,7 +29,7 @@ export class AssetsManagerPage {
 
   searchAsset(asset: string) {
     cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}symbol: ${asset}{enter}{esc}`
+      `{selectall}{backspace}symbol: ${asset}{enter}{esc}`,
     );
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get('.v-data-table__progress').should('not.exist');
@@ -37,7 +37,7 @@ export class AssetsManagerPage {
 
   searchAssetByAddress(address: string) {
     cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}address: ${address}{enter}{esc}`
+      `{selectall}{backspace}address: ${address}{enter}{esc}`,
     );
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get('.v-data-table__progress').should('not.exist');
@@ -45,7 +45,7 @@ export class AssetsManagerPage {
 
   searchAssetBySymbol(symbol: string) {
     cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}symbol: ${symbol}{enter}{esc}`
+      `{selectall}{backspace}symbol: ${symbol}{enter}{esc}`,
     );
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get('.v-data-table__progress').should('not.exist');
@@ -55,15 +55,15 @@ export class AssetsManagerPage {
     this.searchAsset(asset);
 
     cy.get(
-      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
-    ).then($switch => {
+      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
+    ).then(($switch) => {
       const initialValue = $switch.attr('aria-checked');
       expect(initialValue, 'false');
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)',
       ).click();
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
       ).should('have.attr', 'aria-checked', 'true');
     });
   }
@@ -81,15 +81,15 @@ export class AssetsManagerPage {
   removeIgnoredAsset(asset: string) {
     this.searchAsset(asset);
     cy.get(
-      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
-    ).then($switch => {
+      '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
+    ).then(($switch) => {
       const initialValue = $switch.attr('aria-checked');
       expect(initialValue, 'true');
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)',
       ).click();
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input'
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
       ).should('have.attr', 'aria-checked', 'false');
     });
   }
@@ -97,7 +97,7 @@ export class AssetsManagerPage {
   createWaitForDeleteManagedAssets() {
     cy.intercept({
       method: 'DELETE',
-      url: '/api/1/assets/all**'
+      url: '/api/1/assets/all**',
     }).as('apiCall');
 
     return () => {
@@ -233,7 +233,7 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
-      symbol
+      symbol,
     );
   }
 
@@ -267,7 +267,7 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
-      symbol
+      symbol,
     );
   }
 
@@ -304,7 +304,7 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',
-      symbol
+      symbol,
     );
   }
 }

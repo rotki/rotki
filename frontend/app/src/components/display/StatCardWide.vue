@@ -4,8 +4,8 @@ withDefaults(
     locked?: boolean;
   }>(),
   {
-    locked: false
-  }
+    locked: false,
+  },
 );
 </script>
 

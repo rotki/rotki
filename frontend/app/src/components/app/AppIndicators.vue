@@ -6,8 +6,8 @@ const isDevelopment = checkIfDevelopment();
 const { smAndUp } = useDisplay();
 
 const { darkModeEnabled } = useDarkMode();
-const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
-  storeToRefs(useAreaVisibilityStore());
+const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
+  = storeToRefs(useAreaVisibilityStore());
 </script>
 
 <template>
@@ -19,33 +19,42 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
     </div>
     <div class="flex overflow-hidden h-full items-center">
       <GetPremiumButton />
-      <RouterLink v-if="isDevelopment && smAndUp" to="/playground">
-        <RuiButton variant="text" icon>
+      <RouterLink
+        v-if="isDevelopment && smAndUp"
+        to="/playground"
+      >
+        <RuiButton
+          variant="text"
+          icon
+        >
           <RuiIcon name="code-box-line" />
         </RuiButton>
       </RouterLink>
       <AppUpdateIndicator />
       <UserNotesIndicator
-        :visible="showNotesSidebar"
-        @visible:update="showNotesSidebar = $event"
+        :visible.sync="showNotesSidebar"
       />
       <PinnedIndicator
-        :visible="showPinned"
-        @visible:update="showPinned = $event"
+        :visible.sync="showPinned"
       />
-      <ThemeControl v-if="smAndUp" :dark-mode-enabled="darkModeEnabled" />
+      <ThemeControl
+        v-if="smAndUp"
+        :dark-mode-enabled="darkModeEnabled"
+      />
       <NotificationIndicator
         :visible="showNotificationBar"
         class="app__app-bar__button"
         @click="showNotificationBar = !showNotificationBar"
       />
       <CurrencyDropdown class="app__app-bar__button" />
-      <PrivacyModeDropdown v-if="smAndUp" class="app__app-bar__button" />
+      <PrivacyModeDropdown
+        v-if="smAndUp"
+        class="app__app-bar__button"
+      />
       <UserDropdown class="app__app-bar__button" />
       <HelpIndicator
         v-if="smAndUp"
-        :visible="showHelpBar"
-        @visible:update="showHelpBar = $event"
+        :visible.sync="showHelpBar"
       />
     </div>
   </Fragment>

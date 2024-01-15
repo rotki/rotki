@@ -23,7 +23,7 @@ class StickyTableHeader {
   constructor(
     tableContainer: HTMLTableElement,
     cloneContainer: HTMLTableElement,
-    options: { top?: number; mobileBreakpoint?: number } = {}
+    options: { top?: number; mobileBreakpoint?: number } = {},
   ) {
     this.tableContainer = tableContainer;
     this.cloneContainer = cloneContainer;
@@ -42,39 +42,38 @@ class StickyTableHeader {
   }
 
   public destroy(): void {
-    if (this.scrollListener) {
+    if (this.scrollListener)
       document.body.removeEventListener('scroll', this.scrollListener);
-    }
-    if (this.sizeListener) {
+
+    if (this.sizeListener)
       window.removeEventListener('resize', this.sizeListener);
-    }
-    if (this.currentFrameRequest) {
+
+    if (this.currentFrameRequest)
       window.cancelAnimationFrame(this.currentFrameRequest);
-    }
+
     if (this.containerScrollListener) {
       this.tableContainerParent.removeEventListener(
         'click',
-        this.containerScrollListener
+        this.containerScrollListener,
       );
     }
-    if (this.clickListener) {
+    if (this.clickListener)
       this.cloneContainer.removeEventListener('click', this.clickListener);
-    }
-    if (this.cloneHeader) {
+
+    if (this.cloneHeader)
       this.cloneContainer.removeChild(this.cloneHeader);
-    }
-    if (this.observer) {
+
+    if (this.observer)
       this.observer.disconnect();
-    }
   }
 
   private getHeader = () => {
-    const header =
-      this.tableContainer.querySelector<HTMLTableRowElement>('thead');
+    const header
+      = this.tableContainer.querySelector<HTMLTableRowElement>('thead');
 
     if (!header || !this.tableContainer.parentNode) {
       throw new Error(
-        'Header or parent node of sticky header table container not found!'
+        'Header or parent node of sticky header table container not found!',
       );
     }
 
@@ -91,7 +90,7 @@ class StickyTableHeader {
 
         if (cellIndex !== undefined) {
           const firstChild = this.header.querySelector(
-            `th:nth-child(${cellIndex + 1}) > :first-child`
+            `th:nth-child(${cellIndex + 1}) > :first-child`,
           );
 
           if (firstChild && firstChild instanceof HTMLElement) {
@@ -112,25 +111,24 @@ class StickyTableHeader {
   private adjustSize = () => {
     const headerSize = this.header.getBoundingClientRect().width;
     Array.from(this.header.children[0].children).forEach((cell, index) => {
-      const percentageWidth =
-        (cell.getBoundingClientRect().width / headerSize) * 100;
+      const percentageWidth
+        = (cell.getBoundingClientRect().width / headerSize) * 100;
 
       this.cloneHeader.children[0].children[
         index
       ].style.width = `${percentageWidth}%`;
     });
 
-    const tableContainerParentWidth =
-      this.tableContainerParent.getBoundingClientRect().width;
+    const tableContainerParentWidth
+      = this.tableContainerParent.getBoundingClientRect().width;
     this.cloneContainerParent.style.width = `${tableContainerParentWidth}px`;
 
     const headerSizeInPx = `${headerSize}px`;
     this.cloneContainer.style.minWidth = headerSizeInPx;
     this.cloneContainer.style.width = headerSizeInPx;
 
-    if (this.cloneContainer.nextElementSibling instanceof HTMLElement) {
+    if (this.cloneContainer.nextElementSibling instanceof HTMLElement)
       this.cloneContainer.nextElementSibling.style.width = headerSizeInPx;
-    }
   };
 
   private checkPosition = (resize = false) => {
@@ -145,23 +143,25 @@ class StickyTableHeader {
     let reCreated = false;
     if (resize && mobile) {
       this.removeClone();
-    } else if (!mobile && diffTop > -top && this.cloneHeader === null) {
+    }
+    else if (!mobile && diffTop > -top && this.cloneHeader === null) {
       this.createClone();
       reCreated = true;
     }
 
     if (this.cloneHeader !== null) {
-      if (resize || reCreated) {
+      if (resize || reCreated)
         this.adjustSize();
-      }
 
       if (diffTop <= -top) {
         this.removeClone();
-      } else if (diffBottom < -top) {
+      }
+      else if (diffBottom < -top) {
         this.cloneContainerParent.style.display = 'block';
         this.cloneContainerParent.style.top = `${top}px`;
         this.syncHorizontalScroll();
-      } else {
+      }
+      else {
         this.cloneContainerParent.style.display = 'none';
       }
     }
@@ -196,7 +196,7 @@ class StickyTableHeader {
 
     this.tableContainerParent.addEventListener(
       'scroll',
-      this.containerScrollListener
+      this.containerScrollListener,
     );
   }
 
@@ -235,8 +235,7 @@ class StickyTableHeader {
     const headerHeight = this.header.getBoundingClientRect().height;
 
     const defaultBottom = tableRect.y + tableRect.height - headerHeight;
-    const parentBottom =
-      document.body.getBoundingClientRect().bottom - 2 * headerHeight;
+    const parentBottom = document.body.getBoundingClientRect().bottom - 2 * headerHeight;
     return Math.min(defaultBottom, parentBottom, Number.MAX_VALUE);
   }
 }

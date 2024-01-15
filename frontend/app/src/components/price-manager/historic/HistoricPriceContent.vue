@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import {
-  type DataTableColumn,
-  type DataTableSortData
+import type { Ref } from 'vue';
+import type {
+  DataTableColumn,
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
-import {
-  type HistoricalPrice,
-  type HistoricalPriceFormPayload
+import type {
+  HistoricalPrice,
+  HistoricalPriceFormPayload,
 } from '@/types/prices';
 
 const { t } = useI18n();
@@ -14,52 +14,52 @@ const { t } = useI18n();
 const sort: Ref<DataTableSortData> = ref([
   {
     column: 'timestamp',
-    direction: 'desc' as const
-  }
+    direction: 'desc' as const,
+  },
 ]);
 
 const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
-    key: 'wasWorth'
+    key: 'wasWorth',
   },
   {
     label: t('common.price'),
     key: 'price',
     align: 'end',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('price_table.headers.to_asset'),
     key: 'toAsset',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
-    key: 'on'
+    key: 'on',
   },
   {
     label: t('common.datetime'),
     key: 'timestamp',
-    sortable: true
+    sortable: true,
   },
   {
     label: '',
     key: 'actions',
-    class: 'w-[3rem]'
-  }
+    class: 'w-[3rem]',
+  },
 ]);
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
   toAsset: '',
   price: '0',
-  timestamp: 0
+  timestamp: 0,
 });
 
 const price = ref<HistoricalPriceFormPayload>(emptyPrice());
@@ -67,7 +67,7 @@ const fromAsset = ref<string>();
 const toAsset = ref<string>();
 const filter = computed(() => ({
   fromAsset: get(fromAsset),
-  toAsset: get(toAsset)
+  toAsset: get(toAsset),
 }));
 
 const update = ref(false);
@@ -77,7 +77,7 @@ const route = useRoute();
 
 const { items, loading, save, deletePrice, refresh } = useHistoricPrices(
   filter,
-  t
+  t,
 );
 
 const {
@@ -87,25 +87,26 @@ const {
   closeDialog,
   setSubmitFunc,
   trySubmit,
-  setPostSubmitFunc
+  setPostSubmitFunc,
 } = useHistoricPriceForm();
 
-const openForm = (hPrice: HistoricalPrice | null = null) => {
+function openForm(hPrice: HistoricalPrice | null = null) {
   set(update, !!hPrice);
   if (hPrice) {
     set(price, {
       ...hPrice,
-      price: hPrice.price.toFixed() ?? ''
+      price: hPrice.price.toFixed() ?? '',
     });
-  } else {
+  }
+  else {
     set(price, {
       ...emptyPrice(),
       fromAsset: get(fromAsset) ?? '',
-      toAsset: get(toAsset) ?? ''
+      toAsset: get(toAsset) ?? '',
     });
   }
   setOpenDialog(true);
-};
+}
 
 const hideForm = function () {
   closeDialog();
@@ -114,15 +115,15 @@ const hideForm = function () {
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: HistoricalPrice) => {
+function showDeleteConfirmation(item: HistoricalPrice) {
   show(
     {
       title: t('price_table.delete.dialog.title'),
-      message: t('price_table.delete.dialog.message')
+      message: t('price_table.delete.dialog.message'),
     },
-    () => deletePrice(item)
+    () => deletePrice(item),
   );
-};
+}
 
 onMounted(async () => {
   setSubmitFunc(() => save(get(price), get(update)));
@@ -141,7 +142,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
   <TablePageLayout
     :title="[
       t('navigation_menu.manage_prices'),
-      t('navigation_menu.manage_prices_sub.historic_prices')
+      t('navigation_menu.manage_prices_sub.historic_prices'),
     ]"
   >
     <template #buttons>
@@ -161,7 +162,10 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         </template>
         {{ t('price_table.refresh_tooltip') }}
       </RuiTooltip>
-      <RuiButton color="primary" @click="openForm()">
+      <RuiButton
+        color="primary"
+        @click="openForm()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
@@ -216,8 +220,12 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         <template #item.price="{ row }">
           <AmountDisplay :value="row.price" />
         </template>
-        <template #item.wasWorth>{{ t('price_table.was_worth') }}</template>
-        <template #item.on>{{ t('price_table.on') }}</template>
+        <template #item.wasWorth>
+          {{ t('price_table.was_worth') }}
+        </template>
+        <template #item.on>
+          {{ t('price_table.on') }}
+        </template>
         <template #item.actions="{ row }">
           <RowActions
             :disabled="loading"
@@ -241,7 +249,10 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <HistoricPriceForm v-model="price" :edit="update" />
+      <HistoricPriceForm
+        v-model="price"
+        :edit="update"
+      />
     </BigDialog>
   </TablePageLayout>
 </template>

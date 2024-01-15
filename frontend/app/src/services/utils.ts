@@ -1,63 +1,53 @@
-import { type ActionResult } from '@rotki/common/lib/data';
-import {
-  type AxiosInstance,
-  type AxiosResponse,
-  type ParamsSerializerOptions
-} from 'axios';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { ApiValidationError } from '@/types/api/errors';
-import { type PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type {
+  AxiosInstance,
+  AxiosResponse,
+  ParamsSerializerOptions,
+} from 'axios';
+import type { PendingTask } from '@/types/task';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
-export const handleResponse = <T>(
-  response: AxiosResponse<ActionResult<T>>,
-  parse: Parser<T> = response => response.data
-): T => {
+export function handleResponse<T>(response: AxiosResponse<ActionResult<T>>, parse: Parser<T> = response => response.data): T {
   const { result, message } = parse(response);
-  if (result) {
+  if (result)
     return result;
-  }
 
-  if (response.status === 400) {
+  if (response.status === 400)
     throw new ApiValidationError(message);
-  }
-  throw new Error(message);
-};
 
-export const fetchExternalAsync = async (
-  api: AxiosInstance,
-  url: string,
-  params?: Record<string, any>
-): Promise<PendingTask> => {
+  throw new Error(message);
+}
+
+export async function fetchExternalAsync(api: AxiosInstance, url: string, params?: Record<string, any>): Promise<PendingTask> {
   const result = await api.get<ActionResult<PendingTask>>(url, {
     validateStatus: validWithSessionAndExternalService,
     params: snakeCaseTransformer({
       asyncQuery: true,
-      ...(params ? params : {})
-    })
+      ...(params || {}),
+    }),
   });
   return handleResponse(result);
-};
+}
 
 export function serialize(params: Record<string, any>) {
   const list = [];
   for (const [key, value] of Object.entries(params)) {
-    if (value === null || value === undefined) {
+    if (value === null || value === undefined)
       continue;
-    }
 
-    if (Array.isArray(value)) {
+    if (Array.isArray(value))
       list.push(`${key}=${value.join(',')}`);
-    } else {
+    else
       list.push(`${key}=${value}`);
-    }
   }
   return list.join('&');
 }
 
 export const paramsSerializer: ParamsSerializerOptions = {
-  serialize
+  serialize,
 };
 
 /**
@@ -67,8 +57,9 @@ export const paramsSerializer: ParamsSerializerOptions = {
  * @param status The supplied status code
  * @return true if the status code is considered valid.
  */
-const isValid = (validStatuses: number[], status: number): boolean =>
-  validStatuses.includes(status);
+function isValid(validStatuses: number[], status: number): boolean {
+  return validStatuses.includes(status);
+}
 
 /**
  * Used to validate a status. This validation considers valid responses the following
@@ -82,7 +73,7 @@ const isValid = (validStatuses: number[], status: number): boolean =>
  * @return The validity of the status code
  */
 export function validWithParamsSessionAndExternalService(
-  status: number
+  status: number,
 ): boolean {
   return isValid([200, 400, 401, 409, 502], status);
 }

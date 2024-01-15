@@ -4,8 +4,8 @@ withDefaults(
     icon?: boolean;
   }>(),
   {
-    icon: false
-  }
+    icon: false,
+  },
 );
 
 const { createCsv } = useReportsStore();
@@ -16,41 +16,43 @@ const { appSession, openDirectory } = useInterop();
 
 const { downloadReportCSV } = useReportsApi();
 
-const showMessage = (description: string) => {
+function showMessage(description: string) {
   setMessage({
     title: t('profit_loss_report.csv_export_error').toString(),
     description,
-    success: false
+    success: false,
   });
-};
+}
 
-const exportCSV = async () => {
+async function exportCSV() {
   try {
     if (appSession) {
       const directory = await openDirectory(
-        t('common.select_directory').toString()
+        t('common.select_directory').toString(),
       );
-      if (!directory) {
+      if (!directory)
         return;
-      }
+
       await createCsv(directory);
-    } else {
+    }
+    else {
       const result = await downloadReportCSV();
       if (!result.success) {
         showMessage(
-          result.message ?? t('profit_loss_report.download_failed').toString()
+          result.message ?? t('profit_loss_report.download_failed').toString(),
         );
       }
     }
-  } catch (e: any) {
-    showMessage(e.message);
   }
-};
+  catch (error: any) {
+    showMessage(error.message);
+  }
+}
 
 const [DefineButton, ReuseButton] = createReusableTemplate();
 
 const label = computed(() =>
-  appSession ? t('common.actions.export_csv') : t('common.actions.download_csv')
+  appSession ? t('common.actions.export_csv') : t('common.actions.download_csv'),
 );
 </script>
 
@@ -65,13 +67,19 @@ const label = computed(() =>
         @click="exportCSV()"
       >
         <div class="flex items-center gap-2">
-          <RuiIcon size="20" name="file-download-line" />
+          <RuiIcon
+            size="20"
+            name="file-download-line"
+          />
           <span v-if="!icon">{{ label }}</span>
         </div>
       </RuiButton>
     </DefineButton>
     <span v-if="icon">
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <ReuseButton />
         </template>

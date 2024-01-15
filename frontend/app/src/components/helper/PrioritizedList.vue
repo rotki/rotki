@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
-import { type Nullable } from '@/types';
-import { type BaseMessage } from '@/types/messages';
-import {
-  type PrioritizedListData,
-  type PrioritizedListItemData
-} from '@/types/settings/prioritized-list-data';
 import {
   EmptyListId,
-  type PrioritizedListId
+  type PrioritizedListId,
 } from '@/types/settings/prioritized-list-id';
+import type { ComputedRef } from 'vue';
+import type { Nullable } from '@/types';
+import type { BaseMessage } from '@/types/messages';
+import type {
+  PrioritizedListData,
+  PrioritizedListItemData,
+} from '@/types/settings/prioritized-list-data';
 
 const props = withDefaults(
   defineProps<{
@@ -23,8 +23,8 @@ const props = withDefaults(
   {
     disableAdd: false,
     disableDelete: false,
-    status: undefined
-  }
+    status: undefined,
+  },
 );
 
 const emit = defineEmits<{ (e: 'input', value: PrioritizedListId[]): void }>();
@@ -38,39 +38,37 @@ const itemNameTr = computed(() => {
   const name = get(itemDataName);
   return {
     name,
-    namePluralized: pluralize(name, 2)
+    namePluralized: pluralize(name, 2),
   };
 });
 
 const missing = computed<string[]>(() =>
-  get(allItems).itemIdsNotIn(get(value))
+  get(allItems).itemIdsNotIn(get(value)),
 );
 
 const noResults = computed<boolean>(() => get(value).length === 0);
 
 const isFirst = (item: string): boolean => get(value)[0] === item;
 
-const isLast = (item: string): boolean => {
+function isLast(item: string): boolean {
   const items = get(value);
-  return items[items.length - 1] === item;
-};
+  return items.at(-1) === item;
+}
 
-const itemData = (
-  identifier: PrioritizedListId
-): PrioritizedListItemData<PrioritizedListId> => {
+function itemData(identifier: PrioritizedListId): PrioritizedListItemData<PrioritizedListId> {
   const data = get(allItems);
   return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
-};
+}
 
-const addItem = () => {
+function addItem() {
   assert(get(selection));
   const items = [...get(value)];
   items.push(get(selection)!);
   input(items);
   set(selection, null);
-};
+}
 
-const move = (item: PrioritizedListId, down: boolean) => {
+function move(item: PrioritizedListId, down: boolean) {
   const items = [...get(value)];
   const itemIndex = items.indexOf(item);
   const nextIndex = itemIndex + (down ? 1 : -1);
@@ -78,14 +76,14 @@ const move = (item: PrioritizedListId, down: boolean) => {
   items[nextIndex] = item;
   items[itemIndex] = nextItem;
   input(items);
-};
+}
 
-const remove = (item: PrioritizedListId) => {
+function remove(item: PrioritizedListId) {
   const items = [...get(value)];
   const itemIndex = items.indexOf(item);
   items.splice(itemIndex, 1);
   input(items);
-};
+}
 
 const { t } = useI18n();
 
@@ -94,7 +92,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
   if (num) {
     return t('prioritized_list.disabled_items', {
       num,
-      namePluralized: get(itemNameTr).namePluralized
+      namePluralized: get(itemNameTr).namePluralized,
     });
   }
   return t('prioritized_list.all_added');
@@ -103,8 +101,14 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
 
 <template>
   <div>
-    <RuiCard rounded="md" no-padding>
-      <template v-if="slots.title" #header>
+    <RuiCard
+      rounded="md"
+      no-padding
+    >
+      <template
+        v-if="slots.title"
+        #header
+      >
         <slot name="title" />
       </template>
 
@@ -123,10 +127,16 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           persistent-hint
         >
           <template #selection="{ item }">
-            <PrioritizedListEntry :data="itemData(item)" size="24px" />
+            <PrioritizedListEntry
+              :data="itemData(item)"
+              size="24px"
+            />
           </template>
           <template #item="{ item }">
-            <PrioritizedListEntry :data="itemData(item)" size="24px" />
+            <PrioritizedListEntry
+              :data="itemData(item)"
+              size="24px"
+            />
           </template>
         </VAutocomplete>
         <RuiTooltip :open-delay="400">
@@ -155,7 +165,9 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             <th class="w-[3.75rem] text-center">
               {{ t('common.priority') }}
             </th>
-            <th class="ps-6">{{ t('common.name') }}</th>
+            <th class="ps-6">
+              {{ t('common.name') }}
+            </th>
             <th />
           </tr>
         </thead>
@@ -167,20 +179,28 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               </div>
             </td>
           </tr>
-          <tr v-for="(identifier, index) in value" :key="identifier">
+          <tr
+            v-for="(identifier, index) in value"
+            :key="identifier"
+          >
             <td>
               <div class="flex flex-col py-2">
-                <RuiButtonGroup variant="outlined" size="sm" icon vertical>
+                <RuiButtonGroup
+                  variant="outlined"
+                  size="sm"
+                  icon
+                  vertical
+                >
                   <template #default>
                     <RuiButton
-                      :id="'move-up-' + identifier"
+                      :id="`move-up-${identifier}`"
                       :disabled="isFirst(identifier)"
                       @click="move(identifier, false)"
                     >
                       <RuiIcon name="arrow-up-s-line" />
                     </RuiButton>
                     <RuiButton
-                      :id="'move-down-' + identifier"
+                      :id="`move-down-${identifier}`"
                       :disabled="isLast(identifier)"
                       @click="move(identifier, true)"
                     >
@@ -190,7 +210,9 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                 </RuiButtonGroup>
               </div>
             </td>
-            <td class="text-center">{{ index + 1 }}</td>
+            <td class="text-center">
+              {{ index + 1 }}
+            </td>
             <td>
               <PrioritizedListEntry :data="itemData(identifier)" />
             </td>
@@ -202,7 +224,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               >
                 <template #activator>
                   <RuiButton
-                    :id="'delete-' + identifier"
+                    :id="`delete-${identifier}`"
                     icon
                     variant="text"
                     @click="remove(identifier)"
@@ -219,6 +241,9 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         </tbody>
       </SimpleTable>
     </RuiCard>
-    <ActionStatusIndicator class="my-4" :status="status" />
+    <ActionStatusIndicator
+      class="my-4"
+      :status="status"
+    />
   </div>
 </template>

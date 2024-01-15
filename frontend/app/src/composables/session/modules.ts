@@ -1,6 +1,6 @@
-import { type Module } from '@/types/modules';
+import type { Module } from '@/types/modules';
 
-export const useModules = () => {
+export function useModules() {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const isAnyModuleEnabled = (modules: Module[]) =>
@@ -15,6 +15,6 @@ export const useModules = () => {
   return {
     isAnyModuleEnabled,
     isModuleEnabled,
-    activeModules
+    activeModules,
   };
-};
+}

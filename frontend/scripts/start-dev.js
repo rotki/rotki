@@ -17,13 +17,13 @@ const colors = {
   green: msg => `\u001B[32m${msg}\u001B[0m`,
   yellow: msg => `\u001B[33m${msg}\u001B[0m`,
   blue: msg => `\u001B[34m${msg}\u001B[0m`,
-  cyan: msg => `\u001B[36m${msg}\u001B[0m`
+  cyan: msg => `\u001B[36m${msg}\u001B[0m`,
 };
 
 const logger = {
   info: msg => console.info(colors.cyan('dev'), `${msg}`),
   error: (prefix, msg) => console.error(prefix, msg.replace(/\n$/, '')),
-  debug: (prefix, msg) => console.log(prefix, msg.replace(/\n$/, ''))
+  debug: (prefix, msg) => console.log(prefix, msg.replace(/\n$/, '')),
 };
 
 if (!process.env.VIRTUAL_ENV) {
@@ -42,20 +42,20 @@ const pids = {};
 const listeners = {};
 const subprocesses = [];
 
-const startProcess = (cmd, tag, name, args, opts = undefined) => {
+function startProcess(cmd, tag, name, args, opts = undefined) {
   const createListeners = tag => ({
-    out: buffer => {
+    out: (buffer) => {
       logger.debug(tag, buffer.toLocaleString());
     },
-    err: buffer => {
+    err: (buffer) => {
       logger.error(tag, buffer.toLocaleString());
-    }
+    },
   });
 
   const child = spawn(cmd, args, {
     ...opts,
     shell: true,
-    stdio: [process.stdin]
+    stdio: [process.stdin],
   });
 
   subprocesses.push(child);
@@ -66,14 +66,15 @@ const startProcess = (cmd, tag, name, args, opts = undefined) => {
   pids[child.pid] = name;
   listeners[child.pid] = stdListeners;
   return child;
-};
+}
 
-const terminateSubprocesses = () => {
+function terminateSubprocesses() {
   let subprocess;
+  // eslint-disable-next-line no-cond-assign
   while ((subprocess = subprocesses.pop())) {
-    if (subprocess.killed) {
+    if (subprocess.killed)
       continue;
-    }
+
     const name = pids[subprocess.pid] ?? '';
     logger.info(`terminating process: ${name} (${subprocess.pid})`);
     const ls = listeners[subprocess.pid];
@@ -85,7 +86,7 @@ const terminateSubprocesses = () => {
 
     subprocess.kill();
   }
-};
+}
 
 process.on('SIGINT', () => {
   logger.info(`preparing to terminate subprocesses`);
@@ -98,7 +99,7 @@ if (startDevProxy) {
   startProcess(
     'pnpm run --filter @rotki/dev-proxy serve',
     colors.green(PROXY),
-    PROXY
+    PROXY,
   );
 }
 
@@ -107,15 +108,14 @@ logger.info('Starting @rotki/common watch');
 startProcess(
   'pnpm run --filter @rotki/common watch',
   colors.blue(COMMON),
-  COMMON
+  COMMON,
 );
 
 if (noElectron) {
   logger.info('Starting python backend');
   const logDir = path.join(process.cwd(), 'logs');
-  if (!fs.existsSync(logDir)) {
+  if (!fs.existsSync(logDir))
     fs.mkdirSync(logDir);
-  }
 
   const args = [
     '-m',
@@ -125,16 +125,17 @@ if (noElectron) {
     '--api-cors',
     'http://localhost:*',
     '--logfile',
-    `${path.join(logDir, 'backend.log')}`
+    `${path.join(logDir, 'backend.log')}`,
   ];
 
   startProcess('python', colors.yellow(BACKEND), BACKEND, args, {
-    cwd: path.join('..')
+    cwd: path.join('..'),
   });
 }
 
 logger.info('Starting rotki dev mode');
-const getDebuggerPort = () => {
+
+function getDebuggerPort() {
   try {
     const debuggerPort = process.env.DEBUGGER_PORT;
     if (debuggerPort) {
@@ -144,15 +145,15 @@ const getDebuggerPort = () => {
         : null;
     }
     return null;
-  } catch {
+  }
+  catch {
     return null;
   }
-};
+}
 const debuggerPort = getDebuggerPort();
 const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
-if (args) {
+if (args)
   logger.info(`starting rotki with args: ${args}`);
-}
 
 const serveCmd = noElectron
   ? 'pnpm run --filter rotki serve'
@@ -162,7 +163,7 @@ const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 const devRotkiProcess = startProcess(
   `${cmd} ${args}`,
   colors.magenta(ROTKI),
-  ROTKI
+  ROTKI,
 );
 
 devRotkiProcess.on('exit', () => {

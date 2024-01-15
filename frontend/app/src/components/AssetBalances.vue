@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
+import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
 
 defineOptions({
-  name: 'AssetBalances'
+  name: 'AssetBalances',
 });
 
 const props = withDefaults(
@@ -24,8 +24,8 @@ const props = withDefaults(
     loading: false,
     hideTotal: false,
     hideBreakdown: false,
-    stickyHeader: false
-  }
+    stickyHeader: false,
+  },
 );
 
 const { t } = useI18n();
@@ -34,7 +34,7 @@ const { balances } = toRefs(props);
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const total = computed(() =>
-  bigNumberSum(balances.value.map(({ usdValue }) => usdValue))
+  bigNumberSum(balances.value.map(({ usdValue }) => usdValue)),
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -42,7 +42,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
@@ -51,34 +51,34 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     key: 'asset',
     class: 'text-no-wrap w-full',
     cellClass: 'py-0',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('common.price_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdPrice',
     align: 'end',
     cellClass: 'py-0',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('common.amount'),
     key: 'amount',
     align: 'end',
     cellClass: 'py-0',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdValue',
     align: 'end',
     class: 'text-no-wrap',
     cellClass: 'py-0',
-    sortable: true
-  }
+    sortable: true,
+  },
 ]);
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
@@ -90,7 +90,7 @@ const sorted = computed(() => {
     return sortItems(
       data,
       [sortBy.column as keyof AssetBalance],
-      [sortBy.direction === 'desc']
+      [sortBy.direction === 'desc'],
     );
   }
   return data;
@@ -98,9 +98,9 @@ const sorted = computed(() => {
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
-const expand = (item: AssetBalanceWithPrice) => {
+function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
-};
+}
 </script>
 
 <template>
@@ -150,7 +150,10 @@ const expand = (item: AssetBalanceWithPrice) => {
         :value="row.usdValue"
       />
     </template>
-    <template v-if="balances.length > 0 && !hideTotal" #body.append>
+    <template
+      v-if="balances.length > 0 && !hideTotal"
+      #body.append
+    >
       <RowAppend
         label-colspan="3"
         :label="t('common.total')"

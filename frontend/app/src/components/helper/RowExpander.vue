@@ -8,7 +8,12 @@ const click = () => emit('click');
 </script>
 
 <template>
-  <RuiButton variant="text" class="!p-2" icon @click="click()">
+  <RuiButton
+    variant="text"
+    class="!p-2"
+    icon
+    @click="click()"
+  >
     <RuiIcon
       name="arrow-down-s-line"
       class="transition"

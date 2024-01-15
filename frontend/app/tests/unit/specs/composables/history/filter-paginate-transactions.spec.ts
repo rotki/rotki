@@ -1,15 +1,14 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
-import { RouterAccountsSchema } from '@/types/route';
+import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type {
   HistoryEvent,
-  HistoryEventRequestPayload
+  HistoryEventRequestPayload,
 } from '@/types/history/events';
-import type { LocationQuery } from '@/types/route';
 import type { GeneralAccount } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
@@ -17,15 +16,15 @@ import type Vue from 'vue';
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
     reactive({
-      query: {}
-    })
+      query: {},
+    }),
   ),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(({ query }) => {
       useRoute().query = query;
       return true;
-    })
-  })
+    }),
+  }),
 }));
 
 vi.mock('vue', async () => {
@@ -33,7 +32,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn()
+    onBeforeMount: vi.fn(),
   };
 });
 
@@ -51,8 +50,8 @@ describe('composables::history/filter-paginate', () => {
       address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
       chain: Blockchain.ETH,
       label: '',
-      tags: []
-    }
+      tags: [],
+    },
   ]);
   const router = useRouter();
   const route = useRoute();
@@ -71,15 +70,14 @@ describe('composables::history/filter-paginate', () => {
   describe('components::history/trades/HistoryEventsView', () => {
     const onUpdateFilters = (query: LocationQuery) => {
       const parsedAccounts = RouterAccountsSchema.parse(query);
-      if (parsedAccounts.accounts) {
+      if (parsedAccounts.accounts)
         set(accounts, parsedAccounts.accounts);
-      }
     };
 
     const extraParams = computed(() => ({
       accounts: get(accounts).map(
-        account => `${account.address}#${account.chain}`
-      )
+        account => `${account.address}#${account.chain}`,
+      ),
     }));
 
     const customPageParams = computed<Partial<HistoryEventRequestPayload>>(
@@ -88,15 +86,15 @@ describe('composables::history/filter-paginate', () => {
         eventTypes: get(eventTypes),
         eventSubtypes: get(eventSubTypes),
         location: 'ethereum',
-        locationLabels: get(accounts)[0].address
-      })
+        locationLabels: get(accounts)[0].address,
+      }),
     );
 
     beforeEach(() => {
       set(mainPage, true);
     });
 
-    test('initialize composable correctly', async () => {
+    it('initialize composable correctly', async () => {
       const {
         userAction,
         filters,
@@ -104,7 +102,7 @@ describe('composables::history/filter-paginate', () => {
         state,
         fetchData,
         applyRouteFilter,
-        isLoading
+        isLoading,
       } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
@@ -120,8 +118,8 @@ describe('composables::history/filter-paginate', () => {
         {
           onUpdateFilters,
           extraParams,
-          customPageParams
-        }
+          customPageParams,
+        },
       );
 
       expect(get(userAction)).toBe(false);
@@ -140,7 +138,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(6);
     });
 
-    test('check the return types', async () => {
+    it('check the return types', async () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
@@ -156,8 +154,8 @@ describe('composables::history/filter-paginate', () => {
         {
           onUpdateFilters,
           extraParams,
-          customPageParams
-        }
+          customPageParams,
+        },
       );
 
       expect(get(isLoading)).toBe(false);
@@ -169,7 +167,7 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
     });
 
-    test('modify filters and fetch data correctly', async () => {
+    it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['timestamp'], sortDesc: ['false'] };
 
@@ -188,12 +186,12 @@ describe('composables::history/filter-paginate', () => {
         {
           onUpdateFilters,
           extraParams,
-          customPageParams
-        }
+          customPageParams,
+        },
       );
 
       await router.push({
-        query
+        query,
       });
 
       expect(pushSpy).toHaveBeenCalledOnce();
@@ -216,13 +214,13 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(6);
     });
 
-    test('add protocols to filters and expect the value to be set', async () => {
+    it('add protocols to filters and expect the value to be set', async () => {
       set(protocols, ['gas', 'ens']);
 
       const query = {
         sortBy: ['timestamp'],
         sortDesc: ['false'],
-        counterparties: get(protocols)
+        counterparties: get(protocols),
       };
 
       const { isLoading, filters } = usePaginationFilters<
@@ -240,12 +238,12 @@ describe('composables::history/filter-paginate', () => {
         {
           onUpdateFilters,
           extraParams,
-          customPageParams
-        }
+          customPageParams,
+        },
       );
 
       await router.push({
-        query
+        query,
       });
 
       expect(get(isLoading)).toBe(true);
@@ -255,11 +253,11 @@ describe('composables::history/filter-paginate', () => {
       expect(get(filters).counterparties).toStrictEqual(get(protocols));
     });
 
-    test('exclusion filters', async () => {
+    it('exclusion filters', async () => {
       const fetchHistoryEvents = vi.fn();
 
-      const { userAction, fetchData, isLoading, updateFilter } =
-        usePaginationFilters<
+      const { userAction, fetchData, isLoading, updateFilter }
+        = usePaginationFilters<
           HistoryEvent,
           HistoryEventRequestPayload,
           HistoryEvent,
@@ -274,13 +272,13 @@ describe('composables::history/filter-paginate', () => {
           {
             onUpdateFilters,
             extraParams,
-            customPageParams
-          }
+            customPageParams,
+          },
         );
 
       updateFilter({
         location: 'protocols',
-        entryTypes: ['!evm event']
+        entryTypes: ['!evm event'],
       });
 
       set(userAction, true);
@@ -294,10 +292,10 @@ describe('composables::history/filter-paginate', () => {
           value: expect.objectContaining({
             entryTypes: {
               behaviour: FilterBehaviour.EXCLUDE,
-              values: ['evm event']
-            }
-          })
-        })
+              values: ['evm event'],
+            },
+          }),
+        }),
       );
     });
   });

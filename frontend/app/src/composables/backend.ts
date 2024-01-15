@@ -1,33 +1,34 @@
 import { BackendOptions } from '@/electron-main/ipc';
-import { type Writeable } from '@/types';
-import { type LogLevel } from '@/utils/log-level';
+import type { Writeable } from '@/types';
+import type { LogLevel } from '@/utils/log-level';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
 export const loadUserOptions: () => Partial<BackendOptions> = () => {
   const defaultConfig: Partial<BackendOptions> = {
-    loglevel: getDefaultLogLevel()
+    loglevel: getDefaultLogLevel(),
   };
   try {
     const opts = localStorage.getItem(BACKEND_OPTIONS);
     let options: Writeable<Partial<BackendOptions>>;
-    if (opts) {
+    if (opts)
       options = BackendOptions.parse(JSON.parse(opts));
-    } else {
+    else
       options = defaultConfig;
-    }
+
     return options;
-  } catch {
+  }
+  catch {
     return defaultConfig;
   }
 };
 
-export const saveUserOptions = (config: Partial<BackendOptions>) => {
+export function saveUserOptions(config: Partial<BackendOptions>) {
   const options = JSON.stringify(config);
   localStorage.setItem(BACKEND_OPTIONS, options);
-};
+}
 
-export const useBackendManagement = (loaded: () => void = () => {}) => {
+export function useBackendManagement(loaded: () => void = () => {}) {
   const interop = useInterop();
   const store = useMainStore();
   const { connected } = storeToRefs(store);
@@ -40,7 +41,7 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   const defaultLogDirectory = ref('');
   const options = computed<Partial<BackendOptions>>(() => ({
     ...get(userOptions),
-    ...get(fileConfig)
+    ...get(fileConfig),
   }));
 
   onMounted(async () => {
@@ -50,7 +51,7 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   });
 
   const restartBackendWithOptions = async (
-    options: Partial<BackendOptions>
+    options: Partial<BackendOptions>,
   ) => {
     await setConnected(false);
     await interop.restartBackend(options);
@@ -58,15 +59,14 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   };
 
   const load = async () => {
-    if (!interop.isPackaged) {
+    if (!interop.isPackaged)
       return;
-    }
+
     set(userOptions, loadUserOptions());
     set(fileConfig, await interop.config(false));
     const { logDirectory } = await interop.config(true);
-    if (logDirectory) {
+    if (logDirectory)
       set(defaultLogDirectory, logDirectory);
-    }
   };
 
   const saveOptions = async (opts: Partial<BackendOptions>) => {
@@ -75,7 +75,7 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
       logDirectory,
       dataDirectory,
       loglevel,
-      ...opts
+      ...opts,
     };
     await applyUserOptions(updatedOptions);
   };
@@ -91,9 +91,9 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   };
 
   const restartBackend = async () => {
-    if (!interop.isPackaged) {
+    if (!interop.isPackaged)
       return;
-    }
+
     await load();
     await restartBackendWithOptions(get(options));
   };
@@ -107,23 +107,21 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   };
 
   const setupBackend = async () => {
-    if (get(connected)) {
+    if (get(connected))
       return;
-    }
 
     const { sessionOnly, url } = getBackendUrl();
-    if (!!url && !sessionOnly) {
+    if (!!url && !sessionOnly)
       await backendChanged(url);
-    } else {
+    else
       await restartBackend();
-    }
   };
 
   const backendChanged = async (url: string | null) => {
     setConnected(false);
-    if (!url) {
+    if (!url)
       await restartBackend();
-    }
+
     await connect(url);
   };
 
@@ -138,6 +136,6 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
     restartBackend,
     resetSessionBackend,
     setupBackend,
-    backendChanged
+    backendChanged,
   };
-};
+}

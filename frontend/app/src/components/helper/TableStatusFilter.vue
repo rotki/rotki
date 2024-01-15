@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 </script>
 
@@ -21,9 +21,15 @@ defineOptions({
         data-cy="status-filter"
         v-on="on"
       >
-        <RuiIcon size="20" name="equalizer-line" />
+        <RuiIcon
+          size="20"
+          name="equalizer-line"
+        />
         <template #append>
-          <RuiIcon size="20" name="arrow-down-s-line" />
+          <RuiIcon
+            size="20"
+            name="arrow-down-s-line"
+          />
         </template>
       </RuiButton>
     </template>

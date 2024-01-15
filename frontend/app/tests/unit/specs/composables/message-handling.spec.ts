@@ -1,17 +1,17 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SocketMessageType } from '@/types/websocket-messages';
-import { type EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/types/api/chains';
 
 vi.mock('@/store/notifications', async () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn()
-  })
+    notify: vi.fn(),
+  }),
 }));
 
 vi.mock('@/composables/balances/token-detection', () => ({
   useTokenDetection: vi.fn().mockReturnValue({
-    detectTokens: vi.fn()
-  })
+    detectTokens: vi.fn(),
+  }),
 }));
 
 vi.mock('@/composables/info/chains', () => ({
@@ -22,13 +22,13 @@ vi.mock('@/composables/info/chains', () => ({
         id: Blockchain.OPTIMISM,
         type: 'evm',
         name: 'Optimism',
-        nativeToken: 'ETH'
-      } satisfies EvmChainInfo
+        nativeToken: 'ETH',
+      } satisfies EvmChainInfo,
     ]),
     getChain: () => Blockchain.OPTIMISM,
     getChainName: () => Blockchain.OPTIMISM,
-    getNativeAsset: (chain: Blockchain) => chain
-  })
+    getNativeAsset: (chain: Blockchain) => chain,
+  }),
 }));
 
 describe('composables::message-handling', () => {
@@ -36,7 +36,7 @@ describe('composables::message-handling', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
   });
-  test('notifies the user and runs token detection', async () => {
+  it('notifies the user and runs token detection', async () => {
     const { handleMessage } = useMessageHandling();
     const { notify } = useNotificationsStore();
     const { canRequestData } = storeToRefs(useSessionAuthStore());
@@ -48,10 +48,10 @@ describe('composables::message-handling', () => {
         data: [
           {
             evm_chain: 'optimism',
-            address: '0xdead'
-          }
-        ]
-      })
+            address: '0xdead',
+          },
+        ],
+      }),
     );
 
     expect(detectTokens).toHaveBeenCalledTimes(1);

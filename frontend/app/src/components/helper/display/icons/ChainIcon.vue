@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 interface Props {
   size?: string;
@@ -7,7 +7,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: '26px'
+  size: '26px',
 });
 
 const { chain } = toRefs(props);

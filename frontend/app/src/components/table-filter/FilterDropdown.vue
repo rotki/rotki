@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import {
-  type BaseSuggestion,
-  type SearchMatcher,
-  type Suggestion
+import type { Ref } from 'vue';
+import type {
+  BaseSuggestion,
+  SearchMatcher,
+  Suggestion,
 } from '@/types/filtering';
 
 const props = withDefaults(
@@ -15,14 +15,14 @@ const props = withDefaults(
   }>(),
   {
     selectedMatcher: null,
-    keyword: ''
-  }
+    keyword: '',
+  },
 );
 
 const emit = defineEmits<{
   (e: 'click', item: SearchMatcher<any>): void;
   (e: 'suggest', item: Suggestion): void;
-  (e: 'apply:filter', item: Suggestion): void;
+  (e: 'apply-filter', item: Suggestion): void;
 }>();
 
 const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
@@ -32,51 +32,49 @@ const keywordSplited = computed(() => splitSearch(get(keyword)));
 const lastSuggestion: Ref<Suggestion | null> = ref(null);
 const suggested: Ref<Suggestion[]> = ref([]);
 
-const updateSuggestion = (value: Suggestion[], index: number) => {
+function updateSuggestion(value: Suggestion[], index: number) {
   set(lastSuggestion, value[index]);
   emit('suggest', {
     ...value[index],
     index,
-    total: value.length
+    total: value.length,
   });
-};
+}
 
-const click = (matcher: SearchMatcher<any>) => {
+function click(matcher: SearchMatcher<any>) {
   emit('click', matcher);
-};
+}
 
-const applyFilter = (item: Suggestion) => {
+function applyFilter(item: Suggestion) {
   const value = typeof item.value === 'string' ? item.value : item.value.symbol;
-  if (value) {
-    emit('apply:filter', item);
-  }
-};
+  if (value)
+    emit('apply-filter', item);
+}
 
-watch(selectedSuggestion, index => {
+watch(selectedSuggestion, (index) => {
   updateSuggestion(get(suggested), index);
 });
 
-watch(suggested, value => {
+watch(suggested, (value) => {
   if (value.length > 0) {
-    if (get(lastSuggestion) !== value[0]) {
+    if (get(lastSuggestion) !== value[0])
       updateSuggestion(value, 0);
-    }
-  } else {
+  }
+  else {
     set(lastSuggestion, null);
     emit('suggest', { key: '', index: 0, total: 0 } as Suggestion);
   }
 });
 
 watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
-  if (!keyword || !selectedMatcher) {
+  if (!keyword || !selectedMatcher)
     return [];
-  }
 
   const search = splitSearch(keyword);
-  const exclude =
-    'string' in selectedMatcher &&
-    !!selectedMatcher.allowExclusion &&
-    !!search.exclude;
+  const exclude
+    = 'string' in selectedMatcher
+    && !!selectedMatcher.allowExclusion
+    && !!search.exclude;
 
   const suggestedFilter = selectedMatcher.key;
 
@@ -88,30 +86,33 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
     suggestedItems = selectedMatcher.suggestions().map(item => ({
       key: suggestedFilter,
       value: item,
-      exclude
+      exclude,
     }));
-  } else if ('asset' in selectedMatcher) {
+  }
+  else if ('asset' in selectedMatcher) {
     if (searchString) {
       suggestedItems = (await selectedMatcher.suggestions(searchString)).map(
         asset => ({
           key: suggestedFilter,
           value: asset,
-          exclude
-        })
+          exclude,
+        }),
       );
     }
-  } else if ('boolean' in selectedMatcher) {
+  }
+  else if ('boolean' in selectedMatcher) {
     suggestedItems = [
       {
         key: suggestedFilter,
         value: true,
-        exclude: false
-      }
+        exclude: false,
+      },
     ];
-  } else {
+  }
+  else {
     logger.debug(
-      "Matcher doesn't have asset=true, string=true, or boolean=true.",
-      selectedMatcher
+      'Matcher doesn\'t have asset=true, string=true, or boolean=true.',
+      selectedMatcher,
     );
   }
 
@@ -135,17 +136,17 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
         value: a.value,
         asset: typeof a.value !== 'string',
         total: suggestedItems.length,
-        exclude
-      }))
+        exclude,
+      })),
   );
 });
 
 const { t } = useI18n();
 
 watch(selectedSuggestion, () => {
-  if (get(selectedMatcher)) {
+  if (get(selectedMatcher))
     return;
-  }
+
   nextTick(() => {
     document
       .getElementsByClassName('highlightedMatcher')[0]
@@ -161,7 +162,11 @@ const css = useCssModule();
 <template>
   <div class="px-4 py-1">
     <div v-if="selectedMatcher">
-      <div v-if="suggested.length > 0" class="mb-2" :class="css.suggestions">
+      <div
+        v-if="suggested.length > 0"
+        class="mb-2"
+        :class="css.suggestions"
+      >
         <RuiButton
           v-for="(item, index) in suggested"
           :key="item.index"
@@ -169,14 +174,17 @@ const css = useCssModule();
           variant="text"
           class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
           :class="{
-            ['!bg-rui-primary-lighter/20']: index === selectedSuggestion
+            ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
           }"
           @click="applyFilter(item)"
         >
           <SuggestedItem :suggestion="item" />
         </RuiButton>
       </div>
-      <div v-else class="pb-0">
+      <div
+        v-else
+        class="pb-0"
+      >
         <div class="text-rui-text-secondary">
           <i18n path="table_filter.no_suggestions">
             <template #search>
@@ -207,12 +215,18 @@ const css = useCssModule();
         {{ selectedMatcher.hint }}
       </div>
     </div>
-    <div v-else-if="keyword && matchers.length === 0" class="pb-2">
+    <div
+      v-else-if="keyword && matchers.length === 0"
+      class="pb-2"
+    >
       <span>{{ t('table_filter.unsupported_filter') }}</span>
       <span class="font-medium ms-2">{{ keyword }}</span>
     </div>
     <div v-if="!selectedMatcher && matchers.length > 0">
-      <div :class="highlightedTextClasses" class="text-uppercase font-bold">
+      <div
+        :class="highlightedTextClasses"
+        class="uppercase font-bold"
+      >
         {{ t('table_filter.title') }}
       </div>
       <RuiDivider class="my-2" />
@@ -227,7 +241,10 @@ const css = useCssModule();
         />
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-light mt-2">
+    <div
+      :class="highlightedTextClasses"
+      class="font-light mt-2"
+    >
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-medium">

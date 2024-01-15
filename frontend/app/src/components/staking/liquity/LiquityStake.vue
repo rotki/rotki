@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type LiquityStakingDetailEntry } from '@rotki/common/lib/liquity';
 import { Section } from '@/types/status';
+import type { LiquityStakingDetailEntry } from '@rotki/common/lib/liquity';
 
 withDefaults(
   defineProps<{
     stake?: LiquityStakingDetailEntry | null;
   }>(),
   {
-    stake: null
-  }
+    stake: null,
+  },
 );
 
 const { t } = useI18n();
@@ -19,7 +19,9 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 
 <template>
   <RuiCard>
-    <template #header> {{ t('loan_stake.title') }} </template>
+    <template #header>
+      {{ t('loan_stake.title') }}
+    </template>
     <template v-if="stake">
       <div class="flex items-center justify-end">
         <BalanceDisplay
@@ -48,7 +50,10 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
         </div>
       </div>
     </template>
-    <div v-else class="text-center text-rui-text-secondary pb-4">
+    <div
+      v-else
+      class="text-center text-rui-text-secondary pb-4"
+    >
       {{ t('loan_stake.no_lqty_staked') }}
     </div>
   </RuiCard>

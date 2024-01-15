@@ -3,7 +3,7 @@ export class Currency {
     readonly name: string,
     readonly tickerSymbol: SupportedCurrency,
     readonly unicodeSymbol: string,
-    readonly crypto: boolean = false
+    readonly crypto: boolean = false,
   ) {}
 }
 
@@ -56,7 +56,7 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_INR,
   CURRENCY_DKK,
   CURRENCY_PLN,
-  CURRENCY_NGN
+  CURRENCY_NGN,
 ] as const;
 
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
@@ -87,26 +87,26 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency(t('currencies.pln'), CURRENCY_PLN, 'zł'),
     new Currency(t('currencies.ngn'), CURRENCY_NGN, '₦'),
     new Currency('Bitcoin', CURRENCY_BTC, '₿', true),
-    new Currency('Ether', CURRENCY_ETH, 'Ξ', true)
+    new Currency('Ether', CURRENCY_ETH, 'Ξ', true),
   ]);
 
   const defaultCurrency: ComputedRef<Currency> = computed(
-    () => get(currencies)[0]
+    () => get(currencies)[0],
   );
 
   const findCurrency = (currencySymbol: string): Currency => {
     const currency: Currency | undefined = get(currencies).find(
-      currency => currency.tickerSymbol === currencySymbol
+      currency => currency.tickerSymbol === currencySymbol,
     );
-    if (!currency) {
+    if (!currency)
       throw new Error(`Could not find ${currencySymbol}`);
-    }
+
     return currency;
   };
 
   return {
     currencies,
     defaultCurrency,
-    findCurrency
+    findCurrency,
   };
 });

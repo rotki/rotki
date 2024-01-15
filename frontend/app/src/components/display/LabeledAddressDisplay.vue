@@ -1,35 +1,32 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
+import type { GeneralAccount } from '@rotki/common/lib/account';
 
 const props = defineProps<{
   account: GeneralAccount;
 }>();
 
 const { account } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
-  useScramble();
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier }
+  = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 const css = useCssModule();
 
 const aliasName: ComputedRef<string> = computed(() => {
-  if (get(scrambleData)) {
+  if (get(scrambleData))
     return '';
-  }
 
   const { address, chain } = get(account);
   const name = get(addressNameSelector(address, chain));
 
-  if (!name) {
+  if (!name)
     return get(label);
-  }
 
   return name;
 });
 
 const ensName: ComputedRef<string | null> = computed(() => {
-  if (get(scrambleData)) {
+  if (get(scrambleData))
     return null;
-  }
 
   const { address } = get(account);
   return get(ensNameSelector(address));
@@ -50,38 +47,35 @@ const truncationLength = computed<number>(() => {
 });
 
 const truncatedAddress: ComputedRef<string> = computed(() =>
-  truncateAddress(get(address), get(truncationLength))
+  truncateAddress(get(address), get(truncationLength)),
 );
 
 const truncated = computed<boolean>(() => {
   const truncated = get(truncatedAddress);
-  if (truncated.length >= get(address).length) {
+  if (truncated.length >= get(address).length)
     return false;
-  }
+
   return truncated.includes('...');
 });
 
 const label = computed<string>(() => {
   const label = get(account).label;
 
-  if (consistOfNumbers(label)) {
+  if (consistOfNumbers(label))
     return scrambleIdentifier(label);
-  }
 
   return label;
 });
 
 const truncatedAliasName: ComputedRef<string> = computed(() => {
   const name = get(aliasName);
-  if (!name) {
+  if (!name)
     return '';
-  }
 
   const length = get(truncationLength) * 2;
 
-  if (length > 0 && name.length > length) {
+  if (length > 0 && name.length > length)
     return `${name.slice(0, Math.max(0, length))}...`;
-  }
 
   return name;
 });
@@ -105,25 +99,41 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           data-cy="labeled-address-display"
           :class="[
             css['labeled-address-display__address'],
-            { 'labeled-address-display__address--mobile': xs }
+            { 'labeled-address-display__address--mobile': xs },
           ]"
         >
-          <EnsAvatar :address="address" avatar />
-          <span v-if="aliasName" class="text-truncate">
+          <EnsAvatar
+            :address="address"
+            avatar
+          />
+          <span
+            v-if="aliasName"
+            class="text-truncate"
+          >
             {{ truncatedAliasName }}
           </span>
-          <span v-else :class="{ blur: !shouldShowAmount }">
+          <span
+            v-else
+            :class="{ blur: !shouldShowAmount }"
+          >
             {{ truncatedAddress }}
           </span>
         </span>
       </template>
       <div>
-        <div v-if="aliasName">{{ aliasName }}</div>
-        <div v-if="ensName && aliasName !== ensName">({{ ensName }})</div>
+        <div v-if="aliasName">
+          {{ aliasName }}
+        </div>
+        <div v-if="ensName && aliasName !== ensName">
+          ({{ ensName }})
+        </div>
         <div>{{ address }}</div>
       </div>
     </RuiTooltip>
-    <RuiDivider vertical :class="css['labeled-address-display__divider']" />
+    <RuiDivider
+      vertical
+      :class="css['labeled-address-display__divider']"
+    />
     <div :class="css['labeled-address-display__actions']">
       <HashLink
         class="h-full"

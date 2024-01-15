@@ -1,26 +1,26 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
-  validWithSessionStatus
+  validWithSessionStatus,
 } from '@/services/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { BackendConfiguration } from '@/types/backend';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useSettingsApi = () => {
+export function useSettingsApi() {
   const setSettings = async (
-    settings: SettingsUpdate
+    settings: SettingsUpdate,
   ): Promise<UserSettingsModel> => {
     const response = await api.instance.put<ActionResult<UserSettingsModel>>(
       '/settings',
       snakeCaseTransformer({
-        settings
+        settings,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     const data = handleResponse(response);
     return UserSettingsModel.parse(data);
@@ -30,8 +30,8 @@ export const useSettingsApi = () => {
     const response = await api.instance.get<ActionResult<UserSettingsModel>>(
       '/settings',
       {
-        validateStatus: validWithSessionStatus
-      }
+        validateStatus: validWithSessionStatus,
+      },
     );
 
     const data = handleResponse(response);
@@ -40,7 +40,7 @@ export const useSettingsApi = () => {
 
   const backendSettings = async (): Promise<BackendConfiguration> => {
     const response = await api.instance.get<ActionResult<BackendConfiguration>>(
-      '/settings/configuration'
+      '/settings/configuration',
     );
     return BackendConfiguration.parse(handleResponse(response));
   };
@@ -48,6 +48,6 @@ export const useSettingsApi = () => {
   return {
     setSettings,
     getSettings,
-    backendSettings
+    backendSettings,
   };
-};
+}

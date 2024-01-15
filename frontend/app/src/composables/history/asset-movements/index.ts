@@ -1,16 +1,16 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type Collection, type CollectionResponse } from '@/types/collection';
-import { type EntryWithMeta } from '@/types/history/meta';
-import {
-  type AssetMovement,
-  type AssetMovementEntry,
-  type AssetMovementRequestPayload
-} from '@/types/history/asset-movements';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { MaybeRef } from '@vueuse/core';
+import type { Collection, CollectionResponse } from '@/types/collection';
+import type { EntryWithMeta } from '@/types/history/meta';
+import type {
+  AssetMovement,
+  AssetMovementEntry,
+  AssetMovementRequestPayload,
+} from '@/types/history/asset-movements';
+import type { TaskMeta } from '@/types/task';
 
-export const useAssetMovements = () => {
+export function useAssetMovements() {
   const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;
@@ -30,7 +30,7 @@ export const useAssetMovements = () => {
       ascending: [false],
       orderByAttributes: ['timestamp'],
       onlyCache: false,
-      location
+      location,
     };
 
     const { taskId } = await getAssetMovementsTask(defaults);
@@ -38,9 +38,9 @@ export const useAssetMovements = () => {
     const taskMeta = {
       title: t('actions.asset_movements.task.title'),
       description: t('actions.asset_movements.task.description', {
-        exchange
+        exchange,
       }),
-      location
+      location,
     };
 
     try {
@@ -48,17 +48,18 @@ export const useAssetMovements = () => {
         CollectionResponse<EntryWithMeta<AssetMovement>>,
         TaskMeta
       >(taskId, taskType, taskMeta, true);
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         notify({
           title: t('actions.asset_movements.error.title', {
-            exchange
+            exchange,
           }),
           message: t('actions.asset_movements.error.description', {
             exchange,
-            error: e.message
+            error: error.message,
           }),
-          display: true
+          display: true,
         });
       }
     }
@@ -68,10 +69,10 @@ export const useAssetMovements = () => {
 
   const refreshAssetMovements = async (
     userInitiated = false,
-    location?: string
+    location?: string,
   ): Promise<void> => {
-    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
-      useStatusUpdater(Section.ASSET_MOVEMENT);
+    const { setStatus, isFirstLoad, resetStatus, fetchDisabled }
+      = useStatusUpdater(Section.ASSET_MOVEMENT);
 
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping asset movement refresh');
@@ -86,26 +87,27 @@ export const useAssetMovements = () => {
       await Promise.all(locations.map(syncAssetMovementsTask));
       await fetchAssociatedLocations();
       setStatus(Status.LOADED);
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
       resetStatus();
     }
   };
 
   const fetchAssetMovements = async (
-    payload: MaybeRef<AssetMovementRequestPayload>
+    payload: MaybeRef<AssetMovementRequestPayload>,
   ): Promise<Collection<AssetMovementEntry>> => {
     const result = await getAssetMovements({
       ...get(payload),
-      onlyCache: true
+      onlyCache: true,
     });
     return mapCollectionEntriesWithMeta<AssetMovement>(
-      mapCollectionResponse(result)
+      mapCollectionResponse(result),
     );
   };
 
   return {
     refreshAssetMovements,
-    fetchAssetMovements
+    fetchAssetMovements,
   };
-};
+}

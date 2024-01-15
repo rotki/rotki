@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import { type HistoryEventEntry } from '@/types/history/events';
 import Fragment from '@/components/helper/Fragment';
+import type { Ref } from 'vue';
+import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -11,14 +11,14 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
-  (e: 'edit:event', data: HistoryEventEntry): void;
+  (e: 'edit-event', data: HistoryEventEntry): void;
   (
-    e: 'delete:event',
+    e: 'delete-event',
     data: {
       canDelete: boolean;
       item: HistoryEventEntry;
@@ -34,27 +34,26 @@ const { eventGroup, allEvents } = toRefs(props);
 const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
   const all = get(allEvents);
   const eventHeader = get(eventGroup);
-  if (all.length === 0) {
+  if (all.length === 0)
     return [eventHeader];
-  }
+
   const eventIdentifierHeader = eventHeader.eventIdentifier;
   const filtered = all
     .filter(
       ({ eventIdentifier, hidden }) =>
-        eventIdentifier === eventIdentifierHeader && !hidden
+        eventIdentifier === eventIdentifierHeader && !hidden,
     )
     .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 
-  if (filtered.length > 0) {
+  if (filtered.length > 0)
     return filtered;
-  }
 
   return [eventHeader];
 }, []);
 
 const ignoredInAccounting = useRefMap(
   eventGroup,
-  ({ ignoredInAccounting }) => !!ignoredInAccounting
+  ({ ignoredInAccounting }) => !!ignoredInAccounting,
 );
 
 const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
@@ -68,12 +67,11 @@ watch(
   [eventGroup, ignoredInAccounting],
   ([current, currentIgnored], [old, oldIgnored]) => {
     if (
-      current.eventIdentifier !== old.eventIdentifier ||
-      currentIgnored !== oldIgnored
-    ) {
+      current.eventIdentifier !== old.eventIdentifier
+      || currentIgnored !== oldIgnored
+    )
       set(panel, currentIgnored ? [] : [0]);
-    }
-  }
+  },
 );
 
 const blockEvent = isEthBlockEventRef(eventGroup);
@@ -88,11 +86,16 @@ const blockEvent = isEthBlockEventRef(eventGroup);
         :events="events"
         :block-number="blockEvent?.blockNumber"
         :loading="loading"
-        @delete:event="emit('delete:event', $event)"
+        @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-        @edit:event="emit('edit:event', $event)"
+        @edit-event="emit('edit-event', $event)"
       />
-      <VExpansionPanels v-else v-model="panel" flat multiple>
+      <VExpansionPanels
+        v-else
+        v-model="panel"
+        flat
+        multiple
+      >
         <VExpansionPanel class="!bg-transparent !p-0">
           <VExpansionPanelHeader
             v-if="showDropdown"
@@ -104,8 +107,8 @@ const blockEvent = isEthBlockEventRef(eventGroup);
                   open
                     ? t('transactions.events.view.hide')
                     : t('transactions.events.view.show', {
-                        length: events.length
-                      })
+                      length: events.length,
+                    })
                 }}
               </div>
             </template>
@@ -116,11 +119,11 @@ const blockEvent = isEthBlockEventRef(eventGroup);
               :events="events"
               :block-number="blockEvent?.blockNumber"
               :loading="loading"
-              @delete:event="emit('delete:event', $event)"
+              @delete-event="emit('delete-event', $event)"
               @show:missing-rule-action="
                 emit('show:missing-rule-action', $event)
               "
-              @edit:event="emit('edit:event', $event)"
+              @edit-event="emit('edit-event', $event)"
             />
           </VExpansionPanelContent>
         </VExpansionPanel>

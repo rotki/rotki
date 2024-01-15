@@ -7,8 +7,8 @@ withDefaults(
     menu?: boolean;
   }>(),
   {
-    menu: false
-  }
+    menu: false,
+  },
 );
 
 const { showComponents } = storeToRefs(usePremiumStore());

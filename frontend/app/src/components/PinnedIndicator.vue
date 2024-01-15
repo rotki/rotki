@@ -1,15 +1,15 @@
 <script setup lang="ts">
 const props = defineProps<{ visible: boolean }>();
 
-const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
+const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();
 
 const { visible } = toRefs(props);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 const { t } = useI18n();
 
-const toggleVisibility = () => {
-  emit('visible:update', !get(visible));
-};
+function toggleVisibility() {
+  emit('update:visible', !get(visible));
+}
 
 const css = useCssModule();
 </script>
@@ -29,7 +29,10 @@ const css = useCssModule();
       size="lg"
       class="flex items-center"
     >
-      <RuiIcon :class="{ [css.visible]: visible }" name="pushpin-line" />
+      <RuiIcon
+        :class="{ [css.visible]: visible }"
+        name="pushpin-line"
+      />
     </RuiBadge>
   </MenuTooltipButton>
 </template>

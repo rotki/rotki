@@ -12,10 +12,10 @@ const version = version => `\u001B[33m\u001B[40m${version}\u001B[0m`;
 if (!semver.satisfies(pnpmVersion, requiredPnpmVersion)) {
   console.error(
     `${error(
-      'ERROR!'
+      'ERROR!',
     )} ${requiredPnpmVersion} of pnpm is required. The current pnpm version ${version(
-      pnpmVersion
-    )} does not satisfy the required version.\n\n`
+      pnpmVersion,
+    )} does not satisfy the required version.\n\n`,
   );
   process.exit(1);
 }
@@ -23,10 +23,10 @@ if (!semver.satisfies(pnpmVersion, requiredPnpmVersion)) {
 if (!semver.satisfies(process.version, requiredNodeVersion)) {
   console.error(
     `${error(
-      'ERROR!'
+      'ERROR!',
     )} ${requiredNodeVersion} of node is required. The current node version ${version(
-      process.version
-    )} does not satisfy the required version.\n\n`
+      process.version,
+    )} does not satisfy the required version.\n\n`,
   );
   process.exit(1);
 }

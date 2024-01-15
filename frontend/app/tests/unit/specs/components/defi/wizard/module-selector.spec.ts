@@ -9,11 +9,11 @@ import { libraryDefaults } from '../../../../utils/provide-defaults';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn()
-  })
+    setSettings: vi.fn(),
+  }),
 }));
 
-describe('ModuleSelector.vue', () => {
+describe('moduleSelector.vue', () => {
   let wrapper: Wrapper<any>;
   let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
   let pinia: Pinia;
@@ -25,7 +25,7 @@ describe('ModuleSelector.vue', () => {
       pinia,
       vuetify,
       stubs: ['card'],
-      provide: libraryDefaults
+      provide: libraryDefaults,
     });
   };
 
@@ -41,27 +41,27 @@ describe('ModuleSelector.vue', () => {
     api.setSettings = vi.fn();
   });
 
-  test('displays active modules', async () => {
+  it('displays active modules', async () => {
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes()
+      wrapper.find('[data-cy=aave-module-switch]').attributes(),
     ).toHaveProperty('aria-checked', 'true');
   });
 
-  test('disables module on click', async () => {
+  it('disables module on click', async () => {
     expect.assertions(3);
     api.setSettings = vi.fn().mockResolvedValue({
       general: { activeModules: [] },
       accounting: {},
-      other: { havePremium: false, premiumShouldSync: false }
+      other: { havePremium: false, premiumShouldSync: false },
     });
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes()
+      wrapper.find('[data-cy=aave-module-switch]').attributes(),
     ).toHaveProperty('aria-checked', 'true');
     await wrapper.find('[data-cy=aave-module-switch]').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes()
+      wrapper.find('[data-cy=aave-module-switch]').attributes(),
     ).toHaveProperty('aria-checked', 'false');
     expect(settingsStore.activeModules).toEqual([]);
   });

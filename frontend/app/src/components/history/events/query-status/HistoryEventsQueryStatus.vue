@@ -5,8 +5,8 @@ const props = withDefaults(
     locations?: string[];
   }>(),
   {
-    locations: () => []
-  }
+    locations: () => [],
+  },
 );
 
 const { locations } = toRefs(props);
@@ -16,7 +16,7 @@ const {
   getKey,
   isQueryFinished,
   isAllFinished,
-  resetQueryStatus
+  resetQueryStatus,
 } = useEventsQueryStatus(locations);
 </script>
 
@@ -34,8 +34,15 @@ const {
     </template>
 
     <template #item="{ item }">
-      <LocationIcon icon :item="item.location" size="20px" />
-      <HistoryEventsQueryStatusLine :item="item" class="ms-2" />
+      <LocationIcon
+        icon
+        :item="item.location"
+        size="20px"
+      />
+      <HistoryEventsQueryStatusLine
+        :item="item"
+        class="ms-2"
+      />
     </template>
 
     <template #dialog>

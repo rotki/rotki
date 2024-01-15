@@ -5,7 +5,7 @@ import {
   TimeFramePeriod,
   TimeFramePeriodEnum,
   TimeFramePersist,
-  TimeFrameSetting
+  TimeFrameSetting,
 } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
@@ -21,14 +21,14 @@ export enum Quarter {
   Q2 = 'Q2',
   Q3 = 'Q3',
   Q4 = 'Q4',
-  ALL = 'ALL'
+  ALL = 'ALL',
 }
 
 const QuarterEnum = z.nativeEnum(Quarter);
 
 const ProfitLossTimeframe = z.object({
   year: z.string(),
-  quarter: QuarterEnum
+  quarter: QuarterEnum,
 });
 
 export type ProfitLossTimeframe = z.infer<typeof ProfitLossTimeframe>;
@@ -36,7 +36,7 @@ export type ProfitLossTimeframe = z.infer<typeof ProfitLossTimeframe>;
 const ExplorerEndpoints = z.object({
   transaction: z.string().optional(),
   address: z.string().optional(),
-  block: z.string().optional()
+  block: z.string().optional(),
 });
 
 const ExplorersSettings = z.object({
@@ -52,7 +52,7 @@ const ExplorersSettings = z.object({
   [Blockchain.POLYGON_POS]: ExplorerEndpoints.optional(),
   [Blockchain.ARBITRUM_ONE]: ExplorerEndpoints.optional(),
   [Blockchain.BASE]: ExplorerEndpoints.optional(),
-  [Blockchain.GNOSIS]: ExplorerEndpoints.optional()
+  [Blockchain.GNOSIS]: ExplorerEndpoints.optional(),
 });
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;
@@ -84,22 +84,22 @@ export enum DashboardTableType {
   ASSETS = 'ASSETS',
   LIABILITIES = 'LIABILITIES',
   NFT = 'NFT',
-  LIQUIDITY_POSITION = 'LIQUIDITY_POSITION'
+  LIQUIDITY_POSITION = 'LIQUIDITY_POSITION',
 }
 
 const DashboardTablesVisibleColumns = z.object({
   [DashboardTableType.ASSETS]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
   ),
   [DashboardTableType.LIABILITIES]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
   ),
   [DashboardTableType.NFT]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
   ),
   [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
-  )
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
 });
 
 export type DashboardTablesVisibleColumns = z.infer<
@@ -117,18 +117,18 @@ export enum SupportedLanguage {
   ES = 'es',
   GR = 'gr',
   DE = 'de',
-  CN = 'cn'
+  CN = 'cn',
 }
 
 const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);
 
 export enum BlockchainRefreshButtonBehaviour {
   ONLY_REFRESH_BALANCES = 'ONLY_REFRESH_BALANCES',
-  REDETECT_TOKENS = 'REDETECT_TOKENS'
+  REDETECT_TOKENS = 'REDETECT_TOKENS',
 }
 
 const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(
-  BlockchainRefreshButtonBehaviour
+  BlockchainRefreshButtonBehaviour,
 );
 
 const SavedFilterLocationEnum = z.nativeEnum(SavedFilterLocation);
@@ -145,27 +145,27 @@ export const FrontendSettings = z.object({
     queryPeriod =>
       Math.min(
         Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
-        Constraints.MAX_SECONDS_DELAY
+        Constraints.MAX_SECONDS_DELAY,
       ),
-    QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD)
+    QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD),
   ),
   profitLossReportPeriod: ProfitLossTimeframe.default({
     year: new Date().getFullYear().toString(),
-    quarter: Quarter.ALL
+    quarter: Quarter.ALL,
   }),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
   currencyLocation: CurrencyLocationEnum.default(
-    Defaults.DEFAULT_CURRENCY_LOCATION
+    Defaults.DEFAULT_CURRENCY_LOCATION,
   ),
   abbreviateNumber: z.boolean().default(false),
   refreshPeriod: z.preprocess(
     refreshPeriod =>
       Math.min(
         Number.parseInt(refreshPeriod as string) || -1,
-        Constraints.MAX_MINUTES_DELAY
+        Constraints.MAX_MINUTES_DELAY,
       ),
-    RefreshPeriod.default(-1)
+    RefreshPeriod.default(-1),
   ),
   explorers: ExplorersSettings.default({}),
   itemsPerPage: z.number().positive().int().default(10),
@@ -185,23 +185,24 @@ export const FrontendSettings = z.object({
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
-        Number.parseInt(versionUpdateCheckFrequency as string) ||
-          Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-        Constraints.MAX_HOURS_DELAY
+        Number.parseInt(versionUpdateCheckFrequency as string)
+        || Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+        Constraints.MAX_HOURS_DELAY,
       ),
     VersionUpdateCheckFrequency.default(
-      Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
-    )
+      Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+    ),
   ),
   enableAliasNames: z.boolean().default(true),
   blockchainRefreshButtonBehaviour:
     BlockchainRefreshButtonBehaviourEnum.default(
-      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
     ),
   savedFilters: z
     .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
-    .catch({})
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+    .catch({}),
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

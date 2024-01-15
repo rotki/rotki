@@ -10,12 +10,12 @@ export class ApiKeysPage {
     apiKey: string,
     apiSecret: string,
     exchange: string,
-    name: string
+    name: string,
   ) {
     cy.get('[data-cy="exchanges"]').find('[data-cy="add-exchange"]').click();
     cy.get('[data-cy="exchange-keys"]').as('keys');
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(
-      'be.visible'
+      'be.visible',
     );
     cy.get('@keys')
       .find('[data-cy="exchange"]')
@@ -28,19 +28,19 @@ export class ApiKeysPage {
     cy.intercept(
       {
         url: '/api/1/exchanges',
-        method: 'PUT'
+        method: 'PUT',
       },
       {
         statusCode: 200,
         body: {
-          result: true
-        }
-      }
+          result: true,
+        },
+      },
     ).as('exchangeAdd');
 
     const waitForBalances = mockRequest({
       url: `/api/1/exchanges/balances/${exchange}?async_query=true`,
-      method: 'GET'
+      method: 'GET',
     });
 
     cy.get('[data-cy="bottom-dialog"]').find('[data-cy="confirm"]').click();
@@ -48,7 +48,7 @@ export class ApiKeysPage {
     cy.wait('@exchangeAdd', { timeout: 30000 });
 
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(
-      'not.be.visible'
+      'not.be.visible',
     );
   }
 

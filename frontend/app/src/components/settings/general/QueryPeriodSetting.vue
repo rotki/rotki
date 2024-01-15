@@ -12,23 +12,23 @@ const rules = {
   queryPeriod: {
     required: helpers.withMessage(
       t('frontend_settings.validation.periodic_query.non_empty').toString(),
-      required
+      required,
     ),
     between: helpers.withMessage(
       t('frontend_settings.validation.periodic_query.invalid_period', {
         start: minQueryPeriod,
-        end: maxQueryPeriod
+        end: maxQueryPeriod,
       }).toString(),
-      between(minQueryPeriod, maxQueryPeriod)
-    )
-  }
+      between(minQueryPeriod, maxQueryPeriod),
+    ),
+  },
 };
 
 const { queryPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
 
-const resetQueryPeriod = () => {
+function resetQueryPeriod() {
   set(queryPeriod, get(currentPeriod).toString());
-};
+}
 
 const v$ = useVuelidate(rules, { queryPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);

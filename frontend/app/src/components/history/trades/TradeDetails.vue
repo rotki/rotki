@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type TradeEntry } from '@/types/history/trade';
+import type { TradeEntry } from '@/types/history/trade';
 
 const props = withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ const props = withDefaults(
     item: TradeEntry;
   }>(),
   {
-    span: 1
-  }
+    span: 1,
+  },
 );
 
 const { item } = toRefs(props);
@@ -19,7 +19,10 @@ const { href, hasLink, onLinkClick } = useLinks(link);
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="span">
+  <TableExpandContainer
+    visible
+    :colspan="span"
+  >
     <template #title>
       {{ t('closed_trades.details.title') }}
     </template>
@@ -34,13 +37,18 @@ const { href, hasLink, onLinkClick } = useLinks(link);
         :asset="item.feeCurrency"
         :value="item.fee"
       />
-      <template v-else> - </template>
+      <template v-else>
+        -
+      </template>
 
       <span class="font-medium">
         {{ t('closed_trades.details.link') }}
       </span>
 
-      <div v-if="item.link" class="flex items-center gap-3">
+      <div
+        v-if="item.link"
+        class="flex items-center gap-3"
+      >
         {{ item.link }}
         <RuiTooltip
           v-if="hasLink"
@@ -59,14 +67,19 @@ const { href, hasLink, onLinkClick } = useLinks(link);
               target="_blank"
               @click="onLinkClick()"
             >
-              <RuiIcon name="external-link-line" size="12" />
+              <RuiIcon
+                name="external-link-line"
+                size="12"
+              />
             </RuiButton>
           </template>
           {{ item.link }}
         </RuiTooltip>
       </div>
 
-      <template v-else> - </template>
+      <template v-else>
+        -
+      </template>
 
       <template v-if="item.notes">
         <span class="font-medium">

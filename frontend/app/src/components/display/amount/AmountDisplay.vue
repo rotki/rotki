@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { type ComputedRef } from 'vue';
 import { or } from '@vueuse/math';
-import { displayAmountFormatter } from '@/data/amount_formatter';
+import { displayAmountFormatter } from '@/data/amount-formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
-import { type RoundingMode } from '@/types/settings/frontend-settings';
+import type { ComputedRef } from 'vue';
+import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{
@@ -48,8 +48,8 @@ const props = withDefaults(
     noScramble: false,
     timestamp: -1,
     milliseconds: false,
-    xl: false
-  }
+    xl: false,
+  },
 );
 const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
 
@@ -67,7 +67,7 @@ const {
   noScramble,
   timestamp,
   milliseconds,
-  loading
+  loading,
 } = toRefs(props);
 
 const { t } = useI18n();
@@ -75,15 +75,15 @@ const { t } = useI18n();
 const {
   currency,
   currencySymbol: currentCurrency,
-  floatingPrecision
+  floatingPrecision,
 } = storeToRefs(useGeneralSettingsStore());
 
 const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(
-  useSessionSettingsStore()
+  useSessionSettingsStore(),
 );
 
-const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } =
-  useBalancePricesStore();
+const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency }
+  = useBalancePricesStore();
 
 const {
   abbreviateNumber,
@@ -91,15 +91,15 @@ const {
   decimalSeparator,
   currencyLocation,
   amountRoundingMode,
-  valueRoundingMode
+  valueRoundingMode,
 } = storeToRefs(useFrontendSettingsStore());
 
 const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
-const { historicPriceInCurrentCurrency, isPending, createKey } =
-  useHistoricCachePriceStore();
+const { historicPriceInCurrentCurrency, isPending, createKey }
+  = useHistoricCachePriceStore();
 
 const { assetSymbol } = useAssetInfoRetrieval();
 
@@ -110,7 +110,7 @@ const timestampToUse = computed(() => {
 
 const evaluating = or(
   isPending(createKey(get(priceAsset), get(timestampToUse))),
-  isPending(createKey(get(sourceCurrency) || '', get(timestampToUse)))
+  isPending(createKey(get(sourceCurrency) || '', get(timestampToUse))),
 );
 
 const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
@@ -118,24 +118,23 @@ const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
   const to = get(currentCurrency);
   const from = get(sourceCurrency);
 
-  if (!from || to === from) {
+  if (!from || to === from)
     return currentValue;
-  }
+
   const multiplierRate = to === CURRENCY_USD ? One : get(exchangeRate(to));
   const dividerRate = from === CURRENCY_USD ? One : get(exchangeRate(from));
 
-  if (!multiplierRate || !dividerRate) {
+  if (!multiplierRate || !dividerRate)
     return currentValue;
-  }
+
   return currentValue.multipliedBy(multiplierRate).dividedBy(dividerRate);
 });
 
 const internalValue: ComputedRef<BigNumber> = computed(() => {
   // If there is no `sourceCurrency`, it means that no fiat currency, or the unit is asset not fiat, hence we should just show the `value` passed.
   // If `forceCurrency` is true, we should also just return the value.
-  if (!isDefined(sourceCurrency) || get(forceCurrency)) {
+  if (!isDefined(sourceCurrency) || get(forceCurrency))
     return get(value);
-  }
 
   const sourceCurrencyVal = get(sourceCurrency)!;
   const currentCurrencyVal = get(currentCurrency);
@@ -145,9 +144,8 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
 
   // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourselves from the price of `priceAsset`
   if (priceAssetVal) {
-    if (priceAssetVal === currentCurrencyVal) {
+    if (priceAssetVal === currentCurrencyVal)
       return get(amount);
-    }
 
     // If `isCurrentCurrency` is true, we should calculate the value by `amount * priceOfAsset`
     if (isCurrentCurrencyVal && isDefined(priceOfAsset)) {
@@ -158,11 +156,10 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
 
   if (timestampVal > 0 && get(amount) && priceAssetVal) {
     const assetHistoricRate = get(
-      historicPriceInCurrentCurrency(priceAssetVal, timestampVal)
+      historicPriceInCurrentCurrency(priceAssetVal, timestampVal),
     );
-    if (assetHistoricRate.isPositive()) {
+    if (assetHistoricRate.isPositive())
       return get(amount).multipliedBy(assetHistoricRate);
-    }
   }
 
   // If `sourceCurrency` and `currentCurrency` is not equal, we should convert the value
@@ -171,14 +168,13 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
 
     if (timestampVal > 0) {
       const historicRate = get(
-        historicPriceInCurrentCurrency(sourceCurrencyVal, timestampVal)
+        historicPriceInCurrentCurrency(sourceCurrencyVal, timestampVal),
       );
 
-      if (historicRate.isPositive()) {
+      if (historicRate.isPositive())
         calculatedValue = get(value).multipliedBy(historicRate);
-      } else {
+      else
         calculatedValue = Zero;
-      }
     }
 
     return calculatedValue;
@@ -191,8 +187,8 @@ const displayValue: ComputedRef<BigNumber> = useNumberScrambler({
   value: internalValue,
   multiplier: scrambleMultiplier,
   enabled: computed(
-    () => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))
-  )
+    () => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount)),
+  ),
 });
 
 // Check if the `realValue` is NaN
@@ -200,33 +196,32 @@ const isNaN: ComputedRef<boolean> = computed(() => get(displayValue).isNaN());
 
 // Decimal place of `realValue`
 const decimalPlaces: ComputedRef<number> = computed(
-  () => get(displayValue).decimalPlaces() ?? 0
+  () => get(displayValue).decimalPlaces() ?? 0,
 );
 
 // Set exponential notation when the `realValue` is too big
 const showExponential: ComputedRef<boolean> = computed(() =>
-  get(displayValue).gt(1e15)
+  get(displayValue).gt(1e15),
 );
 
 const rounding: ComputedRef<RoundingMode | undefined> = computed(() => {
-  if (isDefined(sourceCurrency)) {
+  if (isDefined(sourceCurrency))
     return get(valueRoundingMode);
-  }
+
   return get(amountRoundingMode);
 });
 
 const renderedValue: ComputedRef<string> = computed(() => {
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
 
-  if (get(isNaN)) {
+  if (get(isNaN))
     return '-';
-  }
 
   if (get(showExponential)) {
     return fixExponentialSeparators(
       get(displayValue).toExponential(floatingPrecisionUsed, get(rounding)),
       get(thousandSeparator),
-      get(decimalSeparator)
+      get(decimalSeparator),
     );
   }
 
@@ -236,15 +231,15 @@ const renderedValue: ComputedRef<string> = computed(() => {
     get(thousandSeparator),
     get(decimalSeparator),
     get(rounding),
-    get(abbreviateNumber)
+    get(abbreviateNumber),
   );
 });
 
 const tooltip: ComputedRef<string | null> = computed(() => {
   if (
-    get(decimalPlaces) > get(floatingPrecision) ||
-    get(showExponential) ||
-    get(abbreviateNumber)
+    get(decimalPlaces) > get(floatingPrecision)
+    || get(showExponential)
+    || get(abbreviateNumber)
   ) {
     const value = get(displayValue);
     return value.toFormat(value.decimalPlaces() ?? 0);
@@ -254,9 +249,8 @@ const tooltip: ComputedRef<string | null> = computed(() => {
 
 const displayCurrency: ComputedRef<Currency> = computed(() => {
   const fiat = get(sourceCurrency);
-  if (get(forceCurrency) && fiat) {
+  if (get(forceCurrency) && fiat)
     return findCurrency(fiat);
-  }
 
   return get(currency);
 });
@@ -267,15 +261,14 @@ const comparisonSymbol: ComputedRef<'' | '<' | '>'> = computed(() => {
   const decimals = get(decimalPlaces);
   const hiddenDecimals = decimals > floatingPrecisionUsed;
 
-  if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
+  if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP)
     return '<';
-  } else if (
-    value.abs().lt(1) &&
-    hiddenDecimals &&
-    get(rounding) === BigNumber.ROUND_DOWN
-  ) {
+  else if (
+    value.abs().lt(1)
+    && hiddenDecimals
+    && get(rounding) === BigNumber.ROUND_DOWN
+  )
     return '>';
-  }
 
   return '';
 });
@@ -286,35 +279,31 @@ const defaultShownCurrency: ComputedRef<ShownCurrency> = computed(() => {
 });
 
 const shouldShowCurrency: ComputedRef<boolean> = computed(
-  () => !get(isNaN) && !!(get(defaultShownCurrency) !== 'none' || get(asset))
+  () => !get(isNaN) && !!(get(defaultShownCurrency) !== 'none' || get(asset)),
 );
 
 // Copy
 const copyValue: ComputedRef<string> = computed(() => {
-  if (get(isNaN)) {
+  if (get(isNaN))
     return '-';
-  }
+
   return get(displayValue).toString();
 });
 
-const fixExponentialSeparators = (
-  value: string,
-  thousands: string,
-  decimals: string
-) => {
+function fixExponentialSeparators(value: string, thousands: string, decimals: string) {
   if (thousands !== ',' || decimals !== '.') {
-    return value.replace(/[,.]/g, $1 => {
-      if ($1 === ',') {
+    return value.replace(/[,.]/g, ($1) => {
+      if ($1 === ',')
         return thousands;
-      }
-      if ($1 === '.') {
+
+      if ($1 === '.')
         return decimals;
-      }
+
       return $1;
     });
   }
   return value;
-};
+}
 
 const { copy, copied } = useCopy(copyValue);
 const css = useCssModule();
@@ -326,20 +315,18 @@ const isManualPrice = isManualAssetPrice(priceAsset);
 
 const displayAsset = computed(() => {
   const symb = get(symbol);
-  if (symb !== '') {
+  if (symb !== '')
     return symb;
-  }
 
   const show = get(defaultShownCurrency);
   const value = get(displayCurrency);
 
-  if (show === 'ticker') {
+  if (show === 'ticker')
     return value.tickerSymbol;
-  } else if (show === 'symbol') {
+  else if (show === 'symbol')
     return value.unicodeSymbol;
-  } else if (show === 'name') {
+  else if (show === 'name')
     return value.name;
-  }
 
   return '';
 });
@@ -350,7 +337,10 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 <template>
   <div class="inline-flex items-baseline">
     <DefineSymbol #default="{ name }">
-      <span data-cy="display-currency" class="truncate max-w-[5rem]">
+      <span
+        data-cy="display-currency"
+        class="truncate max-w-[5rem]"
+      >
         {{ name }}
       </span>
     </DefineSymbol>
@@ -362,7 +352,11 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
       class="self-center mr-2 cursor-pointer"
     >
       <template #activator>
-        <RuiIcon size="16" color="warning" name="sparkling-line" />
+        <RuiIcon
+          size="16"
+          color="warning"
+          name="sparkling-line"
+        />
       </template>
 
       {{ t('amount_display.manual_tooltip') }}
@@ -371,12 +365,12 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
     <span
       :class="[
         {
-          blur: !shouldShowAmount,
+          'blur': !shouldShowAmount,
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
           [css.xl]: xl,
-          [`skeleton min-w-[3.5rem] max-w-[4rem] ${css.loading}`]: anyLoading
-        }
+          [`skeleton min-w-[3.5rem] max-w-[4rem] ${css.loading}`]: anyLoading,
+        },
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg"
       data-cy="amount-display"

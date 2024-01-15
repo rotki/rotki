@@ -8,8 +8,8 @@ withDefaults(
   {
     tags: () => [],
     small: false,
-    wrapperClass: ''
-  }
+    wrapperClass: '',
+  },
 );
 
 const { availableTags } = storeToRefs(useTagStore());

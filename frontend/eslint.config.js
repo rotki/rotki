@@ -1,7 +1,6 @@
 const path = require('node:path');
 const rotki = require('@rotki/eslint-config').default;
 
-/** @type {import('@rotki/eslint-config').OptionsConfig} */
 module.exports = rotki({
   vue: {
     vueVersion: 2,
@@ -23,7 +22,7 @@ module.exports = rotki({
       '/premium_components.*/',
       '/transactions.query_status.*/',
       '/transactions.query_status_events.*/',
-      '/transactions.events.headers.*/'
-    ]
-  }
+      '/transactions.events.headers.*/',
+    ],
+  },
 });

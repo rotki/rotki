@@ -1,6 +1,6 @@
 import {
   type FixtureManualBalance,
-  ManualBalancesPage
+  ManualBalancesPage,
 } from '../../pages/account-balances-page/manual-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
@@ -25,7 +25,7 @@ describe('balances', () => {
     dashboardPage = new DashboardPage();
     settings = new GeneralSettingsPage();
 
-    cy.fixture('account-balances/manual-balances').then(balances => {
+    cy.fixture('account-balances/manual-balances').then((balances) => {
       manualBalances = balances;
     });
     app.fasterLogin(username);
@@ -45,7 +45,7 @@ describe('balances', () => {
 
     waitForAsyncQuery({
       method: 'POST',
-      url: '/api/1/assets/prices/latest'
+      url: '/api/1/assets/prices/latest',
     });
   });
 
@@ -54,16 +54,16 @@ describe('balances', () => {
 
     manualBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
-      dashboardPage.getOverallBalance().then($overallBalance => {
+      dashboardPage.getOverallBalance().then(($overallBalance) => {
         expect($overallBalance.toNumber(), 'total').to.be.within(
           total.minus(PRECISION).toNumber(),
-          total.plus(PRECISION).toNumber()
+          total.plus(PRECISION).toNumber(),
         );
       });
-      dashboardPage.getLocationBalances().then($dashboardBalances => {
+      dashboardPage.getLocationBalances().then(($dashboardBalances) => {
         expect(
           balances.map(x => x.location),
-          'dashboard and manual balances'
+          'dashboard and manual balances',
         ).to.have.members(Array.from($dashboardBalances.keys()));
 
         balances.forEach(({ location, value }) => {
@@ -71,7 +71,7 @@ describe('balances', () => {
           expect(dashboardBalance, `${location} balance`).to.not.be.undefined;
           expect(dashboardBalance?.toNumber(), location).to.be.within(
             value.minus(PRECISION).toNumber(),
-            value.plus(PRECISION).toNumber()
+            value.plus(PRECISION).toNumber(),
           );
         });
       });
@@ -115,7 +115,7 @@ describe('balances', () => {
     manualBalancesPage.visit();
     app.togglePrivacyMenu(true);
     cy.get(
-      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]'
+      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]',
     ).should('not.be.checked');
     manualBalancesPage.balanceShouldMatch(manualBalances);
 
@@ -146,7 +146,7 @@ describe('balances', () => {
     manualBalancesPage.visibleEntries(3);
     manualBalancesPage.isVisible(1, {
       ...manualBalances[1],
-      amount: firstNewAmount
+      amount: firstNewAmount,
     });
 
     const secondNewAmount = '300';
@@ -155,7 +155,7 @@ describe('balances', () => {
     manualBalancesPage.visibleEntries(3);
     manualBalancesPage.isVisible(1, {
       ...manualBalances[1],
-      amount: secondNewAmount
+      amount: secondNewAmount,
     });
 
     cy.get('.manual-balances__add-balance').click();

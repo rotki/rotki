@@ -1,42 +1,42 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
-import { type Collection } from '@/types/collection';
 import {
   type UserNote,
   UserNoteCollectionResponse,
-  type UserNotesFilter
+  type UserNotesFilter,
 } from '@/types/notes';
+import type { Collection } from '@/types/collection';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useUserNotesApi = () => {
+export function useUserNotesApi() {
   const fetchUserNotes = async (
-    filter: UserNotesFilter
+    filter: UserNotesFilter,
   ): Promise<Collection<UserNote>> => {
     const response = await api.instance.post<
       ActionResult<Collection<UserNote>>
     >('/notes', snakeCaseTransformer(filter));
 
     return mapCollectionResponse(
-      UserNoteCollectionResponse.parse(handleResponse(response))
+      UserNoteCollectionResponse.parse(handleResponse(response)),
     );
   };
 
   const addUserNote = async (payload: Partial<UserNote>): Promise<number> => {
     const response = await api.instance.put<ActionResult<number>>(
       '/notes',
-      snakeCaseTransformer(payload)
+      snakeCaseTransformer(payload),
     );
 
     return handleResponse(response);
   };
 
   const updateUserNote = async (
-    payload: Partial<UserNote>
+    payload: Partial<UserNote>,
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/notes',
-      snakeCaseTransformer(payload)
+      snakeCaseTransformer(payload),
     );
 
     return handleResponse(response);
@@ -47,9 +47,9 @@ export const useUserNotesApi = () => {
       '/notes',
       {
         data: {
-          identifier
-        }
-      }
+          identifier,
+        },
+      },
     );
 
     return handleResponse(response);
@@ -59,6 +59,6 @@ export const useUserNotesApi = () => {
     fetchUserNotes,
     addUserNote,
     updateUserNote,
-    deleteUserNote
+    deleteUserNote,
   };
-};
+}

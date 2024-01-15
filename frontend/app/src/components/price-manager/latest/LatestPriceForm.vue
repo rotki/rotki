@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { type ManualPriceFormPayload } from '@/types/prices';
 import { toMessages } from '@/utils/validation';
+import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
@@ -10,8 +10,8 @@ const props = withDefaults(
     disableFromAsset?: boolean;
   }>(),
   {
-    disableFromAsset: false
-  }
+    disableFromAsset: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -27,15 +27,15 @@ const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
 const price = ref<string>('');
 const numericPrice = bigNumberifyFromRef(price);
 
-const input = (price: Partial<ManualPriceFormPayload>) => {
+function input(price: Partial<ManualPriceFormPayload>) {
   emit('input', { ...get(value), ...price });
-};
+}
 
-watch(value, val => {
+watch(value, (val) => {
   set(price, val.price);
 });
 
-watch(price, val => {
+watch(price, (val) => {
   input({ price: val });
 });
 
@@ -49,21 +49,21 @@ const rules = {
   fromAsset: {
     required: helpers.withMessage(
       t('price_form.from_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   toAsset: {
     required: helpers.withMessage(
       t('price_form.to_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   price: {
     required: helpers.withMessage(
       t('price_form.price_non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation } = useLatestPriceForm();
@@ -73,9 +73,9 @@ const v$ = setValidation(
   {
     fromAsset: computed(() => get(value).fromAsset),
     toAsset: computed(() => get(value).toAsset),
-    price: computed(() => get(value).price)
+    price: computed(() => get(value).price),
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 </script>
 
@@ -123,7 +123,10 @@ const v$ = setValidation(
       </template>
       <template #price>
         <strong>
-          <AmountDisplay :value="numericPrice" :tooltip="false" />
+          <AmountDisplay
+            :value="numericPrice"
+            :tooltip="false"
+          />
         </strong>
       </template>
     </i18n>

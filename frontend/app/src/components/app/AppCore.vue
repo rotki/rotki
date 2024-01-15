@@ -10,7 +10,7 @@ const { mobile } = useDisplay();
 
 const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
-  () => get(showDrawer) && !get(isMini) && !get(mobile)
+  () => get(showDrawer) && !get(isMini) && !get(mobile),
 );
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
@@ -23,10 +23,10 @@ onMounted(() => {
   set(showDrawer, !get(mobile));
 });
 
-watch(overall, overall => {
-  if (overall.percentage === '-') {
+watch(overall, (overall) => {
+  if (overall.percentage === '-')
     return;
-  }
+
   updateTray(overall);
 });
 
@@ -36,14 +36,14 @@ onBeforeMount(() => {
   Chart.register(zoomPlugin);
 });
 
-const scrollToTop = () => {
+function scrollToTop() {
   document.body.scrollTo(0, 0);
-};
+}
 
 const { y: scrollY } = useScroll(document.body);
 
 const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
-  () => get(scrollY) > 200
+  () => get(scrollY) > 200,
 );
 </script>
 
@@ -82,7 +82,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
       class="app-main"
       :class="{
         small,
-        expanded
+        expanded,
       }"
     >
       <VMain>

@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { type BrowserWindow, Menu, Tray, app } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
-import { type TrayUpdate } from '@/electron-main/ipc';
-import { type Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import type { TrayUpdate } from '@/electron-main/ipc';
+import type { Nullable } from '@/types';
 
 type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
@@ -23,9 +23,8 @@ export class TrayManager {
   constructor(getWindow: WindowProvider, closeApp: () => void) {
     this.getWindow = getWindow;
     this.closeApp = closeApp;
-    if (settingsManager.appSettings.displayTray) {
+    if (settingsManager.appSettings.displayTray)
       this.build();
-    }
   }
 
   private static get iconPath(): string {
@@ -39,33 +38,33 @@ export class TrayManager {
       {
         label: 'rotki',
         enabled: false,
-        icon: path.join(TrayManager.iconPath, 'rotki_tray.png')
+        icon: path.join(TrayManager.iconPath, 'rotki_tray.png'),
       },
       ...(info
         ? [
             {
               label: info,
-              enabled: false
-            }
+              enabled: false,
+            },
           ]
         : []),
       { type: 'separator' },
       {
         label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: () => this.showHide(this.getWindow())
+        click: () => this.showHide(this.getWindow()),
       },
       { type: 'separator' },
       {
         label: 'Quit',
-        click: this.closeApp
-      }
+        click: this.closeApp,
+      },
     ]);
   }
 
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
-    if (!this._tray) {
+    if (!this._tray)
       return;
-    }
+
     if (up === undefined) {
       this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
       this.tray.setTitle('');
@@ -80,15 +79,15 @@ export class TrayManager {
       icon = 'rotki_up.png';
       color = '\u001B[32m';
       indicator = '▲';
-    } else {
+    }
+    else {
       icon = 'rotki_down.png';
       color = '\u001B[31m';
       indicator = '▼';
     }
 
-    if (!isMac) {
+    if (!isMac)
       this.setIcon(icon);
-    }
 
     this.tray.setTitle(color + indicator);
     this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
@@ -106,7 +105,8 @@ export class TrayManager {
   private showHide(win: BrowserWindow) {
     if (win.isVisible()) {
       win.hide();
-    } else {
+    }
+    else {
       win.show();
       app.focus();
     }

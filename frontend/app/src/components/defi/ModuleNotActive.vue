@@ -9,15 +9,15 @@ defineProps<{
 
 const top = ref(0);
 
-const name = (module: string): string => {
+function name(module: string): string {
   const data = SUPPORTED_MODULES.find(value => value.identifier === module);
   return data?.name ?? '';
-};
+}
 
-const icon = (module: Module): string => {
+function icon(module: Module): string {
   const data = SUPPORTED_MODULES.find(value => value.identifier === module);
   return data?.icon ?? '';
-};
+}
 
 onMounted(() => {
   const currentInstance = getCurrentInstance();
@@ -37,8 +37,15 @@ const { t } = useI18n();
   >
     <div class="module-not-active__container flex flex-col items-center gap-8">
       <div class="flex items-center justify-center gap-4">
-        <div v-for="module in modules" :key="module">
-          <AppImage width="82px" contain :src="icon(module)" />
+        <div
+          v-for="module in modules"
+          :key="module"
+        >
+          <AppImage
+            width="82px"
+            contain
+            :src="icon(module)"
+          />
         </div>
       </div>
       <i18n

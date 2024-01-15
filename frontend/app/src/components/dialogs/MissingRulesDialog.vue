@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type AccountingRuleEntry } from '@/types/settings/accounting';
-import {
-  type EvmChainAndTxHash,
-  type HistoryEventEntry
-} from '@/types/history/events';
 import { toEvmChainAndTxHash } from '@/utils/history';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type {
+  EvmChainAndTxHash,
+  HistoryEventEntry,
+} from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -13,8 +13,8 @@ const props = withDefaults(
   }>(),
   {
     event: undefined,
-    value: false
-  }
+    value: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -37,41 +37,37 @@ const { event } = toRefs(props);
 const isEvm = computed(() => {
   const entry = get(event);
 
-  if (!entry) {
+  if (!entry)
     return false;
-  }
 
   return isEvmEvent(entry);
 });
 
-const onRedecode = () => {
+function onRedecode() {
   const entry = get(event);
 
-  if (!entry) {
+  if (!entry)
     return false;
-  }
 
   emit('re-decode', toEvmChainAndTxHash(entry));
   emit('input', false);
-};
+}
 
-const onEdit = () => {
+function onEdit() {
   const entry = get(event);
 
-  if (!entry) {
+  if (!entry)
     return false;
-  }
 
   emit('edit', entry);
   emit('input', false);
-};
+}
 
-const onAddRule = () => {
+function onAddRule() {
   const entry = get(event);
 
-  if (!entry) {
+  if (!entry)
     return false;
-  }
 
   const { eventType, eventSubtype } = entry;
 
@@ -79,14 +75,15 @@ const onAddRule = () => {
     emit('add-rule', {
       eventSubtype,
       eventType,
-      counterparty: entry.counterparty
+      counterparty: entry.counterparty,
     });
-  } else {
+  }
+  else {
     emit('add-rule', { eventSubtype, eventType, counterparty: null });
   }
 
   emit('input', false);
-};
+}
 </script>
 
 <template>
@@ -99,7 +96,10 @@ const onAddRule = () => {
     >
       <RuiCard data-cy="missing-rules-dialog">
         <template #header>
-          <span class="text-h5" data-cy="dialog-title">
+          <span
+            class="text-h5"
+            data-cy="dialog-title"
+          >
             {{ t('actions.history_events.missing_rule.title') }}
           </span>
         </template>
@@ -117,7 +117,10 @@ const onAddRule = () => {
             @click="onRedecode()"
           >
             <template #prepend>
-              <RuiIcon color="secondary" name="restart-line" />
+              <RuiIcon
+                color="secondary"
+                name="restart-line"
+              />
             </template>
             {{ t('actions.history_events.missing_rule.re_decode') }}
           </RuiButton>
@@ -128,7 +131,10 @@ const onAddRule = () => {
             @click="onEdit()"
           >
             <template #prepend>
-              <RuiIcon color="secondary" name="pencil-line" />
+              <RuiIcon
+                color="secondary"
+                name="pencil-line"
+              />
             </template>
             {{ t('actions.history_events.missing_rule.edit') }}
           </RuiButton>
@@ -139,7 +145,10 @@ const onAddRule = () => {
             @click="onAddRule()"
           >
             <template #prepend>
-              <RuiIcon color="secondary" name="add-line" />
+              <RuiIcon
+                color="secondary"
+                name="add-line"
+              />
             </template>
             {{ t('actions.history_events.missing_rule.add_rule') }}
           </RuiButton>

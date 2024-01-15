@@ -10,8 +10,8 @@ const props = withDefaults(
   }>(),
   {
     label: '',
-    outlined: false
-  }
+    outlined: false,
+  },
 );
 
 const emit = defineEmits<{ (e: 'input', pairs: string[]): void }>();
@@ -25,10 +25,10 @@ const selection = ref<string[]>([]);
 const allMarkets = ref<string[]>([]);
 const loading = ref<boolean>(false);
 
-const handleInput = (value: string[]) => {
+function handleInput(value: string[]) {
   set(selection, value);
   input(value);
-};
+}
 
 const { t } = useI18n();
 const api = useExchangeApi();
@@ -40,33 +40,35 @@ onMounted(async () => {
   try {
     set(
       queriedMarkets,
-      await api.queryBinanceUserMarkets(get(name), get(location))
+      await api.queryBinanceUserMarkets(get(name), get(location)),
     );
-  } catch (e: any) {
+  }
+  catch (error: any) {
     const title = t('binance_market_selector.query_user.title').toString();
     const description = t('binance_market_selector.query_user.error', {
-      message: e.message
+      message: error.message,
     }).toString();
     notify({
       title,
       message: description,
       severity: Severity.ERROR,
-      display: true
+      display: true,
     });
   }
 
   try {
     set(allMarkets, await api.queryBinanceMarkets(get(location)));
-  } catch (e: any) {
+  }
+  catch (error: any) {
     const title = t('binance_market_selector.query_all.title').toString();
     const description = t('binance_market_selector.query_all.error', {
-      message: e.message
+      message: error.message,
     }).toString();
     notify({
       title,
       message: description,
       severity: Severity.ERROR,
-      display: true
+      display: true,
     });
   }
 
@@ -74,23 +76,23 @@ onMounted(async () => {
   set(selection, get(queriedMarkets));
 });
 
-const filter = (item: string, queryText: string) => {
+function filter(item: string, queryText: string) {
   const query = queryText.toLocaleLowerCase();
   const pair = item.toLocaleLowerCase();
 
   return pair.includes(query);
-};
+}
 
-watch(search, search => {
+watch(search, (search) => {
   if (search) {
     const pairs = search.split(' ');
     if (pairs.length > 0) {
       const useLastPairs = search.slice(-1) === ' ';
-      if (useLastPairs) {
+      if (useLastPairs)
         search = '';
-      } else {
+      else
         search = pairs.pop()!;
-      }
+
       const matchedPairs = pairs.filter(pair => get(allMarkets).includes(pair));
       handleInput([...get(selection), ...matchedPairs].filter(uniqueStrings));
     }

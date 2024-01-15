@@ -1,7 +1,7 @@
-import { type PendingTask, type TaskMeta } from '@/types/task';
-import { type TaskType } from '@/types/task-type';
-import { type Section } from '@/types/status';
-import { type Module } from '@/types/modules';
+import type { PendingTask, TaskMeta } from '@/types/task';
+import type { TaskType } from '@/types/task-type';
+import type { Section } from '@/types/status';
+import type { Module } from '@/types/modules';
 
 export interface OnError {
   readonly title: string;

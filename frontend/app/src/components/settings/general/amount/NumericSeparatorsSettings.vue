@@ -6,8 +6,8 @@ import Fragment from '@/components/helper/Fragment';
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
 
-const { thousandSeparator: thousands, decimalSeparator: decimals } =
-  storeToRefs(useFrontendSettingsStore());
+const { thousandSeparator: thousands, decimalSeparator: decimals }
+  = storeToRefs(useFrontendSettingsStore());
 
 const { t } = useI18n();
 
@@ -15,70 +15,66 @@ const rules = {
   thousandSeparator: {
     required: helpers.withMessage(
       t('general_settings.thousand_separator.validation.empty'),
-      required
+      required,
     ),
     notANumber: helpers.withMessage(
       t(
-        'general_settings.thousand_separator.validation.cannot_be_numeric_character'
+        'general_settings.thousand_separator.validation.cannot_be_numeric_character',
       ),
-      not(numeric)
+      not(numeric),
     ),
     notTheSame: helpers.withMessage(
       t('general_settings.thousand_separator.validation.cannot_be_the_same'),
-      not(sameAs(decimalSeparator))
-    )
+      not(sameAs(decimalSeparator)),
+    ),
   },
   decimalSeparator: {
     required: helpers.withMessage(
       t('general_settings.decimal_separator.validation.empty'),
-      required
+      required,
     ),
     notANumber: helpers.withMessage(
       t(
-        'general_settings.decimal_separator.validation.cannot_be_numeric_character'
+        'general_settings.decimal_separator.validation.cannot_be_numeric_character',
       ),
-      not(numeric)
+      not(numeric),
     ),
     notTheSame: helpers.withMessage(
       t('general_settings.decimal_separator.validation.cannot_be_the_same'),
-      not(sameAs(thousandSeparator))
-    )
-  }
+      not(sameAs(thousandSeparator)),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   { thousandSeparator, decimalSeparator },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const { callIfValid } = useValidation(v$);
 
-const callIfThousandsValid = (
-  value: string,
-  method: (value: string) => void
-) => {
+function callIfThousandsValid(value: string, method: (value: string) => void) {
   const validator = get(v$);
   callIfValid(value, method, () => validator.thousandSeparator.$error);
-};
+}
 
-const callIfDecimalsValid = (
-  value: string,
-  method: (value: string) => void
-) => {
+function callIfDecimalsValid(value: string, method: (value: string) => void) {
   const validator = get(v$);
   callIfValid(value, method, () => validator.decimalSeparator.$error);
-};
+}
 
-const thousandsSuccessMessage = (thousandSeparator: string) =>
-  t('general_settings.validation.thousand_separator.success', {
-    thousandSeparator
+function thousandsSuccessMessage(thousandSeparator: string) {
+  return t('general_settings.validation.thousand_separator.success', {
+    thousandSeparator,
   });
+}
 
-const decimalsSuccessMessage = (decimalSeparator: string) =>
-  t('general_settings.validation.decimal_separator.success', {
-    decimalSeparator
+function decimalsSuccessMessage(decimalSeparator: string) {
+  return t('general_settings.validation.decimal_separator.success', {
+    decimalSeparator,
   });
+}
 
 onMounted(() => {
   set(thousandSeparator, get(thousands));

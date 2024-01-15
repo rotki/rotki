@@ -1,6 +1,6 @@
 import { Balance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type Collateral, type CollateralizedLoan } from '@/types/defi/index';
+import type { Collateral, CollateralizedLoan } from '@/types/defi/index';
 
 const DSRMovementType = z.enum(['withdrawal', 'deposit'] as const);
 
@@ -9,7 +9,7 @@ const MakerDAOVaultEventType = z.enum([
   'withdraw',
   'generate',
   'payback',
-  'liquidation'
+  'liquidation',
 ] as const);
 
 export const ApiMakerDAOVault = z.object({
@@ -22,7 +22,7 @@ export const ApiMakerDAOVault = z.object({
   collateralizationRatio: z.string().nullable(),
   liquidationRatio: z.string(),
   liquidationPrice: NumericString.nullable(),
-  stabilityFee: z.string()
+  stabilityFee: z.string(),
 });
 
 export type ApiMakerDAOVault = z.infer<typeof ApiMakerDAOVault>;
@@ -33,7 +33,7 @@ export type ApiMakerDAOVaults = z.infer<typeof ApiMakerDAOVaults>;
 
 export const DSRBalances = z.object({
   currentDsr: NumericString,
-  balances: z.record(Balance)
+  balances: z.record(Balance),
 });
 
 export type DSRBalances = z.infer<typeof DSRBalances>;
@@ -44,12 +44,12 @@ const DSRMovement = z.object({
   value: Balance,
   blockNumber: z.number(),
   timestamp: z.number(),
-  txHash: z.string()
+  txHash: z.string(),
 });
 
 const DSRHistoryItem = z.object({
   gainSoFar: Balance,
-  movements: z.array(DSRMovement)
+  movements: z.array(DSRMovement),
 });
 
 export const DSRHistory = z.record(DSRHistoryItem);
@@ -68,7 +68,7 @@ const MakerDAOVaultEvent = z.object({
   eventType: MakerDAOVaultEventType,
   value: Balance,
   timestamp: z.number(),
-  txHash: z.string()
+  txHash: z.string(),
 });
 
 const MakerDAOVaultDetail = z.object({
@@ -76,7 +76,7 @@ const MakerDAOVaultDetail = z.object({
   creationTs: z.number(),
   totalInterestOwed: NumericString,
   totalLiquidated: Balance,
-  events: z.array(MakerDAOVaultEvent)
+  events: z.array(MakerDAOVaultEvent),
 });
 
 export type MakerDAOVaultDetail = z.infer<typeof MakerDAOVaultDetail>;

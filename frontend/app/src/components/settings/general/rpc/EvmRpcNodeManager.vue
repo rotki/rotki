@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { camelCase } from 'lodash-es';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
-  getPlaceholderNode
+  getPlaceholderNode,
 } from '@/types/settings/rpc';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
   chain: Blockchain;
@@ -22,8 +22,8 @@ const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { setOpenDialog, closeDialog, setPostSubmitFunc } =
-  useEvmRpcNodeForm(chain);
+const { setOpenDialog, closeDialog, setPostSubmitFunc }
+  = useEvmRpcNodeForm(chain);
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
@@ -34,12 +34,13 @@ const chainName = computed(() => get(getChainName(chain)));
 async function loadNodes(): Promise<void> {
   try {
     set(nodes, await api.fetchEvmNodes());
-  } catch (e: any) {
+  }
+  catch (error: any) {
     notify({
       title: t('evm_rpc_node_manager.loading_error.title', {
-        chain: get(chain)
+        chain: get(chain),
       }),
-      message: e.message
+      message: error.message,
     });
   }
 }
@@ -48,70 +49,73 @@ onMounted(async () => {
   await loadNodes();
 });
 
-const resetForm = () => {
+function resetForm() {
   closeDialog();
   set(selectedNode, getPlaceholderNode(get(chain)));
   set(editMode, false);
-};
+}
 
 setPostSubmitFunc(async () => {
   await loadNodes();
   resetForm();
 });
 
-const edit = (item: EvmRpcNode) => {
+function edit(item: EvmRpcNode) {
   setOpenDialog(true);
   set(selectedNode, item);
   set(editMode, true);
-};
+}
 
-const deleteNode = async (node: EvmRpcNode) => {
+async function deleteNode(node: EvmRpcNode) {
   try {
     const identifier = node.identifier;
     await api.deleteEvmNode(identifier);
     await loadNodes();
-  } catch (e: any) {
+  }
+  catch (error: any) {
     setMessage({
       title: t('evm_rpc_node_manager.delete_error.title', {
-        chain: get(chain)
+        chain: get(chain),
       }),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     });
   }
-};
+}
 
-const onActiveChange = async (active: boolean, node: EvmRpcNode) => {
+async function onActiveChange(active: boolean, node: EvmRpcNode) {
   const state = { ...node, active };
   try {
     await api.editEvmNode(state);
     await loadNodes();
-  } catch (e: any) {
+  }
+  catch (error: any) {
     setMessage({
       title: t('evm_rpc_node_manager.activate_error.title', {
-        node: node.name
+        node: node.name,
       }),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     });
   }
-};
+}
 
-const isEtherscan = (item: EvmRpcNode) =>
-  !item.endpoint && item.name.includes('etherscan');
+function isEtherscan(item: EvmRpcNode) {
+  return !item.endpoint && item.name.includes('etherscan');
+}
 
-const isNodeConnected = (item: EvmRpcNode): boolean => {
+function isNodeConnected(item: EvmRpcNode): boolean {
   const blockchain = get(chain);
   const connected = get(connectedNodes);
   const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
   const nodes = evmChain && connected[evmChain] ? connected[evmChain] : [];
 
   return nodes.includes(item.name) || isEtherscan(item);
-};
+}
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: EvmRpcNode) => {
+function showDeleteConfirmation(item: EvmRpcNode) {
   const chainProp = get(chainName);
   show(
     {
@@ -119,12 +123,12 @@ const showDeleteConfirmation = (item: EvmRpcNode) => {
       message: t('evm_rpc_node_manager.confirm.message', {
         node: item.name,
         endpoint: item.endpoint,
-        chain: chainProp
-      })
+        chain: chainProp,
+      }),
     },
-    () => deleteNode(item)
+    () => deleteNode(item),
   );
-};
+}
 
 onUnmounted(() => {
   disposeEvmRpcNodeComposables();
@@ -133,10 +137,16 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <RuiCard no-padding class="overflow-hidden">
+    <RuiCard
+      no-padding
+      class="overflow-hidden"
+    >
       <div class="overflow-auto max-h-[300px]">
         <template v-for="(item, index) in nodes">
-          <RuiDivider v-if="index !== 0" :key="index" />
+          <RuiDivider
+            v-if="index !== 0"
+            :key="index"
+          />
           <div
             :key="index + item.name"
             data-cy="ethereum-node"
@@ -176,7 +186,11 @@ onUnmounted(() => {
                   :open-delay="400"
                 >
                   <template #activator>
-                    <RuiIcon color="success" size="16" name="wifi-line" />
+                    <RuiIcon
+                      color="success"
+                      size="16"
+                      name="wifi-line"
+                    />
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.true') }}
@@ -188,7 +202,11 @@ onUnmounted(() => {
                   :open-delay="400"
                 >
                   <template #activator>
-                    <RuiIcon color="error" size="16" name="wifi-off-line" />
+                    <RuiIcon
+                      color="error"
+                      size="16"
+                      name="wifi-off-line"
+                    />
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.false') }}
@@ -211,7 +229,7 @@ onUnmounted(() => {
                   <span v-if="!item.owned">
                     {{
                       t('evm_rpc_node_manager.weight', {
-                        weight: item.weight
+                        weight: item.weight,
                       })
                     }}
                   </span>

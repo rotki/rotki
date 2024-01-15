@@ -1,7 +1,7 @@
-import { type BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 import { parseBigNumber, updateLocationBalance } from '../utils/amounts';
 import { RotkiApp } from './rotki-app';
+import type { BigNumber } from '@rotki/common';
 
 export class DashboardPage {
   visit() {
@@ -20,7 +20,7 @@ export class DashboardPage {
 
     const balances: Map<string, BigNumber> = new Map<string, BigNumber>();
 
-    cy.get('[data-cy=blockchain-balance__summary').each($element => {
+    cy.get('[data-cy=blockchain-balance__summary').each(($element) => {
       const location = $element.attr('data-location');
       if (!location) {
         cy.log('missing location for element ', $element);
@@ -34,23 +34,23 @@ export class DashboardPage {
   }
 
   getNonFungibleBalances() {
-    return cy.get('[data-cy=dashboard]').then($dashboard => {
+    return cy.get('[data-cy=dashboard]').then(($dashboard) => {
       const nftTable = $dashboard.find('[data-cy="nft-balance-table"]');
       const nftTableExists = nftTable.length > 0;
 
       cy.log('NFT table exists', nftTableExists);
 
-      if (!nftTableExists) {
+      if (!nftTableExists)
         return cy.wrap(Zero);
-      }
-      const selector =
-        'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
+
+      const selector
+        = 'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
       const $displayAmount = nftTable.find(selector);
 
       let amount = Zero;
-      if ($displayAmount.length > 0) {
+      if ($displayAmount.length > 0)
         amount = parseBigNumber($displayAmount.text());
-      }
+
       return cy.wrap(amount);
     });
   }
@@ -62,7 +62,7 @@ export class DashboardPage {
 
     const balances: Map<string, BigNumber> = new Map();
 
-    cy.get('[data-cy=manual-balance__summary').each($element => {
+    cy.get('[data-cy=manual-balance__summary').each(($element) => {
       const location = $element.attr('data-location');
       if (!location) {
         cy.log('missing location for element ', $element);
@@ -77,13 +77,13 @@ export class DashboardPage {
   }
 
   amountDisplayIsBlurred() {
-    cy.get('[data-cy="amount-display"]').should($div => {
+    cy.get('[data-cy="amount-display"]').should(($div) => {
       expect($div.css('filter')).to.match(/^blur/);
     });
   }
 
   amountDisplayIsNotBlurred() {
-    cy.get('[data-cy="amount-display"]').should($div => {
+    cy.get('[data-cy="amount-display"]').should(($div) => {
       expect($div.css('filter')).not.to.match(/^blur/);
     });
   }

@@ -4,14 +4,14 @@ import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty } from 'lodash-es';
-import {
-  type EvmHistoryEvent,
-  type NewEvmHistoryEventPayload
-} from '@/types/history/events';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
+import type {
+  EvmHistoryEvent,
+  NewEvmHistoryEventPayload,
+} from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +22,8 @@ const props = withDefaults(
   {
     editableItem: undefined,
     nextSequence: '',
-    groupHeader: undefined
-  }
+    groupHeader: undefined,
+  },
 );
 
 const { t } = useI18n();
@@ -31,12 +31,12 @@ const { t } = useI18n();
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { counterparties, historyEventProductsMapping } =
-  useHistoryEventMappings();
+const { counterparties, historyEventProductsMapping }
+  = useHistoryEventMappings();
 
 const lastLocation = useLocalStorage(
   'rotki.history_event.location',
-  TRADE_LOCATION_EXTERNAL
+  TRADE_LOCATION_EXTERNAL,
 );
 
 const assetPriceForm: Ref<InstanceType<
@@ -71,95 +71,95 @@ const rules = {
   txHash: {
     required: helpers.withMessage(
       t('transactions.events.form.tx_hash.validation.non_empty').toString(),
-      required
+      required,
     ),
     isValid: helpers.withMessage(
       t('transactions.events.form.tx_hash.validation.valid').toString(),
-      (value: string) => isValidTxHash(value)
-    )
+      (value: string) => isValidTxHash(value),
+    ),
   },
   eventIdentifier: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.event_identifier.validation.non_empty'
+        'transactions.events.form.event_identifier.validation.non_empty',
       ).toString(),
-      requiredIf(() => !!get(editableItem))
-    )
+      requiredIf(() => !!get(editableItem)),
+    ),
   },
   location: {
     required: helpers.withMessage(
       t('transactions.events.form.location.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   asset: {
     required: helpers.withMessage(
       t('transactions.events.form.asset.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   amount: {
     required: helpers.withMessage(
       t('transactions.events.form.amount.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol)
+        currency: get(currencySymbol),
       }).toString(),
-      required
-    )
+      required,
+    ),
   },
   address: {
     isValid: helpers.withMessage(
       t('transactions.events.form.address.validation.valid').toString(),
-      (value: string) => !value || isValidEthAddress(value)
-    )
+      (value: string) => !value || isValidEthAddress(value),
+    ),
   },
   sequenceIndex: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.sequence_index.validation.non_empty'
+        'transactions.events.form.sequence_index.validation.non_empty',
       ).toString(),
-      required
-    )
+      required,
+    ),
   },
   eventType: {
     required: helpers.withMessage(
       t('transactions.events.form.event_type.validation.non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   eventSubtype: {
     required: helpers.withMessage(
       t(
-        'transactions.events.form.event_subtype.validation.non_empty'
+        'transactions.events.form.event_subtype.validation.non_empty',
       ).toString(),
-      required
-    )
+      required,
+    ),
   },
   counterparty: {
     isValid: helpers.withMessage(
       t('transactions.events.form.counterparty.validation.valid').toString(),
       (value: string) =>
-        !value ||
-        get(counterparties).includes(value) ||
-        isValidEthAddress(value)
-    )
+        !value
+        || get(counterparties).includes(value)
+        || isValidEthAddress(value),
+    ),
   },
   product: {
     isValid: helpers.withMessage(
       t('transactions.events.form.product.validation.valid').toString(),
       (value: string) =>
-        !value || get(historyEventLimitedProducts).includes(value)
-    )
-  }
+        !value || get(historyEventLimitedProducts).includes(value),
+    ),
+  },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
-  useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler }
+  = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -178,15 +178,15 @@ const v$ = setValidation(
     eventType,
     eventSubtype,
     counterparty,
-    product
+    product,
   },
   {
     $autoDirty: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 
-const reset = () => {
+function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, null);
@@ -195,8 +195,8 @@ const reset = () => {
     convertFromTimestamp(
       dayjs().valueOf(),
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(location, get(lastLocation));
   set(address, '');
@@ -213,9 +213,9 @@ const reset = () => {
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
-};
+}
 
-const applyEditableData = async (entry: EvmHistoryEvent) => {
+async function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
@@ -224,8 +224,8 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -239,9 +239,9 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(counterparty, entry.counterparty ?? '');
   set(product, entry.product ?? '');
   set(extraData, entry.extraData || {});
-};
+}
 
-const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
+async function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(location, entry.location || get(lastLocation));
@@ -253,23 +253,22 @@ const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
     convertFromTimestamp(
       entry.timestamp,
       DateFormat.DateMonthYearHourMinuteSecond,
-      true
-    )
+      true,
+    ),
   );
   set(usdValue, '0');
-};
+}
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 
-const save = async (): Promise<boolean> => {
+async function save(): Promise<boolean> {
   const timestamp = convertToTimestamp(
     get(datetime),
     DateFormat.DateMonthYearHourMinuteSecond,
-    true
+    true,
   );
 
   const payload: NewEvmHistoryEventPayload = {
@@ -283,7 +282,7 @@ const save = async (): Promise<boolean> => {
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
     location: get(location),
     address: get(address) || null,
@@ -291,7 +290,7 @@ const save = async (): Promise<boolean> => {
     notes: get(notes) || undefined,
     counterparty: get(counterparty) || null,
     product: get(product) || null,
-    extraData: get(extraData) || null
+    extraData: get(extraData) || null,
   };
 
   const edit = get(editableItem);
@@ -300,9 +299,9 @@ const save = async (): Promise<boolean> => {
     edit ? { ...payload, identifier: edit.identifier } : payload,
     assetPriceForm,
     errorMessages,
-    reset
+    reset,
   );
-};
+}
 
 setSubmitFunc(save);
 
@@ -310,12 +309,11 @@ const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 watch(location, (location: string) => {
-  if (location) {
+  if (location)
     set(lastLocation, location);
-  }
 });
 
-const checkPropsData = () => {
+function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
     applyEditableData(editable);
@@ -327,7 +325,7 @@ const checkPropsData = () => {
     return;
   }
   reset();
-};
+}
 
 watch([groupHeader, editableItem], checkPropsData);
 onMounted(() => {
@@ -338,18 +336,16 @@ const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
   const counterpartyVal = get(counterparty);
   const mapping = get(historyEventProductsMapping);
 
-  if (!counterpartyVal) {
+  if (!counterpartyVal)
     return [];
-  }
 
   return mapping[counterpartyVal] ?? [];
 });
 
-watch(historyEventLimitedProducts, products => {
+watch(historyEventLimitedProducts, (products) => {
   const selected = get(product);
-  if (!products.includes(selected)) {
+  if (!products.includes(selected))
     set(product, '');
-  }
 });
 
 const { txEvmChainsToLocation } = useSupportedChains();
@@ -359,7 +355,7 @@ const { accounts } = useAccountBalances();
 const addressSuggestions = computed(() =>
   get(accounts)
     .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address)
+    .map(item => item.address),
 );
 </script>
 

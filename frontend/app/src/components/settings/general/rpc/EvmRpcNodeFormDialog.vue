@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type EvmRpcNode } from '@/types/settings/rpc';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { EvmRpcNode } from '@/types/settings/rpc';
 
 const props = defineProps<{
   value: EvmRpcNode;
@@ -17,9 +17,9 @@ const emit = defineEmits<{
 
 const { editMode, chainName, chain } = toRefs(props);
 
-const resetForm = () => {
+function resetForm() {
   emit('reset');
-};
+}
 
 const { openDialog, submitting, trySubmit } = useEvmRpcNodeForm(chain);
 
@@ -28,7 +28,7 @@ const { t } = useI18n();
 const dialogTitle = computed(() => {
   if (get(editMode)) {
     return t('evm_rpc_node_manager.edit_dialog.title', {
-      chain: get(chainName)
+      chain: get(chainName),
     });
   }
   return t('evm_rpc_node_manager.add_dialog.title', { chain: get(chainName) });

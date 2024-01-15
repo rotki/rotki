@@ -7,20 +7,20 @@ const HistoryEventTypeMapping = z.record(z.record(z.string()));
 const HistoryEventCategoryDetail = z.object({
   label: z.string(),
   icon: z.string(),
-  color: z.enum(contextColors).optional()
+  color: z.enum(contextColors).optional(),
 });
 
 const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);
 
 const HistoryEventCategory = z.object({
   counterpartyMappings: z.record(HistoryEventCategoryDetail),
-  direction: HistoryEventCategoryDirection
+  direction: HistoryEventCategoryDirection,
 });
 
-export const HistoryEventCategoryDetailWithId =
-  HistoryEventCategoryDetail.extend({
+export const HistoryEventCategoryDetailWithId
+  = HistoryEventCategoryDetail.extend({
     identifier: z.string(),
-    direction: HistoryEventCategoryDirection
+    direction: HistoryEventCategoryDirection,
   });
 
 export type HistoryEventCategoryDetailWithId = z.infer<
@@ -39,8 +39,8 @@ export const HistoryEventTypeData = z.object({
   accountingEventsIcons: z.record(z.string()),
   entryTypeMappings: z.record(
     z.nativeEnum(HistoryEventEntryType),
-    z.record(HistoryEventTypeMapping)
-  )
+    z.record(HistoryEventTypeMapping),
+  ),
 });
 
 export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;
@@ -49,7 +49,7 @@ const HistoryEventProductMapping = z.array(z.string());
 
 export const HistoryEventProductData = z.object({
   mappings: z.record(HistoryEventProductMapping),
-  products: HistoryEventProductMapping
+  products: HistoryEventProductMapping,
 });
 
 export type HistoryEventProductData = z.infer<typeof HistoryEventProductData>;

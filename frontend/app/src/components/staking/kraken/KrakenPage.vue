@@ -12,19 +12,17 @@ const isKrakenConnected = computed(() => {
 });
 
 onMounted(async () => {
-  if (get(isKrakenConnected)) {
+  if (get(isKrakenConnected))
     await load(false);
-  }
 });
 
 onUnmounted(() => {
   $reset();
 });
 
-watch(isKrakenConnected, async isKrakenConnected => {
-  if (isKrakenConnected) {
+watch(isKrakenConnected, async (isKrakenConnected) => {
+  if (isKrakenConnected)
     await load(false);
-  }
 });
 
 const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
@@ -59,7 +57,10 @@ const refresh = () => load(true);
       </RuiTooltip>
     </template>
 
-    <FullSizeContent v-if="!isKrakenConnected" class="gap-4">
+    <FullSizeContent
+      v-if="!isKrakenConnected"
+      class="gap-4"
+    >
       <span class="font-bold text-h5">
         {{ t('kraken_page.page.title') }}
       </span>

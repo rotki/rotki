@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { type HistoryEventEntry } from '@/types/history/events';
 import { Routes } from '@/router/routes';
+import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -12,24 +12,23 @@ const { event } = toRefs(props);
 
 const { t } = useI18n();
 
-const onEditRule = () => {
+function onEditRule() {
   const entry = get(event);
 
   const data = {
     eventSubtype: entry.eventSubtype,
     eventType: entry.eventType,
-    counterparty: ''
+    counterparty: '',
   };
 
-  if ('counterparty' in entry) {
+  if ('counterparty' in entry)
     data.counterparty = entry.counterparty ?? '';
-  }
 
   vueRouter.push({
     path: Routes.SETTINGS_ACCOUNTING,
-    query: { 'edit-rule': 'true', ...data }
+    query: { 'edit-rule': 'true', ...data },
   });
-};
+}
 </script>
 
 <template>
@@ -42,14 +41,28 @@ const onEditRule = () => {
       transition="slide-y-transition"
     >
       <template #activator="{ on }">
-        <RuiButton class="!p-2" icon variant="text" v-on="on">
-          <RuiIcon name="more-2-fill" size="20" />
+        <RuiButton
+          class="!p-2"
+          icon
+          variant="text"
+          v-on="on"
+        >
+          <RuiIcon
+            name="more-2-fill"
+            size="20"
+          />
         </RuiButton>
       </template>
       <div class="py-2">
-        <RuiButton variant="list" @click="onEditRule()">
+        <RuiButton
+          variant="list"
+          @click="onEditRule()"
+        >
           <template #prepend>
-            <RuiIcon class="text-rui-text-secondary" name="pencil-line" />
+            <RuiIcon
+              class="text-rui-text-secondary"
+              name="pencil-line"
+            />
           </template>
           {{ t('accounting_settings.rule.edit') }}
         </RuiButton>

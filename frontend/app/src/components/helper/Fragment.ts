@@ -1,38 +1,37 @@
 /* eslint-disable unicorn/prefer-modern-dom-apis */
 import Vue from 'vue';
 
-const freeze = (object: any, property: any, value: any) => {
+function freeze(object: any, property: any, value: any) {
   Object.defineProperty(object, property, {
     configurable: true,
     get() {
       return value;
     },
     set(v) {
-      // eslint-disable-next-line no-console
       console.warn(`tried to set frozen property ${property} with ${v}`);
-    }
+    },
   });
-};
+}
 
-const unfreeze = (object: any, property: any, value = null) => {
+function unfreeze(object: any, property: any, value = null) {
   Object.defineProperty(object, property, {
     configurable: true,
     writable: true,
-    value
+    value,
   });
-};
+}
 
-//TODO: remove after upgrading to Vue 3.x
+// TODO: remove after upgrading to Vue 3.x
 export default Vue.extend({
-  // @ts-ignore
+  // @ts-expect-error
   abstract: true,
   name: 'Fragment',
 
   props: {
     name: {
       type: String,
-      default: () => Math.floor(Date.now() * Math.random()).toString(16)
-    }
+      default: () => Math.floor(Date.now() * Math.random()).toString(16),
+    },
   },
 
   mounted() {
@@ -49,7 +48,7 @@ export default Vue.extend({
     parent.insertBefore(head, container);
     parent.insertBefore(tail, container);
 
-    container.appendChild = node => {
+    container.appendChild = (node) => {
       parent.insertBefore(node, tail);
       freeze(node, 'parentNode', container);
       return node;
@@ -61,14 +60,14 @@ export default Vue.extend({
       return node;
     };
 
-    container.removeChild = node => {
+    container.removeChild = (node) => {
       parent.removeChild(node);
       unfreeze(node, 'parentNode');
       return node;
     };
 
     Array.from(container.childNodes).forEach(node =>
-      container.appendChild(node)
+      container.appendChild(node),
     );
 
     parent.removeChild(container);
@@ -83,12 +82,12 @@ export default Vue.extend({
     };
 
     const removeChild = parent.removeChild;
-    parent.removeChild = node => {
+    parent.removeChild = (node) => {
       if ((node as Node) === container) {
         while (head.nextSibling !== tail) {
-          if (!head.nextSibling) {
+          if (!head.nextSibling)
             continue;
-          }
+
           container.removeChild(head.nextSibling);
         }
 
@@ -98,7 +97,8 @@ export default Vue.extend({
 
         parent.insertBefore = insertBefore;
         parent.removeChild = removeChild;
-      } else {
+      }
+      else {
         removeChild.call(parent, node);
       }
       return node;
@@ -115,11 +115,11 @@ export default Vue.extend({
         child =>
           (child.data = {
             ...child.data,
-            attrs: { fragment, ...(child.data || {}).attrs }
-          })
+            attrs: { fragment, ...(child.data || {}).attrs },
+          }),
       );
     }
 
     return h('div', { attrs: { fragment } }, children);
-  }
+  },
 });

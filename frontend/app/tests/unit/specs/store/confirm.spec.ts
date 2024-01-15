@@ -13,10 +13,10 @@ describe('store:confirm', () => {
   const title = 'confirmation title';
   const message = 'confirmation message';
 
-  test('should show confirmation message', () => {
+  it('should show confirmation message', () => {
     const confirmationMessage = {
       title,
-      message
+      message,
     };
     const { show } = store;
     const { visible, confirmation } = storeToRefs(store);
@@ -32,10 +32,10 @@ describe('store:confirm', () => {
     expect(get(confirmation).message).toBe(message);
   });
 
-  test('should call onConfirm callback', async () => {
+  it('should call onConfirm callback', async () => {
     const confirmationMessage = {
       title,
-      message
+      message,
     };
     const { show, confirm } = store;
     const { visible, confirmation } = storeToRefs(store);
@@ -63,10 +63,10 @@ describe('store:confirm', () => {
     expect(onConfirm).toBeCalledTimes(1);
   });
 
-  test('should call onDismiss callback', async () => {
+  it('should call onDismiss callback', async () => {
     const confirmationMessage = {
       title,
-      message
+      message,
     };
     const { show, dismiss } = store;
     const { visible, confirmation } = storeToRefs(store);

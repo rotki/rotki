@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 defineProps<{ context: Blockchain }>();
 
@@ -11,15 +11,14 @@ const {
   clearDialog,
   trySubmit,
   setPostSubmitFunc,
-  submitting
+  submitting,
 } = useAccountDialog();
 const { loading } = useAccountLoading();
 
-const postSubmitFunc = (result: boolean) => {
-  if (result) {
+function postSubmitFunc(result: boolean) {
+  if (result)
     clearDialog();
-  }
-};
+}
 
 setPostSubmitFunc(postSubmitFunc);
 </script>
@@ -35,6 +34,9 @@ setPostSubmitFunc(postSubmitFunc);
     @confirm="trySubmit()"
     @cancel="clearDialog()"
   >
-    <AccountForm :context="context" data-cy="blockchain-balance-form" />
+    <AccountForm
+      :context="context"
+      data-cy="blockchain-balance-form"
+    />
   </BigDialog>
 </template>

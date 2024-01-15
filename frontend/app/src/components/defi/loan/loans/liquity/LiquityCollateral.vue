@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AssetBalance, type BigNumber } from '@rotki/common';
+import type { AssetBalance, BigNumber } from '@rotki/common';
 
 withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ withDefaults(
     ratio?: BigNumber | null;
   }>(),
   {
-    ratio: null
-  }
+    ratio: null,
+  },
 );
 
 const { t } = useI18n();
@@ -16,14 +16,29 @@ const { t } = useI18n();
 
 <template>
   <StatCard :title="t('loan_collateral.title')">
-    <LoanRow medium :title="t('loan_collateral.locked_collateral')">
-      <BalanceDisplay :asset="collateral.asset" :value="collateral" />
+    <LoanRow
+      medium
+      :title="t('loan_collateral.locked_collateral')"
+    >
+      <BalanceDisplay
+        :asset="collateral.asset"
+        :value="collateral"
+      />
     </LoanRow>
 
-    <RuiDivider v-if="ratio" class="my-4" />
+    <RuiDivider
+      v-if="ratio"
+      class="my-4"
+    />
 
-    <LoanRow v-if="ratio" :title="t('loan_collateral.ratio')">
-      <PercentageDisplay v-if="ratio" :value="ratio.toFormat(2)" />
+    <LoanRow
+      v-if="ratio"
+      :title="t('loan_collateral.ratio')"
+    >
+      <PercentageDisplay
+        v-if="ratio"
+        :value="ratio.toFormat(2)"
+      />
     </LoanRow>
   </StatCard>
 </template>

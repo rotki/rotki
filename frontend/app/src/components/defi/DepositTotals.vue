@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 defineProps<{
   loading: boolean;

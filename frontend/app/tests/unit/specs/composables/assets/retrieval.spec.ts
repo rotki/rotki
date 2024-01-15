@@ -1,23 +1,23 @@
-import { type ERC20Token } from '@/types/blockchain/accounts';
 import { CUSTOM_ASSET } from '@/types/asset';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { ERC20Token } from '@/types/blockchain/accounts';
 
 vi.mock('@/composables/api/assets/info', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
-    erc20details: vi.fn().mockResolvedValue(1)
-  })
+    erc20details: vi.fn().mockResolvedValue(1),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/store/notifications/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn().mockReturnValue({})
-  })
+    notify: vi.fn().mockReturnValue({}),
+  }),
 }));
 
 describe('store::assets/retrieval', () => {
@@ -35,25 +35,25 @@ describe('store::assets/retrieval', () => {
   });
 
   describe('getAssociatedAssetIdentifier', () => {
-    test('ETH2 as ETH = true', () => {
+    it('eTH2 as ETH = true', () => {
       updateGeneralSettings({
-        treatEth2AsEth: true
+        treatEth2AsEth: true,
       });
 
       const result = get(
-        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2')
+        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'),
       );
 
       expect(result).toEqual('ETH');
     });
 
-    test('ETH2 as ETH = false', () => {
+    it('eTH2 as ETH = false', () => {
       updateGeneralSettings({
-        treatEth2AsEth: false
+        treatEth2AsEth: false,
       });
 
       const result = get(
-        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2')
+        assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'),
       );
 
       expect(result).toEqual('ETH2');
@@ -63,19 +63,19 @@ describe('store::assets/retrieval', () => {
   describe('fetchTokenDetails', () => {
     const payload = {
       address: '0x12BB890508c125661E03b09EC06E404bc9289040',
-      evmChain: 'ethereum'
+      evmChain: 'ethereum',
     };
 
-    test('success', async () => {
+    it('success', async () => {
       const tokenDetail: ERC20Token = {
         decimals: 18,
         name: 'Radio Caca',
-        symbol: 'RACA'
+        symbol: 'RACA',
       };
 
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: tokenDetail,
-        meta: { title: '' }
+        meta: { title: '' },
       });
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
@@ -87,9 +87,9 @@ describe('store::assets/retrieval', () => {
       expect(useNotificationsStore().notify).not.toHaveBeenCalled();
     });
 
-    test('failed', async () => {
+    it('failed', async () => {
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
@@ -103,7 +103,7 @@ describe('store::assets/retrieval', () => {
   });
 
   describe('assetInfo, assetName, and assetSymbol', () => {
-    test('identifier falsy', () => {
+    it('identifier falsy', () => {
       const identifier = undefined;
       expect(get(assetInfoRetrieval.assetInfo(identifier))).toEqual(null);
       expect(get(assetInfoRetrieval.assetName(identifier))).toEqual('');
@@ -118,8 +118,8 @@ describe('store::assets/retrieval', () => {
         vi.mocked(assetCacheStore.retrieve).mockReturnValue(
           computed(() => ({
             name: assetName,
-            isCustomAsset: true
-          }))
+            isCustomAsset: true,
+          })),
         );
 
         const result = get(assetInfoRetrieval.assetInfo(identifier));
@@ -129,32 +129,32 @@ describe('store::assets/retrieval', () => {
         expect(result).toMatchObject({
           name: assetName,
           symbol: assetName,
-          isCustomAsset: true
+          isCustomAsset: true,
         });
 
         expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-          assetName
+          assetName,
         );
         expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-          assetName
+          assetName,
         );
       });
 
-      test('isCustomAsset = true', () => {
+      it('isCustomAsset = true', () => {
         vi.mocked(assetCacheStore.retrieve).mockReturnValue(
           computed(() => ({
             name: assetName,
-            isCustomAsset: true
-          }))
+            isCustomAsset: true,
+          })),
         );
       });
 
-      test('assetType === CUSTOM_ASSET', () => {
+      it('assetType === CUSTOM_ASSET', () => {
         vi.mocked(assetCacheStore.retrieve).mockReturnValue(
           computed(() => ({
             name: assetName,
-            assetType: CUSTOM_ASSET
-          }))
+            assetType: CUSTOM_ASSET,
+          })),
         );
       });
     });
@@ -172,48 +172,48 @@ describe('store::assets/retrieval', () => {
         set(fetchedAssetCollections, {
           [collectionId]: {
             name: collectionName,
-            symbol: assetSymbol
-          }
+            symbol: assetSymbol,
+          },
         });
 
         vi.mocked(assetCacheStore.retrieve).mockReturnValue(
           computed(() => ({
             name: assetName,
             symbol: assetSymbol,
-            collectionId
-          }))
+            collectionId,
+          })),
         );
       });
 
-      test('isCollectionParent = true', () => {
+      it('isCollectionParent = true', () => {
         const result = get(assetInfoRetrieval.assetInfo(identifier));
 
         expect(result).toMatchObject({
           name: collectionName,
-          symbol: assetSymbol
+          symbol: assetSymbol,
         });
 
         expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-          collectionName
+          collectionName,
         );
         expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-          assetSymbol
+          assetSymbol,
         );
       });
 
-      test('isCollectionParent = false', () => {
+      it('isCollectionParent = false', () => {
         const result = get(
-          assetInfoRetrieval.assetInfo(identifier, true, false)
+          assetInfoRetrieval.assetInfo(identifier, true, false),
         );
 
         expect(result).toMatchObject({
           name: assetName,
-          symbol: assetSymbol
+          symbol: assetSymbol,
         });
       });
     });
 
-    test('asset name and symbol using fallback', () => {
+    it('asset name and symbol using fallback', () => {
       const address = '0x12BB890508c125661E03b09EC06E404bc9289040';
       const identifier = `eip155:1/erc-20:${address}`;
       vi.mocked(assetCacheStore.retrieve).mockReturnValue(computed(() => null));
@@ -223,14 +223,14 @@ describe('store::assets/retrieval', () => {
 
       expect(result).toMatchObject({
         name: fallbackName,
-        symbol: fallbackName
+        symbol: fallbackName,
       });
 
       expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(
-        fallbackName
+        fallbackName,
       );
       expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(
-        fallbackName
+        fallbackName,
       );
     });
   });

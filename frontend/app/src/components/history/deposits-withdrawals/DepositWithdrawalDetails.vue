@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AssetMovementEntry } from '@/types/history/asset-movements';
+import type { AssetMovementEntry } from '@/types/history/asset-movements';
 
 defineProps<{
   span: number;
@@ -10,12 +10,21 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <TableExpandContainer visible :colspan="span">
+  <TableExpandContainer
+    visible
+    :colspan="span"
+  >
     <template #title>
       {{ t('deposits_withdrawals.details.title') }}
     </template>
-    <MovementLinks v-if="item.address || item.transactionId" :item="item" />
-    <div v-else class="font-medium">
+    <MovementLinks
+      v-if="item.address || item.transactionId"
+      :item="item"
+    />
+    <div
+      v-else
+      class="font-medium"
+    >
       {{ t('deposits_withdrawals.details.no_details') }}
     </div>
   </TableExpandContainer>

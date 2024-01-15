@@ -1,4 +1,3 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { omit } from 'lodash-es';
 import {
   type AccountingRule,
@@ -8,40 +7,39 @@ import {
   type AccountingRuleConflictResolution,
   type AccountingRuleEntry,
   AccountingRuleEntryCollectionResponse,
-  type AccountingRuleRequestPayload
+  type AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
-import { type CollectionResponse } from '@/types/collection';
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import type { CollectionResponse } from '@/types/collection';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useAccountingApi = () => {
+export function useAccountingApi() {
   const fetchAccountingRule = async (
     payload: AccountingRuleRequestPayload,
-    counterparty: string | null
+    counterparty: string | null,
   ): Promise<AccountingRuleEntry | null> => {
     const newPayload = {
       ...omit(payload, ['orderByAttributes', 'ascending']),
-      counterparties: counterparty ? [counterparty, null] : [null]
+      counterparties: counterparty ? [counterparty, null] : [null],
     };
 
     const response = await api.instance.post<
       ActionResult<CollectionResponse<AccountingRuleEntry>>
     >('/accounting/rules', snakeCaseTransformer(newPayload), {
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
 
     const data = AccountingRuleEntryCollectionResponse.parse(
-      handleResponse(response)
+      handleResponse(response),
     );
 
-    if (data.entries.length === 0) {
+    if (data.entries.length === 0)
       return null;
-    }
 
-    if (data.entries.length === 1) {
+    if (data.entries.length === 1)
       return data.entries[0];
-    }
 
     if (data.entries.length > 1) {
       return (
@@ -52,7 +50,7 @@ export const useAccountingApi = () => {
     return null;
   };
   const fetchAccountingRules = async (
-    payload: AccountingRuleRequestPayload
+    payload: AccountingRuleRequestPayload,
   ): Promise<CollectionResponse<AccountingRuleEntry>> => {
     const response = await api.instance.post<
       ActionResult<CollectionResponse<AccountingRuleEntry>>
@@ -60,38 +58,38 @@ export const useAccountingApi = () => {
       '/accounting/rules',
       snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return AccountingRuleEntryCollectionResponse.parse(
-      handleResponse(response)
+      handleResponse(response),
     );
   };
 
   const addAccountingRule = async (
-    payload: AccountingRule
+    payload: AccountingRule,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/accounting/rules',
       snakeCaseTransformer(payload),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const editAccountingRule = async (
-    payload: AccountingRuleEntry
+    payload: AccountingRuleEntry,
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/accounting/rules',
       snakeCaseTransformer(payload),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -102,8 +100,8 @@ export const useAccountingApi = () => {
       '/accounting/rules',
       {
         data: snakeCaseTransformer({ identifier }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -115,37 +113,37 @@ export const useAccountingApi = () => {
     const response = await api.instance.get<
       ActionResult<Record<string, string[]>>
     >('/accounting/rules/info', {
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
 
     return handleResponse(response);
   };
 
   const fetchAccountingRuleConflicts = async (
-    payload: AccountingRuleConflictRequestPayload
+    payload: AccountingRuleConflictRequestPayload,
   ): Promise<CollectionResponse<AccountingRuleConflict>> => {
     const response = await api.instance.post<ActionResult<any>>(
       '/accounting/rules/conflicts',
       snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return AccountingRuleConflictCollectionResponse.parse(
-      handleResponse(response)
+      handleResponse(response),
     );
   };
 
   const resolveAccountingRuleConflicts = async (
-    payload: AccountingRuleConflictResolution
+    payload: AccountingRuleConflictResolution,
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<any>>(
       '/accounting/rules/conflicts',
       snakeCaseTransformer(payload),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -159,6 +157,6 @@ export const useAccountingApi = () => {
     deleteAccountingRule,
     getAccountingRuleLinkedMapping,
     fetchAccountingRuleConflicts,
-    resolveAccountingRuleConflicts
+    resolveAccountingRuleConflicts,
   };
-};
+}

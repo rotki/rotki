@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AddressBookPayload } from '@/types/eth-names';
+import type { AddressBookPayload } from '@/types/eth-names';
 
 const props = defineProps<{
   value: AddressBookPayload;
@@ -18,9 +18,9 @@ const { openDialog, submitting, trySubmit } = useAddressBookForm();
 const model = useSimpleVModel(props, emit);
 const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
-const resetForm = () => {
+function resetForm() {
   emit('reset');
-};
+}
 
 const { t } = useI18n();
 </script>

@@ -13,7 +13,10 @@ const { t } = useI18n();
         class="w-[8rem] h-[8rem] md:w-[16rem] md:h-[16rem] bg-rui-grey-200 p-8 md:p-16 rounded-full mb-8"
       >
         <slot name="logo">
-          <RotkiLogo class="h-full w-full" :url="externalAssets.logo.noData" />
+          <RotkiLogo
+            class="h-full w-full"
+            :url="externalAssets.logo.noData"
+          />
         </slot>
       </div>
     </div>
@@ -27,7 +30,11 @@ const { t } = useI18n();
       path="no_premium_placeholder.get_premium"
       class="text-rui-text-secondary"
     >
-      <ExternalLink :text="t('common.website')" color="primary" premium />
+      <ExternalLink
+        :text="t('common.website')"
+        color="primary"
+        premium
+      />
     </i18n>
   </FullSizeContent>
 </template>

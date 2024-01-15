@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import { DECENTRALIZED_EXCHANGES, Module } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
+import type { Ref } from 'vue';
 
 const modules = Object.values(Module);
 const { allExchanges } = storeToRefs(useLocationStore());
@@ -25,55 +25,57 @@ const purgable = [
   {
     id: Purgeable.CENTRALIZED_EXCHANGES,
     text: t('purge_selector.centralized_exchanges'),
-    value: centralizedExchangeToClear
+    value: centralizedExchangeToClear,
   },
   {
     id: Purgeable.DECENTRALIZED_EXCHANGES,
     text: t('purge_selector.decentralized_exchanges'),
-    value: decentralizedExchangeToClear
+    value: decentralizedExchangeToClear,
   },
   {
     id: Purgeable.DEFI_MODULES,
     text: t('purge_selector.defi_modules'),
-    value: moduleToClear
+    value: moduleToClear,
   },
   {
     id: Purgeable.EVM_TRANSACTIONS,
     text: t('purge_selector.evm_transactions'),
-    value: evmChainToClear
-  }
+    value: evmChainToClear,
+  },
 ];
 
-const purgeSource = async (source: Purgeable) => {
+async function purgeSource(source: Purgeable) {
   const valueRef = purgable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
   if (source === Purgeable.EVM_TRANSACTIONS) {
     await deleteEvmTransactions(value);
-  } else if (source === Purgeable.DEFI_MODULES) {
+  }
+  else if (source === Purgeable.DEFI_MODULES) {
     await deleteModuleData((value as Module) || null);
-  } else if (source === Purgeable.CENTRALIZED_EXCHANGES) {
+  }
+  else if (source === Purgeable.CENTRALIZED_EXCHANGES) {
     await deleteExchangeData(value);
-  } else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
-    if (value) {
+  }
+  else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
+    if (value)
       await deleteModuleData(value as Module);
-    } else {
+    else
       await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
-    }
   }
 
   await purgeCache(source, value);
-};
+}
 
 const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
   purgable,
   purgeSource,
   (source: string) => ({
     success: t('data_management.purge_data.success', {
-      source
+      source,
     }),
     error: t('data_management.purge_data.error', {
-      source
-    })
+      source,
+    }),
   }),
   (textSource, source) => {
     const valueRef = purgable.find(({ id }) => id === source)?.value;
@@ -82,24 +84,26 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
     let message = '';
     if (source === Purgeable.EVM_TRANSACTIONS) {
       message = t(
-        'data_management.purge_data.evm_transaction_purge_confirm.message'
+        'data_management.purge_data.evm_transaction_purge_confirm.message',
       );
-    } else if (value) {
+    }
+    else if (value) {
       message = t('data_management.purge_data.confirm.message', {
         source: textSource,
-        value: toSentenceCase(value)
+        value: toSentenceCase(value),
       });
-    } else {
+    }
+    else {
       message = t('data_management.purge_data.confirm.message_all', {
-        source: textSource
+        source: textSource,
       });
     }
 
     return {
       title: t('data_management.purge_data.confirm.title'),
-      message
+      message,
     };
-  }
+  },
 );
 </script>
 
@@ -195,6 +199,9 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
       </RuiTooltip>
     </div>
 
-    <ActionStatusIndicator v-if="status" :status="status" />
+    <ActionStatusIndicator
+      v-if="status"
+      :status="status"
+    />
   </div>
 </template>

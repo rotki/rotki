@@ -1,18 +1,15 @@
 import {
   NotificationCategory,
   type NotificationPayload,
-  Severity
+  Severity,
 } from '@rotki/common/lib/messages';
-import {
-  type HistoricalPrice,
-  type HistoricalPriceFormPayload,
-  type ManualPricePayload
+import type {
+  HistoricalPrice,
+  HistoricalPriceFormPayload,
+  ManualPricePayload,
 } from '@/types/prices';
 
-export const useHistoricPrices = (
-  filter: Ref<{ fromAsset?: string; toAsset?: string }>,
-  t: ReturnType<typeof useI18n>['t']
-) => {
+export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: string }>, t: ReturnType<typeof useI18n>['t']) {
   const loading = ref(false);
   const items: Ref<HistoricalPrice[]> = ref([]);
 
@@ -20,7 +17,7 @@ export const useHistoricPrices = (
     editHistoricalPrice,
     addHistoricalPrice,
     fetchHistoricalPrices,
-    deleteHistoricalPrice
+    deleteHistoricalPrice,
   } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricCachePriceStore();
   const { setMessage } = useMessageStore();
@@ -30,30 +27,33 @@ export const useHistoricPrices = (
     set(loading, true);
     try {
       set(items, await fetchHistoricalPrices(payload));
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const notification: NotificationPayload = {
         title: t('price_table.fetch.failure.title'),
         message: t('price_table.fetch.failure.message', {
-          message: e.message
+          message: error.message,
         }),
         display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT
+        category: NotificationCategory.DEFAULT,
       };
       notify(notification);
-    } finally {
+    }
+    finally {
       set(loading, false);
     }
   };
 
   const save = async (data: HistoricalPriceFormPayload, update: boolean) => {
     try {
-      if (update) {
+      if (update)
         return await editHistoricalPrice(data);
-      }
+
       return await addHistoricalPrice(data);
-    } catch (e: any) {
-      const values = { message: e.message };
+    }
+    catch (error: any) {
+      const values = { message: error.message };
       const title = update
         ? t('price_management.edit.error.title')
         : t('price_management.add.error.title');
@@ -63,7 +63,7 @@ export const useHistoricPrices = (
       setMessage({
         title,
         description,
-        success: false
+        success: false,
       });
 
       return false;
@@ -71,22 +71,23 @@ export const useHistoricPrices = (
   };
 
   const deletePrice = async (item: HistoricalPrice) => {
-    const { price, ...payload } = item!;
+    const { price, ...payload } = item;
     try {
       await deleteHistoricalPrice(payload);
       await refresh({
         modified: true,
-        additionalEntry: item
+        additionalEntry: item,
       });
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const notification: NotificationPayload = {
         title: t('price_table.delete.failure.title'),
         message: t('price_table.delete.failure.message', {
-          message: e.message
+          message: error.message,
         }),
         display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT
+        category: NotificationCategory.DEFAULT,
       };
       notify(notification);
     }
@@ -100,9 +101,9 @@ export const useHistoricPrices = (
 
     if (payload?.modified) {
       const entries: HistoricalPrice[] = [...get(items)];
-      if (payload?.additionalEntry) {
+      if (payload?.additionalEntry)
         entries.push(payload.additionalEntry);
-      }
+
       resetHistoricalPricesData(entries);
     }
   };
@@ -112,7 +113,7 @@ export const useHistoricPrices = (
     async () => {
       await refresh();
     },
-    { deep: true }
+    { deep: true },
   );
 
   onBeforeMount(refresh);
@@ -122,6 +123,6 @@ export const useHistoricPrices = (
     loading,
     save,
     deletePrice,
-    refresh
+    refresh,
   };
-};
+}

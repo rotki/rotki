@@ -6,7 +6,7 @@ withDefaults(
   defineProps<{
     dropdown?: boolean;
   }>(),
-  { dropdown: false }
+  { dropdown: false },
 );
 
 type ResetType = 'soft' | 'hard';
@@ -25,17 +25,18 @@ async function restoreAssets(resetType: ResetType) {
 
   if (result.success) {
     showDoneConfirmation();
-  } else {
+  }
+  else {
     const { message } = result;
     const title = t('asset_update.restore.title').toString();
-    if (message.includes('There are assets that can not')) {
+    if (message.includes('There are assets that can not'))
       showDoubleConfirmation(resetType);
-    }
+
     notify({
       title,
       message,
       severity: Severity.ERROR,
-      display: true
+      display: true,
     });
   }
 }
@@ -49,47 +50,55 @@ async function updateComplete() {
 
 const { show } = useConfirmStore();
 
-const showRestoreConfirmation = (type: ResetType) => {
+function showRestoreConfirmation(type: ResetType) {
   show(
     {
       title: t('asset_update.restore.delete_confirmation.title'),
       message:
         type === 'soft'
           ? t('asset_update.restore.delete_confirmation.soft_reset_message')
-          : t('asset_update.restore.delete_confirmation.hard_reset_message')
+          : t('asset_update.restore.delete_confirmation.hard_reset_message'),
     },
-    () => restoreAssets(type)
+    () => restoreAssets(type),
   );
-};
+}
 
-const showDoubleConfirmation = (type: ResetType) => {
+function showDoubleConfirmation(type: ResetType) {
   show(
     {
       title: t('asset_update.restore.hard_restore_confirmation.title'),
-      message: t('asset_update.restore.hard_restore_confirmation.message')
+      message: t('asset_update.restore.hard_restore_confirmation.message'),
     },
-    () => restoreAssets(type)
+    () => restoreAssets(type),
   );
-};
+}
 
-const showDoneConfirmation = () => {
+function showDoneConfirmation() {
   show(
     {
       title: t('asset_update.restore.success.title'),
       message: t('asset_update.restore.success.description'),
       primaryAction: t('common.actions.ok'),
       singleAction: true,
-      type: DialogType.SUCCESS
+      type: DialogType.SUCCESS,
     },
-    updateComplete
+    updateComplete,
   );
-};
+}
 </script>
 
 <template>
-  <VMenu v-if="dropdown" offset-x left>
+  <VMenu
+    v-if="dropdown"
+    offset-x
+    left
+  >
     <template #activator="{ on }">
-      <RuiButton id="reset-asset-activator" variant="list" v-on="on">
+      <RuiButton
+        id="reset-asset-activator"
+        variant="list"
+        v-on="on"
+      >
         <template #prepend>
           <RuiIcon name="restart-line" />
         </template>
@@ -112,8 +121,14 @@ const showDoneConfirmation = () => {
       />
     </div>
   </VMenu>
-  <div v-else class="flex flex-row gap-2">
-    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+  <div
+    v-else
+    class="flex flex-row gap-2"
+  >
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
       <template #activator>
         <RuiButton
           variant="outlined"
@@ -125,9 +140,15 @@ const showDoneConfirmation = () => {
       </template>
       {{ t('asset_update.restore.soft_reset_hint') }}
     </RuiTooltip>
-    <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
       <template #activator>
-        <RuiButton color="primary" @click="showRestoreConfirmation('hard')">
+        <RuiButton
+          color="primary"
+          @click="showRestoreConfirmation('hard')"
+        >
           {{ t('asset_update.restore.hard_reset') }}
         </RuiButton>
       </template>

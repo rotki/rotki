@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type CostBasis } from '@/types/reports';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { CostBasis } from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
   }>(),
   {
     currency: null,
-    showGroupLine: false
-  }
+    showGroupLine: false,
+  },
 );
 
 const { t } = useI18n();
@@ -31,38 +31,38 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: t('cost_basis_table.headers.amount'),
     value: 'amount',
-    align: 'end'
+    align: 'end',
   },
   {
     text: t('cost_basis_table.headers.full_amount'),
     value: 'fullAmount',
-    align: 'end'
+    align: 'end',
   },
   {
     text: t('cost_basis_table.headers.remaining_amount'),
     value: 'remainingAmount',
-    align: 'end'
+    align: 'end',
   },
   {
     text: t('cost_basis_table.headers.rate', {
-      currency: get(currency)
+      currency: get(currency),
     }),
     value: 'rate',
-    align: 'end'
+    align: 'end',
   },
   {
     text: t('common.datetime'),
     value: 'time',
-    align: 'end'
+    align: 'end',
   },
   {
     text: t('cost_basis_table.headers.taxable'),
-    value: 'taxable'
-  }
+    value: 'taxable',
+  },
 ]);
 
 const matchedAcquisitions = computed(
-  () => get(costBasis).matchedAcquisitions ?? []
+  () => get(costBasis).matchedAcquisitions ?? [],
 );
 </script>
 
@@ -75,8 +75,11 @@ const matchedAcquisitions = computed(
     :offset-class-name="css.offset"
   >
     <template #offset>
-      <div v-if="showGroupLine" :class="css.group">
-        <div :class="css['group__line']" />
+      <div
+        v-if="showGroupLine"
+        :class="css.group"
+      >
+        <div :class="css.group__line" />
       </div>
     </template>
     <template #append>
@@ -112,7 +115,11 @@ const matchedAcquisitions = computed(
                   >
                     {{ t('cost_basis_table.complete') }}
                   </RuiChip>
-                  <RuiChip v-else size="sm" color="error">
+                  <RuiChip
+                    v-else
+                    size="sm"
+                    color="error"
+                  >
                     {{ t('cost_basis_table.incomplete') }}
                   </RuiChip>
                 </div>
@@ -127,7 +134,10 @@ const matchedAcquisitions = computed(
                 sort-by="time"
               >
                 <template #item.amount="{ item }">
-                  <AmountDisplay force-currency :value="item.amount" />
+                  <AmountDisplay
+                    force-currency
+                    :value="item.amount"
+                  />
                 </template>
                 <template #item.fullAmount="{ item }">
                   <AmountDisplay

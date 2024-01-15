@@ -1,17 +1,19 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type BtcAccountData } from '@/types/blockchain/accounts';
+import type { BtcAccountData } from '@/types/blockchain/accounts';
 
 vi.mock('@/composables/api/blockchain/accounts', () => ({
   useBlockchainAccountsApi: vi.fn().mockReturnValue({
-    deleteXpub: vi.fn().mockResolvedValue(1)
-  })
+    deleteXpub: vi.fn().mockResolvedValue(1),
+  }),
 }));
 
-const standalone = (id: number, tags: string[]) => ({
-  address: `address-${id}`,
-  label: '',
-  tags
-});
+function standalone(id: number, tags: string[]) {
+  return {
+    address: `address-${id}`,
+    label: '',
+    tags,
+  };
+}
 
 describe('store::blockchain/accounts/btc', () => {
   setActivePinia(createPinia());
@@ -24,7 +26,7 @@ describe('store::blockchain/accounts/btc', () => {
 
   const tag = 'tag_1';
 
-  test('update', () => {
+  it('update', () => {
     const { btc } = storeToRefs(store);
 
     const data = {
@@ -35,9 +37,9 @@ describe('store::blockchain/accounts/btc', () => {
           derivationPath: null,
           label: '',
           tags: ['tag_2'],
-          addresses: [standalone(2, []), standalone(3, [])]
-        }
-      ]
+          addresses: [standalone(2, []), standalone(3, [])],
+        },
+      ],
     };
 
     store.update(Blockchain.BTC, data);
@@ -45,7 +47,7 @@ describe('store::blockchain/accounts/btc', () => {
     expect(get(btc)).toEqual(data);
   });
 
-  test('removeTag', () => {
+  it('removeTag', () => {
     const { btc } = storeToRefs(store);
 
     const removedTags: BtcAccountData = {
@@ -56,9 +58,9 @@ describe('store::blockchain/accounts/btc', () => {
           derivationPath: null,
           label: '',
           tags: ['tag_2'],
-          addresses: [standalone(2, []), standalone(3, [])]
-        }
-      ]
+          addresses: [standalone(2, []), standalone(3, [])],
+        },
+      ],
     };
     store.removeTag(tag);
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
-import {
-  type BalanceSnapshot,
-  type LocationDataSnapshot,
-  type Snapshot,
-  type SnapshotPayload
+import type { ComputedRef, Ref } from 'vue';
+import type {
+  BalanceSnapshot,
+  LocationDataSnapshot,
+  Snapshot,
+  SnapshotPayload,
 } from '@/types/snapshots';
 
 const props = defineProps<{
@@ -35,10 +35,10 @@ const locationDataSnapshot: ComputedRef<LocationDataSnapshot[]> = computed(
   () => {
     const data = get(snapshotData);
     return !data ? [] : (data.locationDataSnapshot as LocationDataSnapshot[]);
-  }
+  },
 );
 
-const fetchSnapshotData = async () => {
+async function fetchSnapshotData() {
   const result = await api.getSnapshotData(get(timestamp));
 
   const { balancesSnapshot, locationDataSnapshot } = result;
@@ -46,53 +46,50 @@ const fetchSnapshotData = async () => {
   locationDataSnapshot.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   set(snapshotData, {
     balancesSnapshot,
-    locationDataSnapshot
+    locationDataSnapshot,
   });
-};
+}
 
 onMounted(async () => {
   await fetchSnapshotData();
 });
 
-const close = () => {
+function close() {
   emit('close');
-};
+}
 
 const { notify } = useNotificationsStore();
 
-const updateLocationDataSnapshot = (
-  locationDataSnapshot: LocationDataSnapshot[]
-) => {
+function updateLocationDataSnapshot(locationDataSnapshot: LocationDataSnapshot[]) {
   const data = get(snapshotData);
 
   const newData = {
     balancesSnapshot: data?.balancesSnapshot || [],
-    locationDataSnapshot
+    locationDataSnapshot,
   };
 
   set(snapshotData, newData);
-};
+}
 
-const save = async (): Promise<boolean> => {
+async function save(): Promise<boolean> {
   const data = get(snapshotData);
-  if (!data) {
+  if (!data)
     return false;
-  }
 
   const payload: SnapshotPayload = {
     balancesSnapshot: [],
-    locationDataSnapshot: []
+    locationDataSnapshot: [],
   };
 
   payload.balancesSnapshot = data.balancesSnapshot.map(item => ({
     ...item,
     amount: item.amount.toFixed(),
-    usdValue: item.usdValue.toFixed()
+    usdValue: item.usdValue.toFixed(),
   }));
 
   payload.locationDataSnapshot = data.locationDataSnapshot.map(item => ({
     ...item,
-    usdValue: item.usdValue.toFixed()
+    usdValue: item.usdValue.toFixed(),
   }));
 
   let result = false;
@@ -101,74 +98,87 @@ const save = async (): Promise<boolean> => {
     notify({
       title: t('dashboard.snapshot.edit.dialog.message.title'),
       message: t('dashboard.snapshot.edit.dialog.message.error', {
-        message: e
+        message: e,
       }),
-      display: true
+      display: true,
     });
   };
 
   try {
     result = await api.updateSnapshotData(get(timestamp), payload);
 
-    if (!result) {
+    if (!result)
       notifyError();
-    }
-  } catch (e: any) {
-    notifyError(e);
+  }
+  catch (error: any) {
+    notifyError(error);
   }
 
-  if (result) {
+  if (result)
     await fetchSnapshotData();
-  }
 
   return result;
-};
+}
 
 const { setMessage } = useMessageStore();
 
-const finish = async () => {
+async function finish() {
   const success = await save();
 
   if (success) {
     setMessage({
       title: t('dashboard.snapshot.edit.dialog.message.title'),
       description: t('dashboard.snapshot.edit.dialog.message.success'),
-      success: true
+      success: true,
     });
     await fetchNetValue();
     emit('finish');
   }
-};
+}
 
-const updateAndSave = (event: LocationDataSnapshot[]) => {
+function updateAndSave(event: LocationDataSnapshot[]) {
   updateLocationDataSnapshot(event);
   save();
-};
+}
 
-const updateAndComplete = (event: LocationDataSnapshot[]) => {
+function updateAndComplete(event: LocationDataSnapshot[]) {
   updateLocationDataSnapshot(event);
   finish();
-};
+}
 
 const steps = computed(() => [
   {
-    title: t('dashboard.snapshot.edit.dialog.balances.title')
+    title: t('dashboard.snapshot.edit.dialog.balances.title'),
   },
   {
-    title: t('dashboard.snapshot.edit.dialog.location_data.title')
+    title: t('dashboard.snapshot.edit.dialog.location_data.title'),
   },
   {
-    title: t('common.total')
-  }
+    title: t('common.total'),
+  },
 ]);
 </script>
 
 <template>
-  <VDialog persistent :value="true" max-width="1400">
-    <RuiCard no-padding variant="flat">
+  <VDialog
+    persistent
+    :value="true"
+    max-width="1400"
+  >
+    <RuiCard
+      no-padding
+      variant="flat"
+    >
       <div class="flex bg-rui-primary text-white p-2">
-        <RuiButton variant="text" icon @click="close()">
-          <RuiIcon class="text-white" name="close-line" />
+        <RuiButton
+          variant="text"
+          icon
+          @click="close()"
+        >
+          <RuiIcon
+            class="text-white"
+            name="close-line"
+          />
         </RuiButton>
 
         <h5 class="pl-2 text-h5 flex items-center">

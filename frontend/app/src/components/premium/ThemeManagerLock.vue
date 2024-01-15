@@ -13,7 +13,10 @@ const { t } = useI18n();
       </template>
     </RuiCardHeader>
 
-    <RuiCard dense class="mt-4">
+    <RuiCard
+      dense
+      class="mt-4"
+    >
       <div class="flex items-center gap-2 text-body-2">
         <PremiumLock />
         {{ t('theme_manager_lock.description') }}

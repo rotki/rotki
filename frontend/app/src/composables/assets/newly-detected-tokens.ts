@@ -1,9 +1,10 @@
-import { type NewDetectedToken } from '@/types/websocket-messages';
+import type { NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
 
-const createStorage = (username: string): Ref<NewDetectedToken[]> =>
-  useLocalStorage(`rotki.newly_detected_tokens.${username}`, []);
+function createStorage(username: string): Ref<NewDetectedToken[]> {
+  return useLocalStorage(`rotki.newly_detected_tokens.${username}`, []);
+}
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
   let internalTokens: Ref<NewDetectedToken[]> = ref([]);
@@ -27,28 +28,28 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
 
     const tokenList = [...get(internalTokens)];
     const tokenIndex = tokenList.findIndex(
-      ({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier
+      ({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier,
     );
 
-    if (tokenIndex === -1) {
+    if (tokenIndex === -1)
       tokenList.push(data);
-    } else {
+    else
       tokenList.splice(tokenIndex, 1, data);
-    }
+
     set(internalTokens, tokenList.slice(-MAX_SIZE));
     return tokenIndex === -1;
   };
 
   const removeNewDetectedTokens = (tokensToRemove: string[]) => {
     const filtered = get(internalTokens).filter(
-      item => !tokensToRemove.includes(item.tokenIdentifier)
+      item => !tokensToRemove.includes(item.tokenIdentifier),
     );
 
     set(internalTokens, filtered);
   };
 
   const tokens: ComputedRef<NewDetectedToken[]> = computed(() =>
-    get(internalTokens)
+    get(internalTokens),
   );
 
   watch(ignoredAssets, (value, oldValue) => {
@@ -61,6 +62,6 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     initTokens,
     removeNewDetectedTokens,
     clearInternalTokens,
-    addNewDetectedToken
+    addNewDetectedToken,
   };
 });

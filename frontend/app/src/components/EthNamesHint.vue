@@ -6,9 +6,17 @@ const visible = ref(false);
 
 <template>
   <div>
-    <VMenu v-model="visible" offset-x>
+    <VMenu
+      v-model="visible"
+      offset-x
+    >
       <template #activator="{ on }">
-        <RuiButton variant="text" icon @click="visible = true" v-on="on">
+        <RuiButton
+          variant="text"
+          icon
+          @click="visible = true"
+          v-on="on"
+        >
           <RuiIcon name="question-line" />
         </RuiButton>
       </template>

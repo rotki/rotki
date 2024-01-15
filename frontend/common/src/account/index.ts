@@ -1,4 +1,4 @@
-import { type Blockchain } from '../blockchain';
+import type { Blockchain } from '../blockchain';
 
 export interface AccountData {
   readonly address: string;
@@ -13,4 +13,4 @@ export interface Account<T = Blockchain> {
 
 export interface GeneralAccount<T = Blockchain>
   extends AccountData,
-    Account<T> {}
+  Account<T> {}

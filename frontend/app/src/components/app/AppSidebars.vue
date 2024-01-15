@@ -4,7 +4,7 @@ const {
   showNotificationBar,
   showNotesSidebar,
   showHelpBar,
-  showPinned
+  showPinned,
 } = storeToRefs(useAreaVisibilityStore());
 </script>
 

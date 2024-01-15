@@ -1,6 +1,6 @@
 import logger from 'loglevel';
-import { type ActionStatus } from '@/types/action';
 import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/tags';
+import type { ActionStatus } from '@/types/action';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});
@@ -9,7 +9,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const availableTags: ComputedRef<Record<string, Tag>> = computed(() => ({
     ...get(allTags),
-    ...READ_ONLY_TAGS
+    ...READ_ONLY_TAGS,
   }));
 
   const { removeTag } = useBlockchainAccounts();
@@ -21,14 +21,15 @@ export const useTagStore = defineStore('session/tags', () => {
     try {
       set(allTags, await queryAddTag(tag));
       return { success: true };
-    } catch (e: any) {
+    }
+    catch (error: any) {
       setMessage({
         title: t('actions.session.tag_add.error.title'),
-        description: e.message
+        description: error.message,
       });
       return {
         success: false,
-        message: e.message
+        message: error.message,
       };
     }
   };
@@ -36,10 +37,11 @@ export const useTagStore = defineStore('session/tags', () => {
   const editTag = async (tag: Tag): Promise<void> => {
     try {
       set(allTags, await queryEditTag(tag));
-    } catch (e: any) {
+    }
+    catch (error: any) {
       setMessage({
         title: t('actions.session.tag_edit.error.title'),
-        description: e.message
+        description: error.message,
       });
     }
   };
@@ -48,10 +50,11 @@ export const useTagStore = defineStore('session/tags', () => {
     try {
       set(allTags, await queryDeleteTag(name));
       removeTag(name);
-    } catch (e: any) {
+    }
+    catch (error: any) {
       setMessage({
         title: t('actions.session.tag_delete.error.title'),
-        description: e.message
+        description: error.message,
       });
     }
   };
@@ -59,8 +62,9 @@ export const useTagStore = defineStore('session/tags', () => {
   const fetchTags = async (): Promise<void> => {
     try {
       set(allTags, await queryTags());
-    } catch (e: any) {
-      logger.error('Tags fetch failed', e);
+    }
+    catch (error: any) {
+      logger.error('Tags fetch failed', error);
     }
   };
 
@@ -71,10 +75,9 @@ export const useTagStore = defineStore('session/tags', () => {
     fetchTags,
     addTag,
     editTag,
-    deleteTag
+    deleteTag,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useTagStore, import.meta.hot));
-}

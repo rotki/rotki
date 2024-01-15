@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ManualBalance } from '@/types/manual-balances';
+import type { ManualBalance } from '@/types/manual-balances';
 import type {
   DataTableColumn,
-  DataTableSortData
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
 
 const props = withDefaults(
@@ -11,7 +11,7 @@ const props = withDefaults(
     balances: ManualBalance[];
     loading?: boolean;
   }>(),
-  { loading: false }
+  { loading: false },
 );
 
 const emit = defineEmits<{
@@ -26,15 +26,16 @@ const { balances } = toRefs(props);
 const onlyTags = ref<string[]>([]);
 const sort = ref<DataTableSortData>({
   column: 'usdValue',
-  direction: 'desc'
+  direction: 'desc',
 });
 
-const refresh = () => {
+function refresh() {
   emit('refresh');
-};
-const edit = (balance: ManualBalance) => {
+}
+
+function edit(balance: ManualBalance) {
   emit('edit', balance);
-};
+}
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { deleteManualBalance } = useManualBalancesStore();
@@ -46,8 +47,9 @@ const visibleBalances = computed<ManualBalance[]>(() => {
   const selectedTags = get(onlyTags);
   if (selectedTags.length === 0) {
     mappedBalances = get(balances);
-  } else {
-    mappedBalances = get(balances).filter(balance => {
+  }
+  else {
+    mappedBalances = get(balances).filter((balance) => {
       const tags = balance.tags ?? [];
       return selectedTags.every(tag => tags.includes(tag));
     });
@@ -55,7 +57,7 @@ const visibleBalances = computed<ManualBalance[]>(() => {
 
   return mappedBalances.map(item => ({
     ...item,
-    usdPrice: get(assetPrice(item.asset))
+    usdPrice: get(assetPrice(item.asset)),
   }));
 });
 
@@ -65,12 +67,13 @@ const total = computed(() =>
   aggregateTotal(
     get(visibleBalances),
     get(currencySymbol),
-    get(exchangeRate(get(currencySymbol))) ?? One
-  )
+    get(exchangeRate(get(currencySymbol))) ?? One,
+  ),
 );
 
-const getRowClass = (item: ManualBalance) =>
-  `manual-balance__location__${item.location}`;
+function getRowClass(item: ManualBalance) {
+  return `manual-balance__location__${item.location}`;
+}
 
 const cols = computed<DataTableColumn[]>(() => [
   {
@@ -78,60 +81,60 @@ const cols = computed<DataTableColumn[]>(() => [
     key: 'location',
     align: 'start',
     width: '120px',
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('manual_balances_table.columns.label'),
     key: 'label',
-    sortable: true
+    sortable: true,
   },
   {
     label: t('common.asset'),
     key: 'asset',
     sortable: true,
-    width: '200'
+    width: '200',
   },
   {
     label: t('common.price_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdPrice',
     sortable: true,
-    align: 'end'
+    align: 'end',
   },
   {
     label: t('common.amount'),
     key: 'amount',
     sortable: true,
-    align: 'end'
+    align: 'end',
   },
   {
     label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }),
     key: 'usdValue',
     sortable: true,
-    align: 'end'
+    align: 'end',
   },
   {
     label: t('common.actions_text'),
     key: 'actions',
     align: 'start',
-    width: '50'
-  }
+    width: '50',
+  },
 ]);
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (id: number) => {
+function showDeleteConfirmation(id: number) {
   show(
     {
       title: t('manual_balances_table.delete_dialog.title'),
-      message: t('manual_balances_table.delete_dialog.message')
+      message: t('manual_balances_table.delete_dialog.message'),
     },
-    () => deleteManualBalance(id)
+    () => deleteManualBalance(id),
   );
-};
+}
 </script>
 
 <template>
@@ -148,7 +151,11 @@ const showDeleteConfirmation = (id: number) => {
             {{ title }}
           </span>
           <div class="grow" />
-          <TagFilter v-model="onlyTags" class="max-w-sm" hide-details />
+          <TagFilter
+            v-model="onlyTags"
+            class="max-w-sm"
+            hide-details
+          />
         </div>
       </div>
     </template>
@@ -166,21 +173,26 @@ const showDeleteConfirmation = (id: number) => {
     >
       <template #item.label="{ row }">
         <div
-          class="font-medium"
+          class="font-medium !pb-0"
           data-cy="label"
           :class="{
             'pt-0': !row.tags,
-            '!pb-0': true
           }"
         >
           {{ row.label }}
         </div>
         <div>
-          <TagDisplay :tags="row.tags" :small="true" />
+          <TagDisplay
+            :tags="row.tags"
+            :small="true"
+          />
         </div>
       </template>
       <template #item.asset="{ row }">
-        <AssetDetails opens-details :asset="row.asset" />
+        <AssetDetails
+          opens-details
+          :asset="row.asset"
+        />
       </template>
       <template #item.usdPrice="{ row }">
         <AmountDisplay
@@ -194,7 +206,10 @@ const showDeleteConfirmation = (id: number) => {
         />
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay data-cy="manual-balances__amount" :value="row.amount" />
+        <AmountDisplay
+          data-cy="manual-balances__amount"
+          :value="row.amount"
+        />
       </template>
       <template #item.usdValue="{ row }">
         <AmountDisplay
@@ -220,8 +235,14 @@ const showDeleteConfirmation = (id: number) => {
           @delete-click="showDeleteConfirmation(row.identifier)"
         />
       </template>
-      <template v-if="visibleBalances.length > 0" #body.append>
-        <RowAppend :label-colspan="5" :right-patch-colspan="1">
+      <template
+        v-if="visibleBalances.length > 0"
+        #body.append
+      >
+        <RowAppend
+          :label-colspan="5"
+          :right-patch-colspan="1"
+        >
           <template #label>
             <span class="p-4">
               {{ t('common.total') }}

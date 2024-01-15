@@ -1,12 +1,12 @@
-import { type ComputedRef } from 'vue';
 import { sortBy } from 'lodash-es';
-import {
-  type DefiProtocolSummary,
-  type TokenInfo
-} from '@/types/defi/overview';
 import { Section, Status } from '@/types/status';
-import { type Writeable } from '@/types';
 import { DefiProtocol, isDefiProtocol } from '@/types/modules';
+import type { ComputedRef } from 'vue';
+import type {
+  DefiProtocolSummary,
+  TokenInfo,
+} from '@/types/defi/overview';
+import type { Writeable } from '@/types';
 
 export const useDefiOverviewStore = defineStore('defi/store', () => {
   const { getStatus } = useStatusUpdater(Section.DEFI_OVERVIEW);
@@ -30,16 +30,16 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     protocol: DefiProtocol,
     section: Section,
     noLiabilities?: boolean,
-    noDeposits?: boolean
+    noDeposits?: boolean,
   ): ComputedRef<DefiProtocolSummary | undefined> =>
     computed(() => {
       const currentStatus = getStatus(section);
       if (
-        currentStatus !== Status.LOADED &&
-        currentStatus !== Status.REFRESHING
-      ) {
+        currentStatus !== Status.LOADED
+        && currentStatus !== Status.REFRESHING
+      )
         return undefined;
-      }
+
       const filter: DefiProtocol[] = [protocol];
       const { totalCollateralUsd, totalDebt } = noLiabilities
         ? { totalCollateralUsd: Zero, totalDebt: Zero }
@@ -61,7 +61,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         totalDebtUsd: totalDebt,
         totalLendingDepositUsd: noDeposits
           ? Zero
-          : get(totalLendingDeposit(filter, []))
+          : get(totalLendingDeposit(filter, [])),
       };
     });
 
@@ -71,9 +71,9 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     [DefiProtocol.YEARN_VAULTS]: [
       Section.DEFI_YEARN_VAULTS_BALANCES,
       true,
-      false
+      false,
     ],
-    [DefiProtocol.LIQUITY]: [Section.DEFI_LIQUITY_BALANCES, false, true]
+    [DefiProtocol.LIQUITY]: [Section.DEFI_LIQUITY_BALANCES, false, true],
   };
 
   const overview: ComputedRef<DefiProtocolSummary[]> = computed(() => {
@@ -90,9 +90,9 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         if (data && isDefiProtocol(protocolId)) {
           const dataSummary = get(protocolSummary(protocolId, ...data));
 
-          if (dataSummary && shouldShowOverview(dataSummary)) {
+          if (dataSummary && shouldShowOverview(dataSummary))
             summary[protocol] = dataSummary;
-          }
+
           continue;
         }
 
@@ -101,16 +101,17 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
             protocol: protocolId,
             tokenInfo: {
               tokenName: entry.baseBalance.tokenName,
-              tokenSymbol: entry.baseBalance.tokenSymbol
+              tokenSymbol: entry.baseBalance.tokenSymbol,
             },
             assets: [],
             deposits: false,
             liabilities: false,
             totalCollateralUsd: Zero,
             totalDebtUsd: Zero,
-            totalLendingDepositUsd: Zero
+            totalLendingDepositUsd: Zero,
           };
-        } else if (
+        }
+        else if (
           summary[protocol].tokenInfo?.tokenName !== entry.baseBalance.tokenName
         ) {
           const tokenInfo: Writeable<TokenInfo> = summary[protocol].tokenInfo!;
@@ -123,7 +124,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
           const previousBalance = summary[protocol].balanceUsd ?? Zero;
           summary[protocol].balanceUsd = previousBalance.plus(balance.usdValue);
           const assetIndex = summary[protocol].assets.findIndex(
-            asset => asset.tokenAddress === entry.baseBalance.tokenAddress
+            asset => asset.tokenAddress === entry.baseBalance.tokenAddress,
           );
           if (assetIndex >= 0) {
             const { usdValue, amount } = entry.baseBalance.balance;
@@ -135,10 +136,11 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
               ...asset,
               balance: {
                 usdValue: usdValueSum,
-                amount: amountSum
-              }
+                amount: amountSum,
+              },
             };
-          } else {
+          }
+          else {
             summary[protocol].assets.push(entry.baseBalance);
           }
         }
@@ -147,8 +149,8 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
 
     const overviewStatus = getStatus();
     if (
-      overviewStatus === Status.LOADED ||
-      overviewStatus === Status.REFRESHING
+      overviewStatus === Status.LOADED
+      || overviewStatus === Status.REFRESHING
     ) {
       const filter: DefiProtocol[] = [DefiProtocol.MAKERDAO_DSR];
       const makerDAODSRSummary: DefiProtocolSummary = {
@@ -160,11 +162,11 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         liabilities: false,
         totalCollateralUsd: Zero,
         totalDebtUsd: Zero,
-        totalLendingDepositUsd: get(totalLendingDeposit(filter, []))
+        totalLendingDepositUsd: get(totalLendingDeposit(filter, [])),
       };
 
       const { totalCollateralUsd, totalDebt } = get(
-        loanSummary([DefiProtocol.MAKERDAO_VAULTS])
+        loanSummary([DefiProtocol.MAKERDAO_VAULTS]),
       );
       const makerDAOVaultSummary: DefiProtocolSummary = {
         protocol: DefiProtocol.MAKERDAO_VAULTS,
@@ -175,42 +177,39 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',
         totalDebtUsd: totalDebt,
         totalCollateralUsd,
-        totalLendingDepositUsd: Zero
+        totalLendingDepositUsd: Zero,
       };
 
-      if (shouldShowOverview(makerDAODSRSummary)) {
+      if (shouldShowOverview(makerDAODSRSummary))
         summary[DefiProtocol.MAKERDAO_DSR] = makerDAODSRSummary;
-      }
 
-      if (shouldShowOverview(makerDAOVaultSummary)) {
+      if (shouldShowOverview(makerDAOVaultSummary))
         summary[DefiProtocol.MAKERDAO_VAULTS] = makerDAOVaultSummary;
-      }
 
       const yearnV2Summary = get(
         protocolSummary(
           DefiProtocol.YEARN_VAULTS_V2,
           Section.DEFI_YEARN_VAULTS_V2_BALANCES,
-          true
-        )
+          true,
+        ),
       );
 
-      if (yearnV2Summary && shouldShowOverview(yearnV2Summary)) {
+      if (yearnV2Summary && shouldShowOverview(yearnV2Summary))
         summary[DefiProtocol.YEARN_VAULTS_V2] = yearnV2Summary;
-      }
     }
 
     return sortBy(Object.values(summary), summary => summary.protocol).filter(
-      value => value.balanceUsd || value.deposits || value.liabilities
+      value => value.balanceUsd || value.deposits || value.liabilities,
     );
   });
 
   return {
-    overview
+    overview,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useDefiOverviewStore, import.meta.hot)
+    acceptHMRUpdate(useDefiOverviewStore, import.meta.hot),
   );
 }

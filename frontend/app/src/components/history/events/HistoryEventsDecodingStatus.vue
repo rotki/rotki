@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 
 defineProps<{
   refreshing: boolean;
@@ -15,22 +15,22 @@ const { isTaskRunning } = useTaskStore();
 const fetching = isTaskRunning(TaskType.EVM_UNDECODED_EVENTS);
 const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
 const partialEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
-  all: false
+  all: false,
 });
 const allEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
-  all: true
+  all: true,
 });
 
-const redecodeAllEvmEvents = () => {
+function redecodeAllEvmEvents() {
   emit('redecode-all-evm-events');
-};
+}
 
 const { t } = useI18n();
 
 const {
   checkMissingTransactionEventsAndRedecode,
   unDecodedEventsBreakdown,
-  fetchUndecodedEventsBreakdown
+  fetchUndecodedEventsBreakdown,
 } = useHistoryTransactionDecoding();
 
 const historyStore = useHistoryStore();
@@ -39,38 +39,37 @@ const { evmUndecodedTransactionsStatus } = storeToRefs(historyStore);
 
 onMounted(() => refresh());
 
-const refresh = async () => {
+async function refresh() {
   await fetchUndecodedEventsBreakdown();
 
-  if (Object.keys(get(unDecodedEventsBreakdown)).length === 0) {
+  if (Object.keys(get(unDecodedEventsBreakdown)).length === 0)
     resetEvmUndecodedTransactionsStatus();
-  }
-};
+}
 
-const redecodeMissingEvents = async () => {
+async function redecodeMissingEvents() {
   await checkMissingTransactionEventsAndRedecode();
   await refresh();
-};
+}
 
 const headers: DataTableColumn[] = [
   {
     label: t('common.location'),
     key: 'evmChain',
     align: 'center',
-    cellClass: 'py-3'
+    cellClass: 'py-3',
   },
   {
     label: t('transactions.events_decoding.undecoded_events'),
     key: 'number',
     align: 'end',
     cellClass: '!pr-12',
-    class: '!pr-12'
+    class: '!pr-12',
   },
   {
     label: t('transactions.events_decoding.progress'),
     key: 'progress',
-    align: 'center'
-  }
+    align: 'center',
+  },
 ];
 
 const locationsData = computed(() =>
@@ -81,16 +80,16 @@ const locationsData = computed(() =>
     return {
       evmChain,
       total,
-      processed: progress?.processed || 0
+      processed: progress?.processed || 0,
     };
-  })
+  }),
 );
 
 const total: ComputedRef<number> = computed(() =>
-  get(locationsData).reduce((sum, item) => sum + item.total, 0)
+  get(locationsData).reduce((sum, item) => sum + item.total, 0),
 );
 
-watch(eventTaskLoading, loading => {
+watch(eventTaskLoading, (loading) => {
   if (!loading) {
     refresh();
     resetEvmUndecodedTransactionsStatus();
@@ -98,9 +97,8 @@ watch(eventTaskLoading, loading => {
 });
 
 watch(evmUndecodedTransactionsStatus, (curr, prev) => {
-  if (!isEqual(curr, prev)) {
+  if (!isEqual(curr, prev))
     refresh();
-  }
 });
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
@@ -140,7 +138,10 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             color="primary"
             :value="(data.processed / data.total) * 100"
           />
-          <i18n tag="span" path="transactions.events_decoding.events_processed">
+          <i18n
+            tag="span"
+            path="transactions.events_decoding.events_processed"
+          >
             <template #processed>
               {{ data.processed }}
             </template>
@@ -149,7 +150,9 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             </template>
           </i18n>
         </div>
-        <div v-else>-</div>
+        <div v-else>
+          -
+        </div>
       </DefineProgress>
 
       <RuiDataTable
@@ -172,12 +175,17 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         <template #tfoot>
           <tr>
             <th>{{ t('common.total') }}</th>
-            <td class="text-end pr-12 py-2">{{ total }}</td>
+            <td class="text-end pr-12 py-2">
+              {{ total }}
+            </td>
           </tr>
         </template>
       </RuiDataTable>
     </div>
-    <div v-else class="mb-4 flex items-center gap-4">
+    <div
+      v-else
+      class="mb-4 flex items-center gap-4"
+    >
       <RuiProgress
         v-if="fetching || eventTaskLoading"
         color="primary"
@@ -186,7 +194,11 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         size="28"
         thickness="2"
       />
-      <SuccessDisplay v-else success size="28" />
+      <SuccessDisplay
+        v-else
+        success
+        size="28"
+      />
       {{ t('transactions.events_decoding.decoded.true') }}
     </div>
 
@@ -199,7 +211,10 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         @click="redecodeMissingEvents()"
       >
         <template #prepend>
-          <RuiIcon v-if="!partialEventTaskLoading" name="list-check-2" />
+          <RuiIcon
+            v-if="!partialEventTaskLoading"
+            name="list-check-2"
+          />
           <RuiProgress
             v-else
             circular
@@ -216,7 +231,10 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         @click="redecodeAllEvmEvents()"
       >
         <template #prepend>
-          <RuiIcon v-if="!allEventTaskLoading" name="restart-line" />
+          <RuiIcon
+            v-if="!allEventTaskLoading"
+            name="restart-line"
+          />
           <RuiProgress
             v-else
             circular

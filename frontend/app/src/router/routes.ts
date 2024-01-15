@@ -44,7 +44,7 @@ enum RouteNames {
   SETTINGS_DATA_SECURITY = 'SETTINGS_DATA_SECURITY',
   SETTINGS_MODULES = 'SETTINGS_MODULES',
   ASSETS = 'ASSETS',
-  LOCATIONS = 'LOCATIONS'
+  LOCATIONS = 'LOCATIONS',
 }
 
 type AppRouteMap<T> = {
@@ -97,7 +97,7 @@ export const Routes: AppRouteMap<string> = {
   SETTINGS_DATA_SECURITY: '/settings/data-security',
   SETTINGS_MODULES: '/settings/modules',
   ASSETS: '/assets/:identifier',
-  LOCATIONS: '/locations/:identifier'
+  LOCATIONS: '/locations/:identifier',
 };
 
 export const useAppRoutes = createSharedComposable(() => {
@@ -106,214 +106,214 @@ export const useAppRoutes = createSharedComposable(() => {
     DASHBOARD: {
       route: Routes.DASHBOARD,
       icon: 'dashboard-line',
-      text: t('navigation_menu.dashboard')
+      text: t('navigation_menu.dashboard'),
     },
     ACCOUNTS_BALANCES: {
       route: Routes.ACCOUNTS_BALANCES,
       icon: 'wallet-3-line',
-      text: t('navigation_menu.accounts_balances')
+      text: t('navigation_menu.accounts_balances'),
     },
     ACCOUNTS_BALANCES_BLOCKCHAIN: {
       route: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       icon: 'coins-line',
-      text: t('navigation_menu.accounts_balances_sub.blockchain_balances')
+      text: t('navigation_menu.accounts_balances_sub.blockchain_balances'),
     },
     ACCOUNTS_BALANCES_EXCHANGE: {
       route: Routes.ACCOUNTS_BALANCES_EXCHANGE,
       icon: 'exchange-line',
-      text: t('navigation_menu.accounts_balances_sub.exchange_balances')
+      text: t('navigation_menu.accounts_balances_sub.exchange_balances'),
     },
     ACCOUNTS_BALANCES_MANUAL: {
       route: Routes.ACCOUNTS_BALANCES_MANUAL,
       icon: 'scales-line',
-      text: t('navigation_menu.accounts_balances_sub.manual_balances')
+      text: t('navigation_menu.accounts_balances_sub.manual_balances'),
     },
     ACCOUNTS_BALANCES_NON_FUNGIBLE: {
       route: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
       icon: 'scales-fill',
-      text: t('navigation_menu.accounts_balances_sub.non_fungible_balances')
+      text: t('navigation_menu.accounts_balances_sub.non_fungible_balances'),
     },
     NFTS: {
       route: Routes.NFTS,
       icon: 'image-line',
-      text: t('navigation_menu.nfts')
+      text: t('navigation_menu.nfts'),
     },
     HISTORY: {
       route: Routes.HISTORY,
       icon: 'history-line',
-      text: t('navigation_menu.history')
+      text: t('navigation_menu.history'),
     },
     HISTORY_TRADES: {
       route: Routes.HISTORY_TRADES,
       icon: 'shuffle-line',
-      text: t('navigation_menu.history_sub.trades')
+      text: t('navigation_menu.history_sub.trades'),
     },
     HISTORY_DEPOSITS_WITHDRAWALS: {
       route: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
       icon: 'bank-line',
-      text: t('navigation_menu.history_sub.deposits_withdrawals')
+      text: t('navigation_menu.history_sub.deposits_withdrawals'),
     },
     HISTORY_EVENTS: {
       route: Routes.HISTORY_EVENTS,
       icon: 'exchange-box-line',
-      text: t('navigation_menu.history_sub.history_events')
+      text: t('navigation_menu.history_sub.history_events'),
     },
     DEFI: {
       route: Routes.DEFI,
       icon: 'line-chart-line',
-      text: t('navigation_menu.defi')
+      text: t('navigation_menu.defi'),
     },
     DEFI_OVERVIEW: {
       route: Routes.DEFI_OVERVIEW,
       icon: 'bar-chart-box-line',
-      text: t('navigation_menu.defi_sub.overview')
+      text: t('navigation_menu.defi_sub.overview'),
     },
     DEFI_DEPOSITS: {
       route: Routes.DEFI_DEPOSITS,
       icon: 'login-circle-line',
-      text: t('common.deposits')
+      text: t('common.deposits'),
     },
     DEFI_LIABILITIES: {
       route: Routes.DEFI_LIABILITIES,
       icon: 'logout-circle-r-line',
-      text: t('navigation_menu.defi_sub.liabilities')
+      text: t('navigation_menu.defi_sub.liabilities'),
     },
     DEFI_DEPOSITS_PROTOCOLS: {
       route: Routes.DEFI_DEPOSITS_PROTOCOLS,
       icon: 'settings-2-line',
-      text: t('navigation_menu.defi_sub.deposits_sub.protocols')
+      text: t('navigation_menu.defi_sub.deposits_sub.protocols'),
     },
     DEFI_DEPOSITS_LIQUIDITY: {
       route: Routes.DEFI_DEPOSITS_LIQUIDITY,
       icon: 'water-percent-line',
-      text: t('navigation_menu.defi_sub.deposits_sub.liquidity')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity'),
     },
     DEFI_AIRDROPS: {
       route: Routes.DEFI_AIRDROPS,
       icon: 'gift-line',
-      text: t('navigation_menu.defi_sub.airdrops')
+      text: t('navigation_menu.defi_sub.airdrops'),
     },
     STATISTICS: {
       route: Routes.STATISTICS,
       icon: 'file-chart-line',
-      text: t('navigation_menu.statistics')
+      text: t('navigation_menu.statistics'),
     },
     STAKING: {
       route: Routes.STAKING,
       icon: 'inbox-archive-line',
-      text: t('navigation_menu.staking')
+      text: t('navigation_menu.staking'),
     },
     PROFIT_LOSS_REPORTS: {
       route: Routes.PROFIT_LOSS_REPORTS,
       icon: 'calculator-line',
-      text: t('navigation_menu.profit_loss_report')
+      text: t('navigation_menu.profit_loss_report'),
     },
     PROFIT_LOSS_REPORT: {
       route: Routes.PROFIT_LOSS_REPORT,
       icon: 'calculator-line',
-      text: t('navigation_menu.profit_loss_report')
+      text: t('navigation_menu.profit_loss_report'),
     },
     ASSET_MANAGER: {
       route: Routes.ASSET_MANAGER,
       icon: 'database-2-line',
-      text: t('navigation_menu.manage_assets')
+      text: t('navigation_menu.manage_assets'),
     },
     ASSET_MANAGER_MANAGED: {
       route: Routes.ASSET_MANAGER_MANAGED,
       icon: 'server-line',
-      text: t('navigation_menu.manage_assets_sub.assets')
+      text: t('navigation_menu.manage_assets_sub.assets'),
     },
     ASSET_MANAGER_CUSTOM: {
       route: Routes.ASSET_MANAGER_CUSTOM,
       icon: 'database-line',
-      text: t('navigation_menu.manage_assets_sub.custom_assets')
+      text: t('navigation_menu.manage_assets_sub.custom_assets'),
     },
     ASSET_MANAGER_NEWLY_DETECTED: {
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
       icon: 'list-radio',
-      text: t('navigation_menu.manage_assets_sub.newly_detected')
+      text: t('navigation_menu.manage_assets_sub.newly_detected'),
     },
     PRICE_MANAGER: {
       route: Routes.PRICE_MANAGER,
       icon: 'file-chart-line',
-      text: t('navigation_menu.manage_prices')
+      text: t('navigation_menu.manage_prices'),
     },
     PRICE_MANAGER_LATEST: {
       route: Routes.PRICE_MANAGER_LATEST,
       icon: 'calendar-event-line',
-      text: t('navigation_menu.manage_prices_sub.latest_prices')
+      text: t('navigation_menu.manage_prices_sub.latest_prices'),
     },
     PRICE_MANAGER_HISTORIC: {
       route: Routes.PRICE_MANAGER_HISTORIC,
       icon: 'calendar-2-line',
-      text: t('navigation_menu.manage_prices_sub.historic_prices')
+      text: t('navigation_menu.manage_prices_sub.historic_prices'),
     },
     ADDRESS_BOOK_MANAGER: {
       route: Routes.ADDRESS_BOOK_MANAGER,
       icon: 'book-2-line',
-      text: t('navigation_menu.manage_address_book')
+      text: t('navigation_menu.manage_address_book'),
     },
     API_KEYS: {
       route: Routes.API_KEYS,
       icon: 'key-line',
-      text: t('navigation_menu.api_keys')
+      text: t('navigation_menu.api_keys'),
     },
     API_KEYS_ROTKI_PREMIUM: {
       route: Routes.API_KEYS_ROTKI_PREMIUM,
       icon: 'vip-crown-line',
-      text: t('navigation_menu.api_keys_sub.premium')
+      text: t('navigation_menu.api_keys_sub.premium'),
     },
     API_KEYS_EXCHANGES: {
       route: Routes.API_KEYS_EXCHANGES,
       icon: 'swap-line',
-      text: t('navigation_menu.api_keys_sub.exchanges')
+      text: t('navigation_menu.api_keys_sub.exchanges'),
     },
     API_KEYS_EXTERNAL_SERVICES: {
       route: Routes.API_KEYS_EXTERNAL_SERVICES,
       icon: 'links-line',
-      text: t('navigation_menu.api_keys_sub.external_services')
+      text: t('navigation_menu.api_keys_sub.external_services'),
     },
     IMPORT: {
       route: Routes.IMPORT,
       icon: 'folder-received-line',
-      text: t('navigation_menu.import_data')
+      text: t('navigation_menu.import_data'),
     },
     SETTINGS: {
       route: Routes.SETTINGS,
       icon: 'settings-4-fill',
-      text: t('navigation_menu.settings')
+      text: t('navigation_menu.settings'),
     },
     SETTINGS_GENERAL: {
       route: Routes.SETTINGS_GENERAL,
       icon: 'user-settings-line',
-      text: t('navigation_menu.settings_sub.general')
+      text: t('navigation_menu.settings_sub.general'),
     },
     SETTINGS_ACCOUNTING: {
       route: Routes.SETTINGS_ACCOUNTING,
       icon: 'contacts-line',
-      text: t('navigation_menu.settings_sub.accounting')
+      text: t('navigation_menu.settings_sub.accounting'),
     },
     SETTINGS_DATA_SECURITY: {
       route: Routes.SETTINGS_DATA_SECURITY,
       icon: 'admin-line',
-      text: t('navigation_menu.settings_sub.data_security')
+      text: t('navigation_menu.settings_sub.data_security'),
     },
     SETTINGS_MODULES: {
       route: Routes.SETTINGS_MODULES,
       icon: 'layout-grid-line',
-      text: t('navigation_menu.settings_sub.modules')
+      text: t('navigation_menu.settings_sub.modules'),
     },
     ASSETS: {
       route: Routes.ASSETS,
-      text: t('common.assets')
+      text: t('common.assets'),
     },
     LOCATIONS: {
       route: Routes.LOCATIONS,
-      text: t('navigation_menu.locations')
-    }
+      text: t('navigation_menu.locations'),
+    },
   }));
 
   return {
-    appRoutes
+    appRoutes,
   };
 });

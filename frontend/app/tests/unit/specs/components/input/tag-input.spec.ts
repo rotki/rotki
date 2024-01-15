@@ -1,7 +1,7 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
@@ -14,25 +14,25 @@ vi.mock('@/composables/api/tags', () => ({
       name,
       description: '',
       backgroundColor: 'red',
-      foregroundColor: 'white'
+      foregroundColor: 'white',
     });
     return {
       queryTags: vi.fn().mockResolvedValue({
-        tag1: createTag('tag1')
+        tag1: createTag('tag1'),
       }),
       queryAddTag: vi.fn().mockResolvedValue({
         tag1: createTag('tag1'),
-        tag2: createTag('tag2')
+        tag2: createTag('tag2'),
       }),
       queryEditTag: vi.fn(),
       queryDeleteTag: vi.fn().mockResolvedValue({
-        tag1: createTag('tag1')
-      })
+        tag1: createTag('tag1'),
+      }),
     };
-  }
+  },
 }));
 
-describe('TagInput.vue', () => {
+describe('tagInput.vue', () => {
   let wrapper: Wrapper<TagInput>;
   let store: ReturnType<typeof useTagStore>;
 
@@ -59,18 +59,18 @@ describe('TagInput.vue', () => {
             </div>
           `,
           props: {
-            value: { type: Array }
-          }
-        }
+            value: { type: Array },
+          },
+        },
       },
-      ...options
+      ...options,
     });
   };
 
-  test('should add a tag', async () => {
+  it('should add a tag', async () => {
     const value = ref([]);
     const propsData = {
-      value
+      value,
     };
     wrapper = createWrapper({ propsData });
     store = useTagStore();
@@ -89,14 +89,14 @@ describe('TagInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('.selections div[role=button] span').text()).toBe(
-      'tag1'
+      'tag1',
     );
   });
 
-  test('should remove a tag', async () => {
+  it('should remove a tag', async () => {
     const value = ref([]);
     const propsData = {
-      value
+      value,
     };
     wrapper = createWrapper({ propsData });
     store = useTagStore();
@@ -113,7 +113,7 @@ describe('TagInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('.selections div[role=button] span').text()).toBe(
-      'tag2'
+      'tag2',
     );
 
     await store.deleteTag('tag2');
@@ -128,7 +128,7 @@ describe('TagInput.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(
-      wrapper.find('.selections div[role=button] span').exists()
+      wrapper.find('.selections div[role=button] span').exists(),
     ).toBeFalsy();
   });
 });

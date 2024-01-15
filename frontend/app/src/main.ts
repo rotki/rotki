@@ -35,27 +35,27 @@ if (import.meta.env.MODE === 'production' && import.meta.env.VITE_TEST) {
 Vue.directive('blur', {
   inserted(el) {
     el.addEventListener('focus', ({ target }): void => {
-      if (!target) {
+      if (!target)
         return;
-      }
+
       (target as any).blur();
     });
-  }
+  },
 });
 
 const pinia = createPinia();
 pinia.use(StoreResetPlugin);
 pinia.use(StoreTrackPlugin);
 
-if (isDevelopment) {
+if (isDevelopment)
   pinia.use(storePiniaPlugins);
-}
+
 setActivePinia(pinia);
 
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
 const rui = createRuiPlugin({
-  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100] }
+  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100] },
 });
 
 Vue.use(rui);
@@ -69,7 +69,7 @@ new Vue({
   router,
   pinia,
   i18n,
-  render: h => h(App)
+  render: h => h(App),
 }).$mount('#app');
 
 setupDayjs();

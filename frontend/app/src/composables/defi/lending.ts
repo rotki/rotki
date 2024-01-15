@@ -1,29 +1,29 @@
-//TODO: Split class
+// TODO: Split class
 /* eslint-disable max-lines */
 import { type Balance, BigNumber } from '@rotki/common';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import {
-  type AaveHistoryTotal,
-  type AaveLending
-} from '@rotki/common/lib/defi/aave';
 import { sortBy } from 'lodash-es';
-import {
-  type AaveLoan,
-  type BaseDefiBalance,
-  type DefiBalance,
-  type LoanSummary
-} from '@/types/defi/lending';
-import { type Writeable } from '@/types';
 import { type Collateral, type DefiLoan, ProtocolVersion } from '@/types/defi';
-import {
-  type CompoundBalances,
-  type CompoundLoan
-} from '@/types/defi/compound';
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
-import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
-import { type LiquityLoan } from '@/types/defi/liquity';
 import { DefiProtocol } from '@/types/modules';
+import type {
+  AaveHistoryTotal,
+  AaveLending,
+} from '@rotki/common/lib/defi/aave';
+import type {
+  AaveLoan,
+  BaseDefiBalance,
+  DefiBalance,
+  LoanSummary,
+} from '@/types/defi/lending';
+import type { Writeable } from '@/types';
+import type {
+  CompoundBalances,
+  CompoundLoan,
+} from '@/types/defi/compound';
+import type { MakerDAOVaultModel } from '@/types/defi/maker';
+import type { YearnVaultsHistory } from '@/types/defi/yearn';
+import type { LiquityLoan } from '@/types/defi/liquity';
 
 type NullableLoan =
   | MakerDAOVaultModel
@@ -32,7 +32,7 @@ type NullableLoan =
   | LiquityLoan
   | null;
 
-export const useDefiLending = () => {
+export function useDefiLending() {
   const { assetInfo } = useAssetInfoRetrieval();
   const premium = usePremium();
 
@@ -42,14 +42,14 @@ export const useDefiLending = () => {
   const compoundStore = useCompoundStore();
   const makerDaoStore = useMakerDaoStore();
 
-  const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
-    storeToRefs(yearnStore);
-  const { history: aaveHistory, balances: aaveBalances } =
-    storeToRefs(aaveStore);
-  const { history: compoundHistory, balances: compoundBalances } =
-    storeToRefs(compoundStore);
-  const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } =
-    storeToRefs(makerDaoStore);
+  const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History }
+    = storeToRefs(yearnStore);
+  const { history: aaveHistory, balances: aaveBalances }
+    = storeToRefs(aaveStore);
+  const { history: compoundHistory, balances: compoundBalances }
+    = storeToRefs(compoundStore);
+  const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails }
+    = storeToRefs(makerDaoStore);
   const { balances: liquityBalances } = storeToRefs(liquityStore);
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
@@ -69,9 +69,9 @@ export const useDefiLending = () => {
               ({
                 identifier: `${value.identifier}`,
                 label: scrambleIdentifier(value.identifier),
-                protocol: DefiProtocol.MAKERDAO_VAULTS
-              }) satisfies DefiLoan
-          )
+                protocol: DefiProtocol.MAKERDAO_VAULTS,
+              }) satisfies DefiLoan,
+          ),
         );
       }
 
@@ -80,9 +80,8 @@ export const useDefiLending = () => {
         for (const address of Object.keys(perAddressAaveBalances)) {
           const { borrowing } = perAddressAaveBalances[address];
           const assets = Object.keys(borrowing);
-          if (assets.length === 0) {
+          if (assets.length === 0)
             continue;
-          }
 
           for (const asset of assets) {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
@@ -93,7 +92,7 @@ export const useDefiLending = () => {
               label: `${symbol} - ${formattedAddress}`,
               protocol: DefiProtocol.AAVE,
               owner: address,
-              asset
+              asset,
             });
           }
         }
@@ -105,9 +104,8 @@ export const useDefiLending = () => {
           const { borrowing } = compBalances[address];
           const assets = Object.keys(borrowing);
 
-          if (assets.length === 0) {
+          if (assets.length === 0)
             continue;
-          }
 
           for (const asset of assets) {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
@@ -118,7 +116,7 @@ export const useDefiLending = () => {
               label: `${symbol} - ${formattedAddress}`,
               protocol: DefiProtocol.COMPOUND,
               owner: address,
-              asset
+              asset,
             });
           }
         }
@@ -129,7 +127,7 @@ export const useDefiLending = () => {
         const balanceAddress = Object.keys(balances);
 
         loans.push(
-          ...balanceAddress.filter(uniqueStrings).map(address => {
+          ...balanceAddress.filter(uniqueStrings).map((address) => {
             const troveId = balances[address] ? balances[address].troveId : 0;
             const formattedTroveId = scrambleIdentifier(troveId);
             const formattedAddress = truncateAddress(scrambleHex(address), 6);
@@ -139,9 +137,9 @@ export const useDefiLending = () => {
               label: `Trove ${formattedTroveId} - ${formattedAddress}`,
               protocol: DefiProtocol.LIQUITY,
               owner: address,
-              asset: ''
+              asset: '',
             };
-          })
+          }),
         );
       }
 
@@ -153,33 +151,31 @@ export const useDefiLending = () => {
       const id = identifier?.toLocaleLowerCase();
       const allLoans = get(loans());
       const loan = allLoans.find(
-        loan => loan.identifier.toLocaleLowerCase() === id
+        loan => loan.identifier.toLocaleLowerCase() === id,
       );
 
-      if (!loan) {
+      if (!loan)
         return null;
-      }
 
       if (loan.protocol === DefiProtocol.MAKERDAO_VAULTS) {
         const makerVaults: MakerDAOVaultModel[] = get(makerDAOVaults);
         const vault = makerVaults.find(
-          vault => vault.identifier.toString().toLocaleLowerCase() === id
+          vault => vault.identifier.toString().toLocaleLowerCase() === id,
         );
 
-        if (!vault) {
+        if (!vault)
           return null;
-        }
 
         const makerVaultDetails = get(makerDAOVaultDetails);
         const details = makerVaultDetails.find(
-          details => details.identifier.toString().toLocaleLowerCase() === id
+          details => details.identifier.toString().toLocaleLowerCase() === id,
         );
 
         return details
           ? {
               ...vault,
               ...details,
-              asset: assetSymbolToIdentifierMap.DAI
+              asset: assetSymbolToIdentifierMap.DAI,
             }
           : vault;
       }
@@ -193,7 +189,7 @@ export const useDefiLending = () => {
         let selectedLoan = {
           stableApr: '-',
           variableApr: '-',
-          balance: zeroBalance()
+          balance: zeroBalance(),
         };
 
         let lending: AaveLending = {};
@@ -206,15 +202,14 @@ export const useDefiLending = () => {
         const lost: Writeable<AaveHistoryTotal> = {};
         const liquidationEarned: Writeable<AaveHistoryTotal> = {};
         if (perAddressAaveHistory[owner]) {
-          const { totalLost, totalEarnedLiquidations } =
-            perAddressAaveHistory[owner];
+          const { totalLost, totalEarnedLiquidations }
+            = perAddressAaveHistory[owner];
 
-          if (totalLost[asset]) {
+          if (totalLost[asset])
             lost[asset] = totalLost[asset];
-          }
-          if (!liquidationEarned[asset] && totalEarnedLiquidations[asset]) {
+
+          if (!liquidationEarned[asset] && totalEarnedLiquidations[asset])
             liquidationEarned[asset] = totalEarnedLiquidations[asset];
-          }
         }
 
         return {
@@ -226,14 +221,14 @@ export const useDefiLending = () => {
           variableApr: selectedLoan.variableApr,
           debt: {
             amount: selectedLoan.balance.amount,
-            usdValue: selectedLoan.balance.usdValue
+            usdValue: selectedLoan.balance.usdValue,
           },
           collateral: Object.keys(lending).map(asset => ({
             asset,
-            ...lending[asset].balance
+            ...lending[asset].balance,
           })),
           totalLost: lost,
-          liquidationEarned
+          liquidationEarned,
         } satisfies AaveLoan;
       }
 
@@ -255,7 +250,7 @@ export const useDefiLending = () => {
             debt = selectedLoan.balance;
             collateral = Object.keys(lending).map(asset => ({
               asset,
-              ...lending[asset].balance
+              ...lending[asset].balance,
             }));
           }
         }
@@ -267,7 +262,7 @@ export const useDefiLending = () => {
           identifier: loan.identifier,
           apy,
           debt,
-          collateral
+          collateral,
         } satisfies CompoundLoan;
       }
 
@@ -278,7 +273,7 @@ export const useDefiLending = () => {
         return {
           owner,
           protocol: loan.protocol,
-          balance: get(liquityBalances)[owner]
+          balance: get(liquityBalances)[owner],
         } satisfies LiquityLoan;
       }
 
@@ -286,7 +281,7 @@ export const useDefiLending = () => {
     });
 
   const loanSummary = (
-    protocols: DefiProtocol[] = []
+    protocols: DefiProtocol[] = [],
   ): ComputedRef<LoanSummary> =>
     computed(() => {
       let totalCollateralUsd = Zero;
@@ -299,7 +294,7 @@ export const useDefiLending = () => {
           .reduce(
             (sum: BigNumber, { collateral: { usdValue } }) =>
               sum.plus(usdValue),
-            Zero
+            Zero,
           )
           .plus(totalCollateralUsd);
 
@@ -313,11 +308,11 @@ export const useDefiLending = () => {
         for (const address of Object.keys(perAddressAaveBalances)) {
           const { borrowing, lending } = perAddressAaveBalances[address];
           totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
-            totalCollateralUsd
+            totalCollateralUsd,
           );
 
           totalDebt = balanceUsdValueSum(Object.values(borrowing)).plus(
-            totalDebt
+            totalDebt,
           );
         }
       }
@@ -327,11 +322,11 @@ export const useDefiLending = () => {
         for (const address of Object.keys(compBalances)) {
           const { borrowing, lending } = compBalances[address];
           totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
-            totalCollateralUsd
+            totalCollateralUsd,
           );
 
           totalDebt = balanceUsdValueSum(Object.values(borrowing)).plus(
-            totalDebt
+            totalDebt,
           );
         }
       }
@@ -351,7 +346,7 @@ export const useDefiLending = () => {
 
   const lendingBalances = (
     protocols: DefiProtocol[],
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<DefiBalance[]> =>
     computed(() => {
       const balances: DefiBalance[] = [];
@@ -361,9 +356,9 @@ export const useDefiLending = () => {
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
         const makerDsrBalances = get(dsrBalances);
         for (const address of Object.keys(makerDsrBalances.balances)) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           const balance = makerDsrBalances.balances[address];
           const currentDsr = makerDsrBalances.currentDsr;
           // noinspection SuspiciousTypeOfGuard
@@ -374,7 +369,7 @@ export const useDefiLending = () => {
             protocol: DefiProtocol.MAKERDAO_DSR,
             asset: assetSymbolToIdentifierMap.DAI,
             balance: { ...balance },
-            effectiveInterestRate: `${format}%`
+            effectiveInterestRate: `${format}%`,
           });
         }
       }
@@ -382,9 +377,9 @@ export const useDefiLending = () => {
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const perAddressAaveBalances = get(aaveBalances);
         for (const address of Object.keys(perAddressAaveBalances)) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           const { lending } = perAddressAaveBalances[address];
 
           for (const asset of Object.keys(lending)) {
@@ -394,7 +389,7 @@ export const useDefiLending = () => {
               protocol: DefiProtocol.AAVE,
               asset,
               effectiveInterestRate: aaveAsset.apy,
-              balance: { ...aaveAsset.balance }
+              balance: { ...aaveAsset.balance },
             });
           }
         }
@@ -403,9 +398,9 @@ export const useDefiLending = () => {
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const compBalances: CompoundBalances = get(compoundBalances);
         for (const address of Object.keys(compBalances)) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           const { lending } = compBalances[address];
           for (const asset of Object.keys(lending)) {
             const assetDetails = lending[asset];
@@ -414,7 +409,7 @@ export const useDefiLending = () => {
               protocol: DefiProtocol.COMPOUND,
               asset,
               effectiveInterestRate: assetDetails.apy ?? '0%',
-              balance: { ...assetDetails.balance }
+              balance: { ...assetDetails.balance },
             });
           }
         }
@@ -442,7 +437,7 @@ export const useDefiLending = () => {
         yearnStore
           .fetchBalances({
             refresh: refresh ?? false,
-            version: ProtocolVersion.V1
+            version: ProtocolVersion.V1,
           })
           .then(() => {
             setStatus(Status.PARTIALLY_LOADED);
@@ -450,11 +445,11 @@ export const useDefiLending = () => {
         yearnStore
           .fetchBalances({
             refresh: refresh ?? false,
-            version: ProtocolVersion.V2
+            version: ProtocolVersion.V2,
           })
           .then(() => {
             setStatus(Status.PARTIALLY_LOADED);
-          })
+          }),
       ]);
 
       setStatus(Status.LOADED);
@@ -462,9 +457,8 @@ export const useDefiLending = () => {
 
     const isPremium = get(premium);
     const premiumSection = Section.DEFI_LENDING_HISTORY;
-    if (!isPremium || fetchDisabled(refresh, premiumSection)) {
+    if (!isPremium || fetchDisabled(refresh, premiumSection))
       return;
-    }
 
     setStatus(newStatus, premiumSection);
 
@@ -474,12 +468,12 @@ export const useDefiLending = () => {
       compoundStore.fetchStats(refresh),
       yearnStore.fetchHistory({
         refresh: refresh ?? false,
-        version: ProtocolVersion.V1
+        version: ProtocolVersion.V1,
       }),
       yearnStore.fetchHistory({
         refresh: refresh ?? false,
-        version: ProtocolVersion.V2
-      })
+        version: ProtocolVersion.V2,
+      }),
     ]);
 
     setStatus(Status.LOADED, premiumSection);
@@ -503,7 +497,7 @@ export const useDefiLending = () => {
         }),
         liquityStore.fetchBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
-        })
+        }),
       ]);
 
       setStatus(Status.LOADED, section);
@@ -512,16 +506,15 @@ export const useDefiLending = () => {
     const isPremium = get(premium);
     const premiumSection = Section.DEFI_BORROWING_HISTORY;
 
-    if (!isPremium || fetchDisabled(refresh, premiumSection)) {
+    if (!isPremium || fetchDisabled(refresh, premiumSection))
       return;
-    }
 
     setStatus(newStatus, premiumSection);
 
     await Promise.all([
       makerDaoStore.fetchMakerDAOVaultDetails(refresh),
       compoundStore.fetchStats(refresh),
-      aaveStore.fetchHistory({ refresh })
+      aaveStore.fetchHistory({ refresh }),
     ]);
 
     setStatus(Status.LOADED, premiumSection);
@@ -529,7 +522,7 @@ export const useDefiLending = () => {
 
   const effectiveInterestRate = (
     protocols: DefiProtocol[],
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<string> =>
     computed(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
@@ -539,22 +532,22 @@ export const useDefiLending = () => {
           const n = Number.parseFloat(effectiveInterestRate);
           return {
             weight: usdValue.multipliedBy(n),
-            usdValue
+            usdValue,
           };
         })
         .reduce(
           (sum, current) => ({
             weight: sum.weight.plus(current.weight),
-            usdValue: sum.usdValue.plus(current.usdValue)
+            usdValue: sum.usdValue.plus(current.usdValue),
           }),
           {
             weight: Zero,
-            usdValue: Zero
-          }
+            usdValue: Zero,
+          },
         );
 
       const yearnData = (
-        version: ProtocolVersion
+        version: ProtocolVersion,
       ): ComputedRef<{
         weight: BigNumber;
         usdValue: BigNumber;
@@ -570,38 +563,38 @@ export const useDefiLending = () => {
               if (roi && usdValue.gt(Zero)) {
                 filtered.push({
                   usdValue,
-                  weight: usdValue.multipliedBy(Number.parseFloat(roi))
+                  weight: usdValue.multipliedBy(Number.parseFloat(roi)),
                 });
               }
-            }
+            },
           );
 
           return filtered.reduce(
             ({ usdValue, weight: sWeight }, current) => ({
               weight: sWeight.plus(current.weight),
-              usdValue: usdValue.plus(current.usdValue)
+              usdValue: usdValue.plus(current.usdValue),
             }),
-            { weight: Zero, usdValue: Zero }
+            { weight: Zero, usdValue: Zero },
           );
         });
 
       if (
-        protocols.length === 0 ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS)
+        protocols.length === 0
+        || protocols.includes(DefiProtocol.YEARN_VAULTS)
       ) {
         const { usdValue: yUsdValue, weight: yWeight } = get(
-          yearnData(ProtocolVersion.V1)
+          yearnData(ProtocolVersion.V1),
         );
         usdValue = usdValue.plus(yUsdValue);
         weight = weight.plus(yWeight);
       }
 
       if (
-        protocols.length === 0 ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+        protocols.length === 0
+        || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
       ) {
         const { usdValue: yUsdValue, weight: yWeight } = get(
-          yearnData(ProtocolVersion.V2)
+          yearnData(ProtocolVersion.V2),
         );
         usdValue = usdValue.plus(yUsdValue);
         weight = weight.plus(yWeight);
@@ -615,7 +608,7 @@ export const useDefiLending = () => {
 
   const totalUsdEarned = (
     protocols: DefiProtocol[],
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<BigNumber> =>
     computed(() => {
       let total = Zero;
@@ -625,9 +618,9 @@ export const useDefiLending = () => {
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
         const history = get(dsrHistory);
         for (const address of Object.keys(history)) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           total = total.plus(history[address].gainSoFar.usdValue);
         }
       }
@@ -635,22 +628,20 @@ export const useDefiLending = () => {
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const history = get(aaveHistory);
         for (const address of Object.keys(history)) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           const totalEarned = history[address].totalEarnedInterest;
-          for (const asset of Object.keys(totalEarned)) {
+          for (const asset of Object.keys(totalEarned))
             total = total.plus(totalEarned[asset].usdValue);
-          }
         }
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
         const history = get(compoundHistory);
         for (const address in history.interestProfit) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
 
           const accountProfit = history.interestProfit[address];
           for (const asset in accountProfit) {
@@ -663,64 +654,63 @@ export const useDefiLending = () => {
       function yearnTotalEarned(vaultsHistory: YearnVaultsHistory): BigNumber {
         let yearnEarned = Zero;
         for (const address in vaultsHistory) {
-          if (!allAddresses && !addresses.includes(address)) {
+          if (!allAddresses && !addresses.includes(address))
             continue;
-          }
+
           const accountVaults = vaultsHistory[address];
           for (const vault in accountVaults) {
             const vaultData = accountVaults[vault];
-            if (!vaultData) {
+            if (!vaultData)
               continue;
-            }
+
             yearnEarned = yearnEarned.plus(vaultData.profitLoss.usdValue);
           }
         }
         return yearnEarned;
       }
 
-      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
+      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS))
         total = total.plus(yearnTotalEarned(get(yearnV1History)));
-      }
 
-      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
+      if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
         total = total.plus(yearnTotalEarned(get(yearnV2History)));
-      }
+
       return total;
     });
 
   const totalLendingDeposit = (
     protocols: DefiProtocol[],
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<BigNumber> =>
     computed(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
       let lendingDeposit = balanceUsdValueSum(lendBalances);
 
       const getYearnDeposit = (
-        version: ProtocolVersion
+        version: ProtocolVersion,
       ): ComputedRef<BigNumber> =>
         computed(() =>
           get(yearnVaultsAssets(addresses, version)).reduce(
             (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
-            Zero
-          )
+            Zero,
+          ),
         );
 
       if (
-        protocols.length === 0 ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS)
+        protocols.length === 0
+        || protocols.includes(DefiProtocol.YEARN_VAULTS)
       ) {
         lendingDeposit = lendingDeposit.plus(
-          get(getYearnDeposit(ProtocolVersion.V1))
+          get(getYearnDeposit(ProtocolVersion.V1)),
         );
       }
 
       if (
-        protocols.length === 0 ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+        protocols.length === 0
+        || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
       ) {
         lendingDeposit = lendingDeposit.plus(
-          get(getYearnDeposit(ProtocolVersion.V2))
+          get(getYearnDeposit(ProtocolVersion.V2)),
         );
       }
 
@@ -729,7 +719,7 @@ export const useDefiLending = () => {
 
   const aggregatedLendingBalances = (
     protocols: DefiProtocol[],
-    addresses: string[]
+    addresses: string[],
   ): ComputedRef<BaseDefiBalance[]> =>
     computed(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
@@ -737,15 +727,14 @@ export const useDefiLending = () => {
       const balances = lendBalances.reduce(
         (grouped, { address, protocol, ...baseBalance }) => {
           const { asset } = baseBalance;
-          if (!grouped[asset]) {
+          if (!grouped[asset])
             grouped[asset] = [baseBalance];
-          } else {
+          else
             grouped[asset].push(baseBalance);
-          }
 
           return grouped;
         },
-        {} as Record<string, BaseDefiBalance[]>
+        {} as Record<string, BaseDefiBalance[]>,
       );
 
       const aggregated: BaseDefiBalance[] = [];
@@ -754,22 +743,22 @@ export const useDefiLending = () => {
         const { weight, amount, usdValue } = balances[asset]
           .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => ({
             weight: usdValue.multipliedBy(
-              Number.parseFloat(effectiveInterestRate)
+              Number.parseFloat(effectiveInterestRate),
             ),
             usdValue,
-            amount
+            amount,
           }))
           .reduce(
             (sum, current) => ({
               weight: sum.weight.plus(current.weight),
               usdValue: sum.usdValue.plus(current.usdValue),
-              amount: sum.amount.plus(current.amount)
+              amount: sum.amount.plus(current.amount),
             }),
             {
               weight: Zero,
               usdValue: Zero,
-              amount: Zero
-            }
+              amount: Zero,
+            },
           );
 
         const effectiveInterestRate = weight.div(usdValue);
@@ -778,11 +767,11 @@ export const useDefiLending = () => {
           asset,
           balance: {
             amount,
-            usdValue
+            usdValue,
           },
           effectiveInterestRate: effectiveInterestRate.isNaN()
             ? '0.00%'
-            : `${effectiveInterestRate.toFormat(2)}%`
+            : `${effectiveInterestRate.toFormat(2)}%`,
         });
       }
       return aggregated;
@@ -798,6 +787,6 @@ export const useDefiLending = () => {
     loanSummary,
     lendingBalances,
     fetchLending,
-    fetchBorrowing
+    fetchBorrowing,
   };
-};
+}

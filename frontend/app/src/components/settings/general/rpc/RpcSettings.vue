@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type AsyncComponent, type Ref } from 'vue';
+import type { AsyncComponent, Ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -12,13 +12,13 @@ interface RpcSettingTab {
 const rpcSettingTab: Ref<number> = ref(0);
 
 const { txEvmChains } = useSupportedChains();
-const evmChainTabs = useArrayMap(txEvmChains, chain => {
+const evmChainTabs = useArrayMap(txEvmChains, (chain) => {
   assert(isOfEnum(Blockchain)(chain.id));
   return {
     chain: chain.id,
     component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
-    )
+      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue'),
+    ),
   } satisfies RpcSettingTab;
 });
 
@@ -27,15 +27,15 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   {
     chain: Blockchain.KSM,
     component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/KsmRpcSetting.vue')
-    )
+      () => import('@/components/settings/general/rpc/KsmRpcSetting.vue'),
+    ),
   },
   {
     chain: Blockchain.DOT,
     component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/DotRpcSetting.vue')
-    )
-  }
+      () => import('@/components/settings/general/rpc/DotRpcSetting.vue'),
+    ),
+  },
 ]);
 </script>
 
@@ -46,17 +46,32 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
     </template>
 
     <div>
-      <RuiTabs v-model="rpcSettingTab" color="primary">
-        <RuiTab v-for="tab in rpcSettingTabs" :key="tab.chain">
-          <ChainDisplay :chain="tab.chain" dense />
+      <RuiTabs
+        v-model="rpcSettingTab"
+        color="primary"
+      >
+        <RuiTab
+          v-for="tab in rpcSettingTabs"
+          :key="tab.chain"
+        >
+          <ChainDisplay
+            :chain="tab.chain"
+            dense
+          />
         </RuiTab>
       </RuiTabs>
       <RuiDivider class="mb-4" />
       <RuiTabItems v-model="rpcSettingTab">
         <template #default>
-          <RuiTabItem v-for="tab in rpcSettingTabs" :key="tab.chain">
+          <RuiTabItem
+            v-for="tab in rpcSettingTabs"
+            :key="tab.chain"
+          >
             <template #default>
-              <Component :is="tab.component" :chain="tab.chain" />
+              <Component
+                :is="tab.component"
+                :chain="tab.chain"
+              />
             </template>
           </RuiTabItem>
         </template>

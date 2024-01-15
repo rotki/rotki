@@ -7,13 +7,13 @@ export const UserNote = z.object({
   content: z.string(),
   location: z.string(),
   lastUpdateTimestamp: z.number(),
-  isPinned: z.boolean()
+  isPinned: z.boolean(),
 });
 
 export type UserNote = z.infer<typeof UserNote>;
 
 export const UserNoteCollectionResponse = CollectionCommonFields.extend({
-  entries: z.array(UserNote)
+  entries: z.array(UserNote),
 });
 
 export interface UserNotesFilter {
@@ -48,5 +48,5 @@ export enum NoteLocation {
   SETTINGS_ACCOUNTING = 'SETTINGS_ACCOUNTING',
   SETTINGS_DATA_SECURITY = 'SETTINGS_DATA_SECURITY',
   SETTINGS_MODULES = 'SETTINGS_MODULES',
-  LOCATIONS = 'LOCATIONS'
+  LOCATIONS = 'LOCATIONS',
 }

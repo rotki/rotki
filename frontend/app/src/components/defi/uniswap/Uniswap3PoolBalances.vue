@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { type XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { type LpType } from '@rotki/common/lib/defi';
 import UniswapPoolHeader from '@/components/defi/uniswap/UniswapPoolHeader.vue';
+import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
+import type { LpType } from '@rotki/common/lib/defi';
 
 defineProps<{
   item: XswapBalance;
@@ -15,9 +15,15 @@ const premium = usePremium();
 
 <template>
   <RuiCard>
-    <UniswapPoolHeader :item="item" :lp-type="lpType" />
+    <UniswapPoolHeader
+      :item="item"
+      :lp-type="lpType"
+    />
 
-    <NftDetails v-if="item.nftId" :identifier="item.nftId" />
+    <NftDetails
+      v-if="item.nftId"
+      :identifier="item.nftId"
+    />
 
     <div class="flex flex-wrap">
       <div class="mt-6 mr-16">
@@ -40,9 +46,17 @@ const premium = usePremium();
           {{ t('uniswap.price_range') }}
         </div>
         <div class="flex text-h6">
-          <AmountDisplay :value="item.priceRange[0]" fiat-currency="USD" />
-          <div class="px-2">-</div>
-          <AmountDisplay :value="item.priceRange[1]" fiat-currency="USD" />
+          <AmountDisplay
+            :value="item.priceRange[0]"
+            fiat-currency="USD"
+          />
+          <div class="px-2">
+            -
+          </div>
+          <AmountDisplay
+            :value="item.priceRange[1]"
+            fiat-currency="USD"
+          />
         </div>
       </div>
     </div>
@@ -59,7 +73,11 @@ const premium = usePremium();
         />
       </div>
 
-      <RuiCard v-else dense class="mt-4">
+      <RuiCard
+        v-else
+        dense
+        class="mt-4"
+      >
         <div class="flex items-center gap-2 text-body-2">
           <PremiumLock />
           {{ t('uniswap.assets_non_premium') }}

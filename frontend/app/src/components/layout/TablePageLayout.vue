@@ -2,8 +2,8 @@
 withDefaults(
   defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>(),
   {
-    title: undefined
-  }
+    title: undefined,
+  },
 );
 </script>
 

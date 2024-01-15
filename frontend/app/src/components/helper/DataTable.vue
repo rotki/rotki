@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type TablePagination } from '@/types/pagination';
+import StickyTableHeader from '@/utils/sticky-table-header';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { TablePagination } from '@/types/pagination';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -40,10 +41,10 @@ const props = withDefaults(
     disableHeaderPagination?: boolean;
     customGroup?:
       | ((
-          items: any[],
-          groupBy: string[],
-          groupDesc: boolean[]
-        ) => Record<string, any[]> | any[] | undefined)
+        items: any[],
+        groupBy: string[],
+        groupDesc: boolean[]
+      ) => Record<string, any[]> | any[] | undefined)
       | undefined;
     flat?: boolean;
   }>(),
@@ -61,8 +62,8 @@ const props = withDefaults(
     disableFloatingHeader: false,
     disableHeaderPagination: false,
     customGroup: undefined,
-    flat: false
-  }
+    flat: false,
+  },
 );
 
 const { t } = useI18n();
@@ -70,14 +71,14 @@ const { t } = useI18n();
 const rootAttrs = useAttrs();
 const frontendSettingsStore = useFrontendSettingsStore();
 const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
-  frontendSettingsStore
+  frontendSettingsStore,
 );
 const { container, options, disableFloatingHeader } = toRefs(props);
 
 if (props.multiSort && props.mustSort) {
   logger.warn(
-    'Both multi-sort and must-sort were enabled, ' +
-      'check <data-table/> for more information why this might be a problem'
+    'Both multi-sort and must-sort were enabled, '
+    + 'check <data-table/> for more information why this might be a problem',
   );
 }
 
@@ -87,18 +88,17 @@ const currentPage = ref<number>(1);
 const { footerProps } = useFooterProps();
 
 const itemsPerPageUsed = computed(
-  () => get(options)?.itemsPerPage ?? get(itemsPerPageFromFrontendSetting)
+  () => get(options)?.itemsPerPage ?? get(itemsPerPageFromFrontendSetting),
 );
 
-const onItemsPerPageChange = async (newValue: number) => {
-  if (get(itemsPerPageFromFrontendSetting) === newValue) {
+async function onItemsPerPageChange(newValue: number) {
+  if (get(itemsPerPageFromFrontendSetting) === newValue)
     return;
-  }
 
   set(itemsPerPageFromFrontendSetting, newValue);
-};
+}
 
-const scrollToTop = () => {
+function scrollToTop() {
   const { top } = useElementBounding(tableRef);
   const { top: containerTop } = useElementBounding(container);
 
@@ -106,30 +106,29 @@ const scrollToTop = () => {
   const wrapper = tableContainer ?? document.body;
   const table = get(tableRef);
 
-  if (!table || !wrapper) {
+  if (!table || !wrapper)
     return;
-  }
 
   const tableTop = get(top);
   setTimeout(() => {
     let newScrollTop: number;
     if (get(container)) {
-      newScrollTop =
-        tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
-    } else {
+      newScrollTop
+        = tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
+    }
+    else {
       newScrollTop = tableTop + wrapper.scrollTop - 64;
     }
-    if (wrapper.scrollTop > newScrollTop) {
+    if (wrapper.scrollTop > newScrollTop)
       wrapper.scrollTop = newScrollTop;
-    }
   }, 10);
-};
+}
 
-const pageSelectorData = (props: {
+function pageSelectorData(props: {
   pageStart: number;
   pageStop: number;
   itemsLength: number;
-}) => {
+}) {
   const itemsLength = props.itemsLength;
   const perPage = get(itemsPerPageUsed);
   const totalPage = Math.ceil(itemsLength / perPage);
@@ -138,34 +137,32 @@ const pageSelectorData = (props: {
     value: index + 1,
     text: `${index * perPage + 1} - ${Math.min(
       (index + 1) * perPage,
-      itemsLength
-    )}`
+      itemsLength,
+    )}`,
   }));
-};
+}
 
 onMounted(() => {
   const optionsVal = get(options);
-  if (!optionsVal) {
+  if (!optionsVal)
     return;
-  }
 
-  if (optionsVal.page) {
+  if (optionsVal.page)
     set(currentPage, optionsVal.page);
-  }
-  if (optionsVal.itemsPerPage) {
+
+  if (optionsVal.itemsPerPage)
     onItemsPerPageChange(optionsVal.itemsPerPage);
-  }
 });
 
 onMounted(() => {
   if (!get(container) && !get(disableFloatingHeader)) {
-    watchEffect(onCleanup => {
+    watchEffect((onCleanup) => {
       const tableInstance = get(tableRef);
       const cloneEl = get(cloneTableRef);
       const tableEl = tableInstance.$el.querySelector('table');
 
-      const newSticky = new stickyTableHeader(tableEl, cloneEl, {
-        mobileBreakpoint: tableInstance.mobileBreakpoint
+      const newSticky = new StickyTableHeader(tableEl, cloneEl, {
+        mobileBreakpoint: tableInstance.mobileBreakpoint,
       });
 
       onCleanup(() => {
@@ -183,7 +180,7 @@ const { dark } = useTheme();
     <VDataTable
       ref="tableRef"
       :class="{
-        outlined: !flat
+        outlined: !flat,
       }"
       v-bind="rootAttrs"
       :must-sort="mustSort"
@@ -224,7 +221,11 @@ const { dark } = useTheme();
       </template>
 
       <!-- Pass on all named slots -->
-      <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
+      <slot
+        v-for="slot in Object.keys($slots)"
+        :slot="slot"
+        :name="slot"
+      />
 
       <template #footer.page-text="footerPageTextProps">
         <div class="flex items-center items-page-select">
@@ -239,7 +240,12 @@ const { dark } = useTheme();
             item-value="value"
             item-text="text"
           />
-          <span v-else class="mr-1">{{ footerPageTextProps.itemsLength }}</span>
+          <span
+            v-else
+            class="mr-1"
+          >
+            {{ footerPageTextProps.itemsLength }}
+          </span>
           <span>
             {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
           </span>
@@ -270,7 +276,10 @@ const { dark } = useTheme();
                 item-value="value"
                 item-text="text"
               />
-              <span v-else class="mr-1">
+              <span
+                v-else
+                class="mr-1"
+              >
                 {{ footerPageTextProps.itemsLength }}
               </span>
               <span>
@@ -287,9 +296,15 @@ const { dark } = useTheme();
       :class="dark ? 'theme--dark' : 'theme--light'"
     >
       <div class="v-data-table__wrapper clone__wrapper">
-        <table ref="cloneTableRef" class="clone__table" />
+        <table
+          ref="cloneTableRef"
+          class="clone__table"
+        />
         <div>
-          <RuiProgress v-if="loading" variant="indeterminate" />
+          <RuiProgress
+            v-if="loading"
+            variant="indeterminate"
+          />
         </div>
       </div>
     </div>

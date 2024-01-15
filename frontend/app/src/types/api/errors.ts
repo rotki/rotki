@@ -7,15 +7,14 @@ import { camelCaseTransformer } from '@/services/axios-tranformers';
  * Use {@link ApiValidationError} in the catch clause instead.
  * @param message a stringified json message
  */
-const deserializeApiErrorMessage = (
-  message: string
-): Record<string, string[]> | undefined => {
+function deserializeApiErrorMessage(message: string): Record<string, string[]> | undefined {
   try {
     return JSON.parse(message);
-  } catch {
+  }
+  catch {
     return undefined;
   }
-};
+}
 
 export type ValidationErrors = Record<string, string[] | string>;
 
@@ -24,8 +23,8 @@ export class ApiValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ApiValidationError';
-    this.errors =
-      camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
+    this.errors
+      = camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
   }
 
   getValidationErrors(payload: Record<string, any>): ValidationErrors | string {
@@ -37,17 +36,17 @@ export class ApiValidationError extends Error {
       for (const errorKey of errorKeys) {
         if (!payloadKeys.includes(errorKey)) {
           const entry = errors[errorKey];
-          if (typeof entry === 'string') {
+          if (typeof entry === 'string')
             return entry;
-          }
+
           return entry[0] || '';
         }
       }
     }
 
-    if (!isEmpty(errors)) {
+    if (!isEmpty(errors))
       return errors;
-    }
+
     return this.message;
   }
 }

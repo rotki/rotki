@@ -1,4 +1,3 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import {
   type ProfitLossOverview,
   type ProfitLossReportDebugPayload,
@@ -6,18 +5,19 @@ import {
   ProfitLossReportOverview,
   type ProfitLossReportPeriod,
   ReportActionableItem,
-  Reports
+  Reports,
 } from '@/types/reports';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type ActionStatus } from '@/types/action';
-import { type PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionStatus } from '@/types/action';
+import type { PendingTask } from '@/types/task';
 
-export const useReportsApi = () => {
+export function useReportsApi() {
   const generateReport = async ({
     end,
-    start
+    start,
   }: ProfitLossReportPeriod): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/history',
@@ -25,10 +25,10 @@ export const useReportsApi = () => {
         params: snakeCaseTransformer({
           asyncQuery: true,
           fromTimestamp: start,
-          toTimestamp: end
+          toTimestamp: end,
         }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -38,10 +38,10 @@ export const useReportsApi = () => {
       '/history/export',
       {
         params: snakeCaseTransformer({
-          directoryPath
+          directoryPath,
         }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -51,7 +51,7 @@ export const useReportsApi = () => {
     try {
       const response = await api.instance.get('/history/download', {
         responseType: 'blob',
-        validateStatus: validTaskStatus
+        validateStatus: validTaskStatus,
       });
 
       if (response.status === 200) {
@@ -63,23 +63,24 @@ export const useReportsApi = () => {
       const result: ActionResult<null> = JSON.parse(body);
 
       return { success: false, message: result.message };
-    } catch (e: any) {
-      return { success: false, message: e.message };
+    }
+    catch (error: any) {
+      return { success: false, message: error.message };
     }
   };
 
   const exportReportData = async (
-    payload: ProfitLossReportDebugPayload
+    payload: ProfitLossReportDebugPayload,
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/debug',
       snakeCaseTransformer({
         asyncQuery: true,
-        ...payload
+        ...payload,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -89,11 +90,11 @@ export const useReportsApi = () => {
       '/history/debug',
       snakeCaseTransformer({
         filepath,
-        asyncQuery: true
+        asyncQuery: true,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -106,9 +107,9 @@ export const useReportsApi = () => {
       data,
       {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
+          'Content-Type': 'multipart/form-data',
+        },
+      },
     );
 
     return handleResponse(response);
@@ -118,8 +119,8 @@ export const useReportsApi = () => {
     const response = await api.instance.get<ActionResult<ReportActionableItem>>(
       '/history/actionable_items',
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     const data = handleResponse(response);
@@ -128,7 +129,7 @@ export const useReportsApi = () => {
 
   const fetchReports = async (): Promise<Reports> => {
     const response = await api.instance.get<ActionResult<Reports>>('/reports', {
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
     const data = handleResponse(response);
     return Reports.parse(data);
@@ -138,7 +139,7 @@ export const useReportsApi = () => {
     const response = await api.instance.get<
       ActionResult<ProfitLossReportOverview>
     >(`/reports/${reportId}`, {
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
     const data = handleResponse(response);
     const overview = ProfitLossReportOverview.parse(data);
@@ -147,12 +148,12 @@ export const useReportsApi = () => {
 
   const fetchReportEvents = async (
     reportId: number,
-    page: { limit: number; offset: number }
+    page: { limit: number; offset: number },
   ): Promise<ProfitLossReportEvents> => {
     const response = await api.instance.post<
       ActionResult<ProfitLossReportEvents>
     >(`/reports/${reportId}/data`, page, {
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
     const data = handleResponse(response);
     return ProfitLossReportEvents.parse(data);
@@ -162,8 +163,8 @@ export const useReportsApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/reports/${reportId}`,
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -180,6 +181,6 @@ export const useReportsApi = () => {
     fetchReports,
     fetchReport,
     fetchReportEvents,
-    deleteReport
+    deleteReport,
   };
-};
+}

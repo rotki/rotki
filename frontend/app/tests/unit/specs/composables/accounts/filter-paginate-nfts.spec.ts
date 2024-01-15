@@ -1,25 +1,25 @@
-import { type MaybeRef } from '@vueuse/core';
 import flushPromises from 'flush-promises';
-import { type Collection } from '@/types/collection';
-import {
-  type NonFungibleBalance,
-  type NonFungibleBalancesRequestPayload
+import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import type {
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
-import { type LocationQuery } from '@/types/route';
+import type { LocationQuery } from '@/types/route';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
     reactive({
-      query: {}
-    })
+      query: {},
+    }),
   ),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(({ query }) => {
       useRoute().query = query;
       return true;
-    })
-  })
+    }),
+  }),
 }));
 
 vi.mock('vue', async () => {
@@ -27,7 +27,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn()
+    onBeforeMount: vi.fn(),
   };
 });
 
@@ -42,8 +42,8 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchNonFungibleBalances =
-      useNonFungibleBalancesStore().fetchNonFungibleBalances;
+    fetchNonFungibleBalances
+      = useNonFungibleBalancesStore().fetchNonFungibleBalances;
   });
 
   afterEach(() => {
@@ -54,7 +54,7 @@ describe('composables::history/filter-paginate', () => {
     set(locationOverview, '');
     const ignoredAssetsHandling = ref('none');
     const extraParams = computed(() => ({
-      includeIgnoredTrades: get(ignoredAssetsHandling)
+      includeIgnoredTrades: get(ignoredAssetsHandling),
     }));
 
     const onUpdateFilters = (query: LocationQuery) => {
@@ -65,7 +65,7 @@ describe('composables::history/filter-paginate', () => {
       set(mainPage, true);
     });
 
-    test('initialize composable correctly', async () => {
+    it('initialize composable correctly', async () => {
       const {
         userAction,
         filters,
@@ -73,7 +73,7 @@ describe('composables::history/filter-paginate', () => {
         state,
         fetchData,
         applyRouteFilter,
-        isLoading
+        isLoading,
       } = usePaginationFilters<NonFungibleBalance>(
         locationOverview,
         mainPage,
@@ -84,9 +84,9 @@ describe('composables::history/filter-paginate', () => {
           extraParams,
           defaultSortBy: {
             key: 'name',
-            ascending: [true]
-          }
-        }
+            ascending: [true],
+          },
+        },
       );
 
       expect(get(userAction)).toBe(false);
@@ -107,9 +107,9 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(30);
     });
 
-    test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        usePaginationFilters<NonFungibleBalance>(
+    it('check the return types', async () => {
+      const { isLoading, state, filters, matchers }
+        = usePaginationFilters<NonFungibleBalance>(
           locationOverview,
           mainPage,
           useEmptyFilter,
@@ -119,9 +119,9 @@ describe('composables::history/filter-paginate', () => {
             extraParams,
             defaultSortBy: {
               key: 'name',
-              ascending: [true]
-            }
-          }
+              ascending: [true],
+            },
+          },
         );
 
       expect(get(isLoading)).toBe(false);
@@ -133,7 +133,7 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(matchers)).toEqualTypeOf<undefined[]>();
     });
 
-    test('modify filters and fetch data correctly', async () => {
+    it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortDesc: ['false'] };
 
@@ -147,13 +147,13 @@ describe('composables::history/filter-paginate', () => {
           extraParams,
           defaultSortBy: {
             key: 'name',
-            ascending: [false]
-          }
-        }
+            ascending: [false],
+          },
+        },
       );
 
       await router.push({
-        query
+        query,
       });
 
       expect(pushSpy).toHaveBeenCalledOnce();

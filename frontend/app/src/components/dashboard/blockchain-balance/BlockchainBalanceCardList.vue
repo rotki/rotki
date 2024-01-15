@@ -3,10 +3,10 @@ import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import {
   type BlockchainTotal,
-  SupportedSubBlockchainProtocolData
+  SupportedSubBlockchainProtocolData,
 } from '@/types/blockchain';
 import { toSentenceCase } from '@/utils/text';
-import { type ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{
   total: BlockchainTotal;
@@ -19,10 +19,11 @@ const { getChainName } = useSupportedChains();
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const childData = (identifier: string): ActionDataEntry | null =>
-  SupportedSubBlockchainProtocolData.find(
-    item => item.identifier === identifier
+function childData(identifier: string): ActionDataEntry | null {
+  return SupportedSubBlockchainProtocolData.find(
+    item => item.identifier === identifier,
   ) || null;
+}
 
 const amount = useRefMap(total, ({ usdValue }) => usdValue);
 const loading = useRefMap(total, ({ loading }) => loading);
@@ -42,7 +43,10 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
       >
         <template #avatar>
           <div class="grayscale group-hover:grayscale-0">
-            <ChainIcon size="24px" :chain="chain" />
+            <ChainIcon
+              size="24px"
+              :chain="chain"
+            />
           </div>
         </template>
         <div class="flex flex-wrap justify-between gap-1 text-rui-text">

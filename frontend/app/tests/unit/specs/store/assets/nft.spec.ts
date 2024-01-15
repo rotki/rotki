@@ -1,15 +1,15 @@
-import { type NftResponse } from '@/types/nfts';
+import type { NftResponse } from '@/types/nfts';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
-    fetchNfts: vi.fn().mockResolvedValue(1)
-  })
+    fetchNfts: vi.fn().mockResolvedValue(1),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 describe('composables::nft', () => {
@@ -24,18 +24,18 @@ describe('composables::nft', () => {
   });
 
   describe('fetchNfts', () => {
-    test('success', async () => {
+    it('success', async () => {
       const nfts: NftResponse = {
         addresses: {
-          '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea': []
+          '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea': [],
         },
         entriesFound: 0,
-        entriesLimit: 0
+        entriesLimit: 0,
       };
 
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: nfts,
-        meta: { title: '' }
+        meta: { title: '' },
       });
 
       const result = await store.fetchNfts(true);
@@ -44,13 +44,13 @@ describe('composables::nft', () => {
 
       expect(result).toEqual({
         result: nfts,
-        message: ''
+        message: '',
       });
     });
 
-    test('failed', async () => {
+    it('failed', async () => {
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       const result = await store.fetchNfts(true);
@@ -59,7 +59,7 @@ describe('composables::nft', () => {
 
       expect(result).toEqual({
         result: null,
-        message: 'failed'
+        message: 'failed',
       });
     });
   });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
-import { type StyleValue } from 'vue/types/jsx';
 import { isVideo } from '@/utils/nft';
+import type { ComputedRef } from 'vue';
+import type { StyleValue } from 'vue/types/jsx';
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ const props = withDefaults(
   }>(),
   {
     styled: undefined,
-    size: '50px'
-  }
+    size: '50px',
+  },
 );
 
 const css = useCssModule();
@@ -31,54 +31,52 @@ const balanceData = assetInfo(identifier);
 const { t } = useI18n();
 
 const imageUrlSource: ComputedRef<string | null> = computed(
-  () => get(balanceData)?.imageUrl || null
+  () => get(balanceData)?.imageUrl || null,
 );
 
 const domain: ComputedRef<string | null> = computed(() =>
-  getDomain(get(imageUrlSource) || '')
+  getDomain(get(imageUrlSource) || ''),
 );
 
 const { show } = useConfirmStore();
 
-const showAllowDomainConfirmation = () => {
+function showAllowDomainConfirmation() {
   show(
     {
       title: t(
-        'general_settings.nft_setting.update_whitelist_confirmation.title'
+        'general_settings.nft_setting.update_whitelist_confirmation.title',
       ),
       message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
         {
-          domain: get(domain)
+          domain: get(domain),
         },
-        2
-      )
+        2,
+      ),
     },
-    allowDomain
+    allowDomain,
   );
-};
+}
 
-const allowDomain = () => {
+function allowDomain() {
   const domainVal = get(domain);
 
-  if (!domainVal) {
+  if (!domainVal)
     return;
-  }
 
   const newWhitelisted = [
     ...get(whitelistedDomainsForNftImages),
-    domainVal
+    domainVal,
   ].filter(uniqueStrings);
 
   updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
-};
+}
 
 const renderImage: ComputedRef<boolean> = computed(() => {
   const image = get(imageUrlSource);
 
-  if (!image) {
+  if (!image)
     return true;
-  }
 
   return shouldRenderImage(image);
 });
@@ -86,18 +84,17 @@ const renderImage: ComputedRef<boolean> = computed(() => {
 const imageUrl: ComputedRef<string> = computed(() => {
   const image = get(imageUrlSource);
 
-  if (!image || !get(renderImage)) {
+  if (!image || !get(renderImage))
     return './assets/images/placeholder.svg';
-  }
 
   return image;
 });
 
 const collectionName: ComputedRef<string | null> = computed(() => {
   const data = get(balanceData);
-  if (!data || !data.collectionName) {
+  if (!data || !data.collectionName)
     return null;
-  }
+
   const tokenId = get(identifier).split('_')[3];
   return `${data.collectionName} #${tokenId}`;
 });
@@ -116,7 +113,7 @@ const fallbackData = computed(() => {
   const data = id.split('_');
   return {
     address: data[2],
-    tokenId: data[3]
+    tokenId: data[3],
   };
 });
 </script>
@@ -170,7 +167,10 @@ const fallbackData = computed(() => {
           <RuiSkeletonLoader class="mt-1 mb-1.5 w-[7.5rem]" />
           <RuiSkeletonLoader class="mt-1 w-[5rem]" />
         </template>
-        <div v-else-if="name" :class="css['nft-details']">
+        <div
+          v-else-if="name"
+          :class="css['nft-details']"
+        >
           <div class="font-medium text-truncate">
             {{ name }}
           </div>

@@ -5,12 +5,12 @@
  * @example
  * toSentenceCase('this is a sentence'); // This is a sentence
  */
-export const toSentenceCase = (string: string): string => {
-  if (!string) {
+export function toSentenceCase(string: string): string {
+  if (!string)
     return '';
-  }
+
   return string[0].toUpperCase() + string.slice(1);
-};
+}
 
 /**
  *
@@ -20,12 +20,12 @@ export const toSentenceCase = (string: string): string => {
  * getTextToken('this is a sentence'); // thisisasentence
  */
 
-export const getTextToken = (string: string): string => {
-  if (!string) {
+export function getTextToken(string: string): string {
+  if (!string)
     return '';
-  }
+
   return string.toLowerCase().replace(/[^\dA-Za-z]/g, '');
-};
+}
 
 /**
  *
@@ -34,13 +34,12 @@ export const getTextToken = (string: string): string => {
  * @example
  * toSnakeCase('this is a sentence'); // this_is_a_sentence
  */
-export const toSnakeCase = (string: string): string => {
-  if (!string) {
+export function toSnakeCase(string: string): string {
+  if (!string)
     return '';
-  }
 
   return string.toLowerCase().replace(/ /g, '_');
-};
+}
 
 /**
  *
@@ -49,11 +48,12 @@ export const toSnakeCase = (string: string): string => {
  * @example
  * toCapitalCase('this is a sentence'); // This Is A Sentence
  */
-export const toCapitalCase = (string: string): string =>
-  string.replace(
+export function toCapitalCase(string: string): string {
+  return string.replace(
     /\p{L}+('\p{L}+)?/gu,
-    txt => txt.charAt(0).toUpperCase() + txt.slice(1)
+    txt => txt.charAt(0).toUpperCase() + txt.slice(1),
   );
+}
 
 /**
  *
@@ -67,17 +67,12 @@ export const toCapitalCase = (string: string): string =>
  * @example
  * toHumanReadable('polygon_pos', 'uppercase'); // POLYGON POS
  */
-export const toHumanReadable = (
-  value: string,
-  transform?: 'capitalize' | 'sentence' | 'uppercase' | 'lowercase'
-): string => {
-  if (!value) {
+export function toHumanReadable(value: string, transform?: 'capitalize' | 'sentence' | 'uppercase' | 'lowercase'): string {
+  if (!value)
     return '';
-  }
 
-  if (!transform) {
+  if (!transform)
     return value.replace(/_/g, ' ');
-  }
 
   switch (transform) {
     case 'uppercase':
@@ -89,7 +84,7 @@ export const toHumanReadable = (
     case 'capitalize':
       return toCapitalCase(value.replace(/_/g, ' '));
   }
-};
+}
 
 /**
  * Transforms keys/text between camel and snake cases
@@ -101,7 +96,7 @@ export const toHumanReadable = (
  * @example
  * transformCase('lorem_ipsum', true); // loremIpsum
  */
-export const transformCase = (key: string, camelCase = false): string => {
+export function transformCase(key: string, camelCase = false): string {
   if (camelCase) {
     return key.includes('_')
       ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
@@ -111,15 +106,15 @@ export const transformCase = (key: string, camelCase = false): string => {
   return key.replace(/([A-Z])/gu, (_, p1, offset, string) => {
     const nextCharOffset = offset + 1;
     if (
-      (nextCharOffset < string.length &&
-        /([A-Z])/.test(string[nextCharOffset])) ||
-      nextCharOffset === string.length
-    ) {
+      (nextCharOffset < string.length
+      && /([A-Z])/.test(string[nextCharOffset]))
+      || nextCharOffset === string.length
+    )
       return p1;
-    }
+
     return `_${p1.toLowerCase()}`;
   });
-};
+}
 
 /**
  * Returns the plural of an English word.
@@ -129,10 +124,10 @@ export const transformCase = (key: string, camelCase = false): string => {
  * @param {number} [amount]
  * @returns {string}
  */
-export const pluralize = (word: string, amount?: number): string => {
-  if (amount !== undefined && amount === 1) {
+export function pluralize(word: string, amount?: number): string {
+  if (amount !== undefined && amount === 1)
     return word;
-  }
+
   const plural: Record<string, string> = {
     '(quiz)$': '$1zes',
     '^(ox)$': '$1en',
@@ -143,7 +138,7 @@ export const pluralize = (word: string, amount?: number): string => {
     '(hive)$': '$1s',
     '(?:([^f])fe|([lr])f)$': '$1$2ves',
     '(shea|lea|loa|thie)f$': '$1ves',
-    sis$: 'ses',
+    'sis$': 'ses',
     '([ti])um$': '$1a',
     '(tomat|potat|ech|her|vet)o$': '$1oes',
     '(bu)s$': '$1ses',
@@ -151,7 +146,7 @@ export const pluralize = (word: string, amount?: number): string => {
     '(octop)us$': '$1i',
     '(ax|test)is$': '$1es',
     '(us)$': '$1es',
-    '([^s]+)$': '$1s'
+    '([^s]+)$': '$1s',
   };
   const irregular: Record<string, string> = {
     move: 'moves',
@@ -161,7 +156,7 @@ export const pluralize = (word: string, amount?: number): string => {
     child: 'children',
     man: 'men',
     tooth: 'teeth',
-    person: 'people'
+    person: 'people',
   };
   const uncountable: string[] = [
     'sheep',
@@ -189,31 +184,29 @@ export const pluralize = (word: string, amount?: number): string => {
     'sugar',
     'tuna',
     'you',
-    'wood'
+    'wood',
   ];
   // save some time in the case that singular and plural are the same
-  if (uncountable.includes(word.toLowerCase())) {
+  if (uncountable.includes(word.toLowerCase()))
     return word;
-  }
+
   // check for irregular forms
   for (const w in irregular) {
     const pattern = new RegExp(`${w}$`, 'i');
     const replace = irregular[w];
-    if (pattern.test(word)) {
+    if (pattern.test(word))
       return word.replace(pattern, replace);
-    }
   }
   // check for matches using regular expressions
   for (const reg in plural) {
     const pattern = new RegExp(reg, 'i');
-    if (pattern.test(word)) {
+    if (pattern.test(word))
       return word.replace(pattern, plural[reg]);
-    }
   }
   return word;
-};
+}
 
-export const pluralizeLastWord = (sentence: string): string => {
+export function pluralizeLastWord(sentence: string): string {
   const words = sentence.split(' ');
 
   const lastIndex = words.length - 1;
@@ -221,39 +214,38 @@ export const pluralizeLastWord = (sentence: string): string => {
   words[lastIndex] = pluralize(words[lastIndex]);
 
   return words.join(' ');
-};
+}
 
-export const sanitizeAddress = (address?: string): string => {
-  if (!address) {
+export function sanitizeAddress(address?: string): string {
+  if (!address)
     return '';
-  }
+
   return address.replace(/[^\da-z]+/gi, '');
-};
+}
 
-export const isValidEthAddress = (address?: string): boolean => {
-  if (!address) {
+export function isValidEthAddress(address?: string): boolean {
+  if (!address)
     return false;
-  }
-  return !!address.match(/^0x[\dA-Fa-f]{40}$/);
-};
 
-export const isValidTxHash = (address?: string): boolean => {
-  if (!address) {
+  return !!/^0x[\dA-Fa-f]{40}$/.test(address);
+}
+
+export function isValidTxHash(address?: string): boolean {
+  if (!address)
     return false;
-  }
-  return !!address.match(/^0x[\dA-Fa-f]{64}$/);
-};
 
-export const consistOfNumbers = (text?: string): boolean => {
-  if (!text) {
+  return !!/^0x[\dA-Fa-f]{64}$/.test(address);
+}
+
+export function consistOfNumbers(text?: string): boolean {
+  if (!text)
     return false;
-  }
 
-  return !!text.match(/^\d+$/);
-};
+  return !!/^\d+$/.test(text);
+}
 
 // Transform HTML code entities such as &bull; into “•”
-export const decodeHtmlEntities = (input: string): string => {
+export function decodeHtmlEntities(input: string): string {
   const doc = new DOMParser().parseFromString(input, 'text/html');
   return doc.documentElement.textContent || input;
-};
+}

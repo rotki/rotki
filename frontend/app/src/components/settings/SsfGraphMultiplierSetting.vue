@@ -13,16 +13,16 @@ const updated = () => emit('updated');
 
 const multiplier = ref<string>('0');
 
-const { ssfGraphMultiplier: multiplierSetting, balanceSaveFrequency } =
-  storeToRefs(useGeneralSettingsStore());
+const { ssfGraphMultiplier: multiplierSetting, balanceSaveFrequency }
+  = storeToRefs(useGeneralSettingsStore());
 
 const rules = {
   multiplier: {
     min: helpers.withMessage(
       t('statistics_graph_settings.multiplier.validations.positive_number'),
-      minValue(0)
-    )
-  }
+      minValue(0),
+    ),
+  },
 };
 const v$ = useVuelidate(rules, { multiplier }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
@@ -34,22 +34,22 @@ const numericMultiplier = computed(() => {
 
 const period = computed(() => {
   const multi = get(numericMultiplier);
-  if (multi <= 0) {
+  if (multi <= 0)
     return 0;
-  }
+
   return multi * get(balanceSaveFrequency);
 });
 
-const resetState = () => {
+function resetState() {
   set(multiplier, get(multiplierSetting).toString());
-};
+}
 
 const transform = () => get(numericMultiplier);
 
-const finished = () => {
+function finished() {
   resetState();
   updated();
-};
+}
 
 onMounted(() => {
   resetState();

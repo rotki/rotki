@@ -1,6 +1,6 @@
-import { type AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
 
-export const downloadFileByUrl = (url: string, fileName: string): void => {
+export function downloadFileByUrl(url: string, fileName: string): void {
   const link = document.createElement('a');
   link.setAttribute('href', url);
   link.setAttribute('download', fileName);
@@ -8,27 +8,21 @@ export const downloadFileByUrl = (url: string, fileName: string): void => {
     const event = document.createEvent('MouseEvents');
     event.initEvent('click', true, true);
     link.dispatchEvent(event);
-  } else {
+  }
+  else {
     link.click();
   }
-};
+}
 
-export const downloadFileByBlobResponse = (
-  response: AxiosResponse,
-  filename: string
-) => {
+export function downloadFileByBlobResponse(response: AxiosResponse, filename: string) {
   const url = window.URL.createObjectURL(response.request.response);
   downloadFileByUrl(url, filename);
-};
+}
 
-export const downloadFileByTextContent = (
-  text: string,
-  filename: string,
-  type: 'text/plain' | 'application/json' | 'text/csv' = 'text/plain'
-) => {
+export function downloadFileByTextContent(text: string, filename: string, type: 'text/plain' | 'application/json' | 'text/csv' = 'text/plain') {
   const file = new Blob([text], {
-    type
+    type,
   });
   const url = window.URL.createObjectURL(file);
   downloadFileByUrl(url, filename);
-};
+}

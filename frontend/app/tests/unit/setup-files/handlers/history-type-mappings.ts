@@ -5,6 +5,5 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 
 export default [
   http.get(`${backendUrl}/api/1/history/events/type_mappings`, () =>
-    HttpResponse.json(historyTypeMappings, { status: 200 })
-  )
+    HttpResponse.json(historyTypeMappings, { status: 200 })),
 ];

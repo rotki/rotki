@@ -1,26 +1,25 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useAssetIconApi = () => {
+export function useAssetIconApi() {
   const assetImageUrl = (
     identifier: string,
-    randomString?: string | number
+    randomString?: string | number,
   ): string => {
     let url = `${
       api.instance.defaults.baseURL
     }assets/icon?asset=${encodeURIComponent(identifier)}`;
 
-    if (randomString) {
+    if (randomString)
       url += `&t=${randomString}`;
-    }
 
     return url;
   };
 
   const uploadIcon = async (
     identifier: string,
-    file: File
+    file: File,
   ): Promise<boolean> => {
     const data = new FormData();
     data.append('file', file);
@@ -30,9 +29,9 @@ export const useAssetIconApi = () => {
       data,
       {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
+          'Content-Type': 'multipart/form-data',
+        },
+      },
     );
     return handleResponse(response);
   };
@@ -42,8 +41,8 @@ export const useAssetIconApi = () => {
       `/assets/icon/modify`,
       {
         file,
-        asset
-      }
+        asset,
+      },
     );
     return handleResponse(response);
   };
@@ -52,8 +51,8 @@ export const useAssetIconApi = () => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/assets/icon/modify`,
       {
-        asset
-      }
+        asset,
+      },
     );
     return handleResponse(response);
   };
@@ -63,8 +62,8 @@ export const useAssetIconApi = () => {
       '/cache/icons/clear',
       { entries: assets },
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -75,6 +74,6 @@ export const useAssetIconApi = () => {
     uploadIcon,
     setIcon,
     refreshIcon,
-    clearIconCache
+    clearIconCache,
   };
-};
+}

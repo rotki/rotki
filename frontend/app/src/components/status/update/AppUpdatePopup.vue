@@ -14,7 +14,7 @@ const { downloadUpdate, isPackaged, installUpdate } = useInterop();
 
 const { t } = useI18n();
 
-const dismiss = () => {
+function dismiss() {
   set(showUpdatePopup, false);
   setTimeout(() => {
     set(error, '');
@@ -22,23 +22,24 @@ const dismiss = () => {
     set(downloadReady, false);
     set(percentage, 0);
   }, 400);
-};
+}
 
-const update = async () => {
+async function update() {
   set(downloading, true);
-  const downloaded = await downloadUpdate(progress => {
+  const downloaded = await downloadUpdate((progress) => {
     set(percentage, progress);
   });
   set(downloading, false);
   if (downloaded) {
     set(downloadReady, true);
     set(showUpdatePopup, true);
-  } else {
+  }
+  else {
     set(error, t('update_popup.download_failed.message'));
   }
-};
+}
 
-const install = async () => {
+async function install() {
   set(downloadReady, false);
   set(restarting, true);
 
@@ -47,16 +48,15 @@ const install = async () => {
     set(
       error,
       t('update_popup.install_failed.message', {
-        message: result
-      })
+        message: result,
+      }),
     );
   }
-};
+}
 
 onMounted(async () => {
-  if (isPackaged) {
+  if (isPackaged)
     await checkForUpdate();
-  }
 });
 </script>
 
@@ -75,24 +75,43 @@ onMounted(async () => {
     rounded
     width="380px"
   >
-    <div v-if="!restarting" class="flex items-center gap-4">
-      <RuiIcon v-if="error" size="40" color="error" name="error-warning-line" />
+    <div
+      v-if="!restarting"
+      class="flex items-center gap-4"
+    >
+      <RuiIcon
+        v-if="error"
+        size="40"
+        color="error"
+        name="error-warning-line"
+      />
       <RuiIcon
         v-else-if="!downloadReady && !downloading"
         size="40"
         color="primary"
         name="arrow-up-circle-line"
       />
-      <RuiIcon v-else size="40" color="primary" name="arrow-down-circle-line" />
+      <RuiIcon
+        v-else
+        size="40"
+        color="primary"
+        name="arrow-down-circle-line"
+      />
       <div class="text-body-1">
-        <span v-if="error" class="text-rui-error">
+        <span
+          v-if="error"
+          class="text-rui-error"
+        >
           {{ error }}
         </span>
         <span v-else-if="downloading">
           {{ t('update_popup.download_progress') }}
         </span>
         <div v-else-if="!downloadReady">
-          <i18n tag="div" path="update_popup.messages">
+          <i18n
+            tag="div"
+            path="update_popup.messages"
+          >
             <template #releaseNotes>
               <ExternalLink
                 :text="t('update_popup.release_notes')"
@@ -105,14 +124,19 @@ onMounted(async () => {
         <span v-else>{{ t('update_popup.downloaded') }}</span>
       </div>
     </div>
-    <div v-else class="flex items-center gap-4">
+    <div
+      v-else
+      class="flex items-center gap-4"
+    >
       <RuiProgress
         color="primary"
         thickness="2"
         variant="indeterminate"
         circular
       />
-      <div class="text-body-1">{{ t('update_popup.restart') }}</div>
+      <div class="text-body-1">
+        {{ t('update_popup.restart') }}
+      </div>
     </div>
 
     <RuiProgress
@@ -133,7 +157,10 @@ onMounted(async () => {
       >
         {{ t('common.actions.dismiss') }}
       </RuiButton>
-      <div v-else-if="!downloading && !restarting" class="flex gap-2">
+      <div
+        v-else-if="!downloading && !restarting"
+        class="flex gap-2"
+      >
         <RuiButton
           variant="text"
           color="primary"
@@ -150,7 +177,12 @@ onMounted(async () => {
         >
           {{ t('common.actions.update') }}
         </RuiButton>
-        <RuiButton v-else color="primary" v-bind="attrs" @click="install()">
+        <RuiButton
+          v-else
+          color="primary"
+          v-bind="attrs"
+          @click="install()"
+        >
           {{ t('common.actions.install') }}
         </RuiButton>
       </div>

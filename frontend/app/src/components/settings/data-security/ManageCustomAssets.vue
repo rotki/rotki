@@ -11,42 +11,45 @@ const { importCustomAssets, exportCustomAssets } = useAssets();
 const importDisabled = computed(() => !get(zip));
 const { start, stop } = useTimeoutFn(() => set(downloaded, false), 4000);
 
-const importZip = async () => {
+async function importZip() {
   const file = get(zip);
   assert(file);
   set(uploading, true);
   const result = await importCustomAssets(file);
-  if (result.success) {
+  if (result.success)
     set(uploaded, true);
-  } else {
+  else
     set(importError, result.message);
-  }
+
   set(uploading, false);
   set(zip, null);
-};
+}
 
-const exportZip = async () => {
+async function exportZip() {
   stop();
-  if (get(downloading)) {
+  if (get(downloading))
     return;
-  }
+
   set(downloading, true);
   const result = await exportCustomAssets();
   if (result.success) {
     set(downloaded, true);
     start();
-  } else {
+  }
+  else {
     set(exportError, result.message);
   }
   set(downloading, false);
-};
+}
 
 const { t } = useI18n();
 </script>
 
 <template>
   <RuiCard>
-    <template #header>{{ t('manage_user_assets.title') }}</template>
+    <template #header>
+      {{ t('manage_user_assets.title') }}
+    </template>
 
     <div class="flex flex-col gap-4">
       <RuiAlert type="info">
@@ -54,11 +57,16 @@ const { t } = useI18n();
       </RuiAlert>
 
       <RuiCard>
-        <template #header>{{ t('manage_user_assets.export.title') }}</template>
+        <template #header>
+          {{ t('manage_user_assets.export.title') }}
+        </template>
         <template #subheader>
           {{ t('manage_user_assets.export.subtitle') }}
         </template>
-        <RuiAlert v-if="exportError" type="error">
+        <RuiAlert
+          v-if="exportError"
+          type="error"
+        >
           {{ exportError }}
         </RuiAlert>
         <template #footer>
@@ -69,7 +77,10 @@ const { t } = useI18n();
           >
             {{ t('manage_user_assets.export.button') }}
           </RuiButton>
-          <div v-if="downloaded" class="flex items-center gap-2 ml-4">
+          <div
+            v-if="downloaded"
+            class="flex items-center gap-2 ml-4"
+          >
             <SuccessDisplay success />
             {{ t('manage_user_assets.export.success') }}
           </div>
@@ -77,7 +88,9 @@ const { t } = useI18n();
       </RuiCard>
 
       <RuiCard>
-        <template #header>{{ t('common.actions.import') }}</template>
+        <template #header>
+          {{ t('common.actions.import') }}
+        </template>
         <template #subheader>
           {{ t('manage_user_assets.import.subtitle') }}
         </template>

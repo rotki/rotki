@@ -17,9 +17,15 @@ const { t } = useI18n();
       type="warning"
       :title="t('import_data.notice_warning')"
     >
-      <i18n tag="span" path="import_data.notice">
+      <i18n
+        tag="span"
+        path="import_data.notice"
+      >
         <template #link>
-          <ExternalLink color="primary" :url="externalLinks.githubNewIssue">
+          <ExternalLink
+            color="primary"
+            :url="externalLinks.githubNewIssue"
+          >
             {{ t('import_data.notice_link') }}
           </ExternalLink>
         </template>

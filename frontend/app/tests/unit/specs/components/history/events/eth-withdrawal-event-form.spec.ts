@@ -1,17 +1,17 @@
 import {
   type ThisTypedMountOptions,
   type Wrapper,
-  mount
+  mount,
 } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type EthWithdrawalEvent } from '@/types/history/events';
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
+import type { EthWithdrawalEvent } from '@/types/history/events';
 
-describe('EthWithdrawalEventForm.vue', () => {
+describe('ethWithdrawalEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EthWithdrawalEventForm>;
 
@@ -25,14 +25,14 @@ describe('EthWithdrawalEventForm.vue', () => {
     asset: 'ETH',
     balance: {
       amount: bigNumberify('2.5'),
-      usdValue: bigNumberify('3973.525')
+      usdValue: bigNumberify('3973.525'),
     },
     eventType: 'staking',
     eventSubtype: 'remove asset',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
     notes: 'Exited validator 123 with 2.5 ETH',
     validatorIndex: 123,
-    isExit: true
+    isExit: true,
   };
 
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
@@ -44,14 +44,14 @@ describe('EthWithdrawalEventForm.vue', () => {
       vuetify,
       stubs: {
         VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub
+        VCombobox: VComboboxStub,
       },
-      ...options
+      ...options,
     });
   };
 
   describe('should prefill the fields based on the props', () => {
-    test('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
 
@@ -59,61 +59,27 @@ describe('EthWithdrawalEventForm.vue', () => {
         (
           wrapper.find('[data-cy=validatorIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=withdrawalAddress] .input-value')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe('');
 
       expect(
         (wrapper.find('[data-cy=isExited] input').element as HTMLInputElement)
-          .checked
+          .checked,
       ).toBeFalsy();
     });
 
-    test('`groupHeader` and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader
-        }
-      });
-      await wrapper.vm.$nextTick();
-
-      expect(
-        (
-          wrapper.find('[data-cy=validatorIndex] input')
-            .element as HTMLInputElement
-        ).value
-      ).toBe(groupHeader.validatorIndex.toString());
-
-      expect(
-        (
-          wrapper.find('[data-cy=withdrawalAddress] .input-value')
-            .element as HTMLInputElement
-        ).value
-      ).toBe(groupHeader.locationLabel);
-
-      expect(
-        (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value
-      ).toBe('');
-
-      expect(
-        (wrapper.find('[data-cy=isExited] input').element as HTMLInputElement)
-          .checked
-      ).toBeFalsy();
-    });
-
-    test('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+    it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
         propsData: {
           groupHeader,
-          editableItem: groupHeader
-        }
+        },
       });
       await wrapper.vm.$nextTick();
 
@@ -121,24 +87,58 @@ describe('EthWithdrawalEventForm.vue', () => {
         (
           wrapper.find('[data-cy=validatorIndex] input')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.validatorIndex.toString());
 
       expect(
         (
           wrapper.find('[data-cy=withdrawalAddress] .input-value')
             .element as HTMLInputElement
-        ).value
+        ).value,
       ).toBe(groupHeader.locationLabel);
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
-          .value
+          .value,
+      ).toBe('');
+
+      expect(
+        (wrapper.find('[data-cy=isExited] input').element as HTMLInputElement)
+          .checked,
+      ).toBeFalsy();
+    });
+
+    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+      wrapper = createWrapper({
+        propsData: {
+          groupHeader,
+          editableItem: groupHeader,
+        },
+      });
+      await wrapper.vm.$nextTick();
+
+      expect(
+        (
+          wrapper.find('[data-cy=validatorIndex] input')
+            .element as HTMLInputElement
+        ).value,
+      ).toBe(groupHeader.validatorIndex.toString());
+
+      expect(
+        (
+          wrapper.find('[data-cy=withdrawalAddress] .input-value')
+            .element as HTMLInputElement
+        ).value,
+      ).toBe(groupHeader.locationLabel);
+
+      expect(
+        (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
+          .value,
       ).toBe(groupHeader.balance.amount.toString());
 
       expect(
         (wrapper.find('[data-cy=isExited] input').element as HTMLInputElement)
-          .checked
+          .checked,
       ).toBeTruthy();
     });
   });

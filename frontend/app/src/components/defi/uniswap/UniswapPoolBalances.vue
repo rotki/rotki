@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { type XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { type LpType } from '@rotki/common/lib/defi';
 import UniswapPoolHeader from '@/components/defi/uniswap/UniswapPoolHeader.vue';
+import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
+import type { LpType } from '@rotki/common/lib/defi';
 
 defineProps<{
   item: XswapBalance;
@@ -13,7 +13,10 @@ const { t } = useI18n();
 
 <template>
   <RuiCard>
-    <UniswapPoolHeader :item="item" :lp-type="lpType" />
+    <UniswapPoolHeader
+      :item="item"
+      :lp-type="lpType"
+    />
 
     <div class="flex flex-col gap-4">
       <div>

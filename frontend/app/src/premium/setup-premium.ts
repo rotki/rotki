@@ -6,7 +6,7 @@ import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import * as Vue from 'vue';
 import * as zod from 'zod';
 
-export const setupPremium = async (): Promise<void> => {
+export async function setupPremium(): Promise<void> {
   window.Vue = Vue;
   window.VueUse = VueUse;
   window.VueUseShared = VueUseShared;
@@ -17,4 +17,4 @@ export const setupPremium = async (): Promise<void> => {
   window.bn = BigNumber;
   const { registerComponents } = await import('@/premium/register-components');
   registerComponents();
-};
+}

@@ -14,57 +14,58 @@ const rules = {
   currentPassword: {
     required: helpers.withMessage(
       t('change_password.validation.empty_password'),
-      required
-    )
+      required,
+    ),
   },
   newPassword: {
     required: helpers.withMessage(
       t('change_password.validation.empty_password'),
-      required
-    )
+      required,
+    ),
   },
   newPasswordConfirm: {
     required: helpers.withMessage(
       t('change_password.validation.empty_confirmation'),
-      required
+      required,
     ),
     same: helpers.withMessage(
       t('change_password.validation.password_mismatch'),
-      sameAs(newPassword)
-    )
-  }
+      sameAs(newPassword),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   { currentPassword, newPassword, newPasswordConfirm },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useSessionStore();
 
-const reset = () => {
+function reset() {
   get(v$).$reset();
-};
+}
 
-const change = async () => {
+async function change() {
   set(loading, true);
   const result = await changePassword({
     currentPassword: get(currentPassword),
-    newPassword: get(newPassword)
+    newPassword: get(newPassword),
   });
   set(loading, false);
 
-  if (result.success) {
+  if (result.success)
     reset();
-  }
-};
+}
 </script>
 
 <template>
   <RuiCard>
-    <template #header>{{ t('change_password.title') }}</template>
+    <template #header>
+      {{ t('change_password.title') }}
+    </template>
 
     <form>
       <RuiAlert

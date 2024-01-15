@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
+import type { SupportedAsset } from '@rotki/common/lib/data';
 
 const props = withDefaults(
   defineProps<{
@@ -9,15 +9,15 @@ const props = withDefaults(
   }>(),
   {
     subtitle: '',
-    editableItem: null
-  }
+    editableItem: null,
+  },
 );
 
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit } =
-  useManagedAssetForm();
+const { openDialog, submitting, closeDialog, trySubmit }
+  = useManagedAssetForm();
 </script>
 
 <template>

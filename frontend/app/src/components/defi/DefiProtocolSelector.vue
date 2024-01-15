@@ -2,7 +2,7 @@
 import {
   DefiProtocol,
   SUPPORTED_MODULES,
-  isDefiProtocol
+  isDefiProtocol,
 } from '@/types/modules';
 
 const props = withDefaults(
@@ -12,8 +12,8 @@ const props = withDefaults(
   }>(),
   {
     value: null,
-    liabilities: false
-  }
+    liabilities: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -25,7 +25,7 @@ const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
 const lending = [
   DefiProtocol.MAKERDAO_DSR,
   DefiProtocol.YEARN_VAULTS,
-  DefiProtocol.YEARN_VAULTS_V2
+  DefiProtocol.YEARN_VAULTS_V2,
 ];
 
 const { liabilities } = toRefs(props);
@@ -33,24 +33,24 @@ const search = ref<string>('');
 
 const { t } = useI18n();
 
-const input = (_selectedProtocol: DefiProtocol | null) => {
+function input(_selectedProtocol: DefiProtocol | null) {
   emit('input', _selectedProtocol);
-};
+}
 
 const protocols = computed<DefiProtocol[]>(() => {
-  if (get(liabilities)) {
+  if (get(liabilities))
     return [...dual, ...borrowing];
-  }
+
   return [...dual, ...lending];
 });
 
 const protocolsData = computed(() =>
   SUPPORTED_MODULES.filter(({ identifier }) => {
-    if (!isDefiProtocol(identifier)) {
+    if (!isDefiProtocol(identifier))
       return false;
-    }
+
     return get(protocols).includes(identifier);
-  })
+  }),
 );
 </script>
 
@@ -75,10 +75,16 @@ const protocolsData = computed(() =>
       @input="input($event)"
     >
       <template #selection="{ attrs, item }">
-        <DefiIcon v-bind="attrs" :item="item" />
+        <DefiIcon
+          v-bind="attrs"
+          :item="item"
+        />
       </template>
       <template #item="{ attrs, item }">
-        <DefiIcon v-bind="attrs" :item="item" />
+        <DefiIcon
+          v-bind="attrs"
+          :item="item"
+        />
       </template>
     </VAutocomplete>
     <div class="p-2 text-body-2 text-rui-text-secondary">

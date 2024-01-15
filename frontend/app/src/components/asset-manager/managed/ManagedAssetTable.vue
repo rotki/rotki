@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
-import {
-  type DataTableColumn,
-  type DataTableOptions,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
-import { type TablePagination } from '@/types/pagination';
-import { type Filters, type Matcher } from '@/composables/filters/assets';
 import {
   CUSTOM_ASSET,
   EVM_TOKEN,
-  type IgnoredAssetsHandlingType
+  type IgnoredAssetsHandlingType,
 } from '@/types/asset';
-import { type ActionStatus } from '@/types/action';
+import type { Filters, Matcher } from '@/composables/filters/assets';
+import type {
+  DataTableColumn,
+  DataTableOptions,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type { TablePagination } from '@/types/pagination';
+import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { ActionStatus } from '@/types/action';
 
 const props = withDefaults(
   defineProps<{
@@ -33,7 +33,7 @@ const props = withDefaults(
 
     loading?: boolean;
   }>(),
-  { loading: false }
+  { loading: false },
 );
 
 const emit = defineEmits<{
@@ -58,7 +58,7 @@ const { t } = useI18n();
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'symbol',
-  direction: 'asc' as const
+  direction: 'asc' as const,
 });
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
@@ -66,58 +66,62 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     label: t('common.asset'),
     key: 'symbol',
     sortable: true,
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('common.type'),
     key: 'type',
     sortable: true,
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('common.address'),
     key: 'address',
     sortable: true,
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('asset_table.headers.started'),
     key: 'started',
     sortable: true,
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('assets.ignore'),
     key: 'ignored',
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: '',
     key: 'actions',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-const updatePagination = (options: DataTableOptions) =>
-  emit('update:options', options);
+function updatePagination(options: DataTableOptions) {
+  return emit('update:options', options);
+}
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
-const updateSelected = (selectedAssets: string[]) => {
+
+function updateSelected(selectedAssets: string[]) {
   emit('update:selected', selectedAssets);
-};
-const updateExpanded = (expandedAssets: SupportedAsset[]) =>
-  emit('update:expanded', expandedAssets);
+}
+
+function updateExpanded(expandedAssets: SupportedAsset[]) {
+  return emit('update:expanded', expandedAssets);
+}
 
 const ignoredFilter = useKebabVModel(props, 'ignoredFilter', emit);
 
 const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 
-const getAsset = (item: SupportedAsset) => {
-  const name =
-    item.name ??
-    item.symbol ??
-    (isEvmIdentifier(item.identifier)
+function getAsset(item: SupportedAsset) {
+  const name
+    = item.name
+    ?? item.symbol
+    ?? (isEvmIdentifier(item.identifier)
       ? getAddressFromEvmIdentifier(item.identifier)
       : item.identifier);
 
@@ -126,57 +130,57 @@ const getAsset = (item: SupportedAsset) => {
     symbol: item.symbol ?? '',
     identifier: item.identifier,
     isCustomAsset: item.assetType === CUSTOM_ASSET,
-    customAssetType: item.customAssetType ?? ''
+    customAssetType: item.customAssetType ?? '',
   };
-};
+}
 
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } =
-  useWhitelistedAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
+  = useWhitelistedAssetsStore();
 
 const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
-const isAssetWhitelistedValue = (asset: string) =>
-  get(isAssetWhitelisted(asset));
+function isAssetWhitelistedValue(asset: string) {
+  return get(isAssetWhitelisted(asset));
+}
 
 const { getChain } = useSupportedChains();
 
-const toggleIgnoreAsset = async (identifier: string) => {
-  if (get(isAssetIgnored(identifier))) {
+async function toggleIgnoreAsset(identifier: string) {
+  if (get(isAssetIgnored(identifier)))
     await unignoreAsset(identifier);
-  } else {
+  else
     await ignoreAsset(identifier);
-  }
-  if (props.ignoredFilter.ignoredAssetsHandling !== 'none') {
+
+  if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
     emit('refresh');
-  }
-};
+}
 
 const isSpamAsset = (asset: SupportedAsset) => asset.protocol === 'spam';
 
-const toggleSpam = async (item: SupportedAsset) => {
+async function toggleSpam(item: SupportedAsset) {
   const { identifier } = item;
-  if (isSpamAsset(item)) {
+  if (isSpamAsset(item))
     await removeAssetFromSpamList(identifier);
-  } else {
+  else
     await markAssetAsSpam(identifier);
-  }
-  emit('refresh');
-};
 
-const toggleWhitelistAsset = async (identifier: string) => {
-  if (get(isAssetWhitelisted(identifier))) {
+  emit('refresh');
+}
+
+async function toggleWhitelistAsset(identifier: string) {
+  if (get(isAssetWhitelisted(identifier)))
     await unWhitelistAsset(identifier);
-  } else {
+  else
     await whitelistAsset(identifier);
-  }
-  emit('refresh');
-};
 
-const massIgnore = async (ignored: boolean) => {
+  emit('refresh');
+}
+
+async function massIgnore(ignored: boolean) {
   const ids = get(props.selected)
-    .filter(identifier => {
+    .filter((identifier) => {
       const isItemIgnored = get(isAssetIgnored(identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
@@ -189,24 +193,22 @@ const massIgnore = async (ignored: boolean) => {
     setMessage({
       success: false,
       title: t('ignore.no_items.title', choice),
-      description: t('ignore.no_items.description', choice)
+      description: t('ignore.no_items.description', choice),
     });
     return;
   }
 
-  if (ignored) {
+  if (ignored)
     status = await ignoreAsset(ids);
-  } else {
+  else
     status = await unignoreAsset(ids);
-  }
 
   if (status.success) {
     updateSelected([]);
-    if (props.ignoredFilter.ignoredAssetsHandling !== 'none') {
+    if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
       emit('refresh');
-    }
   }
-};
+}
 </script>
 
 <template>
@@ -222,7 +224,11 @@ const massIgnore = async (ignored: boolean) => {
           class="flex flex-row items-center gap-2"
         >
           {{ t('asset_table.selected', { count: selected.length }) }}
-          <RuiButton size="sm" variant="text" @click="updateSelected([])">
+          <RuiButton
+            size="sm"
+            variant="text"
+            @click="updateSelected([])"
+          >
             {{ t('common.actions.clear_selection') }}
           </RuiButton>
         </div>
@@ -253,7 +259,7 @@ const massIgnore = async (ignored: boolean) => {
       :pagination="{
         limit: options.itemsPerPage,
         page: options.page,
-        total: serverItemLength
+        total: serverItemLength,
       }"
       :pagination-modifiers="{ external: true }"
       :sort.sync="sort"
@@ -283,7 +289,10 @@ const massIgnore = async (ignored: boolean) => {
         />
       </template>
       <template #item.started="{ row }">
-        <DateDisplay v-if="row.started" :timestamp="row.started" />
+        <DateDisplay
+          v-if="row.started"
+          :timestamp="row.started"
+        />
         <span v-else>-</span>
       </template>
       <template #item.type="{ row }">
@@ -339,7 +348,9 @@ const massIgnore = async (ignored: boolean) => {
         </RowActions>
       </template>
       <template #expanded-item="{ row }">
-        <AssetUnderlyingTokens :asset="row" />
+        <AssetUnderlyingTokens
+          :asset="row"
+        />
       </template>
       <template #item.expand="{ row }">
         <RuiTableRowExpander

@@ -5,6 +5,5 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 
 export default [
   http.get(`${backendUrl}/api/1/blockchains/supported`, () =>
-    HttpResponse.json(chains, { status: 200 })
-  )
+    HttpResponse.json(chains, { status: 200 })),
 ];

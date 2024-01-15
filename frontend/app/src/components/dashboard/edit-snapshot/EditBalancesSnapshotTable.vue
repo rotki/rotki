@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type ComputedRef, type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
-import {
-  type BalanceSnapshot,
-  type BalanceSnapshotPayload,
-  type Snapshot
-} from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
+import type { BigNumber } from '@rotki/common';
+import type { ComputedRef, Ref } from 'vue';
+import type { DataTableHeader } from '@/types/vuetify';
+import type {
+  BalanceSnapshot,
+  BalanceSnapshotPayload,
+  Snapshot,
+} from '@/types/snapshots';
 
 const props = defineProps<{
   value: Snapshot;
@@ -38,34 +38,34 @@ const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(
-  () => get(exchangeRate(get(currencySymbol))) ?? One
+  () => get(exchangeRate(get(currencySymbol))) ?? One,
 );
 
 const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() =>
   get(value).balancesSnapshot.map((item, index) => ({
     ...item,
-    index
-  }))
+    index,
+  })),
 );
 
 const assetSearch: Ref<string> = ref('');
 const filteredData: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
   const allData = get(data);
   const search = get(assetSearch);
-  if (!search) {
+  if (!search)
     return allData;
-  }
+
   return allData.filter(({ assetIdentifier }) => assetIdentifier === search);
 });
 
 const total = computed<BigNumber>(() => {
   const totalEntry = get(value).locationDataSnapshot.find(
-    item => item.location === 'total'
+    item => item.location === 'total',
   );
 
-  if (!totalEntry) {
+  if (!totalEntry)
     return Zero;
-  }
+
   return totalEntry.usdValue;
 });
 
@@ -74,81 +74,83 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     text: t('common.category'),
     value: 'category',
     cellClass: 'py-2',
-    width: 150
+    width: 150,
   },
   {
     text: t('common.asset'),
-    value: 'assetIdentifier'
+    value: 'assetIdentifier',
   },
   {
     text: t('common.amount'),
     value: 'amount',
     align: 'end',
-    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
+    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b),
   },
   {
     text: t('common.value_in_symbol', {
-      symbol: get(currencySymbol)
+      symbol: get(currencySymbol),
     }).toString(),
     value: 'usdValue',
     align: 'end',
-    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
+    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b),
   },
   {
     text: '',
     value: 'action',
     cellClass: 'py-2',
     width: 100,
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
-const input = (value: Snapshot) => {
+function input(value: Snapshot) {
   emit('input', value);
-};
+}
 
-const updateStep = (step: number) => {
+function updateStep(step: number) {
   emit('update:step', step);
-};
+}
 
 const conflictedBalanceSnapshot: Ref<BalanceSnapshot | null> = ref(null);
-const checkAssetExist = (asset: string) => {
+
+function checkAssetExist(asset: string) {
   const assetFound = get(value).balancesSnapshot.find(
-    item => item.assetIdentifier === asset
+    item => item.assetIdentifier === asset,
   );
   set(conflictedBalanceSnapshot, assetFound || null);
-};
+}
 
-const closeConvertToEditDialog = () => {
+function closeConvertToEditDialog() {
   set(conflictedBalanceSnapshot, null);
-};
+}
 
-const cancelConvertToEdit = () => {
+function cancelConvertToEdit() {
   set(form, {
     ...get(form),
-    assetIdentifier: ''
+    assetIdentifier: '',
   });
 
   closeConvertToEditDialog();
-};
-const convertToEdit = () => {
+}
+
+function convertToEdit() {
   assert(conflictedBalanceSnapshot);
   const item = get(data).find(
     ({ assetIdentifier }) =>
-      assetIdentifier === get(conflictedBalanceSnapshot)?.assetIdentifier
+      assetIdentifier === get(conflictedBalanceSnapshot)?.assetIdentifier,
   );
 
-  if (item) {
+  if (item)
     editClick(item);
-  }
-  closeConvertToEditDialog();
-};
 
-const editClick = (item: IndexedBalanceSnapshot) => {
+  closeConvertToEditDialog();
+}
+
+function editClick(item: IndexedBalanceSnapshot) {
   set(indexToEdit, item.index);
 
-  const convertedFiatValue =
-    get(currencySymbol) === CURRENCY_USD
+  const convertedFiatValue
+    = get(currencySymbol) === CURRENCY_USD
       ? item.usdValue.toFixed()
       : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
@@ -156,25 +158,25 @@ const editClick = (item: IndexedBalanceSnapshot) => {
     ...item,
     amount: item.amount.toFixed(),
     usdValue: convertedFiatValue,
-    location: ''
+    location: '',
   });
 
   setOpenDialog(true);
-};
+}
 
 const existingLocations = computed<string[]>(() =>
   get(value)
     .locationDataSnapshot.filter(item => item.location !== 'total')
-    .map(item => item.location)
+    .map(item => item.location),
 );
 
-const deleteClick = (item: IndexedBalanceSnapshot) => {
+function deleteClick(item: IndexedBalanceSnapshot) {
   set(indexToDelete, item.index);
   set(showDeleteConfirmation, true);
   set(locationToDelete, '');
-};
+}
 
-const add = () => {
+function add() {
   set(indexToEdit, null);
   set(form, {
     timestamp: get(timestamp),
@@ -182,36 +184,35 @@ const add = () => {
     assetIdentifier: '',
     amount: '',
     usdValue: '',
-    location: ''
+    location: '',
   });
   setOpenDialog(true);
-};
+}
 
 const previewLocationBalance = computed<Record<string, BigNumber> | null>(
   () => {
     const formVal = get(form);
 
-    if (!formVal || !formVal.amount || !formVal.usdValue || !formVal.location) {
+    if (!formVal || !formVal.amount || !formVal.usdValue || !formVal.location)
       return null;
-    }
 
     const index = get(indexToEdit);
     const val = get(value);
 
     const locationData = val.locationDataSnapshot.find(
-      item => item.location === formVal.location
+      item => item.location === formVal.location,
     );
 
     const usdValueInBigNumber = bigNumberify(formVal.usdValue);
-    const convertedUsdValue =
-      get(currencySymbol) === CURRENCY_USD
+    const convertedUsdValue
+      = get(currencySymbol) === CURRENCY_USD
         ? usdValueInBigNumber
         : usdValueInBigNumber.dividedBy(get(fiatExchangeRate));
 
     if (!locationData) {
       return {
         before: Zero,
-        after: convertedUsdValue
+        after: convertedUsdValue,
       };
     }
 
@@ -225,15 +226,15 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(
       const isPrevLiability = balancesSnapshot[index].category === 'liability';
       const prevFactor = bigNumberify(isPrevLiability ? -1 : 1);
       usdValueDiff = usdValueDiff.minus(
-        balancesSnapshot[index].usdValue.multipliedBy(prevFactor)
+        balancesSnapshot[index].usdValue.multipliedBy(prevFactor),
       );
     }
 
     return {
       before: locationData.usdValue,
-      after: locationData.usdValue.plus(usdValueDiff)
+      after: locationData.usdValue.plus(usdValueDiff),
     };
-  }
+  },
 );
 
 const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
@@ -241,19 +242,17 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
     const index = get(indexToDelete);
     const location = get(locationToDelete);
 
-    if (index === null || !location) {
+    if (index === null || !location)
       return null;
-    }
 
     const val = get(value);
     const locationData = val.locationDataSnapshot.find(
-      item => item.location === location
+      item => item.location === location,
     );
     const balanceData = val.balancesSnapshot[index];
 
-    if (!locationData || !balanceData) {
+    if (!locationData || !balanceData)
       return null;
-    }
 
     const isCurrentLiability = balanceData.category === 'liability';
     const currentFactor = bigNumberify(isCurrentLiability ? 1 : -1);
@@ -261,55 +260,52 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
 
     return {
       before: locationData.usdValue,
-      after: locationData.usdValue.plus(usdValueDiff)
+      after: locationData.usdValue.plus(usdValueDiff),
     };
-  }
+  },
 );
 
-const updateData = (
-  balancesSnapshot: BalanceSnapshot[],
-  location = '',
-  calculatedBalance: Record<string, BigNumber> | null = null
-) => {
+function updateData(balancesSnapshot: BalanceSnapshot[], location = '', calculatedBalance: Record<string, BigNumber> | null = null) {
   const val = get(value);
   const locationDataSnapshot = [...val.locationDataSnapshot];
 
   if (location) {
     const locationDataIndex = locationDataSnapshot.findIndex(
-      item => item.location === location
+      item => item.location === location,
     );
     if (locationDataIndex > -1) {
-      locationDataSnapshot[locationDataIndex].usdValue =
-        calculatedBalance!.after;
-    } else {
+      locationDataSnapshot[locationDataIndex].usdValue
+        = calculatedBalance!.after;
+    }
+    else {
       locationDataSnapshot.push({
         timestamp: get(timestamp),
         location,
-        usdValue: calculatedBalance!.after
+        usdValue: calculatedBalance!.after,
       });
     }
   }
 
   const assetsValue = balancesSnapshot.map((item: BalanceSnapshot) => {
-    if (item.category === 'asset') {
+    if (item.category === 'asset')
       return item.usdValue;
-    }
+
     return item.usdValue.negated();
   });
 
   const total = bigNumberSum(assetsValue);
 
   const totalDataIndex = locationDataSnapshot.findIndex(
-    item => item.location === 'total'
+    item => item.location === 'total',
   );
 
   locationDataSnapshot[totalDataIndex].usdValue = total;
 
   input({
     balancesSnapshot,
-    locationDataSnapshot
+    locationDataSnapshot,
   });
-};
+}
 
 const {
   openDialog,
@@ -317,22 +313,22 @@ const {
   closeDialog,
   submitting,
   setSubmitFunc,
-  trySubmit
+  trySubmit,
 } = useEditBalancesSnapshotForm();
 
-const save = async () => {
+async function save() {
   const formVal = get(form);
 
-  if (!formVal) {
+  if (!formVal)
     return;
-  }
+
   const index = get(indexToEdit);
   const val = get(value);
   const timestampVal = get(timestamp);
 
   const usdValueInBigNumber = bigNumberify(formVal.usdValue);
-  const convertedUsdValue =
-    get(currencySymbol) === CURRENCY_USD
+  const convertedUsdValue
+    = get(currencySymbol) === CURRENCY_USD
       ? usdValueInBigNumber
       : usdValueInBigNumber.dividedBy(get(fiatExchangeRate));
 
@@ -342,52 +338,50 @@ const save = async () => {
     category: formVal.category,
     assetIdentifier: formVal.assetIdentifier,
     amount: bigNumberify(formVal.amount),
-    usdValue: convertedUsdValue
+    usdValue: convertedUsdValue,
   };
 
-  if (index !== null) {
+  if (index !== null)
     balancesSnapshot[index] = payload;
-  } else {
+  else
     balancesSnapshot.unshift(payload);
-  }
 
   updateData(balancesSnapshot, formVal.location, get(previewLocationBalance));
   clearEditDialog();
-};
+}
 
 setSubmitFunc(save);
 
-const clearEditDialog = () => {
+function clearEditDialog() {
   closeDialog();
   set(indexToEdit, null);
   set(form, null);
-};
+}
 
-const updateForm = (newForm: BalanceSnapshotPayload & { location: string }) => {
+function updateForm(newForm: BalanceSnapshotPayload & { location: string }) {
   set(form, newForm);
-};
+}
 
-const clearDeleteDialog = () => {
+function clearDeleteDialog() {
   set(indexToDelete, null);
   set(showDeleteConfirmation, false);
   set(locationToDelete, '');
-};
+}
 
-const confirmDelete = () => {
+function confirmDelete() {
   const index = get(indexToDelete);
   const val = get(value);
   const location = get(locationToDelete);
 
-  if (index === null) {
+  if (index === null)
     return;
-  }
 
   const balancesSnapshot = [...val.balancesSnapshot];
   balancesSnapshot.splice(index, 1);
 
   updateData(balancesSnapshot, location, get(previewDeleteLocationBalance));
   clearDeleteDialog();
-};
+}
 
 const tableRef = ref<any>(null);
 
@@ -445,7 +439,10 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       </template>
 
       <template #item.usdValue="{ item }">
-        <AmountDisplay :value="item.usdValue" fiat-currency="USD" />
+        <AmountDisplay
+          :value="item.usdValue"
+          fiat-currency="USD"
+        />
       </template>
 
       <template #item.action="{ item }">
@@ -463,20 +460,32 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >
       <div>
-        <div class="text-caption">{{ t('common.total') }}:</div>
+        <div class="text-caption">
+          {{ t('common.total') }}:
+        </div>
         <div class="font-bold text-h6 -mt-1">
-          <AmountDisplay :value="total" fiat-currency="USD" />
+          <AmountDisplay
+            :value="total"
+            fiat-currency="USD"
+          />
         </div>
       </div>
 
       <div class="flex gap-2">
-        <RuiButton variant="text" color="primary" @click="add()">
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="add()"
+        >
           <template #prepend>
             <RuiIcon name="add-circle-line" />
           </template>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </RuiButton>
-        <RuiButton color="primary" @click="updateStep(2)">
+        <RuiButton
+          color="primary"
+          @click="updateStep(2)"
+        >
           {{ t('common.actions.next') }}
           <template #append>
             <RuiIcon name="arrow-right-line" />

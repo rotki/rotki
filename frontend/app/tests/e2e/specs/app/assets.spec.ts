@@ -15,7 +15,7 @@ describe('assets', () => {
 
     cy.intercept({
       method: 'GET',
-      url: '/api/1/assets/ignored'
+      url: '/api/1/assets/ignored',
     }).as('getIgnoredAsset');
 
     cy.wait('@getIgnoredAsset', { timeout: 15000 })
@@ -27,7 +27,7 @@ describe('assets', () => {
     let ignoredAssets = 0;
     before(() => {
       page.visit('asset-manager-managed');
-      page.ignoredAssets().then(ignored => {
+      page.ignoredAssets().then((ignored) => {
         ignoredAssets = Number.parseInt(ignored);
       });
       page.selectShowAll();

@@ -1,19 +1,19 @@
 import { z } from 'zod';
-import {
-  type MatchedKeywordWithBehaviour,
-  type SearchMatcher
+import type {
+  MatchedKeywordWithBehaviour,
+  SearchMatcher,
 } from '@/types/filtering';
 
 enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',
   EVENT_SUBTYPE = 'event_subtype',
-  COUNTERPARTY = 'counterparty'
+  COUNTERPARTY = 'counterparty',
 }
 
 enum AccountingRuleFilterValueKeys {
   EVENT_TYPE = 'eventTypes',
   EVENT_SUBTYPE = 'eventSubtypes',
-  COUNTERPARTY = 'counterparties'
+  COUNTERPARTY = 'counterparties',
 }
 
 export type Matcher = SearchMatcher<
@@ -24,11 +24,11 @@ export type Matcher = SearchMatcher<
 export type Filters =
   MatchedKeywordWithBehaviour<AccountingRuleFilterValueKeys>;
 
-export const useAccountingRuleFilter = () => {
+export function useAccountingRuleFilter() {
   const filters: Ref<Filters> = ref({});
 
-  const { counterparties, historyEventTypes, historyEventSubTypes } =
-    useHistoryEventMappings();
+  const { counterparties, historyEventTypes, historyEventSubTypes }
+    = useHistoryEventMappings();
   const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
@@ -39,7 +39,7 @@ export const useAccountingRuleFilter = () => {
       multiple: true,
       string: true,
       suggestions: () => get(historyEventTypes),
-      validate: (type: string) => !!type
+      validate: (type: string) => !!type,
     },
     {
       key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
@@ -48,7 +48,7 @@ export const useAccountingRuleFilter = () => {
       multiple: true,
       string: true,
       suggestions: () => get(historyEventSubTypes),
-      validate: (type: string) => !!type
+      validate: (type: string) => !!type,
     },
     {
       key: AccountingRuleFilterKeys.COUNTERPARTY,
@@ -57,8 +57,8 @@ export const useAccountingRuleFilter = () => {
       multiple: true,
       string: true,
       suggestions: () => get(counterparties),
-      validate: (protocol: string) => !!protocol
-    }
+      validate: (protocol: string) => !!protocol,
+    },
   ]);
 
   const updateFilter = (newFilters: Filters) => {
@@ -74,13 +74,13 @@ export const useAccountingRuleFilter = () => {
   const RouteFilterSchema = z.object({
     [AccountingRuleFilterValueKeys.COUNTERPARTY]: OptionalMultipleString,
     [AccountingRuleFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
-    [AccountingRuleFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString
+    [AccountingRuleFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
   });
 
   return {
     matchers,
     filters,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

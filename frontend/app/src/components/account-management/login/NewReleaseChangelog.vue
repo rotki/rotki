@@ -6,9 +6,15 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="flex flex-col align-start gap-4 w-full p-6" :class="css.card">
+  <div
+    class="flex flex-col items-start gap-4 w-full p-6"
+    :class="css.card"
+  >
     <div class="bg-white rounded-[0.625rem] p-3">
-      <RuiIcon color="primary" name="checkbox-circle-line" />
+      <RuiIcon
+        color="primary"
+        name="checkbox-circle-line"
+      />
     </div>
     <div class="text-h6 text-rui-text">
       {{ t('welcome.update.title') }}
@@ -17,7 +23,10 @@ const css = useCssModule();
       {{ t('welcome.update.text', { version }) }}
     </div>
 
-    <ExternalLink :url="link" custom>
+    <ExternalLink
+      :url="link"
+      custom
+    >
       <RuiButton color="primary">
         {{ t('welcome.update.learn_more') }}
       </RuiButton>

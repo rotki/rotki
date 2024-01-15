@@ -4,12 +4,12 @@ withDefaults(
     loading?: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
-const { openDialog, submitting, closeDialog, trySubmit } =
-  useHistoryTransactionsForm();
+const { openDialog, submitting, closeDialog, trySubmit }
+  = useHistoryTransactionsForm();
 
 const { t } = useI18n();
 </script>

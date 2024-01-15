@@ -2,7 +2,7 @@
 import {
   TimeFramePeriod,
   TimeFramePersist,
-  type TimeFrameSetting
+  type TimeFrameSetting,
 } from '@rotki/common/lib/settings/graphs';
 import Fragment from '@/components/helper/Fragment';
 
@@ -18,8 +18,8 @@ const emit = defineEmits<{
   (e: 'visible-timeframes-change', timeframes: TimeFrameSetting[]): void;
 }>();
 
-const { message, visibleTimeframes, value, currentSessionTimeframe } =
-  toRefs(props);
+const { message, visibleTimeframes, value, currentSessionTimeframe }
+  = toRefs(props);
 
 const timeframes = Object.values(TimeFramePeriod);
 const { t } = useI18n();
@@ -27,51 +27,52 @@ const premium = usePremium();
 
 const appendedVisibleTimeframes = computed(() => [
   TimeFramePersist.REMEMBER,
-  ...get(visibleTimeframes)
+  ...get(visibleTimeframes),
 ]);
 
 const invisibleTimeframes = computed(() =>
-  timeframes.filter(item => !isTimeframeVisible(item))
+  timeframes.filter(item => !isTimeframeVisible(item)),
 );
 
 const selectableTimeframes = computed(() =>
   timeframes.filter(
-    item => !isTimeframeDisabled(item) && isTimeframeVisible(item)
-  )
+    item => !isTimeframeDisabled(item) && isTimeframeVisible(item),
+  ),
 );
 
 const text = computed<string>(() => {
   const { success, error } = get(message);
-  return success ? success : error;
+  return success || error;
 });
 
-const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean =>
-  get(visibleTimeframes).includes(timeframe);
+function isTimeframeVisible(timeframe: TimeFramePeriod): boolean {
+  return get(visibleTimeframes).includes(timeframe);
+}
 
-const isTimeframesToggleable = (timeframe: TimeFrameSetting) =>
-  timeframe !== TimeFramePersist.REMEMBER;
+function isTimeframesToggleable(timeframe: TimeFrameSetting) {
+  return timeframe !== TimeFramePersist.REMEMBER;
+}
 
-const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
-  isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+function worksWithoutPremium(period: TimeFrameSetting): boolean {
+  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+}
 
-const isTimeframeDisabled = (timeframe: TimeFrameSetting) =>
-  !get(premium) && !worksWithoutPremium(timeframe);
+function isTimeframeDisabled(timeframe: TimeFrameSetting) {
+  return !get(premium) && !worksWithoutPremium(timeframe);
+}
 
-const timeframeChange = (timeframe: TimeFrameSetting) => {
+function timeframeChange(timeframe: TimeFrameSetting) {
   emit('timeframe-change', timeframe);
-};
+}
 
-const visibleTimeframesChange = (timeframes: TimeFrameSetting[]) => {
+function visibleTimeframesChange(timeframes: TimeFrameSetting[]) {
   emit('visible-timeframes-change', timeframes);
-};
+}
 
-const updateVisibleTimeframes = async (
-  newTimeFrames: TimeFramePeriod[],
-  replaceCurrentSessionTimeframe = false
-) => {
+async function updateVisibleTimeframes(newTimeFrames: TimeFramePeriod[], replaceCurrentSessionTimeframe = false) {
   newTimeFrames.sort(
     (a: TimeFramePeriod, b: TimeFramePeriod) =>
-      timeframes.indexOf(a) - timeframes.indexOf(b)
+      timeframes.indexOf(a) - timeframes.indexOf(b),
   );
 
   if (replaceCurrentSessionTimeframe) {
@@ -83,21 +84,21 @@ const updateVisibleTimeframes = async (
   }
 
   visibleTimeframesChange(newTimeFrames);
-};
+}
 
-const addVisibleTimeframe = async (timeframe: TimeFramePeriod) => {
+async function addVisibleTimeframe(timeframe: TimeFramePeriod) {
   await updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
-};
+}
 
-const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
-  if (timeframe === get(value)) {
+async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
+  if (timeframe === get(value))
     timeframeChange(TimeFramePersist.REMEMBER);
-  }
+
   await updateVisibleTimeframes(
     get(visibleTimeframes).filter(item => item !== timeframe),
-    timeframe === get(currentSessionTimeframe)
+    timeframe === get(currentSessionTimeframe),
   );
-};
+}
 </script>
 
 <template>
@@ -115,7 +116,10 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
         {{ t('timeframe_settings.visible_timeframes') }}
       </div>
 
-      <div class="flex items-center gap-3" :class="{ 'mt-2': premium }">
+      <div
+        class="flex items-center gap-3"
+        :class="{ 'mt-2': premium }"
+      >
         <PremiumLock
           v-if="!premium"
           :tooltip="t('overall_balances.premium_hint')"
@@ -127,9 +131,9 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
           size="sm"
           clickable
           :closeable="
-            isTimeframesToggleable(timeframe) &&
-            !isTimeframeDisabled(timeframe) &&
-            selectableTimeframes.length > 1
+            isTimeframesToggleable(timeframe)
+              && !isTimeframeDisabled(timeframe)
+              && selectableTimeframes.length > 1
           "
           :disabled="isTimeframeDisabled(timeframe)"
           @click:close="removeVisibleTimeframe(timeframe)"
@@ -166,11 +170,13 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
     <div
       :class="{
         'text-rui-success': !!message.success,
-        'text-rui-error': !!message.error
+        'text-rui-error': !!message.error,
       }"
       class="text-caption pt-1 pl-3 min-h-[1.5rem]"
     >
-      <div v-if="text">{{ text }}</div>
+      <div v-if="text">
+        {{ text }}
+      </div>
     </div>
   </Fragment>
 </template>

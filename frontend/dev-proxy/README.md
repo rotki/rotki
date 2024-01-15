@@ -22,12 +22,11 @@ You can configure the proxy, with the following environment variables:
 - `BACKEND` The url of the real backend. (Default: `http://localhost:4242`)
 - `PREMIUM_COMPONENT_DIR` The premium components directory. (Optional)
 
-> The premium components directory is needed only if you need to test the premium components themselves. 
+> The premium components directory is needed only if you need to test the premium components themselves.
 > Assuming that the premium-components repo is at the same parent folder as the application repository one would
 > have to add the following in the `.env` file.
-> 
+>
 > `PREMIUM_COMPONENT_DIR=/home/user/path/premium-components/packages/premium-components`
-
 
 You can provide this configuration in a `.env` file in the `dev-proxy` directory.
 
@@ -77,10 +76,10 @@ npm run build
 
 ## Mocking async queries
 
-Look into the `async-mock.example.json` and create an `async-mock.json` file in the same 
+Look into the `async-mock.example.json` and create an `async-mock.json` file in the same
 directory. Follow a similar structure as the example.
 
-```json 
+```json
 {
   "/api/1/assets/updates": {
     "GET": [
@@ -108,5 +107,5 @@ verb. The request verb can either be an object or an array.
 
 If an object is used, this object will be returned every time you query the same endpoint/verb combination.
 If an array is used instead for each request the next index available will be served. e.g. The first request
-will serve the item at index `0`, the second the item and index `1` etc. If the end of the available responses 
+will serve the item at index `0`, the second the item and index `1` etc. If the end of the available responses
 is reached the last item will keep being returned for any consequent requests.

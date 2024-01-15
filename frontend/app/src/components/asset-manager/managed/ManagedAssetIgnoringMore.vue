@@ -5,8 +5,8 @@ const props = withDefaults(
     isSpam?: boolean;
   }>(),
   {
-    isSpam: false
-  }
+    isSpam: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -21,13 +21,13 @@ const { t } = useI18n();
 const { isAssetWhitelisted } = useWhitelistedAssetsStore();
 const isWhitelisted = isAssetWhitelisted(identifier);
 
-const toggleWhitelist = () => {
+function toggleWhitelist() {
   emit('toggle-whitelist');
-};
+}
 
-const toggleSpam = () => {
+function toggleSpam() {
   emit('toggle-spam');
-};
+}
 </script>
 
 <template>
@@ -40,12 +40,23 @@ const toggleSpam = () => {
       transition="slide-y-transition"
     >
       <template #activator="{ on }">
-        <RuiButton class="!p-1" icon variant="text" v-on="on">
-          <RuiIcon name="arrow-down-s-line" size="20" />
+        <RuiButton
+          class="!p-1"
+          icon
+          variant="text"
+          v-on="on"
+        >
+          <RuiIcon
+            name="arrow-down-s-line"
+            size="20"
+          />
         </RuiButton>
       </template>
       <div class="py-2 text-rui-text-secondary">
-        <RuiButton variant="list" @click="toggleWhitelist()">
+        <RuiButton
+          variant="list"
+          @click="toggleWhitelist()"
+        >
           <template #prepend>
             <RuiCheckbox
               color="primary"
@@ -56,7 +67,10 @@ const toggleSpam = () => {
           </template>
           {{ t('ignore.whitelist.action.add') }}
         </RuiButton>
-        <RuiButton variant="list" @click="toggleSpam()">
+        <RuiButton
+          variant="list"
+          @click="toggleSpam()"
+        >
           <template #prepend>
             <RuiCheckbox
               color="primary"

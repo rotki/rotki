@@ -2,20 +2,20 @@
 import {
   NotificationCategory,
   type NotificationPayload,
-  Severity
+  Severity,
 } from '@rotki/common/lib/messages';
-import { type Ref } from 'vue';
-import { type Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type DataTableColumn,
-  type DataTableOptions
+import type { Ref } from 'vue';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type {
+  DataTableColumn,
+  DataTableOptions,
 } from '@rotki/ui-library-compat';
-import {
-  type AddressBookEntry,
-  type AddressBookLocation
+import type {
+  AddressBookEntry,
+  AddressBookLocation,
 } from '@/types/eth-names';
-import { type Collection } from '@/types/collection';
-import { type TablePagination } from '@/types/pagination';
+import type { Collection } from '@/types/collection';
+import type { TablePagination } from '@/types/pagination';
 
 const props = defineProps<{
   collection: Collection<AddressBookEntry>;
@@ -33,41 +33,43 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const setPage = (page: number) => {
+function setPage(page: number) {
   emit('update:page', page);
-};
+}
 
-const updatePagination = (pagination: DataTableOptions) =>
-  emit('update:options', pagination);
+function updatePagination(pagination: DataTableOptions) {
+  return emit('update:options', pagination);
+}
 
-const refresh = () => {
+function refresh() {
   emit('refresh');
-};
+}
 
-const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
+function addressBookDeletion(location: Ref<AddressBookLocation>) {
   const { show } = useConfirmStore();
   const { notify } = useNotificationsStore();
-  const { deleteAddressBook: deleteAddressBookCaller } =
-    useAddressesNamesStore();
+  const { deleteAddressBook: deleteAddressBookCaller }
+    = useAddressesNamesStore();
 
   const deleteAddressBook = async (
     address: string,
-    blockchain: Blockchain | null
+    blockchain: Blockchain | null,
   ) => {
     try {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
       refresh();
-    } catch (e: any) {
+    }
+    catch (error: any) {
       const notification: NotificationPayload = {
         title: t('address_book.actions.delete.error.title'),
         message: t('address_book.actions.delete.error.description', {
           chain: blockchain || t('common.multi_chain'),
           address,
-          message: e.message
+          message: error.message,
         }).toString(),
         category: NotificationCategory.DEFAULT,
         display: true,
-        severity: Severity.ERROR
+        severity: Severity.ERROR,
       };
       notify(notification);
     }
@@ -79,40 +81,40 @@ const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
         title: t('address_book.actions.delete.dialog.title'),
         message: t('address_book.actions.delete.dialog.message', {
           chain: item.blockchain || t('common.multi_chain'),
-          address: item.address
-        })
+          address: item.address,
+        }),
       },
-      () => deleteAddressBook(item.address, item.blockchain)
+      () => deleteAddressBook(item.address, item.blockchain),
     );
   };
 
   return {
-    showDeleteConfirmation
+    showDeleteConfirmation,
   };
-};
+}
 
 const { location } = toRefs(props);
 
-const edit = (item: AddressBookEntry) => {
+function edit(item: AddressBookEntry) {
   emit('edit', item);
-};
+}
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.address').toString(),
     key: 'address',
-    sortable: false
+    sortable: false,
   },
   {
     label: t('common.name').toString(),
     key: 'name',
-    sortable: false
+    sortable: false,
   },
   {
     label: '',
     key: 'actions',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
 const { showDeleteConfirmation } = addressBookDeletion(location);
@@ -120,7 +122,10 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
 
 <template>
   <div>
-    <CollectionHandler :collection="collection" @set-page="setPage($event)">
+    <CollectionHandler
+      :collection="collection"
+      @set-page="setPage($event)"
+    >
       <template #default="{ data, itemLength }">
         <RuiDataTable
           dense
@@ -131,7 +136,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
           :pagination="{
             limit: options.itemsPerPage,
             page: options.page,
-            total: itemLength
+            total: itemLength,
           }"
           :pagination-modifiers="{ external: true }"
           row-attr=""
@@ -143,7 +148,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             <AccountDisplay
               :account="{
                 address: row.address,
-                chain: row.blockchain
+                chain: row.blockchain,
               }"
               :use-alias-name="false"
               :truncate="false"

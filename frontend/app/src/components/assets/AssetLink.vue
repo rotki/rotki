@@ -5,8 +5,8 @@ const props = withDefaults(
     link?: boolean;
   }>(),
   {
-    link: false
-  }
+    link: false,
+  },
 );
 
 const { asset } = toRefs(props);
@@ -18,7 +18,12 @@ const { navigateToDetails } = useAssetPageNavigation(asset);
 
 <template>
   <div class="flex flex-row gap-1">
-    <RuiButton size="sm" icon variant="text" @click="navigateToDetails()">
+    <RuiButton
+      size="sm"
+      icon
+      variant="text"
+      @click="navigateToDetails()"
+    >
       <slot />
     </RuiButton>
     <HashLink

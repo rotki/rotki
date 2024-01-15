@@ -1,5 +1,5 @@
 import { defaultAccountingSettings } from '@/data/factories';
-import { type AccountingSettings } from '@/types/user';
+import type { AccountingSettings } from '@/types/user';
 
 export const useAccountingSettingsStore = defineStore(
   'settings/accounting',
@@ -10,18 +10,18 @@ export const useAccountingSettingsStore = defineStore(
     const pnlCsvWithFormulas = computed(() => settings.pnlCsvWithFormulas);
     const includeCrypto2crypto = computed(() => settings.includeCrypto2crypto);
     const includeFeesInCostBasis = computed(
-      () => settings.includeFeesInCostBasis
+      () => settings.includeFeesInCostBasis,
     );
     const includeGasCosts = computed(() => settings.includeGasCosts);
     const taxfreeAfterPeriod = computed(() => settings.taxfreeAfterPeriod);
     const accountForAssetsMovements = computed(
-      () => settings.accountForAssetsMovements
+      () => settings.accountForAssetsMovements,
     );
     const calculatePastCostBasis = computed(
-      () => settings.calculatePastCostBasis
+      () => settings.calculatePastCostBasis,
     );
     const ethStakingTaxableAfterWithdrawalEnabled = computed(
-      () => settings.ethStakingTaxableAfterWithdrawalEnabled
+      () => settings.ethStakingTaxableAfterWithdrawalEnabled,
     );
     const costBasisMethod = computed(() => settings.costBasisMethod);
 
@@ -42,13 +42,13 @@ export const useAccountingSettingsStore = defineStore(
       costBasisMethod,
       // return settings on development for state persistence
       ...(checkIfDevelopment() ? { settings } : {}),
-      update
+      update,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useAccountingSettingsStore, import.meta.hot)
+    acceptHMRUpdate(useAccountingSettingsStore, import.meta.hot),
   );
 }

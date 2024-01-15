@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ const props = withDefaults(
     asset?: string;
   }>(),
   {
-    asset: ''
-  }
+    asset: '',
+  },
 );
 
 const price = ref<string>('');
@@ -25,19 +25,17 @@ const {
   fetchPrices,
   toSelectedCurrency,
   assetPrice,
-  isAssetPriceInCurrentCurrency
+  isAssetPriceInCurrentCurrency,
 } = useBalancePricesStore();
 const { addLatestPrice } = useAssetPricesApi();
 
 const { fetchLatestPrices } = useAssetPricesApi();
 
-const getAssetPriceInFiat = async (
-  asset: string
-): Promise<BigNumber | null> => {
+async function getAssetPriceInFiat(asset: string): Promise<BigNumber | null> {
   set(fetchingPrice, true);
   await fetchPrices({
     ignoreCache: true,
-    selectedAssets: [asset]
+    selectedAssets: [asset],
   });
   set(fetchingPrice, false);
 
@@ -51,17 +49,17 @@ const getAssetPriceInFiat = async (
   }
 
   return null;
-};
+}
 
-const setPriceAndPriceAsset = (newPrice = '', newPriceAsset = '') => {
+function setPriceAndPriceAsset(newPrice = '', newPriceAsset = '') {
   set(price, newPrice);
   set(priceAsset, newPriceAsset);
   set(fetchedPrice, newPrice);
   set(isCustomPrice, !newPrice || !newPriceAsset);
   set(fiatPriceHint, null);
-};
+}
 
-const searchAssetPrice = async () => {
+async function searchAssetPrice() {
   const assetProp = get(asset);
 
   if (!assetProp) {
@@ -81,9 +79,8 @@ const searchAssetPrice = async () => {
 
     if (mainCurrency !== newPriceAsset) {
       const priceInFiat = await getAssetPriceInFiat(assetProp);
-      if (priceInFiat) {
+      if (priceInFiat)
         set(fiatPriceHint, priceInFiat);
-      }
     }
 
     return;
@@ -101,24 +98,25 @@ const searchAssetPrice = async () => {
   }
 
   setPriceAndPriceAsset();
-};
+}
 
-const savePrice = async (asset: string) => {
+async function savePrice(asset: string) {
   if (get(isCustomPrice) && get(price) && get(priceAsset)) {
     await addLatestPrice({
       fromAsset: asset,
       toAsset: get(priceAsset),
-      price: get(price)
+      price: get(price),
     });
   }
-};
+}
 
-watch(isCustomPrice, isCustomPrice => {
+watch(isCustomPrice, (isCustomPrice) => {
   if (isCustomPrice) {
     set(price, '');
     set(priceAsset, '');
     set(fiatPriceHint, null);
-  } else {
+  }
+  else {
     searchAssetPrice();
   }
 });
@@ -134,7 +132,7 @@ watch(asset, () => {
 const { t } = useI18n();
 
 defineExpose({
-  savePrice
+  savePrice,
 });
 </script>
 
@@ -163,10 +161,13 @@ defineExpose({
     >
       {{
         t('common.price_in_symbol', {
-          symbol: currencySymbol
+          symbol: currencySymbol,
         })
       }}:
-      <AmountDisplay :value="fiatPriceHint" :fiat-currency="currencySymbol" />
+      <AmountDisplay
+        :value="fiatPriceHint"
+        :fiat-currency="currencySymbol"
+      />
     </div>
 
     <RuiCheckbox

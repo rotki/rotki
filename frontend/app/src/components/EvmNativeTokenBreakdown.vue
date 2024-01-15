@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common/lib';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
+import type { BigNumber } from '@rotki/common/lib';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -17,8 +17,8 @@ const props = withDefaults(
   {
     blockchainOnly: false,
     showPercentage: false,
-    total: null
-  }
+    total: null,
+  },
 );
 
 const { t } = useI18n();
@@ -41,7 +41,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
 const tableHeaders = computed<DataTableColumn[]>(() => {
@@ -52,7 +52,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       align: 'center',
       class: 'text-no-wrap',
       cellClass: 'py-2',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('common.amount'),
@@ -60,17 +60,17 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       align: 'end',
       class: 'w-full',
       cellClass: 'py-2',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD
+        symbol: get(currencySymbol) ?? CURRENCY_USD,
       }),
       key: 'usdValue',
       align: 'end',
       cellClass: 'py-2',
-      sortable: true
-    }
+      sortable: true,
+    },
   ];
 
   if (get(showPercentage)) {
@@ -79,20 +79,20 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'percentage',
       align: 'end',
       class: 'text-no-wrap',
-      cellClass: 'py-2'
+      cellClass: 'py-2',
     });
   }
 
   return headers;
 });
 
-const percentage = (value: BigNumber) => {
+function percentage(value: BigNumber) {
   const totalVal = get(total);
-  if (!totalVal) {
+  if (!totalVal)
     return '';
-  }
+
   return calculatePercentage(value, totalVal);
-};
+}
 </script>
 
 <template>

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
-import { type Message } from '@rotki/common/lib/messages';
-import { type SkippedHistoryEventsSummary } from '@/types/history/events';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { Message } from '@rotki/common/lib/messages';
+import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 
 const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
-const { state: skippedEvents, execute } =
-  useAsyncState<SkippedHistoryEventsSummary>(
+const { state: skippedEvents, execute }
+  = useAsyncState<SkippedHistoryEventsSummary>(
     getSkippedEventsSummary,
     {
       locations: {},
-      total: 0
+      total: 0,
     },
     {
       immediate: true,
       resetOnExecute: false,
-      delay: 0
-    }
+      delay: 0,
+    },
   );
 
 onMounted(() => {
@@ -30,40 +30,40 @@ const headers: DataTableColumn[] = [
     label: t('common.location'),
     key: 'location',
     align: 'center',
-    cellClass: 'py-3'
+    cellClass: 'py-3',
   },
   {
     label: t('transactions.events.skipped.headers.number'),
     key: 'number',
     align: 'end',
     cellClass: '!pr-12',
-    class: '!pr-12'
-  }
+    class: '!pr-12',
+  },
 ];
 
 const locationsData = computed(() =>
   Object.entries(get(skippedEvents).locations).map(([location, number]) => ({
     location,
-    number
-  }))
+    number,
+  })),
 );
 
 const { appSession, openDirectory } = useInterop();
 
-const { downloadSkippedEventsCSV, exportSkippedEventsCSV } =
-  useSkippedHistoryEventsApi();
+const { downloadSkippedEventsCSV, exportSkippedEventsCSV }
+  = useSkippedHistoryEventsApi();
 
 const { setMessage } = useMessageStore();
 
-const showExportCSVError = (description: string) => {
+function showExportCSVError(description: string) {
   setMessage({
     title: t('transactions.events.skipped.csv_export_error').toString(),
     description,
-    success: false
+    success: false,
   });
-};
+}
 
-const createCsv = async (path: string): Promise<void> => {
+async function createCsv(path: string): Promise<void> {
   let message: Message;
   try {
     const success = await exportSkippedEventsCSV(path);
@@ -71,52 +71,56 @@ const createCsv = async (path: string): Promise<void> => {
       title: t('actions.online_events.skipped.csv_export.title').toString(),
       description: success
         ? t(
-            'actions.online_events.skipped.csv_export.message.success'
-          ).toString()
+          'actions.online_events.skipped.csv_export.message.success',
+        ).toString()
         : t(
-            'actions.online_events.skipped.csv_export.message.failure'
-          ).toString(),
-      success
+          'actions.online_events.skipped.csv_export.message.failure',
+        ).toString(),
+      success,
     };
-  } catch (e: any) {
+  }
+  catch (error: any) {
     message = {
       title: t('actions.online_events.skipped.csv_export.title').toString(),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
   }
   setMessage(message);
-};
+}
 
-const exportCSV = async () => {
+async function exportCSV() {
   try {
     if (appSession) {
       const directory = await openDirectory(
-        t('common.select_directory').toString()
+        t('common.select_directory').toString(),
       );
-      if (!directory) {
+      if (!directory)
         return;
-      }
+
       await createCsv(directory);
-    } else {
+    }
+    else {
       const result = await downloadSkippedEventsCSV();
       if (!result.success) {
         showExportCSVError(
-          result.message ??
-            t('transactions.events.skipped.download_failed').toString()
+          result.message
+          ?? t('transactions.events.skipped.download_failed').toString(),
         );
       }
     }
-  } catch (e: any) {
-    showExportCSVError(e.message);
   }
-};
+  catch (error: any) {
+    showExportCSVError(error.message);
+  }
+}
 
-const { reProcessSkippedEvents: reProcessSkippedEventsCaller } =
-  useSkippedHistoryEventsApi();
+const { reProcessSkippedEvents: reProcessSkippedEventsCaller }
+  = useSkippedHistoryEventsApi();
 
 const loading: Ref<boolean> = ref(false);
-const reProcessSkippedEvents = async () => {
+
+async function reProcessSkippedEvents() {
   set(loading, true);
   let message: Message;
   try {
@@ -125,36 +129,39 @@ const reProcessSkippedEvents = async () => {
       message = {
         title: t('transactions.events.skipped.reprocess.failed.title'),
         description: t(
-          'transactions.events.skipped.reprocess.failed.no_processed_events'
+          'transactions.events.skipped.reprocess.failed.no_processed_events',
         ),
-        success: false
+        success: false,
       };
-    } else {
+    }
+    else {
       message = {
         title: t('transactions.events.skipped.reprocess.success.title'),
         description:
           successful < total
             ? t('transactions.events.skipped.reprocess.success.some', {
-                total,
-                successful
-              })
+              total,
+              successful,
+            })
             : t('transactions.events.skipped.reprocess.success.all'),
-        success: true
+        success: true,
       };
     }
-  } catch (e: any) {
-    logger.error(e);
+  }
+  catch (error: any) {
+    logger.error(error);
     message = {
       title: t('transactions.events.skipped.reprocess.failed.title').toString(),
-      description: e.message,
-      success: false
+      description: error.message,
+      success: false,
     };
-  } finally {
+  }
+  finally {
     set(loading, false);
   }
 
   setMessage(message);
-};
+}
 </script>
 
 <template>
@@ -174,7 +181,7 @@ const reProcessSkippedEvents = async () => {
         striped
         outlined
         :empty="{
-          description: t('transactions.events.skipped.no_skipped_events')
+          description: t('transactions.events.skipped.no_skipped_events'),
         }"
       >
         <template #item.location="{ row }">
@@ -186,13 +193,22 @@ const reProcessSkippedEvents = async () => {
         <template #tfoot>
           <tr>
             <th>{{ t('common.total') }}</th>
-            <td class="text-end pr-12 py-2">{{ skippedEvents.total }}</td>
+            <td class="text-end pr-12 py-2">
+              {{ skippedEvents.total }}
+            </td>
           </tr>
         </template>
       </RuiDataTable>
 
-      <div v-if="skippedEvents.total > 0" class="flex gap-3 mt-6">
-        <RuiButton variant="outlined" color="primary" @click="exportCSV()">
+      <div
+        v-if="skippedEvents.total > 0"
+        class="flex gap-3 mt-6"
+      >
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          @click="exportCSV()"
+        >
           <template #prepend>
             <RuiIcon name="file-download-line" />
           </template>

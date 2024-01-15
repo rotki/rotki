@@ -12,25 +12,25 @@ const props = withDefaults(
     location?: 'uniswap_v2' | 'uniswap_v3' | 'balancer' | 'sushiswap';
   }>(),
   {
-    location: undefined
-  }
+    location: undefined,
+  },
 );
 
 const imageSize = '64px';
 
 const pages = {
   uniswap_v2: defineAsyncComponent(
-    () => import('@/pages/defi/deposits/liquidity/uniswap_v2/index.vue')
+    () => import('@/pages/defi/deposits/liquidity/uniswap_v2/index.vue'),
   ),
   uniswap_v3: defineAsyncComponent(
-    () => import('@/pages/defi/deposits/liquidity/uniswap_v3/index.vue')
+    () => import('@/pages/defi/deposits/liquidity/uniswap_v3/index.vue'),
   ),
   balancer: defineAsyncComponent(
-    () => import('@/pages/defi/deposits/liquidity/balancer/index.vue')
+    () => import('@/pages/defi/deposits/liquidity/balancer/index.vue'),
   ),
   sushiswap: defineAsyncComponent(
-    () => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')
-  )
+    () => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue'),
+  ),
 };
 
 const { location } = toRefs(props);
@@ -41,30 +41,30 @@ const liquidities: ComputedRef<LiquidityPageInfo[]> = computed(() => [
   {
     id: 'uniswap_v2',
     image: './assets/images/protocols/uniswap.svg',
-    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
+    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2'),
   },
   {
     id: 'uniswap_v3',
     image: './assets/images/protocols/uniswap.svg',
-    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
+    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3'),
   },
   {
     id: 'balancer',
     image: './assets/images/protocols/balancer.svg',
-    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
+    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer'),
   },
   {
     id: 'sushiswap',
     image: './assets/images/protocols/sushiswap.svg',
-    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
-  }
+    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap'),
+  },
 ]);
 
 const router = useRouter();
 
 const lastLocation = useLocalStorage(
   'rotki.staking.last_liquidity_provider',
-  ''
+  '',
 );
 
 const page = computed(() => {
@@ -72,19 +72,18 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-const updateLocation = async (location: string) => {
-  if (location) {
+async function updateLocation(location: string) {
+  if (location)
     set(lastLocation, location);
-  }
+
   await router.push(
-    Routes.DEFI_DEPOSITS_LIQUIDITY.replace(':location*', location)
+    Routes.DEFI_DEPOSITS_LIQUIDITY.replace(':location*', location),
   );
-};
+}
 
 onBeforeMount(async () => {
-  if (get(lastLocation)) {
+  if (get(lastLocation))
     await updateLocation(get(lastLocation));
-  }
 });
 </script>
 
@@ -100,9 +99,19 @@ onBeforeMount(async () => {
         item-value="id"
         @change="updateLocation($event)"
       >
-        <template v-for="slot in ['item', 'selection']" #[slot]="data">
-          <div v-if="data.item" :key="slot" class="flex items-center gap-2">
-            <AdaptiveWrapper width="24" height="24">
+        <template
+          v-for="slot in ['item', 'selection']"
+          #[slot]="data"
+        >
+          <div
+            v-if="data.item"
+            :key="slot"
+            class="flex items-center gap-2"
+          >
+            <AdaptiveWrapper
+              width="24"
+              height="24"
+            >
               <AppImage
                 width="1.5"
                 contain
@@ -116,14 +125,20 @@ onBeforeMount(async () => {
       </VSelect>
     </RuiCard>
 
-    <div v-if="page" class="pt-8">
+    <div
+      v-if="page"
+      class="pt-8"
+    >
       <Component :is="page" />
     </div>
     <div v-else>
       <div
         class="flex flex-row items-center justify-center justify-md-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
       >
-        <RuiIcon class="shrink-0" name="corner-left-up-line" />
+        <RuiIcon
+          class="shrink-0"
+          name="corner-left-up-line"
+        />
         <div class="pt-3">
           {{ t('staking_page.dropdown_hint') }}
         </div>
@@ -144,11 +159,15 @@ onBeforeMount(async () => {
                   :to="
                     Routes.DEFI_DEPOSITS_LIQUIDITY.replace(
                       ':location*',
-                      item.id
+                      item.id,
                     )
                   "
                 >
-                  <AppImage :size="imageSize" contain :src="item.image" />
+                  <AppImage
+                    :size="imageSize"
+                    contain
+                    :src="item.image"
+                  />
                 </InternalLink>
               </template>
               {{ item.name }}

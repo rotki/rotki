@@ -2,9 +2,9 @@
 const { t } = useI18n();
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 
-const show = () => {
+function show() {
   set(showAbout, true);
-};
+}
 </script>
 
 <template>
@@ -13,7 +13,13 @@ const show = () => {
     :popper="{ placement: 'top', offsetDistance: 0 }"
   >
     <template #activator>
-      <RuiButton variant="text" color="primary" icon rounded @click="show()">
+      <RuiButton
+        variant="text"
+        color="primary"
+        icon
+        rounded
+        @click="show()"
+      >
         <RuiIcon name="information-line" />
       </RuiButton>
     </template>

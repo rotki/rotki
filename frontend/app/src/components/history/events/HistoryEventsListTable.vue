@@ -2,17 +2,17 @@
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { objectPick } from '@vueuse/shared';
 import Fragment from '@/components/helper/Fragment';
-import { type HistoryEventEntry } from '@/types/history/events';
 import {
   isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
-  isEvmEvent
+  isEvmEvent,
 } from '@/utils/history/events';
+import type { HistoryEventEntry } from '@/types/history/events';
 
-type DeleteEvent = {
+interface DeleteEvent {
   canDelete: boolean;
   item: HistoryEventEntry;
-};
+}
 
 const props = withDefaults(
   defineProps<{
@@ -22,54 +22,56 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-    blockNumber: undefined
-  }
+    blockNumber: undefined,
+  },
 );
 
 const emit = defineEmits<{
-  (e: 'edit:event', data: HistoryEventEntry): void;
-  (e: 'delete:event', data: DeleteEvent): void;
+  (e: 'edit-event', data: HistoryEventEntry): void;
+  (e: 'delete-event', data: DeleteEvent): void;
   (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
 }>();
 
 const { t } = useI18n();
 const { getChain } = useSupportedChains();
-const isNoTxHash = (item: HistoryEventEntry) =>
-  item.entryType === HistoryEventEntryType.EVM_EVENT &&
-  ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset') ||
-    (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply') ||
-    item.counterparty === 'safe-multisig');
 
-const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
-const deleteEvent = (item: HistoryEventEntry) =>
-  emit('delete:event', {
+function isNoTxHash(item: HistoryEventEntry) {
+  return item.entryType === HistoryEventEntryType.EVM_EVENT
+    && ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset')
+    || (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply')
+    || item.counterparty === 'safe-multisig');
+}
+
+const editEvent = (item: HistoryEventEntry) => emit('edit-event', item);
+
+function deleteEvent(item: HistoryEventEntry) {
+  return emit('delete-event', {
     item,
-    canDelete: isEvmEvent(item) ? props.events.length > 1 : true
+    canDelete: isEvmEvent(item) ? props.events.length > 1 : true,
   });
+}
 
-const getEventNoteAttrs = (event: HistoryEventEntry) => {
+function getEventNoteAttrs(event: HistoryEventEntry) {
   const data: {
     validatorIndex?: number;
     blockNumber?: number;
   } = {};
 
-  if ('validatorIndex' in event) {
+  if ('validatorIndex' in event)
     data.validatorIndex = event.validatorIndex;
-  }
 
-  if ('blockNumber' in event) {
+  if ('blockNumber' in event)
     data.blockNumber = event.blockNumber;
-  }
 
   // todo: validate optional or nullable state of schema
   const { notes, asset } = objectPick(event, ['notes', 'asset']);
 
   return {
-    notes: notes ? notes : undefined,
+    notes: notes || undefined,
     asset,
-    ...data
+    ...data,
   };
-};
+}
 </script>
 
 <template>
@@ -80,7 +82,7 @@ const getEventNoteAttrs = (event: HistoryEventEntry) => {
         :key="index"
         class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-4 items-center"
         :class="{
-          'border-b border-default': index < events.length - 1
+          'border-b border-default': index < events.length - 1,
         }"
       >
         <HistoryEventType
@@ -88,7 +90,10 @@ const getEventNoteAttrs = (event: HistoryEventEntry) => {
           :chain="getChain(item.location)"
           class="md:col-span-2 lg:col-span-6"
         />
-        <HistoryEventAsset :event="item" class="md:col-span-2 lg:col-span-4" />
+        <HistoryEventAsset
+          :event="item"
+          class="md:col-span-2 lg:col-span-4"
+        />
         <HistoryEventNote
           v-bind="getEventNoteAttrs(item)"
           :amount="item.balance.amount"
@@ -117,7 +122,10 @@ const getEventNoteAttrs = (event: HistoryEventEntry) => {
                 icon
                 @click="emit('show:missing-rule-action', item)"
               >
-                <RuiIcon size="16" name="information-line" />
+                <RuiIcon
+                  size="16"
+                  name="information-line"
+                />
               </RuiButton>
             </template>
             {{ t('actions.history_events.missing_rule.title') }}

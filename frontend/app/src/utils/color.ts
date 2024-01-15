@@ -1,11 +1,9 @@
-export const invertColor = (color: string, bw = true): string => {
-  if (color.indexOf('#') === 0) {
+export function invertColor(color: string, bw = true): string {
+  if (color.indexOf('#') === 0)
     color = color.slice(1);
-  }
 
-  if (color.length === 3) {
+  if (color.length === 3)
     color = color[0] + color[0] + color[1] + color[1] + color[2] + color[2];
-  }
 
   assert(color.length === 6, `Invalid color: ${color}`);
 
@@ -13,19 +11,19 @@ export const invertColor = (color: string, bw = true): string => {
   const g = Number.parseInt(color.slice(2, 4), 16);
   const b = Number.parseInt(color.slice(4, 6), 16);
 
-  if (bw) {
+  if (bw)
     return r * 0.299 + g * 0.587 + b * 0.114 > 186 ? '000000' : 'FFFFFF';
-  }
 
   const rInv = (255 - r).toString(16).padStart(2, '0');
   const gInv = (255 - g).toString(16).padStart(2, '0');
   const bInv = (255 - b).toString(16).padStart(2, '0');
 
   return `${rInv}${gInv}${bInv}`;
-};
+}
 
-const randomInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function toHex(value: number): string {
   return Math.round(value * 255)
@@ -39,23 +37,24 @@ function hslToRgb(h: number, s: number, l: number): string {
 
   if (s === 0) {
     r = g = b = l; // achromatic
-  } else {
+  }
+  else {
     const hue2rgb = function hue2rgb(p: number, q: number, t: number): number {
-      if (t < 0) {
+      if (t < 0)
         t += 1;
-      }
-      if (t > 1) {
+
+      if (t > 1)
         t -= 1;
-      }
-      if (t < 1 / 6) {
+
+      if (t < 1 / 6)
         return p + (q - p) * 6 * t;
-      }
-      if (t < 1 / 2) {
+
+      if (t < 1 / 2)
         return q;
-      }
-      if (t < 2 / 3) {
+
+      if (t < 2 / 3)
         return p + (q - p) * (2 / 3 - t) * 6;
-      }
+
       return p;
     };
 
@@ -69,14 +68,14 @@ function hslToRgb(h: number, s: number, l: number): string {
   return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-export const randomColor = (): string => {
+export function randomColor(): string {
   const h = randomInt(0, 360);
   const s = randomInt(42, 98);
   const l = randomInt(40, 90);
   return hslToRgb((1 / 360) * h, s / 100, l / 100);
-};
+}
 
-export const hexToRgbPoints = (hex: string): [number, number, number] => {
+export function hexToRgbPoints(hex: string): [number, number, number] {
   // Remove the '#' symbol if present
   hex = hex.replace('#', '');
 
@@ -86,4 +85,4 @@ export const hexToRgbPoints = (hex: string): [number, number, number] => {
   const b = parseInt(hex.substring(4, 6), 16);
 
   return [r, g, b];
-};
+}

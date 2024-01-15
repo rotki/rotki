@@ -1,5 +1,5 @@
-import { type BigNumber } from '@rotki/common';
 import { bigNumberify } from '@/utils/bignumbers';
+import type { BigNumber } from '@rotki/common';
 
 /**
  * Removes the separator (comma) from a given amount.
@@ -7,9 +7,9 @@ import { bigNumberify } from '@/utils/bignumbers';
  * @param {string} amount - The amount with separator.
  * @return {string} The amount without separator.
  */
-export const removeSeparator = (amount: string): string =>
-  // TODO: extract the `replace(/,/g, '')` as to use user settings (when implemented)
-  amount.replace(/,/g, '');
+export function removeSeparator(amount: string): string {
+  return amount.replace(/,/g, '');
+}
 
 /**
  * Formats a given amount to use two decimal points.
@@ -28,8 +28,9 @@ export function formatAmount(amount: string): string {
  * @param {string} text - The string to be parsed.
  * @returns {BigNumber} - The parsed BigNumber.
  */
-export const parseBigNumber = (text: string): BigNumber =>
-  bigNumberify(removeSeparator(text));
+export function parseBigNumber(text: string): BigNumber {
+  return bigNumberify(removeSeparator(text));
+}
 
 /**
  * Updates the balance of a location.
@@ -43,13 +44,12 @@ export const parseBigNumber = (text: string): BigNumber =>
 export function updateLocationBalance(
   amount: string,
   balances: Map<string, BigNumber>,
-  location: string
+  location: string,
 ): void {
   const balance = parseBigNumber(amount);
   const locationBalance = balances.get(location);
-  if (!locationBalance) {
+  if (!locationBalance)
     balances.set(location, balance);
-  } else {
+  else
     balances.set(location, locationBalance.plus(balance));
-  }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Balance } from '@rotki/common';
+import type { Balance } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -26,43 +26,41 @@ const props = withDefaults(
     ticker: true,
     loading: false,
     iconSize: '24px',
-    calculateValue: false
-  }
+    calculateValue: false,
+  },
 );
 
 const { asset, value, calculateValue } = toRefs(props);
 
 const amount = useValueOrDefault(
   useRefMap(value, value => value?.amount),
-  Zero
+  Zero,
 );
 const usdValue = useValueOrDefault(
   useRefMap(value, value => value?.usdValue),
-  Zero
+  Zero,
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetPrice, toSelectedCurrency } = useBalancePricesStore();
 
 const valueCurrency = computed(() => {
-  if (!get(calculateValue)) {
+  if (!get(calculateValue))
     return 'USD';
-  }
 
   return get(currencySymbol);
 });
 
 const valueInCurrency = computed(() => {
-  if (!get(calculateValue)) {
+  if (!get(calculateValue))
     return get(usdValue);
-  }
 
   const owned = get(amount);
   const ethPrice = assetPrice(get(asset));
 
-  if (isDefined(ethPrice)) {
+  if (isDefined(ethPrice))
     return owned.multipliedBy(get(toSelectedCurrency(ethPrice)));
-  }
+
   return Zero;
 });
 </script>
@@ -73,14 +71,14 @@ const valueInCurrency = computed(() => {
     :class="{
       'justify-end': !noJustify,
       'text-rui-success': mode === 'gain',
-      'text-rui-error': mode === 'loss'
+      'text-rui-error': mode === 'loss',
     }"
   >
     <div
       class="flex flex-col"
       :class="{
         'items-start': align === 'start',
-        'items-end': align === 'end'
+        'items-end': align === 'end',
       }"
     >
       <AmountDisplay
@@ -99,8 +97,15 @@ const valueInCurrency = computed(() => {
         class="block text-rui-text-secondary"
       />
     </div>
-    <AssetLink v-if="!noIcon" :asset="asset">
-      <AssetIcon :identifier="asset" :size="iconSize" class="flex" />
+    <AssetLink
+      v-if="!noIcon"
+      :asset="asset"
+    >
+      <AssetIcon
+        :identifier="asset"
+        :size="iconSize"
+        class="flex"
+      />
     </AssetLink>
   </div>
 </template>

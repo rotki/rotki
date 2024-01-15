@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type Nullable } from '@/types';
-import { type Collection } from '@/types/collection';
-import {
-  type Filters,
-  type Matcher
+import type { Nullable } from '@/types';
+import type { Collection } from '@/types/collection';
+import type {
+  Filters,
+  Matcher,
 } from '@/composables/filters/custom-assets';
-import {
-  type CustomAsset,
-  type CustomAssetRequestPayload
+import type {
+  CustomAsset,
+  CustomAssetRequestPayload,
 } from '@/types/asset';
 
 const props = withDefaults(
@@ -15,7 +15,7 @@ const props = withDefaults(
     identifier?: string | null;
     mainPage?: boolean;
   }>(),
-  { identifier: null, mainPage: false }
+  { identifier: null, mainPage: false },
 );
 
 const { identifier, mainPage } = toRefs(props);
@@ -25,54 +25,53 @@ const types = ref<string[]>([]);
 const dialogTitle = computed<string>(() =>
   get(editableItem)
     ? t('asset_management.edit_title')
-    : t('asset_management.add_title')
+    : t('asset_management.add_title'),
 );
 
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
-const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } =
-  useAssetManagementApi();
+const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes }
+  = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 
 const { show } = useConfirmStore();
 
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 
-const add = () => {
+function add() {
   set(editableItem, null);
   setOpenDialog(true);
-};
+}
 
-const edit = (editAsset: CustomAsset) => {
+function edit(editAsset: CustomAsset) {
   set(editableItem, editAsset);
   setOpenDialog(true);
-};
+}
 
-const deleteAsset = async (assetId: string) => {
+async function deleteAsset(assetId: string) {
   try {
     const success = await deleteCustomAsset(assetId);
-    if (success) {
+    if (success)
       await refresh();
-    }
-  } catch (e: any) {
+  }
+  catch (error: any) {
     setMessage({
       description: t('asset_management.delete_error', {
         address: assetId,
-        message: e.message
-      })
+        message: error.message,
+      }),
     });
   }
-};
+}
 
-const editAsset = (assetId: Nullable<string>) => {
+function editAsset(assetId: Nullable<string>) {
   if (assetId) {
     const asset = get(state).data.find(({ identifier: id }) => id === assetId);
-    if (asset) {
+    if (asset)
       edit(asset);
-    }
   }
-};
+}
 
 const {
   state,
@@ -84,7 +83,7 @@ const {
   setFilter,
   setOptions,
   isLoading: loading,
-  editableItem
+  editableItem,
 } = usePaginationFilters<
   CustomAsset,
   CustomAssetRequestPayload,
@@ -95,31 +94,31 @@ const {
 >(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
   defaultSortBy: {
     key: 'name',
-    ascending: [false]
-  }
+    ascending: [false],
+  },
 });
 
-const refreshTypes = async () => {
+async function refreshTypes() {
   set(types, await getCustomAssetTypes());
-};
+}
 
-const refresh = async () => {
+async function refresh() {
   await Promise.all([fetchData(), refreshTypes()]);
-};
+}
 
 setPostSubmitFunc(refresh);
 
-const showDeleteConfirmation = (item: CustomAsset) => {
+function showDeleteConfirmation(item: CustomAsset) {
   show(
     {
       title: t('asset_management.confirm_delete.title'),
       message: t('asset_management.confirm_delete.message', {
-        asset: item?.name ?? ''
-      })
+        asset: item?.name ?? '',
+      }),
     },
-    async () => await deleteAsset(item.identifier)
+    async () => await deleteAsset(item.identifier),
   );
-};
+}
 
 onMounted(async () => {
   await refresh();
@@ -132,7 +131,7 @@ onMounted(async () => {
   }
 });
 
-watch(identifier, assetId => {
+watch(identifier, (assetId) => {
   editAsset(assetId);
 });
 </script>
@@ -141,7 +140,7 @@ watch(identifier, assetId => {
   <TablePageLayout
     :title="[
       t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.custom_assets')
+      t('navigation_menu.manage_assets_sub.custom_assets'),
     ]"
   >
     <template #buttons>
@@ -157,7 +156,11 @@ watch(identifier, assetId => {
         {{ t('common.refresh') }}
       </RuiButton>
 
-      <RuiButton data-cy="managed-asset-add-btn" color="primary" @click="add()">
+      <RuiButton
+        data-cy="managed-asset-add-btn"
+        color="primary"
+        @click="add()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>

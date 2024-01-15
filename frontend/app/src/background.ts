@@ -4,31 +4,30 @@ import windowStateKeeper from 'electron-window-state';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
-import { type Nullable } from '@/types';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { assert } from '@/utils/assertions';
 import createProtocol from './create-protocol';
 import SubprocessHandler from './subprocess-handler';
+import type { Nullable } from '@/types';
 
 const isDevelopment = checkIfDevelopment();
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
 
-const onActivate = async (): Promise<void> => {
+async function onActivate(): Promise<void> {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (win === null) {
+  if (win === null)
     await createWindow();
-  } else {
+  else
     win?.show();
-  }
-};
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-const onReady = async (): Promise<void> => {
+async function onReady(): Promise<void> {
   if (isDevelopment) {
     // Install Vue Devtools
     try {
@@ -36,15 +35,15 @@ const onReady = async (): Promise<void> => {
       const { VUEJS_DEVTOOLS, default: tools } = await import(
         'electron-devtools-installer'
       );
-      if ('default' in tools && typeof tools.default === 'function') {
+      if ('default' in tools && typeof tools.default === 'function')
         await tools.default(VUEJS_DEVTOOLS);
-      } else if (typeof tools === 'function') {
+      else if (typeof tools === 'function')
         await tools(VUEJS_DEVTOOLS);
-      } else {
+      else
         console.error('something is wrong with devtools installer');
-      }
-    } catch (e: any) {
-      console.error('Vue Devtools failed to install:', e.toString());
+    }
+    catch (error: any) {
+      console.error('Vue Devtools failed to install:', error.toString());
     }
   }
 
@@ -61,59 +60,56 @@ const onReady = async (): Promise<void> => {
     closeApp,
     trayManager,
     menuActions,
-    ensureSafeUpdateRestart
+    ensureSafeUpdateRestart,
   );
   await createWindow();
   trayManager.listen();
 
   getWindow().webContents.on('context-menu', (event, props): void => {
     const menu = new Menu();
-    if (props.editFlags.canCut) {
+    if (props.editFlags.canCut)
       menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
-    }
 
-    if (props.editFlags.canCopy) {
+    if (props.editFlags.canCopy)
       menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
-    }
 
-    if (props.editFlags.canPaste) {
+    if (props.editFlags.canPaste)
       menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
-    }
 
     menu.popup({ window: getWindow() });
   });
-};
+}
 
 const lock = app.requestSingleInstanceLock();
 
 if (!lock) {
   app.quit();
-} else {
+}
+else {
   app.on('second-instance', (): void => {
     try {
-      if (!win) {
+      if (!win)
         return;
-      }
 
-      if (win.isMinimized()) {
+      if (win.isMinimized())
         win.restore();
-      }
+
       win.focus();
-    } catch (e) {
-      console.error('Could not restore the window', e);
+    }
+    catch (error) {
+      console.error('Could not restore the window', error);
       app.quit();
     }
   });
 
   // Quit when all windows are closed.
   app.on('window-all-closed', (): void => {
-    if (process.platform !== 'darwin') {
+    if (process.platform !== 'darwin')
       app.quit();
-    }
   });
   app.on('activate', onActivate);
   app.on('ready', onReady);
-  app.on('will-quit', async e => {
+  app.on('will-quit', async (e) => {
     e.preventDefault();
     await closeApp();
   });
@@ -123,31 +119,29 @@ if (!lock) {
   });
 }
 
-const ensureSafeUpdateRestart = (): void => {
+function ensureSafeUpdateRestart(): void {
   win?.removeAllListeners('close');
   win?.removeAllListeners('closed');
   app.removeAllListeners('close');
   app.removeAllListeners('window-all-closed');
   app.removeAllListeners('will-quit');
   app.removeAllListeners('before-quit');
-};
+}
 
 const menuActions = {
   displayTray: (display: boolean): void => {
     const applicationMenu = Menu.getApplicationMenu();
     if (applicationMenu) {
       const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
-      if (menuItem) {
+      if (menuItem)
         menuItem.enabled = display;
-      }
     }
 
-    if (display) {
+    if (display)
       trayManager?.build();
-    } else {
+    else
       trayManager?.destroy();
-    }
-  }
+  },
 };
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -159,13 +153,13 @@ const pyHandler = new SubprocessHandler(app);
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'app',
-    privileges: { standard: true, secure: true, supportFetchAPI: true }
-  }
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
+  },
 ]);
 
 async function createWindow(): Promise<BrowserWindow> {
-  const { width: screenWidth, height: screenHeight } =
-    screen.getPrimaryDisplay().workAreaSize;
+  const { width: screenWidth, height: screenHeight }
+    = screen.getPrimaryDisplay().workAreaSize;
 
   const regularScreenWidth = 1366;
   const regularScreenHeight = 768;
@@ -176,7 +170,7 @@ async function createWindow(): Promise<BrowserWindow> {
 
   const defaultWidth = Math.floor(Math.max(screenWidth / ratio, minimumWidth));
   const defaultHeight = Math.floor(
-    Math.max(screenHeight / ratio, minimumHeight)
+    Math.max(screenHeight / ratio, minimumHeight),
   );
 
   // set default window width and height to be proportional with screen resolution, in case not specified
@@ -187,7 +181,7 @@ async function createWindow(): Promise<BrowserWindow> {
   // A / B = C / D
   const mainWindowState = windowStateKeeper({
     defaultWidth,
-    defaultHeight
+    defaultHeight,
   });
 
   // Create the browser window.
@@ -200,8 +194,8 @@ async function createWindow(): Promise<BrowserWindow> {
       nodeIntegration: false,
       sandbox: true,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
-    }
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
 
   if (import.meta.env.VITE_DEV_SERVER_URL) {
@@ -209,7 +203,8 @@ async function createWindow(): Promise<BrowserWindow> {
     // Load the url of the dev server if in development mode
     await win.loadURL(import.meta.env.VITE_DEV_SERVER_URL as string);
     win.webContents.openDevTools();
-  } else {
+  }
+  else {
     createProtocol('app');
     // Load the index.html when not in development
     pyHandler.setCorsURL('app://*');
@@ -217,34 +212,36 @@ async function createWindow(): Promise<BrowserWindow> {
   }
 
   Menu.setApplicationMenu(
-    Menu.buildFromTemplate(getUserMenu(true, menuActions))
+    Menu.buildFromTemplate(getUserMenu(true, menuActions)),
   );
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
-  win.on('close', async e => {
+  win.on('close', async (e) => {
     try {
       if (process.platform === 'darwin' && !forceQuit) {
         e.preventDefault();
         win?.hide();
-      } else {
+      }
+      else {
         await closeApp();
       }
-    } catch (e) {
-      console.error(e);
+    }
+    catch (error) {
+      console.error(error);
       await closeApp();
     }
   });
 
   win.on('closed', async () => {
     try {
-      if (process.platform === 'darwin' && !forceQuit) {
+      if (process.platform === 'darwin' && !forceQuit)
         win?.hide();
-      } else {
+      else
         win = null;
-      }
-    } catch (e) {
-      console.error(e);
+    }
+    catch (error) {
+      console.error(error);
     }
   });
   return win;
@@ -254,16 +251,16 @@ async function closeApp(): Promise<void> {
   trayManager?.destroy();
   try {
     await pyHandler.exitPyProc();
-  } finally {
+  }
+  finally {
     // In some cases app object might be already disposed
     try {
-      if (process.platform !== 'win32') {
+      if (process.platform !== 'win32')
         app.exit();
-      }
-    } catch (e: any) {
-      if (e.message !== 'Object has been destroyed') {
-        console.error(e);
-      }
+    }
+    catch (error: any) {
+      if (error.message !== 'Object has been destroyed')
+        console.error(error);
     }
   }
 }

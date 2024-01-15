@@ -10,8 +10,8 @@ export default defineConfig({
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': `${join(PACKAGE_ROOT, 'src')}/`
-    }
+      '@': `${join(PACKAGE_ROOT, 'src')}/`,
+    },
   },
   build: {
     sourcemap: isDevelopment ? 'inline' : false,
@@ -20,14 +20,14 @@ export default defineConfig({
     minify: !isDevelopment,
     lib: {
       entry: 'src/preload.ts',
-      formats: ['cjs']
+      formats: ['cjs'],
     },
     rollupOptions: {
       external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
-        entryFileNames: '[name].js'
-      }
+        entryFileNames: '[name].js',
+      },
     },
-    emptyOutDir: false
-  }
+    emptyOutDir: false,
+  },
 });

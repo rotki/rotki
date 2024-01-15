@@ -12,8 +12,8 @@ const props = withDefaults(
     height: 'auto',
     width: 'auto',
     circle: false,
-    padding: '2px'
-  }
+    padding: '2px',
+  },
 );
 
 const { dark } = useTheme();

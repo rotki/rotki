@@ -6,13 +6,13 @@ defineProps<{
   label: string;
 }>();
 
-const getFlagEmoji = (code: string) => {
+function getFlagEmoji(code: string) {
   const codePoints = code
     .toUpperCase()
     .split('')
     .map(char => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
-};
+}
 
 const css = useCssModule();
 </script>
@@ -25,7 +25,12 @@ const css = useCssModule();
         :key="country"
         class="flex items-center"
       >
-        <span v-if="index > 0" class="px-1">/</span>
+        <span
+          v-if="index > 0"
+          class="px-1"
+        >
+          /
+        </span>
         <span :class="css.flag">
           {{ getFlagEmoji(country) }}
         </span>

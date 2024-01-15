@@ -4,8 +4,8 @@ withDefaults(
     mobile?: boolean;
   }>(),
   {
-    mobile: false
-  }
+    mobile: false,
+  },
 );
 
 const { t } = useI18n();
@@ -13,14 +13,31 @@ const { t } = useI18n();
 
 <template>
   <div>
-    <BadgeDisplay v-if="mobile" color="grey" class="items-center gap-2">
-      <RuiIcon size="18" name="eye-off-line" />
+    <BadgeDisplay
+      v-if="mobile"
+      color="grey"
+      class="items-center gap-2"
+    >
+      <RuiIcon
+        size="18"
+        name="eye-off-line"
+      />
       {{ t('common.ignored_in_accounting') }}
     </BadgeDisplay>
-    <RuiTooltip v-else :popper="{ placement: 'bottom' }" :open-delay="400">
+    <RuiTooltip
+      v-else
+      :popper="{ placement: 'bottom' }"
+      :open-delay="400"
+    >
       <template #activator>
-        <BadgeDisplay color="grey" class="py-1">
-          <RuiIcon size="18" name="eye-off-line" />
+        <BadgeDisplay
+          color="grey"
+          class="py-1"
+        >
+          <RuiIcon
+            size="18"
+            name="eye-off-line"
+          />
         </BadgeDisplay>
       </template>
       {{ t('common.ignored_in_accounting') }}

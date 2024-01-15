@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type SubBlockchainTotal } from '@/types/blockchain';
-import { type ActionDataEntry } from '@/types/action';
+import type { SubBlockchainTotal } from '@/types/blockchain';
+import type { ActionDataEntry } from '@/types/action';
 
 withDefaults(
   defineProps<{
@@ -8,15 +8,18 @@ withDefaults(
     details: ActionDataEntry | null;
   }>(),
   {
-    details: null
-  }
+    details: null,
+  },
 );
 
 const css = useCssModule();
 </script>
 
 <template>
-  <RouterLink v-if="details" :to="details.detailPath || ''">
+  <RouterLink
+    v-if="details"
+    :to="details.detailPath || ''"
+  >
     <ListItem
       :id="`${child.protocol}_box`"
       :key="child.protocol"
@@ -26,7 +29,11 @@ const css = useCssModule();
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">
           <AdaptiveWrapper>
-            <AppImage :src="details.icon" width="24px" height="24px" />
+            <AppImage
+              :src="details.icon"
+              width="24px"
+              height="24px"
+            />
           </AdaptiveWrapper>
         </div>
       </template>

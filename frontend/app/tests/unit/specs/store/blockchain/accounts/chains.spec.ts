@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type GeneralAccountData } from '@/types/blockchain/accounts';
+import type { GeneralAccountData } from '@/types/blockchain/accounts';
 
 describe('store::blockchain/accounts/chains', () => {
   setActivePinia(createPinia());
@@ -13,14 +13,14 @@ describe('store::blockchain/accounts/chains', () => {
   const address = '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea';
   const tag = 'tag_1';
 
-  test('update', () => {
+  it('update', () => {
     const { optimism } = storeToRefs(store);
     const accounts: GeneralAccountData[] = [
       {
         address,
         label: 'test optimism',
-        tags: [tag]
-      }
+        tags: [tag],
+      },
     ];
 
     store.update(Blockchain.OPTIMISM, accounts);
@@ -28,12 +28,12 @@ describe('store::blockchain/accounts/chains', () => {
     expect(get(optimism)).toEqual(accounts);
   });
 
-  test('removeTag', () => {
+  it('removeTag', () => {
     const { optimism, optimismAddresses } = storeToRefs(store);
     const newData: GeneralAccountData = {
       address,
       label: 'test optimism',
-      tags: []
+      tags: [],
     };
 
     store.removeTag(tag);

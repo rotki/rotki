@@ -1,20 +1,20 @@
-import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
-import { type MaybeRef } from '@vueuse/core';
 import { AssetBalances } from '@/types/balances';
-import {
-  type ExchangeData,
-  type ExchangeInfo,
-  type ExchangeSavingsCollection,
-  type ExchangeSavingsCollectionResponse,
-  type ExchangeSavingsRequestPayload
-} from '@/types/exchanges';
-import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type ExchangeMeta, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import {
-  type AssetBreakdown,
-  type ExchangeBalancePayload
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type {
+  ExchangeData,
+  ExchangeInfo,
+  ExchangeSavingsCollection,
+  ExchangeSavingsCollectionResponse,
+  ExchangeSavingsRequestPayload,
+} from '@/types/exchanges';
+import type { AssetPrices } from '@/types/prices';
+import type { ExchangeMeta, TaskMeta } from '@/types/task';
+import type {
+  AssetBreakdown,
+  ExchangeBalancePayload,
 } from '@/types/blockchain/accounts';
 
 export const useExchangeBalancesStore = defineStore(
@@ -33,7 +33,7 @@ export const useExchangeBalancesStore = defineStore(
     const {
       queryExchangeBalances,
       getExchangeSavings,
-      getExchangeSavingsTask
+      getExchangeSavingsTask,
     } = useExchangeApi();
     const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
@@ -43,7 +43,7 @@ export const useExchangeBalancesStore = defineStore(
         .map(value => ({
           location: value,
           balances: balances[value],
-          total: assetSum(balances[value])
+          total: assetSum(balances[value]),
         }))
         .sort((a, b) => sortDesc(a.total, b.total));
     });
@@ -51,8 +51,8 @@ export const useExchangeBalancesStore = defineStore(
     const balances: ComputedRef<AssetBalances> = computed(() =>
       sumAssetBalances(
         Object.values(get(exchangeBalances)),
-        getAssociatedAssetIdentifier
-      )
+        getAssociatedAssetIdentifier,
+      ),
     );
 
     const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
@@ -63,17 +63,16 @@ export const useExchangeBalancesStore = defineStore(
           const exchangeData = cexBalances[exchange];
           for (const exchangeDataAsset in exchangeData) {
             const associatedAsset = get(
-              getAssociatedAssetIdentifier(exchangeDataAsset)
+              getAssociatedAssetIdentifier(exchangeDataAsset),
             );
-            if (associatedAsset !== asset) {
+            if (associatedAsset !== asset)
               continue;
-            }
 
             breakdown.push({
               address: '',
               location: exchange,
               balance: exchangeData[exchangeDataAsset],
-              tags: []
+              tags: [],
             });
           }
         }
@@ -84,20 +83,19 @@ export const useExchangeBalancesStore = defineStore(
       computed(() => {
         const assets: AssetBalances = {};
         const exchange = get(connectedExchanges).find(
-          ({ location }) => id === location
+          ({ location }) => id === location,
         );
 
         if (exchange) {
           const balances = get(getBalances(exchange.location));
-          for (const balance of balances) {
+          for (const balance of balances)
             appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
-          }
         }
         return assets;
       });
 
     const getByLocationBalances = (
-      convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>
+      convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>,
     ): ComputedRef<Record<string, BigNumber>> =>
       computed(() => {
         const balances: Record<string, BigNumber> = {};
@@ -111,7 +109,7 @@ export const useExchangeBalancesStore = defineStore(
 
     const getBalances = (
       exchange: string,
-      hideIgnored = true
+      hideIgnored = true,
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const balances = get(exchangeBalances);
@@ -121,11 +119,11 @@ export const useExchangeBalancesStore = defineStore(
             get(
               mergeAssociatedAssets(
                 balances[exchange],
-                getAssociatedAssetIdentifier
-              )
+                getAssociatedAssetIdentifier,
+              ),
             ),
             asset => hideIgnored && get(isAssetIgnored(asset)),
-            assetPrice
+            assetPrice,
           );
         }
 
@@ -133,18 +131,17 @@ export const useExchangeBalancesStore = defineStore(
       });
 
     const fetchExchangeBalances = async (
-      payload: ExchangeBalancePayload
+      payload: ExchangeBalancePayload,
     ): Promise<void> => {
       const { location, ignoreCache } = payload;
       const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
       const meta = metadata<ExchangeMeta>(taskType);
 
-      if (get(isTaskRunning(taskType)) && meta?.location === location) {
+      if (get(isTaskRunning(taskType)) && meta?.location === location)
         return;
-      }
 
       const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
-        Section.EXCHANGES
+        Section.EXCHANGES,
       );
 
       const newStatus = isFirstLoad() ? Status.LOADING : Status.REFRESHING;
@@ -155,39 +152,40 @@ export const useExchangeBalancesStore = defineStore(
         const meta: ExchangeMeta = {
           location,
           title: t('actions.balances.exchange_balances.task.title', {
-            location
-          }).toString()
+            location,
+          }).toString(),
         };
 
         const { result } = await awaitTask<AssetBalances, ExchangeMeta>(
           taskId,
           taskType,
           meta,
-          true
+          true,
         );
 
         set(exchangeBalances, {
           ...get(exchangeBalances),
-          [location]: AssetBalances.parse(result)
+          [location]: AssetBalances.parse(result),
         });
         setStatus(Status.LOADED);
-      } catch (e: any) {
-        if (!isTaskCancelled(e)) {
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
           const message = t(
             'actions.balances.exchange_balances.error.message',
             {
               location,
-              error: e.message
-            }
+              error: error.message,
+            },
           ).toString();
           const title = t('actions.balances.exchange_balances.error.title', {
-            location
+            location,
           }).toString();
 
           notify({
             title,
             message,
-            display: true
+            display: true,
           });
         }
         resetStatus();
@@ -195,32 +193,31 @@ export const useExchangeBalancesStore = defineStore(
     };
 
     const fetchConnectedExchangeBalances = async (
-      refresh = false
+      refresh = false,
     ): Promise<void> => {
       const exchanges = get(connectedExchanges);
       for (const exchange of exchanges) {
         await fetchExchangeBalances({
           location: exchange.location,
-          ignoreCache: refresh
+          ignoreCache: refresh,
         });
       }
     };
 
     const updatePrices = (prices: MaybeRef<AssetPrices>) => {
       const exchanges = { ...get(exchangeBalances) };
-      for (const exchange in exchanges) {
+      for (const exchange in exchanges)
         exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
-      }
 
       set(exchangeBalances, exchanges);
     };
 
     const fetchExchangeSavings = async (
-      payload: MaybeRef<ExchangeSavingsRequestPayload>
+      payload: MaybeRef<ExchangeSavingsRequestPayload>,
     ): Promise<ExchangeSavingsCollection> => {
       const response = await getExchangeSavings({
         ...get(payload),
-        onlyCache: true
+        onlyCache: true,
       });
 
       return mapCollectionResponse(response);
@@ -235,15 +232,15 @@ export const useExchangeBalancesStore = defineStore(
         ascending: [false],
         orderByAttributes: ['timestamp'],
         onlyCache: false,
-        location
+        location,
       };
 
       const { taskId } = await getExchangeSavingsTask(defaults);
 
       const taskMeta = {
         title: t('actions.balances.exchange_savings_interest.task.title', {
-          location
-        })
+          location,
+        }),
       };
 
       try {
@@ -251,20 +248,21 @@ export const useExchangeBalancesStore = defineStore(
           taskId,
           taskType,
           taskMeta,
-          true
+          true,
         );
         return true;
-      } catch (e: any) {
-        if (!isTaskCancelled(e)) {
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
           notify({
             title: t('actions.balances.exchange_savings_interest.error.title', {
-              location
+              location,
             }),
             message: t(
               'actions.balances.exchange_savings_interest.error.message',
-              { location }
+              { location },
             ),
-            display: true
+            display: true,
           });
         }
       }
@@ -273,10 +271,10 @@ export const useExchangeBalancesStore = defineStore(
     };
 
     const refreshExchangeSavings = async (
-      userInitiated = false
+      userInitiated = false,
     ): Promise<void> => {
       const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-        Section.EXCHANGE_SAVINGS
+        Section.EXCHANGE_SAVINGS,
       );
 
       if (fetchDisabled(userInitiated)) {
@@ -292,16 +290,17 @@ export const useExchangeBalancesStore = defineStore(
           .filter(uniqueStrings)
           .filter(location => ['binance', 'binanceus'].includes(location));
 
-        if (locations.length > 0) {
+        if (locations.length > 0)
           await Promise.all(locations.map(syncExchangeSavings));
-        }
+
         setStatus(
           get(isTaskRunning(TaskType.QUERY_EXCHANGE_SAVINGS))
             ? Status.REFRESHING
-            : Status.LOADED
+            : Status.LOADED,
         );
-      } catch (e) {
-        logger.error(e);
+      }
+      catch (error) {
+        logger.error(error);
         resetStatus();
       }
     };
@@ -318,13 +317,13 @@ export const useExchangeBalancesStore = defineStore(
       getByLocationBalances,
       updatePrices,
       fetchExchangeSavings,
-      refreshExchangeSavings
+      refreshExchangeSavings,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useExchangeBalancesStore, import.meta.hot)
+    acceptHMRUpdate(useExchangeBalancesStore, import.meta.hot),
   );
 }

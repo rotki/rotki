@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 const props = withDefaults(
   defineProps<{
     locations?: string[];
   }>(),
   {
-    locations: () => []
-  }
+    locations: () => [],
+  },
 );
 
 const { locations } = toRefs(props);
@@ -34,8 +34,15 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
     </template>
 
     <template #item="{ item }">
-      <LocationIcon icon :item="item.location" size="20px" />
-      <HistoryEventsQueryStatusLine :item="item" class="ms-2" />
+      <LocationIcon
+        icon
+        :item="item.location"
+        size="20px"
+      />
+      <HistoryEventsQueryStatusLine
+        :item="item"
+        class="ms-2"
+      />
     </template>
 
     <template #tooltip="{ item }">

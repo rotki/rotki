@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
-import { type CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
+import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(
   defineProps<{
     editableItem?: CustomAsset | null;
     types?: string[];
   }>(),
-  { editableItem: null, types: () => [] }
+  { editableItem: null, types: () => [] },
 );
 
 const { editableItem } = toRefs(props);
@@ -19,31 +19,32 @@ const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
   name: '',
   customAssetType: '',
-  notes: ''
+  notes: '',
 });
 
 const formData = ref<CustomAsset>(emptyCustomAsset());
 
-const checkEditableItem = () => {
+function checkEditableItem() {
   const form = get(editableItem);
   if (form) {
     set(search, form.customAssetType);
     set(formData, form);
-  } else {
+  }
+  else {
     set(search, '');
     set(formData, emptyCustomAsset());
   }
-};
+}
 
 watch(editableItem, checkEditableItem);
 onMounted(checkEditableItem);
 
-const input = (asset: Partial<CustomAsset>) => {
+function input(asset: Partial<CustomAsset>) {
   set(formData, { ...get(formData), ...asset });
-};
+}
 
-const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
-  ref(null);
+const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null>
+  = ref(null);
 
 const { t } = useI18n();
 
@@ -58,13 +59,13 @@ const note = computed({
   },
   set(value?: string) {
     input({ notes: value ?? null });
-  }
+  },
 });
 
-watch(search, type => {
-  if (type === null) {
+watch(search, (type) => {
+  if (type === null)
     type = get(formData).customAssetType;
-  }
+
   set(customAssetType, type);
 });
 
@@ -72,15 +73,15 @@ const rules = {
   name: {
     required: helpers.withMessage(
       t('asset_form.name_non_empty').toString(),
-      required
-    )
+      required,
+    ),
   },
   type: {
     required: helpers.withMessage(
       t('asset_form.type_non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation, setSubmitFunc } = useCustomAssetForm();
@@ -89,19 +90,19 @@ const v$ = setValidation(
   rules,
   {
     name,
-    type: customAssetType
+    type: customAssetType,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
-const saveIcon = (identifier: string) => {
+function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
-};
+}
 
 const { setMessage } = useMessageStore();
 const { editCustomAsset, addCustomAsset } = useAssetManagementApi();
 
-const save = async (): Promise<string> => {
+async function save(): Promise<string> {
   const data = get(formData);
   let success = false;
   let identifier = data.identifier;
@@ -110,25 +111,26 @@ const save = async (): Promise<string> => {
   try {
     if (editMode) {
       success = await editCustomAsset(data);
-    } else {
+    }
+    else {
       identifier = await addCustomAsset(omit(data, 'identifier'));
       success = !!identifier;
     }
 
-    if (identifier) {
+    if (identifier)
       saveIcon(identifier);
-    }
-  } catch (e: any) {
-    const obj = { message: e.message };
+  }
+  catch (error: any) {
+    const obj = { message: error.message };
     setMessage({
       description: editMode
         ? t('asset_management.edit_error', obj)
-        : t('asset_management.add_error', obj)
+        : t('asset_management.add_error', obj),
     });
   }
 
   return success ? identifier : '';
-};
+}
 
 setSubmitFunc(save);
 </script>
@@ -169,6 +171,9 @@ setSubmitFunc(save);
       :label="t('common.notes')"
     />
 
-    <AssetIconForm ref="assetIconFormRef" :identifier="formData.identifier" />
+    <AssetIconForm
+      ref="assetIconFormRef"
+      :identifier="formData.identifier"
+    />
   </div>
 </template>

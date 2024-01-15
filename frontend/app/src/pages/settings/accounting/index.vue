@@ -2,6 +2,6 @@
   <div class="accounting-settings">
     <AccountingRuleSetting />
     <AccountingTradeSettings />
-    <AccountingCSVExportSetting />
+    <AccountingCsvExportSetting />
   </div>
 </template>

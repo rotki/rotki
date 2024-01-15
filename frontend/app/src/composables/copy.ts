@@ -1,8 +1,8 @@
-export const useCopy = (source: Ref<string>) => {
+export function useCopy(source: Ref<string>) {
   const copied = ref<boolean>(false);
 
   const { copy: copyText } = useClipboard({
-    source
+    source,
   });
 
   const { start, stop, isPending } = useTimeoutFn(
@@ -10,7 +10,7 @@ export const useCopy = (source: Ref<string>) => {
       set(copied, false);
     },
     4000,
-    { immediate: false }
+    { immediate: false },
   );
 
   const { start: startAnimation } = useTimeoutFn(
@@ -19,7 +19,7 @@ export const useCopy = (source: Ref<string>) => {
       start();
     },
     100,
-    { immediate: false }
+    { immediate: false },
   );
 
   const copy = async (): Promise<void> => {
@@ -32,4 +32,4 @@ export const useCopy = (source: Ref<string>) => {
   };
 
   return { copy, copied };
-};
+}

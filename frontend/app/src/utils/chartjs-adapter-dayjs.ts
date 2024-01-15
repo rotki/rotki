@@ -1,11 +1,10 @@
-import { _adapters } from 'chart.js';
+import { type TimeUnit, _adapters } from 'chart.js';
 import dayjs, { type QUnitType } from 'dayjs';
 import AdvancedFormat from 'dayjs/plugin/advancedFormat';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import QuarterOfYear from 'dayjs/plugin/quarterOfYear';
-import type { TimeUnit } from 'chart.js';
 
 dayjs.extend(AdvancedFormat);
 dayjs.extend(QuarterOfYear);
@@ -23,7 +22,7 @@ const FORMATS = {
   week: 'll',
   month: 'MMM YYYY',
   quarter: '[Q]Q - YYYY',
-  year: 'YYYY'
+  year: 'YYYY',
 };
 
 _adapters._date.override({
@@ -31,15 +30,15 @@ _adapters._date.override({
   parse(value: any, format?: TimeUnit) {
     const valueType = typeof value;
 
-    if (value === null || valueType === 'undefined') {
+    if (value === null || valueType === 'undefined')
       return null;
-    }
 
     if (valueType === 'string' && typeof format === 'string') {
       return dayjs(value, format).isValid()
         ? dayjs(value, format).valueOf()
         : null;
-    } else if (!(value instanceof dayjs)) {
+    }
+    else if (!(value instanceof dayjs)) {
       return dayjs(value).isValid() ? dayjs(value).valueOf() : null;
     }
     return null;
@@ -56,17 +55,17 @@ _adapters._date.override({
   startOf(
     time: any,
     unit: (TimeUnit & QUnitType) | 'isoWeek',
-    weekday?: number
+    weekday?: number,
   ) {
     if (unit === 'isoWeek') {
       // Ensure that weekday has a valid format
-      const validatedWeekday: number =
-        typeof weekday === 'number' && weekday > 0 && weekday < 7 ? weekday : 1;
+      const validatedWeekday: number
+        = typeof weekday === 'number' && weekday > 0 && weekday < 7 ? weekday : 1;
       return dayjs(time).isoWeekday(validatedWeekday).startOf('day').valueOf();
     }
     return dayjs(time).startOf(unit).valueOf();
   },
   endOf(time: any, unit: TimeUnit & QUnitType) {
     return dayjs(time).endOf(unit).valueOf();
-  }
+  },
 });

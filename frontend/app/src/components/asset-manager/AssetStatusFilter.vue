@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {
   IgnoredAssetHandlingType,
-  type IgnoredAssetsHandlingType
+  type IgnoredAssetsHandlingType,
 } from '@/types/asset';
 
-type Model = {
+interface Model {
   onlyShowOwned: boolean;
   onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
-};
+}
 
 const props = defineProps<{
   value: Model;
@@ -22,8 +22,9 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const showMenu = ref(false);
 
-const isHandlingType = (t: any): t is IgnoredAssetsHandlingType =>
-  Object.values(IgnoredAssetHandlingType).includes(t);
+function isHandlingType(t: any): t is IgnoredAssetsHandlingType {
+  return Object.values(IgnoredAssetHandlingType).includes(t);
+}
 
 const handlingSelection = computed({
   get() {
@@ -33,10 +34,10 @@ const handlingSelection = computed({
     if (isHandlingType(value)) {
       emit('input', {
         ...props.value,
-        ignoredAssetsHandling: value
+        ignoredAssetsHandling: value,
       });
     }
-  }
+  },
 });
 
 const onlyShowOwned = computed({
@@ -46,9 +47,9 @@ const onlyShowOwned = computed({
   set(value: boolean) {
     emit('input', {
       ...props.value,
-      onlyShowOwned: value
+      onlyShowOwned: value,
     });
-  }
+  },
 });
 
 const onlyShowWhitelisted = computed({
@@ -58,15 +59,18 @@ const onlyShowWhitelisted = computed({
   set(value: boolean) {
     emit('input', {
       ...props.value,
-      onlyShowWhitelisted: value
+      onlyShowWhitelisted: value,
     });
-  }
+  },
 });
 </script>
 
 <template>
   <TableStatusFilter v-model="showMenu">
-    <div class="p-1 pt-2" data-cy="asset-filter-menu">
+    <div
+      class="p-1 pt-2"
+      data-cy="asset-filter-menu"
+    >
       <RuiCheckbox
         v-model="onlyShowOwned"
         color="primary"
@@ -83,7 +87,7 @@ const onlyShowWhitelisted = computed({
         :label="t('asset_table.only_show_whitelisted')"
         hide-details
       />
-      <div class="font-bold text-uppercase p-2 text-sm">
+      <div class="font-bold uppercase p-2 text-sm">
         {{ t('asset_table.filter_by_ignored_status') }}
       </div>
       <div class="pb-2 px-3">
@@ -112,9 +116,9 @@ const onlyShowWhitelisted = computed({
               t(
                 'asset_table.only_show_ignored',
                 {
-                  length: count
+                  length: count,
                 },
-                1
+                1,
               )
             "
           />

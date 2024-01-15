@@ -7,7 +7,7 @@ describe('composables::message-handling', () => {
     store = useSessionSettingsStore();
   });
 
-  test('Should not scramble when the state is off', () => {
+  it('should not scramble when the state is off', () => {
     const { scrambleHex, scrambleIdentifier } = useScramble();
 
     const hex = '0xabcdef';
@@ -17,7 +17,7 @@ describe('composables::message-handling', () => {
     expect(scrambleIdentifier(numbers)).toEqual(numbers);
   });
 
-  test('Should scramble hex', () => {
+  it('should scramble hex', () => {
     store.update({ scrambleData: true });
     const { scrambleHex } = useScramble();
 
@@ -28,7 +28,7 @@ describe('composables::message-handling', () => {
     expect(isValidEthAddress(result)).toBeTruthy();
   });
 
-  test('Should scramble identifier', () => {
+  it('should scramble identifier', () => {
     store.update({ scrambleData: true });
     const { scrambleIdentifier } = useScramble();
 

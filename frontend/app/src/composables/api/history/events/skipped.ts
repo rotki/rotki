@@ -1,16 +1,16 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import {
   ProcessSkippedHistoryEventsResponse,
-  SkippedHistoryEventsSummary
+  SkippedHistoryEventsSummary,
 } from '@/types/history/events';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type ActionStatus } from '@/types/action';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import type { ActionStatus } from '@/types/action';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useSkippedHistoryEventsApi = () => {
-  const getSkippedEventsSummary =
-    async (): Promise<SkippedHistoryEventsSummary> => {
+export function useSkippedHistoryEventsApi() {
+  const getSkippedEventsSummary
+    = async (): Promise<SkippedHistoryEventsSummary> => {
       const response = await api.instance.get<
         ActionResult<SkippedHistoryEventsSummary>
       >('/history/skipped_external_events');
@@ -18,28 +18,28 @@ export const useSkippedHistoryEventsApi = () => {
       return SkippedHistoryEventsSummary.parse(handleResponse(response));
     };
 
-  const reProcessSkippedEvents =
-    async (): Promise<ProcessSkippedHistoryEventsResponse> => {
+  const reProcessSkippedEvents
+    = async (): Promise<ProcessSkippedHistoryEventsResponse> => {
       const response = await api.instance.post<
         ActionResult<ProcessSkippedHistoryEventsResponse>
       >('/history/skipped_external_events');
 
       return ProcessSkippedHistoryEventsResponse.parse(
-        handleResponse(response)
+        handleResponse(response),
       );
     };
 
   const exportSkippedEventsCSV = async (
-    directoryPath: string
+    directoryPath: string,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/history/skipped_external_events',
       snakeCaseTransformer({
-        directoryPath
+        directoryPath,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -52,8 +52,8 @@ export const useSkippedHistoryEventsApi = () => {
         null,
         {
           responseType: 'blob',
-          validateStatus: validStatus
-        }
+          validateStatus: validStatus,
+        },
       );
 
       if (response.status === 200) {
@@ -65,8 +65,9 @@ export const useSkippedHistoryEventsApi = () => {
       const result: ActionResult<null> = JSON.parse(body);
 
       return { success: false, message: result.message };
-    } catch (e: any) {
-      return { success: false, message: e.message };
+    }
+    catch (error: any) {
+      return { success: false, message: error.message };
     }
   };
 
@@ -74,6 +75,6 @@ export const useSkippedHistoryEventsApi = () => {
     getSkippedEventsSummary,
     reProcessSkippedEvents,
     exportSkippedEventsCSV,
-    downloadSkippedEventsCSV
+    downloadSkippedEventsCSV,
   };
-};
+}

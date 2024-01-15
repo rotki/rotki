@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { type AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 const props = withDefaults(
   defineProps<{
@@ -8,14 +8,14 @@ const props = withDefaults(
   }>(),
   {
     editableItem: null,
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const { editableItem } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit } =
-  useAccountingRuleForm();
+const { openDialog, submitting, closeDialog, trySubmit }
+  = useAccountingRuleForm();
 
 const { t } = useI18n();
 

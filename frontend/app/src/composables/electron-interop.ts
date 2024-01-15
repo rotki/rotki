@@ -1,11 +1,11 @@
-import {
-  type BackendOptions,
-  type Listeners,
-  type SystemVersion,
-  type TrayUpdate
-} from '@/electron-main/ipc';
-import { type WebVersion } from '@/types';
 import { externalLinks } from '@/data/external-links';
+import type {
+  BackendOptions,
+  Listeners,
+  SystemVersion,
+  TrayUpdate,
+} from '@/electron-main/ipc';
+import type { WebVersion } from '@/types';
 
 const electronApp = !!window.interop;
 
@@ -55,19 +55,19 @@ const interop = {
   },
 
   metamaskImport: async (): Promise<string[]> => {
-    if (!window.interop) {
+    if (!window.interop)
       throw new Error('environment does not support interop');
-    }
-    return window.interop.metamaskImport().then(value => {
-      if ('error' in value) {
+
+    return window.interop.metamaskImport().then((value) => {
+      if ('error' in value)
         throw new Error(value.error);
-      }
+
       return value.addresses;
     });
   },
 
   restartBackend: async (
-    options: Partial<BackendOptions>
+    options: Partial<BackendOptions>,
   ): Promise<boolean> => {
     assert(window.interop);
     return await window.interop.restartBackend(options);
@@ -82,7 +82,7 @@ const interop = {
     if (!window.interop) {
       return {
         platform: navigator?.platform,
-        userAgent: navigator?.userAgent
+        userAgent: navigator?.userAgent,
       };
     }
     return window.interop?.version();
@@ -101,7 +101,7 @@ const interop = {
 
   storePassword: async (
     username: string,
-    password: string
+    password: string,
   ): Promise<boolean | undefined> => {
     assert(window.interop);
     return await window.interop.storePassword(username, password);
@@ -120,12 +120,12 @@ const interop = {
     (await window.interop?.checkForUpdates()) ?? false,
 
   downloadUpdate: async (
-    progress: (percentage: number) => void
+    progress: (percentage: number) => void,
   ): Promise<boolean> =>
     (await window.interop?.downloadUpdate(progress)) ?? false,
 
   installUpdate: async (): Promise<boolean | Error> =>
-    (await window.interop?.installUpdate()) ?? false
+    (await window.interop?.installUpdate()) ?? false,
 };
 
 export const useInterop = () => interop;

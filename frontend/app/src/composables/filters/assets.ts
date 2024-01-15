@@ -1,25 +1,25 @@
 import { z } from 'zod';
-import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
+import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 
 enum AssetFilterKeys {
   SYMBOL = 'symbol',
   NAME = 'name',
   EVM_CHAIN = 'chain',
-  ADDRESS = 'address'
+  ADDRESS = 'address',
 }
 
 enum AssetFilterValueKeys {
   SYMBOL = 'symbol',
   NAME = 'name',
   EVM_CHAIN = 'evmChain',
-  ADDRESS = 'address'
+  ADDRESS = 'address',
 }
 
 export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
 
 export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
-export const useAssetFilter = () => {
+export function useAssetFilter() {
   const filters: Ref<Filters> = ref({});
 
   const { allEvmChains } = useSupportedChains();
@@ -33,7 +33,7 @@ export const useAssetFilter = () => {
       hint: t('assets.filter.symbol_hint'),
       string: true,
       suggestions: () => [],
-      validate: () => true
+      validate: () => true,
     },
     {
       key: AssetFilterKeys.NAME,
@@ -42,7 +42,7 @@ export const useAssetFilter = () => {
       hint: t('assets.filter.name_hint'),
       string: true,
       suggestions: () => [],
-      validate: () => true
+      validate: () => true,
     },
     {
       key: AssetFilterKeys.EVM_CHAIN,
@@ -50,7 +50,7 @@ export const useAssetFilter = () => {
       description: t('assets.filter.chain'),
       string: true,
       suggestions: () => get(allEvmChains).map(x => x.name),
-      validate: (chain: string) => !!chain
+      validate: (chain: string) => !!chain,
     },
     {
       key: AssetFilterKeys.ADDRESS,
@@ -58,8 +58,8 @@ export const useAssetFilter = () => {
       description: t('assets.filter.address'),
       string: true,
       suggestions: () => [],
-      validate: (address: string) => isValidEthAddress(address)
-    }
+      validate: (address: string) => isValidEthAddress(address),
+    },
   ]);
 
   const updateFilter = (newFilters: Filters) => {
@@ -71,13 +71,13 @@ export const useAssetFilter = () => {
     [AssetFilterValueKeys.SYMBOL]: OptionalString,
     [AssetFilterValueKeys.NAME]: OptionalString,
     [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
-    [AssetFilterValueKeys.ADDRESS]: OptionalString
+    [AssetFilterValueKeys.ADDRESS]: OptionalString,
   });
 
   return {
     filters,
     matchers,
     updateFilter,
-    RouteFilterSchema
+    RouteFilterSchema,
   };
-};
+}

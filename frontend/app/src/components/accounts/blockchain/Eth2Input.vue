@@ -5,12 +5,12 @@ import {
   helpers,
   maxValue,
   minValue,
-  requiredUnless
+  requiredUnless,
 } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
-import { type Eth2Validator } from '@/types/balances';
-import { type ValidationErrors } from '@/types/api/errors';
 import { toMessages } from '@/utils/validation';
+import type { Eth2Validator } from '@/types/balances';
+import type { ValidationErrors } from '@/types/api/errors';
 
 const props = defineProps<{
   validator: Eth2Validator | null;
@@ -27,27 +27,27 @@ const validatorIndex = ref('');
 const publicKey = ref('');
 const ownershipPercentage = ref<string>();
 
-const updateProperties = (validator: Eth2Validator | null) => {
+function updateProperties(validator: Eth2Validator | null) {
   validatorIndex.value = validator?.validatorIndex ?? '';
   publicKey.value = validator?.publicKey ?? '';
   ownershipPercentage.value = validator?.ownershipPercentage ?? '';
-};
+}
 
 const { t } = useI18n();
 
 const rules = {
   validatorIndex: {
-    requiredUnlessKey: requiredUnless(logicAnd(publicKey))
+    requiredUnlessKey: requiredUnless(logicAnd(publicKey)),
   },
   publicKey: {
-    requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex))
+    requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex)),
   },
   ownershipPercentage: {
     percentage: helpers.withMessage(
       t('eth2_input.ownership.validation'),
-      and(minValue(0), maxValue(100))
-    )
-  }
+      and(minValue(0), maxValue(100)),
+    ),
+  },
 };
 
 const { setValidation } = useAccountDialog();
@@ -57,19 +57,18 @@ const v$ = setValidation(
   {
     validatorIndex,
     publicKey,
-    ownershipPercentage
+    ownershipPercentage,
   },
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: errorMessages
-  }
+    $externalResults: errorMessages,
+  },
 );
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 
 onMounted(() => updateProperties(validator.value));
@@ -79,16 +78,16 @@ watch(validator, updateProperties);
 watch(
   [validatorIndex, publicKey, ownershipPercentage],
   ([validatorIndex, publicKey, ownershipPercentage]) => {
-    const validator: Eth2Validator | null =
-      validatorIndex || publicKey
+    const validator: Eth2Validator | null
+      = validatorIndex || publicKey
         ? {
             validatorIndex: onlyIfTruthy(validatorIndex)?.trim(),
             publicKey: onlyIfTruthy(publicKey)?.trim(),
-            ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim()
+            ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim(),
           }
         : null;
     emit('update:validator', validator);
-  }
+  },
 );
 </script>
 

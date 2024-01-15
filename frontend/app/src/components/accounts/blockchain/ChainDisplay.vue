@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ const props = withDefaults(
     dense?: boolean;
   }>(),
   {
-    dense: false
-  }
+    dense: false,
+  },
 );
 
 const { chain } = toRefs(props);
@@ -18,7 +18,12 @@ const name = getChainName(chain);
 </script>
 
 <template>
-  <ListItem :size="dense ? 'sm' : 'md'" :title="name" no-padding no-hover>
+  <ListItem
+    :size="dense ? 'sm' : 'md'"
+    :title="name"
+    no-padding
+    no-hover
+  >
     <template #avatar>
       <ChainIcon :chain="chain" />
     </template>

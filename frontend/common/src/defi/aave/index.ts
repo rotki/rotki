@@ -9,12 +9,12 @@ export interface AaveBorrowingRates {
 const AaveBorrowingAsset = z.object({
   balance: Balance,
   stableApr: z.string(),
-  variableApr: z.string()
+  variableApr: z.string(),
 });
 
 const AaveLendingAsset = z.object({
   balance: Balance,
-  apy: z.string()
+  apy: z.string(),
 });
 
 const AaveBorrowing = z.record(AaveBorrowingAsset);
@@ -25,7 +25,7 @@ export type AaveLending = z.infer<typeof AaveLending>;
 
 const AaveBalance = z.object({
   lending: AaveLending,
-  borrowing: AaveBorrowing
+  borrowing: AaveBorrowing,
 });
 
 export const AaveBalances = z.record(AaveBalance);
@@ -38,7 +38,7 @@ export type AaveHistoryTotal = z.infer<typeof AaveHistoryTotal>;
 const AaveAccountingHistory = z.object({
   totalEarnedInterest: AaveHistoryTotal,
   totalEarnedLiquidations: AaveHistoryTotal,
-  totalLost: AaveHistoryTotal
+  totalLost: AaveHistoryTotal,
 });
 
 export const AaveHistory = z.record(AaveAccountingHistory);

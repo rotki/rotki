@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type Eth2ValidatorEntry,
-  type EthStakingFilter
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type {
+  Eth2ValidatorEntry,
+  EthStakingFilter,
 } from '@rotki/common/lib/staking/eth2';
 
 defineProps<{
@@ -20,13 +20,13 @@ const accounts: Ref<GeneralAccount[]> = ref([]);
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const { t } = useI18n();
 
-const updateValidators = (validators: Eth2ValidatorEntry[]) => {
+function updateValidators(validators: Eth2ValidatorEntry[]) {
   emit('input', { validators });
-};
+}
 
-const updateAccounts = (accounts: GeneralAccount[]) => {
+function updateAccounts(accounts: GeneralAccount[]) {
   emit('input', { accounts });
-};
+}
 
 watch(accounts, accounts => updateAccounts(accounts));
 </script>

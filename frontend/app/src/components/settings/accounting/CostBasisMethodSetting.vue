@@ -10,15 +10,17 @@ onMounted(() => {
 
 const { t } = useI18n();
 
-const getSuccessMessage = (method: string) =>
-  t('account_settings.messages.cost_basis_method.success', {
-    method: method.toUpperCase()
+function getSuccessMessage(method: string) {
+  return t('account_settings.messages.cost_basis_method.success', {
+    method: method.toUpperCase(),
   });
+}
 
-const getErrorMessage = (method: string) =>
-  t('account_settings.messages.cost_basis_method.error', {
-    method: method.toUpperCase()
+function getErrorMessage(method: string) {
+  return t('account_settings.messages.cost_basis_method.error', {
+    method: method.toUpperCase(),
   });
+}
 </script>
 
 <template>

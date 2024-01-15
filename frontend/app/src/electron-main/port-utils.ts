@@ -1,4 +1,4 @@
-import { default as net } from 'node:net';
+import net from 'node:net';
 
 export const DEFAULT_PORT = 4242;
 
@@ -10,25 +10,24 @@ function checkAvailability(port: number): Promise<number> {
     server.listen(port, 'localhost', () => {
       const address = server.address();
       server.close();
-      if (address && typeof address !== 'string') {
+      if (address && typeof address !== 'string')
         resolve(address.port);
-      } else {
+      else
         reject(new Error(`Invalid Address value ${address}`));
-      }
     });
   });
 }
 
 export async function selectPort(
-  startPort: number = DEFAULT_PORT
+  startPort: number = DEFAULT_PORT,
 ): Promise<number> {
   for (let portNumber = startPort; portNumber <= 65535; portNumber++) {
     try {
       return await checkAvailability(portNumber);
-    } catch (e: any) {
-      if (!['EADDRINUSE', 'EACCES'].includes(e.code)) {
-        throw e;
-      }
+    }
+    catch (error: any) {
+      if (!['EADDRINUSE', 'EACCES'].includes(error.code))
+        throw error;
     }
   }
   throw new Error('no free ports found');

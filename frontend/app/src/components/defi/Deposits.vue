@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { DefiProtocol, Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
-  YearnVaultsProfitDetails
+  YearnVaultsProfitDetails,
 } from '@/premium/premium';
+import type { YearnVaultProfitLoss } from '@/types/defi/yearn';
+import type { ComputedRef } from 'vue';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;
@@ -22,7 +22,7 @@ const modules: Module[] = [
   Module.COMPOUND,
   Module.YEARN,
   Module.YEARN_V2,
-  Module.MAKERDAO_DSR
+  Module.MAKERDAO_DSR,
 ];
 
 const chains = [Blockchain.ETH];
@@ -40,11 +40,12 @@ const aaveStore = useAaveStore();
 
 const { t } = useI18n();
 
-const isProtocol = (protocol: DefiProtocol) =>
-  computed(() => {
+function isProtocol(protocol: DefiProtocol) {
+  return computed(() => {
     const protocols = get(selectedProtocols);
     return protocols.length > 0 && protocols.includes(protocol);
   });
+}
 
 const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
 
@@ -65,14 +66,14 @@ const lendingBalances = computed(() => {
 });
 
 const totalEarnedInAave = computed(() =>
-  get(aaveStore.aaveTotalEarned(get(selectedAddresses)))
+  get(aaveStore.aaveTotalEarned(get(selectedAddresses))),
 );
 
 const effectiveInterestRate = computed<BigNumber>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
   return bigNumberify(
-    get(defiLending.effectiveInterestRate(protocols, addresses))
+    get(defiLending.effectiveInterestRate(protocols, addresses)),
   );
 });
 
@@ -96,11 +97,11 @@ const isYearn = logicOr(isYearnVaults, isYearnVaultsV2);
 const noProtocolSelection = computed(() => get(selectedProtocols).length === 0);
 
 const yearnVersion = computed(() => {
-  if (get(isYearnVaults)) {
+  if (get(isYearnVaults))
     return ProtocolVersion.V1;
-  } else if (get(isYearnVaultsV2)) {
+  else if (get(isYearnVaultsV2))
     return ProtocolVersion.V2;
-  }
+
   return null;
 });
 
@@ -109,14 +110,13 @@ const yearnProfit = computed(() => {
   const allSelected = protocols.length === 0;
   const addresses = get(selectedAddresses);
   let v1Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaults) || allSelected) {
+  if (get(isYearnVaults) || allSelected)
     v1Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V1));
-  }
 
   let v2Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaultsV2) || allSelected) {
+  if (get(isYearnVaultsV2) || allSelected)
     v2Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V2));
-  }
+
   return [...v1Profit, ...v2Profit];
 });
 
@@ -126,16 +126,16 @@ const historyRefreshing = isLoading(historySection);
 
 const refreshing = logicOr(isLoading(section), historyRefreshing);
 
-const refresh = async () => {
+async function refresh() {
   await defiLending.fetchLending(true);
-};
+}
 
 onMounted(async () => {
   const currentRoute = get(route);
-  const queryElement = currentRoute.query['protocol'];
-  if (isDefiProtocol(queryElement)) {
+  const queryElement = currentRoute.query.protocol;
+  if (isDefiProtocol(queryElement))
     set(protocol, queryElement);
-  }
+
   await defiLending.fetchLending();
 });
 
@@ -147,12 +147,11 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
     [DefiProtocol.COMPOUND]: ['compound'],
     [DefiProtocol.MAKERDAO_DSR]: ['makerdao dsr'],
     [DefiProtocol.YEARN_VAULTS]: ['yearn-v1'],
-    [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2']
+    [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2'],
   };
 
-  if (selectedProtocol === null) {
+  if (selectedProtocol === null)
     return Object.values(mapping).flat();
-  }
 
   const mappedProtocol = mapping[selectedProtocol];
   assert(mappedProtocol);
@@ -162,8 +161,8 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t('common.deposits').toLocaleLowerCase()
-  })
+    title: t('common.deposits').toLocaleLowerCase(),
+  }),
 );
 </script>
 
@@ -172,7 +171,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     :title="[
       t('navigation_menu.defi'),
       t('common.deposits'),
-      t('navigation_menu.defi_sub.deposits_sub.protocols')
+      t('navigation_menu.defi_sub.deposits_sub.protocols'),
     ]"
   >
     <template #buttons>
@@ -199,10 +198,15 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     </template>
 
     <ProgressScreen v-if="loading">
-      <template #message>{{ t('lending.loading') }}</template>
+      <template #message>
+        {{ t('lending.loading') }}
+      </template>
     </ProgressScreen>
 
-    <div v-else class="flex flex-col gap-4">
+    <div
+      v-else
+      class="flex flex-col gap-4"
+    >
       <DepositTotals
         :loading="historyLoading"
         :effective-interest-rate="effectiveInterestRate"
@@ -222,8 +226,14 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         <DefiProtocolSelector v-model="protocol" />
       </div>
 
-      <StatCard v-if="!isYearn" :title="t('common.assets')">
-        <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
+      <StatCard
+        v-if="!isYearn"
+        :title="t('common.assets')"
+      >
+        <LendingAssetTable
+          :loading="refreshing"
+          :assets="lendingBalances"
+        />
       </StatCard>
 
       <YearnAssetsTable
@@ -250,7 +260,10 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         />
       </template>
 
-      <PremiumCard v-if="!premium" :title="t('lending.history')" />
+      <PremiumCard
+        v-if="!premium"
+        :title="t('lending.history')"
+      />
 
       <HistoryEventsView
         v-else

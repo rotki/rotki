@@ -24,12 +24,12 @@ export type AccountAssetBalances = z.infer<typeof AccountAssetBalances>;
 
 export enum BalanceType {
   ASSET = 'asset',
-  LIABILITY = 'liability'
+  LIABILITY = 'liability',
 }
 
 export const EvmTokens = z.object({
   tokens: z.array(z.string()).nullish(),
-  lastUpdateTimestamp: z.number().nullish()
+  lastUpdateTimestamp: z.number().nullish(),
 });
 
 export const EvmTokensRecord = z.record(EvmTokens);

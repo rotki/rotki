@@ -1,12 +1,5 @@
-import {
-  type DataUtilities,
-  type DateUtilities,
-  type PremiumInterface,
-  type SettingsApi
-} from '@rotki/common/lib/premium';
-import { type Themes, type TimeUnit } from '@rotki/common/lib/settings';
 import dayjs from 'dayjs';
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   assetsApi,
@@ -16,10 +9,17 @@ import {
   statisticsApi,
   sushiApi,
   userSettings,
-  utilsApi
+  utilsApi,
 } from '@/premium/premium-apis';
-import { type DateFormat } from '@/types/date-format';
-import { type FrontendSettingsPayload } from '@/types/settings/frontend-settings';
+import type { Themes, TimeUnit } from '@rotki/common/lib/settings';
+import type {
+  DataUtilities,
+  DateUtilities,
+  PremiumInterface,
+  SettingsApi,
+} from '@rotki/common/lib/premium';
+import type { DateFormat } from '@/types/date-format';
+import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
 const date: DateUtilities = {
   epoch(): number {
@@ -43,7 +43,7 @@ const date: DateUtilities = {
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(
       new Date(timestamp * 1000),
-      useGeneralSettingsStore().dateDisplayFormat
+      useGeneralSettingsStore().dateDisplayFormat,
     );
   },
   getDateInputISOFormat(format: string): string {
@@ -51,20 +51,22 @@ const date: DateUtilities = {
   },
   convertToTimestamp(date: string, dateFormat: string): number {
     return convertToTimestamp(date, dateFormat as DateFormat);
-  }
+  },
 };
 
-const data = (): DataUtilities => ({
-  assets: assetsApi(),
-  statistics: statisticsApi(),
-  balances: balancesApi(),
-  balancer: balancerApi(),
-  compound: compoundApi(),
-  sushi: sushiApi(),
-  utils: utilsApi()
-});
+function data(): DataUtilities {
+  return {
+    assets: assetsApi(),
+    statistics: statisticsApi(),
+    balances: balancesApi(),
+    balancer: balancerApi(),
+    compound: compoundApi(),
+    sushi: sushiApi(),
+    utils: utilsApi(),
+  };
+}
 
-const settings = (): SettingsApi => {
+function settings(): SettingsApi {
   const { t } = useI18n();
   const frontendStore = useFrontendSettingsStore();
   return {
@@ -74,13 +76,13 @@ const settings = (): SettingsApi => {
     defaultThemes(): Themes {
       return {
         dark: DARK_COLORS,
-        light: LIGHT_COLORS
+        light: LIGHT_COLORS,
       };
     },
     themes(): Themes {
       return {
         light: frontendStore.lightTheme,
-        dark: frontendStore.darkTheme
+        dark: frontendStore.darkTheme,
       };
     },
     user: userSettings(),
@@ -88,24 +90,26 @@ const settings = (): SettingsApi => {
       t,
       // TODO: deprecate on the next major components version (it's only here for backwards compat)
       tc: (key, choice, values) => {
-        if (!isDefined(choice)) {
+        if (!isDefined(choice))
           return t(key);
-        }
-        if (!values) {
-          return t(key, choice);
-        }
-        return t(key, values, choice);
-      }
-    }
-  };
-};
 
-export const usePremiumApi = (): PremiumInterface => ({
-  useHostComponents: true,
-  version: 23,
-  api: () => ({
-    date,
-    data: data(),
-    settings: settings()
-  })
-});
+        if (!values)
+          return t(key, choice);
+
+        return t(key, values, choice);
+      },
+    },
+  };
+}
+
+export function usePremiumApi(): PremiumInterface {
+  return {
+    useHostComponents: true,
+    version: 23,
+    api: () => ({
+      date,
+      data: data(),
+      settings: settings(),
+    }),
+  };
+}

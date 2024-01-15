@@ -4,7 +4,7 @@ import { externalLinks } from '@/data/external-links';
 import {
   IPC_ABOUT,
   IPC_DEBUG_SETTINGS,
-  IPC_REQUEST_RESTART
+  IPC_REQUEST_RESTART,
 } from '@/electron-main/ipc-commands';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
@@ -16,7 +16,7 @@ export interface MenuActions {
 }
 
 export const debugSettings = {
-  persistStore: false
+  persistStore: false,
 };
 
 let actions: MenuActions = { displayTray: () => {} };
@@ -32,9 +32,9 @@ const debugMenu = {
         debugSettings.persistStore = item.checked;
         browserWindow.webContents.send(IPC_DEBUG_SETTINGS, debugSettings);
         browserWindow.reload();
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 
 const separator = { type: 'separator' };
@@ -46,56 +46,56 @@ const helpMenu = {
       label: 'Usage Guide',
       click: async () => {
         await shell.openExternal(externalLinks.usageGuide);
-      }
+      },
     },
     {
       label: 'Frequently Asked Questions',
       click: async () => {
         await shell.openExternal(externalLinks.faq);
-      }
+      },
     },
     separator,
     {
       label: 'Release Notes',
       click: async () => {
         await shell.openExternal(externalLinks.changeLog);
-      }
+      },
     },
     separator,
     {
       label: 'Issue / Feature Requests',
       click: async () => {
         await shell.openExternal(externalLinks.githubIssues);
-      }
+      },
     },
     {
       label: 'Logs Directory',
       click: async () => {
         await shell.openPath(app.getPath('logs'));
-      }
+      },
     },
     separator,
     {
       label: 'Clear Cache',
       click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
         await browserWindow.webContents.session.clearCache();
-      }
+      },
     },
     {
       label: 'Reset Settings / Restart Backend',
       click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
         await browserWindow.webContents.session.clearStorageData();
         browserWindow.webContents.send(IPC_REQUEST_RESTART);
-      }
+      },
     },
     separator,
     {
       label: 'About',
       click: (_item: MenuItem, browserWindow: BrowserWindow) => {
         browserWindow.webContents.send(IPC_ABOUT);
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 const macEditOptions = [
   { role: 'pasteAndMatchStyle' },
@@ -104,8 +104,8 @@ const macEditOptions = [
   separator,
   {
     label: 'Speech',
-    submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }]
-  }
+    submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }],
+  },
 ];
 const editMenu = {
   label: '&Edit',
@@ -119,19 +119,19 @@ const editMenu = {
     // Macs have special copy/paste and speech functionality
     ...(isMac
       ? macEditOptions
-      : [{ role: 'delete' }, separator, { role: 'selectAll' }])
-  ]
+      : [{ role: 'delete' }, separator, { role: 'selectAll' }]),
+  ],
 };
 const fileMenu = {
   label: 'File',
-  submenu: [isMac ? { role: 'close' } : { role: 'quit' }]
+  submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
 };
 
 const developmentViewMenu = [
   { role: 'reload' },
   { role: 'forceReload' },
   { role: 'toggleDevTools' },
-  separator
+  separator,
 ];
 
 const minimize = {
@@ -140,7 +140,7 @@ const minimize = {
   enabled: settingsManager.appSettings.displayTray,
   click: (_: KeyboardEvent, window: BrowserWindow) => {
     window.hide();
-  }
+  },
 };
 
 const displayTrayIcon = {
@@ -152,7 +152,7 @@ const displayTrayIcon = {
     settingsManager.appSettings.displayTray = displayTray;
     settingsManager.save();
     actions.displayTray(displayTray);
-  }
+  },
 };
 
 const viewMenu = {
@@ -168,8 +168,8 @@ const viewMenu = {
     { role: 'togglefullscreen' },
     minimize,
     separator,
-    displayTrayIcon
-  ]
+    displayTrayIcon,
+  ],
 };
 const defaultMenuTemplate: any[] = [
   // On a mac we want to show a "rotki" menu item in the app bar
@@ -182,9 +182,9 @@ const defaultMenuTemplate: any[] = [
             { role: 'hideOthers' },
             { role: 'unhide' },
             separator,
-            { role: 'quit' }
-          ]
-        }
+            { role: 'quit' },
+          ],
+        },
       ]
     : []),
   fileMenu,
@@ -193,7 +193,7 @@ const defaultMenuTemplate: any[] = [
   helpMenu,
   separator,
 
-  ...(isDevelopment ? [debugMenu] : [])
+  ...(isDevelopment ? [debugMenu] : []),
 ];
 
 export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
@@ -209,16 +209,16 @@ export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
               id: 'premium-button',
               click: async () => {
                 await shell.openExternal(externalLinks.premium);
-              }
-            }
-          ]
+              },
+            },
+          ],
         }
       : {
           id: 'premium-button',
           click: async () => {
             await shell.openExternal(externalLinks.premium);
-          }
-        })
+          },
+        }),
   };
 
   // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in

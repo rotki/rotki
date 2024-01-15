@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
-import { type PoapDeliveryDetails } from '@/types/defi/airdrops';
-import { default as images } from './poap.json';
+import images from './poap.json';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
 
 defineProps<{
   visible: boolean;
@@ -25,7 +25,7 @@ const events = [
   'resuscitators',
   'yam',
   'ycover',
-  'yfi_og'
+  'yfi_og',
 ] as const;
 
 type EventType = (typeof events)[number];
@@ -35,29 +35,37 @@ const { t } = useI18n();
 const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.name'),
-    key: 'name'
+    key: 'name',
   },
   {
     label: '',
     key: 'link',
     align: 'end',
-    width: '50px'
-  }
+    width: '50px',
+  },
 ]);
 
-const getImage = (event: EventType): string => {
+function getImage(event: EventType): string {
   const image = images[event];
   return image ?? '';
-};
+}
 </script>
 
 <template>
-  <TableExpandContainer :visible="visible" :colspan="colspan" no-padding>
+  <TableExpandContainer
+    :visible="visible"
+    :colspan="colspan"
+    no-padding
+  >
     <template #title>
       {{ t('poap_delivery_airdrops.title') }}
     </template>
 
-    <RuiDataTable :rows="items" :cols="headers" row-attr="name">
+    <RuiDataTable
+      :rows="items"
+      :cols="headers"
+      row-attr="name"
+    >
       <template #item.name="{ row }">
         <div class="flex items-center gap-4">
           <AdaptiveWrapper>
@@ -75,9 +83,19 @@ const getImage = (event: EventType): string => {
       </template>
 
       <template #item.link="{ row }">
-        <ExternalLink :url="row.link" custom>
-          <RuiButton variant="text" color="primary" icon>
-            <RuiIcon size="16" name="external-link-line" />
+        <ExternalLink
+          :url="row.link"
+          custom
+        >
+          <RuiButton
+            variant="text"
+            color="primary"
+            icon
+          >
+            <RuiIcon
+              size="16"
+              name="external-link-line"
+            />
           </RuiButton>
         </ExternalLink>
       </template>

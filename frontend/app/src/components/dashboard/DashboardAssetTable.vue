@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import {
-  type AssetBalance,
-  type AssetBalanceWithPrice,
-  type BigNumber
-} from '@rotki/common';
-import {
-  type DataTableColumn,
-  type DataTableSortData
-} from '@rotki/ui-library-compat';
-import { type Ref } from 'vue';
-import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
-import { type DashboardTableType } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
+import type {
+  AssetBalance,
+  AssetBalanceWithPrice,
+  BigNumber,
+} from '@rotki/common';
+import type {
+  DataTableColumn,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
+import type { Ref } from 'vue';
+import type { Nullable } from '@/types';
+import type { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{
@@ -22,7 +22,7 @@ const props = withDefaults(
     tableType: DashboardTableType;
     loading?: boolean;
   }>(),
-  { loading: false }
+  { loading: false },
 );
 
 const { t } = useI18n();
@@ -35,14 +35,14 @@ const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
-  direction: 'desc' as const
+  direction: 'desc' as const,
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { exchangeRate } = useBalancePricesStore();
 const totalInUsd = computed(() =>
-  aggregateTotal(get(balances), CURRENCY_USD, One)
+  aggregateTotal(get(balances), CURRENCY_USD, One),
 );
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
@@ -51,29 +51,31 @@ const total = computed(() => {
 
 const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
 
-const assetFilter = (item: Nullable<AssetBalance>) => {
+function assetFilter(item: Nullable<AssetBalance>) {
   const keyword = get(search).toLocaleLowerCase()?.trim() ?? '';
-  if (!keyword || !item) {
+  if (!keyword || !item)
     return true;
-  }
+
   const name = get(assetName(item.asset))?.toLocaleLowerCase()?.trim();
   const symbol = get(assetSymbol(item.asset))?.toLocaleLowerCase()?.trim();
   return symbol.includes(keyword) || name.includes(keyword);
-};
+}
 
 const statisticsStore = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statisticsStore);
-const percentageOfTotalNetValue = (value: BigNumber) => {
+
+function percentageOfTotalNetValue(value: BigNumber) {
   const netWorth = get(totalNetWorthUsd) as BigNumber;
   const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
   return calculatePercentage(value, total);
-};
+}
 
-const percentageOfCurrentGroup = (value: BigNumber) =>
-  calculatePercentage(value, get(totalInUsd));
+function percentageOfCurrentGroup(value: BigNumber) {
+  return calculatePercentage(value, get(totalInUsd));
+}
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
@@ -85,7 +87,7 @@ const filtered = computed(() => {
     return sortItems(
       data,
       [sortBy.column as keyof AssetBalance],
-      [sortBy.direction === 'desc']
+      [sortBy.direction === 'desc'],
     );
   }
   return data;
@@ -100,35 +102,35 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'asset',
       class: 'text-no-wrap w-full',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol)
+        symbol: get(currencySymbol),
       }),
       key: 'usdPrice',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('common.amount'),
       key: 'amount',
       align: 'end',
       cellClass: 'py-0',
-      sortable: true
+      sortable: true,
     },
     {
       label: t('common.value_in_symbol', {
-        symbol: get(currencySymbol)
+        symbol: get(currencySymbol),
       }),
       key: 'usdValue',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
-      sortable: true
-    }
+      sortable: true,
+    },
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
@@ -139,7 +141,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       key: 'percentageOfTotalNetValue',
       align: 'end',
       cellClass: 'py-0',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
     });
   }
 
@@ -148,13 +150,13 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: t(
         'dashboard_asset_table.headers.percentage_of_total_current_group',
         {
-          group: get(title)
-        }
+          group: get(title),
+        },
       ),
       key: 'percentageOfTotalCurrentGroup',
       align: 'end',
       cellClass: 'py-0',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
     });
   }
 
@@ -164,7 +166,9 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
 
 <template>
   <DashboardExpandableTable>
-    <template #title>{{ title }}</template>
+    <template #title>
+      {{ title }}
+    </template>
     <template #details>
       <RuiTextField
         v-model="search"
@@ -195,7 +199,10 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
         </template>
-        <VisibleColumnsSelector :group="tableType" :group-label="title" />
+        <VisibleColumnsSelector
+          :group="tableType"
+          :group-label="title"
+        />
       </VMenu>
     </template>
     <template #shortDetails>
@@ -268,7 +275,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
         <span class="text-rui-text-secondary">
           {{
             t('dashboard_asset_table.no_search_result', {
-              search
+              search,
             })
           }}
         </span>

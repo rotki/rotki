@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
-import { type ComputedRef } from 'vue';
 import {
   type MatchedKeyword,
   type SearchMatcher,
   dateDeserializer,
   dateSerializer,
-  dateValidator
+  dateValidator,
 } from '@/types/filtering';
+import type { EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
+import type { ComputedRef } from 'vue';
 
 const emit = defineEmits<{
   (e: 'update:period', value: EthStakingPeriod): void;
@@ -15,12 +15,12 @@ const emit = defineEmits<{
 
 enum Eth2StakingFilterKeys {
   START = 'start',
-  END = 'end'
+  END = 'end',
 }
 
 enum Eth2StakingFilterValueKeys {
   START = 'fromTimestamp',
-  END = 'toTimestamp'
+  END = 'toTimestamp',
 }
 
 export type Matcher = SearchMatcher<
@@ -46,11 +46,11 @@ const matchers: ComputedRef<Matcher[]> = computed(
         string: true,
         suggestions: () => [],
         hint: t('closed_trades.filter.date_hint', {
-          format: getDateInputISOFormat(get(dateInputFormat))
+          format: getDateInputISOFormat(get(dateInputFormat)),
         }),
         validate: dateValidator(dateInputFormat),
         serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat)
+        deserializer: dateDeserializer(dateInputFormat),
       },
       {
         key: Eth2StakingFilterKeys.END,
@@ -59,16 +59,16 @@ const matchers: ComputedRef<Matcher[]> = computed(
         string: true,
         suggestions: () => [],
         hint: t('closed_trades.filter.date_hint', {
-          format: getDateInputISOFormat(get(dateInputFormat))
+          format: getDateInputISOFormat(get(dateInputFormat)),
         }),
         validate: dateValidator(dateInputFormat),
         serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat)
-      }
-    ] satisfies Matcher[]
+        deserializer: dateDeserializer(dateInputFormat),
+      },
+    ] satisfies Matcher[],
 );
 
-const updateFilters = (updatedFilters: Filters) => {
+function updateFilters(updatedFilters: Filters) {
   set(filters, updatedFilters);
   const { fromTimestamp, toTimestamp } = updatedFilters;
 
@@ -76,7 +76,7 @@ const updateFilters = (updatedFilters: Filters) => {
   assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
 
   emit('update:period', { fromTimestamp, toTimestamp });
-};
+}
 </script>
 
 <template>

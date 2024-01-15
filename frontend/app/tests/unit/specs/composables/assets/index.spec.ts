@@ -1,5 +1,5 @@
 import { afterEach } from 'vitest';
-import { type AssetMergePayload, type AssetUpdatePayload } from '@/types/asset';
+import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -7,30 +7,30 @@ vi.mock('@/composables/api/assets/index', () => ({
     performUpdate: vi.fn().mockResolvedValue(1),
     mergeAssets: vi.fn().mockResolvedValue(true),
     importCustom: vi.fn().mockResolvedValue(1),
-    exportCustom: vi.fn().mockResolvedValue({})
-  })
+    exportCustom: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/store/notifications/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn().mockReturnValue({})
-  })
+    notify: vi.fn().mockReturnValue({}),
+  }),
 }));
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
     appSession: vi.fn(),
-    openDirectory: vi.fn()
+    openDirectory: vi.fn(),
   };
   return {
     useInterop: vi.fn().mockReturnValue(mockInterop),
-    interop: mockInterop
+    interop: mockInterop,
   };
 });
 
@@ -52,57 +52,57 @@ describe('store::assets/index', () => {
         expect(useNotificationsStore().notify).not.toHaveBeenCalled();
       });
 
-      test('update available', async () => {
+      it('update available', async () => {
         const versions = {
           local: 14,
           remote: 16,
-          newChanges: 2
+          newChanges: 2,
         };
 
         vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
           result: versions,
-          meta: { title: '' }
+          meta: { title: '' },
         });
 
         const result = await store.checkForUpdate();
 
         expect(result).toEqual({
           updateAvailable: true,
-          versions
+          versions,
         });
       });
 
-      test('update not available', async () => {
+      it('update not available', async () => {
         const versions = {
           local: 14,
           remote: 14,
-          newChanges: 2
+          newChanges: 2,
         };
 
         vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
           result: versions,
-          meta: { title: '' }
+          meta: { title: '' },
         });
 
         const result = await store.checkForUpdate();
 
         expect(result).toEqual({
           updateAvailable: false,
-          versions
+          versions,
         });
       });
     });
 
-    test('error', async () => {
+    it('error', async () => {
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       const result = await store.checkForUpdate();
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
       expect(result).toEqual({
-        updateAvailable: false
+        updateAvailable: false,
       });
 
       expect(useNotificationsStore().notify).toHaveBeenCalled();
@@ -113,8 +113,8 @@ describe('store::assets/index', () => {
     const payload: AssetUpdatePayload = {
       version: 16,
       resolution: {
-        ETH: 'local'
-      }
+        ETH: 'local',
+      },
     };
 
     describe('success', () => {
@@ -123,52 +123,52 @@ describe('store::assets/index', () => {
         expect(useNotificationsStore().notify).not.toHaveBeenCalled();
       });
 
-      test('done', async () => {
+      it('done', async () => {
         vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
           result: true,
-          meta: { title: '' }
+          meta: { title: '' },
         });
 
         const result = await store.applyUpdates(payload);
 
         expect(result).toEqual({
-          done: true
+          done: true,
         });
       });
 
-      test('done', async () => {
+      it('done with chain identifier', async () => {
         const conflicts = [
           {
             identifier: 'ETH',
             local: {},
-            remote: {}
-          }
+            remote: {},
+          },
         ];
 
         vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
           result: conflicts,
-          meta: { title: '' }
+          meta: { title: '' },
         });
 
         const result = await store.applyUpdates(payload);
 
         expect(result).toEqual({
           done: false,
-          conflicts
+          conflicts,
         });
       });
     });
 
-    test('error', async () => {
+    it('error', async () => {
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       const result = await store.applyUpdates(payload);
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
       expect(result).toEqual({
-        done: false
+        done: false,
       });
 
       expect(useNotificationsStore().notify).toHaveBeenCalled();
@@ -178,37 +178,37 @@ describe('store::assets/index', () => {
   describe('mergeAssets', () => {
     const payload: AssetMergePayload = {
       sourceIdentifier: 'ETH2',
-      targetIdentifier: 'ETH'
+      targetIdentifier: 'ETH',
     };
 
-    test('success', async () => {
+    it('success', async () => {
       vi.mocked(api.mergeAssets).mockResolvedValue(true);
 
       const result = await store.mergeAssets(payload);
 
       expect(api.mergeAssets).toHaveBeenCalledWith(
         payload.sourceIdentifier,
-        payload.targetIdentifier
+        payload.targetIdentifier,
       );
 
       expect(result).toEqual({
-        success: true
+        success: true,
       });
     });
 
-    test('failed', async () => {
+    it('failed', async () => {
       vi.mocked(api.mergeAssets).mockRejectedValue(new Error('failed'));
 
       const result = await store.mergeAssets(payload);
 
       expect(api.mergeAssets).toHaveBeenCalledWith(
         payload.sourceIdentifier,
-        payload.targetIdentifier
+        payload.targetIdentifier,
       );
 
       expect(result).toEqual({
         success: false,
-        message: 'failed'
+        message: 'failed',
       });
     });
   });
@@ -216,10 +216,10 @@ describe('store::assets/index', () => {
   describe('importCustomAssets', () => {
     const file = new File(['0'], 'test.csv');
 
-    test('success', async () => {
+    it('success', async () => {
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: true,
-        meta: { title: '' }
+        meta: { title: '' },
       });
 
       const result = await store.importCustomAssets(file);
@@ -227,13 +227,13 @@ describe('store::assets/index', () => {
       expect(api.importCustom).toHaveBeenCalledWith(file, false);
 
       expect(result).toEqual({
-        success: true
+        success: true,
       });
     });
 
-    test('failed', async () => {
+    it('failed', async () => {
       vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
-        new Error('failed')
+        new Error('failed'),
       );
 
       const result = await store.importCustomAssets(file);
@@ -242,7 +242,7 @@ describe('store::assets/index', () => {
 
       expect(result).toEqual({
         success: false,
-        message: 'failed'
+        message: 'failed',
       });
     });
   });
@@ -253,18 +253,18 @@ describe('store::assets/index', () => {
       vi.mocked(useInterop().openDirectory).mockResolvedValue(filepath);
     });
 
-    test('success', async () => {
+    it('success', async () => {
       vi.mocked(api.exportCustom).mockResolvedValue({ success: true });
       const result = await store.exportCustomAssets();
 
       expect(api.exportCustom).toHaveBeenCalledWith(filepath);
 
       expect(result).toEqual({
-        success: true
+        success: true,
       });
     });
 
-    test('failed', async () => {
+    it('failed', async () => {
       vi.mocked(api.exportCustom).mockRejectedValue(new Error('failed'));
 
       const result = await store.exportCustomAssets();
@@ -273,7 +273,7 @@ describe('store::assets/index', () => {
 
       expect(result).toEqual({
         success: false,
-        message: 'failed'
+        message: 'failed',
       });
     });
   });

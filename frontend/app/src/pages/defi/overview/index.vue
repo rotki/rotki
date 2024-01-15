@@ -8,9 +8,9 @@ const section = Section.DEFI_OVERVIEW;
 
 const { t } = useI18n();
 
-const refresh = async () => {
+async function refresh() {
   await store.fetchAllDefi(true);
-};
+}
 
 onMounted(async () => {
   await store.fetchAllDefi(false);
@@ -23,8 +23,8 @@ const refreshing = isLoading(section);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
-    title: t('decentralized_overview.title').toLocaleLowerCase()
-  })
+    title: t('decentralized_overview.title').toLocaleLowerCase(),
+  }),
 );
 </script>
 
@@ -52,7 +52,9 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
     </template>
 
     <ProgressScreen v-if="loading">
-      <template #message>{{ t('decentralized_overview.loading') }}</template>
+      <template #message>
+        {{ t('decentralized_overview.loading') }}
+      </template>
     </ProgressScreen>
     <NoDataScreen v-else-if="currentOverview.length === 0">
       <template #title>
@@ -60,7 +62,10 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       </template>
       {{ t('decentralized_overview.empty_subtitle') }}
     </NoDataScreen>
-    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      v-else
+      class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+    >
       <Overview
         v-for="summary in currentOverview"
         :key="summary.protocol"

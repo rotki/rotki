@@ -15,19 +15,19 @@ const step: Ref<number> = ref(1);
 const steps = [
   {
     title: t('create_account.steps.step_1.title'),
-    description: t('create_account.steps.step_1.description')
+    description: t('create_account.steps.step_1.description'),
   },
   {
     title: t('create_account.steps.step_2.title'),
-    description: t('create_account.steps.step_2.description')
+    description: t('create_account.steps.step_2.description'),
   },
   {
     title: t('create_account.steps.step_3.title'),
-    description: t('create_account.steps.step_3.description')
+    description: t('create_account.steps.step_3.description'),
   },
   {
-    title: t('create_account.steps.step_4.title')
-  }
+    title: t('create_account.steps.step_4.title'),
+  },
 ];
 </script>
 
@@ -36,7 +36,10 @@ const steps = [
     <section :class="css.section">
       <div :class="css.container">
         <div :class="css.wrapper">
-          <div class="pb-4" data-cy="account-management">
+          <div
+            class="pb-4"
+            data-cy="account-management"
+          >
             <UserHost>
               <UpgradeProgressDisplay v-if="upgradeVisible" />
               <CreateAccountWizard
@@ -44,7 +47,7 @@ const steps = [
                 :step.sync="step"
                 :loading="loading"
                 :error="error"
-                @error:clear="error = ''"
+                @clear-error="error = ''"
                 @cancel="navigateToUserLogin(true)"
                 @confirm="createNewAccount($event)"
               />
@@ -74,7 +77,10 @@ const steps = [
     <AccountManagementAside class="hidden lg:flex justify-between">
       <div class="p-12">
         <div class="mb-10">
-          <RuiLogo class="!h-8" text />
+          <RuiLogo
+            class="!h-8"
+            text
+          />
         </div>
         <div>
           <RuiStepper
@@ -84,7 +90,10 @@ const steps = [
             :steps="steps"
           />
         </div>
-        <DockerWarning v-if="!dockerRiskAccepted && isDocker" class="mt-8" />
+        <DockerWarning
+          v-if="!dockerRiskAccepted && isDocker"
+          class="mt-8"
+        />
       </div>
       <AccountManagementFooterText
         #default="{ copyright }"

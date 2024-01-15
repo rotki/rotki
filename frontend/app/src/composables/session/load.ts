@@ -1,6 +1,6 @@
 import { Section, Status } from '@/types/status';
 
-export const useDataLoader = () => {
+export function useDataLoader() {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
   const { fetchWatchers } = useWatchersStore();
   const { fetchTags } = useTagStore();
@@ -18,7 +18,7 @@ export const useDataLoader = () => {
       fetchWhitelistedAssets(),
       fetchWatchers(),
       fetch(),
-      fetchNetValue()
+      fetchNetValue(),
     ]);
     await refreshPrices();
   };
@@ -29,7 +29,8 @@ export const useDataLoader = () => {
 
     if (get(shouldFetchData)) {
       startPromise(refreshData());
-    } else {
+    }
+    else {
       const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
       const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
       ethUpdater.setStatus(Status.LOADED);
@@ -38,6 +39,6 @@ export const useDataLoader = () => {
   };
 
   return {
-    load
+    load,
   };
-};
+}

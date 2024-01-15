@@ -14,13 +14,13 @@ export const NumericString = z
 
 export const Balance = z.object({
   amount: NumericString,
-  usdValue: NumericString
+  usdValue: NumericString,
 });
 
 export type Balance = z.infer<typeof Balance>;
 
 export const AssetEntry = z.object({
-  asset: z.string().min(1)
+  asset: z.string().min(1),
 });
 
 export const AssetBalance = Balance.merge(AssetEntry);
@@ -28,23 +28,23 @@ export const AssetBalance = Balance.merge(AssetEntry);
 export type AssetBalance = z.infer<typeof AssetBalance>;
 
 export const Percentage = z.string().refine(
-  arg => {
+  (arg) => {
     const number = Number.parseFloat(arg);
     return Number.isFinite(number) && number >= 0 && number <= 100;
   },
   {
-    message: 'Percentage must be between 0 and 100'
-  }
+    message: 'Percentage must be between 0 and 100',
+  },
 );
 
 export type Percentage = z.infer<typeof Percentage>;
 
 const WithPrice = z.object({ usdPrice: NumericString });
 
-export const AssetBalanceWithPriceBeforeBreakdown =
-  AssetBalance.merge(WithPrice);
+export const AssetBalanceWithPriceBeforeBreakdown
+  = AssetBalance.merge(WithPrice);
 const AssetBalanceWithPrice = AssetBalanceWithPriceBeforeBreakdown.extend({
-  breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional()
+  breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional(),
 });
 
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
@@ -55,7 +55,8 @@ export interface HasBalance {
   readonly balance: Balance;
 }
 
-export { BigNumber as BigNumber };
+export { BigNumber };
 
-export const onlyIfTruthy = <T>(value: T): T | undefined =>
-  value ? value : undefined;
+export function onlyIfTruthy<T>(value: T): T | undefined {
+  return value || undefined;
+}

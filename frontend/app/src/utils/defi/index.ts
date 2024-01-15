@@ -1,9 +1,7 @@
-import { type ProfitLossModel } from '@rotki/common/lib/defi';
-import { type CompoundProfitAndLoss } from '@/types/defi/compound';
+import type { ProfitLossModel } from '@rotki/common/lib/defi';
+import type { CompoundProfitAndLoss } from '@/types/defi/compound';
 
-export const toProfitLossModel = (
-  profitAndLoss: CompoundProfitAndLoss
-): ProfitLossModel[] => {
+export function toProfitLossModel(profitAndLoss: CompoundProfitAndLoss): ProfitLossModel[] {
   const data: ProfitLossModel[] = [];
   for (const address of Object.keys(profitAndLoss)) {
     const assets = profitAndLoss[address];
@@ -11,10 +9,10 @@ export const toProfitLossModel = (
       data.push({
         address,
         asset,
-        value: assets[asset]
+        value: assets[asset],
       });
     }
   }
 
   return data;
-};
+}

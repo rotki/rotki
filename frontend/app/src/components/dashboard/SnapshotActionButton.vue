@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Writeable } from '@/types';
-import { type AllBalancePayload } from '@/types/blockchain/accounts';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
+import type { Writeable } from '@/types';
+import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
@@ -21,20 +21,20 @@ const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
 const { dark } = useTheme();
 
-const refreshAllAndSave = async () => {
+async function refreshAllAndSave() {
   set(visible, false);
   const payload: Writeable<Partial<AllBalancePayload>> = {
     ignoreCache: true,
-    saveData: true
+    saveData: true,
   };
-  if (get(ignoreErrors)) {
+  if (get(ignoreErrors))
     payload.ignoreErrors = true;
-  }
+
   await fetchBalances(payload);
   await fetchNetValue();
-};
+}
 
-const importSnapshot = async () => {
+async function importSnapshot() {
   set(importSnapshotLoading, true);
 
   let success = false;
@@ -43,33 +43,36 @@ const importSnapshot = async () => {
     if (appSession) {
       await importBalancesSnapshot(
         get(balanceSnapshotFile)!.path,
-        get(locationDataSnapshotFile)!.path
+        get(locationDataSnapshotFile)!.path,
       );
-    } else {
+    }
+    else {
       await uploadBalancesSnapshot(
         get(balanceSnapshotFile)!,
-        get(locationDataSnapshotFile)!
+        get(locationDataSnapshotFile)!,
       );
     }
     success = true;
-  } catch (e: any) {
-    message = e.message;
+  }
+  catch (error: any) {
+    message = error.message;
   }
 
   if (!success) {
     setMessage({
       title: t('snapshot_action_button.messages.title'),
       description: t('snapshot_action_button.messages.failed_description', {
-        message
-      })
+        message,
+      }),
     });
-  } else {
+  }
+  else {
     setMessage({
       title: t('snapshot_action_button.messages.title'),
       description: t('snapshot_action_button.messages.success_description', {
-        message
+        message,
       }),
-      success: true
+      success: true,
     });
 
     setTimeout(() => {
@@ -80,7 +83,7 @@ const importSnapshot = async () => {
   set(importSnapshotLoading, false);
   set(balanceSnapshotFile, null);
   set(locationDataSnapshotFile, null);
-};
+}
 </script>
 
 <template>
@@ -110,7 +113,10 @@ const importSnapshot = async () => {
       </div>
 
       <div class="pt-2 text--secondary">
-        <DateDisplay v-if="lastBalanceSave" :timestamp="lastBalanceSave" />
+        <DateDisplay
+          v-if="lastBalanceSave"
+          :timestamp="lastBalanceSave"
+        />
 
         <span v-else>
           {{ t('common.never') }}
@@ -131,17 +137,31 @@ const importSnapshot = async () => {
           {{ t('snapshot_action_button.force_save') }}
         </RuiButton>
 
-        <RuiTooltip :open-delay="400" tooltip-class="max-w-[16rem]">
+        <RuiTooltip
+          :open-delay="400"
+          tooltip-class="max-w-[16rem]"
+        >
           <template #activator>
-            <RuiIcon name="information-line" color="primary" />
+            <RuiIcon
+              name="information-line"
+              color="primary"
+            />
           </template>
           {{ t('snapshot_action_button.snapshot_tooltip') }}
         </RuiTooltip>
       </div>
 
-      <RuiTooltip class="mt-2" :open-delay="400" tooltip-class="max-w-[16rem]">
+      <RuiTooltip
+        class="mt-2"
+        :open-delay="400"
+        tooltip-class="max-w-[16rem]"
+      >
         <template #activator>
-          <RuiCheckbox v-model="ignoreErrors" color="primary" hide-details>
+          <RuiCheckbox
+            v-model="ignoreErrors"
+            color="primary"
+            hide-details
+          >
             {{ t('snapshot_action_button.ignore_errors_label') }}
           </RuiCheckbox>
         </template>

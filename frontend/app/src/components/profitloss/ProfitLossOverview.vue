@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {
-  type ProfitLossOverviewItem,
-  type SelectedReport
-} from '@/types/reports';
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
+import type {
+  ProfitLossOverviewItem,
+  SelectedReport,
+} from '@/types/reports';
 
 const props = withDefaults(
   defineProps<{
@@ -15,14 +15,14 @@ const props = withDefaults(
   {
     symbol: null,
     flat: false,
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const { report } = toRefs(props);
 
 const total = computed<ProfitLossOverviewItem>(() =>
-  calculateTotalProfitLoss(get(report))
+  calculateTotalProfitLoss(get(report)),
 );
 
 const { t } = useI18n();
@@ -58,7 +58,9 @@ const { t } = useI18n();
             :key="key"
             class="border-default border-b"
           >
-            <td class="pa-4">{{ pluralizeLastWord(toCapitalCase(key)) }}</td>
+            <td class="pa-4">
+              {{ pluralizeLastWord(toCapitalCase(key)) }}
+            </td>
             <td class="text-right pa-4">
               <AmountDisplay
                 pnl
@@ -81,7 +83,10 @@ const { t } = useI18n();
             </td>
           </tr>
           <tr v-if="Object.keys(report.overview).length === 0">
-            <td colspan="3" class="pa-4 h-[3rem]" />
+            <td
+              colspan="3"
+              class="pa-4 h-[3rem]"
+            />
           </tr>
           <tr class="border-t border-default font-medium">
             <td class="pa-4">

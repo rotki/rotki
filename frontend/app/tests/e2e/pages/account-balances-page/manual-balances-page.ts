@@ -22,24 +22,23 @@ export class ManualBalancesPage {
     cy.get('.manual-balances-form__asset').type(balance.keyword);
     cy.get('[data-cy="no_assets"]').should('not.exist');
     cy.get(`#asset-${balance.asset.toLowerCase()}`).should('be.visible');
-    cy.get('.v-autocomplete__content .v-list > div').should($list => {
+    cy.get('.v-autocomplete__content .v-list > div').should(($list) => {
       expect($list.eq(0)).to.contain(balance.asset);
       $list.first().trigger('click');
     });
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
-    for (const tag of balance.tags) {
+    for (const tag of balance.tags)
       cy.get('.manual-balances-form__tags').type(`${tag}{enter}`);
-    }
 
     cy.get('.manual-balances-form__location').click();
     cy.get('.manual-balances-form__location').type(
-      `{selectall}{backspace}${balance.location}{enter}`
+      `{selectall}{backspace}${balance.location}{enter}`,
     );
     cy.get('.v-autocomplete__content').should('not.be.visible');
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible'
+      'not.be.visible',
     );
   }
 
@@ -98,15 +97,14 @@ export class ManualBalancesPage {
       .find('[data-cy=list-title]')
       .should('contain.text', balance.asset);
 
-    for (const tag of balance.tags) {
+    for (const tag of balance.tags)
       cy.get('@row').find('.tag').contains(tag).should('be.visible');
-    }
   }
 
   private getLocationBalances() {
     const balances: Map<string, BigNumber> = new Map();
 
-    cy.get('[data-cy=manual-balances__location]').each($element => {
+    cy.get('[data-cy=manual-balances__location]').each(($element) => {
       const location = $element.attr('data-location');
       if (!location) {
         cy.log('missing location for element ', $element);
@@ -124,7 +122,7 @@ export class ManualBalancesPage {
   }
 
   getTotals() {
-    return this.getLocationBalances().then($balances => {
+    return this.getLocationBalances().then(($balances) => {
       let total = new BigNumber(0);
       const balances: { location: string; value: BigNumber }[] = [];
 
@@ -135,7 +133,7 @@ export class ManualBalancesPage {
 
       return cy.wrap({
         total,
-        balances
+        balances,
       });
     });
   }

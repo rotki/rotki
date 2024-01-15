@@ -1,15 +1,15 @@
 import { BigNumber } from '@rotki/common';
-import { AmountFormatter } from '@/data/amount_formatter';
+import { AmountFormatter } from '@/data/amount-formatter';
 
-describe('AmountFormatter', () => {
+describe('amountFormatter', () => {
   const converter = new AmountFormatter();
 
   it('should handle decimal precision correctly', () => {
     expect(
-      converter.format(bigNumberify(127.32189477847), 2, ' ', ',')
+      converter.format(bigNumberify(127.32189477847), 2, ' ', ','),
     ).toEqual('127,32');
     expect(
-      converter.format(bigNumberify(127.32789477847), 2, ' ', ',')
+      converter.format(bigNumberify(127.32789477847), 2, ' ', ','),
     ).toEqual('127,32');
     expect(
       converter.format(
@@ -17,14 +17,14 @@ describe('AmountFormatter', () => {
         2,
         ' ',
         ',',
-        BigNumber.ROUND_UP
-      )
+        BigNumber.ROUND_UP,
+      ),
     ).toEqual('127,33');
   });
 
   it('should handle decimal separator correctly', () => {
     expect(converter.format(bigNumberify(127.32), 2, ' ', ',')).toEqual(
-      '127,32'
+      '127,32',
     );
   });
 
@@ -34,13 +34,13 @@ describe('AmountFormatter', () => {
 
   it('should handle one thousand separator correctly', () => {
     expect(converter.format(bigNumberify(1127.32), 2, ' ', ',')).toEqual(
-      '1 127,32'
+      '1 127,32',
     );
   });
 
   it('should multiple thousand separator correctly', () => {
     expect(converter.format(bigNumberify(1221127.32), 2, ' ', ',')).toEqual(
-      '1 221 127,32'
+      '1 221 127,32',
     );
   });
 });

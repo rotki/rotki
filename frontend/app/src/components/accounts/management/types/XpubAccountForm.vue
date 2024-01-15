@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type BtcChains } from '@/types/blockchain/chains';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import {
-  type XpubAccountWithBalance,
-  type XpubPayload
+import type { BtcChains } from '@/types/blockchain/chains';
+import type {
+  XpubAccountWithBalance,
+  XpubPayload,
 } from '@/types/blockchain/accounts';
 
 const props = defineProps<{ blockchain: BtcChains }>();
@@ -23,7 +23,7 @@ const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 const { t } = useI18n();
 
-const save = async () => {
+async function save() {
   const edit = !!get(accountToEdit);
 
   const chain = get(blockchain);
@@ -35,10 +35,11 @@ const save = async () => {
         address: '',
         label: get(label),
         tags: get(tags),
-        xpub: get(xpub) || undefined
+        xpub: get(xpub) || undefined,
       });
       startPromise(fetchAccounts(chain));
-    } else {
+    }
+    else {
       await addAccounts({
         blockchain: chain,
         payload: [
@@ -46,61 +47,65 @@ const save = async () => {
             address: '',
             label: get(label),
             tags: get(tags),
-            xpub: get(xpub) || undefined
-          }
-        ]
+            xpub: get(xpub) || undefined,
+          },
+        ],
       });
     }
 
     set(xpub, null);
     set(label, '');
     set(tags, []);
-  } catch (e: any) {
-    logger.error(e);
-    let errors = e.message;
-    if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors({
+  }
+  catch (error: any) {
+    logger.error(error);
+    let errors = error.message;
+    if (error instanceof ApiValidationError) {
+      errors = error.getValidationErrors({
         xpub: '',
-        derivationPath: ''
+        derivationPath: '',
       });
     }
 
     if (typeof errors === 'string') {
       await setMessage({
         description: t('account_form.error.description', {
-          error: errors
+          error: errors,
         }),
         title: t('account_form.error.title'),
-        success: false
+        success: false,
       });
-    } else {
+    }
+    else {
       set(errorMessages, errors);
       return false;
     }
 
     return false;
-  } finally {
+  }
+  finally {
     set(pending, false);
   }
   return true;
-};
+}
 
-const setXpub = (acc: XpubAccountWithBalance): void => {
+function setXpub(acc: XpubAccountWithBalance): void {
   set(xpub, {
     xpub: acc.xpub,
     derivationPath: acc.derivationPath,
     blockchain: get(blockchain),
-    xpubType: ''
+    xpubType: '',
   });
   set(label, acc.label);
   set(tags, acc.tags);
-};
+}
 
-watch(accountToEdit, acc => {
+watch(accountToEdit, (acc) => {
   if (acc) {
     assert('derivationPath' in acc);
     setXpub(acc);
-  } else {
+  }
+  else {
     set(xpub, null);
   }
 });

@@ -6,8 +6,8 @@ const props = withDefaults(
     success?: boolean;
   }>(),
   {
-    success: false
-  }
+    success: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -19,12 +19,12 @@ const { t } = useI18n();
 const { message, success } = toRefs(props);
 const visible = ref<boolean>(false);
 
-watch(message, message => {
+watch(message, (message) => {
   set(visible, message.length > 0);
 });
 
 const icon = computed<string>(() =>
-  get(success) ? 'checkbox-circle-line' : 'error-warning-line'
+  get(success) ? 'checkbox-circle-line' : 'error-warning-line',
 );
 </script>
 
@@ -55,7 +55,10 @@ const icon = computed<string>(() =>
             :class="success ? 'text-rui-success' : 'text-rui-error'"
           />
         </div>
-        <div class="hyphens-auto break-words" data-cy="message-dialog__title">
+        <div
+          class="hyphens-auto break-words"
+          data-cy="message-dialog__title"
+        >
           {{ message }}
         </div>
       </div>

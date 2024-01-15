@@ -1,10 +1,10 @@
-import { type Dictionary } from 'vue-router/types/router';
 import { z } from 'zod';
-import { type Account } from '@rotki/common/lib/account';
 import {
   Blockchain,
-  type BlockchainSelection
+  type BlockchainSelection,
 } from '@rotki/common/lib/blockchain';
+import type { Dictionary } from 'vue-router/types/router';
+import type { Account } from '@rotki/common/lib/account';
 
 export type LocationQuery = Dictionary<
   string | (string | null)[] | null | undefined | boolean
@@ -31,21 +31,21 @@ export const RouterPaginationOptionsSchema = z.object({
   sortDesc: z
     .array(z.string())
     .or(z.string())
-    .transform(val => {
+    .transform((val) => {
       const arr = Array.isArray(val) ? val : [val];
       return arr.map(entry => entry === 'true');
     })
-    .optional()
+    .optional(),
 });
 
 export const RouterAccountsSchema = z.object({
   accounts: z
     .array(z.string())
     .or(z.string())
-    .transform(val => {
+    .transform((val) => {
       const arr = Array.isArray(val) ? val : [val];
       const mapped: Account<BlockchainSelection>[] = [];
-      arr.forEach(entry => {
+      arr.forEach((entry) => {
         const parsed = entry.split('#');
         if (parsed.length === 2) {
           const address = parsed[0];
@@ -54,7 +54,7 @@ export const RouterAccountsSchema = z.object({
           if (chain.toUpperCase() in Blockchain || chain === 'ALL') {
             mapped.push({
               address,
-              chain: chain as BlockchainSelection
+              chain: chain as BlockchainSelection,
             });
           }
         }
@@ -62,5 +62,5 @@ export const RouterAccountsSchema = z.object({
 
       return mapped;
     })
-    .optional()
+    .optional(),
 });

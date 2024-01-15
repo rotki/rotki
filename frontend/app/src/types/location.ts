@@ -1,4 +1,4 @@
-import { type ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry } from '@/types/action';
 
 export type AllLocation = Record<
   string,

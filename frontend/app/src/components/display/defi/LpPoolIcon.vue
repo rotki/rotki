@@ -9,28 +9,27 @@ const props = defineProps<{
 const data = [
   {
     identifier: LpType.UNISWAP_V2,
-    icon: './assets/images/protocols/uniswap.svg'
+    icon: './assets/images/protocols/uniswap.svg',
   },
   {
     identifier: LpType.UNISWAP_V3,
-    icon: './assets/images/protocols/uniswap.svg'
+    icon: './assets/images/protocols/uniswap.svg',
   },
   {
     identifier: LpType.SUSHISWAP,
-    icon: './assets/images/protocols/sushiswap.svg'
+    icon: './assets/images/protocols/sushiswap.svg',
   },
   {
     identifier: LpType.BALANCER,
-    icon: './assets/images/protocols/balancer.svg'
-  }
+    icon: './assets/images/protocols/balancer.svg',
+  },
 ];
 
 const icon = computed(() => {
   const selected = data.find(({ identifier }) => identifier === props.type);
 
-  if (!selected) {
+  if (!selected)
     return undefined;
-  }
 
   return selected.icon;
 });
@@ -59,7 +58,10 @@ const css = useCssModule();
         padding="0"
         :show-chain="false"
       />
-      <div v-else :class="[css['second-icon'], css['more-assets']]">
+      <div
+        v-else
+        :class="[css['second-icon'], css['more-assets']]"
+      >
         +{{ assets.length - 1 }}
       </div>
     </div>
@@ -69,7 +71,11 @@ const css = useCssModule();
         color="grey lighten-4"
         :class="css['lp-type-icon-avatar']"
       >
-        <AppImage :width="16" :height="16" :src="icon" />
+        <AppImage
+          :width="16"
+          :height="16"
+          :src="icon"
+        />
       </VAvatar>
     </div>
   </div>

@@ -7,7 +7,7 @@ import { type Plugin, defineConfig } from 'vite';
 const PACKAGE_ROOT = __dirname;
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-const binaryDependencyPlugin = (): Plugin => {
+function binaryDependencyPlugin(): Plugin {
   let outDir = '';
   let rootDir = '';
   return {
@@ -27,13 +27,12 @@ const binaryDependencyPlugin = (): Plugin => {
         'app',
         'node_modules',
         'ps-list',
-        'vendor'
+        'vendor',
       );
       const files = fs.readdirSync(psList);
       const output = join(rootDir, outDir, 'vendor');
-      if (!fs.existsSync(output)) {
+      if (!fs.existsSync(output))
         fs.mkdirSync(output);
-      }
 
       for (const file of files) {
         const src = join(psList, file);
@@ -41,17 +40,17 @@ const binaryDependencyPlugin = (): Plugin => {
         console.log(`${file} -> ${dest}`);
         fs.copyFileSync(src, dest);
       }
-    }
+    },
   };
-};
+}
 
 export default defineConfig({
   root: PACKAGE_ROOT,
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': `${join(PACKAGE_ROOT, 'src')}/`
-    }
+      '@': `${join(PACKAGE_ROOT, 'src')}/`,
+    },
   },
   plugins: [binaryDependencyPlugin()],
   build: {
@@ -61,19 +60,19 @@ export default defineConfig({
     minify: !isDevelopment,
     lib: {
       entry: 'src/background.ts',
-      formats: ['cjs']
+      formats: ['cjs'],
     },
     rollupOptions: {
       external: [
         'csv',
         'electron',
         'electron-devtools-installer',
-        ...builtinModules.flatMap(p => [p, `node:${p}`])
+        ...builtinModules.flatMap(p => [p, `node:${p}`]),
       ],
       output: {
-        entryFileNames: '[name].js'
-      }
+        entryFileNames: '[name].js',
+      },
     },
-    emptyOutDir: false
-  }
+    emptyOutDir: false,
+  },
 });

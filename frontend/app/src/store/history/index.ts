@@ -1,11 +1,11 @@
-import { type EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const associatedLocations: Ref<string[]> = ref([]);
-  const { fetchAssociatedLocations: fetchAssociatedLocationsApi } =
-    useHistoryApi();
+  const { fetchAssociatedLocations: fetchAssociatedLocationsApi }
+    = useHistoryApi();
 
   const evmUndecodedTransactionsStatus: Ref<
     Record<string, EvmUndecodedTransactionsData>
@@ -14,7 +14,7 @@ export const useHistoryStore = defineStore('history', () => {
   const setEvmUndecodedTransactions = (data: EvmUndecodedTransactionsData) => {
     set(evmUndecodedTransactionsStatus, {
       ...get(evmUndecodedTransactionsStatus),
-      [data.evmChain]: data
+      [data.evmChain]: data,
     });
   };
 
@@ -25,17 +25,18 @@ export const useHistoryStore = defineStore('history', () => {
   const fetchAssociatedLocations = async () => {
     try {
       set(associatedLocations, await fetchAssociatedLocationsApi());
-    } catch (e: any) {
-      logger.error(e);
-      const message = e?.message ?? e ?? '';
+    }
+    catch (error: any) {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
       notify({
         title: t(
-          'actions.history.fetch_associated_locations.error.title'
+          'actions.history.fetch_associated_locations.error.title',
         ).toString(),
         message: t('actions.history.fetch_associated_locations.error.message', {
-          message
+          message,
         }).toString(),
-        display: true
+        display: true,
       });
     }
   };
@@ -45,6 +46,6 @@ export const useHistoryStore = defineStore('history', () => {
     fetchAssociatedLocations,
     evmUndecodedTransactionsStatus,
     setEvmUndecodedTransactions,
-    resetEvmUndecodedTransactionsStatus
+    resetEvmUndecodedTransactionsStatus,
   };
 });

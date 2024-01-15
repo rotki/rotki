@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type ProfitLossEvent } from '@/types/reports';
-import { type HistoricalPriceFormPayload } from '@/types/prices';
 import { toMessages } from '@/utils/validation';
+import type { ComputedRef, Ref } from 'vue';
+import type { ProfitLossEvent } from '@/types/reports';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{
   event: ProfitLossEvent;
@@ -20,21 +20,21 @@ const fetchingPrice: Ref<boolean> = ref(false);
 const showDialog: Ref<boolean> = ref(false);
 const price: Ref<string> = ref('');
 
-const openEditHistoricPriceDialog = async () => {
+async function openEditHistoricPriceDialog() {
   set(showDialog, true);
   set(fetchingPrice, true);
   const { assetIdentifier, timestamp } = get(event);
   const historicPrice = await getHistoricPrice({
     fromAsset: assetIdentifier,
     toAsset: get(currency),
-    timestamp
+    timestamp,
   });
   set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
   set(fetchingPrice, false);
-};
+}
 
 const datetime: ComputedRef<string> = computed(() =>
-  convertFromTimestamp(get(event).timestamp)
+  convertFromTimestamp(get(event).timestamp),
 );
 
 const { t } = useI18n();
@@ -43,54 +43,68 @@ const rules = {
   price: {
     required: helpers.withMessage(
       t('price_form.price_non_empty').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    price
+    price,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const { setMessage } = useMessageStore();
-const updatePrice = async () => {
+
+async function updatePrice() {
   const payload: HistoricalPriceFormPayload = {
     fromAsset: get(event).assetIdentifier,
     toAsset: get(currency),
     timestamp: get(event).timestamp,
-    price: get(price)
+    price: get(price),
   };
 
   try {
     await addHistoricalPrice(payload);
     set(showDialog, false);
-  } catch (e: any) {
-    const values = { message: e.message };
+  }
+  catch (error: any) {
+    const values = { message: error.message };
     const title = t('price_management.add.error.title');
     const description = t('price_management.add.error.description', values);
     setMessage({
       title,
       description,
-      success: false
+      success: false,
     });
   }
-};
+}
 </script>
 
 <template>
   <div class="flex justify-end">
-    <VMenu transition="slide-y-transaction" max-width="250px" offset-y>
+    <VMenu
+      transition="slide-y-transaction"
+      max-width="250px"
+      offset-y
+    >
       <template #activator="{ on }">
-        <RuiButton variant="text" class="!p-2" icon v-on="on">
+        <RuiButton
+          variant="text"
+          class="!p-2"
+          icon
+          v-on="on"
+        >
           <RuiIcon name="more-2-fill" />
         </RuiButton>
       </template>
       <div class="py-2">
-        <RuiButton variant="list" @click="openEditHistoricPriceDialog()">
+        <RuiButton
+          variant="list"
+          @click="openEditHistoricPriceDialog()"
+        >
           <template #prepend>
             <RuiIcon name="edit-line" />
           </template>
@@ -99,7 +113,10 @@ const updatePrice = async () => {
       </div>
     </VMenu>
 
-    <VDialog v-model="showDialog" max-width="450px">
+    <VDialog
+      v-model="showDialog"
+      max-width="450px"
+    >
       <RuiCard>
         <template #header>
           {{ t('profit_loss_events.edit_historic_price') }}
@@ -143,10 +160,17 @@ const updatePrice = async () => {
 
         <template #footer>
           <div class="grow" />
-          <RuiButton variant="text" color="primary" @click="showDialog = false">
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="showDialog = false"
+          >
             {{ t('common.actions.cancel') }}
           </RuiButton>
-          <RuiButton color="primary" @click="updatePrice()">
+          <RuiButton
+            color="primary"
+            @click="updatePrice()"
+          >
             {{ t('price_form.update_price') }}
           </RuiButton>
         </template>

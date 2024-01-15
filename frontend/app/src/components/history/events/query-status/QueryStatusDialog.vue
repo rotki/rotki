@@ -11,7 +11,11 @@ const { t } = useI18n();
 <template>
   <VDialog width="1200">
     <template #activator="{ on }">
-      <RuiButton variant="text" class="ml-4" v-on="on">
+      <RuiButton
+        variant="text"
+        class="ml-4"
+        v-on="on"
+      >
         {{ t('common.details') }}
         <template #append>
           <RuiIcon name="arrow-right-s-line" />
@@ -30,7 +34,11 @@ const { t } = useI18n();
                 <slot name="current" />
               </div>
             </div>
-            <RuiButton icon variant="text" @click="dialog.value = false">
+            <RuiButton
+              icon
+              variant="text"
+              @click="dialog.value = false"
+            >
               <RuiIcon name="close-line" />
             </RuiButton>
           </div>
@@ -43,7 +51,10 @@ const { t } = useI18n();
             class="border-t border-default py-3"
           >
             <div class="flex items-center">
-              <slot name="item" :item="item" />
+              <slot
+                name="item"
+                :item="item"
+              />
 
               <RuiTooltip
                 v-if="showTooltip ? showTooltip(item) : true"
@@ -58,10 +69,16 @@ const { t } = useI18n();
                   />
                 </template>
 
-                <slot name="tooltip" :item="item" />
+                <slot
+                  name="tooltip"
+                  :item="item"
+                />
               </RuiTooltip>
             </div>
-            <slot name="steps" :item="item" />
+            <slot
+              name="steps"
+              :item="item"
+            />
           </div>
         </div>
       </RuiCard>

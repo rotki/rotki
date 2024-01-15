@@ -3,7 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Theme } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
-  TimeFramePersist
+  TimeFramePersist,
 } from '@rotki/common/lib/settings/graphs';
 import { type Pinia, createPinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
@@ -16,14 +16,14 @@ import {
   DashboardTableType,
   type FrontendSettings,
   Quarter,
-  SupportedLanguage
+  SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn()
-  })
+    setSettings: vi.fn(),
+  }),
 }));
 
 describe('settings:frontend', () => {
@@ -35,7 +35,7 @@ describe('settings:frontend', () => {
     api = useSettingsApi();
   });
 
-  test('updates settings on valid payload', async () => {
+  it('updates settings on valid payload', async () => {
     expect.assertions(1);
     const store = useFrontendSettingsStore(pinia);
     await store.updateSetting({ defiSetupDone: true });
@@ -52,7 +52,7 @@ describe('settings:frontend', () => {
             queryPeriod: 5,
             profitLossReportPeriod: {
               year: new Date().getFullYear().toString(),
-              quarter: Quarter.ALL
+              quarter: Quarter.ALL,
             },
             thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
             decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
@@ -80,7 +80,7 @@ describe('settings:frontend', () => {
               [DashboardTableType.NFT]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.LIQUIDITY_POSITION]:
-                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
+                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
             },
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
             versionUpdateCheckFrequency:
@@ -88,20 +88,20 @@ describe('settings:frontend', () => {
             enableAliasNames: true,
             blockchainRefreshButtonBehaviour:
               BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-            savedFilters: {}
-          })
-        )
-      })
+            savedFilters: {},
+          }),
+        ),
+      }),
     );
   });
 
-  test('does not update settings on missing payload', async () => {
+  it('does not update settings on missing payload', async () => {
     expect.assertions(1);
     const store = useFrontendSettingsStore(pinia);
     await expect(store.updateSetting({})).rejects.toBeInstanceOf(Error);
   });
 
-  test('restore', async () => {
+  it('restore', async () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
       defiSetupDone: true,
@@ -114,12 +114,12 @@ describe('settings:frontend', () => {
         TimeFramePeriod.THREE_MONTHS,
         TimeFramePeriod.MONTH,
         TimeFramePeriod.TWO_WEEKS,
-        TimeFramePeriod.WEEK
+        TimeFramePeriod.WEEK,
       ],
       queryPeriod: 5,
       profitLossReportPeriod: {
         year: '2018',
-        quarter: Quarter.Q3
+        quarter: Quarter.Q3,
       },
       currencyLocation: CurrencyLocation.BEFORE,
       abbreviateNumber: false,
@@ -128,8 +128,8 @@ describe('settings:frontend', () => {
       refreshPeriod: 120,
       explorers: {
         [Blockchain.ETH]: {
-          transaction: 'explore/tx'
-        }
+          transaction: 'explore/tx',
+        },
       },
       itemsPerPage: 25,
       valueRoundingMode: BigNumber.ROUND_DOWN,
@@ -138,12 +138,12 @@ describe('settings:frontend', () => {
       lightTheme: {
         primary: '#000000',
         accent: '#ffffff',
-        graph: '#555555'
+        graph: '#555555',
       },
       darkTheme: {
         primary: '#ffffff',
         accent: '#000000',
-        graph: '#555555'
+        graph: '#555555',
       },
       defaultThemeVersion: 1,
       graphZeroBased: true,
@@ -153,22 +153,22 @@ describe('settings:frontend', () => {
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
         [DashboardTableType.ASSETS]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
         ],
         [DashboardTableType.LIABILITIES]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
         ],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
         [DashboardTableType.LIQUIDITY_POSITION]: [
-          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
-        ]
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
+        ],
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour:
         BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      savedFilters: {}
+      savedFilters: {},
     };
 
     store.update(state);
@@ -183,12 +183,12 @@ describe('settings:frontend', () => {
       TimeFramePeriod.THREE_MONTHS,
       TimeFramePeriod.MONTH,
       TimeFramePeriod.TWO_WEEKS,
-      TimeFramePeriod.WEEK
+      TimeFramePeriod.WEEK,
     ]);
     expect(store.queryPeriod).toBe(5);
     expect(store.profitLossReportPeriod).toMatchObject({
       year: '2018',
-      quarter: Quarter.Q3
+      quarter: Quarter.Q3,
     });
     expect(store.thousandSeparator).toBe('|');
     expect(store.decimalSeparator).toBe('-');
@@ -197,8 +197,8 @@ describe('settings:frontend', () => {
     expect(store.refreshPeriod).toBe(120);
     expect(store.explorers).toStrictEqual({
       [Blockchain.ETH]: {
-        transaction: 'explore/tx'
-      }
+        transaction: 'explore/tx',
+      },
     });
     expect(store.itemsPerPage).toBe(25);
     expect(store.valueRoundingMode).toBe(BigNumber.ROUND_DOWN);
@@ -207,12 +207,12 @@ describe('settings:frontend', () => {
     expect(store.lightTheme).toStrictEqual({
       primary: '#000000',
       accent: '#ffffff',
-      graph: '#555555'
+      graph: '#555555',
     });
     expect(store.darkTheme).toStrictEqual({
       primary: '#ffffff',
       accent: '#000000',
-      graph: '#555555'
+      graph: '#555555',
     });
     expect(store.graphZeroBased).toBe(true);
     expect(store.showGraphRangeSelector).toBe(true);
@@ -222,20 +222,20 @@ describe('settings:frontend', () => {
     expect(store.dashboardTablesVisibleColumns).toStrictEqual({
       [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIABILITIES]: [
-        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
       ],
       [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIQUIDITY_POSITION]: [
-        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
-      ]
+        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
+      ],
     });
     expect(store.dateInputFormat).toBe(
-      DateFormat.DateMonthYearHourMinuteSecond
+      DateFormat.DateMonthYearHourMinuteSecond,
     );
     expect(store.versionUpdateCheckFrequency).toBe(24);
     expect(store.enableAliasNames).toBe(true);
     expect(store.blockchainRefreshButtonBehaviour).toBe(
-      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
     );
     expect(store.savedFilters).toMatchObject({});
   });

@@ -1,5 +1,5 @@
-import { type Nullable } from '@rotki/common';
-import { type Pinned } from '@/types/session';
+import type { Nullable } from '@rotki/common';
+import type { Pinned } from '@/types/session';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showAbout = ref(false);
@@ -15,15 +15,15 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     if (!get(showDrawer)) {
       set(showDrawer, !get(showDrawer));
       set(isMini, false);
-    } else {
+    }
+    else {
       set(isMini, !get(isMini));
     }
   };
 
   watch(pinned, (current, prev) => {
-    if (current !== prev) {
+    if (current !== prev)
       set(showPinned, !!current);
-    }
   });
 
   return {
@@ -35,12 +35,12 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     showDrawer,
     pinned,
     showPinned,
-    toggleDrawer
+    toggleDrawer,
   };
 });
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useAreaVisibilityStore, import.meta.hot)
+    acceptHMRUpdate(useAreaVisibilityStore, import.meta.hot),
   );
 }

@@ -6,14 +6,14 @@ const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);
 
 const { dotRpcEndpoint: dotRpc } = storeToRefs(useGeneralSettingsStore());
 
-const dotSuccessMessage = (endpoint: string) => {
+function dotSuccessMessage(endpoint: string) {
   if (endpoint) {
     return t('general_settings.validation.dot_rpc.success_set', {
-      endpoint
+      endpoint,
     });
   }
   return t('general_settings.validation.dot_rpc.success_unset');
-};
+}
 
 onBeforeMount(() => {
   set(dotRpcEndpoint, get(dotRpc) || Defaults.DOT_RPC_ENDPOINT);

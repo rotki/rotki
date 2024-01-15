@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Collection } from '@/types/collection';
+import type { Collection } from '@/types/collection';
 
 const props = defineProps<{
   collection: Collection<any>;
@@ -9,14 +9,14 @@ const emit = defineEmits<{
   (e: 'set-page', page: number): void;
 }>();
 
-const setPage = (page: number) => {
+function setPage(page: number) {
   emit('set-page', page);
-};
+}
 
 const { collection } = toRefs(props);
 
-const { data, limit, found, total, entriesFoundTotal, totalUsdValue } =
-  getCollectionData(collection);
+const { data, limit, found, total, entriesFoundTotal, totalUsdValue }
+  = getCollectionData(collection);
 
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 watch([data, found, itemsPerPage], ([data, found, itemsPerPage]) => {
@@ -30,7 +30,7 @@ const { showUpgradeRow, itemLength } = setupEntryLimit(
   limit,
   found,
   total,
-  entriesFoundTotal
+  entriesFoundTotal,
 );
 </script>
 

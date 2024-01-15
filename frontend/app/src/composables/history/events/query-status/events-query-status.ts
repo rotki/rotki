@@ -1,7 +1,7 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { MaybeRef } from '@vueuse/core';
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
-export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
+export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
   const store = useEventsQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
   const { queryStatus, isAllFinished } = storeToRefs(store);
@@ -9,9 +9,8 @@ export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
   const filtered: ComputedRef<HistoryEventsQueryData[]> = computed(() => {
     const statuses = Object.values(get(queryStatus));
     const locationsVal = get(locations);
-    if (locationsVal.length === 0) {
+    if (locationsVal.length === 0)
       return statuses;
-    }
 
     return statuses.filter(({ location }) => locationsVal.includes(location));
   });
@@ -30,8 +29,8 @@ export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
       : 'transactions.query_status_events.end_date';
   };
 
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } =
-    useQueryStatus(filtered, isStatusFinished);
+  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
+    = useQueryStatus(filtered, isStatusFinished);
 
   const getKey = (item: HistoryEventsQueryData) => item.location + item.name;
 
@@ -47,6 +46,6 @@ export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
     sortedQueryStatus,
     filtered,
     queryingLength,
-    length
+    length,
   };
-};
+}

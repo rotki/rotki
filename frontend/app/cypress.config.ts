@@ -28,22 +28,22 @@ export default defineConfig({
           if (results && results.video && results.tests) {
             // Do we have failures for any retry attempts?
             const failures = results.tests.some(test =>
-              test.attempts.some(attempt => attempt.state === 'failed')
+              test.attempts.some(attempt => attempt.state === 'failed'),
             );
             if (!failures) {
               // delete the video if the spec passed and no tests retried
               fs.unlinkSync(results.video);
             }
           }
-        }
+        },
       );
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
       require('@cypress/code-coverage/task')(on, config);
       // include any other plugin code...
       return config;
-    }
+    },
   },
   defaultCommandTimeout: 60000,
   responseTimeout: 60000,
-  pageLoadTimeout: 300000
+  pageLoadTimeout: 300000,
 });

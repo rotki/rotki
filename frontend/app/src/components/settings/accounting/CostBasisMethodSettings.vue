@@ -25,12 +25,12 @@ const { costBasisMethodData } = useCostBasisMethod();
         v-on="on"
       >
         <template #title>
-          <span class="text-uppercase">{{ item.identifier }}</span>
+          <span class="uppercase">{{ item.identifier }}</span>
         </template>
       </ListItem>
     </template>
     <template #selection="{ item }">
-      <span class="font-medium text-uppercase">{{ item.identifier }}</span>
+      <span class="font-medium uppercase">{{ item.identifier }}</span>
     </template>
   </VSelect>
 </template>

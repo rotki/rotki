@@ -1,4 +1,4 @@
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 export interface ScramblerOptions {
   value: Ref<BigNumber>;
@@ -6,13 +6,12 @@ export interface ScramblerOptions {
   multiplier: Ref<number>;
 }
 
-export const useNumberScrambler = (
-  options: ScramblerOptions
-): ComputedRef<BigNumber> =>
-  computed(() => {
+export function useNumberScrambler(options: ScramblerOptions): ComputedRef<BigNumber> {
+  return computed(() => {
     const value = get(options.value);
-    if (!get(options.enabled)) {
+    if (!get(options.enabled))
       return value;
-    }
+
     return value.multipliedBy(get(options.multiplier));
   });
+}

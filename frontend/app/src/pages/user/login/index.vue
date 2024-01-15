@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type LoginCredentials } from '@/types/login';
 import Fragment from '@/components/helper/Fragment';
+import type { LoginCredentials } from '@/types/login';
 
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
@@ -9,7 +9,7 @@ const { userLogin, errors, loading } = useAccountManagement();
 const { checkForAssetUpdate } = storeToRefs(useSessionStore());
 
 const showUpgradeProgress: ComputedRef<boolean> = computed(
-  () => get(upgradeVisible) && get(errors).length === 0
+  () => get(upgradeVisible) && get(errors).length === 0,
 );
 
 const isDocker = import.meta.env.VITE_DOCKER;
@@ -23,20 +23,20 @@ const header = computed(() => {
 
   return {
     header: header?.header || t('login.welcome_title'),
-    text: header?.text || t('login.welcome_description')
+    text: header?.text || t('login.welcome_description'),
   };
 });
 
-const handleLogin = async (credentials: LoginCredentials) => {
+async function handleLogin(credentials: LoginCredentials) {
   set(errors, []);
   await userLogin(credentials);
-};
+}
 
-const navigate = async () => {
+async function navigate() {
   set(canRequestData, true);
   await navigateToDashboard();
   set(showReleaseNotes, false);
-};
+}
 
 const { t } = useI18n();
 const css = useCssModule();
@@ -48,7 +48,10 @@ onMounted(async () => fetchMessages());
   <Fragment>
     <section :class="css.section">
       <div :class="css.container">
-        <RuiLogo :class="css.logo__mobile" text />
+        <RuiLogo
+          :class="css.logo__mobile"
+          text
+        />
         <div :class="css.wrapper">
           <div data-cy="account-management">
             <UserHost>
@@ -91,15 +94,23 @@ onMounted(async () => fetchMessages());
         <h2 class="text-h3 font-light xl:text-h2 mb-6">
           {{ header.header }}
         </h2>
-        <p class="text-body-2">{{ header.text }}</p>
-        <NewReleaseChangelog v-if="showReleaseNotes" class="mt-4" />
+        <p class="text-body-2">
+          {{ header.text }}
+        </p>
+        <NewReleaseChangelog
+          v-if="showReleaseNotes"
+          class="mt-4"
+        />
         <WelcomeMessageDisplay
           v-else-if="welcomeMessage"
           class="mt-6"
           :message="welcomeMessage"
         />
       </div>
-      <DockerWarning v-if="!dockerRiskAccepted && isDocker" class="mt-8" />
+      <DockerWarning
+        v-if="!dockerRiskAccepted && isDocker"
+        class="mt-8"
+      />
     </AccountManagementAside>
   </Fragment>
 </template>

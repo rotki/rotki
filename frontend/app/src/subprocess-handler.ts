@@ -8,37 +8,33 @@ import { type App, type BrowserWindow, app, ipcMain } from 'electron';
 import psList from 'ps-list';
 import { type Task, tasklist } from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
-import { type BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import type { BackendOptions } from '@/electron-main/ipc';
 import type stream from 'node:stream';
 
 const isDevelopment = checkIfDevelopment();
 
-const streamToString = (
-  ioStream: stream.Readable,
-  log: (msg: string) => void,
-  label = 'rotki-core'
-): (() => void) => {
+function streamToString(ioStream: stream.Readable, log: (msg: string) => void, label = 'rotki-core'): (() => void) {
   const bufferChunks: Buffer[] = [];
   const stringChunks: string[] = [];
 
   const onData = (chunk: any): void => {
-    if (typeof chunk === 'string') {
+    if (typeof chunk === 'string')
       stringChunks.push(chunk);
-    } else {
+    else
       bufferChunks.push(chunk);
-    }
   };
 
   const onEnd = (): void => {
     if (bufferChunks.length > 0) {
       try {
         stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
-      } catch (e: any) {
-        stringChunks.push(e.message);
+      }
+      catch (error: any) {
+        stringChunks.push(error.message);
       }
     }
 
@@ -58,34 +54,34 @@ const streamToString = (
     ioStream.off('end', onEnd);
     ioStream.off('error', onError);
   };
-};
+}
 
 function getBackendArguments(options: Partial<BackendOptions>): string[] {
   const args: string[] = [];
-  if (options.loglevel) {
+  if (options.loglevel)
     args.push('--loglevel', options.loglevel);
-  }
-  if (options.logFromOtherModules) {
+
+  if (options.logFromOtherModules)
     args.push('--logfromothermodules');
-  }
-  if (options.dataDirectory) {
+
+  if (options.dataDirectory)
     args.push('--data-dir', options.dataDirectory);
-  }
-  if (options.sleepSeconds) {
+
+  if (options.sleepSeconds)
     args.push('--sleep-secs', options.sleepSeconds.toString());
-  }
-  if (options.maxLogfilesNum) {
+
+  if (options.maxLogfilesNum)
     args.push('--max-logfiles-num', options.maxLogfilesNum.toString());
-  }
+
   if (options.maxSizeInMbAllLogs) {
     args.push(
       '--max-size-in-mb-all-logs',
-      options.maxSizeInMbAllLogs.toString()
+      options.maxSizeInMbAllLogs.toString(),
     );
   }
-  if (options.sqliteInstructions !== undefined) {
+  if (options.sqliteInstructions !== undefined)
     args.push('--sqlite-instructions', options.sqliteInstructions.toString());
-  }
+
   return args;
 }
 
@@ -106,7 +102,7 @@ export default class SubprocessHandler {
   private exiting: boolean;
   private stdioListeners = {
     outOff: (): void => {},
-    errOff: (): void => {}
+    errOff: (): void => {},
   };
 
   constructor(private app: App) {
@@ -136,9 +132,9 @@ export default class SubprocessHandler {
   }
 
   get logDir(): string {
-    if (import.meta.env.VITE_DEV_LOGS) {
+    if (import.meta.env.VITE_DEV_LOGS)
       return path.join('frontend', 'logs');
-    }
+
     return this.logDirectory ?? this.defaultLogDirectory;
   }
 
@@ -152,9 +148,9 @@ export default class SubprocessHandler {
 
   private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
-    if (os.platform() === 'darwin') {
+    if (os.platform() === 'darwin')
       return path.join(resources, BACKEND_DIRECTORY, 'rotki-core');
-    }
+
     return path.join(resources, BACKEND_DIRECTORY);
   }
 
@@ -174,38 +170,37 @@ export default class SubprocessHandler {
 
   logToFile(msg: string | Error) {
     try {
-      if (!msg) {
+      if (!msg)
         return;
-      }
-      const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
+
+      const message = `${new Date(Date.now()).toISOString()}: ${msg.toString()}`;
 
       // eslint-disable-next-line no-console
       console.log(message);
-      if (!fs.existsSync(this.logDir)) {
+      if (!fs.existsSync(this.logDir))
         fs.mkdirSync(this.logDir);
-      }
+
       fs.appendFileSync(this.electronLogFile, `${message}\n`);
-    } catch {
+    }
+    catch {
       // Not much we can do if an error happens here.
     }
   }
 
   setCorsURL(url: string) {
-    if (url.endsWith('/')) {
+    if (url.endsWith('/'))
       this._corsURL = url.slice(0, Math.max(0, url.length - 1));
-    } else {
+    else
       this._corsURL = url;
-    }
   }
 
   listenForMessages() {
     // Listen for ack messages from renderer process
     ipcMain.on('ack', (event, ...args) => {
-      if (args[0] === 1) {
+      if (args[0] === 1)
         clearInterval(this.rpcFailureNotifier);
-      } else {
+      else
         this.logToFile(`Warning: unknown ack code ${args[0]}`);
-      }
     });
   }
 
@@ -219,16 +214,16 @@ export default class SubprocessHandler {
     const runningProcesses = await psList({ all: true });
     const matches = runningProcesses.filter(
       process =>
-        process.cmd?.includes('-m rotkehlchen') ||
-        process.cmd?.includes('rotki-core')
+        process.cmd?.includes('-m rotkehlchen')
+        || process.cmd?.includes('rotki-core'),
     );
     return matches.map(p => p.pid);
   }
 
   async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
-    if (options.logDirectory && !fs.existsSync(options.logDirectory)) {
+    if (options.logDirectory && !fs.existsSync(options.logDirectory))
       fs.mkdirSync(options.logDirectory);
-    }
+
     this.logDirectory = options.logDirectory;
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting rotki-core');
@@ -241,11 +236,12 @@ export default class SubprocessHandler {
         this.setFailureNotification(
           window,
           'rotki requires at least macOS High Sierra',
-          BackendCode.MACOS_VERSION
+          BackendCode.MACOS_VERSION,
         );
         return;
       }
-    } else if (os.platform() === 'win32') {
+    }
+    else if (os.platform() === 'win32') {
       const release = os.release().split('.');
       if (release.length > 1) {
         const major = Number.parseInt(release[0]);
@@ -257,7 +253,7 @@ export default class SubprocessHandler {
           this.setFailureNotification(
             window,
             'rotki cannot run on Windows 7 or earlier, since Python3.11 is no longer supported there',
-            BackendCode.WIN_VERSION
+            BackendCode.WIN_VERSION,
           );
           return;
         }
@@ -277,39 +273,36 @@ export default class SubprocessHandler {
     if (port !== DEFAULT_PORT && Number.parseInt(oldPort) !== port) {
       this._serverUrl = `${scheme}://${host}:${port}`;
       this.logToFile(
-        `Default port ${oldPort} was in use. Starting rotki-core at ${port}`
+        `Default port ${oldPort} was in use. Starting rotki-core at ${port}`,
       );
     }
 
     this._port = port;
     const args: string[] = getBackendArguments(options);
 
-    if (this.guessPackaged()) {
+    if (this.guessPackaged())
       this.startProcessPackaged(port, args, window);
-    } else {
+    else
       this.startProcess(port, args);
-    }
 
     const childProcess = this.childProcess;
-    if (!childProcess) {
+    if (!childProcess)
       return;
-    }
+
     if (childProcess.stdout) {
       this.stdioListeners.outOff = streamToString(childProcess.stdout, msg =>
-        this.logBackendOutput(msg)
-      );
+        this.logBackendOutput(msg));
     }
     if (childProcess.stderr) {
       this.stdioListeners.errOff = streamToString(childProcess.stderr, msg =>
-        this.logBackendOutput(msg)
-      );
+        this.logBackendOutput(msg));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const handler = this;
     this.onChildError = (err: Error) => {
       this.logToFile(
-        `Encountered an error while trying to start rotki-core\n\n${err}`
+        `Encountered an error while trying to start rotki-core\n\n${err.toString()}`,
       );
       // Notify the main window every 2 seconds until it acks the notification
       handler.setFailureNotification(window, err, BackendCode.TERMINATED);
@@ -319,14 +312,14 @@ export default class SubprocessHandler {
 
     this.onChildExit = (code: number, signal: any) => {
       this.logToFile(
-        `rotki-core exited with signal: ${signal} (Code: ${code})`
+        `rotki-core exited with signal: ${signal} (Code: ${code})`,
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
         handler.setFailureNotification(
           window,
           this.backendOutput,
-          BackendCode.TERMINATED
+          BackendCode.TERMINATED,
         );
       }
       this.childProcess = undefined;
@@ -338,7 +331,7 @@ export default class SubprocessHandler {
 
     if (childProcess) {
       this.logToFile(
-        `rotki-core started on port: ${port} (PID: ${childProcess.pid})`
+        `rotki-core started on port: ${port} (PID: ${childProcess.pid})`,
       );
       return;
     }
@@ -347,50 +340,50 @@ export default class SubprocessHandler {
 
   async exitPyProc(restart = false) {
     const client = this.childProcess;
-    if (!client) {
+    if (!client)
       return;
-    }
-    if (this.exiting) {
+
+    if (this.exiting)
       return;
-    }
+
     this.exiting = true;
     this.logToFile(
       restart
         ? 'Restarting rotki-core'
-        : `Terminating rotki-core: (PID ${client.pid})`
+        : `Terminating rotki-core: (PID ${client.pid})`,
     );
-    if (this.rpcFailureNotifier) {
+    if (this.rpcFailureNotifier)
       clearInterval(this.rpcFailureNotifier);
-    }
+
     if (restart && client) {
-      if (this.onChildExit) {
+      if (this.onChildExit)
         client.off('exit', this.onChildExit);
-      }
-      if (this.onChildError) {
+
+      if (this.onChildError)
         client.off('error', this.onChildError);
-      }
+
       this.stdioListeners.outOff();
       this.stdioListeners.errOff();
     }
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32')
       await this.terminateWindowsProcesses(restart);
-    }
-    if (client) {
+
+    if (client)
       await this.terminateBackend(client);
-    }
+
     this.exiting = false;
   }
 
   private logBackendOutput(msg: string | Error) {
     this.logToFile(msg);
-    this.backendOutput += msg;
+    this.backendOutput = `${this.backendOutput} ${msg.toString()}`;
   }
 
   private terminateBackend = (client: ChildProcess) =>
     new Promise<void>((resolve, reject) => {
       if (!client.pid) {
         this.logToFile(
-          'subprocess was already terminated (no process id pid found)'
+          'subprocess was already terminated (no process id pid found)',
         );
         this.childProcess = undefined;
         this._port = undefined;
@@ -400,13 +393,13 @@ export default class SubprocessHandler {
 
       client.once('exit', () => {
         this.logToFile(
-          `The Python sub-process was terminated successfully (${client.killed})`
+          `The Python sub-process was terminated successfully (${client.killed})`,
         );
         resolve();
         this.childProcess = undefined;
         this._port = undefined;
       });
-      client.once('error', e => {
+      client.once('error', (e) => {
         reject(e);
       });
       client.kill();
@@ -415,7 +408,7 @@ export default class SubprocessHandler {
   private guessPackaged() {
     const path = SubprocessHandler.packagedBackendPath();
     this.logToFile(
-      `Determining if we are packaged by seeing if ${path} exists`
+      `Determining if we are packaged by seeing if ${path} exists`,
     );
     return fs.existsSync(path);
   }
@@ -423,11 +416,11 @@ export default class SubprocessHandler {
   private setFailureNotification(
     window: Electron.BrowserWindow | null,
     backendOutput: string | Error,
-    code: BackendCode
+    code: BackendCode,
   ) {
-    if (this.rpcFailureNotifier) {
+    if (this.rpcFailureNotifier)
       clearInterval(this.rpcFailureNotifier);
-    }
+
     this.rpcFailureNotifier = setInterval(() => {
       window?.webContents.send('failed', backendOutput, code);
     }, 2000);
@@ -438,25 +431,24 @@ export default class SubprocessHandler {
       '-m',
       'rotkehlchen',
       '--rest-api-port',
-      port.toString()
+      port.toString(),
     ];
 
-    if (this._corsURL) {
+    if (this._corsURL)
       defaultArgs.push('--api-cors', this._corsURL);
-    }
 
     defaultArgs.push('--logfile', this.backendLogFile);
 
     if (!process.env.VIRTUAL_ENV) {
       this.logAndQuit(
-        'ERROR: Running in development mode and not inside a python virtual environment'
+        'ERROR: Running in development mode and not inside a python virtual environment',
       );
       return;
     }
 
     const allArgs = defaultArgs.concat(args);
     this.logToFile(
-      `Starting non-packaged rotki-core: python ${allArgs.join(' ')}`
+      `Starting non-packaged rotki-core: python ${allArgs.join(' ')}`,
     );
 
     this.childProcess = spawn('python', allArgs, { cwd: '../../' });
@@ -465,8 +457,7 @@ export default class SubprocessHandler {
       this.colibriProcess = spawn('colibri');
       if (this.colibriProcess.stdout) {
         streamToString(this.colibriProcess.stdout, msg =>
-          this.logToFile(`Colibri says: ${msg}`)
-        );
+          this.logToFile(`Colibri says: ${msg}`));
       }
     }
   }
@@ -474,7 +465,7 @@ export default class SubprocessHandler {
   private startProcessPackaged(
     port: number,
     args: string[],
-    window: Electron.CrossProcessExports.BrowserWindow
+    window: Electron.CrossProcessExports.BrowserWindow,
   ): void {
     const distDir = SubprocessHandler.packagedBackendPath();
     const files = fs.readdirSync(distDir);
@@ -503,13 +494,13 @@ export default class SubprocessHandler {
 
     this.executable = exe;
     const executable = path.join(distDir, exe);
-    if (this._corsURL) {
+    if (this._corsURL)
       args.push('--api-cors', this._corsURL);
-    }
+
     args.push('--logfile', this.backendLogFile);
     args = ['--rest-api-port', port.toString()].concat(args);
     this.logToFile(
-      `Starting packaged rotki-core: ${executable} ${args.join(' ')}`
+      `Starting packaged rotki-core: ${executable} ${args.join(' ')}`,
     );
     this.childProcess = spawn(executable, args);
 
@@ -528,7 +519,7 @@ export default class SubprocessHandler {
         streamToString(
           this.colibriProcess.stdout,
           msg => this.logToFile(`output: ${msg}`),
-          'colibri'
+          'colibri',
         );
       }
     }
@@ -558,19 +549,18 @@ export default class SubprocessHandler {
       .filter(task => task.imageName === executable)
       .map(task => task.pid);
     this.logToFile(
-      `Detected the following running rotki-core processes: ${pids.join(', ')}`
+      `Detected the following running rotki-core processes: ${pids.join(', ')}`,
     );
 
     const args = ['/f', '/t'];
 
-    for (const pid of pids) {
+    for (const pid of pids)
       args.push('/PID', pid.toString());
-    }
 
     this.logToFile(
       `Preparing to call "taskill ${args.join(
-        ' '
-      )}" on the rotki-core processes`
+        ' ',
+      )}" on the rotki-core processes`,
     );
 
     const taskKill = spawn('taskkill', args);
@@ -578,18 +568,17 @@ export default class SubprocessHandler {
     return new Promise<void>((resolve, reject) => {
       taskKill.on('exit', () => {
         this.logToFile('Call to taskkill exited');
-        if (!restart) {
+        if (!restart)
           app.exit();
-        }
 
         this.waitForTermination(tasks, pids).then(resolve, reject);
       });
 
-      taskKill.on('error', err => {
-        this.logToFile(`Call to taskkill failed:\n\n ${err}`);
-        if (!restart) {
+      taskKill.on('error', (err) => {
+        this.logToFile(`Call to taskkill failed:\n\n ${err.toString()}`);
+        if (!restart)
           app.exit();
-        }
+
         resolve();
       });
 
@@ -603,19 +592,17 @@ export default class SubprocessHandler {
     }
 
     let running = stillRunning();
-    if (running === 0) {
+    if (running === 0)
       return;
-    }
 
     for (let i = 0; i < 10; i++) {
       this.logToFile(
-        `The ${running} processes are still running. Waiting for 2 seconds`
+        `The ${running} processes are still running. Waiting for 2 seconds`,
       );
       await wait(2000);
       running = stillRunning();
-      if (stillRunning.length === 0) {
+      if (stillRunning.length === 0)
         break;
-      }
     }
   }
 }

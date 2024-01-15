@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { pickBy } from 'lodash-es';
-import { type ComputedRef, type Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -41,18 +41,15 @@ const intersections = ref<Intersections>({
   [Blockchain.POLYGON_POS]: false,
   [Blockchain.ARBITRUM_ONE]: false,
   [Blockchain.BASE]: false,
-  [Blockchain.GNOSIS]: false
+  [Blockchain.GNOSIS]: false,
 });
 
-const updateWhenRatio = (
-  entries: IntersectionObserverEntry[],
-  value: Blockchain
-) => {
+function updateWhenRatio(entries: IntersectionObserverEntry[], value: Blockchain) {
   set(intersections, {
     ...get(intersections),
-    [value]: entries[0].isIntersecting
+    [value]: entries[0].isIntersecting,
   });
-};
+}
 
 const { ethAccounts, eth2Accounts, loopringAccounts } = useEthAccountBalances();
 const {
@@ -63,7 +60,7 @@ const {
   polygonAccounts,
   arbitrumAccounts,
   baseAccounts,
-  gnosisAccounts
+  gnosisAccounts,
 } = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
@@ -73,9 +70,8 @@ const context: ComputedRef<Blockchain> = computed(() => {
   // pick only intersections that are visible (at least 50%)
   const activeObservers = Object.keys(pickBy(get(intersections), e => e));
 
-  if (activeObservers.length > 0) {
-    return activeObservers[activeObservers.length - 1] as Blockchain;
-  }
+  if (activeObservers.length > 0)
+    return activeObservers.at(-1) as Blockchain;
 
   return Blockchain.ETH;
 });
@@ -104,7 +100,7 @@ const observers: Observers = {
   [Blockchain.BASE]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.BASE),
   [Blockchain.GNOSIS]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.GNOSIS)
+    updateWhenRatio(entries, Blockchain.GNOSIS),
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -121,7 +117,7 @@ const busy: Busy = {
   [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS),
   [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE),
   [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE),
-  [Blockchain.GNOSIS]: isAccountOperationRunning(Blockchain.GNOSIS)
+  [Blockchain.GNOSIS]: isAccountOperationRunning(Blockchain.GNOSIS),
 };
 
 const threshold = [0.5];
@@ -130,13 +126,13 @@ const { createAccount, editAccount } = useAccountDialog();
 
 const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   () =>
-    get(ethAccounts).length > 0 ||
-    get(optimismAccounts).length > 0 ||
-    get(avaxAccounts).length > 0 ||
-    get(polygonAccounts).length > 0 ||
-    get(arbitrumAccounts).length > 0 ||
-    get(baseAccounts).length > 0 ||
-    get(gnosisAccounts).length > 0
+    get(ethAccounts).length > 0
+    || get(optimismAccounts).length > 0
+    || get(avaxAccounts).length > 0
+    || get(polygonAccounts).length > 0
+    || get(arbitrumAccounts).length > 0
+    || get(baseAccounts).length > 0
+    || get(gnosisAccounts).length > 0,
 );
 </script>
 
@@ -144,7 +140,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   <TablePageLayout
     :title="[
       t('navigation_menu.accounts_balances'),
-      t('navigation_menu.accounts_balances_sub.blockchain_balances')
+      t('navigation_menu.accounts_balances_sub.blockchain_balances'),
     ]"
   >
     <template #buttons>
@@ -187,8 +183,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.eth,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.eth')"
         :blockchain="Blockchain.ETH"
@@ -201,8 +197,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.eth2,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.eth2')"
         :blockchain="Blockchain.ETH2"
@@ -215,8 +211,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.btc,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.btc')"
         :blockchain="Blockchain.BTC"
@@ -229,8 +225,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.bch,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.bch')"
         :blockchain="Blockchain.BCH"
@@ -243,8 +239,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.ksm,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.ksm')"
         :blockchain="Blockchain.KSM"
@@ -257,8 +253,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.dot,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.dot')"
         :blockchain="Blockchain.DOT"
@@ -271,8 +267,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.avax,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.avax')"
         :blockchain="Blockchain.AVAX"
@@ -285,8 +281,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.optimism,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.optimism')"
         :blockchain="Blockchain.OPTIMISM"
@@ -299,8 +295,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.polygon_pos,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.polygon_pos')"
         :blockchain="Blockchain.POLYGON_POS"
@@ -313,8 +309,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.arbitrum_one,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.arbitrum_one')"
         :blockchain="Blockchain.ARBITRUM_ONE"
@@ -327,8 +323,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.base,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.base')"
         :blockchain="Blockchain.BASE"
@@ -341,8 +337,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         v-intersect="{
           handler: observers.gnosis,
           options: {
-            threshold
-          }
+            threshold,
+          },
         }"
         :title="t('blockchain_balances.balances.gnosis')"
         :blockchain="Blockchain.GNOSIS"

@@ -1,20 +1,15 @@
-import { type BaseMessage } from '@/types/messages';
+import type { BaseMessage } from '@/types/messages';
 
-export const useCacheClear = <T>(
-  clearable: { id: T; text: string }[],
-  clearHandle: (source: T) => Promise<void>,
-  message: (source: string) => {
-    success: string;
-    error: string;
-  },
-  confirmText: (
-    textSource: string,
-    source: T
-  ) => {
-    title: string;
-    message: string;
-  }
+export function useCacheClear<T>(clearable: { id: T; text: string }[], clearHandle: (source: T) => Promise<void>, message: (source: string) => {
+  success: string;
+  error: string;
+}, confirmText: (
+  textSource: string,
+  source: T
 ) => {
+  title: string;
+  message: string;
+}) {
   const status: Ref<BaseMessage | null> = ref(null);
   const confirm: Ref<boolean> = ref(false);
   const pending: Ref<boolean> = ref(false);
@@ -29,15 +24,17 @@ export const useCacheClear = <T>(
       await clearHandle(source);
       set(status, {
         success: message(text(source)).success,
-        error: ''
+        error: '',
       });
       setTimeout(() => set(status, null), 5000);
-    } catch {
+    }
+    catch {
       set(status, {
         error: message(text(source)).error,
-        success: ''
+        success: '',
       });
-    } finally {
+    }
+    finally {
       set(pending, false);
     }
   };
@@ -51,6 +48,6 @@ export const useCacheClear = <T>(
   return {
     status,
     pending,
-    showConfirmation
+    showConfirmation,
   };
-};
+}

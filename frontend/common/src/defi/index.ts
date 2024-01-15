@@ -1,4 +1,4 @@
-import { type Balance } from '../index';
+import type { Balance } from '../index';
 
 export interface ProfitLossModel {
   readonly address: string;
@@ -10,5 +10,5 @@ export enum LpType {
   UNISWAP_V2 = 'UNISWAP_V2',
   UNISWAP_V3 = 'UNISWAP_V3',
   SUSHISWAP = 'SUSHISWAP',
-  BALANCER = 'BALANCER'
+  BALANCER = 'BALANCER',
 }

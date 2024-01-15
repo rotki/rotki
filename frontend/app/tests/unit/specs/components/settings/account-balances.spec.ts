@@ -8,7 +8,7 @@ import { TaskType } from '@/types/task-type';
 import createCustomPinia from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
-describe('AccountBalances.vue', () => {
+describe('accountBalances.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
@@ -21,9 +21,9 @@ describe('AccountBalances.vue', () => {
       propsData: {
         blockchain: Blockchain.ETH,
         balances: [],
-        title: 'ETH balances'
+        title: 'ETH balances',
       },
-      provide: libraryDefaults
+      provide: libraryDefaults,
     });
   });
 
@@ -31,20 +31,20 @@ describe('AccountBalances.vue', () => {
     useSessionStore().$reset();
   });
 
-  test('table enters into loading state when balances load', async () => {
+  it('table enters into loading state when balances load', async () => {
     const { add, remove } = useTaskStore();
     add({
       id: 1,
       type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
       meta: {
-        title: 'test'
+        title: 'test',
       },
-      time: 0
+      time: 0,
     });
 
     useStatusStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
-      status: Status.LOADING
+      status: Status.LOADING,
     });
 
     await wrapper.vm.$nextTick();
@@ -53,7 +53,7 @@ describe('AccountBalances.vue', () => {
       wrapper
         .find('[data-cy=account-balances-refresh-menu]')
         .find('button')
-        .attributes('disabled')
+        .attributes('disabled'),
     ).toBe('disabled');
 
     expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
@@ -61,7 +61,7 @@ describe('AccountBalances.vue', () => {
     remove(1);
     useStatusStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
-      status: Status.LOADED
+      status: Status.LOADED,
     });
     await wrapper.vm.$nextTick();
 
@@ -69,7 +69,7 @@ describe('AccountBalances.vue', () => {
       wrapper
         .find('[data-cy=account-balances-refresh-menu]')
         .find('button')
-        .attributes('disabled')
+        .attributes('disabled'),
     ).toBeUndefined();
     expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');

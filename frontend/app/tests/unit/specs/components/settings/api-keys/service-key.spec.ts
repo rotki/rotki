@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
-describe('ServiceKey.vue', () => {
+describe('serviceKey.vue', () => {
   let wrapper: Wrapper<any>;
 
   function createWrapper(): Wrapper<any> {
@@ -15,8 +15,8 @@ describe('ServiceKey.vue', () => {
       vuetify,
       propsData: {
         apiKey: '',
-        name: 'etherscan'
-      }
+        name: 'etherscan',
+      },
     });
   }
 
@@ -24,20 +24,20 @@ describe('ServiceKey.vue', () => {
     wrapper = createWrapper();
   });
 
-  test('component leaves edit mode when updated with non-empty value', async () => {
+  it('component leaves edit mode when updated with non-empty value', async () => {
     expect.assertions(2);
     await wrapper.vm.$nextTick();
     expect(
-      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled')
+      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled'),
     ).toBeUndefined();
     await wrapper.setProps({
-      apiKey: '1234'
+      apiKey: '1234',
     });
     await wrapper.vm.$nextTick();
     expect(
       wrapper
         .find('[data-cy=service-key__api-key] input')
-        .attributes('disabled')
+        .attributes('disabled'),
     ).toBe('disabled');
   });
 });

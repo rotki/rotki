@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
-import { displayDateFormatter } from '@/data/date_formatter';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { DateFormat } from '@/types/date-format';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type ImportSourceType } from '@/types/upload-types';
 import { toMessages } from '@/utils/validation';
+import type { TaskMeta } from '@/types/task';
+import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{ source: ImportSourceType; icon?: string }>(),
-  { icon: '' }
+  { icon: '' },
 );
 
 const { source } = toRefs(props);
@@ -27,29 +27,29 @@ const rules = {
   dateInputFormat: {
     required: helpers.withMessage(
       t('general_settings.date_display.validation.empty').toString(),
-      requiredIf(refIsTruthy(dateInputFormat))
+      requiredIf(refIsTruthy(dateInputFormat)),
     ),
     validDate: helpers.withMessage(
       t('general_settings.date_display.validation.invalid').toString(),
       (v: string | null): boolean =>
-        v === null || displayDateFormatter.containsValidDirectives(v)
-    )
-  }
+        v === null || displayDateFormatter.containsValidDirectives(v),
+    ),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    dateInputFormat
+    dateInputFormat,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 const dateInputFormatExample = computed(() => {
   const now = new Date();
-  if (!get(dateInputFormat)) {
+  if (!get(dateInputFormat))
     return '';
-  }
+
   return displayDateFormatter.format(now, get(dateInputFormat)!);
 });
 
@@ -59,51 +59,51 @@ const { awaitTask, isTaskRunning } = useTaskStore();
 const loading = isTaskRunning(taskType, { source: get(source) });
 const { importDataFrom, importFile } = useImportDataApi();
 
-const uploadPackaged = async (file: string) => {
+async function uploadPackaged(file: string) {
   try {
     const sourceVal = get(source);
     const { taskId } = await importDataFrom(
       sourceVal,
       file,
-      get(dateInputFormat) || null
+      get(dateInputFormat) || null,
     );
 
     const taskMeta = {
       title: t('file_upload.task.title', { source: sourceVal }).toString(),
-      source: sourceVal
+      source: sourceVal,
     };
 
     const { result } = await awaitTask<boolean, TaskMeta>(
       taskId,
       taskType,
       taskMeta,
-      true
+      true,
     );
 
-    if (result) {
+    if (result)
       set(uploaded, true);
-    }
-  } catch (e: any) {
-    if (!isTaskCancelled(e)) {
-      set(errorMessage, e.message);
-    }
   }
-};
+  catch (error: any) {
+    if (!isTaskCancelled(error))
+      set(errorMessage, error.message);
+  }
+}
 
-const uploadFile = async () => {
+async function uploadFile() {
   const fileVal = get(file);
   if (fileVal) {
     if (appSession) {
       await uploadPackaged(fileVal.path);
-    } else {
+    }
+    else {
       const formData = new FormData();
       formData.append('source', get(source));
       formData.append('file', fileVal);
       formData.append('async_query', 'true');
       const dateInputFormatVal = get(dateInputFormat);
-      if (dateInputFormatVal) {
+      if (dateInputFormatVal)
         formData.append('timestamp_format', dateInputFormatVal);
-      }
+
       try {
         const { taskId } = await importFile(formData);
         const { result } = await awaitTask<boolean, TaskMeta>(
@@ -111,30 +111,28 @@ const uploadFile = async () => {
           taskType,
           {
             title: t('file_upload.task.title', {
-              source: get(source)
-            }).toString()
-          }
+              source: get(source),
+            }).toString(),
+          },
         );
 
-        if (result) {
+        if (result)
           set(uploaded, true);
-        }
-      } catch (e: any) {
-        if (!isTaskCancelled(e)) {
-          set(errorMessage, e.message);
-        }
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error))
+          set(errorMessage, error.message);
       }
     }
   }
-};
+}
 
-const changeShouldCustomDateFormat = () => {
-  if (get(dateInputFormat) === null) {
+function changeShouldCustomDateFormat() {
+  if (get(dateInputFormat) === null)
     set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
-  } else {
+  else
     set(dateInputFormat, null);
-  }
-};
+}
 
 const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
 
@@ -174,7 +172,7 @@ const slots = useSlots();
         :label="t('file_upload.date_input_format.placeholder')"
         :hint="
           t('file_upload.date_input_format.hint', {
-            format: dateInputFormatExample
+            format: dateInputFormatExample,
           })
         "
       >

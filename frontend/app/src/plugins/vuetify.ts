@@ -17,7 +17,7 @@ import {
   LIGHT_INFO,
   LIGHT_PRIMARY,
   LIGHT_SUCCESS,
-  LIGHT_WARNING
+  LIGHT_WARNING,
 } from '@/plugins/theme';
 
 Vue.use(Vuetify);
@@ -26,42 +26,42 @@ const DARK_GREY = '#1e1e1e';
 
 const vuetify = new Vuetify({
   icons: {
-    iconfont: 'mdi'
+    iconfont: 'mdi',
   },
   theme: {
     options: {
-      customProperties: true
+      customProperties: true,
     },
     themes: {
       light: {
-        primary: LIGHT_PRIMARY,
-        secondary: '#0a0908',
-        accent: LIGHT_ACCENT,
-        graph: LIGHT_GRAPH,
-        graphFade: '#ffffff',
-        error: LIGHT_ERROR,
-        success: LIGHT_SUCCESS,
-        info: LIGHT_INFO,
-        warning: LIGHT_WARNING,
+        'primary': LIGHT_PRIMARY,
+        'secondary': '#0a0908',
+        'accent': LIGHT_ACCENT,
+        'graph': LIGHT_GRAPH,
+        'graphFade': '#ffffff',
+        'error': LIGHT_ERROR,
+        'success': LIGHT_SUCCESS,
+        'info': LIGHT_INFO,
+        'warning': LIGHT_WARNING,
         'rotki-light-grey': '#f9fafb',
         'rotki-grey': '#9fa6b2',
-        'rotki-scrollbar': '#eeeeee'
+        'rotki-scrollbar': '#eeeeee',
       },
       dark: {
-        primary: DARK_PRIMARY,
-        accent: DARK_ACCENT,
-        graph: DARK_GRAPH,
-        graphFade: DARK_GREY,
-        dark: DARK_GREY,
-        error: DARK_ERROR,
-        success: DARK_SUCCESS,
-        info: DARK_INFO,
-        warning: DARK_WARNING,
+        'primary': DARK_PRIMARY,
+        'accent': DARK_ACCENT,
+        'graph': DARK_GRAPH,
+        'graphFade': DARK_GREY,
+        'dark': DARK_GREY,
+        'error': DARK_ERROR,
+        'success': DARK_SUCCESS,
+        'info': DARK_INFO,
+        'warning': DARK_WARNING,
         'rotki-light-grey': '#121212',
-        'rotki-scrollbar': '#999999'
-      }
-    }
-  }
+        'rotki-scrollbar': '#999999',
+      },
+    },
+  },
 });
 
 export { vuetify };

@@ -6,10 +6,11 @@ const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
 
 const { t } = useI18n();
 
-const successMessage = (currencyLocation: CurrencyLocation) =>
-  t('general_settings.validation.currency_location.success', {
-    currencyLocation
+function successMessage(currencyLocation: CurrencyLocation) {
+  return t('general_settings.validation.currency_location.success', {
+    currencyLocation,
   });
+}
 
 onMounted(() => {
   set(currencyLocation, get(location));

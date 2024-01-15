@@ -1,14 +1,11 @@
-import { type ActionResult, type SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
-import { type MaybeRef } from '@vueuse/core';
-import { type Collection } from '@/types/collection';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
   validWithSessionAndExternalService,
-  validWithoutSessionStatus
+  validWithoutSessionStatus,
 } from '@/services/utils';
 import {
   type AssetIdResponse,
@@ -16,35 +13,38 @@ import {
   type CustomAsset,
   type CustomAssetRequestPayload,
   CustomAssets,
-  SupportedAssets
+  SupportedAssets,
 } from '@/types/asset';
+import type { Collection } from '@/types/collection';
+import type { MaybeRef } from '@vueuse/core';
+import type { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 
-export const useAssetManagementApi = () => {
+export function useAssetManagementApi() {
   const queryAllAssets = async (
-    payload: MaybeRef<AssetRequestPayload>
+    payload: MaybeRef<AssetRequestPayload>,
   ): Promise<Collection<SupportedAsset>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
       snakeCaseTransformer(get(payload)),
       {
-        validateStatus: validWithSessionAndExternalService
-      }
+        validateStatus: validWithSessionAndExternalService,
+      },
     );
 
     return mapCollectionResponse(
-      SupportedAssets.parse(handleResponse(response))
+      SupportedAssets.parse(handleResponse(response)),
     );
   };
 
   const queryAllCustomAssets = async (
-    payload: MaybeRef<CustomAssetRequestPayload>
+    payload: MaybeRef<CustomAssetRequestPayload>,
   ): Promise<Collection<CustomAsset>> => {
     const response = await api.instance.post<ActionResult<CustomAssets>>(
       '/assets/custom',
       snakeCaseTransformer(get(payload)),
       {
-        validateStatus: validWithSessionAndExternalService
-      }
+        validateStatus: validWithSessionAndExternalService,
+      },
     );
 
     return mapCollectionResponse(CustomAssets.parse(handleResponse(response)));
@@ -54,8 +54,8 @@ export const useAssetManagementApi = () => {
     const ownedAssets = await api.instance.get<ActionResult<string[]>>(
       '/assets',
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return OwnedAssets.parse(handleResponse(ownedAssets));
@@ -65,22 +65,22 @@ export const useAssetManagementApi = () => {
     const response = await api.instance.get<ActionResult<string[]>>(
       '/assets/types',
       {
-        validateStatus: validWithoutSessionStatus
-      }
+        validateStatus: validWithoutSessionStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const addAsset = async (
-    asset: Omit<SupportedAsset, 'identifier'>
+    asset: Omit<SupportedAsset, 'identifier'>,
   ): Promise<AssetIdResponse> => {
     const response = await api.instance.put<ActionResult<AssetIdResponse>>(
       '/assets/all',
       snakeCaseTransformer(asset),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -91,8 +91,8 @@ export const useAssetManagementApi = () => {
       '/assets/all',
       snakeCaseTransformer(asset),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -103,8 +103,8 @@ export const useAssetManagementApi = () => {
       '/assets/all',
       {
         data: snakeCaseTransformer({ identifier }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -114,22 +114,22 @@ export const useAssetManagementApi = () => {
     const response = await api.instance.get<ActionResult<string[]>>(
       '/assets/custom/types',
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
   };
 
   const addCustomAsset = async (
-    asset: Omit<CustomAsset, 'identifier'>
+    asset: Omit<CustomAsset, 'identifier'>,
   ): Promise<string> => {
     const response = await api.instance.put<ActionResult<string>>(
       '/assets/custom',
       snakeCaseTransformer(asset),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -140,8 +140,8 @@ export const useAssetManagementApi = () => {
       '/assets/custom',
       snakeCaseTransformer(asset),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -152,8 +152,8 @@ export const useAssetManagementApi = () => {
       '/assets/custom',
       {
         data: snakeCaseTransformer({ identifier }),
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -170,6 +170,6 @@ export const useAssetManagementApi = () => {
     getCustomAssetTypes,
     addCustomAsset,
     editCustomAsset,
-    deleteCustomAsset
+    deleteCustomAsset,
   };
-};
+}

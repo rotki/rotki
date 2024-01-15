@@ -14,8 +14,8 @@ const VAutocompleteStub = {
   props: {
     value: { type: String },
     items: { type: Array<any> },
-    itemValue: { type: String }
-  }
+    itemValue: { type: String },
+  },
 };
 
 export default VAutocompleteStub;

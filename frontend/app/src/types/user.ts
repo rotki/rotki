@@ -7,17 +7,17 @@ import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
-import { type ToSnakeCase } from '@/types/common';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
+import type { ToSnakeCase } from '@/types/common';
 
 export const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
-  frontendSettings: z.string().transform(arg => {
+  frontendSettings: z.string().transform((arg) => {
     const data = arg ? camelCaseTransformer(JSON.parse(arg)) : {};
     return FrontendSettings.parse(data);
   }),
   premiumShouldSync: z.boolean(),
-  havePremium: z.boolean()
+  havePremium: z.boolean(),
 });
 
 export type OtherSettings = z.infer<typeof OtherSettings>;
@@ -31,12 +31,12 @@ const GeneralSettings = z.object({
     balanceSaveFrequency =>
       Math.min(
         Number.parseInt(balanceSaveFrequency as string),
-        Constraints.MAX_HOURS_DELAY
+        Constraints.MAX_HOURS_DELAY,
       ),
-    z.number().int().max(Constraints.MAX_HOURS_DELAY)
+    z.number().int().max(Constraints.MAX_HOURS_DELAY),
   ),
   dateDisplayFormat: z.string(),
-  mainCurrency: z.string().transform(currency => {
+  mainCurrency: z.string().transform((currency) => {
     const { findCurrency } = useCurrencies();
     return findCurrency(currency);
   }),
@@ -53,7 +53,7 @@ const GeneralSettings = z.object({
   addressNamePriority: z.array(AddressNamePriorityEnum),
   queryRetryLimit: z.number().min(1),
   connectTimeout: z.number().min(1),
-  readTimeout: z.number().min(1)
+  readTimeout: z.number().min(1),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -62,7 +62,7 @@ export enum CostBasisMethod {
   FIFO = 'fifo',
   LIFO = 'lifo',
   HIFO = 'hifo',
-  ACB = 'acb'
+  ACB = 'acb',
 }
 
 export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
@@ -76,7 +76,7 @@ export const BaseAccountingSettings = z.object({
   profitCurrency: z.string().nullish(),
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
   includeFeesInCostBasis: z.boolean().nullish(),
-  costBasisMethod: CostBasisMethodEnum.nullish()
+  costBasisMethod: CostBasisMethodEnum.nullish(),
 });
 
 export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
@@ -85,7 +85,7 @@ const AccountingSettings = z
   .object({
     pnlCsvWithFormulas: z.boolean(),
     pnlCsvHaveSummary: z.boolean(),
-    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO)
+    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO),
   })
   .merge(BaseAccountingSettings);
 
@@ -96,8 +96,8 @@ const Settings = GeneralSettings.merge(AccountingSettings).merge(OtherSettings);
 const SettingsUpdate = Settings.merge(
   z.object({
     mainCurrency: z.string(),
-    frontendSettings: z.string()
-  })
+    frontendSettings: z.string(),
+  }),
 );
 
 export type SettingsUpdate = Partial<z.infer<typeof SettingsUpdate>>;
@@ -106,7 +106,7 @@ const BaseData = z.object({
   version: z.number(),
   lastWriteTs: z.number(),
   lastDataUploadTs: z.number(),
-  lastBalanceSave: z.number()
+  lastBalanceSave: z.number(),
 });
 
 type BaseData = z.infer<typeof BaseData>;
@@ -115,76 +115,84 @@ export const UserSettings = BaseData.merge(Settings);
 
 type UserSettings = z.infer<typeof UserSettings>;
 
-const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
-  taxfreeAfterPeriod: settings.taxfreeAfterPeriod,
-  pnlCsvWithFormulas: settings.pnlCsvWithFormulas,
-  pnlCsvHaveSummary: settings.pnlCsvHaveSummary,
-  includeGasCosts: settings.includeGasCosts,
-  includeCrypto2crypto: settings.includeCrypto2crypto,
-  accountForAssetsMovements: settings.accountForAssetsMovements,
-  calculatePastCostBasis: settings.calculatePastCostBasis,
-  includeFeesInCostBasis: settings.includeFeesInCostBasis,
-  costBasisMethod: settings.costBasisMethod,
-  ethStakingTaxableAfterWithdrawalEnabled:
-    settings.ethStakingTaxableAfterWithdrawalEnabled
-});
+function getAccountingSettings(settings: UserSettings): AccountingSettings {
+  return {
+    taxfreeAfterPeriod: settings.taxfreeAfterPeriod,
+    pnlCsvWithFormulas: settings.pnlCsvWithFormulas,
+    pnlCsvHaveSummary: settings.pnlCsvHaveSummary,
+    includeGasCosts: settings.includeGasCosts,
+    includeCrypto2crypto: settings.includeCrypto2crypto,
+    accountForAssetsMovements: settings.accountForAssetsMovements,
+    calculatePastCostBasis: settings.calculatePastCostBasis,
+    includeFeesInCostBasis: settings.includeFeesInCostBasis,
+    costBasisMethod: settings.costBasisMethod,
+    ethStakingTaxableAfterWithdrawalEnabled:
+    settings.ethStakingTaxableAfterWithdrawalEnabled,
+  };
+}
 
-const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
-  uiFloatingPrecision: settings.uiFloatingPrecision,
-  mainCurrency: settings.mainCurrency,
-  dateDisplayFormat: settings.dateDisplayFormat,
-  balanceSaveFrequency: settings.balanceSaveFrequency,
-  ksmRpcEndpoint: settings.ksmRpcEndpoint,
-  dotRpcEndpoint: settings.dotRpcEndpoint,
-  submitUsageAnalytics: settings.submitUsageAnalytics,
-  activeModules: settings.activeModules,
-  btcDerivationGapLimit: settings.btcDerivationGapLimit,
-  displayDateInLocaltime: settings.displayDateInLocaltime,
-  currentPriceOracles: settings.currentPriceOracles,
-  historicalPriceOracles: settings.historicalPriceOracles,
-  ssfGraphMultiplier: settings.ssfGraphMultiplier,
-  inferZeroTimedBalances: settings.inferZeroTimedBalances,
-  nonSyncingExchanges: settings.nonSyncingExchanges,
-  evmchainsToSkipDetection: settings.evmchainsToSkipDetection,
-  treatEth2AsEth: settings.treatEth2AsEth,
-  addressNamePriority: settings.addressNamePriority,
-  queryRetryLimit: settings.queryRetryLimit,
-  connectTimeout: settings.connectTimeout,
-  readTimeout: settings.readTimeout
-});
+function getGeneralSettings(settings: UserSettings): GeneralSettings {
+  return {
+    uiFloatingPrecision: settings.uiFloatingPrecision,
+    mainCurrency: settings.mainCurrency,
+    dateDisplayFormat: settings.dateDisplayFormat,
+    balanceSaveFrequency: settings.balanceSaveFrequency,
+    ksmRpcEndpoint: settings.ksmRpcEndpoint,
+    dotRpcEndpoint: settings.dotRpcEndpoint,
+    submitUsageAnalytics: settings.submitUsageAnalytics,
+    activeModules: settings.activeModules,
+    btcDerivationGapLimit: settings.btcDerivationGapLimit,
+    displayDateInLocaltime: settings.displayDateInLocaltime,
+    currentPriceOracles: settings.currentPriceOracles,
+    historicalPriceOracles: settings.historicalPriceOracles,
+    ssfGraphMultiplier: settings.ssfGraphMultiplier,
+    inferZeroTimedBalances: settings.inferZeroTimedBalances,
+    nonSyncingExchanges: settings.nonSyncingExchanges,
+    evmchainsToSkipDetection: settings.evmchainsToSkipDetection,
+    treatEth2AsEth: settings.treatEth2AsEth,
+    addressNamePriority: settings.addressNamePriority,
+    queryRetryLimit: settings.queryRetryLimit,
+    connectTimeout: settings.connectTimeout,
+    readTimeout: settings.readTimeout,
+  };
+}
 
-const getOtherSettings = (settings: UserSettings): OtherSettings => ({
-  krakenAccountType: settings.krakenAccountType,
-  frontendSettings: settings.frontendSettings,
-  premiumShouldSync: settings.premiumShouldSync,
-  havePremium: settings.havePremium
-});
+function getOtherSettings(settings: UserSettings): OtherSettings {
+  return {
+    krakenAccountType: settings.krakenAccountType,
+    frontendSettings: settings.frontendSettings,
+    premiumShouldSync: settings.premiumShouldSync,
+    havePremium: settings.havePremium,
+  };
+}
 
-const getData = (settings: UserSettings): BaseData => ({
-  lastDataUploadTs: settings.lastDataUploadTs,
-  lastBalanceSave: settings.lastBalanceSave,
-  version: settings.version,
-  lastWriteTs: settings.lastWriteTs
-});
+function getData(settings: UserSettings): BaseData {
+  return {
+    lastDataUploadTs: settings.lastDataUploadTs,
+    lastBalanceSave: settings.lastBalanceSave,
+    version: settings.version,
+    lastWriteTs: settings.lastWriteTs,
+  };
+}
 
 export const UserSettingsModel = UserSettings.transform(settings => ({
   general: getGeneralSettings(settings),
   accounting: getAccountingSettings(settings),
   other: getOtherSettings(settings),
-  data: getData(settings)
+  data: getData(settings),
 }));
 
 export type UserSettingsModel = z.infer<typeof UserSettingsModel>;
 
 export const UserAccount = z.object({
   settings: UserSettingsModel,
-  exchanges: z.array(Exchange)
+  exchanges: z.array(Exchange),
 });
 
 export type UserAccount = z.infer<typeof UserAccount>;
 
 const ApiKey = z.object({
-  apiKey: z.string()
+  apiKey: z.string(),
 });
 
 export const ExternalServiceKeys = z.object({
@@ -194,7 +202,7 @@ export const ExternalServiceKeys = z.object({
   beaconchain: ApiKey.optional(),
   loopring: ApiKey.optional(),
   opensea: ApiKey.optional(),
-  blockscout: ApiKey.optional()
+  blockscout: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;

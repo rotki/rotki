@@ -15,20 +15,19 @@ export function deleteBackendUrl(): void {
 
 export function saveBackendUrl({ sessionOnly, url }: BackendSettings): void {
   localStorage.setItem(KEY_BACKEND_URL, url);
-  if (sessionOnly) {
+  if (sessionOnly)
     localStorage.setItem(KEY_BACKEND_URL_SESSION_ONLY, `${true}`);
-  } else {
+  else
     localStorage.removeItem(KEY_BACKEND_URL_SESSION_ONLY);
-  }
 }
 
 export function getBackendUrl(): BackendSettings {
-  const sessionOnly =
-    !!localStorage.getItem(KEY_BACKEND_URL_SESSION_ONLY) ?? false;
+  const sessionOnly
+    = !!localStorage.getItem(KEY_BACKEND_URL_SESSION_ONLY) ?? false;
   const url = localStorage.getItem(KEY_BACKEND_URL) ?? '';
   return {
     url,
-    sessionOnly
+    sessionOnly,
   };
 }
 
@@ -37,9 +36,8 @@ export function lastLogin(): string {
 }
 
 export function setLastLogin(username: string): void {
-  if (!username) {
+  if (!username)
     localStorage.removeItem(KEY_LAST_LOGIN);
-  } else {
+  else
     localStorage.setItem(KEY_LAST_LOGIN, username);
-  }
 }

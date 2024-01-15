@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const displayDateInLocaltime = ref<boolean>(true);
 const { displayDateInLocaltime: enabled } = storeToRefs(
-  useGeneralSettingsStore()
+  useGeneralSettingsStore(),
 );
 
 onMounted(() => {

@@ -10,14 +10,14 @@ describe('store::notifications/index', () => {
     vi.useRealTimers();
   });
 
-  test('normal notification', () => {
+  it('normal notification', () => {
     const notificationsStore = useNotificationsStore();
     const { data } = storeToRefs(notificationsStore);
     const { notify, remove } = notificationsStore;
 
     notify({
       title: 'notification-title-1',
-      message: 'notification-message-1'
+      message: 'notification-message-1',
     });
 
     const dataVal = get(data);
@@ -25,14 +25,14 @@ describe('store::notifications/index', () => {
     expect(dataVal).toMatchObject([
       {
         title: 'notification-title-1',
-        message: 'notification-message-1'
-      }
+        message: 'notification-message-1',
+      },
     ]);
 
     remove(dataVal[0].id);
   });
 
-  test('group notification', () => {
+  it('group notification', () => {
     const notificationsStore = useNotificationsStore();
     const { data } = storeToRefs(notificationsStore);
     const { notify } = notificationsStore;
@@ -41,7 +41,7 @@ describe('store::notifications/index', () => {
       title: 'notification-title-1',
       message: 'notification-message-1',
       group: NotificationGroup.NEW_DETECTED_TOKENS,
-      display: true
+      display: true,
     });
 
     expect(get(data)).toMatchObject([
@@ -49,8 +49,8 @@ describe('store::notifications/index', () => {
         title: 'notification-title-1',
         message: 'notification-message-1',
         group: NotificationGroup.NEW_DETECTED_TOKENS,
-        display: true
-      }
+        display: true,
+      },
     ]);
 
     const originalDate = get(data)[0].date;
@@ -60,7 +60,7 @@ describe('store::notifications/index', () => {
       message: 'notification-message-2',
       group: NotificationGroup.NEW_DETECTED_TOKENS,
       groupCount: 2,
-      display: true
+      display: true,
     });
 
     expect(get(data)).toMatchObject([
@@ -70,8 +70,8 @@ describe('store::notifications/index', () => {
         group: NotificationGroup.NEW_DETECTED_TOKENS,
         groupCount: 2,
         display: false,
-        date: originalDate
-      }
+        date: originalDate,
+      },
     ]);
 
     vi.advanceTimersByTime(60_000);
@@ -81,7 +81,7 @@ describe('store::notifications/index', () => {
       message: 'notification-message-3',
       group: NotificationGroup.NEW_DETECTED_TOKENS,
       groupCount: 3,
-      display: true
+      display: true,
     });
 
     expect(get(data)).toMatchObject([
@@ -90,12 +90,12 @@ describe('store::notifications/index', () => {
         message: 'notification-message-3',
         group: NotificationGroup.NEW_DETECTED_TOKENS,
         groupCount: 3,
-        display: true
-      }
+        display: true,
+      },
     ]);
   });
 
-  test('action notification always on top', () => {
+  it('action notification always on top', () => {
     const notificationsStore = useNotificationsStore();
     const { prioritized } = storeToRefs(notificationsStore);
     const { notify } = notificationsStore;
@@ -105,29 +105,29 @@ describe('store::notifications/index', () => {
         message: 'notification-message-2',
         i18nParam: { choice: 0, message: '', props: {} },
         priority: Priority.ACTION,
-        action: { label: 'Action', action: vi.fn }
+        action: { label: 'Action', action: vi.fn },
       },
       {
         title: 'notification-title-4',
         message: 'notification-message-4',
         i18nParam: { choice: 0, message: '', props: {} },
         priority: Priority.ACTION,
-        action: { label: 'Action', action: vi.fn }
-      }
+        action: { label: 'Action', action: vi.fn },
+      },
     ];
 
     // normal notification
     notify({
       title: 'notification-title-1',
-      message: 'notification-message-1'
+      message: 'notification-message-1',
     });
 
     // should be the only notification shown
     expect(get(prioritized)).toMatchObject([
       {
         title: 'notification-title-1',
-        message: 'notification-message-1'
-      }
+        message: 'notification-message-1',
+      },
     ]);
 
     // add a notification with action
@@ -139,7 +139,7 @@ describe('store::notifications/index', () => {
     // normal priority notification should go down
     expect(get(prioritized)[1]).toMatchObject({
       title: 'notification-title-1',
-      message: 'notification-message-1'
+      message: 'notification-message-1',
     });
 
     vi.advanceTimersByTime(60_000);
@@ -148,14 +148,14 @@ describe('store::notifications/index', () => {
     notify({
       title: 'notification-title-3',
       message: 'notification-message-3',
-      priority: Priority.BULK
+      priority: Priority.BULK,
     });
 
     // should be at the tail
     expect(get(prioritized)[2]).toMatchObject({
       title: 'notification-title-3',
       message: 'notification-message-3',
-      priority: Priority.BULK
+      priority: Priority.BULK,
     });
 
     // action notification should still be on top

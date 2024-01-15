@@ -5,15 +5,15 @@ import {
   helpers,
   minValue,
   numeric,
-  required
+  required,
 } from '@vuelidate/validators';
-import { type Ref } from 'vue';
 import { isEqual } from 'lodash-es';
-import { type BackendOptions } from '@/electron-main/ipc';
-import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
-import { type BackendConfiguration } from '@/types/backend';
 import { toMessages } from '@/utils/validation';
+import type { Ref } from 'vue';
+import type { BackendOptions } from '@/electron-main/ipc';
+import type { Writeable } from '@/types';
+import type { BackendConfiguration } from '@/types/backend';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;
@@ -37,7 +37,7 @@ const { backendSettings } = useSettingsApi();
 const selecting: Ref<boolean> = ref(false);
 const confirmReset: Ref<boolean> = ref(false);
 const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
-  backendSettings()
+  backendSettings(),
 );
 
 const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
@@ -50,36 +50,36 @@ const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
     logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
     logFromOtherModules: opts.logFromOtherModules ?? false,
     maxLogfilesNum:
-      opts.maxLogfilesNum ??
-      config?.maxLogfilesNum?.value ??
-      defaults.maxLogfilesNum,
+      opts.maxLogfilesNum
+      ?? config?.maxLogfilesNum?.value
+      ?? defaults.maxLogfilesNum,
     maxSizeInMbAllLogs:
-      opts.maxSizeInMbAllLogs ??
-      config?.maxSizeInMbAllLogs?.value ??
-      defaults.maxSizeInMbAllLogs,
+      opts.maxSizeInMbAllLogs
+      ?? config?.maxSizeInMbAllLogs?.value
+      ?? defaults.maxSizeInMbAllLogs,
     sqliteInstructions:
-      opts.sqliteInstructions ??
-      config?.sqliteInstructions?.value ??
-      defaults.sqliteInstructions
+      opts.sqliteInstructions
+      ?? config?.sqliteInstructions?.value
+      ?? defaults.sqliteInstructions,
   };
 });
 
-const parseValue = (value?: string) => {
-  if (!value) {
+function parseValue(value?: string) {
+  if (!value)
     return 0;
-  }
+
   const parsedValue = Number.parseInt(value);
   return Number.isNaN(parsedValue) ? 0 : parsedValue;
-};
+}
 
-const stringifyValue = (value?: number) => {
-  if (!value) {
+function stringifyValue(value?: number) {
+  if (!value)
     return '0';
-  }
-  return value.toString();
-};
 
-const loaded = async () => {
+  return value.toString();
+}
+
+async function loaded() {
   const initial = get(initialOptions);
 
   set(logLevel, initial.loglevel);
@@ -89,7 +89,7 @@ const loaded = async () => {
   set(maxLogFiles, stringifyValue(initial.maxLogfilesNum));
   set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
   set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
-};
+}
 
 const {
   resetOptions,
@@ -98,7 +98,7 @@ const {
   logLevel,
   defaultLogLevel,
   defaultLogDirectory,
-  options
+  options,
 } = useBackendManagement(loaded);
 
 const isMaxLogFilesDefault = computed(() => {
@@ -116,51 +116,44 @@ const isSqliteInstructionsDefaults = computed(() => {
   return defaults.sqliteInstructions === parseValue(get(sqliteInstructions));
 });
 
-const resetDefaultArguments = (field: 'files' | 'size' | 'instructions') => {
+function resetDefaultArguments(field: 'files' | 'size' | 'instructions') {
   const defaults = get(defaultBackendArguments);
-  if (field === 'files') {
+  if (field === 'files')
     set(maxLogFiles, stringifyValue(defaults.maxLogfilesNum));
-  } else if (field === 'size') {
+  else if (field === 'size')
     set(maxLogSize, stringifyValue(defaults.maxSizeInMbAllLogs));
-  } else if (field === 'instructions') {
+  else if (field === 'instructions')
     set(sqliteInstructions, stringifyValue(defaults.sqliteInstructions));
-  }
-};
+}
 
 const newUserOptions = computed(() => {
   const initial = get(initialOptions);
   const newOptions: Writeable<Partial<BackendOptions>> = {};
 
   const level = get(logLevel);
-  if (level !== initial.loglevel) {
+  if (level !== initial.loglevel)
     newOptions.loglevel = level;
-  }
 
   const userData = get(userDataDirectory);
-  if (userData !== initial.dataDirectory) {
+  if (userData !== initial.dataDirectory)
     newOptions.dataDirectory = userData;
-  }
 
   const userLog = get(userLogDirectory);
-  if (userLog !== initial.logDirectory) {
+  if (userLog !== initial.logDirectory)
     newOptions.logDirectory = userLog;
-  }
 
   const logFromOther = get(logFromOtherModules);
-  if (logFromOther !== initial.logFromOtherModules) {
+  if (logFromOther !== initial.logFromOtherModules)
     newOptions.logFromOtherModules = logFromOther;
-  }
-  if (!get(isMaxLogFilesDefault)) {
+
+  if (!get(isMaxLogFilesDefault))
     newOptions.maxLogfilesNum = parseValue(get(maxLogFiles));
-  }
 
-  if (!get(isMaxSizeDefault)) {
+  if (!get(isMaxSizeDefault))
     newOptions.maxSizeInMbAllLogs = parseValue(get(maxLogSize));
-  }
 
-  if (!get(isSqliteInstructionsDefaults)) {
+  if (!get(isSqliteInstructionsDefaults))
     newOptions.sqliteInstructions = parseValue(get(sqliteInstructions));
-  }
 
   return newOptions;
 });
@@ -173,7 +166,7 @@ const anyValueChanged = computed(() => {
     logFromOtherModules: get(logFromOtherModules),
     maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
     sqliteInstructions: parseValue(get(sqliteInstructions)),
-    maxLogfilesNum: parseValue(get(maxLogFiles))
+    maxLogfilesNum: parseValue(get(maxLogFiles)),
   };
 
   return !isEqual(form, get(initialOptions));
@@ -184,18 +177,18 @@ const { openDirectory } = useInterop();
 const nonNegativeNumberRules = {
   required: helpers.withMessage(
     t('backend_settings.errors.non_empty'),
-    required
+    required,
   ),
   nonNegative: helpers.withMessage(
     t('backend_settings.errors.min', { min: 0 }),
-    and(numeric, minValue(0))
-  )
+    and(numeric, minValue(0)),
+  ),
 };
 
 const rules = {
   maxLogSize: nonNegativeNumberRules,
   maxLogFiles: nonNegativeNumberRules,
-  sqliteInstructions: nonNegativeNumberRules
+  sqliteInstructions: nonNegativeNumberRules,
 };
 
 const v$ = useVuelidate(
@@ -203,31 +196,31 @@ const v$ = useVuelidate(
   {
     maxLogSize,
     maxLogFiles,
-    sqliteInstructions
+    sqliteInstructions,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 
 watch(v$, ({ $invalid }) => {
   set(valid, !$invalid);
 });
 
-const icon = (level: LogLevel): string => {
-  if (level === LogLevel.DEBUG) {
+function icon(level: LogLevel): string {
+  if (level === LogLevel.DEBUG)
     return 'bug-line';
-  } else if (level === LogLevel.INFO) {
+  else if (level === LogLevel.INFO)
     return 'information-line';
-  } else if (level === LogLevel.WARNING) {
+  else if (level === LogLevel.WARNING)
     return 'alert-line';
-  } else if (level === LogLevel.ERROR) {
+  else if (level === LogLevel.ERROR)
     return 'error-warning-line';
-  } else if (level === LogLevel.CRITICAL) {
+  else if (level === LogLevel.CRITICAL)
     return 'virus-line';
-  } else if (level === LogLevel.TRACE) {
+  else if (level === LogLevel.TRACE)
     return 'file-search-line';
-  }
+
   throw new Error(`Invalid option: ${level}`);
-};
+}
 
 const reset = async function () {
   set(confirmReset, false);
@@ -236,17 +229,16 @@ const reset = async function () {
 };
 
 const selectDataDirectory = async function () {
-  if (get(selecting)) {
+  if (get(selecting))
     return;
-  }
 
   try {
     const title = t('backend_settings.data_directory.select');
     const directory = await openDirectory(title);
-    if (directory) {
+    if (directory)
       set(userDataDirectory, directory);
-    }
-  } finally {
+  }
+  finally {
     set(selecting, false);
   }
 };
@@ -257,27 +249,27 @@ async function save() {
 }
 
 async function selectLogsDirectory() {
-  if (get(selecting)) {
+  if (get(selecting))
     return;
-  }
+
   set(selecting, true);
   try {
     const directory = await openDirectory(
-      t('backend_settings.log_directory.select')
+      t('backend_settings.log_directory.select'),
     );
-    if (directory) {
+    if (directory)
       set(userLogDirectory, directory);
-    }
-  } finally {
+  }
+  finally {
     set(selecting, false);
   }
 }
 
-const dismiss = () => {
+function dismiss() {
   emit('dismiss');
-};
+}
 
-watch(dataDirectory, directory => {
+watch(dataDirectory, (directory) => {
   set(userDataDirectory, get(options).dataDirectory ?? directory);
 });
 
@@ -285,15 +277,15 @@ const levels = Object.values(LogLevel);
 
 const { show } = useConfirmStore();
 
-const showResetConfirmation = () => {
+function showResetConfirmation() {
   show(
     {
       title: t('backend_settings.confirm.title'),
-      message: t('backend_settings.confirm.message')
+      message: t('backend_settings.confirm.message'),
     },
-    reset
+    reset,
   );
-};
+}
 </script>
 
 <template>
@@ -303,7 +295,10 @@ const showResetConfirmation = () => {
     @cancel="dismiss()"
   >
     <div class="mb-8">
-      <LanguageSetting use-local-setting class="mb-10" />
+      <LanguageSetting
+        use-local-setting
+        class="mb-10"
+      />
     </div>
 
     <div class="mb-4">
@@ -362,7 +357,11 @@ const showResetConfirmation = () => {
         @click="selectLogsDirectory()"
       >
         <template #append>
-          <RuiButton variant="text" icon @click="selectLogsDirectory()">
+          <RuiButton
+            variant="text"
+            icon
+            @click="selectLogsDirectory()"
+          >
             <RuiIcon name="folder-line" />
           </RuiButton>
         </template>
@@ -384,13 +383,19 @@ const showResetConfirmation = () => {
       >
         <template #item="{ item }">
           <div class="flex items-center gap-4">
-            <RuiIcon class="text-rui-text-secondary" :name="icon(item)" />
+            <RuiIcon
+              class="text-rui-text-secondary"
+              :name="icon(item)"
+            />
             {{ item.toLocaleLowerCase() }}
           </div>
         </template>
         <template #selection="{ item }">
           <div class="flex items-center gap-4">
-            <RuiIcon class="text-rui-text-secondary" :name="icon(item)" />
+            <RuiIcon
+              class="text-rui-text-secondary"
+              :name="icon(item)"
+            />
             {{ item.toLocaleLowerCase() }}
           </div>
         </template>
@@ -500,7 +505,11 @@ const showResetConfirmation = () => {
 
     <template #footer>
       <div class="flex justify-end w-full gap-2">
-        <RuiButton variant="text" color="primary" @click="dismiss()">
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="dismiss()"
+        >
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton

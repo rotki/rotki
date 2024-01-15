@@ -1,9 +1,7 @@
-import { type Validation, type ValidationArgs } from '@vuelidate/core';
-import { type MaybeRef } from '@vueuse/core';
+import type { Validation, ValidationArgs } from '@vuelidate/core';
+import type { MaybeRef } from '@vueuse/core';
 
-export const useValidation = <V extends ValidationArgs>(
-  v$: MaybeRef<Validation<V>>
-) => {
+export function useValidation<V extends ValidationArgs>(v$: MaybeRef<Validation<V>>) {
   const hasError = () => {
     const validator = get(v$);
     return validator.$error;
@@ -12,14 +10,13 @@ export const useValidation = <V extends ValidationArgs>(
   const callIfValid = <T = unknown>(
     value: T,
     method: (e: T) => void,
-    invalid: () => boolean = hasError
+    invalid: () => boolean = hasError,
   ) => {
-    if (!invalid()) {
+    if (!invalid())
       method(value);
-    }
   };
 
   return {
-    callIfValid
+    callIfValid,
   };
-};
+}

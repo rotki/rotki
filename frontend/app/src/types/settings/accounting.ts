@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
-import {
-  type ConflictResolutionStrategy,
-  type PaginationRequestPayload
+import type {
+  ConflictResolutionStrategy,
+  PaginationRequestPayload,
 } from '@/types/common';
 
 export enum AccountingTreatment {
-  SWAP = 'swap'
+  SWAP = 'swap',
 }
 
 const AccountingTreatmentEnum = z.nativeEnum(AccountingTreatment);
 
 export const AccountingRuleWithLinkedProperty = z.object({
   value: z.boolean(),
-  linkedSetting: z.string().optional()
+  linkedSetting: z.string().optional(),
 });
 
 export type AccountingRuleWithLinkedProperty = z.infer<
@@ -27,20 +27,20 @@ export const AccountingRule = z.object({
   taxable: AccountingRuleWithLinkedProperty,
   countCostBasisPnl: AccountingRuleWithLinkedProperty,
   countEntireAmountSpend: AccountingRuleWithLinkedProperty,
-  accountingTreatment: AccountingTreatmentEnum.nullable()
+  accountingTreatment: AccountingTreatmentEnum.nullable(),
 });
 
 export type AccountingRule = z.infer<typeof AccountingRule>;
 
 const AccountingRuleEntry = AccountingRule.extend({
-  identifier: z.number()
+  identifier: z.number(),
 });
 
 export type AccountingRuleEntry = z.infer<typeof AccountingRuleEntry>;
 
-export const AccountingRuleEntryCollectionResponse =
-  CollectionCommonFields.extend({
-    entries: z.array(AccountingRuleEntry)
+export const AccountingRuleEntryCollectionResponse
+  = CollectionCommonFields.extend({
+    entries: z.array(AccountingRuleEntry),
   });
 
 export type AccountingRuleEntryCollectionResponse = z.infer<
@@ -63,14 +63,14 @@ export interface AccountingRuleLinkedSettingMap {
 export const AccountingRuleConflict = z.object({
   localId: z.number(),
   localData: AccountingRule,
-  remoteData: AccountingRule
+  remoteData: AccountingRule,
 });
 
 export type AccountingRuleConflict = z.infer<typeof AccountingRuleConflict>;
 
-export const AccountingRuleConflictCollectionResponse =
-  CollectionCommonFields.extend({
-    entries: z.array(AccountingRuleConflict)
+export const AccountingRuleConflictCollectionResponse
+  = CollectionCommonFields.extend({
+    entries: z.array(AccountingRuleConflict),
   });
 
 export interface AccountingRuleConflictRequestPayload

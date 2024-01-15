@@ -16,8 +16,8 @@ function loadLocaleMessages(): LocaleMessages {
         messages[locale] = locales[key].default;
       }
     }
-    // eslint-disable-next-line no-empty
-  } catch {}
+  }
+  catch {}
   return messages;
 }
 
@@ -27,12 +27,12 @@ export default castToVueI18n(
       legacy: false,
       locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
       fallbackLocale:
-        (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) ||
-        'en',
+        (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined)
+        || 'en',
       messages: loadLocaleMessages(),
       silentTranslationWarn:
-        import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true'
+        import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
     },
-    VueI18n
-  )
+    VueI18n,
+  ),
 );

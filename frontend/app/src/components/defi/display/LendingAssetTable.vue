@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type BaseDefiBalance } from '@/types/defi/lending';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { BaseDefiBalance } from '@/types/defi/lending';
 
 withDefaults(
   defineProps<{
@@ -8,8 +8,8 @@ withDefaults(
     loading?: boolean;
   }>(),
   {
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -18,19 +18,19 @@ const { t } = useI18n();
 const headers = computed<DataTableHeader[]>(() => [
   {
     text: t('common.asset'),
-    value: 'asset'
+    value: 'asset',
   },
   {
     text: t('common.amount'),
     value: 'balance.amount',
-    align: 'end'
+    align: 'end',
   },
   { text: '', value: 'balance.usdValue', align: 'end' },
   {
     text: t('lending_asset_table.headers.effective_interest_rate'),
     value: 'effectiveInterestRate',
-    align: 'end'
-  }
+    align: 'end',
+  },
 ]);
 </script>
 
@@ -42,7 +42,10 @@ const headers = computed<DataTableHeader[]>(() => [
     sort-by="balance.usdValue"
   >
     <template #item.asset="{ item }">
-      <AssetDetails :asset="item.asset" hide-name />
+      <AssetDetails
+        :asset="item.asset"
+        hide-name
+      />
     </template>
     <template #item.balance.amount="{ item }">
       <AmountDisplay :value="item.balance.amount" />
@@ -60,7 +63,7 @@ const headers = computed<DataTableHeader[]>(() => [
     <template #header.balance.usdValue>
       {{
         t('lending_asset_table.headers.usd_value', {
-          currency: currencySymbol
+          currency: currencySymbol,
         })
       }}
     </template>

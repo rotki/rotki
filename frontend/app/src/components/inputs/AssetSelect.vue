@@ -1,9 +1,9 @@
-﻿<script setup lang="ts">
-import { type Ref } from 'vue';
-import { type AssetInfoWithId } from '@/types/asset';
+<script setup lang="ts">
 import { transformCase } from '@/utils/text';
-import { type NftAsset } from '@/types/nfts';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
+import type { Ref } from 'vue';
+import type { AssetInfoWithId } from '@/types/asset';
+import type { NftAsset } from '@/types/nfts';
 
 const props = withDefaults(
   defineProps<{
@@ -38,19 +38,19 @@ const props = withDefaults(
     required: false,
     showIgnored: false,
     hideDetails: false,
-    includeNfts: false
-  }
+    includeNfts: false,
+  },
 );
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { items, showIgnored, excludes, errorMessages, value, includeNfts } =
-  toRefs(props);
+const { items, showIgnored, excludes, errorMessages, value, includeNfts }
+  = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
-const input = (value: string) => {
+function input(value: string) {
   emit('input', value || '');
-};
+}
 
 const autoCompleteInput = ref(null);
 const search = ref<string>('');
@@ -64,9 +64,9 @@ const { t } = useI18n();
 const errors = computed(() => {
   const messages = get(errorMessages);
   const errorMessage = get(error);
-  if (errorMessage) {
+  if (errorMessage)
     messages.push(errorMessage);
-  }
+
   return messages;
 });
 
@@ -79,13 +79,13 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   return knownAssets.filter((asset: AssetInfoWithId) => {
     const unIgnored = includeIgnored || !get(isAssetIgnored(asset.identifier));
 
-    const included =
-      itemsVal && itemsVal.length > 0
+    const included
+      = itemsVal && itemsVal.length > 0
         ? itemsVal.includes(asset.identifier)
         : true;
 
-    const excluded =
-      excludesVal && excludesVal.length > 0
+    const excluded
+      = excludesVal && excludesVal.length > 0
         ? excludesVal.includes(asset.identifier)
         : false;
 
@@ -93,42 +93,40 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   });
 });
 
-const assetText = (asset: AssetInfoWithId): string =>
-  `${asset.symbol} ${asset.name}`;
+function assetText(asset: AssetInfoWithId): string {
+  return `${asset.symbol} ${asset.name}`;
+}
 
-const blur = () => {
+function blur() {
   useTimeoutFn(() => {
     set(search, '');
   }, 200);
-};
+}
 
-const searchAssets = async (
-  keyword: string,
-  signal: AbortSignal
-): Promise<void> => {
+async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
   try {
     set(assets, await assetSearch(keyword, 50, get(includeNfts), signal));
-  } catch (e: any) {
-    set(error, e.message);
   }
-};
+  catch (error_: any) {
+    set(error, error_.message);
+  }
+}
 
 let pending: AbortController | null = null;
 
-watch(search, search => {
-  if (search) {
+watch(search, (search) => {
+  if (search)
     set(loading, true);
-  } else {
+  else
     set(loading, false);
-  }
 });
 
 watchThrottled(
   search,
-  async search => {
-    if (!search) {
+  async (search) => {
+    if (!search)
       return;
-    }
+
     if (pending) {
       pending.abort();
       pending = null;
@@ -141,24 +139,24 @@ watchThrottled(
     set(loading, false);
   },
   {
-    throttle: 800
-  }
+    throttle: 800,
+  },
 );
 
-const checkValue = async () => {
+async function checkValue() {
   const val = get(value);
-  if (!val) {
+  if (!val)
     return;
-  }
+
   const mapping = await assetMapping([val]);
   set(assets, [
     ...get(assets),
     {
       identifier: val,
-      ...mapping.assets[transformCase(val, true)]
-    }
+      ...mapping.assets[transformCase(val, true)],
+    },
   ]);
-};
+}
 
 onMounted(async () => {
   await checkValue();
@@ -209,7 +207,11 @@ watch(value, async () => {
           size="40px"
           class="overflow-hidden"
         />
-        <AssetDetailsBase v-else class="asset-select__details" :asset="item" />
+        <AssetDetailsBase
+          v-else
+          class="asset-select__details"
+          :asset="item"
+        />
       </template>
     </template>
     <template #item="{ item }">
@@ -222,19 +224,25 @@ watch(value, async () => {
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(
-          item.identifier.toLocaleLowerCase()
+          item.identifier.toLocaleLowerCase(),
         )}`"
         class="asset-select__details"
         :asset="item"
       />
     </template>
     <template #no-data>
-      <div data-cy="no_assets" class="px-4 py-2">
+      <div
+        data-cy="no_assets"
+        class="px-4 py-2"
+      >
         {{ t('asset_select.no_results') }}
       </div>
     </template>
     <template #append>
-      <div v-if="loading" class="h-full flex items-center">
+      <div
+        v-if="loading"
+        class="h-full flex items-center"
+      >
         <RuiProgress
           class="asset-select__loading"
           color="primary"

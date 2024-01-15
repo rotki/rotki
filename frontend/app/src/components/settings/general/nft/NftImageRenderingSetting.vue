@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
 import { isEqual } from 'lodash-es';
 import { externalLinks } from '@/data/external-links';
+import type { ComputedRef, Ref } from 'vue';
 
 const renderAllNftImages: Ref<'all' | 'whitelisted'> = ref('all');
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
@@ -9,7 +9,7 @@ const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
 const frontendStore = useFrontendSettingsStore();
 const {
   renderAllNftImages: renderAll,
-  whitelistedDomainsForNftImages: whitelist
+  whitelistedDomainsForNftImages: whitelist,
 } = storeToRefs(frontendStore);
 
 const { updateSetting } = frontendStore;
@@ -19,26 +19,26 @@ onMounted(() => {
   set(whitelistedDomainsForNftImages, get(whitelist));
 });
 
-const onChange = (value: string[]) => {
+function onChange(value: string[]) {
   set(
     whitelistedDomainsForNftImages,
-    value.map(val => getDomain(val)).filter(uniqueStrings)
+    value.map(val => getDomain(val)).filter(uniqueStrings),
   );
-};
+}
 
-const updateWhitelist = () => {
+function updateWhitelist() {
   updateSetting({
-    whitelistedDomainsForNftImages: get(whitelistedDomainsForNftImages)
+    whitelistedDomainsForNftImages: get(whitelistedDomainsForNftImages),
   });
   set(showUpdateWhitelistConfirmation, false);
-};
+}
 
-const reset = () => {
+function reset() {
   set(whitelistedDomainsForNftImages, get(whitelist));
   set(showUpdateWhitelistConfirmation, false);
-};
+}
 
-watch(whitelist, data => {
+watch(whitelist, (data) => {
   set(whitelistedDomainsForNftImages, data);
 });
 
@@ -47,23 +47,21 @@ const { t } = useI18n();
 const showUpdateWhitelistConfirmation: Ref<boolean> = ref(false);
 
 const changed: ComputedRef<boolean> = computed(
-  () => !isEqual(get(whitelistedDomainsForNftImages), get(whitelist))
+  () => !isEqual(get(whitelistedDomainsForNftImages), get(whitelist)),
 );
 
-const confirmUpdated = () => {
+function confirmUpdated() {
   const currentValue = get(whitelistedDomainsForNftImages);
   if (currentValue.length === 0 || !get(changed)) {
     updateWhitelist();
     return;
   }
   set(showUpdateWhitelistConfirmation, true);
-};
+}
 
 const { show } = useConfirmStore();
-const updateRenderingSetting = (
-  value: string,
-  update: (value: any) => void
-) => {
+
+function updateRenderingSetting(value: string, update: (value: any) => void) {
   if (value === 'whitelisted') {
     update(false);
     return;
@@ -73,16 +71,16 @@ const updateRenderingSetting = (
     {
       title: t('general_settings.nft_setting.allow_all_confirmation.title'),
       message: t('general_settings.nft_setting.allow_all_confirmation.message'),
-      type: 'info'
+      type: 'info',
     },
     () => {
       update(value === 'all');
     },
     () => {
       set(renderAllNftImages, 'whitelisted');
-    }
+    },
   );
-};
+}
 
 const css = useCssModule();
 </script>
@@ -94,7 +92,7 @@ const css = useCssModule();
         <template #header>
           {{
             t(
-              'general_settings.nft_setting.subtitle.nft_images_rendering_setting'
+              'general_settings.nft_setting.subtitle.nft_images_rendering_setting',
             )
           }}
         </template>
@@ -104,7 +102,10 @@ const css = useCssModule();
             path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
           >
             <template #link>
-              <ExternalLink color="primary" :url="externalLinks.nftWarning">
+              <ExternalLink
+                color="primary"
+                :url="externalLinks.nftWarning"
+              >
                 {{ t('common.here') }}
               </ExternalLink>
             </template>
@@ -134,7 +135,7 @@ const css = useCssModule();
           <RuiRadio internal-value="whitelisted">
             {{
               t(
-                'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
+                'general_settings.nft_setting.label.render_setting.only_allow_whitelisted',
               )
             }}
           </RuiRadio>
@@ -161,7 +162,7 @@ const css = useCssModule();
           deletable-chips
           clearable
           multiple
-          :disabled="renderAllNftImages == 'all'"
+          :disabled="renderAllNftImages === 'all'"
           @change="onChange($event)"
         />
       </SettingsOption>
@@ -184,14 +185,17 @@ const css = useCssModule();
       :message="
         t(
           'general_settings.nft_setting.update_whitelist_confirmation.message',
-          1
+          1,
         )
       "
       max-width="700"
       @cancel="reset()"
       @confirm="updateWhitelist()"
     >
-      <RuiCard outlined class="mt-4 h-auto">
+      <RuiCard
+        outlined
+        class="mt-4 h-auto"
+      >
         <ul class="list-disc">
           <li
             v-for="domain in whitelistedDomainsForNftImages"

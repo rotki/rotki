@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
-import {
-  type AssetPriceInfo,
-  type ManualPriceFormPayload
+import type { Ref } from 'vue';
+import type {
+  AssetPriceInfo,
+  ManualPriceFormPayload,
 } from '@/types/prices';
 
 const props = withDefaults(
@@ -10,7 +10,7 @@ const props = withDefaults(
     identifier: string;
     isCollectionParent?: boolean;
   }>(),
-  { isCollectionParent: false }
+  { isCollectionParent: false },
 );
 
 const { identifier, isCollectionParent } = toRefs(props);
@@ -19,7 +19,7 @@ const { assetPriceInfo } = useAggregatedBalances();
 const { assetName } = useAssetInfoRetrieval();
 
 const info = computed<AssetPriceInfo>(() =>
-  get(assetPriceInfo(identifier, isCollectionParent))
+  get(assetPriceInfo(identifier, isCollectionParent)),
 );
 
 const { isManualAssetPrice } = useBalancePricesStore();
@@ -34,29 +34,29 @@ const { show } = useConfirmStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const setPriceForm = () => {
+function setPriceForm() {
   setOpenDialog(true);
   set(customPrice, {
     fromAsset: get(identifier),
     toAsset: get(currencySymbol),
-    price: get(info).usdPrice.toFixed()
+    price: get(info).usdPrice.toFixed(),
   });
-};
+}
 
 const { refreshCurrentPrices, deletePrice, refreshing } = useLatestPrices(t);
 
-const showDeleteConfirmation = () => {
+function showDeleteConfirmation() {
   const identifierVal = get(identifier);
   show(
     {
       title: t('assets.custom_price.delete.tooltip'),
       message: t('assets.custom_price.delete.message', {
-        asset: get(assetName(identifierVal)) ?? identifierVal
-      })
+        asset: get(assetName(identifierVal)) ?? identifierVal,
+      }),
     },
-    () => deletePrice({ fromAsset: identifierVal })
+    () => deletePrice({ fromAsset: identifierVal }),
   );
-};
+}
 
 onMounted(() => {
   setPostSubmitFunc(() => refreshCurrentPrices(true));
@@ -65,8 +65,13 @@ onMounted(() => {
 
 <template>
   <div class="grid sm:grid-cols-3 gap-4">
-    <RuiCard no-padding class="[&>div:first-child]:pb-3">
-      <template #header>{{ t('common.price') }}</template>
+    <RuiCard
+      no-padding
+      class="[&>div:first-child]:pb-3"
+    >
+      <template #header>
+        {{ t('common.price') }}
+      </template>
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <AmountDisplay
           class="flex-1 text-h5 font-medium text-rui-text-secondary"
@@ -88,7 +93,9 @@ onMounted(() => {
       </div>
     </RuiCard>
     <RuiCard no-padding>
-      <template #header>{{ t('assets.amount') }}</template>
+      <template #header>
+        {{ t('assets.amount') }}
+      </template>
       <AmountDisplay
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
         :value="info.amount"
@@ -96,7 +103,9 @@ onMounted(() => {
       />
     </RuiCard>
     <RuiCard no-padding>
-      <template #header>{{ t('assets.value') }}</template>
+      <template #header>
+        {{ t('assets.value') }}
+      </template>
       <AmountDisplay
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
         :loading="refreshing"

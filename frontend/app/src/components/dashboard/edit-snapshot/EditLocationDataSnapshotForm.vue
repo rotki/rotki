@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { type LocationDataSnapshotPayload } from '@/types/snapshots';
 import { toMessages } from '@/utils/validation';
+import type { LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = withDefaults(
   defineProps<{
@@ -9,8 +9,8 @@ const props = withDefaults(
     excludedLocations?: string[];
   }>(),
   {
-    excludedLocations: () => []
-  }
+    excludedLocations: () => [],
+  },
 );
 
 const emit = defineEmits<{
@@ -28,15 +28,15 @@ const rules = {
   location: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.location_data.rules.location'),
-      required
-    )
+      required,
+    ),
   },
   value: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.location_data.rules.value'),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation } = useEditLocationsSnapshotForm();
@@ -45,9 +45,9 @@ const v$ = setValidation(
   rules,
   {
     location,
-    value
+    value,
   },
-  { $autoDirty: true }
+  { $autoDirty: true },
 );
 </script>
 
@@ -65,7 +65,7 @@ const v$ = setValidation(
       outlined
       :label="
         t('common.value_in_symbol', {
-          symbol: currencySymbol
+          symbol: currencySymbol,
         })
       "
       :error-messages="toMessages(v$.value)"

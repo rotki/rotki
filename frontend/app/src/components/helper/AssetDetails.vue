@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
-import { type StyleValue } from 'vue/types/jsx';
-import { type AssetInfoWithId } from '@/types/asset';
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
+import type { ComputedRef } from 'vue';
+import type { StyleValue } from 'vue/types/jsx';
+import type { AssetInfoWithId } from '@/types/asset';
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +22,8 @@ const props = withDefaults(
     dense: false,
     enableAssociation: true,
     isCollectionParent: false,
-    link: false
-  }
+    link: false,
+  },
 );
 
 const { asset, enableAssociation, isCollectionParent } = toRefs(props);
@@ -34,7 +34,7 @@ const address = reactify(getAddressFromEvmIdentifier)(asset);
 
 const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
   ...get(assetDetails),
-  identifier: get(asset)
+  identifier: get(asset),
 }));
 </script>
 

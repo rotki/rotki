@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type BaseMessage } from '@/types/messages';
+import type { BaseMessage } from '@/types/messages';
 
 withDefaults(
   defineProps<{
     status: BaseMessage | null;
   }>(),
   {
-    status: null
-  }
+    status: null,
+  },
 );
 </script>
 

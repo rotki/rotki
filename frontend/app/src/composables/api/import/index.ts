@@ -1,14 +1,14 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common/lib/data';
+import type { PendingTask } from '@/types/task';
 
-export const useImportDataApi = () => {
+export function useImportDataApi() {
   const importDataFrom = async (
     source: string,
     file: string,
-    timestampFormat: string | null
+    timestampFormat: string | null,
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/import',
@@ -16,11 +16,11 @@ export const useImportDataApi = () => {
         source,
         file,
         timestampFormat,
-        asyncQuery: true
+        asyncQuery: true,
       }),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
 
     return handleResponse(response);
@@ -33,9 +33,9 @@ export const useImportDataApi = () => {
       {
         validateStatus: validStatus,
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
+          'Content-Type': 'multipart/form-data',
+        },
+      },
     );
 
     return handleResponse(response);
@@ -43,6 +43,6 @@ export const useImportDataApi = () => {
 
   return {
     importDataFrom,
-    importFile
+    importFile,
   };
-};
+}

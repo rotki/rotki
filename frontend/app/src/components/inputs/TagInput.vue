@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Tag } from '@/types/tags';
+import type { Tag } from '@/types/tags';
 
 const props = withDefaults(
   defineProps<{
@@ -10,8 +10,8 @@ const props = withDefaults(
   }>(),
   {
     label: 'Tags',
-    outlined: false
-  }
+    outlined: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -27,88 +27,87 @@ const manageTags = ref<boolean>(false);
 
 const search = ref<string>('');
 
-const randomScheme = () => {
+function randomScheme() {
   const backgroundColor = randomColor();
   return {
     backgroundColor,
-    foregroundColor: invertColor(backgroundColor)
+    foregroundColor: invertColor(backgroundColor),
   };
-};
+}
 
 const colorScheme = ref(randomScheme());
 
-const tagExists = (tagName: string): boolean =>
-  get(tags)
+function tagExists(tagName: string): boolean {
+  return get(tags)
     .map(({ name }) => name)
     .includes(tagName);
+}
 
-const createTag = async (name: string) => {
+async function createTag(name: string) {
   const { backgroundColor, foregroundColor } = get(colorScheme);
   const tag: Tag = {
     name,
     description: '',
     backgroundColor,
-    foregroundColor
+    foregroundColor,
   };
   return await store.addTag(tag);
-};
+}
 
-const remove = (tag: string) => {
+function remove(tag: string) {
   const tags = get(value);
   const index = tags.indexOf(tag);
   input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-};
+}
 
-const attemptTagCreation = (element: string) => {
-  if (tagExists(element)) {
+function attemptTagCreation(element: string) {
+  if (tagExists(element))
     return;
-  }
+
   createTag(element)
     .then(({ success }) => {
-      if (!success) {
+      if (!success)
         remove(element);
-      }
     })
-    .catch(e => logger.error(e));
-};
+    .catch(error => logger.error(error));
+}
 
-const input = (_value: (string | Tag)[]) => {
+function input(_value: (string | Tag)[]) {
   const tags: string[] = [];
   for (const element of _value) {
     if (typeof element === 'string') {
       attemptTagCreation(element);
       tags.push(element);
-    } else {
+    }
+    else {
       tags.push(element.name);
     }
   }
 
   emit('input', tags);
-};
+}
 
 watch(search, (keyword: string | null, previous: string | null) => {
-  if (keyword && !previous) {
+  if (keyword && !previous)
     set(colorScheme, randomScheme());
-  }
 });
 
 const newTagBackground = computed<string>(
-  () => `#${get(colorScheme).backgroundColor}`
+  () => `#${get(colorScheme).backgroundColor}`,
 );
 
 const newTagForeground = computed<string>(
-  () => `#${get(colorScheme).foregroundColor}`
+  () => `#${get(colorScheme).foregroundColor}`,
 );
 
 const filteredValue = computed<Tag[]>(() =>
-  get(tags).filter(({ name }) => get(value).includes(name))
+  get(tags).filter(({ name }) => get(value).includes(name)),
 );
 
 watch(tags, () => {
   const filtered = get(filteredValue);
-  if (get(value).length > filtered.length) {
+  if (get(value).length > filtered.length)
     input(filtered);
-  }
 });
 </script>
 
@@ -195,7 +194,11 @@ watch(tags, () => {
       content-class="h-full"
       @input="manageTags = false"
     >
-      <TagManager v-if="manageTags" dialog @close="manageTags = false" />
+      <TagManager
+        v-if="manageTags"
+        dialog
+        @close="manageTags = false"
+      />
     </VDialog>
   </div>
 </template>

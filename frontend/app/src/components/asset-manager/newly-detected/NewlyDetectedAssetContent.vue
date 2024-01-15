@@ -6,7 +6,7 @@ const { t } = useI18n();
   <TablePageLayout
     :title="[
       t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.newly_detected')
+      t('navigation_menu.manage_assets_sub.newly_detected'),
     ]"
   >
     <NewlyDetectedAssetTable />

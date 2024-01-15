@@ -5,25 +5,25 @@ vi.mock('@/composables/electron-interop', () => ({
     isPackaged: true,
     restartBackend: vi.fn(),
     config: vi.fn().mockReturnValue({
-      logDirectory: '/Users/home/rotki/logs'
-    })
-  })
+      logDirectory: '/Users/home/rotki/logs',
+    }),
+  }),
 }));
 
 vi.mock('@/utils/account-management', () => ({
   getBackendUrl: vi.fn().mockReturnValue({
     sessionOnly: true,
-    url: ''
+    url: '',
   }),
-  deleteBackendUrl: vi.fn()
+  deleteBackendUrl: vi.fn(),
 }));
 
 vi.mock('@/store/main', () => ({
   useMainStore: vi.fn().mockReturnValue({
     connected: false,
     setConnected: vi.fn(),
-    connect: vi.fn()
-  })
+    connect: vi.fn(),
+  }),
 }));
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
@@ -38,15 +38,15 @@ describe('composables::backend', () => {
     vi.clearAllMocks();
   });
 
-  test('should use default config', async () => {
+  it('should use default config', async () => {
     const loaded = vi.fn();
-    let backendManagement: ReturnType<typeof useBackendManagement> | null =
-      null;
+    let backendManagement: ReturnType<typeof useBackendManagement> | null
+      = null;
 
     const wrapper = mount({
       setup() {
         backendManagement = useBackendManagement(loaded);
-      }
+      },
     });
 
     await wrapper.vm.$nextTick();
@@ -57,33 +57,33 @@ describe('composables::backend', () => {
 
     expect(get(options)).toStrictEqual({
       loglevel: 'debug',
-      logDirectory: '/Users/home/rotki/logs'
+      logDirectory: '/Users/home/rotki/logs',
     });
     expect(get(fileConfig)).toStrictEqual({
-      logDirectory: '/Users/home/rotki/logs'
+      logDirectory: '/Users/home/rotki/logs',
     });
 
     expect(get(defaultLogDirectory)).toBe('/Users/home/rotki/logs');
     expect(loaded).toHaveBeenCalledOnce();
   });
 
-  test('should get saved data in localStorage', async () => {
+  it('should get saved data in localStorage', async () => {
     const loaded = vi.fn();
     const savedOptions = {
       loglevel: 'critical',
       maxSizeInMbAllLogs: 10,
       sqliteInstructions: 100,
-      maxLogfilesNum: 1000
+      maxLogfilesNum: 1000,
     };
     localStorage.setItem(BACKEND_OPTIONS, JSON.stringify(savedOptions));
 
-    let backendManagement: ReturnType<typeof useBackendManagement> | null =
-      null;
+    let backendManagement: ReturnType<typeof useBackendManagement> | null
+      = null;
 
     const wrapper = mount({
       setup() {
         backendManagement = useBackendManagement(loaded);
-      }
+      },
     });
 
     await wrapper.vm.$nextTick();
@@ -97,54 +97,54 @@ describe('composables::backend', () => {
       loglevel: 'critical',
       maxLogfilesNum: 1000,
       maxSizeInMbAllLogs: 10,
-      sqliteInstructions: 100
+      sqliteInstructions: 100,
     });
 
     expect(loaded).toHaveBeenCalledOnce();
   });
 
-  test('should save options', async () => {
+  it('should save options', async () => {
     const { saveOptions } = useBackendManagement();
     const newOptions = {
       logDirectory: 'new_log_directory',
-      dataDirectory: 'new_data_directory'
+      dataDirectory: 'new_data_directory',
     };
 
     await saveOptions(newOptions);
 
     expect(
-      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || '')
+      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || ''),
     ).toStrictEqual(newOptions);
 
     expect(useInterop().restartBackend).toBeCalledWith(newOptions);
   });
 
-  test('should reset options', async () => {
+  it('should reset options', async () => {
     const { resetOptions } = useBackendManagement();
 
     await resetOptions();
 
     expect(
-      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || '')
+      JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || ''),
     ).toStrictEqual({});
 
     expect(useInterop().restartBackend).toBeCalledWith({});
   });
 
-  test('should restart backend session', async () => {
+  it('should restart backend session', async () => {
     const { resetSessionBackend } = useBackendManagement();
 
     await resetSessionBackend();
 
     expect(useInterop().restartBackend).toBeCalledWith({
-      logDirectory: '/Users/home/rotki/logs'
+      logDirectory: '/Users/home/rotki/logs',
     });
   });
 
-  test('should not restart backend session', async () => {
+  it('should not restart backend session', async () => {
     vi.mocked(getBackendUrl).mockReturnValue({
       sessionOnly: false,
-      url: ''
+      url: '',
     });
     const { resetSessionBackend } = useBackendManagement();
 
@@ -153,7 +153,7 @@ describe('composables::backend', () => {
     expect(useInterop().restartBackend).not.toBeCalled();
   });
 
-  test('should restart backend if the url is not set', async () => {
+  it('should restart backend if the url is not set', async () => {
     const url = '';
     const { backendChanged } = useBackendManagement();
 
@@ -163,7 +163,7 @@ describe('composables::backend', () => {
     expect(useMainStore().connect).toHaveBeenCalledWith(url);
   });
 
-  test('should not backend if the url is set', async () => {
+  it('should not backend if the url is set', async () => {
     const url = 'test_backend_url';
     const { backendChanged } = useBackendManagement();
 
@@ -173,7 +173,7 @@ describe('composables::backend', () => {
     expect(useMainStore().connect).toHaveBeenCalledWith(url);
   });
 
-  test('should not do anything on setupBackend, if connected=true', async () => {
+  it('should not do anything on setupBackend, if connected=true', async () => {
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
 
@@ -184,7 +184,7 @@ describe('composables::backend', () => {
     expect(useInterop().restartBackend).not.toBeCalled();
   });
 
-  test('should restart backend, if connected=false and url is not set', async () => {
+  it('should restart backend, if connected=false and url is not set', async () => {
     const store = useMainStore();
     const { connected } = storeToRefs(store);
     const { connect } = store;
@@ -198,7 +198,7 @@ describe('composables::backend', () => {
     expect(connect).toHaveBeenCalledWith();
   });
 
-  test('should not restart backend, if connected=false and url is set', async () => {
+  it('should not restart backend, if connected=false and url is set', async () => {
     const store = useMainStore();
     const { connected } = storeToRefs(store);
     const { connect } = store;
@@ -208,7 +208,7 @@ describe('composables::backend', () => {
 
     vi.mocked(getBackendUrl).mockReturnValue({
       sessionOnly: false,
-      url
+      url,
     });
 
     const { setupBackend } = useBackendManagement();

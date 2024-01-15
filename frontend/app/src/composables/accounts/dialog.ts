@@ -1,9 +1,9 @@
-import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
+import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
-type Title = {
+interface Title {
   title: string;
   subtitle?: string;
-};
+}
 
 const defaultTitle = (): Title => ({ title: '' });
 
@@ -24,7 +24,7 @@ export const useAccountDialog = createSharedComposable(() => {
   const createAccount = (): void => {
     set(accountToEdit, null);
     set(dialogText, {
-      title: t('blockchain_balances.form_dialog.add_title')
+      title: t('blockchain_balances.form_dialog.add_title'),
     });
     set(openDialog, true);
   };
@@ -33,7 +33,7 @@ export const useAccountDialog = createSharedComposable(() => {
     set(accountToEdit, account);
     set(dialogText, {
       title: t('blockchain_balances.form_dialog.edit_title'),
-      subtitle: t('blockchain_balances.form_dialog.edit_subtitle')
+      subtitle: t('blockchain_balances.form_dialog.edit_subtitle'),
     });
     set(openDialog, true);
   };
@@ -44,7 +44,7 @@ export const useAccountDialog = createSharedComposable(() => {
     setSubmitFunc,
     setPostSubmitFunc,
     trySubmit,
-    submitting
+    submitting,
   } = useForm<boolean>();
 
   return {
@@ -59,6 +59,6 @@ export const useAccountDialog = createSharedComposable(() => {
     createAccount,
     editAccount,
     clearDialog,
-    submitting
+    submitting,
   };
 });

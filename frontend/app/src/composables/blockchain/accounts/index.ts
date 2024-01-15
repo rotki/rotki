@@ -1,23 +1,23 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
   type BtcChains,
   isBtcChain,
-  isRestChain
+  isRestChain,
 } from '@/types/blockchain/chains';
-import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import {
-  type AccountPayload,
-  type BasicBlockchainAccountPayload,
-  type BlockchainAccountPayload,
-  type BtcAccountData,
-  type GeneralAccountData
+import type { BlockchainBalances } from '@/types/blockchain/balances';
+import type { BlockchainMetadata } from '@/types/task';
+import type {
+  AccountPayload,
+  BasicBlockchainAccountPayload,
+  BlockchainAccountPayload,
+  BtcAccountData,
+  GeneralAccountData,
 } from '@/types/blockchain/accounts';
-import { type EvmAccountsResult } from '@/types/api/accounts';
-import { type AddressBookSimplePayload } from '@/types/eth-names';
+import type { EvmAccountsResult } from '@/types/api/accounts';
+import type { AddressBookSimplePayload } from '@/types/eth-names';
 
-export const useBlockchainAccounts = () => {
+export function useBlockchainAccounts() {
   const {
     addBlockchainAccount,
     removeBlockchainAccount,
@@ -25,16 +25,16 @@ export const useBlockchainAccounts = () => {
     editBtcAccount,
     queryAccounts,
     queryBtcAccounts,
-    addEvmAccount: addEvmAccountCaller
+    addEvmAccount: addEvmAccountCaller,
   } = useBlockchainAccountsApi();
   const { removeTag: removeBtcTag, update: updateBtc } = useBtcAccountsStore();
   const {
     removeTag: removeEthTag,
     updateEth,
-    fetchEth2Validators
+    fetchEth2Validators,
   } = useEthAccountsStore();
-  const { removeTag: removeChainTag, update: updateChain } =
-    useChainsAccountsStore();
+  const { removeTag: removeChainTag, update: updateChain }
+    = useChainsAccountsStore();
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
 
@@ -43,7 +43,7 @@ export const useBlockchainAccounts = () => {
 
   const addAccount = async (
     blockchain: Blockchain,
-    { address, label, tags, xpub }: AccountPayload
+    { address, label, tags, xpub }: AccountPayload,
   ): Promise<string> => {
     const taskType = TaskType.ADD_ACCOUNT;
     const { taskId } = await addBlockchainAccount({
@@ -51,7 +51,7 @@ export const useBlockchainAccounts = () => {
       address,
       label,
       xpub,
-      tags
+      tags,
     });
 
     try {
@@ -60,19 +60,20 @@ export const useBlockchainAccounts = () => {
         taskType,
         {
           title: t('actions.balances.blockchain_accounts_add.task.title', {
-            blockchain
+            blockchain,
           }),
           description: t(
             'actions.balances.blockchain_accounts_add.task.description',
-            { address }
+            { address },
           ),
-          blockchain
+          blockchain,
         },
-        true
+        true,
       );
 
       return result.length > 0 ? result[0] : '';
-    } catch {
+    }
+    catch {
       return '';
     }
   };
@@ -80,13 +81,13 @@ export const useBlockchainAccounts = () => {
   const addEvmAccount = async ({
     address,
     label,
-    tags
+    tags,
   }: AccountPayload): Promise<EvmAccountsResult> => {
     const taskType = TaskType.ADD_ACCOUNT;
     const { taskId } = await addEvmAccountCaller({
       address,
       label,
-      tags
+      tags,
     });
 
     try {
@@ -96,33 +97,34 @@ export const useBlockchainAccounts = () => {
         taskType,
         {
           title: t('actions.balances.blockchain_accounts_add.task.title', {
-            blockchain
+            blockchain,
           }),
           description: t(
             'actions.balances.blockchain_accounts_add.task.description',
-            { address }
-          )
+            { address },
+          ),
         },
-        true
+        true,
       );
 
       return result;
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        throw e;
-      }
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error))
+        throw error;
+
       return {};
     }
   };
 
   const editAccount = async (
-    payload: BlockchainAccountPayload
+    payload: BlockchainAccountPayload,
   ): Promise<BtcAccountData | GeneralAccountData[]> => {
     const { blockchain } = payload;
 
-    if (isBtcChain(blockchain)) {
+    if (isBtcChain(blockchain))
       return await editBtcAccount(payload);
-    }
+
     const result = editBlockchainAccount(payload);
     resetAddressNamesData([payload]);
     return result;
@@ -139,35 +141,36 @@ export const useBlockchainAccounts = () => {
         taskType,
         {
           title: t('actions.balances.blockchain_account_removal.task.title', {
-            blockchain
+            blockchain,
           }),
           description: t(
             'actions.balances.blockchain_account_removal.task.description',
-            { count: accounts.length }
+            { count: accounts.length },
           ),
-          blockchain
-        }
+          blockchain,
+        },
       );
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
-        logger.error(e);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
         const title = t(
           'actions.balances.blockchain_account_removal.error.title',
           {
             count: accounts.length,
-            blockchain
-          }
+            blockchain,
+          },
         );
         const description = t(
           'actions.balances.blockchain_account_removal.error.description',
           {
-            error: e.message
-          }
+            error: error.message,
+          },
         );
         notify({
           title,
           message: description,
-          display: true
+          display: true,
         });
       }
     }
@@ -180,36 +183,36 @@ export const useBlockchainAccounts = () => {
       Blockchain,
       Blockchain.BTC | Blockchain.BCH | Blockchain.ETH2
     >,
-    refreshEns: boolean = false
+    refreshEns: boolean = false,
   ): Promise<string[] | null> => {
     try {
       const accounts = await queryAccounts(blockchain);
-      if (blockchain === Blockchain.ETH) {
+      if (blockchain === Blockchain.ETH)
         updateEth(accounts);
-      } else if (isRestChain(blockchain)) {
+      else if (isRestChain(blockchain))
         updateChain(blockchain, accounts);
-      }
 
       if (isEvm(blockchain)) {
         const namesPayload: AddressBookSimplePayload[] = accounts.map(
           ({ address }) => ({
             address,
-            blockchain
-          })
+            blockchain,
+          }),
         );
 
         startPromise(fetchEnsNames(namesPayload, refreshEns));
       }
       return accounts.map(account => account.address);
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
       notify({
         title: t('actions.get_accounts.error.title'),
         message: t('actions.get_accounts.error.description', {
           blockchain: blockchain.toUpperCase(),
-          message: e.message
+          message: error.message,
         }),
-        display: true
+        display: true,
       });
       return null;
     }
@@ -220,28 +223,28 @@ export const useBlockchainAccounts = () => {
       const accounts = await queryBtcAccounts(chain);
       updateBtc(chain, accounts);
       return true;
-    } catch (e: any) {
-      logger.error(e);
+    }
+    catch (error: any) {
+      logger.error(error);
       notify({
         title: t('actions.get_accounts.error.title'),
         message: t('actions.get_accounts.error.description', {
           blockchain: chain.toUpperCase(),
-          message: e.message
+          message: error.message,
         }),
-        display: true
+        display: true,
       });
       return false;
     }
   };
 
   const fetch = async (blockchain: Blockchain, refreshEns: boolean = false) => {
-    if (isBtcChain(blockchain)) {
+    if (isBtcChain(blockchain))
       return fetchBtcAccounts(blockchain);
-    } else if (isRestChain(blockchain) || blockchain === Blockchain.ETH) {
+    else if (isRestChain(blockchain) || blockchain === Blockchain.ETH)
       return fetchBlockchainAccounts(blockchain, refreshEns);
-    } else if (blockchain === Blockchain.ETH2) {
+    else if (blockchain === Blockchain.ETH2)
       return fetchEth2Validators();
-    }
   };
 
   const removeTag = (tag: string) => {
@@ -256,6 +259,6 @@ export const useBlockchainAccounts = () => {
     editAccount,
     removeAccount,
     fetch,
-    removeTag
+    removeTag,
   };
-};
+}

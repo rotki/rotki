@@ -2,11 +2,11 @@
 import {
   type Module,
   SUPPORTED_MODULES,
-  type SupportedModule
+  type SupportedModule,
 } from '@/types/modules';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -18,8 +18,8 @@ const props = withDefaults(
   {
     value: '',
     items: () => [],
-    attach: undefined
-  }
+    attach: undefined,
+  },
 );
 
 const emit = defineEmits<{
@@ -32,7 +32,7 @@ const modules = computed<SupportedModule[]>(() => {
   const items = props.items;
 
   return SUPPORTED_MODULES.filter(item =>
-    items && items.length > 0 ? items.includes(item.identifier) : true
+    items && items.length > 0 ? items.includes(item.identifier) : true,
   );
 });
 </script>
@@ -53,10 +53,16 @@ const modules = computed<SupportedModule[]>(() => {
     "
   >
     <template #selection="{ attrs, item }">
-      <DefiIcon v-bind="attrs" :item="item" />
+      <DefiIcon
+        v-bind="attrs"
+        :item="item"
+      />
     </template>
     <template #item="{ attrs, item }">
-      <DefiIcon v-bind="attrs" :item="item" />
+      <DefiIcon
+        v-bind="attrs"
+        :item="item"
+      />
     </template>
   </VAutocomplete>
 </template>

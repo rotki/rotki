@@ -4,10 +4,11 @@ const btcDerivationGapLimit = ref<string>('20');
 const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const successMessage = (limit: string) =>
-  t('general_settings.validation.btc_derivation_gap.success', {
-    limit
+function successMessage(limit: string) {
+  return t('general_settings.validation.btc_derivation_gap.success', {
+    limit,
   });
+}
 
 onMounted(() => {
   set(btcDerivationGapLimit, get(limit).toString());

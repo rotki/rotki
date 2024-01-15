@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {
-  type DataTableColumn,
-  type DataTableSortColumn
-} from '@rotki/ui-library-compat';
-import { type Writeable } from '@/types';
-import { type Exchange, type ExchangePayload } from '@/types/exchanges';
 import { externalLinks } from '@/data/external-links';
+import type {
+  DataTableColumn,
+  DataTableSortColumn,
+} from '@rotki/ui-library-compat';
+import type { Writeable } from '@/types';
+import type { Exchange, ExchangePayload } from '@/types/exchanges';
 
 const { exchangesWithKey } = storeToRefs(useLocationStore());
 
@@ -17,7 +17,7 @@ const placeholder: () => ExchangePayload = () => ({
   apiSecret: null,
   passphrase: null,
   krakenAccountType: 'starter',
-  binanceMarkets: null
+  binanceMarkets: null,
 });
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
@@ -30,7 +30,7 @@ const exchange = ref<ExchangePayload>(placeholder());
 const editMode = ref<boolean>(false);
 const sort = ref<DataTableSortColumn>({
   column: 'name',
-  direction: 'asc'
+  direction: 'asc',
 });
 
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
@@ -38,20 +38,22 @@ const { update } = useSettingsStore();
 
 const { t } = useI18n();
 
-const findNonSyncExchangeIndex = (exchange: Exchange) =>
-  get(nonSyncingExchanges).findIndex(
+function findNonSyncExchangeIndex(exchange: Exchange) {
+  return get(nonSyncingExchanges).findIndex(
     (item: Exchange) =>
-      item.name === exchange.name && item.location === exchange.location
+      item.name === exchange.name && item.location === exchange.location,
   );
+}
 
-const isNonSyncExchange = (exchange: Exchange) =>
-  findNonSyncExchangeIndex(exchange) > -1;
+function isNonSyncExchange(exchange: Exchange) {
+  return findNonSyncExchangeIndex(exchange) > -1;
+}
 
-const resetNonSyncingExchanges = () => {
+function resetNonSyncingExchanges() {
   set(nonSyncingExchanges, get(current));
-};
+}
 
-const toggleSync = async (exchange: Exchange) => {
+async function toggleSync(exchange: Exchange) {
   const index = findNonSyncExchangeIndex(exchange);
 
   const data = [...get(nonSyncingExchanges)];
@@ -61,12 +63,13 @@ const toggleSync = async (exchange: Exchange) => {
   if (index > -1) {
     enable = false;
     data.splice(index);
-  } else {
+  }
+  else {
     data.push({ location: exchange.location, name: exchange.name });
   }
 
   const status = await update({
-    nonSyncingExchanges: data
+    nonSyncingExchanges: data,
   });
 
   if (!status.success) {
@@ -79,64 +82,62 @@ const toggleSync = async (exchange: Exchange) => {
           : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,
         name: exchange.name,
-        message: status.message
+        message: status.message,
       }),
-      display: true
+      display: true,
     });
   }
 
   resetNonSyncingExchanges();
-};
+}
 
 const { exchangeName } = useLocations();
 
-const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc } =
-  useExchangeApiKeysForm();
+const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc }
+  = useExchangeApiKeysForm();
 
-const addExchange = () => {
+function addExchange() {
   set(editMode, false);
   setOpenDialog(true);
   set(exchange, placeholder());
-};
+}
 
-const editExchange = (exchangePayload: Exchange) => {
+function editExchange(exchangePayload: Exchange) {
   set(editMode, true);
   setOpenDialog(true);
   set(exchange, {
     ...placeholder(),
     ...exchangePayload,
-    newName: exchangePayload.name
+    newName: exchangePayload.name,
   });
-};
+}
 
-const resetForm = () => {
+function resetForm() {
   closeDialog();
   set(exchange, placeholder());
-};
+}
 
 setPostSubmitFunc(resetForm);
 
-const setup = async (): Promise<boolean> => {
+async function setup(): Promise<boolean> {
   const writeableExchange: Writeable<ExchangePayload> = { ...get(exchange) };
-  if (writeableExchange.name === writeableExchange.newName) {
+  if (writeableExchange.name === writeableExchange.newName)
     writeableExchange.newName = null;
-  }
 
   return await setupExchange({
     exchange: writeableExchange,
-    edit: get(editMode)
+    edit: get(editMode),
   });
-};
+}
 
 setSubmitFunc(setup);
 
-const remove = async (item: Exchange) => {
+async function remove(item: Exchange) {
   const success = await removeExchange(item);
 
-  if (success) {
+  if (success)
     set(exchange, placeholder());
-  }
-};
+}
 
 onBeforeMount(() => {
   resetNonSyncingExchanges();
@@ -157,38 +158,38 @@ const headers = computed<DataTableColumn[]>(() => [
     key: 'location',
     width: '120px',
     align: 'center',
-    cellClass: 'py-0'
+    cellClass: 'py-0',
   },
   {
     label: t('common.name'),
-    key: 'name'
+    key: 'name',
   },
   {
     label: t('exchange_settings.header.sync_enabled'),
-    key: 'syncEnabled'
+    key: 'syncEnabled',
   },
   {
     label: t('common.actions_text'),
     key: 'actions',
     width: '105px',
-    align: 'center'
-  }
+    align: 'center',
+  },
 ]);
 
 const { show } = useConfirmStore();
 
-const showRemoveConfirmation = (item: Exchange) => {
+function showRemoveConfirmation(item: Exchange) {
   show(
     {
       title: t('exchange_settings.confirmation.title'),
       message: t('exchange_settings.confirmation.message', {
         name: item?.name ?? '',
-        location: item ? exchangeName(item.location) : ''
-      })
+        location: item ? exchangeName(item.location) : '',
+      }),
     },
-    () => remove(item)
+    () => remove(item),
   );
-};
+}
 </script>
 
 <template>
@@ -197,11 +198,15 @@ const showRemoveConfirmation = (item: Exchange) => {
     data-cy="exchanges"
     :title="[
       t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.exchanges')
+      t('navigation_menu.api_keys_sub.exchanges'),
     ]"
   >
     <template #buttons>
-      <RuiButton color="primary" data-cy="add-exchange" @click="addExchange()">
+      <RuiButton
+        color="primary"
+        data-cy="add-exchange"
+        @click="addExchange()"
+      >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
@@ -212,7 +217,10 @@ const showRemoveConfirmation = (item: Exchange) => {
     <RuiCard>
       <div class="flex flex-row-reverse mb-2">
         <HintMenuIcon>
-          <i18n path="exchange_settings.subtitle" tag="div">
+          <i18n
+            path="exchange_settings.subtitle"
+            tag="div"
+          >
             <ExternalLink
               :text="t('exchange_settings.usage_guide')"
               :url="externalLinks.usageGuideSection.addingAnExchange"

@@ -23,30 +23,28 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
-import { type ExternalTrade } from './types';
+import type { ExternalTrade } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
 
-const logout = () => {
+function logout() {
   cy.request({
     url: `${backendUrl}/api/1/users`,
     method: 'GET',
-    failOnStatusCode: false
+    failOnStatusCode: false,
   })
     .its('body')
-    .then(body => {
+    .then((body) => {
       const result = body.result;
-      if (!result) {
+      if (!result)
         return;
-      }
 
       const loggedUsers = Object.keys(result).filter(
-        user => result[user] === 'loggedin'
+        user => result[user] === 'loggedin',
       );
 
-      if (loggedUsers.length !== 1) {
+      if (loggedUsers.length !== 1)
         return;
-      }
 
       const user = loggedUsers[0];
 
@@ -56,54 +54,52 @@ const logout = () => {
           method: 'PATCH',
           failOnStatusCode: false,
           body: {
-            action: 'logout'
-          }
+            action: 'logout',
+          },
         })
         .its('body')
         .then(body => body.result);
     });
-};
+}
 
-const updateAssets = () => {
+function updateAssets() {
   cy.request({
     url: `${backendUrl}/api/1/assets/updates`,
     method: 'DELETE',
     body: {
-      reset: 'soft'
+      reset: 'soft',
     },
-    failOnStatusCode: false
+    failOnStatusCode: false,
   })
     .its('body')
-    .then(body => {
+    .then((body) => {
       const result = body.result;
-      if (result) {
+      if (result)
         cy.log(`asset reset completed: ${JSON.stringify(result)}`);
-      }
     });
-};
+}
 
-const disableModules = () => {
+function disableModules() {
   cy.request({
     url: `${backendUrl}/api/1/settings`,
     method: 'PUT',
     body: {
       settings: {
-        active_modules: []
-      }
+        active_modules: [],
+      },
     },
-    failOnStatusCode: false
+    failOnStatusCode: false,
   })
     .its('body')
-    .then(body => {
+    .then((body) => {
       const result = body.result;
-      if (result) {
+      if (result)
         cy.log(`settings updated: ${JSON.stringify(result.active_modules)}`);
-      }
     });
-};
+}
 
-const createAccount = (username: string, password = '1234') =>
-  cy
+function createAccount(username: string, password = '1234') {
+  return cy
     .request({
       url: `${backendUrl}/api/1/users`,
       method: 'PUT',
@@ -111,15 +107,16 @@ const createAccount = (username: string, password = '1234') =>
         name: username,
         password,
         initial_settings: {
-          submit_usage_analytics: true
-        }
+          submit_usage_analytics: true,
+        },
       },
-      failOnStatusCode: false
+      failOnStatusCode: false,
     })
     .its('body');
+}
 
-const addExternalTrade = (trade: ExternalTrade) =>
-  cy
+function addExternalTrade(trade: ExternalTrade) {
+  return cy
     .request({
       url: `${backendUrl}/api/1/trades`,
       method: 'PUT',
@@ -134,25 +131,27 @@ const addExternalTrade = (trade: ExternalTrade) =>
         fee: trade.fee,
         fee_currency: trade.fee_id,
         link: trade.link,
-        notes: trade.notes
-      }
+        notes: trade.notes,
+      },
     })
     .its('body');
+}
 
-const addEtherscanKey = (key: string) =>
-  cy
+function addEtherscanKey(key: string) {
+  return cy
     .request({
       url: `${backendUrl}/api/1/external_services`,
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': 'application/json; charset=utf-8',
       },
       body: {
-        services: [{ name: 'etherscan', api_key: key }]
+        services: [{ name: 'etherscan', api_key: key }],
       },
-      failOnStatusCode: false
+      failOnStatusCode: false,
     })
     .its('status');
+}
 
 /**
  * Wait for the element to not exist.
@@ -160,7 +159,7 @@ const addEtherscanKey = (key: string) =>
  * If it doesn't appear again, we can continue.
  * But if it appears again, run the check again from the start.
  */
-const assertNoRunningTasks = () => {
+function assertNoRunningTasks() {
   const selector = '[data-cy=notification-indicator-progress]';
   cy.get(selector)
     .should('not.exist')
@@ -168,13 +167,12 @@ const assertNoRunningTasks = () => {
       // eslint-disable-next-line cypress/no-unnecessary-waiting
       cy.wait(1000);
 
-      cy.get('body').then($body => {
-        if ($body.find(selector).length > 0) {
+      cy.get('body').then(($body) => {
+        if ($body.find(selector).length > 0)
           cy.assertNoRunningTasks();
-        }
       });
     });
-};
+}
 
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);

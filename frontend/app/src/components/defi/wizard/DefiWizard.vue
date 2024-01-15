@@ -4,17 +4,18 @@ const { t } = useI18n();
 const step = ref<number>(1);
 
 const { updateSetting } = useFrontendSettingsStore();
-const done = async () => {
+
+async function done() {
   await updateSetting({ defiSetupDone: true });
-};
+}
 
 const steps = computed(() => [
   {
-    title: t('defi_wizard.steps.setup.title')
+    title: t('defi_wizard.steps.setup.title'),
   },
   {
-    title: t('defi_wizard.steps.select_modules.title')
-  }
+    title: t('defi_wizard.steps.select_modules.title'),
+  },
 ]);
 </script>
 
@@ -84,7 +85,11 @@ const steps = computed(() => [
             <ModuleSelector />
             <template #footer>
               <div class="flex gap-2 p-2">
-                <RuiButton color="primary" variant="text" @click="step = 1">
+                <RuiButton
+                  color="primary"
+                  variant="text"
+                  @click="step = 1"
+                >
                   {{ t('common.actions.back') }}
                 </RuiButton>
                 <RuiButton

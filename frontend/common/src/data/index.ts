@@ -7,7 +7,7 @@ export interface ActionResult<T> {
 
 export enum EvmTokenKind {
   ERC20 = 'erc20',
-  ERC721 = 'erc721'
+  ERC721 = 'erc721',
 }
 
 export const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
@@ -17,7 +17,7 @@ export type EvmTokenKindEnum = z.infer<typeof EvmTokenKindEnum>;
 export const UnderlyingToken = z.object({
   address: z.string(),
   tokenKind: EvmTokenKindEnum,
-  weight: z.string()
+  weight: z.string(),
 });
 
 export type UnderlyingToken = z.infer<typeof UnderlyingToken>;
@@ -31,7 +31,7 @@ export const BaseAsset = z.object({
   symbol: z.string().nullish(),
   swappedFor: z.string().nullish(),
   evmChain: z.string().nullish(),
-  tokenKind: EvmTokenKindEnum.nullish()
+  tokenKind: EvmTokenKindEnum.nullish(),
 });
 
 export type BaseAsset = z.infer<typeof BaseAsset>;
@@ -45,7 +45,7 @@ export const SupportedAsset = BaseAsset.extend({
   address: z.string().nullish(),
   underlyingTokens: z.array(UnderlyingToken).nullish(),
   protocol: z.string().nullish(),
-  customAssetType: z.string().nullish()
+  customAssetType: z.string().nullish(),
 });
 
 export type SupportedAsset = z.infer<typeof SupportedAsset>;
@@ -60,12 +60,12 @@ export const AssetInfo = z.object({
   collectionId: z.string().nullish(),
   collectionName: z.string().nullish(),
   imageUrl: z.string().nullish(),
-  isSpam: z.boolean().optional()
+  isSpam: z.boolean().optional(),
 });
 
 export const AssetInfoWithTransformer = AssetInfo.transform(data => ({
   ...data,
-  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
+  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
 }));
 
 export type AssetInfo = z.infer<typeof AssetInfo>;
@@ -73,12 +73,12 @@ export type AssetInfo = z.infer<typeof AssetInfo>;
 // note: make sure that the identifier is checksummed
 export const assetSymbolToIdentifierMap: Record<string, string> = {
   DAI: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
-  ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'
+  ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',
 };
 
-export const getIdentifierFromSymbolMap = (symbol: string): string => {
-  if (symbol in assetSymbolToIdentifierMap) {
+export function getIdentifierFromSymbolMap(symbol: string): string {
+  if (symbol in assetSymbolToIdentifierMap)
     return assetSymbolToIdentifierMap[symbol];
-  }
+
   return symbol;
-};
+}

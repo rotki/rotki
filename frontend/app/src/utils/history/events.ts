@@ -1,4 +1,3 @@
-import { type MaybeRef } from '@vueuse/core';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import {
   type EthBlockEvent,
@@ -8,99 +7,101 @@ import {
   type HistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
-  type OnlineHistoryEvent
+  type OnlineHistoryEvent,
 } from '@/types/history/events';
+import type { MaybeRef } from '@vueuse/core';
 
-export const isOfEventType = <T extends HistoryEvent>(
-  e: HistoryEvent,
-  type: HistoryEventEntryType
-): e is T => type === e?.entryType;
+export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
+  return type === e?.entryType;
+}
 
-export const isEvmEventType = (type: HistoryEventEntryType): boolean =>
-  type === HistoryEventEntryType.EVM_EVENT;
+export function isEvmEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.EVM_EVENT;
+}
 
-export const isEvmEvent = (event: HistoryEvent): event is EvmHistoryEvent =>
-  isEvmEventType(event.entryType);
+export function isEvmEvent(event: HistoryEvent): event is EvmHistoryEvent {
+  return isEvmEventType(event.entryType);
+}
 
-export const isEvmEventRef = (
-  event: MaybeRef<HistoryEvent>
-): ComputedRef<EvmHistoryEvent | undefined> =>
-  computed(() => {
+export function isEvmEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EvmHistoryEvent | undefined> {
+  return computed(() => {
     const eventVal = get(event);
     return isEvmEvent(eventVal) ? eventVal : undefined;
   });
+}
 
-export const isWithdrawalEventType = (type: HistoryEventEntryType): boolean =>
-  type === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
+export function isWithdrawalEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
+}
 
-export const isWithdrawalEvent = (
-  event: HistoryEvent
-): event is EthWithdrawalEvent => isWithdrawalEventType(event.entryType);
+export function isWithdrawalEvent(event: HistoryEvent): event is EthWithdrawalEvent {
+  return isWithdrawalEventType(event.entryType);
+}
 
-export const isWithdrawalEventRef = (
-  event: MaybeRef<HistoryEvent>
-): ComputedRef<EthWithdrawalEvent | undefined> =>
-  computed(() => {
+export function isWithdrawalEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EthWithdrawalEvent | undefined> {
+  return computed(() => {
     const eventVal = get(event);
     return isWithdrawalEvent(eventVal) ? eventVal : undefined;
   });
+}
 
-export const isEthBlockEventType = (type: HistoryEventEntryType): boolean =>
-  type === HistoryEventEntryType.ETH_BLOCK_EVENT;
+export function isEthBlockEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.ETH_BLOCK_EVENT;
+}
 
-export const isEthBlockEvent = (event: HistoryEvent): event is EthBlockEvent =>
-  isEthBlockEventType(event.entryType);
+export function isEthBlockEvent(event: HistoryEvent): event is EthBlockEvent {
+  return isEthBlockEventType(event.entryType);
+}
 
-export const isEthBlockEventRef = (
-  event: MaybeRef<HistoryEvent>
-): ComputedRef<EthBlockEvent | undefined> =>
-  computed(() => {
+export function isEthBlockEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EthBlockEvent | undefined> {
+  return computed(() => {
     const eventVal = get(event);
     return isEthBlockEvent(eventVal) ? eventVal : undefined;
   });
+}
 
-export const isOnlineHistoryEventType = (type: HistoryEventEntryType) =>
-  type === HistoryEventEntryType.HISTORY_EVENT;
+export function isOnlineHistoryEventType(type: HistoryEventEntryType) {
+  return type === HistoryEventEntryType.HISTORY_EVENT;
+}
 
-export const isOnlineHistoryEvent = (
-  event: HistoryEvent
-): event is OnlineHistoryEvent => isOnlineHistoryEventType(event.entryType);
+export function isOnlineHistoryEvent(event: HistoryEvent): event is OnlineHistoryEvent {
+  return isOnlineHistoryEventType(event.entryType);
+}
 
-export const isOnlineHistoryEventRef = (
-  event: MaybeRef<HistoryEvent>
-): ComputedRef<OnlineHistoryEvent | undefined> =>
-  computed(() => {
+export function isOnlineHistoryEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<OnlineHistoryEvent | undefined> {
+  return computed(() => {
     const eventVal = get(event);
     return isOnlineHistoryEvent(eventVal) ? eventVal : undefined;
   });
+}
 
-export const isEthDepositEventType = (type: HistoryEventEntryType): boolean =>
-  type === HistoryEventEntryType.ETH_DEPOSIT_EVENT;
+export function isEthDepositEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.ETH_DEPOSIT_EVENT;
+}
 
-export const isEthDepositEvent = (
-  event: HistoryEvent
-): event is EthDepositEvent => isEthDepositEventType(event.entryType);
+export function isEthDepositEvent(event: HistoryEvent): event is EthDepositEvent {
+  return isEthDepositEventType(event.entryType);
+}
 
-export const isEthDepositEventRef = (
-  event: MaybeRef<HistoryEvent>
-): ComputedRef<EthDepositEvent | undefined> =>
-  computed(() => {
+export function isEthDepositEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EthDepositEvent | undefined> {
+  return computed(() => {
     const eventVal = get(event);
     return isEthDepositEvent(eventVal) ? eventVal : undefined;
   });
+}
 
-export const isMissingAccountingRule = (
-  type: HistoryEventAccountingRuleStatus
-): boolean => type === HistoryEventAccountingRuleStatus.NOT_PROCESSED;
+export function isMissingAccountingRule(type: HistoryEventAccountingRuleStatus): boolean {
+  return type === HistoryEventAccountingRuleStatus.NOT_PROCESSED;
+}
 
-export const isEventMissingAccountingRule = (
-  event: HistoryEventEntry
-): boolean => isMissingAccountingRule(event.eventAccountingRuleStatus);
+export function isEventMissingAccountingRule(event: HistoryEventEntry): boolean {
+  return isMissingAccountingRule(event.eventAccountingRuleStatus);
+}
 
-export const isAccountingRuleProcessed = (
-  type: HistoryEventAccountingRuleStatus
-): boolean => type === HistoryEventAccountingRuleStatus.PROCESSED;
+export function isAccountingRuleProcessed(type: HistoryEventAccountingRuleStatus): boolean {
+  return type === HistoryEventAccountingRuleStatus.PROCESSED;
+}
 
-export const isEventAccountingRuleProcessed = (
-  event: HistoryEventEntry
-): boolean => isAccountingRuleProcessed(event.eventAccountingRuleStatus);
+export function isEventAccountingRuleProcessed(event: HistoryEventEntry): boolean {
+  return isAccountingRuleProcessed(event.eventAccountingRuleStatus);
+}

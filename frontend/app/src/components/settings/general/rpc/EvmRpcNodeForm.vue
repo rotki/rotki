@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { between, required, requiredIf } from '@vuelidate/validators';
-import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty, omit } from 'lodash-es';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings/rpc';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
   value: EvmRpcNode;
@@ -23,14 +23,13 @@ const { t } = useI18n();
 const { chain, chainName, value, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
-const getWeight = (value?: string): number => {
-  if (!value) {
+function getWeight(value?: string): number {
+  if (!value)
     return 0;
-  }
 
   const parsedValue = parseInt(value);
   return Number.isNaN(parsedValue) ? 0 : parsedValue;
-};
+}
 
 const weight = computed({
   get() {
@@ -38,13 +37,13 @@ const weight = computed({
   },
   set(value?: string) {
     state.weight = getWeight(value);
-  }
+  },
 });
 
 const rules = {
   name: { required },
   endpoint: { required: requiredIf(logicNot(isEtherscan)) },
-  weight: { required, between: between(0, 100) }
+  weight: { required, between: between(0, 100) },
 };
 
 const errorMessages = ref<Record<string, string[] | string>>({});
@@ -53,58 +52,58 @@ const { setValidation, setSubmitFunc } = useEvmRpcNodeForm(chain);
 
 const v$ = setValidation(rules, state, {
   $autoDirty: true,
-  $externalResults: errorMessages
+  $externalResults: errorMessages,
 });
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 
-const updateState = (selectedNode: EvmRpcNode): void => {
+function updateState(selectedNode: EvmRpcNode): void {
   state.identifier = selectedNode.identifier;
   state.name = selectedNode.name;
   state.endpoint = selectedNode.endpoint;
   state.weight = selectedNode.weight;
   state.active = selectedNode.active;
   state.owned = selectedNode.owned;
-};
+}
 
 onMounted(() => {
   updateState(get(value));
 });
 
-watch(value, node => {
-  if (node === get(state)) {
+watch(value, (node) => {
+  if (node === get(state))
     return;
-  }
+
   updateState(node);
 });
 
-watch(state, state => {
+watch(state, (state) => {
   emit('input', state);
 });
 
 const api = useEvmNodesApi(get(chain));
 const { setMessage } = useMessageStore();
 
-const save = async () => {
+async function save() {
   const editing = get(editMode);
   try {
     const node = get(value);
-    if (editing) {
+    if (editing)
       return await api.editEvmNode(node);
-    }
+
     return await api.addEvmNode(omit(node, 'identifier'));
-  } catch (e: any) {
+  }
+  catch (error: any) {
     const chainProp = get(chainName);
     const errorTitle = editing
       ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
       : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });
 
-    if (e instanceof ApiValidationError) {
-      const messages = e.errors;
+    if (error instanceof ApiValidationError) {
+      const messages = error.errors;
 
       set(errorMessages, messages);
 
@@ -118,20 +117,21 @@ const save = async () => {
           description: unknownKeys
             .map(key => `${key}: ${messages[key]}`)
             .join(', '),
-          success: false
+          success: false,
         });
       }
-    } else {
+    }
+    else {
       setMessage({
         title: errorTitle,
-        description: e.message,
-        success: false
+        description: error.message,
+        success: false,
       });
     }
 
     return false;
   }
-};
+}
 
 setSubmitFunc(save);
 </script>

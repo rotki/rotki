@@ -1,13 +1,10 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type AssetBalance } from '@rotki/common';
-import { type MaybeRef } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
-import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { AssetBalance } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
-export const useAccountDetails = (
-  blockchain: MaybeRef<Blockchain>,
-  address: MaybeRef<string> = ''
-) => {
+export function useAccountDetails(blockchain: MaybeRef<Blockchain>, address: MaybeRef<string> = '') {
   const ethBalancesStore = useEthBalancesStore();
   const { getLoopringAssetBalances } = ethBalancesStore;
   const { balances: ethBalances, loopring } = storeToRefs(ethBalancesStore);
@@ -17,28 +14,27 @@ export const useAccountDetails = (
 
   const balances: ComputedRef<BlockchainAssetBalances> = computed(() => {
     const chain = get(blockchain);
-    if (chain === Blockchain.ETH) {
+    if (chain === Blockchain.ETH)
       return get(ethBalances)[chain];
-    } else if (chain === Blockchain.OPTIMISM) {
+    else if (chain === Blockchain.OPTIMISM)
       return get(chainBalances)[chain];
-    } else if (chain === Blockchain.POLYGON_POS) {
+    else if (chain === Blockchain.POLYGON_POS)
       return get(chainBalances)[chain];
-    } else if (chain === Blockchain.ARBITRUM_ONE) {
+    else if (chain === Blockchain.ARBITRUM_ONE)
       return get(chainBalances)[chain];
-    } else if (chain === Blockchain.BASE) {
+    else if (chain === Blockchain.BASE)
       return get(chainBalances)[chain];
-    } else if (chain === Blockchain.GNOSIS) {
+    else if (chain === Blockchain.GNOSIS)
       return get(chainBalances)[chain];
-    }
+
     return {};
   });
 
   const assets: ComputedRef<AssetBalance[]> = computed(() => {
     const accountAddress = get(address);
     const ethAccount = get(balances)[accountAddress];
-    if (!ethAccount || isEmpty(ethAccount)) {
+    if (!ethAccount || isEmpty(ethAccount))
       return [];
-    }
 
     return Object.entries(ethAccount.assets)
       .filter(([asset]) => !get(isAssetIgnored(asset)))
@@ -47,17 +43,16 @@ export const useAccountDetails = (
           ({
             asset,
             amount,
-            usdValue
-          }) as AssetBalance
+            usdValue,
+          } satisfies AssetBalance),
       );
   });
 
   const liabilities: ComputedRef<AssetBalance[]> = computed(() => {
     const accountAddress = get(address);
     const account = get(balances)[accountAddress];
-    if (!account || isEmpty(account)) {
+    if (!account || isEmpty(account))
       return [];
-    }
 
     return Object.entries(account.liabilities)
       .filter(([asset]) => !get(isAssetIgnored(asset)))
@@ -66,8 +61,8 @@ export const useAccountDetails = (
           ({
             asset,
             amount,
-            usdValue
-          }) as AssetBalance
+            usdValue,
+          }) satisfies AssetBalance,
       );
   });
 
@@ -75,9 +70,8 @@ export const useAccountDetails = (
     const accountAddress = get(address);
     const account = get(balances)[accountAddress];
 
-    if (!account || isEmpty(account)) {
+    if (!account || isEmpty(account))
       return false;
-    }
 
     const totalAssets = Object.entries(account.assets).length;
     const totalLiabilities = Object.entries(account.liabilities).length;
@@ -91,26 +85,25 @@ export const useAccountDetails = (
   };
 
   const getLoopringBalances = (
-    address: MaybeRef<string>
+    address: MaybeRef<string>,
   ): ComputedRef<AssetBalance[]> =>
     computed(() => {
-      if (get(blockchain) !== Blockchain.ETH) {
+      if (get(blockchain) !== Blockchain.ETH)
         return [];
-      }
+
       const ownedAssets = getLoopringAssetBalances(address);
       return toSortedAssetBalanceArray(get(ownedAssets), asset =>
-        get(isAssetIgnored(asset))
-      );
+        get(isAssetIgnored(asset)));
     });
 
-  const loopringBalances: ComputedRef<AssetBalance[]> =
-    getLoopringBalances(address);
+  const loopringBalances: ComputedRef<AssetBalance[]>
+    = getLoopringBalances(address);
 
   return {
     assets,
     liabilities,
     loopringBalances,
     getLoopringBalances,
-    hasDetails
+    hasDetails,
   };
-};
+}

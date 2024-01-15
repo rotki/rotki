@@ -3,7 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Module } from '@/types/modules';
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 });
 
 const props = withDefaults(
@@ -17,8 +17,8 @@ const props = withDefaults(
     modelValue: null,
     disabled: false,
     dense: false,
-    evmOnly: false
-  }
+    evmOnly: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -42,31 +42,28 @@ const items = computed(() => {
 
   let data: string[] = get(supportedChains).map(({ id }) => id);
 
-  if (!isEth2Enabled) {
+  if (!isEth2Enabled)
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
-  }
 
-  if (get(evmOnly)) {
+  if (get(evmOnly))
     data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
-  }
 
   return data;
 });
 
-const clearSearch = () => {
+function clearSearch() {
   set(search, '');
-};
+}
 
-const updateBlockchain = (blockchain: Blockchain) => {
+function updateBlockchain(blockchain: Blockchain) {
   clearSearch();
   emit('update:model-value', blockchain);
-};
+}
 
-const filter = (chain: Blockchain, queryText: string) => {
+function filter(chain: Blockchain, queryText: string) {
   const item = get(supportedChains).find(blockchain => blockchain.id === chain);
-  if (!item) {
+  if (!item)
     return false;
-  }
 
   const nameIncludes = item.name
     .toLocaleLowerCase()
@@ -77,7 +74,7 @@ const filter = (chain: Blockchain, queryText: string) => {
     .includes(queryText.toLocaleLowerCase());
 
   return nameIncludes || idIncludes;
-};
+}
 </script>
 
 <template>
@@ -98,7 +95,11 @@ const filter = (chain: Blockchain, queryText: string) => {
     @blur="clearSearch()"
   >
     <template #selection="{ item }">
-      <ChainDisplay v-if="!search" :chain="item" :dense="dense" />
+      <ChainDisplay
+        v-if="!search"
+        :chain="item"
+        :dense="dense"
+      />
     </template>
     <template #item="{ item }">
       <ChainDisplay :chain="item" />

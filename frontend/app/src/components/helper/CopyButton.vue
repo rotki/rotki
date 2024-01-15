@@ -15,8 +15,16 @@ const { copy } = useClipboard({ source: value });
     :open-delay="400"
   >
     <template #activator>
-      <RuiButton :size="size" variant="text" icon @click="copy()">
-        <RuiIcon size="16" name="file-copy-line" />
+      <RuiButton
+        :size="size"
+        variant="text"
+        icon
+        @click="copy()"
+      >
+        <RuiIcon
+          size="16"
+          name="file-copy-line"
+        />
       </RuiButton>
     </template>
     <span>{{ tooltip }}</span>

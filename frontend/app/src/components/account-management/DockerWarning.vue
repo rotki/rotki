@@ -5,9 +5,9 @@ const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { t } = useI18n();
 const { usageGuideSection } = externalLinks;
 
-const proceed = () => {
+function proceed() {
   set(dockerRiskAccepted, true);
-};
+}
 </script>
 
 <template>
@@ -21,7 +21,12 @@ const proceed = () => {
         />
       </i18n>
 
-      <RuiButton class="mt-4" size="sm" color="primary" @click="proceed()">
+      <RuiButton
+        class="mt-4"
+        size="sm"
+        color="primary"
+        @click="proceed()"
+      >
         {{ t('docker_warning.action') }}
       </RuiButton>
     </RuiAlert>

@@ -18,8 +18,8 @@ const props = withDefaults(
     deleteDisabled: false,
     deleteTooltip: '',
     noDelete: false,
-    align: 'start'
-  }
+    align: 'start',
+  },
 );
 
 const emit = defineEmits<{
@@ -32,22 +32,29 @@ const deleteClick = () => emit('delete-click');
 
 const tooltipProps = {
   popper: { placement: 'top', offsetDistance: 0 },
-  openDelay: 400
+  openDelay: 400,
 };
 
 const justify = computed(() => {
   const justify = {
     start: 'justify-start',
     center: 'justify-center',
-    end: 'justify-end'
+    end: 'justify-end',
   } as const;
   return justify[props.align];
 });
 </script>
 
 <template>
-  <div class="flex flex-row flex-nowrap items-center gap-1" :class="justify">
-    <RuiTooltip v-if="!noEdit" v-bind="tooltipProps" :disabled="!editTooltip">
+  <div
+    class="flex flex-row flex-nowrap items-center gap-1"
+    :class="justify"
+  >
+    <RuiTooltip
+      v-if="!noEdit"
+      v-bind="tooltipProps"
+      :disabled="!editTooltip"
+    >
       <template #activator>
         <RuiButton
           :disabled="disabled || editDisabled"
@@ -56,7 +63,10 @@ const justify = computed(() => {
           icon
           @click="editClick()"
         >
-          <RuiIcon size="16" name="pencil-line" />
+          <RuiIcon
+            size="16"
+            name="pencil-line"
+          />
         </RuiButton>
       </template>
       {{ editTooltip }}
@@ -74,7 +84,10 @@ const justify = computed(() => {
           icon
           @click="deleteClick()"
         >
-          <RuiIcon size="16" name="delete-bin-line" />
+          <RuiIcon
+            size="16"
+            name="delete-bin-line"
+          />
         </RuiButton>
       </template>
       {{ deleteTooltip }}

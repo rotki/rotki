@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type Ref } from 'vue';
 import { toCapitalCase } from '@/utils/text';
-import { type HistoryEvent } from '@/types/history/events';
 import { isOfEventType } from '@/utils/history/events';
+import type { Ref } from 'vue';
+import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
@@ -14,34 +14,30 @@ const props = withDefaults(
   {
     editableItem: undefined,
     nextSequence: undefined,
-    groupHeader: undefined
-  }
+    groupHeader: undefined,
+  },
 );
 
 const { groupHeader, editableItem } = toRefs(props);
 
 const entryType: Ref<HistoryEventEntryType> = ref(
-  HistoryEventEntryType.HISTORY_EVENT
+  HistoryEventEntryType.HISTORY_EVENT,
 );
 
-const getEvent = <T extends HistoryEvent>(
-  event: HistoryEvent,
-  type: HistoryEventEntryType
-): T | undefined => {
-  if (isOfEventType<T>(event, type)) {
+function getEvent<T extends HistoryEvent>(event: HistoryEvent, type: HistoryEventEntryType): T | undefined {
+  if (isOfEventType<T>(event, type))
     return event;
-  }
+
   return undefined;
-};
+}
 
 const historyEventEntryTypes = Object.values(HistoryEventEntryType);
 
 watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
-  if (editableItem) {
+  if (editableItem)
     set(entryType, editableItem.entryType);
-  } else if (groupHeader) {
+  else if (groupHeader)
     set(entryType, groupHeader.entryType);
-  }
 });
 </script>
 
@@ -56,8 +52,12 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       label="Entry Type"
       hide-details
     >
-      <template #item="{ item }">{{ toCapitalCase(item) }}</template>
-      <template #selection="{ item }">{{ toCapitalCase(item) }}</template>
+      <template #item="{ item }">
+        {{ toCapitalCase(item) }}
+      </template>
+      <template #selection="{ item }">
+        {{ toCapitalCase(item) }}
+      </template>
     </VSelect>
 
     <RuiDivider class="my-8" />

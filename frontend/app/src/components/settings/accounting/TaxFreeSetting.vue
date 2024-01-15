@@ -9,72 +9,74 @@ const taxFreePeriod = ref(false);
 const { t } = useI18n();
 
 const { taxfreeAfterPeriod: period } = storeToRefs(
-  useAccountingSettingsStore()
+  useAccountingSettingsStore(),
 );
 
 const rules = {
   taxFreeAfterPeriod: {
     required: helpers.withMessage(
       t('account_settings.validation.tax_free_days'),
-      required
+      required,
     ),
     minValue: helpers.withMessage(
       t('account_settings.validation.tax_free_days_gt_zero'),
-      minValue(1)
-    )
-  }
+      minValue(1),
+    ),
+  },
 };
 
 const v$ = useVuelidate(rules, { taxFreeAfterPeriod }, { $autoDirty: true });
 
-const convertPeriod = (period: number, currentType: 'days' | 'seconds') => {
+function convertPeriod(period: number, currentType: 'days' | 'seconds') {
   const dayInSeconds = 86400;
-  if (currentType === 'days') {
+  if (currentType === 'days')
     return period * dayInSeconds;
-  } else if (currentType === 'seconds') {
+  else if (currentType === 'seconds')
     return period / dayInSeconds;
-  }
-  throw new Error(`invalid type: ${currentType}`);
-};
 
-const getTaxFreePeriod = (enabled: boolean) => {
-  if (!enabled) {
+  throw new Error(`invalid type: ${currentType}`);
+}
+
+function getTaxFreePeriod(enabled: boolean) {
+  if (!enabled)
     return -1;
-  }
 
   return convertPeriod(365, 'days');
-};
+}
 
-const resetTaxFreePeriod = () => {
+function resetTaxFreePeriod() {
   const currentPeriod = get(period);
   if (currentPeriod && currentPeriod > -1) {
     set(taxFreePeriod, true);
     set(taxFreeAfterPeriod, convertPeriod(currentPeriod, 'seconds').toString());
-  } else {
+  }
+  else {
     set(taxFreePeriod, false);
     set(taxFreeAfterPeriod, undefined);
   }
-};
+}
 
-const callIfValid = <T = unknown,>(value: T, method: (e: T) => void) => {
+function callIfValid<T = unknown>(value: T, method: (e: T) => void) {
   const validator = get(v$);
-  if (!validator.$error) {
+  if (!validator.$error)
     method(value);
-  }
-};
+}
 
-const switchSuccess = (enabled: boolean) =>
-  t('account_settings.messages.tax_free', {
-    enabled: enabled ? 'enabled' : 'disabled'
+function switchSuccess(enabled: boolean) {
+  return t('account_settings.messages.tax_free', {
+    enabled: enabled ? 'enabled' : 'disabled',
   });
+}
 
-const numberSuccess = (period: number) =>
-  t('account_settings.messages.tax_free_period', {
-    period
+function numberSuccess(period: number) {
+  return t('account_settings.messages.tax_free_period', {
+    period,
   });
+}
 
-const getPeriod = (value: number) =>
-  value ? convertPeriod(value, 'days') : -1;
+function getPeriod(value: number) {
+  return value ? convertPeriod(value, 'days') : -1;
+}
 
 onMounted(() => {
   resetTaxFreePeriod();

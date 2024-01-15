@@ -8,8 +8,8 @@ const css = useCssModule();
 const { isModuleEnabled } = useModules();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 
-const { getChainName, getEvmChainName, isEvm, evmChainsData, supportedChains } =
-  useSupportedChains();
+const { getChainName, getEvmChainName, isEvm, evmChainsData, supportedChains }
+  = useSupportedChains();
 
 const skippedChains = computed(() => {
   const savedNames = get(evmchainsToSkipDetection) ?? [];
@@ -26,21 +26,20 @@ const items = computed(() => {
 
   data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
 
-  if (!isEth2Enabled) {
+  if (!isEth2Enabled)
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
-  }
 
   return data;
 });
 
-const getChainNames = (chains: Blockchain[]) =>
-  (chains ?? []).map(getEvmChainName);
+function getChainNames(chains: Blockchain[]) {
+  return (chains ?? []).map(getEvmChainName);
+}
 
-const filter = (chain: Blockchain, queryText: string) => {
+function filter(chain: Blockchain, queryText: string) {
   const item = get(supportedChains).find(blockchain => blockchain.id === chain);
-  if (!item) {
+  if (!item)
     return false;
-  }
 
   const query = queryText.toLocaleLowerCase();
 
@@ -49,10 +48,11 @@ const filter = (chain: Blockchain, queryText: string) => {
   const idIncludes = item.id.toLocaleLowerCase().includes(query);
 
   return nameIncludes || idIncludes;
-};
+}
 
-const removeChain = (chain: Blockchain) =>
-  getChainNames(get(skippedChains).filter(c => c !== chain));
+function removeChain(chain: Blockchain) {
+  return getChainNames(get(skippedChains).filter(c => c !== chain));
+}
 </script>
 
 <template>
@@ -97,13 +97,19 @@ const removeChain = (chain: Blockchain) =>
             @click:close="updateImmediate(removeChain(item))"
           >
             <span class="flex gap-1 -ml-1">
-              <ChainIcon :chain="item" size="0.875rem" />
+              <ChainIcon
+                :chain="item"
+                size="0.875rem"
+              />
               {{ getChainName(item).value }}
             </span>
           </RuiChip>
         </template>
         <template #item="{ item }">
-          <ChainDisplay :chain="item" dense />
+          <ChainDisplay
+            :chain="item"
+            dense
+          />
         </template>
       </VAutocomplete>
     </SettingsOption>

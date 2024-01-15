@@ -4,7 +4,7 @@ const css = useCssModule();
 const { t } = useI18n();
 
 const copyright = computed(() =>
-  t('app.copyright', { year: new Date().getFullYear() })
+  t('app.copyright', { year: new Date().getFullYear() }),
 );
 </script>
 

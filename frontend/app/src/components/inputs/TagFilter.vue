@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Tag } from '@/types/tags';
+import type { Tag } from '@/types/tags';
 
 const props = withDefaults(
   defineProps<{
@@ -9,8 +9,8 @@ const props = withDefaults(
   }>(),
   {
     disabled: false,
-    hideDetails: false
-  }
+    hideDetails: false,
+  },
 );
 
 const emit = defineEmits<{ (e: 'input', tags: string[]): void }>();
@@ -25,15 +25,15 @@ const availableTagsList = computed<Tag[]>(() => {
   return Object.values(tags);
 });
 
-const input = (tags: string[]) => {
+function input(tags: string[]) {
   emit('input', tags);
-};
+}
 
-const remove = (tag: string) => {
+function remove(tag: string) {
   const tags = get(value);
   const index = tags.indexOf(tag);
   input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-};
+}
 </script>
 
 <template>
@@ -71,7 +71,10 @@ const remove = (tag: string) => {
       </RuiChip>
     </template>
     <template #item="{ item }">
-      <TagIcon :tag="item" small />
+      <TagIcon
+        :tag="item"
+        small
+      />
       <span class="tag-input__tag__description ml-4">
         {{ item.description }}
       </span>

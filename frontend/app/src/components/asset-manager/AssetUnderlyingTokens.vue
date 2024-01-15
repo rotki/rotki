@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { SupportedAsset } from '@rotki/common/lib/data';
 
 defineProps<{ asset: SupportedAsset }>();
 
@@ -9,24 +9,26 @@ const { t } = useI18n();
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.address'),
-    key: 'address'
+    key: 'address',
   },
   {
     label: t('underlying_token_manager.tokens.token_kind'),
     key: 'tokenKind',
-    cellClass: 'text-no-wrap'
+    cellClass: 'text-no-wrap',
   },
   {
     label: t('underlying_token_manager.tokens.weight'),
     key: 'weight',
-    cellClass: 'text-no-wrap'
-  }
+    cellClass: 'text-no-wrap',
+  },
 ]);
 </script>
 
 <template>
   <RuiCard>
-    <template #header>{{ t('asset_table.underlying_tokens') }}</template>
+    <template #header>
+      {{ t('asset_table.underlying_tokens') }}
+    </template>
     <RuiDataTable
       outlined
       :cols="tableHeaders"
@@ -34,7 +36,10 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       row-attr="address"
     >
       <template #item.address="{ row }">
-        <HashLink :text="row.address" full-address />
+        <HashLink
+          :text="row.address"
+          full-address
+        />
       </template>
       <template #item.tokenKind="{ row }">
         {{ row.tokenKind.toUpperCase() }}
@@ -42,7 +47,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       <template #item.weight="{ row }">
         {{
           t('underlying_token_manager.tokens.weight_percentage', {
-            weight: row.weight
+            weight: row.weight,
           })
         }}
       </template>

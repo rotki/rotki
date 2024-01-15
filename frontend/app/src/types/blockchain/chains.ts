@@ -11,7 +11,7 @@ const RestChains = [
   Blockchain.POLYGON_POS,
   Blockchain.ARBITRUM_ONE,
   Blockchain.BASE,
-  Blockchain.GNOSIS
+  Blockchain.GNOSIS,
 ] as const;
 
 export type BtcChains = (typeof BtcChains)[number];
@@ -20,25 +20,29 @@ export type EthChains = (typeof EthChains)[number];
 
 export type RestChains = (typeof RestChains)[number];
 
-export const isBtcChain = (chain: Blockchain): chain is BtcChains =>
-  BtcChains.includes(chain as any);
+export function isBtcChain(chain: Blockchain): chain is BtcChains {
+  return BtcChains.includes(chain as any);
+}
 
-export const isEthChain = (chain: Blockchain): chain is EthChains =>
-  EthChains.includes(chain as any);
+export function isEthChain(chain: Blockchain): chain is EthChains {
+  return EthChains.includes(chain as any);
+}
 
-export const isRestChain = (chain: Blockchain): chain is RestChains =>
-  RestChains.includes(chain as any);
+export function isRestChain(chain: Blockchain): chain is RestChains {
+  return RestChains.includes(chain as any);
+}
 
-export const isBlockchain = (chain: string): chain is Blockchain =>
-  Object.values(Blockchain).includes(chain as any);
+export function isBlockchain(chain: string): chain is Blockchain {
+  return Object.values(Blockchain).includes(chain as any);
+}
 
 export const evmTokenKindsData = [
   {
     identifier: EvmTokenKind.ERC20,
-    label: 'ERC20'
+    label: 'ERC20',
   },
   {
     identifier: EvmTokenKind.ERC721,
-    label: 'ERC721'
-  }
+    label: 'ERC721',
+  },
 ];

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type Ref } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
-import { type EditableMissingPrice, type MissingPrice } from '@/types/reports';
-import {
-  type HistoricalPrice,
-  type HistoricalPriceDeletePayload,
-  type HistoricalPriceFormPayload
-} from '@/types/prices';
 import { ApiValidationError } from '@/types/api/errors';
+import type { BigNumber } from '@rotki/common';
+import type { Ref } from 'vue';
+import type { DataTableHeader } from '@/types/vuetify';
+import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
+import type {
+  HistoricalPrice,
+  HistoricalPriceDeletePayload,
+  HistoricalPriceFormPayload,
+} from '@/types/prices';
 
 const props = defineProps<{
   items: MissingPrice[];
@@ -23,15 +23,16 @@ const {
   fetchHistoricalPrices,
   addHistoricalPrice,
   editHistoricalPrice,
-  deleteHistoricalPrice
+  deleteHistoricalPrice,
 } = useAssetPricesApi();
 
-const createKey = (item: MissingPrice) =>
-  item.fromAsset + item.toAsset + item.time;
+function createKey(item: MissingPrice) {
+  return item.fromAsset + item.toAsset + item.time;
+}
 
-const getHistoricalPrices = async () => {
+async function getHistoricalPrices() {
   set(prices, await fetchHistoricalPrices());
-};
+}
 
 onMounted(async () => {
   await getHistoricalPrices();
@@ -40,23 +41,23 @@ onMounted(async () => {
 const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
 
 const formattedItems = computed<EditableMissingPrice[]>(() =>
-  get(items).map(item => {
+  get(items).map((item) => {
     const savedHistoricalPrice = get(prices).find(
       price =>
-        price.fromAsset === item.fromAsset &&
-        price.toAsset === item.toAsset &&
-        price.timestamp === item.time
+        price.fromAsset === item.fromAsset
+        && price.toAsset === item.toAsset
+        && price.timestamp === item.time,
     );
 
     const key = createKey(item);
     const savedPrice = savedHistoricalPrice?.price;
     const refreshedHistoricalPrice = get(refreshedHistoricalPrices)[key];
 
-    const useRefreshedHistoricalPrice =
-      !savedPrice && !!refreshedHistoricalPrice;
+    const useRefreshedHistoricalPrice
+      = !savedPrice && !!refreshedHistoricalPrice;
 
-    const price =
-      (useRefreshedHistoricalPrice
+    const price
+      = (useRefreshedHistoricalPrice
         ? refreshedHistoricalPrice
         : savedPrice
       )?.toFixed() ?? '';
@@ -65,52 +66,52 @@ const formattedItems = computed<EditableMissingPrice[]>(() =>
       ...item,
       saved: !!savedPrice,
       price,
-      useRefreshedHistoricalPrice
+      useRefreshedHistoricalPrice,
     };
-  })
+  }),
 );
 
-const updatePrice = async (item: EditableMissingPrice) => {
-  if (item.useRefreshedHistoricalPrice) {
+async function updatePrice(item: EditableMissingPrice) {
+  if (item.useRefreshedHistoricalPrice)
     return;
-  }
 
   const payload: HistoricalPriceDeletePayload = {
     fromAsset: item.fromAsset,
     toAsset: item.toAsset,
-    timestamp: item.time
+    timestamp: item.time,
   };
 
   try {
     if (item.price) {
       const formPayload: HistoricalPriceFormPayload = {
         ...payload,
-        price: item.price
+        price: item.price,
       };
 
-      if (item.saved) {
+      if (item.saved)
         await editHistoricalPrice(formPayload);
-      } else {
+      else
         await addHistoricalPrice(formPayload);
-      }
-    } else if (item.saved) {
+    }
+    else if (item.saved) {
       await deleteHistoricalPrice(payload);
     }
-  } catch (e: any) {
-    let errorMessage = e.message;
-    if (e instanceof ApiValidationError) {
-      const errors = e.getValidationErrors({ price: '' });
-      errorMessage = typeof errors === 'string' ? e.message : errors.price[0];
+  }
+  catch (error: any) {
+    let errorMessage = error.message;
+    if (error instanceof ApiValidationError) {
+      const errors = error.getValidationErrors({ price: '' });
+      errorMessage = typeof errors === 'string' ? error.message : errors.price[0];
     }
 
     set(errorMessages, {
       ...get(errorMessages),
-      [createKey(item)]: errorMessage
+      [createKey(item)]: errorMessage,
     });
   }
 
   await getHistoricalPrices();
-};
+}
 
 const tableRef = ref<any>(null);
 
@@ -119,37 +120,37 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 const headers = computed<DataTableHeader[]>(() => [
   {
     text: t(
-      'profit_loss_report.actionable.missing_prices.headers.from_asset'
+      'profit_loss_report.actionable.missing_prices.headers.from_asset',
     ).toString(),
-    value: 'fromAsset'
+    value: 'fromAsset',
   },
   {
     text: t(
-      'profit_loss_report.actionable.missing_prices.headers.to_asset'
+      'profit_loss_report.actionable.missing_prices.headers.to_asset',
     ).toString(),
-    value: 'toAsset'
+    value: 'toAsset',
   },
   {
     text: t('common.datetime').toString(),
-    value: 'time'
+    value: 'time',
   },
   {
     text: t('common.price').toString(),
     value: 'price',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
 const { getHistoricPrice } = useBalancePricesStore();
 
 const refreshing = ref<boolean>(false);
 
-const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
+async function refreshHistoricalPrice(item: EditableMissingPrice) {
   set(refreshing, true);
   const rateFromHistoricPrice = await getHistoricPrice({
     timestamp: item.time,
     fromAsset: item.fromAsset,
-    toAsset: item.toAsset
+    toAsset: item.toAsset,
   });
 
   const key = createKey(item);
@@ -157,14 +158,15 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
     const refreshedHistoricalPricesVal = get(refreshedHistoricalPrices);
     refreshedHistoricalPricesVal[key] = rateFromHistoricPrice;
     set(refreshedHistoricalPrices, refreshedHistoricalPricesVal);
-  } else {
+  }
+  else {
     set(errorMessages, {
       ...get(errorMessages),
-      [key]: t('profit_loss_report.actionable.missing_prices.price_not_found')
+      [key]: t('profit_loss_report.actionable.missing_prices.price_not_found'),
     });
   }
   set(refreshing, false);
-};
+}
 </script>
 
 <template>
@@ -173,7 +175,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned
+        [$style['table--pinned']]: isPinned,
       }"
       :headers="headers"
       :items="formattedItems"
@@ -185,10 +187,16 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
       <template #item="{ item }">
         <tr :key="createKey(item)">
           <td>
-            <AssetDetails link :asset="item.fromAsset" />
+            <AssetDetails
+              link
+              :asset="item.fromAsset"
+            />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
-            <AssetDetails link :asset="item.toAsset" />
+            <AssetDetails
+              link
+              :asset="item.toAsset"
+            />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
             <DateDisplay :timestamp="item.time" />
@@ -207,10 +215,10 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
               :success-messages="
                 item.saved
                   ? [
-                      t(
-                        'profit_loss_report.actionable.missing_prices.price_is_saved'
-                      )
-                    ]
+                    t(
+                      'profit_loss_report.actionable.missing_prices.price_is_saved',
+                    ),
+                  ]
                   : []
               "
               :error-messages="errorMessages[createKey(item)]"
@@ -235,13 +243,16 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       color="primary"
                       @click="refreshHistoricalPrice(item)"
                     >
-                      <RuiIcon size="20" name="refresh-line" />
+                      <RuiIcon
+                        size="20"
+                        name="refresh-line"
+                      />
                     </RuiButton>
                   </template>
                   <span>
                     {{
                       t(
-                        'profit_loss_report.actionable.missing_prices.refresh_price_hint'
+                        'profit_loss_report.actionable.missing_prices.refresh_price_hint',
                       )
                     }}
                   </span>
@@ -252,7 +263,10 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
         </tr>
       </template>
     </DataTable>
-    <slot name="actions" :items="formattedItems" />
+    <slot
+      name="actions"
+      :items="formattedItems"
+    />
   </div>
 </template>
 

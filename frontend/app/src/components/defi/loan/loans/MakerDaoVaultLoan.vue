@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import type { BigNumber } from '@rotki/common';
+import type { ComputedRef } from 'vue';
+import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
   vault: MakerDAOVaultModel;
@@ -14,9 +14,9 @@ const { t } = useI18n();
 
 const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   const makerVault = props.vault;
-  if ('totalInterestOwed' in makerVault) {
+  if ('totalInterestOwed' in makerVault)
     return makerVault.totalInterestOwed;
-  }
+
   return Zero;
 });
 
@@ -28,7 +28,7 @@ const header = computed(() => {
   const makerVault = props.vault;
   return {
     identifier: scrambleIdentifier(makerVault.identifier),
-    collateralType: makerVault.collateralType
+    collateralType: makerVault.collateralType,
   };
 });
 
@@ -37,7 +37,10 @@ const chain = Blockchain.ETH;
 
 <template>
   <div class="flex flex-col gap-4">
-    <LoanHeader v-if="vault.owner" :owner="vault.owner">
+    <LoanHeader
+      v-if="vault.owner"
+      :owner="vault.owner"
+    >
       {{ t('maker_dao_vault_loan.header', header) }}
     </LoanHeader>
 
@@ -46,7 +49,10 @@ const chain = Blockchain.ETH;
       <MakerDaoVaultLiquidation :vault="vault" />
     </div>
 
-    <LoanDebt :debt="vault.debt" :asset="vault.collateral.asset">
+    <LoanDebt
+      :debt="vault.debt"
+      :asset="vault.collateral.asset"
+    >
       <MakerDaoVaultDebtDetails
         :total-interest-owed="totalInterestOwed"
         :loading="!totalInterestOwed"

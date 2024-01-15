@@ -16,8 +16,8 @@ withDefaults(
     timeStart: 0,
     timeEnd: 0,
     found: undefined,
-    entriesFoundTotal: undefined
-  }
+    entriesFoundTotal: undefined,
+  },
 );
 
 const { t } = useI18n();
@@ -26,7 +26,10 @@ const { xs } = useDisplay();
 
 <template>
   <tr class="bg-transparent">
-    <td :colspan="xs ? 2 : colspan" class="font-medium py-2">
+    <td
+      :colspan="xs ? 2 : colspan"
+      class="font-medium py-2"
+    >
       <i18n
         v-if="events"
         path="upgrade_row.events"
@@ -50,13 +53,24 @@ const { xs } = useDisplay();
           />
         </template>
         <template #from>
-          <DateDisplay class="mx-1" :timestamp="timeStart" />
+          <DateDisplay
+            class="mx-1"
+            :timestamp="timeStart"
+          />
         </template>
         <template #to>
-          <DateDisplay class="ml-1" :timestamp="timeEnd" />
+          <DateDisplay
+            class="ml-1"
+            :timestamp="timeEnd"
+          />
         </template>
       </i18n>
-      <i18n v-else tag="div" path="upgrade_row.upgrade" class="md:text-center">
+      <i18n
+        v-else
+        tag="div"
+        path="upgrade_row.upgrade"
+        class="md:text-center"
+      >
         <template #total>
           {{ entriesFoundTotal ? entriesFoundTotal : total }}
         </template>

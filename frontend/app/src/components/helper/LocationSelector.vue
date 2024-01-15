@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type TradeLocationData } from '@/types/history/trade/location';
+import type { TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
@@ -8,7 +8,7 @@ const props = withDefaults(
     excludes?: string[];
     attach?: string;
   }>(),
-  { value: '', items: () => [], excludes: () => [], attach: undefined }
+  { value: '', items: () => [], excludes: () => [], attach: undefined },
 );
 
 const emit = defineEmits<{
@@ -26,14 +26,14 @@ const locations = computed<TradeLocationData[]>(() => {
   const itemsVal = get(items);
   const excludesVal = get(excludes);
 
-  return get(tradeLocations).filter(item => {
-    const included =
-      itemsVal && itemsVal.length > 0
+  return get(tradeLocations).filter((item) => {
+    const included
+      = itemsVal && itemsVal.length > 0
         ? itemsVal.includes(item.identifier)
         : true;
 
-    const excluded =
-      excludesVal && excludesVal.length > 0
+    const excluded
+      = excludesVal && excludesVal.length > 0
         ? excludesVal.includes(item.identifier)
         : false;
 

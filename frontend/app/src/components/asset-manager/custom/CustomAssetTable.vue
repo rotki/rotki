@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
-import { type TablePagination } from '@/types/pagination';
-import { type CustomAsset } from '@/types/asset';
-import {
-  type Filters,
-  type Matcher
+import type { DataTableHeader } from '@/types/vuetify';
+import type { TablePagination } from '@/types/pagination';
+import type { CustomAsset } from '@/types/asset';
+import type {
+  Filters,
+  Matcher,
 } from '@/composables/filters/custom-assets';
 
 withDefaults(
@@ -17,7 +17,7 @@ withDefaults(
     filters: Filters;
     loading?: boolean;
   }>(),
-  { loading: false }
+  { loading: false },
 );
 
 const emit = defineEmits<{
@@ -34,41 +34,47 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: t('common.asset'),
     value: 'name',
-    width: '50%'
+    width: '50%',
   },
   {
     text: t('common.type'),
     value: 'custom_asset_type',
-    width: '50%'
+    width: '50%',
   },
   {
     text: '',
     value: 'actions',
-    sortable: false
+    sortable: false,
   },
   {
     text: '',
     width: '48px',
     value: 'expand',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
-const updatePagination = (pagination: TablePagination<CustomAsset>) =>
-  emit('update:pagination', pagination);
-const updateFilter = (filters: Filters) => emit('update:filters', filters);
-const updateExpanded = (expandedAssets: CustomAsset[]) =>
-  emit('update:expanded', expandedAssets);
 
-const getAsset = (item: CustomAsset) => ({
-  name: item.name,
-  symbol: item.customAssetType,
-  identifier: item.identifier,
-  isCustomAsset: true,
-  customAssetType: item.customAssetType
-});
+function updatePagination(pagination: TablePagination<CustomAsset>) {
+  return emit('update:pagination', pagination);
+}
+const updateFilter = (filters: Filters) => emit('update:filters', filters);
+
+function updateExpanded(expandedAssets: CustomAsset[]) {
+  return emit('update:expanded', expandedAssets);
+}
+
+function getAsset(item: CustomAsset) {
+  return {
+    name: item.name,
+    symbol: item.customAssetType,
+    identifier: item.identifier,
+    isCustomAsset: true,
+    customAssetType: item.customAssetType,
+  };
+}
 </script>
 
 <template>
@@ -78,7 +84,7 @@ const getAsset = (item: CustomAsset) => ({
         <HintMenuIcon>
           {{ t('asset_table.custom.subtitle') }}
         </HintMenuIcon>
-        <div class="w-full sm:max-w-[25rem] align-self-center">
+        <div class="w-full sm:max-w-[25rem] self-center">
           <TableFilter
             :matches="filters"
             :matchers="matchers"
@@ -127,8 +133,13 @@ const getAsset = (item: CustomAsset) => ({
         </RowActions>
       </template>
       <template #expanded-item="{ item }">
-        <TableExpandContainer visible :colspan="tableHeaders.length">
-          <div class="font-bold">{{ t('common.notes') }}:</div>
+        <TableExpandContainer
+          visible
+          :colspan="tableHeaders.length"
+        >
+          <div class="font-bold">
+            {{ t('common.notes') }}:
+          </div>
           <div class="pt-2">
             {{ item.notes }}
           </div>

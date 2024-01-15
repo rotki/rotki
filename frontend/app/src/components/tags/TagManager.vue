@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type Tag, defaultTag } from '@/types/tags';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 
 withDefaults(
   defineProps<{
     dialog?: boolean;
   }>(),
   {
-    dialog: false
-  }
+    dialog: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -28,55 +28,56 @@ const { t } = useI18n();
 const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.name'),
-    key: 'name'
+    key: 'name',
   },
   {
     label: t('common.description'),
     key: 'description',
-    cellClass: 'w-full'
+    cellClass: 'w-full',
   },
   {
     label: t('common.actions_text'),
     key: 'action',
-    sortable: false
-  }
+    sortable: false,
+  },
 ]);
 
 const close = () => emit('close');
 
-const save = async (newTag: Tag) => {
+async function save(newTag: Tag) {
   set(tag, defaultTag());
   if (get(editMode)) {
     set(editMode, false);
     await editTag(newTag);
-  } else {
+  }
+  else {
     await addTag(newTag);
   }
-};
+}
 
-const cancel = () => {
+function cancel() {
   set(tag, defaultTag());
   set(editMode, false);
-};
+}
 
-const editItem = (newTag: Tag) => {
+function editItem(newTag: Tag) {
   set(tag, newTag);
   set(editMode, true);
-};
+}
 
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (selectedTag: Tag) => {
+function showDeleteConfirmation(selectedTag: Tag) {
   show(
     {
       title: t('tag_manager.confirmation.title'),
       message: t('tag_manager.confirmation.message', {
-        tagToDelete: selectedTag.name
-      })
+        tagToDelete: selectedTag.name,
+      }),
     },
-    () => deleteTag(selectedTag.name)
+    () => deleteTag(selectedTag.name),
   );
-};
+}
 </script>
 
 <template>
@@ -141,7 +142,10 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
         outlined
       >
         <template #item.name="{ row }">
-          <TagIcon :tag="row" small />
+          <TagIcon
+            :tag="row"
+            small
+          />
         </template>
         <template #item.action="{ row }">
           <RowActions

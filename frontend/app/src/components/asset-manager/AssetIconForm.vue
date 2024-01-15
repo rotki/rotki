@@ -4,7 +4,7 @@ const props = withDefaults(
     identifier: string;
     refreshable?: boolean;
   }>(),
-  { refreshable: false }
+  { refreshable: false },
 );
 
 const { identifier } = toRefs(props);
@@ -21,55 +21,56 @@ const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
 const { t } = useI18n();
 
-const refreshIcon = async () => {
+async function refreshIcon() {
   set(refreshIconLoading, true);
   const identifierVal = get(identifier);
   try {
     await refresh(identifierVal);
-  } catch (e: any) {
+  }
+  catch (error: any) {
     notify({
       title: t('asset_form.fetch_latest_icon.title'),
       message: t('asset_form.fetch_latest_icon.description', {
         identifier: identifierVal,
-        message: e.message
+        message: error.message,
       }),
-      display: true
+      display: true,
     });
   }
   set(refreshIconLoading, false);
   set(timestamp, Date.now());
-};
+}
 
-const saveIcon = async (identifier: string) => {
-  if (!get(icon)) {
+async function saveIcon(identifier: string) {
+  if (!get(icon))
     return;
-  }
 
   let success = false;
   let message = '';
   try {
-    if (appSession) {
+    if (appSession)
       await setIcon(identifier, get(icon)!.path);
-    } else {
+    else
       await uploadIcon(identifier, get(icon)!);
-    }
+
     success = true;
-  } catch (e: any) {
-    message = e.message;
+  }
+  catch (error: any) {
+    message = error.message;
   }
 
   if (!success) {
     setMessage({
       title: t('asset_form.icon_upload.title'),
       description: t('asset_form.icon_upload.description', {
-        message
-      })
+        message,
+      }),
     });
   }
-};
+}
 
 defineExpose({
-  saveIcon
+  saveIcon,
 });
 </script>
 
@@ -94,7 +95,10 @@ defineExpose({
               :loading="refreshIconLoading"
               @click="refreshIcon()"
             >
-              <RuiIcon size="20" name="refresh-line" />
+              <RuiIcon
+                size="20"
+                name="refresh-line"
+              />
             </RuiButton>
           </template>
           {{ t('asset_form.fetch_latest_icon.title') }}
@@ -115,7 +119,10 @@ defineExpose({
         file-filter=".png, .svg, .jpeg, .jpg, .webp"
       />
     </div>
-    <div v-if="icon" class="text-caption text-rui-success mt-2">
+    <div
+      v-if="icon"
+      class="text-caption text-rui-success mt-2"
+    >
       {{ t('asset_form.replaced', { name: icon.name }) }}
     </div>
   </div>

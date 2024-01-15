@@ -17,18 +17,17 @@ onMounted(() => {
   const account = get(accountToEdit);
   if (account) {
     set(blockchain, account.chain);
-    if ('xpub' in account && !account.address) {
+    if ('xpub' in account && !account.address)
       set(inputMode, InputMode.XPUB_ADD);
-    }
-  } else {
+  }
+  else {
     set(blockchain, get(context));
   }
 });
 
-watch(context, ctx => {
-  if (!get(accountToEdit)) {
+watch(context, (ctx) => {
+  if (!get(accountToEdit))
     set(blockchain, ctx);
-  }
 });
 </script>
 
@@ -46,7 +45,10 @@ watch(context, ctx => {
       :all-evm-chains="allEvmChains"
     >
       <template #selector="{ loading }">
-        <AllEvmChainsSelector v-model="allEvmChains" :disabled="loading" />
+        <AllEvmChainsSelector
+          v-model="allEvmChains"
+          :disabled="loading"
+        />
       </template>
     </MetamaskAccountForm>
     <ValidatorAccountForm v-else-if="blockchain === Blockchain.ETH2" />
@@ -60,7 +62,10 @@ watch(context, ctx => {
       :all-evm-chains="allEvmChains"
     >
       <template #selector="{ loading }">
-        <AllEvmChainsSelector v-model="allEvmChains" :disabled="loading" />
+        <AllEvmChainsSelector
+          v-model="allEvmChains"
+          :disabled="loading"
+        />
       </template>
     </AddressAccountForm>
   </div>

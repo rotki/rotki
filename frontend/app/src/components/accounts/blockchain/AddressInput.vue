@@ -11,8 +11,8 @@ const props = withDefaults(
     errorMessages?: Record<string, string[]>;
   }>(),
   {
-    errorMessages: () => ({})
-  }
+    errorMessages: () => ({}),
+  },
 );
 
 const emit = defineEmits<{
@@ -36,9 +36,9 @@ const entries = computed(() => {
   const entries: Record<string, string> = {};
   for (const address of allAddresses) {
     const lowerCase = address.toLocaleLowerCase();
-    if (entries[lowerCase]) {
+    if (entries[lowerCase])
       continue;
-    }
+
     entries[lowerCase] = address;
   }
   return Object.values(entries);
@@ -49,45 +49,42 @@ watch(multiple, () => {
   set(userAddresses, '');
 });
 
-const onPasteMulti = (event: ClipboardEvent) => {
-  if (get(disabled)) {
+function onPasteMulti(event: ClipboardEvent) {
+  if (get(disabled))
     return;
-  }
+
   const paste = trimOnPaste(event);
-  if (paste) {
+  if (paste)
     userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
-  }
-};
+}
 
-const onPasteAddress = (event: ClipboardEvent) => {
-  if (get(disabled)) {
+function onPasteAddress(event: ClipboardEvent) {
+  if (get(disabled))
     return;
-  }
-  const paste = trimOnPaste(event);
-  if (paste) {
-    set(address, paste);
-  }
-};
 
-const updateAddresses = (addresses: string[]) => {
+  const paste = trimOnPaste(event);
+  if (paste)
+    set(address, paste);
+}
+
+function updateAddresses(addresses: string[]) {
   get(v$).$clearExternalResults();
   emit('update:addresses', addresses);
-};
+}
 
-const updateErrorMessages = (errorMessages: Record<string, string[]>) => {
+function updateErrorMessages(errorMessages: Record<string, string[]>) {
   emit('update:error-messages', errorMessages);
-};
+}
 
 watch(entries, addresses => updateAddresses(addresses));
-watch(address, address => {
+watch(address, (address) => {
   updateAddresses(address ? [address.trim()] : []);
 });
 
-const setAddress = (addresses: string[]) => {
-  if (addresses.length === 1) {
+function setAddress(addresses: string[]) {
+  if (addresses.length === 1)
     set(address, addresses[0]);
-  }
-};
+}
 
 watch(addresses, addresses => setAddress(addresses));
 onMounted(() => setAddress(get(addresses)));
@@ -96,15 +93,15 @@ const rules = {
   address: {
     required: helpers.withMessage(
       t('account_form.validation.address_non_empty').toString(),
-      requiredIf(logicNot(multiple))
-    )
+      requiredIf(logicNot(multiple)),
+    ),
   },
   userAddresses: {
     required: helpers.withMessage(
       t('account_form.validation.address_non_empty').toString(),
-      requiredIf(logicAnd(multiple))
-    )
-  }
+      requiredIf(logicAnd(multiple)),
+    ),
+  },
 };
 
 const { setValidation } = useAccountDialog();
@@ -114,38 +111,38 @@ const errorMessagesModel = computed({
     const errors = get(errorMessages);
     return {
       address: errors.address || '',
-      userAddresses: errors.address || ''
+      userAddresses: errors.address || '',
     };
   },
   set(newErrors) {
     const error = newErrors.address;
     if (error) {
       updateErrorMessages({
-        address: error
+        address: error,
       });
-    } else {
+    }
+    else {
       updateErrorMessages({});
     }
-  }
+  },
 });
 
 const v$ = setValidation(
   rules,
   {
     address,
-    userAddresses
+    userAddresses,
   },
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: errorMessagesModel
-  }
+    $externalResults: errorMessagesModel,
+  },
 );
 
-watch(errorMessages, errors => {
-  if (!isEmpty(errors)) {
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
     get(v$).$validate();
-  }
 });
 </script>
 
@@ -196,9 +193,9 @@ watch(errorMessages, errors => {
         t(
           'account_form.labels.addresses_entries',
           {
-            count: entries.length
+            count: entries.length,
           },
-          entries.length
+          entries.length,
         )
       "
     />

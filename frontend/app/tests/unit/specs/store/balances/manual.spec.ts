@@ -1,16 +1,16 @@
 import {
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN,
-  TRADE_LOCATION_EXTERNAL
+  TRADE_LOCATION_EXTERNAL,
 } from '@/data/defaults';
-import { type AssetPrices } from '@/types/prices';
 import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { AssetPrices } from '@/types/prices';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
-    exchangeRate: vi.fn().mockReturnValue(1)
-  })
+    exchangeRate: vi.fn().mockReturnValue(1),
+  }),
 }));
 
 vi.mock('@/composables/api/balances/manual', () => ({
@@ -18,20 +18,20 @@ vi.mock('@/composables/api/balances/manual', () => ({
     queryManualBalances: vi.fn().mockResolvedValue(1),
     addManualBalances: vi.fn().mockResolvedValue(1),
     editManualBalances: vi.fn().mockResolvedValue(1),
-    deleteManualBalances: vi.fn().mockResolvedValue({})
-  })
+    deleteManualBalances: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({})
-  })
+    awaitTask: vi.fn().mockResolvedValue({}),
+  }),
 }));
 
 describe('store::balances/manual', () => {
   setActivePinia(createPinia());
-  const store: ReturnType<typeof useManualBalancesStore> =
-    useManualBalancesStore();
+  const store: ReturnType<typeof useManualBalancesStore>
+    = useManualBalancesStore();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,7 +46,7 @@ describe('store::balances/manual', () => {
       label: 'My monero wallet',
       tags: [],
       location: TRADE_LOCATION_BLOCKCHAIN,
-      balanceType: BalanceType.ASSET
+      balanceType: BalanceType.ASSET,
     },
     {
       identifier: 2,
@@ -56,7 +56,7 @@ describe('store::balances/manual', () => {
       label: 'My another wallet',
       tags: [],
       location: TRADE_LOCATION_BLOCKCHAIN,
-      balanceType: BalanceType.ASSET
+      balanceType: BalanceType.ASSET,
     },
     {
       identifier: 3,
@@ -66,8 +66,8 @@ describe('store::balances/manual', () => {
       label: 'My Bank Account',
       tags: [],
       location: TRADE_LOCATION_BANKS,
-      balanceType: BalanceType.LIABILITY
-    }
+      balanceType: BalanceType.LIABILITY,
+    },
   ];
 
   const ethAndEth2Balances = [
@@ -79,7 +79,7 @@ describe('store::balances/manual', () => {
       label: 'Ethereum',
       tags: [],
       location: TRADE_LOCATION_EXTERNAL,
-      balanceType: BalanceType.ASSET
+      balanceType: BalanceType.ASSET,
     },
     {
       identifier: 5,
@@ -89,48 +89,48 @@ describe('store::balances/manual', () => {
       label: 'Staked ETH',
       tags: [],
       location: TRADE_LOCATION_EXTERNAL,
-      balanceType: BalanceType.ASSET
-    }
+      balanceType: BalanceType.ASSET,
+    },
   ];
 
   describe('computed', () => {
     const { manualBalancesData } = storeToRefs(store);
     set(manualBalancesData, balances);
 
-    test('manualBalances', () => {
+    it('manualBalances', () => {
       const { manualBalances } = storeToRefs(store);
       expect(get(manualBalances)).toMatchObject([balances[0], balances[1]]);
     });
 
-    test('manualLiabilities', () => {
+    it('manualLiabilities', () => {
       const { manualLiabilities } = storeToRefs(store);
       expect(get(manualLiabilities)).toMatchObject([balances[2]]);
     });
 
-    test('manualLabels', () => {
+    it('manualLabels', () => {
       const { manualLabels } = storeToRefs(store);
       expect(get(manualLabels)).toMatchObject([
         'My monero wallet',
         'My another wallet',
-        'My Bank Account'
+        'My Bank Account',
       ]);
     });
 
-    test('manualBalanceByLocation', () => {
+    it('manualBalanceByLocation', () => {
       const { manualBalanceByLocation } = storeToRefs(store);
       expect(get(manualBalanceByLocation)).toMatchObject([
-        { location: TRADE_LOCATION_BLOCKCHAIN, usdValue: bigNumberify(80) }
+        { location: TRADE_LOCATION_BLOCKCHAIN, usdValue: bigNumberify(80) },
       ]);
     });
 
-    test('getBreakdown', () => {
+    it('getBreakdown', () => {
       expect(get(store.getBreakdown('BTC'))).toMatchObject([
         {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
           balance: { amount: bigNumberify(30), usdValue: bigNumberify(30) },
-          tags: []
-        }
+          tags: [],
+        },
       ]);
 
       expect(get(store.getBreakdown('DAI'))).toMatchObject([
@@ -138,8 +138,8 @@ describe('store::balances/manual', () => {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
           balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
-          tags: []
-        }
+          tags: [],
+        },
       ]);
 
       const { manualBalancesData } = storeToRefs(store);
@@ -148,7 +148,7 @@ describe('store::balances/manual', () => {
       const breakdown = store.getBreakdown('ETH');
 
       updateGeneralSettings({
-        treatEth2AsEth: false
+        treatEth2AsEth: false,
       });
 
       expect(get(breakdown)).toMatchObject([
@@ -156,12 +156,12 @@ describe('store::balances/manual', () => {
           address: '',
           location: 'external',
           balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
-          tags: []
-        }
+          tags: [],
+        },
       ]);
 
       updateGeneralSettings({
-        treatEth2AsEth: true
+        treatEth2AsEth: true,
       });
 
       expect(get(breakdown)).toMatchObject([
@@ -169,40 +169,40 @@ describe('store::balances/manual', () => {
           address: '',
           location: 'external',
           balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
-          tags: []
+          tags: [],
         },
         {
           address: '',
           location: 'external',
           balance: { amount: bigNumberify(100), usdValue: bigNumberify(100) },
-          tags: []
-        }
+          tags: [],
+        },
       ]);
     });
 
-    test('getLocationBreakdown', () => {
+    it('getLocationBreakdown', () => {
       updateGeneralSettings({
-        treatEth2AsEth: false
+        treatEth2AsEth: false,
       });
 
       const locationBreakdown = store.getLocationBreakdown(
-        TRADE_LOCATION_EXTERNAL
+        TRADE_LOCATION_EXTERNAL,
       );
 
       expect(get(locationBreakdown)).toMatchObject({
         ETH: ethAndEth2Balances[0],
-        ETH2: ethAndEth2Balances[1]
+        ETH2: ethAndEth2Balances[1],
       });
 
       updateGeneralSettings({
-        treatEth2AsEth: true
+        treatEth2AsEth: true,
       });
 
       expect(get(locationBreakdown)).toMatchObject({
         ETH: {
           amount: bigNumberify(150),
-          usdValue: bigNumberify(150)
-        }
+          usdValue: bigNumberify(150),
+        },
       });
     });
   });
@@ -217,7 +217,7 @@ describe('store::balances/manual', () => {
         label: 'My monero wallet',
         tags: [],
         location: TRADE_LOCATION_BLOCKCHAIN,
-        balanceType: BalanceType.ASSET
+        balanceType: BalanceType.ASSET,
       },
       {
         identifier: 2,
@@ -227,7 +227,7 @@ describe('store::balances/manual', () => {
         label: 'My another wallet',
         tags: [],
         location: TRADE_LOCATION_BLOCKCHAIN,
-        balanceType: BalanceType.ASSET
+        balanceType: BalanceType.ASSET,
       },
       {
         identifier: 3,
@@ -237,14 +237,14 @@ describe('store::balances/manual', () => {
         label: 'My Bank Account',
         tags: [],
         location: TRADE_LOCATION_BANKS,
-        balanceType: BalanceType.LIABILITY
-      }
+        balanceType: BalanceType.LIABILITY,
+      },
     ];
 
-    test('default', async () => {
+    it('default', async () => {
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: { balances: mockBalancesResponse },
-        meta: { title: '' }
+        meta: { title: '' },
       });
 
       await store.fetchManualBalances();
@@ -256,62 +256,62 @@ describe('store::balances/manual', () => {
   });
 
   describe('updatePrices', () => {
-    test('default', () => {
+    it('default', () => {
       const prices: AssetPrices = {
         DAI: {
           isCurrentCurrency: true,
           isManualPrice: false,
-          value: bigNumberify(2)
+          value: bigNumberify(2),
         },
         BTC: {
           isCurrentCurrency: true,
           isManualPrice: false,
-          value: bigNumberify(3)
-        }
+          value: bigNumberify(3),
+        },
       };
 
       store.updatePrices(prices);
       const { manualBalancesData } = storeToRefs(store);
       expect(get(manualBalancesData)[0].usdValue).toEqual(
-        bigNumberify(50).multipliedBy(2)
+        bigNumberify(50).multipliedBy(2),
       );
 
       expect(get(manualBalancesData)[1].usdValue).toEqual(
-        bigNumberify(30).multipliedBy(3)
+        bigNumberify(30).multipliedBy(3),
       );
 
       expect(get(manualBalancesData)[2].usdValue).toEqual(
-        bigNumberify(50).multipliedBy(1)
+        bigNumberify(50).multipliedBy(1),
       );
     });
   });
 
   describe('addManualBalances', () => {
-    test('default', async () => {
+    it('default', async () => {
       await store.addManualBalance(balances[0]);
 
       expect(useManualBalancesApi().addManualBalances).toHaveBeenCalledWith([
-        balances[0]
+        balances[0],
       ]);
     });
   });
 
   describe('editManualBalances', () => {
-    test('default', async () => {
+    it('default', async () => {
       await store.editManualBalance(balances[0]);
 
       expect(useManualBalancesApi().editManualBalances).toHaveBeenCalledWith([
-        balances[0]
+        balances[0],
       ]);
     });
   });
 
   describe('deleteManualBalances', () => {
-    test('default', async () => {
+    it('default', async () => {
       await store.deleteManualBalance(1);
 
       expect(useManualBalancesApi().deleteManualBalances).toHaveBeenCalledWith([
-        1
+        1,
       ]);
     });
   });

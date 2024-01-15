@@ -6,19 +6,18 @@ export default class IndexedDb {
   constructor(
     private dbName: string,
     private dbVersion: number,
-    private store: string
+    private store: string,
   ) {}
 
   get db(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      if (!window.indexedDB) {
-        reject('Unsupported indexedDB');
-      }
+      if (!window.indexedDB)
+        reject(new Error('Unsupported indexedDB'));
 
       const request = (
-        window.indexedDB ||
-        (window as any).mozIndexedDB ||
-        (window as any).webkitIndexedDB
+        window.indexedDB
+        || (window as any).mozIndexedDB
+        || (window as any).webkitIndexedDB
       ).open(this.dbName, this.dbVersion);
 
       request.onsuccess = (e): void => {
@@ -32,7 +31,7 @@ export default class IndexedDb {
         if (!db.objectStoreNames.contains(this.store)) {
           db.createObjectStore(this.store, {
             keyPath: 'id',
-            autoIncrement: true
+            autoIncrement: true,
           });
         }
       };
@@ -65,7 +64,7 @@ export default class IndexedDb {
             const totalExceeded = length - ROWLIMIT;
             if (totalExceeded > 0) {
               objectStore.delete(
-                IDBKeyRange.bound(firstId, firstId + totalExceeded - 1)
+                IDBKeyRange.bound(firstId, firstId + totalExceeded - 1),
               );
             }
           }
@@ -73,8 +72,9 @@ export default class IndexedDb {
       };
 
       request.onerror = (e: any): void => callback?.(e.target.error);
-    } catch (e: any) {
-      logger.getLogger('console-only').log(e);
+    }
+    catch (error: any) {
+      logger.getLogger('console-only').log(error);
     }
   }
 
@@ -91,13 +91,15 @@ export default class IndexedDb {
         if (cursor) {
           cursor.continue();
           results.push(cursor.value);
-        } else {
+        }
+        else {
           callback(results);
         }
       };
       request.onerror = (e: any): void => callback(e.target.error);
-    } catch (e: any) {
-      logger.getLogger('console-only').log(e);
+    }
+    catch (error: any) {
+      logger.getLogger('console-only').log(error);
     }
   }
 }

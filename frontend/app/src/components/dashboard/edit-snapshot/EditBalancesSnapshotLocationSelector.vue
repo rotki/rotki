@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -10,8 +10,8 @@ const props = withDefaults(
   {
     value: '',
     locations: () => [],
-    previewLocationBalance: null
-  }
+    previewLocationBalance: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -24,7 +24,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard variant="outlined" class="[&>div]:!overflow-visible" rounded="sm">
+  <RuiCard
+    variant="outlined"
+    class="[&>div]:!overflow-visible"
+    rounded="sm"
+  >
     <div class="text-subtitle-2 mb-3">
       {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
     </div>
@@ -41,7 +45,10 @@ const { t } = useI18n();
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
       :label="t('common.location')"
     />
-    <div v-if="previewLocationBalance" class="mt-4">
+    <div
+      v-if="previewLocationBalance"
+      class="mt-4"
+    >
       <div class="text-subtitle-2">
         {{ t('dashboard.snapshot.edit.dialog.balances.preview.title') }}
       </div>

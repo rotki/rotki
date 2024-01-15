@@ -5,7 +5,7 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
-describe('AssetBalances.vue', () => {
+describe('assetBalances.vue', () => {
   let wrapper: Wrapper<any>;
   beforeEach(() => {
     const vuetify = new Vuetify();
@@ -15,9 +15,9 @@ describe('AssetBalances.vue', () => {
       vuetify,
       pinia,
       propsData: {
-        balances: []
+        balances: [],
       },
-      provide: libraryDefaults
+      provide: libraryDefaults,
     });
   });
 
@@ -25,7 +25,7 @@ describe('AssetBalances.vue', () => {
     useSessionStore().$reset();
   });
 
-  test('table enters into loading state when balances load', async () => {
+  it('table enters into loading state when balances load', async () => {
     await wrapper.setProps({ loading: true });
     await wrapper.vm.$nextTick();
 

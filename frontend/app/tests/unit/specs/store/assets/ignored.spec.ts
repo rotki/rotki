@@ -2,14 +2,14 @@ vi.mock('@/composables/api/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({
     getIgnoredAssets: vi.fn().mockResolvedValue([]),
     addIgnoredAssets: vi.fn().mockResolvedValue([]),
-    removeIgnoredAssets: vi.fn().mockResolvedValue([])
-  })
+    removeIgnoredAssets: vi.fn().mockResolvedValue([]),
+  }),
 }));
 
 describe('store::assets/ignored', () => {
   setActivePinia(createPinia());
-  const store: ReturnType<typeof useIgnoredAssetsStore> =
-    useIgnoredAssetsStore();
+  const store: ReturnType<typeof useIgnoredAssetsStore>
+    = useIgnoredAssetsStore();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,7 +21,7 @@ describe('store::assets/ignored', () => {
 
     expect(get(ignoredAssets)).toEqual([]);
     vi.mocked(useAssetIgnoreApi().getIgnoredAssets).mockResolvedValue(
-      mockIgnoredAssets
+      mockIgnoredAssets,
     );
     await store.fetchIgnoredAssets();
     expect(useAssetIgnoreApi().getIgnoredAssets).toHaveBeenCalledOnce();
@@ -31,7 +31,7 @@ describe('store::assets/ignored', () => {
   it('should add ignored asset', async () => {
     vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue([
       'ETH',
-      'DAI'
+      'DAI',
     ]);
     await store.ignoreAsset('DAI');
     expect(useAssetIgnoreApi().addIgnoredAssets).toHaveBeenCalledWith(['DAI']);

@@ -1,12 +1,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { AllDefiProtocols } from '@/types/defi/overview';
 import { DECENTRALIZED_EXCHANGES, DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type DefiAccount, ProtocolVersion } from '@/types/defi';
 import { Purgeable } from '@/types/session/purge';
+import type { TaskMeta } from '@/types/task';
+import type { ComputedRef } from 'vue';
 
 type ResetStateParams =
   | Module
@@ -32,8 +32,8 @@ export const useDefiStore = defineStore('defi', () => {
 
   const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();
 
-  const { addressesV1: yearnV1Addresses, addressesV2: yearnV2Addresses } =
-    storeToRefs(yearnStore);
+  const { addressesV1: yearnV1Addresses, addressesV2: yearnV2Addresses }
+    = storeToRefs(yearnStore);
   const { addresses: aaveAddresses } = storeToRefs(aaveStore);
   const { addresses: compoundAddresses } = storeToRefs(compoundStore);
   const { addresses: makerDaoAddresses } = storeToRefs(makerDaoStore);
@@ -44,7 +44,7 @@ export const useDefiStore = defineStore('defi', () => {
   >;
 
   const defiAccounts = (
-    protocols: DefiProtocol[]
+    protocols: DefiProtocol[],
   ): ComputedRef<DefiAccount[]> =>
     computed(() => {
       const addresses: {
@@ -54,39 +54,34 @@ export const useDefiStore = defineStore('defi', () => {
         [DefiProtocol.AAVE]: [],
         [DefiProtocol.COMPOUND]: [],
         [DefiProtocol.YEARN_VAULTS]: [],
-        [DefiProtocol.YEARN_VAULTS_V2]: []
+        [DefiProtocol.YEARN_VAULTS_V2]: [],
       };
 
       const noProtocolsSelected = protocols.length === 0;
 
       if (
-        noProtocolsSelected ||
-        protocols.includes(DefiProtocol.MAKERDAO_DSR)
-      ) {
+        noProtocolsSelected
+        || protocols.includes(DefiProtocol.MAKERDAO_DSR)
+      )
         addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
-      }
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE)) {
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
         addresses[DefiProtocol.AAVE] = get(aaveAddresses);
-      }
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND)) {
+      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
         addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
-      }
 
       if (
-        noProtocolsSelected ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS)
-      ) {
+        noProtocolsSelected
+        || protocols.includes(DefiProtocol.YEARN_VAULTS)
+      )
         addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
-      }
 
       if (
-        noProtocolsSelected ||
-        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
-      ) {
+        noProtocolsSelected
+        || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+      )
         addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
-      }
 
       const accounts: Record<string, DefiAccount> = {};
       for (const protocol in addresses) {
@@ -95,11 +90,12 @@ export const useDefiStore = defineStore('defi', () => {
         for (const address of perProtocolAddresses) {
           if (accounts[address]) {
             accounts[address].protocols.push(selectedProtocol);
-          } else {
+          }
+          else {
             accounts[address] = {
               address,
               chain: Blockchain.ETH,
-              protocols: [selectedProtocol]
+              protocols: [selectedProtocol],
             };
           }
         }
@@ -111,9 +107,8 @@ export const useDefiStore = defineStore('defi', () => {
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_BALANCES);
 
   const fetchDefiBalances = async (refresh: boolean) => {
-    if (fetchDisabled(refresh)) {
+    if (fetchDisabled(refresh))
       return;
-    }
 
     setStatus(Status.LOADING);
     try {
@@ -123,21 +118,22 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         taskType,
         {
-          title: t('actions.defi.balances.task.title')
-        }
+          title: t('actions.defi.balances.task.title'),
+        },
       );
 
       set(allProtocols, AllDefiProtocols.parse(result));
-    } catch (e: any) {
-      if (!isTaskCancelled(e)) {
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         const title = t('actions.defi.balances.error.title');
         const message = t('actions.defi.balances.error.description', {
-          error: e.message
+          error: error.message,
         });
         notify({
           title,
           message,
-          display: true
+          display: true,
         });
       }
     }
@@ -147,9 +143,8 @@ export const useDefiStore = defineStore('defi', () => {
   async function fetchAllDefi(refresh = false) {
     const section = Section.DEFI_OVERVIEW;
 
-    if (fetchDisabled(refresh, section)) {
+    if (fetchDisabled(refresh, section))
       return;
-    }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
@@ -163,13 +158,13 @@ export const useDefiStore = defineStore('defi', () => {
       compoundStore.fetchBalances(refresh),
       yearnStore.fetchBalances({
         refresh,
-        version: ProtocolVersion.V1
+        version: ProtocolVersion.V1,
       }),
       yearnStore.fetchBalances({
         refresh,
-        version: ProtocolVersion.V2
+        version: ProtocolVersion.V2,
       }),
-      liquityStore.fetchBalances(refresh)
+      liquityStore.fetchBalances(refresh),
     ]);
 
     setStatus(Status.LOADED, section);
@@ -185,24 +180,24 @@ export const useDefiStore = defineStore('defi', () => {
     [Module.UNISWAP]: () => uniswapStore.reset(),
     [Module.SUSHISWAP]: () => sushiswapStore.reset(),
     [Module.BALANCER]: () => balancerStore.reset(),
-    [Module.LIQUITY]: () => liquityStore.reset()
+    [Module.LIQUITY]: () => liquityStore.reset(),
   };
 
   const resetState = (module: ResetStateParams) => {
     if (module === Purgeable.DECENTRALIZED_EXCHANGES) {
       DECENTRALIZED_EXCHANGES.map(mod => modules[mod]());
-    } else if (module === Purgeable.DEFI_MODULES) {
-      for (const mod in modules) {
+    }
+    else if (module === Purgeable.DEFI_MODULES) {
+      for (const mod in modules)
         modules[mod as Module]();
-      }
-    } else {
+    }
+    else {
       const reset = modules[module];
 
-      if (!reset) {
+      if (!reset)
         logger.warn(`Missing reset function for ${module}`);
-      } else {
+      else
         reset();
-      }
     }
   };
 
@@ -211,10 +206,9 @@ export const useDefiStore = defineStore('defi', () => {
     resetState(Purgeable.DEFI_MODULES);
   };
 
-  watch(premium, premium => {
-    if (!premium) {
+  watch(premium, (premium) => {
+    if (!premium)
       reset();
-    }
   });
 
   return {
@@ -223,10 +217,9 @@ export const useDefiStore = defineStore('defi', () => {
     fetchDefiBalances,
     fetchAllDefi,
     resetState,
-    reset
+    reset,
   };
 });
 
-if (import.meta.hot) {
+if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useDefiStore, import.meta.hot));
-}

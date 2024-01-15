@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
 import { helpers, required } from '@vuelidate/validators';
-import { type BalanceSnapshotPayload } from '@/types/snapshots';
 import { toMessages } from '@/utils/validation';
+import type { BigNumber } from '@rotki/common';
+import type { BalanceSnapshotPayload } from '@/types/snapshots';
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
   location: string;
@@ -18,8 +18,8 @@ const props = withDefaults(
   {
     edit: false,
     locations: () => [],
-    previewLocationBalance: null
-  }
+    previewLocationBalance: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -39,12 +39,11 @@ const amount = usePropVModel(props, 'form', 'amount', emit);
 const usdValue = usePropVModel(props, 'form', 'usdValue', emit);
 const location = usePropVModel(props, 'form', 'location', emit);
 
-const checkAssetType = () => {
+function checkAssetType() {
   const formVal = get(form);
-  if (isNft(formVal.assetIdentifier)) {
+  if (isNft(formVal.assetIdentifier))
     set(assetType, 'nft');
-  }
-};
+}
 
 onBeforeMount(() => {
   checkAssetType();
@@ -54,48 +53,47 @@ watch(form, () => {
   checkAssetType();
 });
 
-watch(assetType, assetType => {
-  if (assetType === 'nft') {
+watch(assetType, (assetType) => {
+  if (assetType === 'nft')
     set(amount, '1');
-  }
 });
 
 const rules = {
   category: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.category').toString(),
-      required
-    )
+      required,
+    ),
   },
   assetIdentifier: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(),
-      required
-    )
+      required,
+    ),
   },
   amount: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString(),
-      required
-    )
+      required,
+    ),
   },
   usdValue: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(),
-      required
-    )
-  }
+      required,
+    ),
+  },
 };
 
 const { setValidation } = useEditBalancesSnapshotForm();
 
 const v$ = setValidation(rules, form, {
-  $autoDirty: true
+  $autoDirty: true,
 });
 
-const updateAsset = (asset: string) => {
+function updateAsset(asset: string) {
   emit('update:asset', asset);
-};
+}
 </script>
 
 <template>
@@ -165,7 +163,7 @@ const updateAsset = (asset: string) => {
         outlined
         :label="
           t('common.value_in_symbol', {
-            symbol: currencySymbol
+            symbol: currencySymbol,
           })
         "
         :error-messages="toMessages(v$.usdValue)"

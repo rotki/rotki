@@ -5,9 +5,10 @@ defineProps<{
 
 const emit = defineEmits(['click']);
 const { count } = storeToRefs(useNotificationsStore());
-const click = () => {
+
+function click() {
   emit('click');
-};
+}
 
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
@@ -31,7 +32,7 @@ const { t } = useI18n();
       <RuiIcon
         v-if="!hasRunningTasks"
         :class="{
-          [$style.visible]: visible
+          [$style.visible]: visible,
         }"
         name="notification-3-line"
       />
@@ -40,7 +41,12 @@ const { t } = useI18n();
         class="flex items-center"
         data-cy="notification-indicator-progress"
       >
-        <RuiProgress variant="indeterminate" circular size="20" thickness="2" />
+        <RuiProgress
+          variant="indeterminate"
+          circular
+          size="20"
+          thickness="2"
+        />
       </div>
     </MenuTooltipButton>
   </RuiBadge>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
-import { type ComputedRef } from 'vue';
-import { type StyleValue } from 'vue/types/jsx';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
+import type { ComputedRef } from 'vue';
+import type { StyleValue } from 'vue/types/jsx';
 
 const props = withDefaults(
   defineProps<{
@@ -26,8 +26,8 @@ const props = withDefaults(
     circle: false,
     padding: '2px',
     enableAssociation: true,
-    showChain: true
-  }
+    showChain: true,
+  },
 );
 
 const emit = defineEmits<{ (e: 'click'): void }>();
@@ -41,7 +41,7 @@ const {
   padding,
   size,
   enableAssociation,
-  showChain
+  showChain,
 } = toRefs(props);
 
 const error = ref<boolean>(false);
@@ -75,9 +75,8 @@ const name = computed(() => get(asset)?.name);
 
 const displayAsset = computed<string>(() => {
   const currencySymbol = get(currency);
-  if (currencySymbol) {
+  if (currencySymbol)
     return currencySymbol;
-  }
 
   return get(symbol) ?? get(name) ?? get(mappedIdentifier) ?? '';
 });
@@ -86,35 +85,34 @@ const tooltip = computed(() => {
   if (get(isCustomAsset)) {
     return {
       symbol: get(name),
-      name: ''
+      name: '',
     };
   }
 
   return {
     symbol: get(symbol),
-    name: get(name)
+    name: get(name),
   };
 });
 
 const url = computed<string>(() => {
   const id = get(mappedIdentifier);
-  if (get(symbol) === 'WETH') {
+  if (get(symbol) === 'WETH')
     return `./assets/images/protocols/weth.svg`;
-  }
 
   const currentTimestamp = get(timestamp) || Date.now();
   return getAssetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
 });
 
 const chainIconSize = computed(
-  () => `${(Number.parseInt(get(size)) * 50) / 100}px`
+  () => `${(Number.parseInt(get(size)) * 50) / 100}px`,
 );
 const chainWrapperSize = computed(
-  () => `${Number.parseInt(get(chainIconSize)) + 4}px`
+  () => `${Number.parseInt(get(chainIconSize)) + 4}px`,
 );
 const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
 const chainIconPosition = computed(
-  () => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`
+  () => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`,
 );
 
 const placeholderStyle = computed(() => {
@@ -123,15 +121,14 @@ const placeholderStyle = computed(() => {
   const prop = `calc(${pad} + ${pad} + ${width})`;
   return {
     width: prop,
-    height: prop
+    height: prop,
   };
 });
 
 watch([symbol, changeable, identifier], (curr, prev) => {
   set(error, false);
-  if (curr[1] !== prev[1]) {
+  if (curr[1] !== prev[1])
     set(pending, true);
-  }
 });
 </script>
 
@@ -151,10 +148,13 @@ watch([symbol, changeable, identifier], (curr, prev) => {
           v-if="showChain && chain"
           :class="{
             [css.circle]: true,
-            [css.chain]: true
+            [css.chain]: true,
           }"
         >
-          <EvmChainIcon :chain="chain" :size="chainIconSize" />
+          <EvmChainIcon
+            :chain="chain"
+            :size="chainIconSize"
+          />
         </div>
 
         <div

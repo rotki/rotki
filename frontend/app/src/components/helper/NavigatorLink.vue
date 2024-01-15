@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type RawLocation } from 'vue-router';
+import type { RawLocation } from 'vue-router';
 
 const props = withDefaults(
   defineProps<{
@@ -9,18 +9,17 @@ const props = withDefaults(
   }>(),
   {
     tag: 'span',
-    enabled: true
-  }
+    enabled: true,
+  },
 );
 
 const { enabled, to } = toRefs(props);
 const router = useRouter();
 
-const navigate = async () => {
-  if (get(enabled)) {
+async function navigate() {
+  if (get(enabled))
     await router.push(get(to));
-  }
-};
+}
 
 const attrs = useAttrs();
 </script>

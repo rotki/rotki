@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   TimeFramePeriod,
-  type TimeFrameSetting
+  type TimeFrameSetting,
 } from '@rotki/common/lib/settings/graphs';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
@@ -12,21 +12,22 @@ const { t } = useI18n();
 
 const { timeframe } = useSessionSettingsStore();
 const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(
-  useFrontendSettingsStore()
+  useFrontendSettingsStore(),
 );
 
-const resetTimeframeSetting = () => {
+function resetTimeframeSetting() {
   set(defaultGraphTimeframe, get(timeframeSetting));
-};
+}
 
-const resetVisibleTimeframes = () => {
+function resetVisibleTimeframes() {
   set(visibleTimeframes, get(visible));
-};
+}
 
-const successMessage = (timeframe: TimeFramePeriod) =>
-  t('frontend_settings.validation.timeframe.success', {
-    timeframe
+function successMessage(timeframe: TimeFramePeriod) {
+  return t('frontend_settings.validation.timeframe.success', {
+    timeframe,
   });
+}
 
 onMounted(() => {
   set(currentSessionTimeframe, get(timeframe));

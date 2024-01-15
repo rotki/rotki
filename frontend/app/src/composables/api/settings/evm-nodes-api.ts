@@ -1,11 +1,11 @@
-import { type ActionResult } from '@rotki/common/lib/data';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings/rpc';
+import type { ActionResult } from '@rotki/common/lib/data';
 
-export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
+export function useEvmNodesApi(chain: Blockchain = Blockchain.ETH) {
   const url = `/blockchains/${chain}/nodes`;
 
   const fetchEvmNodes = async (): Promise<EvmRpcNodeList> => {
@@ -14,14 +14,14 @@ export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
   };
 
   const addEvmNode = async (
-    node: Omit<EvmRpcNode, 'identifier'>
+    node: Omit<EvmRpcNode, 'identifier'>,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       url,
       snakeCaseTransformer(node),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -31,8 +31,8 @@ export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
       url,
       snakeCaseTransformer(node),
       {
-        validateStatus: validStatus
-      }
+        validateStatus: validStatus,
+      },
     );
     return handleResponse(response);
   };
@@ -40,7 +40,7 @@ export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
   const deleteEvmNode = async (identifier: number): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(url, {
       data: snakeCaseTransformer({ identifier }),
-      validateStatus: validStatus
+      validateStatus: validStatus,
     });
     return handleResponse(response);
   };
@@ -49,6 +49,6 @@ export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
     fetchEvmNodes,
     addEvmNode,
     editEvmNode,
-    deleteEvmNode
+    deleteEvmNode,
   };
-};
+}

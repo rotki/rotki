@@ -9,39 +9,36 @@ const { length, value } = toRefs(props);
 const items = computed(() => {
   const items: number[] = [];
 
-  for (let i = 1; i <= get(length); i++) {
+  for (let i = 1; i <= get(length); i++)
     items.push(i);
-  }
+
   return items;
 });
 
-const changePage = (page: number) => {
+function changePage(page: number) {
   emit('input', page);
-};
+}
 
-const newPage = (data?: any) => {
-  if (!data) {
+function newPage(data?: any) {
+  if (!data)
     return;
-  }
 
   const page = Number.parseInt(data);
-  if (isNaN(page)) {
+  if (isNaN(page))
     return;
-  }
+
   changePage(page);
-};
+}
 
-const nextPage = () => {
-  if (get(value) < get(length)) {
+function nextPage() {
+  if (get(value) < get(length))
     changePage(get(value) + 1);
-  }
-};
+}
 
-const previousPage = () => {
-  if (get(value) > 1) {
+function previousPage() {
+  if (get(value) > 1)
     changePage(get(value) - 1);
-  }
-};
+}
 
 const { t } = useI18n();
 
@@ -59,7 +56,10 @@ const css = useCssModule();
     >
       <RuiIcon name="arrow-left-s-line" />
     </RuiButton>
-    <div :class="[css.pages, 'bg-white dark:bg-rui-grey-900']">
+    <div
+      class="bg-white dark:bg-rui-grey-900"
+      :class="[css.pages]"
+    >
       <VAutocomplete
         :items="items"
         :value="value"

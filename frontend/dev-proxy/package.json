@@ -18,6 +18,7 @@
     "@types/express": "4.17.21",
     "@types/node": "18.19.6",
     "dotenv": "16.3.1",
+    "loglevel": "1.8.1",
     "nodemon": "3.0.2",
     "ts-node": "10.9.2",
     "typescript": "5.2.2"

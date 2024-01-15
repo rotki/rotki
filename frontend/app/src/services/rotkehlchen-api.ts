@@ -8,9 +8,8 @@ export class RotkehlchenApi {
   private readonly pathname: string;
 
   get defaultServerUrl(): string {
-    if (import.meta.env.VITE_BACKEND_URL) {
+    if (import.meta.env.VITE_BACKEND_URL)
       return import.meta.env.VITE_BACKEND_URL as string;
-    }
 
     if (import.meta.env.VITE_PUBLIC_PATH) {
       const pathname = this.pathname;
@@ -43,7 +42,7 @@ export class RotkehlchenApi {
     this.axios = axios.create({
       baseURL: `${this.serverUrl}/api/1/`,
       timeout: 30000,
-      transformResponse: basicAxiosTransformer
+      transformResponse: basicAxiosTransformer,
     });
     this.setupCancellation();
   }
@@ -53,7 +52,7 @@ export class RotkehlchenApi {
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
       timeout: 30000,
-      transformResponse: basicAxiosTransformer
+      transformResponse: basicAxiosTransformer,
     });
     this.setupCancellation();
     this.setupAuthRedirect();
@@ -61,22 +60,22 @@ export class RotkehlchenApi {
 
   private setupCancellation() {
     this.axios.interceptors.request.use(
-      request => {
+      (request) => {
         request.cancelToken = this.signal.token;
         return request;
       },
-      error => {
-        if (error.response) {
+      (error) => {
+        if (error.response)
           return Promise.reject(error.response.data);
-        }
+
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   private setupAuthRedirect() {
     this.axios.interceptors.response.use(
-      response => {
+      (response) => {
         if (response.status === 401) {
           this.cancel();
           window.location.href = '/';
@@ -84,7 +83,7 @@ export class RotkehlchenApi {
 
         return response;
       },
-      error => {
+      (error) => {
         if (error.response) {
           if (error.response.status === 401) {
             this.cancel();
@@ -93,7 +92,7 @@ export class RotkehlchenApi {
           return Promise.reject(error.response.data);
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 }

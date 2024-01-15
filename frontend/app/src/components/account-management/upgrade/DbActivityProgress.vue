@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type CurrentDbUpgradeProgress } from '@/types/login';
+import type { CurrentDbUpgradeProgress } from '@/types/login';
 
 const props = withDefaults(
   defineProps<{
@@ -7,8 +7,8 @@ const props = withDefaults(
     dataMigration?: boolean;
   }>(),
   {
-    dataMigration: false
-  }
+    dataMigration: false,
+  },
 );
 
 const { t } = useI18n();
@@ -70,7 +70,10 @@ const multipleUpgrades = computed(() => {
           <div>
             {{ t('login.migrating_data.current', { ...progress }) }}
           </div>
-          <ul v-if="progress.description" class="-ml-2">
+          <ul
+            v-if="progress.description"
+            class="-ml-2"
+          >
             <li>{{ progress.description }}</li>
           </ul>
         </template>

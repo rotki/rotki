@@ -13,8 +13,8 @@ const VComboboxStub = {
   `,
   props: {
     value: { type: String },
-    items: { type: Array<any> }
-  }
+    items: { type: Array<any> },
+  },
 };
 
 export default VComboboxStub;

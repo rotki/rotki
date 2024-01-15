@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { type Ref } from 'vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
+import type { Ref } from 'vue';
 
 withDefaults(
   defineProps<{
@@ -16,8 +16,8 @@ withDefaults(
   {
     label: () => ({}),
     errorMessages: () => ({}),
-    loading: false
-  }
+    loading: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -30,30 +30,29 @@ const reversed: Ref<boolean> = ref(false);
 
 const rootAttrs = useAttrs();
 
-const reverse = () => {
+function reverse() {
   const newReversed = !get(reversed);
   set(reversed, newReversed);
   emit('update:reversed', newReversed);
 
   nextTick(() => {
-    if (!newReversed) {
+    if (!newReversed)
       get(primaryInput)?.focus();
-    } else {
+    else
       get(secondaryInput)?.focus();
-    }
   });
-};
+}
 
 const primaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
 const secondaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
 
-const updatePrimaryValue = (value: string) => {
+function updatePrimaryValue(value: string) {
   emit('update:primary-value', value);
-};
+}
 
-const updateSecondaryValue = (value: string) => {
+function updateSecondaryValue(value: string) {
   emit('update:secondary-value', value);
-};
+}
 </script>
 
 <template>
@@ -61,7 +60,7 @@ const updateSecondaryValue = (value: string) => {
     class="wrapper flex"
     :class="{
       'flex-col': !reversed,
-      'flex-col-reverse': reversed
+      'flex-col-reverse': reversed,
     }"
   >
     <AmountInput
@@ -103,7 +102,10 @@ const updateSecondaryValue = (value: string) => {
       data-cy="grouped-amount-input__swap-button"
       @click="reverse()"
     >
-      <RuiIcon size="16" name="arrow-up-down-line" />
+      <RuiIcon
+        size="16"
+        name="arrow-up-down-line"
+      />
     </RuiButton>
   </div>
 </template>

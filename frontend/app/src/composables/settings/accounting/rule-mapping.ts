@@ -1,13 +1,13 @@
-import { type MaybeRef } from '@vueuse/core';
-import { type AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
+import type { MaybeRef } from '@vueuse/core';
+import type { AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
 
   const { getAccountingRuleLinkedMapping } = useAccountingApi();
 
-  const accountingRuleLinkedMapping: Ref<Record<string, string[]>> =
-    asyncComputed(() => getAccountingRuleLinkedMapping(), {});
+  const accountingRuleLinkedMapping: Ref<Record<string, string[]>>
+    = asyncComputed(() => getAccountingRuleLinkedMapping(), {});
 
   const store = storeToRefs(useAccountingSettingsStore());
 
@@ -18,30 +18,29 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
     typeof get(state) === 'boolean';
 
   const accountingRuleLinkedMappingData = (
-    key: MaybeRef<string>
+    key: MaybeRef<string>,
   ): ComputedRef<AccountingRuleLinkedSettingMap[]> =>
     computed(() => {
       const data = get(accountingRuleLinkedMapping)[get(key)];
 
-      if (!data) {
+      if (!data)
         return [];
-      }
 
       const result: AccountingRuleLinkedSettingMap[] = [];
 
-      data.forEach(item => {
+      data.forEach((item) => {
         const translationKey = `accounting_settings.trade.labels.${item}`;
         const stateName = transformCase(item, true);
 
         assert(
           stateInStore(stateName),
-          `linked property ${stateName} is not part of the setting`
+          `linked property ${stateName} is not part of the setting`,
         );
         const state = store[stateName];
 
         assert(
           stateIsBoolean(state),
-          `linked property ${stateName} is not boolean`
+          `linked property ${stateName} is not boolean`,
         );
 
         const label = te(translationKey)
@@ -51,7 +50,7 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
         result.push({
           identifier: item,
           label,
-          state: get(state)
+          state: get(state),
         });
       });
 
@@ -59,6 +58,6 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
     });
 
   return {
-    accountingRuleLinkedMappingData
+    accountingRuleLinkedMappingData,
   };
 });

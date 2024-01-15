@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
   address: string;
@@ -11,7 +11,7 @@ const { address, blockchain } = toRefs(props);
 
 const { detectingTokens, detectedTokens, detectTokens } = useTokenDetection(
   blockchain,
-  address
+  address,
 );
 
 const { t } = useI18n();
@@ -23,7 +23,10 @@ const { t } = useI18n();
       {{ detectedTokens.total }}
     </div>
     <div>
-      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="text"
@@ -41,7 +44,11 @@ const { t } = useI18n();
               thickness="2"
             />
 
-            <RuiIcon v-else size="16" name="restart-line" />
+            <RuiIcon
+              v-else
+              size="16"
+              name="restart-line"
+            />
           </RuiButton>
         </template>
         <div class="text-center">

@@ -6,7 +6,7 @@ const route = useRoute();
 
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(
-  () => isDevelopment && get(route).name === 'playground'
+  () => isDevelopment && get(route).name === 'playground',
 );
 
 const { locale } = useI18n();
@@ -17,13 +17,12 @@ onBeforeMount(() => {
   setLanguage(get(adaptiveLanguage));
 });
 
-const setLanguage = (language: string) => {
-  if (language !== get(locale)) {
+function setLanguage(language: string) {
+  if (language !== get(locale))
     set(locale, language);
-  }
-};
+}
 
-watch(adaptiveLanguage, language => {
+watch(adaptiveLanguage, (language) => {
   setLanguage(language);
 });
 </script>

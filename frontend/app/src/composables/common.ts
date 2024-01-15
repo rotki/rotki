@@ -1,18 +1,18 @@
-export const useProxy = () => {
+export function useProxy() {
   const currentInstance = getCurrentInstance();
   assert(currentInstance?.proxy);
   return currentInstance.proxy;
-};
+}
 
-export const useTheme = () => {
+export function useTheme() {
   const { $vuetify } = useProxy();
   const theme = computed(() => $vuetify.theme);
   const dark = computed(() => $vuetify.theme.dark);
 
   const appBarColor = computed(() => {
-    if (!get(dark)) {
+    if (!get(dark))
       return 'white';
-    }
+
     return null;
   });
 
@@ -20,11 +20,11 @@ export const useTheme = () => {
     $vuetify,
     theme,
     dark,
-    appBarColor
+    appBarColor,
   };
-};
+}
 
-export const useDisplay = () => {
+export function useDisplay() {
   const { $vuetify } = useProxy();
   const mobile = computed(() => $vuetify.breakpoint.mobile);
   const name = computed(() => $vuetify.breakpoint.name);
@@ -56,6 +56,6 @@ export const useDisplay = () => {
     lgAndUp,
     mobile,
     name,
-    width
+    width,
   };
-};
+}

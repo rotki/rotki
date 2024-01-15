@@ -1,7 +1,7 @@
-import { type DebugSettings } from '@rotki/common/lib/settings';
 import { z } from 'zod';
-import { type BackendCode } from '@/electron-main/backend-code';
 import { LogLevel } from '@/utils/log-level';
+import type { DebugSettings } from '@rotki/common/lib/settings';
+import type { BackendCode } from '@/electron-main/backend-code';
 
 interface MetamaskImportError {
   readonly error: string;
@@ -22,7 +22,7 @@ export interface SystemVersion {
 
 export const ActiveLogLevel = z.preprocess(
   s => (typeof s === 'string' ? s.toLowerCase() : s),
-  z.nativeEnum(LogLevel)
+  z.nativeEnum(LogLevel),
 );
 
 export const BackendOptions = z.object({
@@ -33,7 +33,7 @@ export const BackendOptions = z.object({
   logFromOtherModules: z.boolean().optional(),
   maxSizeInMbAllLogs: z.number().optional(),
   sqliteInstructions: z.number().optional(),
-  maxLogfilesNum: z.number().optional()
+  maxLogfilesNum: z.number().optional(),
 });
 
 export type StoredBackendOptions = z.infer<typeof BackendOptions>;

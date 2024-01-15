@@ -1,5 +1,5 @@
 import Vue, { type WritableComputedRef } from 'vue';
-import { type VueI18n } from 'vue-i18n-bridge';
+import type { VueI18n } from 'vue-i18n-bridge';
 
 type NamedValues = Record<string, unknown>;
 
@@ -15,12 +15,12 @@ interface ModifiedI18n extends Omit<VueI18n, 't' | 'locale'> {
   t: MigrationTranslator;
 }
 
-export const useI18n = (): ModifiedI18n => {
+export function useI18n(): ModifiedI18n {
   const instance = getCurrentInstance();
   const vm = instance?.proxy || new Vue();
 
-  // @ts-ignore
+  // @ts-expect-error
   return vm._i18nBridgeRoot.global as VueI18n & {
     locale: WritableComputedRef<string>;
   };
-};
+}

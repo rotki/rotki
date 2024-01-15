@@ -1,15 +1,15 @@
-import { type BigNumber } from '@rotki/common';
-import { type MaybeRef } from '@vueuse/core';
-import { type Collection } from '@/types/collection';
 import { Module } from '@/types/modules';
-import {
-  type NonFungibleBalance,
-  type NonFungibleBalancesCollectionResponse,
-  type NonFungibleBalancesRequestPayload
-} from '@/types/nfbalances';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import type { BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import type {
+  NonFungibleBalance,
+  NonFungibleBalancesCollectionResponse,
+  NonFungibleBalancesRequestPayload,
+} from '@/types/nfbalances';
+import type { TaskMeta } from '@/types/task';
 
 export const useNonFungibleBalancesStore = defineStore(
   'balances/non-fungible',
@@ -23,20 +23,20 @@ export const useNonFungibleBalancesStore = defineStore(
     const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
     const fetchNonFungibleBalances = async (
-      payload: MaybeRef<NonFungibleBalancesRequestPayload>
+      payload: MaybeRef<NonFungibleBalancesRequestPayload>,
     ): Promise<Collection<NonFungibleBalance>> => {
       const payloadVal = get(payload);
       const result = await fetchNfBalances({
         ...get(payloadVal),
-        ignoreCache: false
+        ignoreCache: false,
       });
 
       if (
-        !payloadVal.ignoredAssetsHandling ||
-        payloadVal.ignoredAssetsHandling === 'exclude'
-      ) {
+        !payloadVal.ignoredAssetsHandling
+        || payloadVal.ignoredAssetsHandling === 'exclude'
+      )
         set(nonFungibleTotalValue, result.totalUsdValue);
-      }
+
       return mapCollectionResponse(result);
     };
 
@@ -48,7 +48,7 @@ export const useNonFungibleBalancesStore = defineStore(
         offset: 0,
         ascending: [true],
         orderByAttributes: ['name'],
-        ignoreCache: true
+        ignoreCache: true,
       };
 
       const { taskId } = await fetchNfBalancesTask(defaults);
@@ -58,34 +58,34 @@ export const useNonFungibleBalancesStore = defineStore(
           taskId,
           taskType,
           {
-            title: t('actions.nft_balances.task.title')
-          }
+            title: t('actions.nft_balances.task.title'),
+          },
         );
         return true;
-      } catch (e: any) {
-        if (isTaskCancelled(e)) {
+      }
+      catch (error: any) {
+        if (isTaskCancelled(error))
           return false;
-        }
+
         notify({
           title: t('actions.nft_balances.error.title'),
           message: t('actions.nft_balances.error.message', {
-            message: e.message
+            message: error.message,
           }),
-          display: true
+          display: true,
         });
-        throw e;
+        throw error;
       }
     };
 
     const refreshNonFungibleBalances = async (
-      userInitiated = false
+      userInitiated = false,
     ): Promise<void> => {
-      if (!get(activeModules).includes(Module.NFTS)) {
+      if (!get(activeModules).includes(Module.NFTS))
         return;
-      }
 
-      const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
-        useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
+      const { setStatus, isFirstLoad, resetStatus, fetchDisabled }
+        = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
       if (fetchDisabled(userInitiated)) {
         logger.info('skipping non fungible balances refresh');
@@ -96,8 +96,9 @@ export const useNonFungibleBalancesStore = defineStore(
         setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
         await syncNonFungiblesTask();
         setStatus(Status.LOADED);
-      } catch (e: any) {
-        logger.error(e);
+      }
+      catch (error: any) {
+        logger.error(error);
         resetStatus();
       }
     };
@@ -105,13 +106,13 @@ export const useNonFungibleBalancesStore = defineStore(
     return {
       nonFungibleTotalValue,
       fetchNonFungibleBalances,
-      refreshNonFungibleBalances
+      refreshNonFungibleBalances,
     };
-  }
+  },
 );
 
 if (import.meta.hot) {
   import.meta.hot.accept(
-    acceptHMRUpdate(useNonFungibleBalancesStore, import.meta.hot)
+    acceptHMRUpdate(useNonFungibleBalancesStore, import.meta.hot),
   );
 }

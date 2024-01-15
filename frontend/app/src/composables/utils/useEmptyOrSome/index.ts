@@ -4,11 +4,9 @@
  * @param items
  * @param condition
  */
-export const useEmptyOrSome = <T>(
-  items: Ref<T[] | undefined>,
-  condition: (t: T) => boolean
-): ComputedRef<boolean> =>
-  computed(() => {
+export function useEmptyOrSome<T>(items: Ref<T[] | undefined>, condition: (t: T) => boolean): ComputedRef<boolean> {
+  return computed(() => {
     const t = get(items);
     return !t || t.some(condition);
   });
+}
