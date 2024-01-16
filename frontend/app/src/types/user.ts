@@ -195,6 +195,13 @@ const ApiKey = z.object({
   apiKey: z.string(),
 });
 
+const Auth = z.object({
+  username: z.string(),
+  password: z.string(),
+});
+
+export type Auth = z.infer<typeof Auth>;
+
 export const ExternalServiceKeys = z.object({
   etherscan: z.record(ApiKey.optional()).optional(),
   cryptocompare: ApiKey.optional(),
@@ -203,16 +210,25 @@ export const ExternalServiceKeys = z.object({
   loopring: ApiKey.optional(),
   opensea: ApiKey.optional(),
   blockscout: ApiKey.optional(),
+  monerium: Auth.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
 
 export type ExternalServiceName = ToSnakeCase<keyof ExternalServiceKeys>;
 
-export interface ExternalServiceKey {
+export interface ExternalServicePayloadWithApiKey {
   readonly name: string;
   readonly apiKey: string;
 }
+
+export interface ExternalServicePayloadWithAuth {
+  readonly name: string;
+  readonly username: string;
+  readonly password: string;
+}
+
+export type ExternalServiceKey = ExternalServicePayloadWithApiKey | ExternalServicePayloadWithAuth;
 
 export const ExchangeRates = z.record(NumericString);
 
