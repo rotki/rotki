@@ -15,6 +15,10 @@ const isDevelopment = checkIfDevelopment();
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
 
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+let win: BrowserWindow | null;
+
 async function onActivate(): Promise<void> {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -143,10 +147,6 @@ const menuActions = {
       trayManager?.destroy();
   },
 };
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win: BrowserWindow | null;
 const pyHandler = new SubprocessHandler(app);
 
 // Standard scheme must be registered before the app is ready
