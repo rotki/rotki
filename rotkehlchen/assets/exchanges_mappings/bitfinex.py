@@ -71,8 +71,11 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
     'ONE-2': 'ONE',
     evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
-    evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
     evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
     evm_address_to_identifier('0xD04E772BC0d591fBD288f2E2a86aFA3D3CB647F8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LAI',  # noqa: E501
     evm_address_to_identifier('0x4B85a666deC7C959e88b97814E46113601B07e57', ChainID.BINANCE, EvmTokenKind.ERC20): 'GOC',  # noqa: E501
+    evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
+    evm_address_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INJ',  # noqa: E501
+    evm_address_to_identifier('0xf091867EC603A6628eD83D274E835539D82e9cc8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZETA',  # noqa: E501
+    evm_address_to_identifier('0xC5d27F27F08D1FD1E3EbBAa50b3442e6c0D50439', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'APP',  # noqa: E501
 }

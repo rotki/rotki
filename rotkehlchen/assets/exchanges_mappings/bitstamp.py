@@ -18,5 +18,7 @@ WORLD_TO_BITSTAMP = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CEL',  # noqa: E501
     evm_address_to_identifier('0x491604c0FDF08347Dd1fa4Ee062a822A5DD06B5D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CTSI',  # noqa: E501
     evm_address_to_identifier('0x0996bFb5D057faa237640E2506BE7B4f9C46de0B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RNDR',  # noqa: E501
-    evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
+    evm_address_to_identifier('0x628A3b2E302C7e896AcC432D2d0dD22B6cb9bc88', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LMWR',  # noqa: E501
+    evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
+    evm_address_to_identifier('0xB2492E97a68a6E4B9E9a11B99F6C42E5aCCD38c7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VEXT',  # noqa: E501
 }

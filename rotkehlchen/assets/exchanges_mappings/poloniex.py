@@ -53,7 +53,6 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x9E46A38F5DaaBe8683E10793b06749EEF7D733d1'): 'NCT',
     strethaddress_to_identifier('0xa3EE21C306A700E682AbCdfe9BaA6A08F3820419'): 'CTC',
     strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'WLUNA',
-    evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
     evm_address_to_identifier('0x08d967bb0134F2d07f7cfb6E246680c53927DD30', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MATH',  # noqa: E501
     evm_address_to_identifier('0xbC396689893D065F41bc2C6EcbeE5e0085233447', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PERP',  # noqa: E501
     evm_address_to_identifier('0x8CE9137d39326AD0cD6491fb5CC0CbA0e089b6A9', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SXP',  # noqa: E501
@@ -163,4 +162,16 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x48c87cDacb6Bb6BF6E5Cd85D8ee5C847084c7410', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HAM',  # noqa: E501
     evm_address_to_identifier('0xC9D21E5A24110b67af31aF464edfDC2dAe5Ec7D5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTM2',  # noqa: E501
     evm_address_to_identifier('0xeca82185adCE47f39c684352B0439f030f860318', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PERL',  # noqa: E501
+    evm_address_to_identifier('0xf486ad071f3bEE968384D2E39e2D8aF0fCf6fd46', ChainID.BINANCE, EvmTokenKind.ERC20): 'VELO',  # noqa: E501
+    evm_address_to_identifier('0xBBc2AE13b23d715c30720F079fcd9B4a74093505', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ERN',  # noqa: E501
+    evm_address_to_identifier('0x6B0b3a982b4634aC68dD83a4DBF02311cE324181', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ALI',  # noqa: E501
+    evm_address_to_identifier('0x940181a94A35A4569E4529A3CDfB74e38FD98631', ChainID.BASE, EvmTokenKind.ERC20): 'AERODROME',  # noqa: E501
+    evm_address_to_identifier('0x628A3b2E302C7e896AcC432D2d0dD22B6cb9bc88', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LMWR',  # noqa: E501
+    'LUKSO': 'LUK',
+    evm_address_to_identifier('0x38e382f74dfb84608f3c1f10187f6bef5951de93', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MUBI',  # noqa: E501
+    evm_address_to_identifier('0xf091867EC603A6628eD83D274E835539D82e9cc8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZETA',  # noqa: E501
+    evm_address_to_identifier('0x982239D38Af50B0168dA33346d85Fb12929c4c07', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TROVE',  # noqa: E501
+    evm_address_to_identifier('0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', ChainID.AVALANCHE, EvmTokenKind.ERC20): 'QI',  # noqa: E501
+    evm_address_to_identifier('0xB2492E97a68a6E4B9E9a11B99F6C42E5aCCD38c7', ChainID.AVALANCHE, EvmTokenKind.ERC20): 'VEXT',  # noqa: E501
+    evm_address_to_identifier('0xC5d27F27F08D1FD1E3EbBAa50b3442e6c0D50439', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'APP',  # noqa: E501
 }

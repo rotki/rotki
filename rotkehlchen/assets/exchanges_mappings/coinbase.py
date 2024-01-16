@@ -37,7 +37,6 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xAC51066d7bEC65Dc4589368da368b212745d63E8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ALICE',  # noqa: E501
     evm_address_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'IMX',  # noqa: E501
     evm_address_to_identifier('0xAE12C5930881c53715B369ceC7606B70d8EB229f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'C98',  # noqa: E501
-    evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
     evm_address_to_identifier('0x80C62FE4487E1351b47Ba49809EBD60ED085bf52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CLV',  # noqa: E501
     evm_address_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLUNA',  # noqa: E501
     evm_address_to_identifier('0x8f8221aFbB33998d8584A2B05749bA73c37a938a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REQ',  # noqa: E501
@@ -78,4 +77,12 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYUSD',  # noqa: E501
     evm_address_to_identifier('0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', ChainID.AVALANCHE, EvmTokenKind.ERC20): 'QI',  # noqa: E501
     evm_address_to_identifier('0x0d88eD6E74bbFD96B831231638b66C05571e824F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AVT',  # noqa: E501
+    evm_address_to_identifier('0x6b66ccd1340c479B07B390d326eaDCbb84E726Ba', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SEAM',  # noqa: E501
+    evm_address_to_identifier('0x27054b13b1B798B345b591a4d22e6562d47eA75a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AST',  # noqa: E501
+    evm_address_to_identifier('0xBBc2AE13b23d715c30720F079fcd9B4a74093505', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ERN',  # noqa: E501
+    evm_address_to_identifier('0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FIS',  # noqa: E501
+    evm_address_to_identifier('0xBe9895146f7AF43049ca1c1AE358B0541Ea49704', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CBETH',  # noqa: E501
+    evm_address_to_identifier('0x3c8B650257cFb5f272f799F5e2b4e65093a11a05', ChainID.OPTIMISM, EvmTokenKind.ERC20): 'VELO',  # noqa: E501
+    evm_address_to_identifier('0xf091867EC603A6628eD83D274E835539D82e9cc8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZETA',  # noqa: E501
+    'RENDER': 'RENDER',
 }

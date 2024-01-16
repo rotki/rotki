@@ -65,13 +65,13 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    optimism_tokens = [
+    optimism_tokens = {
         A_OP,
         Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-        Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-    ]
+        Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
+    }
     assert result[TEST_ADDY]['last_update_timestamp'] >= now
-    assert result[TEST_ADDY]['tokens'] == optimism_tokens
+    assert set(result[TEST_ADDY]['tokens']) == optimism_tokens
 
     # and query balances again to see tokens also appear
     response = requests.get(

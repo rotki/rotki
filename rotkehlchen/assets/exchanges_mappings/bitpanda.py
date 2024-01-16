@@ -37,5 +37,11 @@ WORLD_TO_BITPANDA = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GTC',  # noqa: E501
     evm_address_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FTT',  # noqa: E501
     evm_address_to_identifier('0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82', ChainID.BINANCE, EvmTokenKind.ERC20): 'CAKE',  # noqa: E501
-    evm_address_to_identifier('0x3506424F91fD33084466F402d5D97f05F8e3b4AF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CHZ',  # noqa: E501
+    evm_address_to_identifier('0x14778860E937f509e651192a90589dE711Fb88a9', ChainID.BINANCE, EvmTokenKind.ERC20): 'CYBER',  # noqa: E501
+    evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
+    evm_address_to_identifier('0x80C62FE4487E1351b47Ba49809EBD60ED085bf52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CLV',  # noqa: E501
+    evm_address_to_identifier('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MASK',  # noqa: E501
+    evm_address_to_identifier('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CEL',  # noqa: E501
+    evm_address_to_identifier('0x163f8C2467924be0ae7B5347228CABF260318753', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
+    evm_address_to_identifier('0x0000000000085d4780B73119b644AE5ecd22b376', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TUSD',  # noqa: E501
 }

@@ -154,7 +154,6 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'GMT': 'GMT',
     'CFG': 'CFG',
     strethaddress_to_identifier('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'): 'WETH',
-    strethaddress_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'): 'LDO',
     strethaddress_to_identifier('0x0b38210ea11411557c13457D4dA7dC6ea731B88a'): 'API3',
     'RUNE': 'RUNE',
     strethaddress_to_identifier('0x607F4C5BB672230e8672085532f7e901544a7375'): 'RLC',
@@ -235,5 +234,14 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'SEI': 'SEI',
     evm_address_to_identifier('0x6DcB98f460457fe4952e12779Ba852F82eCC62C1', ChainID.ARBITRUM_NOVA, EvmTokenKind.ERC20): 'BRICK',  # noqa: E501
     evm_address_to_identifier('0x0057Ac2d777797d31CD3f8f13bF5e927571D6Ad0', ChainID.ARBITRUM_NOVA, EvmTokenKind.ERC20): 'MOON',  # noqa: E501
-
+    'JTO': 'JTO',
+    'PYTH': 'PYTH',
+    evm_address_to_identifier('0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'POL',  # noqa: E501
+    evm_address_to_identifier('0x1151CB3d861920e07a38e03eEAd12C32178567F6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BONK',  # noqa: E501
+    evm_address_to_identifier('0x2CD14cbA3F26254beeD1d78158cd2B6F91809600', ChainID.BINANCE, EvmTokenKind.ERC20): 'GENS',  # noqa: E501
+    'JUP': 'JUP',
+    'DYM': 'DYM',
+    'PICA': 'PICA',
+    'WIF': 'WIF',
+    evm_address_to_identifier('0xaA7a9CA87d3694B5755f213B5D04094b8d0F0A6F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'OTP',  # noqa: E501
 }

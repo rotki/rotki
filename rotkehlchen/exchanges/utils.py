@@ -124,8 +124,8 @@ def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
 def pair_symbol_to_base_quote(
         symbol: str,
         asset_deserialize_fn: Callable[[str], AssetWithOracles],
-        five_letter_assets: tuple[str, ...],
-        six_letter_assets: tuple[str, ...] | None = None,
+        five_letter_assets: set[str],
+        six_letter_assets: set[str] | None = None,
 ) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a symbol product into a base/quote asset tuple. Currently used for gemini and bybit.
 
@@ -167,6 +167,8 @@ def pair_symbol_to_base_quote(
         if any(asset in symbol for asset in six_letter_assets):
             base_asset = asset_deserialize_fn(symbol[:6].upper())
             quote_asset = asset_deserialize_fn(symbol[6:].upper())
+        else:
+            raise UnprocessableTradePair(symbol)
     else:
         raise UnprocessableTradePair(symbol)
 

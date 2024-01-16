@@ -293,6 +293,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         evm_address_to_identifier(address='0xb3Ad645dB386D7F6D753B2b9C3F4B853DA6890B8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # contractor but cc has creator platform
         evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # consumer price index but cc has crypto price
         'IRON',  # iron fish but cc has iron
+        'VARA',  # equilibre but VARA chain in cc
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
