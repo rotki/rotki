@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import type { Ref } from 'vue';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
@@ -30,6 +30,11 @@ const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 const extraParams = computed(() => ({
   ignoredAssetsHandling: get(ignoredAssetsHandling),
 }));
+
+const sort = ref<DataTableSortData>({
+  column: 'lastPrice',
+  direction: 'desc',
+});
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
@@ -259,6 +264,8 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
             outlined
             :cols="tableHeaders"
             :rows="data"
+            :sort.sync="sort"
+            :sort-modifiers="{ external: true }"
             :options="options"
             :pagination="{
               limit: options.itemsPerPage,
