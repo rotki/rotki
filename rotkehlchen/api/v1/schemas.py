@@ -1261,6 +1261,20 @@ class ModifiableSettingsSchema(Schema):
         ),
         load_default=None,
     )
+    oracle_penalty_threshold_count = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=1,
+            error='The count should be >= 1',
+        ),
+    )
+    oracle_penalty_duration = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=1,
+            error='The penalty should be >= 1 seconds',
+        ),
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1316,6 +1330,8 @@ class ModifiableSettingsSchema(Schema):
             query_retry_limit=data['query_retry_limit'],
             connect_timeout=data['connect_timeout'],
             read_timeout=data['read_timeout'],
+            oracle_penalty_threshold_count=data['oracle_penalty_threshold_count'],
+            oracle_penalty_duration=data['oracle_penalty_duration'],
         )
 
 

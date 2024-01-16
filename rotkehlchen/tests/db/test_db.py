@@ -50,6 +50,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_INFER_ZERO_TIMED_BALANCES,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_ORACLE_PENALTY_DURATION,
+    DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_QUERY_RETRY_LIMIT,
@@ -481,6 +483,8 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'query_retry_limit': DEFAULT_QUERY_RETRY_LIMIT,
         'connect_timeout': DEFAULT_CONNECT_TIMEOUT,
         'read_timeout': DEFAULT_READ_TIMEOUT,
+        'oracle_penalty_threshold_count': DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
+        'oracle_penalty_duration': DEFAULT_ORACLE_PENALTY_DURATION,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
@@ -529,6 +533,10 @@ def test_settings_entry_types(database):
     assert res.active_modules == DEFAULT_ACTIVE_MODULES
     assert isinstance(res.frontend_settings, str)
     assert res.frontend_settings == ''
+    assert isinstance(res.oracle_penalty_threshold_count, int)
+    assert res.oracle_penalty_threshold_count == DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT
+    assert isinstance(res.oracle_penalty_duration, int)
+    assert res.oracle_penalty_duration == DEFAULT_ORACLE_PENALTY_DURATION
 
 
 def test_key_value_cache_entry_types(database):

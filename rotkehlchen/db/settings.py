@@ -55,6 +55,8 @@ DEFAULT_INFER_ZERO_TIMED_BALANCES = False  # If True the asset amount and value 
 DEFAULT_QUERY_RETRY_LIMIT = 5
 DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_READ_TIMEOUT = 30
+DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT = 5
+DEFAULT_ORACLE_PENALTY_DURATION = 1800
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -88,6 +90,8 @@ INTEGER_KEYS = (
     'query_retry_limit',
     'connect_timeout',
     'read_timeout',
+    'oracle_penalty_threshold_count',
+    'oracle_penalty_duration',
 )
 STRING_KEYS = (
     'ksm_rpc_endpoint',
@@ -135,6 +139,8 @@ CachedDBSettingsFieldNames = Literal[
     'query_retry_limit',
     'connect_timeout',
     'read_timeout',
+    'oracle_penalty_threshold_count',
+    'oracle_penalty_duration',
 ]
 
 DBSettingsFieldTypes = (
@@ -190,6 +196,8 @@ class DBSettings:
     query_retry_limit: int = DEFAULT_QUERY_RETRY_LIMIT
     connect_timeout: int = DEFAULT_CONNECT_TIMEOUT
     read_timeout: int = DEFAULT_READ_TIMEOUT
+    oracle_penalty_threshold_count: int = DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT
+    oracle_penalty_duration: int = DEFAULT_ORACLE_PENALTY_DURATION
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -243,6 +251,8 @@ class ModifiableDBSettings(NamedTuple):
     query_retry_limit: int | None = None
     connect_timeout: int | None = None
     read_timeout: int | None = None
+    oracle_penalty_threshold_count: int | None = None
+    oracle_penalty_duration: int | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -367,9 +377,14 @@ def serialize_db_setting(
 
 class CachedSettings:
     """
-    Singleton class that manages the cached settings. It is initialized with default values on
-    user login and is reset on user logout. This way the cached settings are bound to the user's
-    session and not shared between users. It is updated when a setting is updated.
+    Singleton class that manages the cached settings.
+
+    It is initialized with default settings whenever it is created.
+    When a user is unlocked on login/signup, it will be updated with
+    saved DB settings if any via the initialize method and is reset
+    on user logout. This way the cached settings are bound to the
+    user's session and not shared between users. It is updated when a
+    setting is updated.
 
     Keep in mind:
     - last_write_ts is not cached for performance reasons
@@ -387,6 +402,12 @@ class CachedSettings:
 
         CachedSettings.__instance = super().__new__(cls)
         return CachedSettings.__instance
+
+    def initialize(self, settings: DBSettings) -> None:
+        """Intialize with saved DB settings
+
+        This overwrites the default db settings set at class instantiation"""
+        self._settings = settings
 
     def reset(self) -> None:
         self._settings = DBSettings()
@@ -414,3 +435,11 @@ class CachedSettings:
 
     def get_query_retry_limit(self) -> int:
         return self.get_entry('query_retry_limit')  # type: ignore
+
+    @property
+    def oracle_penalty_duration(self) -> int:
+        return self._settings.oracle_penalty_duration
+
+    @property
+    def oracle_penalty_threshold_count(self) -> int:
+        return self._settings.oracle_penalty_threshold_count

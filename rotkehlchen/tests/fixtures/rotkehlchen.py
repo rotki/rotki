@@ -42,6 +42,11 @@ from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_con
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
 
 
+@pytest.fixture(name='should_mock_settings')
+def fixture_should_mock_settings():
+    return True
+
+
 @pytest.fixture(name='start_with_logged_in_user')
 def fixture_start_with_logged_in_user():
     return True
@@ -261,6 +266,7 @@ def initialize_mock_rotkehlchen_instance(
         add_accounts_to_db,
         latest_accounting_rules,
         initialize_accounting_rules,
+        should_mock_settings=True,
 ) -> None:
     if not start_with_logged_in_user:
         return
@@ -317,6 +323,7 @@ def initialize_mock_rotkehlchen_instance(
             use_custom_database=use_custom_database,
             new_db_unlock_actions=new_db_unlock_actions,
             perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+            should_mock_settings=should_mock_settings,
         )
         rotki.unlock_user(
             user=username,
@@ -475,6 +482,7 @@ def fixture_rotkehlchen_api_server(
         add_accounts_to_db,
         latest_accounting_rules,
         initialize_accounting_rules,
+        should_mock_settings,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -482,7 +490,6 @@ def fixture_rotkehlchen_api_server(
         rotki=uninitialized_rotkehlchen,
         rest_port_number=rest_api_port,
     )
-
     initialize_mock_rotkehlchen_instance(
         rotki=api_server.rest_api.rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
@@ -520,6 +527,7 @@ def fixture_rotkehlchen_api_server(
         add_accounts_to_db=add_accounts_to_db,
         latest_accounting_rules=latest_accounting_rules,
         initialize_accounting_rules=initialize_accounting_rules,
+        should_mock_settings=should_mock_settings,
     )
     with ExitStack() as stack:
         if start_with_logged_in_user is True:

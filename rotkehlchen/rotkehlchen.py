@@ -309,9 +309,6 @@ class Rotkehlchen:
         self.cryptocompare.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
-        # Initialize the cached settings singleton
-        CachedSettings()
-
         # Anything that was set above here has to be cleaned in case of failure in the next step
         # by reset_after_failed_account_creation_or_login()
         try:
@@ -336,6 +333,7 @@ class Rotkehlchen:
 
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
+            CachedSettings().initialize(settings)  # initialize with saved DB settings
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='submit_usage_analytics',

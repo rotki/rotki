@@ -611,6 +611,8 @@ Getting or modifying settings
               "ssf_graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
               "cost_basis_method": "fifo",
+              "oracle_penalty_threshold_count": 5,
+              "oracle_penalty_duration": 1800,
               "address_name_priority": ["private_addressbook", "blockchain_account",
                                         "global_addressbook", "ethereum_tokens",
                                         "hardcoded_mappings", "ens_names"],
@@ -645,6 +647,8 @@ Getting or modifying settings
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
    :resjson int connect_timeout: The number of seconds to wait before giving up on establishing a connection to an external service. Default is 30.
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
+   :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
+   :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -689,6 +693,8 @@ Getting or modifying settings
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
    :resjson int connect_timeout: The number of seconds to wait before giving up on establishing a connection to an external service. Default is 30.
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
+   :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
+   :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
 
    **Example Response**:
 
