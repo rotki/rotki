@@ -28,6 +28,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -56,7 +57,6 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.penalizable_oracle import ORACLE_PENALTY_TS
 
 UNDERLYING_ASSET_PRICES = {
     A_AAVE: FVal('100'),
@@ -559,15 +559,16 @@ def test_punishing_of_oracles_works(inquirer):
                 assert defillama_mock.called is True
 
         # move the current time forward and check that coingecko is still penalized
+        penalty_duration = CachedSettings().oracle_penalty_duration
         with freeze_time(datetime.datetime.fromtimestamp(
-                ts_now() + ORACLE_PENALTY_TS / 2,
+                ts_now() + penalty_duration / 2,
                 tz=datetime.UTC,
         )):
             assert inquirer._coingecko.is_penalized() is True
 
         # move the current time forward and check that coingecko is no longer penalized
         with freeze_time(datetime.datetime.fromtimestamp(
-                ts_now() + ORACLE_PENALTY_TS + 1,
+                ts_now() + penalty_duration + 1,
                 tz=datetime.UTC,
         )):
             assert inquirer._coingecko.is_penalized() is False

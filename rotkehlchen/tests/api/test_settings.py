@@ -35,7 +35,8 @@ from rotkehlchen.types import (
 )
 
 
-def test_cached_settings(rotkehlchen_api_server, username):
+@pytest.mark.parametrize('should_mock_settings', [False])
+def test_cached_settings(rotkehlchen_api_server, username, db_password):
     """Make sure that querying cached settings works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -88,6 +89,35 @@ def test_cached_settings(rotkehlchen_api_server, username):
 
     # Make sure that the cached settings are reset after logout
     assert CachedSettings().get_settings() == DBSettings()
+
+    # Login again, we'd expect settings to remain updated
+    data = {'password': db_password, 'sync_approval': 'unknown', 'resume_from_backup': False}
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    assert_proper_response(response)
+    assert rotki.user_is_logged_in is True
+
+    # Cached settings and DBSettings match
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_settings = rotki.data.db.get_settings(cursor)
+
+    cached_settings = CachedSettings().get_settings()
+    for field in fields(cached_settings):
+        if field.name == 'last_write_ts':  # last_write_ts is not cached
+            continue
+        assert getattr(cached_settings, field.name) == getattr(db_settings, field.name)
+
+    # API gives us the expected (updated) settings
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
+    assert_proper_response(response)
+    json_data = response.json()
+
+    assert json_data['result']['query_retry_limit'] == 3
+    assert json_data['result']['connect_timeout'] == 45
+    assert json_data['result']['read_timeout'] == 45
+    assert json_data['result']['submit_usage_analytics'] is True
 
 
 def test_querying_settings(rotkehlchen_api_server, username):
