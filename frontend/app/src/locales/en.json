@@ -2277,6 +2277,10 @@
       "hint": "Enter your Covalent API key",
       "title": "Covalent"
     },
+    "credential": {
+      "username": "Username",
+      "password": "Password"
+    },
     "cryptocompare": {
       "delete_tooltip": "Deletes the CryptoCompare API key",
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
@@ -2299,6 +2303,13 @@
       "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
       "settings": "Settings",
       "title": "Loopring"
+    },
+    "monerium": {
+      "delete_tooltip": "Deletes the Monerium credential",
+      "description": "Used to show Monerium transaction properly with relevant information.",
+      "title": "Monerium",
+      "understand": "I understand the risk",
+      "warning": "At the moment, Monerium uses basic authentication only, so these are not read-only credentials."
     },
     "opensea": {
       "delete_tooltip": "Delete your OpenSea API key",

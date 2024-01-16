@@ -1,8 +1,6 @@
+import type { Writeable } from '@/types';
+import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
-import type {
-  ExternalServiceKeys,
-  ExternalServiceName,
-} from '@/types/user';
 
 function getName(name: ExternalServiceName, chain?: string) {
   if (name === 'etherscan') {
@@ -37,16 +35,48 @@ export const useExternalApiKeys = createSharedComposable(
       computed(() => {
         const items = get(keys);
         const service = get(name);
-        if (!items) {
+
+        if (!items)
           return '';
-        }
-        else if (service === 'etherscan') {
+
+        if (service === 'etherscan') {
+          const itemService = items[service];
+
           const chainId = get(chain);
           assert(chainId, 'missing chain for etherscan');
-          return items[service]?.[transformCase(chainId, true)]?.apiKey || '';
+
+          const transformedChainId = transformCase(chainId, true);
+
+          if (itemService && transformedChainId in itemService) {
+            const chainData = itemService[transformedChainId];
+            if (chainData && 'apiKey' in chainData)
+              return chainData.apiKey || '';
+          }
         }
-        return items[service]?.apiKey || '';
+        else {
+          const itemService = items[service];
+
+          if (itemService && 'apiKey' in itemService)
+            return itemService.apiKey || '';
+        }
+
+        return '';
       });
+
+    const credential = (name: MaybeRef<ExternalServiceName>): ComputedRef<Auth | null> => computed(() => {
+      const items = get(keys);
+      const service = get(name);
+
+      if (!items || service === 'etherscan')
+        return null;
+
+      const itemService = items[service];
+
+      if (itemService && 'username' in itemService)
+        return itemService;
+
+      return null;
+    });
 
     const actionStatus = (
       name: MaybeRef<ExternalServiceName>,
@@ -83,11 +113,23 @@ export const useExternalApiKeys = createSharedComposable(
         [key]: message,
       });
     };
-    const save = async ({ name, apiKey }: { name: string; apiKey: string }) => {
+    const save = async (payload: ExternalServiceKey) => {
+      const { name } = payload;
       resetStatus(name);
       try {
         set(loading, true);
-        set(keys, await setExternalServices([{ name, apiKey: apiKey.trim() }]));
+
+        const trimmedPayload: Writeable<ExternalServiceKey> = payload;
+        if ('apiKey' in trimmedPayload) {
+          trimmedPayload.apiKey = trimmedPayload.apiKey.trim();
+        }
+        else {
+          trimmedPayload.username = trimmedPayload.username.trim();
+          trimmedPayload.password = trimmedPayload.password.trim();
+        }
+
+        set(keys, await setExternalServices([trimmedPayload]));
+
         setStatus(name, {
           success: true,
           message: t('external_services.set.success.message', {
@@ -146,6 +188,7 @@ export const useExternalApiKeys = createSharedComposable(
       loading,
       getName,
       apiKey,
+      credential,
       actionStatus,
       load,
       save,

@@ -1,32 +1,34 @@
 <script setup lang="ts">
+import type { Auth, ExternalServicePayloadWithAuth } from '@/types/user';
+
 const props = withDefaults(
   defineProps<{
-    apiKey: string;
+    credential?: Auth | null;
     name: string;
     loading?: boolean;
     tooltip?: string;
     hint?: string;
-    label?: string;
     status?: { message: string; success?: boolean };
   }>(),
   {
+    credential: null,
     status: undefined,
     loading: false,
     tooltip: '',
     hint: '',
-    label: '',
   },
 );
 
 const emit = defineEmits<{
   (e: 'delete-key', value: string): void;
-  (e: 'save', value: { name: string; apiKey: string }): void;
+  (e: 'save', value: ExternalServicePayloadWithAuth): void;
 }>();
 
 const { t } = useI18n();
-const { apiKey, status } = toRefs(props);
+const { credential, status } = toRefs(props);
 
-const currentValue = ref<string>('');
+const username = ref<string>('');
+const password = ref<string>('');
 const editMode = ref<boolean>(false);
 const cancellable = ref<boolean>(false);
 
@@ -45,7 +47,8 @@ const successMessages = useRefMap(status, (status) => {
 });
 
 function updateStatus() {
-  if (!get(apiKey)) {
+  const credentialVal = get(credential);
+  if (!credentialVal) {
     set(cancellable, false);
     set(editMode, true);
   }
@@ -53,14 +56,17 @@ function updateStatus() {
     set(cancellable, true);
     set(editMode, false);
   }
-  set(currentValue, get(apiKey));
+
+  set(username, credentialVal?.username || '');
+  set(password, credentialVal?.password || '');
 }
 
 function saveHandler() {
   if (get(editMode)) {
     emit('save', {
       name: props.name,
-      apiKey: get(currentValue),
+      username: get(username),
+      password: get(password),
     });
     set(editMode, false);
     set(cancellable, true);
@@ -72,15 +78,18 @@ function saveHandler() {
 
 function cancel() {
   set(editMode, false);
-  set(currentValue, get(apiKey));
+  const credentialVal = get(credential);
+  if (!credentialVal)
+    return;
+  set(username, credentialVal.username);
+  set(password, credentialVal.password);
 }
 
-onMounted(() => {
+watch(credential, () => {
   updateStatus();
-});
-
-watch(apiKey, () => {
-  updateStatus();
+}, {
+  immediate: true,
+  deep: true,
 });
 
 const slots = useSlots();
@@ -92,8 +101,8 @@ const slots = useSlots();
       class="flex items-start gap-4"
       data-cy="service-key__content"
     >
-      <RuiRevealableTextField
-        v-model="currentValue"
+      <RuiTextField
+        v-model="username"
         variant="outlined"
         color="primary"
         class="grow"
@@ -101,9 +110,22 @@ const slots = useSlots();
         :text-color="!editMode ? 'success' : undefined"
         :error-messages="errorMessages"
         :success-messages="successMessages"
-        :hint="currentValue ? '' : hint"
         :disabled="!editMode"
-        :label="label"
+        :label="t('external_services.credential.username')"
+        prepend-icon="user-line"
+      />
+
+      <RuiRevealableTextField
+        v-model="password"
+        variant="outlined"
+        color="primary"
+        class="grow"
+        data-cy="service-key__api-key"
+        :text-color="!editMode ? 'success' : undefined"
+        :error-messages="errorMessages"
+        :success-messages="successMessages"
+        :disabled="!editMode"
+        :label="t('external_services.credential.password')"
         prepend-icon="key-line"
       />
 
@@ -117,7 +139,7 @@ const slots = useSlots();
             variant="text"
             data-cy="service-key__delete"
             class="mt-1"
-            :disabled="loading || !apiKey"
+            :disabled="loading || !credential"
             color="primary"
             @click="emit('delete-key', name)"
           >
@@ -147,7 +169,7 @@ const slots = useSlots();
       <RuiButton
         data-cy="service-key__save"
         color="primary"
-        :disabled="(editMode && !currentValue) || loading"
+        :disabled="(editMode && (!username || !password)) || loading"
         @click="saveHandler()"
       >
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
