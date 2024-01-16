@@ -1,4 +1,3 @@
-import type { Writeable } from '@/types';
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 
@@ -113,22 +112,13 @@ export const useExternalApiKeys = createSharedComposable(
         [key]: message,
       });
     };
+
     const save = async (payload: ExternalServiceKey) => {
       const { name } = payload;
       resetStatus(name);
       try {
         set(loading, true);
-
-        const trimmedPayload: Writeable<ExternalServiceKey> = payload;
-        if ('apiKey' in trimmedPayload) {
-          trimmedPayload.apiKey = trimmedPayload.apiKey.trim();
-        }
-        else {
-          trimmedPayload.username = trimmedPayload.username.trim();
-          trimmedPayload.password = trimmedPayload.password.trim();
-        }
-
-        set(keys, await setExternalServices([trimmedPayload]));
+        set(keys, await setExternalServices([payload]));
 
         setStatus(name, {
           success: true,

@@ -93,7 +93,7 @@ const slots = useSlots();
       data-cy="service-key__content"
     >
       <RuiRevealableTextField
-        v-model="currentValue"
+        v-model.trim="currentValue"
         variant="outlined"
         color="primary"
         class="grow"

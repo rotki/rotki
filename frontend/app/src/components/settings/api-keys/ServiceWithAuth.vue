@@ -102,7 +102,7 @@ const slots = useSlots();
       data-cy="service-key__content"
     >
       <RuiTextField
-        v-model="username"
+        v-model.trim="username"
         variant="outlined"
         color="primary"
         class="grow"
@@ -116,7 +116,7 @@ const slots = useSlots();
       />
 
       <RuiRevealableTextField
-        v-model="password"
+        v-model.trim="password"
         variant="outlined"
         color="primary"
         class="grow"
