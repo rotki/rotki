@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { DataTableHeader } from '@/types/vuetify';
+import { some } from 'lodash-es';
+import type {
+  DataTableColumn,
+  DataTableOptions,
+  DataTableSortData,
+} from '@rotki/ui-library-compat';
 import type { TablePagination } from '@/types/pagination';
 import type { CustomAsset } from '@/types/asset';
 import type {
@@ -7,7 +12,7 @@ import type {
   Matcher,
 } from '@/composables/filters/custom-assets';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     assets: CustomAsset[];
     expanded: CustomAsset[];
@@ -23,43 +28,47 @@ withDefaults(
 const emit = defineEmits<{
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:pagination', pagination: TablePagination<CustomAsset>): void;
+  (e: 'update:options', pagination: DataTableOptions): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
 
 const { t } = useI18n();
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref({
+  column: 'name',
+  direction: 'desc' as const,
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.asset'),
-    value: 'name',
-    width: '50%',
+    label: t('common.asset'),
+    key: 'name',
+    class: 'w-1/2',
+    cellClass: 'py-0',
+    sortable: true,
   },
   {
-    text: t('common.type'),
-    value: 'custom_asset_type',
-    width: '50%',
+    label: t('common.type'),
+    key: 'custom_asset_type',
+    class: 'w-1/2',
+    cellClass: 'py-0',
+    sortable: true,
   },
   {
-    text: '',
-    value: 'actions',
-    sortable: false,
-  },
-  {
-    text: '',
-    width: '48px',
-    value: 'expand',
-    sortable: false,
+    label: '',
+    key: 'actions',
+    cellClass: 'py-0',
   },
 ]);
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 
-function updatePagination(pagination: TablePagination<CustomAsset>) {
-  return emit('update:pagination', pagination);
+function updatePagination(options: DataTableOptions) {
+  emit('update:options', options);
 }
+
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 
 function updateExpanded(expandedAssets: CustomAsset[]) {
@@ -74,6 +83,14 @@ function getAsset(item: CustomAsset) {
     isCustomAsset: true,
     customAssetType: item.customAssetType,
   };
+}
+
+function isExpanded(identifier: string) {
+  return some(props.expanded, { identifier });
+}
+
+function expand(item: CustomAsset) {
+  updateExpanded(isExpanded(item.identifier) ? [] : [item]);
 }
 </script>
 
@@ -93,65 +110,70 @@ function getAsset(item: CustomAsset) {
         </div>
       </div>
     </template>
-    <DataTable
-      :items="assets"
+    <RuiDataTable
+      :rows="assets"
       :loading="loading"
-      :headers="tableHeaders"
-      single-expand
+      :cols="tableHeaders"
       :expanded="expanded"
-      :options="options"
-      item-key="identifier"
-      sort-by="name"
+      :pagination="{
+        limit: options.itemsPerPage,
+        page: options.page,
+        total: serverItemLength,
+      }"
+      :pagination-modifiers="{ external: true }"
+      :sort.sync="sort"
+      :sort-modifiers="{ external: true }"
+      :sticky-offset="64"
+      row-attr="identifier"
+      data-cy="custom-assets-table"
+      single-expand
+      sticky-header
+      outlined
       class="custom-assets-table"
-      :sort-desc="false"
-      :server-items-length="serverItemLength"
       @update:options="updatePagination($event)"
     >
-      <template #item.name="{ item }">
+      <template #item.name="{ row }">
         <AssetDetailsBase
           :changeable="!loading"
           opens-details
-          :asset="getAsset(item)"
+          :asset="getAsset(row)"
         />
       </template>
-      <template #item.custom_asset_type="{ item }">
+      <template #item.custom_asset_type="{ row }">
         <BadgeDisplay>
-          {{ item.customAssetType }}
+          {{ row.customAssetType }}
         </BadgeDisplay>
       </template>
-      <template #item.actions="{ item }">
+      <template #item.actions="{ row }">
         <RowActions
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="deleteAsset(item)"
+          @edit-click="edit(row)"
+          @delete-click="deleteAsset(row)"
         >
           <CopyButton
             :tooltip="t('asset_table.copy_identifier.tooltip')"
-            :value="item.identifier"
+            :value="row.identifier"
           />
         </RowActions>
       </template>
-      <template #expanded-item="{ item }">
-        <TableExpandContainer
-          visible
-          :colspan="tableHeaders.length"
-        >
+      <template #expanded-item="{ row }">
+        <RuiCard>
           <div class="font-bold">
             {{ t('common.notes') }}:
           </div>
           <div class="pt-2">
-            {{ item.notes }}
+            {{ row.notes }}
           </div>
-        </TableExpandContainer>
+        </RuiCard>
       </template>
-      <template #item.expand="{ item }">
-        <RowExpander
-          v-if="item.notes"
-          :expanded="expanded.includes(item)"
-          @click="updateExpanded(expanded.includes(item) ? [] : [item])"
+      <template #item.expand="{ row }">
+        <RuiTableRowExpander
+          v-if="row.notes"
+          :expanded="isExpanded(row.identifier)"
+          @click="expand(row)"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
   </RuiCard>
 </template>

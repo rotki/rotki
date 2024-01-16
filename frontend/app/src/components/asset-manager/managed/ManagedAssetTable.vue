@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { some } from 'lodash-es';
 import {
   CUSTOM_ASSET,
   EVM_TOKEN,
@@ -94,7 +95,6 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: '',
     key: 'actions',
-    sortable: false,
   },
 ]);
 const edit = (asset: SupportedAsset) => emit('edit', asset);
@@ -208,6 +208,14 @@ async function massIgnore(ignored: boolean) {
     if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
       emit('refresh');
   }
+}
+
+function isExpanded(identifier: string) {
+  return some(props.expanded, { identifier });
+}
+
+function expand(item: SupportedAsset) {
+  updateExpanded(isExpanded(item.identifier) ? [] : [item]);
 }
 </script>
 
@@ -349,14 +357,15 @@ async function massIgnore(ignored: boolean) {
       </template>
       <template #expanded-item="{ row }">
         <AssetUnderlyingTokens
-          :asset="row"
+          v-if="row.underlyingTokens"
+          :tokens="row.underlyingTokens"
         />
       </template>
       <template #item.expand="{ row }">
         <RuiTableRowExpander
           v-if="row.underlyingTokens && row.underlyingTokens.length > 0"
-          :expanded="expanded.includes(row)"
-          @click="updateExpanded(expanded.includes(row) ? [] : [row])"
+          :expanded="isExpanded(row.identifier)"
+          @click="expand(row)"
         />
       </template>
     </RuiDataTable>
