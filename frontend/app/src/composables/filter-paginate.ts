@@ -65,7 +65,8 @@ export function usePaginationFilters<
   const {
     onUpdateFilters,
     defaultCollection,
-    extraParams,
+    // giving it a default value since it is watched, for cases where there are no extra params
+    extraParams = computed<LocationQuery>(() => ({})),
     customPageParams,
     defaultParams,
     defaultSortBy,
@@ -264,7 +265,7 @@ export function usePaginationFilters<
       selectedFilters.location = location;
 
     const extraParamsConverted = Object.fromEntries(
-      Object.entries(get(extraParams) || {}).map(([key, value]) => [
+      Object.entries(get(extraParams)).map(([key, value]) => [
         key,
         value?.toString(),
       ]),
