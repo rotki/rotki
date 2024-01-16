@@ -39,16 +39,22 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         amount_sold = deserialize_asset_amount(csv_row['Sell Amount'])
         amount_bought = deserialize_asset_amount(csv_row['Buy Amount'])
         asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Base Currency')  # noqa: E501
+        if (trade_type := TradeType.deserialize(csv_row['Type'])) == TradeType.BUY:
+            rate = amount_sold / amount_bought
+            amount = amount_bought
+        else:  # sell
+            rate = amount_bought / amount_sold
+            amount = amount_sold
         trade = Trade(
             timestamp=ts_ms_to_sec(timestamp),
             location=location,
             fee=fee,
             fee_currency=fee_currency,
-            rate=Price(amount_sold / amount_bought),
+            rate=Price(rate),
             base_asset=asset,
             quote_asset=symbol_to_asset_or_token(csv_row['Quote Currency']),
-            trade_type=TradeType.deserialize(csv_row['Type']),
-            amount=amount_bought,
+            trade_type=trade_type,
+            amount=amount,
             notes=csv_row['Description'],
         )
         self.add_trade(write_cursor, trade)
