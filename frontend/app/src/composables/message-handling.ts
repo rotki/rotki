@@ -1,9 +1,4 @@
-import {
-  type Notification,
-  NotificationGroup,
-  Priority,
-  Severity,
-} from '@rotki/common/lib/messages';
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common/lib/messages';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
@@ -174,7 +169,7 @@ export function useMessageHandling() {
   const handleDbUploadMessage = (data: DbUploadResult): Notification | null => {
     const { actionable, message, uploaded } = data;
 
-    if (!actionable || uploaded)
+    if (uploaded)
       return null;
 
     return {
@@ -182,12 +177,16 @@ export function useMessageHandling() {
       message: t('notification_messages.db_upload_result.message', {
         reason: message,
       }),
-      severity: Severity.WARNING,
+      severity: actionable ? Severity.INFO : Severity.ERROR,
       priority: Priority.ACTION,
-      action: {
-        label: t('notification_messages.db_upload_result.action'),
-        action: () => showSyncConfirmation(SYNC_UPLOAD),
-      },
+      group: NotificationGroup.DB_UPLOAD_RESULT,
+      display: true,
+      action: actionable
+        ? {
+            label: t('notification_messages.db_upload_result.action'),
+            action: () => showSyncConfirmation(SYNC_UPLOAD),
+          }
+        : undefined,
     };
   };
 
@@ -341,6 +340,7 @@ export function useMessageHandling() {
   };
 
   return {
+    handleDbUploadMessage,
     handleMessage,
     consume,
   };

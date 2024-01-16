@@ -115,6 +115,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
         title: newData.title,
         message: newData.message,
         groupCount: newData.groupCount,
+        action: newData.action,
+        severity: newData.severity || notification.severity,
+        priority: newData.priority,
         display,
       };
 

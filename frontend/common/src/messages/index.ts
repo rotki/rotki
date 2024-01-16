@@ -15,6 +15,7 @@ export enum Priority {
 
 export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
+  DB_UPLOAD_RESULT = 'DB_UPLOAD_RESULT',
 }
 
 export const NotificationCategory = {
