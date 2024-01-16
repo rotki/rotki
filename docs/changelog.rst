@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Importing sell trades via rotki generic trades CSV import will now work properly again.
 * :bug:`-` All Gnosis bridge dai events from ethereum to gnosis chain should now be decoded properly.
 * :bug:`7526` Liquity trove LUSD borrowing fee and stability pool LQTY frontend fee will now be properly shown and processed by rotki.
 * :bug:`-` USDT will be processed correctly when importing events from nexo.
