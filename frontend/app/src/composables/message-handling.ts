@@ -151,6 +151,7 @@ export function useMessageHandling() {
       actions.push({
         label: t('notification_messages.missing_api_key.action'),
         action: () => router.push(route),
+        persist: true,
       });
     }
 
@@ -161,6 +162,7 @@ export function useMessageHandling() {
         label: t('notification_messages.missing_api_key.get_key'),
         icon: 'external-link-line',
         action: () => openUrl(external),
+        persist: true,
       });
     }
 

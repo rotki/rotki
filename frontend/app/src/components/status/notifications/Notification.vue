@@ -85,7 +85,8 @@ async function copy() {
 
 async function doAction(id: number, action: NotificationAction) {
   action.action?.();
-  dismiss(id);
+  if (!action.persist)
+    dismiss(id);
 }
 </script>
 

@@ -36,6 +36,7 @@ export interface NotificationAction {
   readonly label: string;
   readonly action: () => void;
   readonly icon?: string;
+  readonly persist?: boolean;
 }
 
 export interface I18nParam {

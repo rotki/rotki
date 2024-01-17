@@ -113,7 +113,8 @@ export const useExternalApiKeys = createSharedComposable(
       });
     };
 
-    const save = async (payload: ExternalServiceKey) => {
+    const save = async (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void,
+    ) => {
       const { name } = payload;
       const isPayloadWithCredential = 'username' in payload;
       resetStatus(name);
@@ -133,6 +134,7 @@ export const useExternalApiKeys = createSharedComposable(
               serviceName,
             }),
         });
+        await postConfirmAction?.();
       }
       catch (error: any) {
         const errorMessage = error.message;
