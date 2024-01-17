@@ -2147,7 +2147,7 @@
     "summary": {
       "buy": "{label}: Buy {amount} {base} with {quote} for {rate} {quote} per {base}",
       "label": "Summary",
-      "sell": "{label}: Sell {amount} {base} with {quote} for {rate} {quote} per {base}"
+      "sell": "{label}: Sell {amount} {base} for {quote} for {rate} {quote} per {base}"
     },
     "trade_type": {
       "buy": "Buy",
@@ -3481,13 +3481,13 @@
       "taxfree_profit_loss": "Tax Free P/L"
     },
     "debug": {
-      "export_data": "Export data",
+      "export_data": "Export debug data",
       "export_message": {
         "failure": "Export PnL report debug data failed",
         "success": "PnL report debug data exported successfully",
         "title": "Export PnL report debug data"
       },
-      "import_data": "Import data",
+      "import_data": "Import debug data",
       "import_data_dialog": {
         "title": "Import PnL report debug data"
       },
@@ -3503,7 +3503,7 @@
       "message": "Η αναφορά PnL από {start} έως {end} έχει δημιουργηθεί.",
       "title": "Η αναφορά PnL έχει δημιουργηθεί"
     },
-    "title": "Saved Historical Reports"
+    "title": "Generated Reports"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -3540,12 +3540,8 @@
     "title": "Queried Addresses"
   },
   "reports_table": {
-    "delete": {
-      "tooltip": "Delete the report"
-    },
-    "load": {
-      "tooltip": "Load the report"
-    }
+    "delete": "Delete report",
+    "load": "Load report"
   },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",

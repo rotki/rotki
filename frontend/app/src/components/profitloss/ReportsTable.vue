@@ -2,7 +2,7 @@
 import { Routes } from '@/router/routes';
 import { calculateTotalProfitLoss } from '@/utils/report';
 import type { ComputedRef, Ref } from 'vue';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library-compat';
 import type { Report } from '@/types/reports';
 
 const expanded: Ref<Report[]> = ref([]);
@@ -52,7 +52,6 @@ const tableHeaders: ComputedRef<DataTableColumn[]> = computed(() => [
     key: 'actions',
     align: 'end',
     width: 140,
-    sortable: false,
   },
 ]);
 
@@ -70,6 +69,11 @@ function getReportUrl(identifier: number) {
 }
 
 const latestReport = (reportId: number) => get(isLatestReport(reportId));
+
+const sort = ref<DataTableSortColumn>({
+  column: 'timestamp',
+  direction: 'desc',
+});
 </script>
 
 <template>
@@ -80,8 +84,8 @@ const latestReport = (reportId: number) => get(isLatestReport(reportId));
     <RuiDataTable
       :cols="tableHeaders"
       :rows="items"
-      sort-by="timestamp"
       single-expand
+      :sort="sort"
       :expanded.sync="expanded"
       outlined
       row-attr="id"
@@ -131,52 +135,27 @@ const latestReport = (reportId: number) => get(isLatestReport(reportId));
         />
       </template>
       <template #item.actions="{ row }">
-        <div class="flex justify-end gap-1">
-          <ExportReportCsv
-            v-if="latestReport(row.identifier)"
-            icon
-          />
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RouterLink :to="getReportUrl(row.identifier)">
-                <RuiButton
-                  size="sm"
-                  icon
-                  variant="text"
-                  color="primary"
-                >
-                  <RuiIcon
-                    size="20"
-                    name="file-text-line"
-                  />
-                </RuiButton>
-              </RouterLink>
-            </template>
-            <span>{{ t('reports_table.load.tooltip') }}</span>
-          </RuiTooltip>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                icon
-                size="sm"
-                variant="text"
-                color="primary"
-                @click="deleteReport(row.identifier)"
-              >
+        <div class="flex items-center justify-end gap-4">
+          <RouterLink :to="getReportUrl(row.identifier)">
+            <RuiButton
+              size="sm"
+              variant="text"
+              color="primary"
+            >
+              <template #prepend>
                 <RuiIcon
                   size="20"
-                  name="delete-bin-5-line"
+                  name="file-text-line"
                 />
-              </RuiButton>
-            </template>
-            <span>{{ t('reports_table.delete.tooltip') }}</span>
-          </RuiTooltip>
+              </template>
+              {{ t('reports_table.load') }}
+            </RuiButton>
+          </RouterLink>
+
+          <ReportsTableMoreAction
+            :show-export-button="latestReport(row.identifier)"
+            @delete="deleteReport(row.identifier)"
+          />
         </div>
       </template>
       <template #expanded-item="{ row }">

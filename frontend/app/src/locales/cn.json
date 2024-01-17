@@ -2184,7 +2184,7 @@
     "summary": {
       "buy": "{label}: 用 {quote} 以每 {base} {rate} {quote} 的价格购买 {amount} {base}",
       "label": "总结",
-      "sell": "{label}: 以 {quote} 的价格卖出 {amount} {base} 每 {base} 的 {rate} {quote}"
+      "sell": "{label}：以每 {base} 的 {rate} {quote} 价格以 {quote} 价格出售 {amount} {base}"
     },
     "trade_type": {
       "buy": "买",
@@ -3577,13 +3577,13 @@
       "taxfree_profit_loss": "Tax Free P/L"
     },
     "debug": {
-      "export_data": "导出数据",
+      "export_data": "导出调试数据",
       "export_message": {
         "failure": "导出PnL报告调试数据失败",
         "success": "PnL报告调试数据导出成功",
         "title": "导出PnL报告调试数据"
       },
-      "import_data": "导入数据",
+      "import_data": "导入调试数据",
       "import_data_dialog": {
         "title": "导入PnL报告调试数据"
       },
@@ -3599,7 +3599,7 @@
       "message": "从 {start} 到 {end} 生成了盈亏报告。",
       "title": "已生成盈亏报告"
     },
-    "title": "保存的历史报告"
+    "title": "生成的报告"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -3636,12 +3636,8 @@
     "title": "查询地址"
   },
   "reports_table": {
-    "delete": {
-      "tooltip": "删除报告"
-    },
-    "load": {
-      "tooltip": "加载报告"
-    }
+    "delete": "删除报告",
+    "load": "加载报告"
   },
   "rounding_settings": {
     "amount_rounding": "金额舍入",
