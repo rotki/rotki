@@ -1364,6 +1364,12 @@ History events can be filtered if you have a premium subscription activated. You
 
 By default, all events will be processed in accounting, but you can ignore unwanted events, so they won't be processed. You can click on the three dots to display the options for the group of events, and click ``Ignore events in accounting``/``Unignore events in accounting``.
 
+Events can be exported as CSV, click on ``Export CSV`` button and accept prompt to download exported events.
+
+.. image:: images/events_query_process_export.png
+   :alt: Button to download events as csv
+   :align: center
+
 It is possible that you need to redecode events for an evm transaction. To do that you have two options. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
 
 .. image:: images/redecode_events.png
@@ -1756,8 +1762,20 @@ This watcher service runs on the rotki server so you don't even need to leave th
 
 Below you can see a small demonstration of the usage of makerdao vaults by a premium account.
 
-.. image:: images/vaults_premium_demo.gif
+.. image:: images/vaults_premium_demo1.png
    :alt: Makerdao vaults premium demo
+   :align: center
+
+.. image:: images/vaults_premium_demo2.png
+   :alt: Makerdao vaults premium choose account
+   :align: center
+
+.. image:: images/vaults_premium_demo3.png
+   :alt: Makerdao vaults premium more details
+   :align: center
+
+.. image:: images/vaults_premium_demo4.png
+   :alt: Makerdao vaults premium exit watcher
    :align: center
 
 Creating a profit/loss report
