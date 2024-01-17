@@ -72,21 +72,20 @@ function update(value: TableColumn) {
       <RuiButton
         :key="item.value"
         variant="list"
-        class="py-1 [&>span:first-child]:flex-1"
+        size="sm"
         :value="item.value"
         @click="update(item.value)"
       >
-        {{ item.text }}
-
-        <template #append>
+        <template #prepend>
           <RuiCheckbox
-            class="!p-0 pl-2"
+            class="-mr-2"
             color="primary"
             hide-details
             :value="active(item.value)"
             @input="update(item.value)"
           />
         </template>
+        {{ item.text }}
       </RuiButton>
     </template>
   </div>

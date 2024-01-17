@@ -55,12 +55,13 @@ function toggleSpam() {
       <div class="py-2 text-rui-text-secondary">
         <RuiButton
           variant="list"
+          size="sm"
           @click="toggleWhitelist()"
         >
           <template #prepend>
             <RuiCheckbox
+              class="-mr-2"
               color="primary"
-              class="[&_span]:-mr-1 [&_span]:!py-0"
               hide-details
               :value="isWhitelisted"
             />
@@ -69,12 +70,13 @@ function toggleSpam() {
         </RuiButton>
         <RuiButton
           variant="list"
+          size="sm"
           @click="toggleSpam()"
         >
           <template #prepend>
             <RuiCheckbox
+              class="-mr-2"
               color="primary"
-              class="[&_span]:-mr-1 [&_span]:!py-0"
               hide-details
               :value="isSpam"
             />
