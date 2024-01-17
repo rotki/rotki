@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki is now available in French.
 * :feature:`7214` Swaps done through Paraswap Augustus on Ethereum, Arbitrum, Optimism, Polygon, and Base chains, will now get properly decoded in the history view and will be taken into account during accounting.
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :feature:`7027` Monerium transactions are now decoded as mints and burns. If the user provides monerium credentials then a periodic task pulls data from the monerium API and the transactions are enriched with actual banking data and/or with bridging data from chain to chain.
