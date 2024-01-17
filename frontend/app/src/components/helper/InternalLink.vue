@@ -22,6 +22,7 @@ const props = withDefaults(
 );
 
 const rootAttrs = useAttrs();
+const css = useCssModule();
 </script>
 
 <template>
@@ -42,7 +43,24 @@ const rootAttrs = useAttrs();
       @click.ctrl.prevent
       @click.shift.prevent
     >
-      <slot />
+      <RuiButton
+        variant="text"
+        color="primary"
+        :class="css.button"
+      >
+        <slot />
+      </RuiButton>
     </a>
   </RouterLink>
 </template>
+
+<style lang="scss" module>
+.button {
+  @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
+  font-weight: inherit !important;
+
+  span {
+    @apply underline;
+  }
+}
+</style>

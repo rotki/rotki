@@ -52,6 +52,7 @@ import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
 
 /**
  * Vuetify components that are used in the premium components
@@ -134,6 +135,7 @@ export function registerComponents(): void {
   // Version 24 - 1.31
   Vue.component('LpPoolHeader', LpPoolHeader);
   Vue.component('RowAppend', RowAppend);
+  Vue.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
   vuetifyRegister();
   ruiRegister();
   logger.info('Components registered');

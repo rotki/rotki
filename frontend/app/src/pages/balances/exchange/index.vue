@@ -259,7 +259,7 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
       </div>
       <div
         v-else
-        class="px-4 py-8"
+        class="p-2"
       >
         <i18n path="exchange_balances.no_connected_exchanges">
           <InternalLink
