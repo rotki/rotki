@@ -202,13 +202,13 @@ EVENT_CATEGORY_DETAILS = {
         icon='share-circle-line',
     )}, EventCategory.STAKE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='Stake',
-        icon='folder-add-line',
+        icon='archive-stack-add-line',
     )}, EventCategory.UNSTAKE: {DEFAULT: EventCategoryDetails(
         label='Unstake',
-        icon='folder-reduce-line',
+        icon='archive-stack-reduce-line',
     )}, EventCategory.STAKE_EXIT: {DEFAULT: EventCategoryDetails(
         label='exit',
-        icon='folder-reduce-line',
+        icon='archive-stack-reduce-line',
     )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
         label='Attest',
         icon='quill-pen-line',

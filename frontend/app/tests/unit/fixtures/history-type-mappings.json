@@ -409,7 +409,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "Stake",
-            "icon": "folder-add-line"
+            "icon": "archive-stack-add-line"
           }
         },
         "direction": "out"
@@ -418,7 +418,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "Unstake",
-            "icon": "folder-reduce-line"
+            "icon": "archive-stack-reduce-line"
           }
         },
         "direction": "in"
