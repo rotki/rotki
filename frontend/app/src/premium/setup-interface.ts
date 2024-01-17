@@ -105,7 +105,7 @@ function settings(): SettingsApi {
 export function usePremiumApi(): PremiumInterface {
   return {
     useHostComponents: true,
-    version: 23,
+    version: 25,
     api: () => ({
       date,
       data: data(),

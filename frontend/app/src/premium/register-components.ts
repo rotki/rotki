@@ -135,6 +135,7 @@ export function registerComponents(): void {
   // Version 24 - 1.31
   Vue.component('LpPoolHeader', LpPoolHeader);
   Vue.component('RowAppend', RowAppend);
+  // Version 25 - 1.32
   Vue.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
   vuetifyRegister();
   ruiRegister();
