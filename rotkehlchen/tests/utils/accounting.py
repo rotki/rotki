@@ -14,7 +14,7 @@ from rotkehlchen.accounting.structures.processed_event import ProcessedAccountin
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_WBTC
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
@@ -35,25 +35,13 @@ TIMESTAMP_0_SEC = Timestamp(0)
 TIMESTAMP_1_MS = TimestampMS(1000)
 TIMESTAMP_1_SEC = Timestamp(1)
 
-MOCKED_PRICES: dict[str, dict[str, dict[Timestamp, Price]]] = {
+MOCKED_PRICES = {
     A_WBTC.identifier: {
         'EUR': {
-            TIMESTAMP_0_SEC: Price(FVal(0.5)),
             TIMESTAMP_1_SEC: Price(ONE),
         },
     },
     A_USDC.identifier: {
-        'EUR': {
-            TIMESTAMP_0_SEC: Price(ONE),
-            TIMESTAMP_1_SEC: Price(ONE),
-        },
-    },
-    A_ETH.identifier: {
-        'EUR': {
-            TIMESTAMP_1_SEC: Price(FVal(100)),
-        },
-    },
-    A_USDT.identifier: {
         'EUR': {
             TIMESTAMP_1_SEC: Price(ONE),
         },
