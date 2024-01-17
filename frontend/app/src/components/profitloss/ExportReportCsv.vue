@@ -1,10 +1,10 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    icon?: boolean;
+    list?: boolean;
   }>(),
   {
-    icon: false,
+    list: false,
   },
 );
 
@@ -49,43 +49,23 @@ async function exportCSV() {
   }
 }
 
-const [DefineButton, ReuseButton] = createReusableTemplate();
-
 const label = computed(() =>
   appSession ? t('common.actions.export_csv') : t('common.actions.download_csv'),
 );
 </script>
 
 <template>
-  <span>
-    <DefineButton>
-      <RuiButton
-        :size="icon ? 'sm' : undefined"
-        :variant="icon ? 'text' : 'default'"
-        :icon="icon"
-        color="primary"
-        @click="exportCSV()"
-      >
-        <div class="flex items-center gap-2">
-          <RuiIcon
-            size="20"
-            name="file-download-line"
-          />
-          <span v-if="!icon">{{ label }}</span>
-        </div>
-      </RuiButton>
-    </DefineButton>
-    <span v-if="icon">
-      <RuiTooltip
-        :popper="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <ReuseButton />
-        </template>
-        <span> {{ label }} </span>
-      </RuiTooltip>
-    </span>
-    <ReuseButton v-else />
-  </span>
+  <RuiButton
+    :variant="list ? 'list' : 'default'"
+    color="primary"
+    @click="exportCSV()"
+  >
+    <template #prepend>
+      <RuiIcon
+        size="20"
+        name="file-download-line"
+      />
+    </template>
+    {{ label }}
+  </RuiButton>
 </template>

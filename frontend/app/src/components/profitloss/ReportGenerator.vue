@@ -44,7 +44,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 <template>
   <RuiCard>
     <template #custom-header>
-      <div class="flex justify-between p-4">
+      <div class="flex justify-between px-4 py-2">
         <CardTitle>
           {{ t('common.actions.generate') }}
         </CardTitle>
@@ -87,22 +87,34 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             {{ t('common.actions.generate') }}
           </RuiButton>
         </div>
-        <div>
+        <div class="">
           <VMenu
-            v-if="isDevelopment"
             offset-y
             left
           >
             <template #activator="{ on }">
-              <RuiButton
-                size="lg"
-                v-on="on"
+              <RuiTooltip
+                :open-delay="400"
+                :popper="{ placement: 'top' }"
+                :disabled="isDevelopment"
+                class="h-full"
               >
-                <template #prepend>
-                  <RuiIcon name="file-settings-line" />
+                <template #activator>
+                  <RuiButton
+                    size="lg"
+                    v-on="on"
+                  >
+                    <template #prepend>
+                      <RuiIcon name="bug-line" />
+                    </template>
+                    <span v-if="isDevelopment">
+                      {{ t('profit_loss_reports.debug.title') }}
+                    </span>
+                  </RuiButton>
                 </template>
+
                 {{ t('profit_loss_reports.debug.title') }}
-              </RuiButton>
+              </RuiTooltip>
             </template>
             <div class="py-2">
               <RuiButton
@@ -125,16 +137,6 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
               </RuiButton>
             </div>
           </VMenu>
-          <RuiButton
-            v-else
-            size="lg"
-            @click="exportReportData()"
-          >
-            <template #prepend>
-              <RuiIcon name="file-download-line" />
-            </template>
-            {{ t('profit_loss_reports.debug.export_data') }}
-          </RuiButton>
         </div>
       </div>
     </template>
