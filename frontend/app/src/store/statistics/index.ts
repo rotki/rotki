@@ -36,7 +36,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       const totalLiabilities = get(liabilities());
       const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
 
-      const lpTotalBalance = get(lpTotal(includeNft));
+      const lpTotalBalance = get(lpTotal(false));
 
       const assetValue = aggregatedBalances.reduce(
         (sum, value) => sum.plus(value.usdValue),
