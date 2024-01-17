@@ -2296,6 +2296,7 @@
       "hint": "Enter your {chain} Etherscan API key",
       "title": "Etherscan"
     },
+    "get_api_key": "You can apply for an API key {link}",
     "loopring": {
       "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
@@ -2315,7 +2316,6 @@
       "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",
-      "link": "You can apply for an API key {link}",
       "title": "Opensea"
     },
     "set": {
@@ -2324,6 +2324,14 @@
       },
       "success": {
         "message": "Successfully updated the key for {serviceName}"
+      }
+    },
+    "set_credential": {
+      "error": {
+        "message": "Error while settings external service credential: {error}"
+      },
+      "success": {
+        "message": "Successfully updated the credential for {serviceName}"
       }
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key."
@@ -3390,7 +3398,8 @@
     },
     "missing_api_key": {
       "action": "Enter key",
-      "message": "You do not have an {location} {service} API key configured. rotki {location} {service} queries will still work but will be very slow. If you are not using your own {location} node, it is recommended to go to {url}, create an API key and then input it in the external service credentials setting of rotki",
+      "get_key": "Get API key",
+      "message": "Rotki queries for {location} chain is working slower because you dont have {location} {service} API key configured. Press \"@:notification_messages.missing_api_key.get_key\" to make one or \"@:notification_messages.missing_api_key.action\" to add it in the app.",
       "title": "{location} {service} API key"
     },
     "new_detected_token": {

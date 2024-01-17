@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { camelCase } from 'lodash-es';
+import { externalLinks } from '@/data/external-links';
+import { isEtherscanKey } from '@/types/external';
+
 const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);
 
@@ -29,6 +33,14 @@ function removeEtherscanNotification() {
 
   removeNotification(notification.id);
 }
+
+const link = computed(() => {
+  const location = camelCase(get(evmChain));
+  if (isEtherscanKey(location))
+    return externalLinks.etherscan[location];
+
+  return undefined;
+});
 </script>
 
 <template>
@@ -51,5 +63,21 @@ function removeEtherscanNotification() {
     :status="status"
     @save="save($event)"
     @delete-key="confirmDelete($event, removeEtherscanNotification)"
-  />
+  >
+    <i18n
+      v-if="link"
+      tag="div"
+      class="text-rui-text-secondary text-body-2"
+      path="external_services.get_api_key"
+    >
+      <template #link>
+        <ExternalLink
+          color="primary"
+          :url="link"
+        >
+          {{ t('common.here') }}
+        </ExternalLink>
+      </template>
+    </i18n>
+  </ServiceKey>
 </template>

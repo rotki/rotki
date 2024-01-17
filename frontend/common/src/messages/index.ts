@@ -35,6 +35,7 @@ export interface Message {
 export interface NotificationAction {
   readonly label: string;
   readonly action: () => void;
+  readonly icon?: string;
 }
 
 export interface I18nParam {
@@ -48,7 +49,7 @@ interface NotificationBase {
   readonly message: string;
   readonly severity: Severity;
   readonly category: NotificationCategory;
-  readonly action?: NotificationAction;
+  readonly action?: NotificationAction | NotificationAction[];
   readonly group?: NotificationGroup;
   readonly groupCount?: number;
   readonly i18nParam?: I18nParam;

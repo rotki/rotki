@@ -2073,6 +2073,7 @@
       "hint": "Enter your Etherscan API key",
       "title": "Etherscan"
     },
+    "get_api_key": "You can apply for an API key {link}",
     "loopring": {
       "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
@@ -2085,7 +2086,6 @@
       "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",
-      "link": "You can apply for an API key {link}",
       "title": "Opensea"
     },
     "set": {
@@ -3041,7 +3041,8 @@
     },
     "missing_api_key": {
       "action": "Introducir clave",
-      "message": "No tiene configurada una clave API de {location} {service}. Las consultas de {location} {service} de rotki seguirán funcionando, pero serán muy lentas. Si no está utilizando su propio nodo {location}, se recomienda ir a {url}, crear una clave API y luego ingresarla en la configuración de credenciales de servicio externo de rotki",
+      "get_key": "Obtener clave API",
+      "message": "Las consultas de Rotki para {location} chain funcionan más lentamente porque no tiene {location} {service} API key configurada. Pulsa \"@:notification_messages.missing_api_key.get_key\" para hacer una o \"@:notification_messages.missing_api_key.action\" para añadirla en la app.",
       "title": "{location} {service} clave API"
     },
     "new_detected_token": {

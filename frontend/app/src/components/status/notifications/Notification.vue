@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NotificationData, Severity } from '@rotki/common/lib/messages';
+import { type NotificationAction, type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 
 const props = withDefaults(
@@ -17,6 +17,17 @@ const { t } = useI18n();
 const { copy: copyToClipboard } = useClipboard();
 
 const { notification } = toRefs(props);
+
+const actions: ComputedRef<NotificationAction[]> = computed(() => {
+  const action = get(notification).action;
+
+  if (!action)
+    return [];
+  if (!Array.isArray(action))
+    return [action];
+
+  return action;
+});
 
 function dismiss(id: number) {
   emit('dismiss', id);
@@ -72,10 +83,9 @@ async function copy() {
   await copyToClipboard(messageText);
 }
 
-async function action(notification: NotificationData) {
-  const action = notification.action?.action;
-  action?.();
-  dismiss(notification.id);
+async function doAction(id: number, action: NotificationAction) {
+  action.action?.();
+  dismiss(id);
 }
 </script>
 
@@ -154,26 +164,23 @@ async function action(notification: NotificationData) {
         </div>
       </div>
       <slot />
-      <div class="flex mt-auto items-center mx-0.5">
-        <div
-          v-if="notification.action"
-          class="flex items-start mr-2"
+      <div class="flex mt-auto gap-2 mx-0.5">
+        <RuiButton
+          v-for="(action, index) in actions"
+          :key="index"
+          color="primary"
+          variant="text"
+          size="sm"
+          @click="doAction(notification.id, action)"
         >
-          <RuiButton
-            color="primary"
-            variant="text"
-            size="sm"
-            @click="action(notification)"
-          >
-            {{ notification.action.label }}
-            <template #append>
-              <RuiIcon
-                name="arrow-right-line"
-                size="16"
-              />
-            </template>
-          </RuiButton>
-        </div>
+          {{ action.label }}
+          <template #append>
+            <RuiIcon
+              :name="action.icon ?? 'arrow-right-line'"
+              size="16"
+            />
+          </template>
+        </RuiButton>
         <RuiTooltip
           :popper="{ placement: 'bottom', offsetDistance: 0 }"
           :open-delay="400"

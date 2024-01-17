@@ -1,6 +1,7 @@
 import { externalLinks } from '@/data/external-links';
+import type { MaybeRef } from '@vueuse/core';
 
-export function useLinks(url?: Ref<string | undefined>) {
+export function useLinks(url?: MaybeRef<string | undefined>) {
   const { isPackaged, openUrl } = useInterop();
   const targetUrl = computed(() => get(url) ?? externalLinks.premium);
   const href = computed(() => (isPackaged ? undefined : get(targetUrl)));

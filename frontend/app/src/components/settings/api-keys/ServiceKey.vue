@@ -128,8 +128,6 @@ const slots = useSlots();
       </RuiTooltip>
     </div>
 
-    <slot v-if="slots.default" />
-
     <div
       class="pt-4 flex gap-2"
       data-cy="service-key__buttons"
@@ -153,5 +151,6 @@ const slots = useSlots();
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
       </RuiButton>
     </div>
+    <slot v-if="slots.default" />
   </div>
 </template>

@@ -115,23 +115,35 @@ export const useExternalApiKeys = createSharedComposable(
 
     const save = async (payload: ExternalServiceKey) => {
       const { name } = payload;
+      const isPayloadWithCredential = 'username' in payload;
       resetStatus(name);
       try {
         set(loading, true);
         set(keys, await setExternalServices([payload]));
 
+        const serviceName = toCapitalCase(name.split('_').join(' '));
+
         setStatus(name, {
           success: true,
-          message: t('external_services.set.success.message', {
-            serviceName: toCapitalCase(name.split('_').join(' ')),
-          }),
+          message: isPayloadWithCredential
+            ? t('external_services.set_credential.success.message', {
+              serviceName,
+            })
+            : t('external_services.set.success.message', {
+              serviceName,
+            }),
         });
       }
       catch (error: any) {
+        const errorMessage = error.message;
         setStatus(name, {
-          message: t('external_services.set.error.message', {
-            error: error.message,
-          }),
+          message: isPayloadWithCredential
+            ? t('external_services.set_credential.error.message', {
+              error: errorMessage,
+            })
+            : t('external_services.set.error.message', {
+              error: errorMessage,
+            }),
         });
       }
       finally {
