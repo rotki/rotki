@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -351,7 +352,8 @@ class AccountingPot(CustomizableDateMixin):
         2.1 If either of the assets is fiat -- use its amount and price for calculations.
         2.2. If neither of the assets is fiat -- use `out_price` if `out_price` is known,
         otherwise `in_price`.
-        3.1 If `fee_info` is provided, fee is included in the price of one of the assets.
+        3.1 If `fee_info` is provided and it's included in the cost basis,
+        fee is included in the price of one of the assets.
         3.2. If `asset_out` is fiat -- fee is added to `calculated_in_price`.
         3.3. If `asset_in` is fiat -- fee is subtracted from `calculated_out_price`.
         3.4. Otherwise fee is added to the price of the asset that was bought.
@@ -384,14 +386,15 @@ class AccountingPot(CustomizableDateMixin):
             if e.rate_limited is True and out_price is None:
                 raise  # in_price = out_price = None -> notify user
 
-        if fee_info is not None:
-            try:
+        # when `self.settings.include_fees_in_cost_basis == False` we completely ignore fees in
+        # this function since they are not included in the cost basis
+        fee_price = None
+        if fee_info is not None and self.settings.include_fees_in_cost_basis:
+            with contextlib.suppress(PriceQueryUnsupportedAsset, RemoteError):
                 fee_price = self.get_rate_in_profit_currency(
                     asset=fee_info[1],
                     timestamp=timestamp,
                 )
-            except (PriceQueryUnsupportedAsset, RemoteError):
-                fee_price = None
 
         # Determine whether to use `out_price` or `in_price` for calculations
         price_to_use: Literal['in', 'out']

@@ -12,6 +12,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from more_itertools import peekable
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -141,7 +142,10 @@ class EventsAccountant:
     ) -> int:
         """
         Takes out_event (spend part), in_event (acquisition part), optionally fee part
-        and generates corresponding accounting events.
+        and generates corresponding accounting events prioritising the following order:
+        1. out_event is always first
+        2. fee_event comes just after the other event (in/out) with the same asset
+        3. sequence of the in_event and fee_event is preserved
 
         TODO: Contains similarities with Trade::process() which could be abstracted.
         Especially regarding the fees.
@@ -162,8 +166,6 @@ class EventsAccountant:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
             return 2
 
-        consumed_events = 2
-
         group_id = out_event.event_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
@@ -178,6 +180,19 @@ class EventsAccountant:
             count_entire_amount_spend=False,
             extra_data=extra_data,
         )
+
+        add_in_event_kwargs = {
+            'event_type': AccountingEventType.TRANSACTION_EVENT,
+            'notes': in_event.notes if in_event.notes else '',
+            'location': in_event.location,
+            'timestamp': timestamp,
+            'asset': in_event.asset,
+            'amount': in_event.balance.amount,
+            'taxable': False,  # acquisitions in swaps are never taxable
+            'given_price': prices[1],
+            'extra_data': extra_data,
+        }
+        events_to_add_queue: list[tuple[Callable, dict[str, Any]]] = []
         if fee_event is not None:
             fee_price = None
             if fee_event.asset == self.pot.profit_currency:
@@ -196,33 +211,30 @@ class EventsAccountant:
                 fee_taxable = True
                 fee_taxable_amount_ratio = trade_taxable_amount / out_event.balance.amount
 
-            self.pot.add_out_event(
-                event_type=AccountingEventType.FEE,
-                notes=fee_event.notes,  # type: ignore [arg-type]  # notes exist here
-                location=fee_event.location,
-                timestamp=timestamp,
-                asset=fee_event.asset,
-                amount=fee_event.balance.amount,
-                taxable=fee_taxable,
-                given_price=fee_price,
-                # By setting the taxable amount ratio we determine how much of the fee
-                # spending should be a taxable spend and how much free.
-                taxable_amount_ratio=fee_taxable_amount_ratio,
-                count_cost_basis_pnl=True,
-                count_entire_amount_spend=True,
-                extra_data=extra_data,
-            )
-            consumed_events = 3
+            events_to_add_queue.extend([
+                (self.pot.add_in_event, add_in_event_kwargs),
+                (self.pot.add_out_event, {
+                    'event_type': AccountingEventType.FEE,
+                    'notes': fee_event.notes,
+                    'location': fee_event.location,
+                    'timestamp': timestamp,
+                    'asset': fee_event.asset,
+                    'amount': fee_event.balance.amount,
+                    'taxable': fee_taxable,
+                    'given_price': fee_price,
+                    # By setting the taxable amount ratio we determine how much of the fee
+                    # spending should be a taxable spend and how much free.
+                    'taxable_amount_ratio': fee_taxable_amount_ratio,
+                    'count_cost_basis_pnl': True,
+                    'count_entire_amount_spend': True,
+                    'extra_data': extra_data,
+                }),
+            ])
+            if fee_event.asset == out_event.asset or fee_event.sequence_index < in_event.sequence_index:  # noqa: E501
+                events_to_add_queue.reverse()  # we add fee first
+        else:
+            events_to_add_queue.append((self.pot.add_in_event, add_in_event_kwargs))
 
-        self.pot.add_in_event(
-            event_type=AccountingEventType.TRANSACTION_EVENT,
-            notes=in_event.notes if in_event.notes else '',
-            location=in_event.location,
-            timestamp=timestamp,
-            asset=in_event.asset,
-            amount=in_event.balance.amount,
-            taxable=False,  # acquisitions in swaps are never taxable
-            given_price=prices[1],
-            extra_data=extra_data,
-        )
-        return consumed_events
+        for adding_method, kwargs in events_to_add_queue:
+            adding_method(**kwargs)  # add the queued events
+        return 1 + len(events_to_add_queue)  # consumed events
