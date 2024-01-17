@@ -35,7 +35,8 @@ const status = actionStatus(name);
     >
       <i18n
         tag="div"
-        path="external_services.opensea.link"
+        class="text-rui-text-secondary text-body-2"
+        path="external_services.get_api_key"
       >
         <template #link>
           <ExternalLink

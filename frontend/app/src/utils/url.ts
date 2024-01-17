@@ -1,6 +1,8 @@
+import { camelCase } from 'lodash-es';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
 import { externalLinks } from '@/data/external-links';
+import { isEtherscanKey } from '@/types/external';
 
 export function getDomain(str: string): string {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;
@@ -38,47 +40,18 @@ const { etherscan } = externalLinks;
  * @returns {{external: string, route: {path: string, hash: string}} | {}}
  */
 export function getEtherScanRegisterUrl(location: string) {
-  switch (location) {
-    case 'optimism':
-      return {
-        external: etherscan.optimism,
-        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
-      };
-    case 'ethereum':
-      return {
-        external: etherscan.ethereum,
-        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
-      };
-    case 'polygon_pos':
-      return {
-        external: etherscan.polygonPos,
-        route: {
-          path: Routes.API_KEYS_EXTERNAL_SERVICES,
-          hash: `#${location}`,
-        },
-      };
-    case 'arbitrum_one':
-      return {
-        external: etherscan.arbitrum,
-        route: {
-          path: Routes.API_KEYS_EXTERNAL_SERVICES,
-          hash: `#${location}`,
-        },
-      };
-    case 'base':
-      return {
-        external: etherscan.base,
-        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
-      };
-    case 'gnosis':
-      return {
-        external: etherscan.gnosis,
-        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
-      };
-    default:
-      logger.warn(`Unsupported etherscan location: '${location}'`);
-      return {};
+  const camelCaseLocation = camelCase(location);
+
+  if (isEtherscanKey(camelCaseLocation)) {
+    const data = etherscan[camelCaseLocation];
+    return {
+      external: data,
+      route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
+    };
   }
+
+  logger.warn(`Unsupported etherscan location: '${location}'`);
+  return {};
 }
 
 /**

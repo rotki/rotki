@@ -31,12 +31,12 @@ export const externalLinks = {
   releases: `${GITHUB_BASE_URL}releases`,
   releasesVersion: `${GITHUB_BASE_URL}releases/tag/v$version`,
   etherscan: {
-    ethereum: 'https://etherscan.io/register',
-    optimism: 'https://optimistic.etherscan.io/register',
-    polygonPos: 'https://polygonscan.com/register',
-    arbitrum: 'https://arbiscan.io/register',
-    base: 'https://basescan.org/register',
-    gnosis: 'https://gnosisscan.io/register',
+    ethereum: 'https://etherscan.io/myapikey',
+    optimism: 'https://optimistic.etherscan.io/myapikey',
+    polygonPos: 'https://polygonscan.com/myapikey',
+    arbitrumOne: 'https://arbiscan.io/myapikey',
+    base: 'https://basescan.org/myapikey',
+    gnosis: 'https://gnosisscan.io/myapikey',
   },
   metamaskDownload: 'https://metamask.io/download/',
   openSeaApiKeyReference:

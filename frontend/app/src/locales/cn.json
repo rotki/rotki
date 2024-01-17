@@ -2115,6 +2115,7 @@
       "hint": "输入您的 {chain} Etherscan API 密钥",
       "title": "Etherscan"
     },
+    "get_api_key": "您可以申请 an API key {link}",
     "loopring": {
       "delete_tooltip": "删除您的 Loopring API key",
       "description": "用于查询路印协议中的余额。此API密钥只能查询生成此密钥的账户。",
@@ -2127,7 +2128,6 @@
       "delete_tooltip": "删除你的 OpenSea API key",
       "description": "用于查询OpenSea的NFT信息和余额。",
       "hint": "输入您的 OpenSea API key",
-      "link": "您可以申请 an API key {link}",
       "title": "Opensea"
     },
     "set": {
@@ -3118,7 +3118,8 @@
     },
     "missing_api_key": {
       "action": "回车键",
-      "message": "您没有配置 {location} {service} API 密钥。 rotki {location} {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
+      "get_key": "获取 API 密钥",
+      "message": "由于您没有配置 {location} {service} 的 API 密钥，{location}链的 Rotki 查询速度较慢。配置了 API 密钥。请使用\"@:notification_messages.missing_api_key.get_key \"或\"@:notification_messages.missing_api_key.action \"在应用程序中添加密钥。",
       "title": "{location} {service} API 密钥"
     },
     "new_detected_token": {

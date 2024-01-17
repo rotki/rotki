@@ -18,11 +18,5 @@ defineProps<{
     <template #location>
       {{ params.props.location }}
     </template>
-    <template #url>
-      <ExternalLink
-        :url="params.props.url"
-        :text="params.props.url"
-      />
-    </template>
   </i18n>
 </template>

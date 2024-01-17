@@ -1,4 +1,10 @@
-import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common/lib/messages';
+import {
+  type Notification,
+  type NotificationAction,
+  NotificationGroup,
+  Priority,
+  Severity,
+} from '@rotki/common/lib/messages';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
@@ -139,6 +145,27 @@ export function useMessageHandling() {
     const { external, route } = getServiceRegisterUrl(service, location);
     const locationName = get(getChainName(location as Blockchain));
 
+    const actions: NotificationAction[] = [];
+
+    if (route) {
+      actions.push({
+        label: t('notification_messages.missing_api_key.action'),
+        action: () => router.push(route),
+        persist: true,
+      });
+    }
+
+    if (external) {
+      const { openUrl } = useInterop();
+
+      actions.push({
+        label: t('notification_messages.missing_api_key.get_key'),
+        icon: 'external-link-line',
+        action: () => openUrl(external),
+        persist: true,
+      });
+    }
+
     return {
       title: t('notification_messages.missing_api_key.title', {
         service: toHumanReadable(service, 'capitalize'),
@@ -157,12 +184,7 @@ export function useMessageHandling() {
       },
       severity: Severity.WARNING,
       priority: Priority.ACTION,
-      action: !route
-        ? undefined
-        : {
-            label: t('notification_messages.missing_api_key.action'),
-            action: () => router.push(route),
-          },
+      action: actions,
     };
   };
 
