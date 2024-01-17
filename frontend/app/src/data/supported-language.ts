@@ -26,4 +26,9 @@ export const supportedLanguages = [
     label: 'Chinese (中文)',
     countries: ['cn'],
   },
+  {
+    identifier: SupportedLanguage.FR,
+    label: 'French (Français)',
+    countries: ['fr'],
+  },
 ];
