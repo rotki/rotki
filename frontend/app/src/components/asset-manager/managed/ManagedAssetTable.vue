@@ -67,24 +67,27 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     label: t('common.asset'),
     key: 'symbol',
     sortable: true,
+    class: 'w-full',
     cellClass: 'py-0',
   },
   {
     label: t('common.type'),
     key: 'type',
     sortable: true,
-    cellClass: 'py-0',
+    cellClass: '!text-nowrap py-0',
   },
   {
     label: t('common.address'),
     key: 'address',
     sortable: true,
+    class: 'min-w-[11.375rem]',
     cellClass: 'py-0',
   },
   {
     label: t('asset_table.headers.started'),
     key: 'started',
     sortable: true,
+    class: 'min-w-[10rem]',
     cellClass: 'py-0',
   },
   {
