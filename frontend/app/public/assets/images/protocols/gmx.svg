@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="608" height="472" viewBox="0 0 608 472">
+  <defs>
+    <linearGradient id="linear-gradient" x1="0.536" y1="0.026" x2="0.011" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#03d1cf" stop-opacity="0.988"/>
+      <stop offset="1" stop-color="#4e09f8"/>
+    </linearGradient>
+    <clipPath id="clip-GMX_LOGO_ONLY">
+      <rect width="608" height="472"/>
+    </clipPath>
+  </defs>
+  <g id="GMX_LOGO_ONLY" data-name="GMX_LOGO ONLY" clip-path="url(#clip-GMX_LOGO_ONLY)">
+    <g id="LOGO_GMX" data-name="LOGO GMX" transform="translate(1.317 -16.974)">
+      <rect id="BASE" width="608" height="472" transform="translate(-1.317 16.974)" fill="rgba(255,255,255,0)"/>
+      <path id="Path_1591" data-name="Path 1591" d="M1070.463,1104.6,798.486,696,525.667,1104.6H905.756L798.486,948.649l-53.212,81.022H688.683l109.8-162.915L957.28,1104.6Z" transform="translate(-494.667 -647.027)" fill="url(#linear-gradient)"/>
+    </g>
+  </g>
+</svg>
