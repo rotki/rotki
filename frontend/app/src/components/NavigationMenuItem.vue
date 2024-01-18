@@ -44,7 +44,7 @@ const css = useCssModule();
     <div
       :class="[
         css.wrapper,
-        { [css.active]: active, [css.parent]: parent, [css.mini]: mini, [css.submenu]: subMenu },
+        { [css.active]: active, [css.active__parent]: active && parent, [css.mini]: mini, [css.submenu]: subMenu },
       ]"
       @click="expandParent()"
     >
@@ -141,19 +141,19 @@ const css = useCssModule();
   &.active {
     @apply bg-rui-primary font-bold text-white hover:bg-rui-primary;
 
-    &.parent {
-      @apply font-medium bg-transparent text-rui-primary;
-
-      .icon, .toggle {
-        @apply text-rui-primary;
-      }
-    }
-
     .icon {
       @apply text-white;
 
       .image {
         @apply opacity-100 filter brightness-0 invert;
+      }
+    }
+
+    &__parent {
+      @apply font-medium bg-transparent text-rui-primary hover:bg-rui-grey-100;
+
+      .icon, .toggle {
+        @apply text-rui-primary;
       }
     }
   }
@@ -186,8 +186,8 @@ const css = useCssModule();
     &.active {
       @apply hover:bg-rui-primary;
 
-      &.parent {
-        @apply hover:bg-transparent;
+      &__parent {
+        @apply hover:bg-rui-grey-800;
       }
     }
 
