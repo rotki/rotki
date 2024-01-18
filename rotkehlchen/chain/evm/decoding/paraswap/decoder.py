@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.paraswap.constants import PARASWAP_AUGUSTUS_ROUTER
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
-    SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
-)
+from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -101,6 +99,9 @@ class ParaswapCommonDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         if partial_refund_event is not None:  # if some in_asset is returned back
+            if in_event.asset == out_event.asset:  # check the similarity of asset with out_event
+                # due to order of events it can happen that this two get mislabeled and need to be swapped  # noqa: E501
+                partial_refund_event, in_event = in_event, partial_refund_event
             out_event.balance.amount -= partial_refund_event.balance.amount  # adjust the amount
             context.decoded_events.remove(partial_refund_event)  # and remove it from the list
         out_event.notes = f'Swap {out_event.balance.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in paraswap'  # noqa: E501
@@ -185,16 +186,12 @@ class ParaswapCommonDecoder(DecoderInterface):
         }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
-        return {
-            b'\x0b\x86\xa4\xc1': {  # swapOnUniswapV2Fork
-                UNISWAP_V2_SWAP_SIGNATURE: self._decode_uniswap_v2_swap,
-            },
-            b'n\x91S\x8b': {  # swapOnUniswapV2ForkWithPermit
-                UNISWAP_V2_SWAP_SIGNATURE: self._decode_uniswap_v2_swap,
-            },
-            b'\xa6\x88m\xa9': {  # directUniV3Swap
-                DIRECT_SWAP_SIGNATURE: self._decode_uniswap_v3_swap,
-            },
+        return {  # swapOnUniswapV2Fork, swapOnUniswapV2ForkWithPermit, buyOnUniswapV2Fork
+            method_id: {SWAP_SIGNATURE: self._decode_uniswap_v2_swap}
+            for method_id in (b'\x0b\x86\xa4\xc1', b'n\x91S\x8b', b'\xb2\xf1\xe6\xdb')
+        } | {  # directUniV3Swap, directCurveV1Swap, directCurveV2Swap, directBalancerV2GivenInSwap
+            method_id: {DIRECT_SWAP_SIGNATURE: self._decode_uniswap_v3_swap}
+            for method_id in (b'\xa6\x88m\xa9', b'8e\xbd\xe6', b'X\xf1Q\x00', b'\xb2/M\xb8')
         }
 
     @staticmethod
