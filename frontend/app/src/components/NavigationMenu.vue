@@ -244,41 +244,51 @@ const navItems: MenuItem[] = [
           </a>
         </template>
       </RouterLink>
-      <NavigationMenuItem
-        v-else-if="navItem.type === 'group'"
-        :key="i"
-        :class="`navigation__${navItem.class}`"
-        :mini="isMini"
-        :text="navItem.text"
-        :icon="navItem.icon"
-        :icon-component="navItem.component"
-        :image="navItem.image"
-        parent
-      >
-        <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800': isMini }">
-          <RouterLink
-            v-for="(subNavItem, si) in navItem.items"
-            :key="si"
-            :to="subNavItem.route"
-            custom
-          >
-            <template #default="{ isActive, href }">
-              <a :href="href">
-                <NavigationMenuItem
-                  :class="`navigation__${subNavItem.class}`"
-                  :mini="isMini"
-                  :text="subNavItem.text"
-                  :icon="subNavItem.icon"
-                  :image="subNavItem.image"
-                  :icon-component="subNavItem.component"
-                  :active="isActive"
-                  sub-menu
-                />
-              </a>
-            </template>
-          </RouterLink>
-        </div>
-      </NavigationMenuItem>
+      <template v-else-if="navItem.type === 'group'">
+        <RouterLink
+          :key="navItem.route"
+          :to="navItem.route"
+          custom
+        >
+          <template #default="{ isActive: isActiveParent }">
+            <NavigationMenuItem
+              :key="i"
+              :class="`navigation__${navItem.class}`"
+              :mini="isMini"
+              :text="navItem.text"
+              :icon="navItem.icon"
+              :icon-component="navItem.component"
+              :image="navItem.image"
+              :active="isActiveParent"
+              parent
+            >
+              <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800': isMini }">
+                <RouterLink
+                  v-for="(subNavItem, si) in navItem.items"
+                  :key="si"
+                  :to="subNavItem.route"
+                  custom
+                >
+                  <template #default="{ isActive, href }">
+                    <a :href="href">
+                      <NavigationMenuItem
+                        :class="`navigation__${subNavItem.class}`"
+                        :mini="isMini"
+                        :text="subNavItem.text"
+                        :icon="subNavItem.icon"
+                        :image="subNavItem.image"
+                        :icon-component="subNavItem.component"
+                        :active="isActive"
+                        sub-menu
+                      />
+                    </a>
+                  </template>
+                </RouterLink>
+              </div>
+            </NavigationMenuItem>
+          </template>
+        </RouterLink>
+      </template>
       <RuiDivider
         v-else-if="navItem.type === 'divider'"
         :key="i"

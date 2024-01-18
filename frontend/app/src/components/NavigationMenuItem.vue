@@ -44,7 +44,7 @@ const css = useCssModule();
     <div
       :class="[
         css.wrapper,
-        { [css.active]: active, [css.mini]: mini, [css.submenu]: subMenu },
+        { [css.active]: active, [css.active__parent]: active && parent, [css.mini]: mini, [css.submenu]: subMenu },
       ]"
       @click="expandParent()"
     >
@@ -96,7 +96,7 @@ const css = useCssModule();
       </template>
       <div
         v-if="parent"
-        class="text-rui-text-secondary"
+        :class="css.toggle"
       >
         <RuiIcon
           name="arrow-down-s-line"
@@ -134,6 +134,10 @@ const css = useCssModule();
     }
   }
 
+  .toggle {
+    @apply text-rui-text-secondary;
+  }
+
   &.active {
     @apply bg-rui-primary font-bold text-white hover:bg-rui-primary;
 
@@ -142,6 +146,14 @@ const css = useCssModule();
 
       .image {
         @apply opacity-100 filter brightness-0 invert;
+      }
+    }
+
+    &__parent {
+      @apply font-medium bg-transparent text-rui-primary hover:bg-rui-grey-100;
+
+      .icon, .toggle {
+        @apply text-rui-primary;
       }
     }
   }
@@ -173,6 +185,10 @@ const css = useCssModule();
 
     &.active {
       @apply hover:bg-rui-primary;
+
+      &__parent {
+        @apply hover:bg-rui-grey-800;
+      }
     }
 
     .icon {
