@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
+import { toMessages } from '@/utils/validation';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);
@@ -77,7 +78,7 @@ onMounted(() => {
             :hint="t('frontend_settings.hint.refresh')"
             :success-messages="success"
             :error-messages="
-              error || v$.refreshPeriod.$errors.map(e => e.$message)
+              error || toMessages(v$.refreshPeriod)
             "
             @input="callIfValid($event, update)"
           />

@@ -29,6 +29,8 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     queryRetryLimit: Defaults.DEFAULT_QUERY_RETRY_LIMIT,
     connectTimeout: Defaults.DEFAULT_CONNECT_TIMEOUT,
     readTimeout: Defaults.DEFAULT_READ_TIMEOUT,
+    oraclePenaltyThresholdCount: Defaults.DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
+    oraclePenaltyDuration: Defaults.DEFAULT_ORACLE_PENALTY_DURATION,
   };
 }
 

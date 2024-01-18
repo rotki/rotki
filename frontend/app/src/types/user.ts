@@ -54,6 +54,8 @@ const GeneralSettings = z.object({
   queryRetryLimit: z.number().min(1),
   connectTimeout: z.number().min(1),
   readTimeout: z.number().min(1),
+  oraclePenaltyThresholdCount: z.number().min(1),
+  oraclePenaltyDuration: z.number().min(1),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -154,6 +156,8 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     queryRetryLimit: settings.queryRetryLimit,
     connectTimeout: settings.connectTimeout,
     readTimeout: settings.readTimeout,
+    oraclePenaltyThresholdCount: settings.oraclePenaltyThresholdCount,
+    oraclePenaltyDuration: settings.oraclePenaltyDuration,
   };
 }
 

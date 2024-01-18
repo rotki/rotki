@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
@@ -68,7 +69,7 @@ onMounted(() => {
         :min="minQueryPeriod"
         :max="maxQueryPeriod"
         :success-messages="success"
-        :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
+        :error-messages="error || toMessages(v$.queryPeriod)"
         @input="callIfValid($event, update)"
       />
     </SettingsOption>

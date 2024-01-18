@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import Fragment from '@/components/helper/Fragment';
+import { toMessages } from '@/utils/validation';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
@@ -101,7 +102,7 @@ onMounted(() => {
         type="text"
         :success-messages="success"
         :error-messages="
-          error || v$.thousandSeparator.$errors.map(e => e.$message)
+          error || toMessages(v$.thousandSeparator)
         "
         @input="callIfThousandsValid($event, update)"
       />
@@ -124,7 +125,7 @@ onMounted(() => {
         type="text"
         :success-messages="success"
         :error-messages="
-          error || v$.decimalSeparator.$errors.map(e => e.$message)
+          error || toMessages(v$.decimalSeparator)
         "
         @input="callIfDecimalsValid($event, update)"
       />

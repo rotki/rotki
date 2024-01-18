@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
+import { toMessages } from '@/utils/validation';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
@@ -83,7 +84,7 @@ onMounted(() => {
           :hint="t('general_settings.version_update_check_hint')"
           :success-messages="success"
           :error-messages="
-            error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
+            error || toMessages(v$.versionUpdateCheckFrequency)
           "
           @input="update($event)"
         />

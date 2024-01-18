@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
+import { toMessages } from '@/utils/validation';
 
 const balanceSaveFrequency = ref<string>('0');
 
@@ -67,7 +68,7 @@ onMounted(() => {
       type="number"
       :success-messages="success"
       :error-messages="
-        error || v$.balanceSaveFrequency.$errors.map(e => e.$message)
+        error || toMessages(v$.balanceSaveFrequency)
       "
       @input="callIfValid($event, update)"
     />
