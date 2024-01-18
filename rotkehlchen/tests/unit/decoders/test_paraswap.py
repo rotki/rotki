@@ -8,7 +8,17 @@ from rotkehlchen.chain.ethereum.modules.paraswap.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
-from rotkehlchen.constants.assets import A_ENS, A_ETH, A_LINK, A_SUSHI, A_USDC, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import (
+    A_ENS,
+    A_ETH,
+    A_KP3R,
+    A_LINK,
+    A_PSP,
+    A_SUSHI,
+    A_USDC,
+    A_USDT,
+    A_WBTC,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -22,6 +32,9 @@ A_MPL = Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6')
 A_TKST = Asset('eip155:1/erc20:0x7CdBfC86A0BFa20F133748B0CF5cEa5b787b182c')
 A_PRISMA = Asset('eip155:1/erc20:0xdA47862a83dac0c112BA89c6abC2159b95afd71C')
 A_UDOODLE = Asset('eip155:1/erc20:0xa07dCC1aBFe20D29D87a32E2bA89876145DAfB0a')
+A_AUCTION = Asset('eip155:1/erc20:0xA9B1Eb5908CfC3cdf91F9B8B3a74108598009096')
+A_FXS = Asset('eip155:1/erc20:0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0')
+A_cvxFXS = Asset('eip155:1/erc20:0xFEEf77d3f69374f66429C91d732A244f074bdf74')
 
 
 @pytest.mark.vcr()
@@ -658,6 +671,60 @@ def test_swap_on_uniswap_v2_fork_with_permit(database, ethereum_inquirer, ethere
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xA80F8ac7Fe79558854E26A49867D11f8cF9cC36B']])
+def test_buy_uniswap_v2_fork(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x15df127374a04772df72b94685f60f71200da679e4bc2c334a12889fe2ab046c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1705575743000)
+    swap_amount, received_amount, gas_fees = '0.396919294295211225', '40', '0.004393070468277507'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=user_address,
+        notes=f'Burned {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} ETH in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_AUCTION,
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} AUCTION as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0xB855c4eBb5b6eB3F2033aecC4E543e27BC39465D']])
 def test_direct_uniswap_v3_swap(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2b6e830d4b32c22b3c4c2a26dbdb9a17c3cc2962fc35d5b4cd5d56c58cbec68a')  # noqa: E501
@@ -697,6 +764,207 @@ def test_direct_uniswap_v3_swap(database, ethereum_inquirer, ethereum_accounts):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} ETH as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xE93EB339C3d826F8A4d14Cc14CA008375915000F']])
+def test_direct_curve_v1_swap(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5a601f524592627eaf3562e4cb1340880260a1bf627a984392308cdf79a828dc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1705577795000)
+    swap_amount, received_amount, gas_fees = '1175.108', '1343.06000017590196878', '0.008673416651691594'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=user_address,
+        notes=f'Burned {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=96,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_FXS,
+        balance=Balance(amount=ZERO),
+        location_label=user_address,
+        notes=f'Revoke FXS spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',
+        counterparty=None,
+        address=PARASWAP_TOKEN_TRANSFER_PROXY,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=97,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_FXS,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} FXS in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=98,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_cvxFXS,
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} cvxFXS as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x6133de401FB609aACB767D8b379157731a09b66b']])
+def test_direct_curve_v2_swap(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2ea92952050e9f5cbf9b46619355a3b34822286443e10a6f5405573330def118')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1705502243000)
+    swap_amount, received_amount, gas_fees = '5.48189', '184.099593744496046878', '0.01392159540206184'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=user_address,
+        notes=f'Burned {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} ETH in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_KP3R,
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} KP3R as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x23a49A9930f5b562c6B1096C3e6b5BEc133E8B2E']])
+def test_direct_balancer_v2_given_swap(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x606413e4074e79e68ee0f79eee96c94cf091e7c061a551d2dd2a27044fb007e7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1705575743000)
+    swap_amount, received_amount, gas_fees = '17438.484493735105063894', '0.253269184972671572', '0.006247513881593877'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=user_address,
+        notes=f'Burned {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=242,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_PSP,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Set PSP spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {swap_amount}',  # noqa: E501
+        counterparty=None,
+        address=PARASWAP_TOKEN_TRANSFER_PROXY,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=243,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_PSP,
+        balance=Balance(amount=ZERO),
+        location_label=user_address,
+        notes=f'Revoke PSP spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',
+        counterparty=None,
+        address=PARASWAP_TOKEN_TRANSFER_PROXY,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=244,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_PSP,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} PSP in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=245,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
