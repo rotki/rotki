@@ -63,12 +63,9 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
 });
 
 const price = ref<HistoricalPriceFormPayload>(emptyPrice());
-const fromAsset = ref<string>();
-const toAsset = ref<string>();
-const filter = computed(() => ({
-  fromAsset: get(fromAsset),
-  toAsset: get(toAsset),
-}));
+const filter = ref<{ fromAsset?: string; toAsset?: string }>({});
+const fromAsset = useRefPropVModel(filter, 'fromAsset');
+const toAsset = useRefPropVModel(filter, 'toAsset');
 
 const update = ref(false);
 
@@ -175,7 +172,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
     <RuiCard>
       <div class="flex flex-row flex-wrap mb-4 gap-2">
         <AssetSelect
-          v-model="filter.fromAsset"
+          v-model="fromAsset"
           outlined
           :label="t('price_management.from_asset')"
           clearable
@@ -187,7 +184,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
           </template>
         </AssetSelect>
         <AssetSelect
-          v-model="filter.toAsset"
+          v-model="toAsset"
           outlined
           class="flex-1"
           :label="t('price_management.to_asset')"

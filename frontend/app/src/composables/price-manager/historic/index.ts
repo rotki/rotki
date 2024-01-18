@@ -45,6 +45,21 @@ export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: st
     }
   };
 
+  const refresh = async (payload?: {
+    modified?: boolean;
+    additionalEntry?: HistoricalPrice;
+  }) => {
+    await fetchPrices(get(filter));
+
+    if (payload?.modified) {
+      const entries: HistoricalPrice[] = [...get(items)];
+      if (payload?.additionalEntry)
+        entries.push(payload.additionalEntry);
+
+      resetHistoricalPricesData(entries);
+    }
+  };
+
   const save = async (data: HistoricalPriceFormPayload, update: boolean) => {
     try {
       if (update)
@@ -90,21 +105,6 @@ export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: st
         category: NotificationCategory.DEFAULT,
       };
       notify(notification);
-    }
-  };
-
-  const refresh = async (payload?: {
-    modified?: boolean;
-    additionalEntry?: HistoricalPrice;
-  }) => {
-    await fetchPrices(get(filter));
-
-    if (payload?.modified) {
-      const entries: HistoricalPrice[] = [...get(items)];
-      if (payload?.additionalEntry)
-        entries.push(payload.additionalEntry);
-
-      resetHistoricalPricesData(entries);
     }
   };
 
