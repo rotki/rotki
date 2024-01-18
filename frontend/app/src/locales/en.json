@@ -3458,6 +3458,28 @@
       "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created",
       "title": "Price pair cache creation"
     },
+    "penalty": {
+      "subtitle": "Penalty settings for misbehaving oracle(s) in runtime.",
+      "title": "Oracle penalty settings",
+      "labels": {
+        "oracle_penalty_duration": "Oracle penalty duration",
+        "oracle_penalty_threshold_count": "Oracle penalty threshold count"
+      },
+      "hints": {
+        "oracle_penalty_duration": "The duration in seconds for which an oracle is penalized",
+        "oracle_penalty_threshold_count": "The number of failures after which an oracle is penalized."
+      },
+      "validation": {
+        "oracle_penalty_duration": {
+          "invalid_period": "Duration must be greater than {min} second.",
+          "non_empty": "Please enter the number of seconds"
+        },
+        "oracle_penalty_threshold_count": {
+          "invalid_period": "Number of failures must be greater than {min}",
+          "non_empty": "Please enter the number of failures"
+        }
+      }
+    },
     "select_oracle": "Select price oracle",
     "subtitle": "Create/delete and view cached prices",
     "title": "Oracle cache",

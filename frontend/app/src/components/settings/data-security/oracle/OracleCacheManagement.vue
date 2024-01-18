@@ -296,5 +296,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
         </RuiTooltip>
       </template>
     </RuiDataTable>
+
+    <OraclePenaltySettings />
   </RuiCard>
 </template>

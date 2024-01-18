@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
+import { toMessages } from '@/utils/validation';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);
@@ -74,7 +75,7 @@ onMounted(() => {
         type="text"
         :success-messages="success"
         :error-messages="
-          error || v$.dateDisplayFormat.$errors.map(e => e.$message)
+          error || toMessages(v$.dateDisplayFormat)
         "
         :hint="
           t('general_settings.date_display_format_hint', {

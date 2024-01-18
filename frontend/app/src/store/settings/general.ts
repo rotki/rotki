@@ -76,6 +76,10 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   );
   const readTimeout: ComputedRef<number> = computed(() => settings.readTimeout);
 
+  const oraclePenaltyThresholdCount: ComputedRef<number> = computed(() => settings.oraclePenaltyThresholdCount);
+
+  const oraclePenaltyDuration: ComputedRef<number> = computed(() => settings.oraclePenaltyDuration);
+
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
@@ -111,6 +115,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     queryRetryLimit,
     connectTimeout,
     readTimeout,
+    oraclePenaltyThresholdCount,
+    oraclePenaltyDuration,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     update,

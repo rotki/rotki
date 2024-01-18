@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { toMessages } from '@/utils/validation';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(
@@ -59,7 +60,7 @@ onMounted(() => {
       :label="t('general_settings.labels.date_input_format')"
       class="pt-4 general-settings__fields__date-input-format"
       :success-messages="success"
-      :error-messages="error || v$.dateInputFormat.$errors.map(e => e.$message)"
+      :error-messages="error || toMessages(v$.dateInputFormat)"
       @change="callIfValid($event, update)"
     />
   </SettingsOption>

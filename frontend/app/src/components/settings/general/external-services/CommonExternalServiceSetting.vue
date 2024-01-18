@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{
@@ -66,7 +67,7 @@ onMounted(() => {
         type="number"
         :min="min"
         :success-messages="success"
-        :error-messages="error || v$.inputValue.$errors.map(e => e.$message)"
+        :error-messages="error || toMessages(v$.inputValue)"
         @input="callIfValid($event, update)"
       />
     </SettingsOption>

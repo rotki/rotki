@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;
@@ -61,7 +62,7 @@ onMounted(() => {
       type="number"
       :success-messages="success"
       :error-messages="
-        error || v$.floatingPrecision.$errors.map(e => e.$message)
+        error || toMessages(v$.floatingPrecision)
       "
       @input="callIfValid($event, update)"
     />
