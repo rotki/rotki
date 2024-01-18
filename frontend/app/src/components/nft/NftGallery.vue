@@ -280,9 +280,8 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
           <NftSorter
             class="md:col-span-2"
             :sort-by="sortBy"
-            :sort-desc="sortDescending"
+            :sort-desc.sync="sortDescending"
             @update:sort-by="updateSortBy($event)"
-            @update:sort-desc="sortDescending = $event"
           />
         </div>
       </RuiCard>

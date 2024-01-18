@@ -15,7 +15,7 @@ function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
 }
 
-const sortByModel = useVModel(props, 'sortBy', emit);
+const sortByModel = useKebabVModel(props, 'sortBy', emit);
 
 const { t } = useI18n();
 
