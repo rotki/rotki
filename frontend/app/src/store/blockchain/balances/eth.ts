@@ -162,6 +162,10 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
 
     const { amount, usdValue } = eth2[publicKey].assets[ETH2_ASSET];
 
+    // we should not need to update anything if amount and value are zero
+    if (amount.isZero() && usdValue.isZero())
+      return;
+
     const calc = (
       value: BigNumber,
       oldPercentage: BigNumber,
@@ -199,8 +203,13 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     });
 
     const oldTotals = get(totals);
-    const { amount: oldTotalAmount, usdValue: oldTotalUsdValue }
-      = oldTotals[Blockchain.ETH2][ETH2_ASSET];
+    const stakingTotals = oldTotals[Blockchain.ETH2];
+
+    // In case the only tracked validators have exited and total is empty
+    if (!stakingTotals[ETH2_ASSET])
+      return;
+
+    const { amount: oldTotalAmount, usdValue: oldTotalUsdValue } = stakingTotals[ETH2_ASSET];
 
     set(totals, {
       ...oldTotals,
