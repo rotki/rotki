@@ -2035,7 +2035,7 @@ def test_upgrade_db_40_to_41(user_data_dir):
             name VARCHAR[30] NOT NULL PRIMARY KEY,
             api_key TEXT
             )""") is True
-        assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2')]  # noqa: E501
+        assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2'), ('covalent', 'lollol')]  # noqa: E501
 
     db_v40.logout()
 

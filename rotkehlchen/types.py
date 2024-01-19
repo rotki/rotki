@@ -114,19 +114,18 @@ HexColorCode = NewType('HexColorCode', T_HexColorCode)
 
 
 class ExternalService(SerializableEnumNameMixin):
-    ETHERSCAN = 0
-    CRYPTOCOMPARE = 1
-    BEACONCHAIN = 2
-    LOOPRING = 3
-    OPENSEA = 4
-    COVALENT = 5
-    OPTIMISM_ETHERSCAN = 6
-    POLYGON_POS_ETHERSCAN = 7
-    ARBITRUM_ONE_ETHERSCAN = 8
-    BASE_ETHERSCAN = 9
-    GNOSIS_ETHERSCAN = 10
-    BLOCKSCOUT = 11
-    MONERIUM = 12
+    ETHERSCAN = auto()
+    CRYPTOCOMPARE = auto()
+    BEACONCHAIN = auto()
+    LOOPRING = auto()
+    OPENSEA = auto()
+    OPTIMISM_ETHERSCAN = auto()
+    POLYGON_POS_ETHERSCAN = auto()
+    ARBITRUM_ONE_ETHERSCAN = auto()
+    BASE_ETHERSCAN = auto()
+    GNOSIS_ETHERSCAN = auto()
+    BLOCKSCOUT = auto()
+    MONERIUM = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
@@ -410,52 +409,6 @@ class EvmInternalTransaction(NamedTuple):
     @property
     def identifier(self) -> str:
         return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)
-
-
-class CovalentTransaction(NamedTuple):
-    """Represent a transaction in covalent"""
-    tx_hash: str
-    timestamp: Timestamp
-    block_number: int
-    from_address: ChecksumEvmAddress
-    to_address: ChecksumEvmAddress | None
-    value: int
-    gas: int
-    gas_price: int
-    gas_used: int
-    # Input data and nonce is decoded, default is 0x and 0, encoded in future
-    input_data: str
-    nonce: int
-
-    def serialize(self) -> dict[str, Any]:
-        result = {
-            'tx_hash': self.tx_hash,
-            'timestamp': self.timestamp,
-            'block_number': self.block_number,
-            'from_address': self.from_address,
-            'to_address': self.to_address,
-            'value': self.value,
-            'gas': self.gas,
-            'gas_price': self.gas_price,
-            'gas_used': self.gas_used,
-            'input_data': self.input_data,
-            'nonce': self.nonce,
-        }
-
-        return result
-
-    def __hash__(self) -> int:
-        return hash(self.identifier)
-
-    def __eq__(self, other: object) -> bool:
-        if other is None or not isinstance(other, CovalentTransaction):
-            return False
-
-        return hash(self) == hash(other)
-
-    @property
-    def identifier(self) -> str:
-        return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
 
 
 class SupportedBlockchain(SerializableEnumValueMixin):

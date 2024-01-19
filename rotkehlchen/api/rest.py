@@ -3208,32 +3208,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_avalanche_transactions(
-            self,
-            address: ChecksumEvmAddress,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        avalanche = self.rotkehlchen.chains_aggregator.avalanche
-        try:
-            response = avalanche.covalent.get_transactions(
-                account=address,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-            )
-        except RemoteError:
-            return wrap_in_fail_result(message='Not found.', status_code=HTTPStatus.NOT_FOUND)
-        if response is None:
-            return wrap_in_fail_result(message='Not found.', status_code=HTTPStatus.NOT_FOUND)
-
-        entries_result = [transaction.serialize() for transaction in response]
-        result = {
-            'entries': entries_result,
-            'entries_found': len(entries_result),
-        }
-        return _wrap_in_ok_result(result)
-
-    @async_api_call()
     def get_nfts(self, ignore_cache: bool) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='nfts',
