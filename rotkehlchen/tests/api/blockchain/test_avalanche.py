@@ -46,7 +46,6 @@ def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
 def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding an Avalanche blockchain account when there is none in the db
     works as expected."""
@@ -92,7 +91,6 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
-@pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
 def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
     """Test removing an Avalanche blockchain account works as expected"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

@@ -32,7 +32,6 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
-from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
@@ -40,7 +39,7 @@ from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.mock import mock_proxies, patch_avalanche_request
+from rotkehlchen.tests.utils.mock import mock_proxies
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -210,11 +209,6 @@ def fixture_ethrpc_endpoint() -> str | None:
     return None
 
 
-@pytest.fixture(name='covalent_avalanche')
-def fixture_covalent_avalanche(messages_aggregator, database):
-    return Covalent(database=database, msg_aggregator=messages_aggregator, chain_id='43114')
-
-
 @pytest.fixture(name='ethereum_manager_connect_at_start')
 def fixture_ethereum_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
@@ -240,12 +234,6 @@ def fixture_ethereum_mock_data():
 
 @pytest.fixture(name='optimism_mock_data')
 def fixture_optimism_mock_data():
-    """Can contain mocked data for both etherscan and web3 requests"""
-    return {}
-
-
-@pytest.fixture(name='avalanche_mock_data')
-def fixture_avalance_mock_data():
     """Can contain mocked data for both etherscan and web3 requests"""
     return {}
 
@@ -661,23 +649,11 @@ def fixture_polkadot_manager(
 
 
 @pytest.fixture(name='avalanche_manager')
-def fixture_avalanche_manager(
-        messages_aggregator,
-        covalent_avalanche,
-        network_mocking,
-        avalanche_mock_data,
-):
-    avalanche_manager = AvalancheManager(
+def fixture_avalanche_manager(messages_aggregator):
+    return AvalancheManager(
         avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
-        covalent=covalent_avalanche,
         msg_aggregator=messages_aggregator,
     )
-    with patch('rotkehlchen.externalapis.covalent.COVALENT_KEYS', ('',)):
-        if network_mocking:
-            with patch_avalanche_request(avalanche_manager, avalanche_mock_data):
-                yield avalanche_manager
-        else:
-            yield avalanche_manager
 
 
 @pytest.fixture(name='ethereum_modules')

@@ -114,17 +114,29 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_new_supported_locations')
 
 
+def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _remove_covalent_api_key')
+    write_cursor.execute(
+        'DELETE FROM external_service_credentials WHERE name=?',
+        ('covalent', ),
+    )
+    log.debug('Exit _remove_covalent_api_key')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
         - Create a new table for key-value cache
         - Move non-settings and non-used query ranges to the new cache
         - Add new supported locations
+        - remove any covalent api key added by the user
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(5)
+    progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
+        progress_handler.new_step()
+        _remove_covalent_api_key(write_cursor)
         progress_handler.new_step()
         _upgrade_external_service_credentials(write_cursor)
         progress_handler.new_step()

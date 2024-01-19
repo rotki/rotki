@@ -47,7 +47,6 @@ from rotkehlchen.api.v1.schemas import (
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTaskSchema,
-    AvalancheTransactionQuerySchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
     BinanceMarketsUserSchema,
@@ -2529,26 +2528,6 @@ class BinanceSavingsResource(BaseMethodView):
             only_cache=only_cache,
             query_filter=query_filter,
             value_filter=value_filter,
-        )
-
-
-class AvalancheTransactionsResource(BaseMethodView):
-    get_schema = AvalancheTransactionQuerySchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(
-            self,
-            async_query: bool,
-            address: ChecksumEvmAddress,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_avalanche_transactions(
-            async_query=async_query,
-            address=address,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
         )
 
 

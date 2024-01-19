@@ -65,7 +65,6 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
-from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
@@ -406,14 +405,8 @@ class Rotkehlchen:
             connect_on_startup=len(blockchain_accounts.dot) != 0,
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
-        self.covalent_avalanche = Covalent(
-            database=self.data.db,
-            msg_aggregator=self.msg_aggregator,
-            chain_id=chains_id['avalanche'],
-        )
         avalanche_manager = AvalancheManager(
             avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
-            covalent=self.covalent_avalanche,
             msg_aggregator=self.msg_aggregator,
         )
 

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_arg
 
 import requests
 from gevent.lock import Semaphore
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -593,7 +593,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
-        """Queries the AVAX balances of the accounts via Avalanche/Covalent endpoints.
+        """Queries the AVAX balances of the accounts via Avalanche rpcs.
         May raise:
         - RemoteError: if no nodes are available or the balances request fails.
         """
@@ -1389,7 +1389,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                             avax_manager.w3.eth.get_transaction_count(address) != 0 or
                             avax_manager.get_avax_balance(address) != ZERO
                         )
-                    except (requests.exceptions.RequestException, RemoteError) as e:
+                    except (requests.exceptions.RequestException, Web3Exception) as e:
                         log.error(f'Failed to check {address} activity in avalanche due to {e!s}')
                         failed_to_query_chains.append(chain)
                         has_activity = False

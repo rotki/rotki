@@ -38,7 +38,6 @@ ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
 def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
     """Test adding an Avalanche blockchain account when the same account is input
     in Ethereum works fine
@@ -213,7 +212,6 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-@pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_avalanche/covalent_query_transactions.json'}])  # noqa: E501
 def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
     """Test that adding accounts to multiple evm chains works fine
 
