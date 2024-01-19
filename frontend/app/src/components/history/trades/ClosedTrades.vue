@@ -3,6 +3,7 @@ import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import type { Writeable } from '@/types';
 import type {
   Trade,
   TradeEntry,
@@ -141,6 +142,15 @@ const {
     set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
+  customPageParams: computed<Partial<TradeRequestPayload>>(() => {
+    const params: Writeable<Partial<TradeRequestPayload>> = {};
+    const location = get(locationOverview);
+
+    if (location)
+      params.location = toSnakeCase(location);
+
+    return params;
+  }),
   extraParams,
 });
 

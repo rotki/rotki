@@ -19,14 +19,15 @@ export function splitSearch(keyword: Nullable<string>): SplitResult {
     return defaultSplitResult();
 
   const negateOperatorIndex = keyword.indexOf('!=');
-  const equalOperatorIndex = Math.max(
-    keyword.indexOf('='),
-    keyword.indexOf(':'),
-  );
+  const equalOperatorIndex = keyword.indexOf('=');
+  const colonOperatorIndex = keyword.indexOf(':');
+  const matchOperatorIndex = equalOperatorIndex === -1 || colonOperatorIndex === -1
+    ? Math.max(equalOperatorIndex, colonOperatorIndex)
+    : Math.min(equalOperatorIndex, colonOperatorIndex);
 
   const exclude = negateOperatorIndex > -1;
 
-  if (!exclude && equalOperatorIndex < 0) {
+  if (!exclude && matchOperatorIndex < 0) {
     return {
       key: keyword.trim(),
       value: '',
@@ -34,7 +35,7 @@ export function splitSearch(keyword: Nullable<string>): SplitResult {
     };
   }
 
-  const separatorIndex = exclude ? negateOperatorIndex : equalOperatorIndex;
+  const separatorIndex = exclude ? negateOperatorIndex : matchOperatorIndex;
   const length = exclude ? 2 : 1;
 
   const key = keyword.slice(0, Math.max(0, separatorIndex)).trim();

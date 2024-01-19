@@ -11,6 +11,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { DataTableHeader } from '@/types/vuetify';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
+import type { Writeable } from '@/types';
 
 const props = withDefaults(
   defineProps<{
@@ -109,6 +110,15 @@ const {
   onUpdateFilters(query) {
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
+  customPageParams: computed<Partial<AssetMovementRequestPayload>>(() => {
+    const params: Writeable<Partial<AssetMovementRequestPayload>> = {};
+    const location = get(locationOverview);
+
+    if (location)
+      params.location = toSnakeCase(location);
+
+    return params;
+  }),
   extraParams,
 });
 
