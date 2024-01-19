@@ -38,7 +38,7 @@ onMounted(() => {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update: updateTimeframeSetting }"
+    #default="{ error, success, updateImmediate: updateTimeframeSetting }"
     setting="timeframeSetting"
     frontend-setting
     :success-message="successMessage"
@@ -46,7 +46,7 @@ onMounted(() => {
     @finished="resetTimeframeSetting()"
   >
     <SettingsOption
-      #default="{ update: updateVisibleTimeframes }"
+      #default="{ updateImmediate: updateVisibleTimeframes }"
       setting="visibleTimeframes"
       frontend-setting
       @finished="resetVisibleTimeframes()"
