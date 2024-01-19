@@ -218,20 +218,20 @@ const css = useCssModule();
       <template #item.free_amount="{ item }">
         <div class="flex items-center justify-between flex-nowrap gap-4">
           <AssetLink
-            v-if="item.asset"
-            :asset="item.asset"
+            v-if="item.assetIdentifier"
+            :asset="item.assetIdentifier"
             link
           >
             <AssetIcon
               class="flex"
-              :identifier="item.asset"
+              :identifier="item.assetIdentifier"
               size="24px"
             />
           </AssetLink>
           <AmountDisplay
             force-currency
             :value="item.freeAmount"
-            :asset="item.asset ? item.asset : ''"
+            :asset="item.assetIdentifier ? item.assetIdentifier : ''"
           />
         </div>
       </template>
@@ -239,7 +239,7 @@ const css = useCssModule();
         <AmountDisplay
           force-currency
           :value="item.taxableAmount"
-          :asset="item.asset ? item.asset : ''"
+          :asset="item.assetIdentifier ? item.assetIdentifier : ''"
         />
       </template>
       <template #item.price="{ item }">
@@ -290,12 +290,14 @@ const css = useCssModule();
             :amount="
               item.taxableAmount.isZero() ? item.freeAmount : item.taxableAmount
             "
-            :asset="item.asset"
+            :asset="item.assetIdentifier"
             :chain="getChain(item.location)"
           />
-          <template v-else>
-            {{ item.notes }}
-          </template>
+          <HistoryEventNote
+            v-else
+            :notes="item.notes"
+            :asset="item.assetIdentifier"
+          />
         </div>
       </template>
       <template #item.actions="{ item }">

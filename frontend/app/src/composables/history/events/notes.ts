@@ -158,6 +158,17 @@ export function useHistoryEventNote() {
           return;
         }
 
+        if (isEvmIdentifier(word)) {
+          const symbol = get(assetSymbol(word));
+          if (symbol) {
+            formats.push({
+              type: NoteType.WORD,
+              word: symbol,
+            });
+            return;
+          }
+        }
+
         formats.push({ type: NoteType.WORD, word });
       });
 

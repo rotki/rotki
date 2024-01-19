@@ -94,13 +94,18 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
 
 <style lang="scss" module>
 .address {
-  vertical-align: middle;
+  @apply align-middle;
 
   &__content {
-    background: var(--v-rotki-light-grey-darken1);
-    padding-right: 0.25rem;
-    border-radius: 3rem;
-    margin: 2px;
+    @apply bg-rui-grey-300 pr-1 rounded-full m-0.5;
+  }
+}
+
+:global(.dark) {
+  .address {
+    &__content {
+      @apply bg-rui-grey-800;
+    }
   }
 }
 </style>
