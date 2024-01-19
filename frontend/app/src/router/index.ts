@@ -411,6 +411,7 @@ const router = new Router({
       return { selector: to.hash };
     }
     else if (savedPosition) {
+      document.body.scrollTo(savedPosition.x, savedPosition.y);
       return savedPosition;
     }
 
