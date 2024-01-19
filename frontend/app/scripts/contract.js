@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('node:path');
+const process = require('node:process');
 const { startAndTest } = require('start-server-and-test');
 const { ArgumentParser } = require('argparse');
 
@@ -35,19 +36,19 @@ if (spec)
   test += ` --spec **/${spec}`;
 
 async function run() {
-  startAndTest({
-    services,
-    test,
-    namedArguments: { expect: 200 },
-  })
-    .then(() => {
-      info('Execution completed successfully');
-      process.exit(0);
-    })
-    .catch(() => {
-      console.error('Command execution failed');
-      process.exit(1);
+  try {
+    await startAndTest({
+      services,
+      test,
+      namedArguments: { expect: 200 },
     });
+    info('Execution completed successfully');
+    process.exit(0);
+  }
+  catch (error) {
+    console.error('Command execution failed', error);
+    process.exit(1);
+  }
 }
 
 // re-evaluate after moving to mjs or ts

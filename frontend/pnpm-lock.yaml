@@ -20,8 +20,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(eslint@8.56.0)
       '@rotki/eslint-config':
-        specifier: 2.1.0
-        version: 2.1.0(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.0.3)(@vue/compiler-sfc@3.3.11)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2)
+        specifier: 2.2.0
+        version: 2.2.0(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.0.3)(@vue/compiler-sfc@3.3.11)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2)
       '@rotki/eslint-plugin':
         specifier: 0.0.3
         version: 0.0.3(eslint@8.56.0)(typescript@5.2.2)
@@ -2560,8 +2560,8 @@ packages:
       rollup: 2.79.1
     dev: true
 
-  /@rotki/eslint-config@2.1.0(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.0.3)(@vue/compiler-sfc@3.3.11)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2):
-    resolution: {integrity: sha512-G5pWfCK+MtV0UAC5RugUoJQ9LLSlGq/Vjc5IXWM/RoSbBXHVybzUroi/CEstsViC20EV3r03SqWw/CYKiW1NwA==}
+  /@rotki/eslint-config@2.2.0(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.0.3)(@vue/compiler-sfc@3.3.11)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2):
+    resolution: {integrity: sha512-6c/4ivMTXNeCTfREJ2JasCE1wG5F35vFn72x6RVGZoe7t2KeSJVEGKjnco7S16xdEs1WmjwP5tae/yIjpPxvQA==}
     engines: {node: '>=16 <19', pnpm: '>=8 <9'}
     peerDependencies:
       '@intlify/eslint-plugin-vue-i18n': ^2.0.0
