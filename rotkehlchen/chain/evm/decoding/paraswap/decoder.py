@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.paraswap.constants import PARASWAP_AUGUSTUS_ROUTER
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -63,6 +63,7 @@ class ParaswapCommonDecoder(DecoderInterface):
         in_event: EvmEvent | None = None
         partial_refund_event: EvmEvent | None = None
         fee_event: EvmEvent | None = None
+        fee_asset: CryptoAsset | None = None
         for event in context.decoded_events:
             if sender != event.location_label:  # in this case, it's not a valid send/receive event
                 continue
@@ -98,33 +99,41 @@ class ParaswapCommonDecoder(DecoderInterface):
             log.error(f'Could not find the corresponding events when decoding paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        if partial_refund_event is not None:  # if some in_asset is returned back
-            if in_event.asset == out_event.asset:  # check the similarity of asset with out_event
-                # due to order of events it can happen that this two get mislabeled and need to be swapped  # noqa: E501
-                partial_refund_event, in_event = in_event, partial_refund_event
+        if partial_refund_event is not None:  # if some in_asset is returned back.
+            # it's assumed in the above for loop, that the second in_event is the partial refund
+            # we verify below if the assumption is wrong, by checking the asset's similarity
+            # we check it here instead of in the for loop above because, out_event could be None
+            # at the time of the check
+            if in_event.asset == out_event.asset:  # if this is true, then assumption is wrong
+                partial_refund_event, in_event = in_event, partial_refund_event  # swap them
             out_event.balance.amount -= partial_refund_event.balance.amount  # adjust the amount
             context.decoded_events.remove(partial_refund_event)  # and remove it from the list
         out_event.notes = f'Swap {out_event.balance.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in paraswap'  # noqa: E501
 
-        fee_raw = fee_asset = None  # extract the fee info
-        if in_event.asset.is_evm_token():
-            fee_asset = in_event.asset.resolve_to_evm_token()
-            for log_event in context.all_logs:
-                if (
-                    log_event.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                    hex_or_bytes_to_address(log_event.topics[1]) == PARASWAP_AUGUSTUS_ROUTER and
-                    hex_or_bytes_to_address(log_event.topics[2]) == self.fee_receiver_address and
-                    log_event.address == fee_asset.evm_address
-                ):
-                    fee_raw = hex_or_bytes_to_int(log_event.data)
-                    break
+        fee_raw: int | None = None
+        # assets can be native currency, so resolve them to CryptoAsset instead of EvmToken
+        out_asset = out_event.asset.resolve_to_crypto_asset()
+        in_asset = in_event.asset.resolve_to_crypto_asset()
+        for log_event in context.all_logs:  # extract the fee info
+            if (
+                log_event.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                hex_or_bytes_to_address(log_event.topics[1]) == self.router_address and
+                hex_or_bytes_to_address(log_event.topics[2]) == self.fee_receiver_address
+            ):
+                if isinstance(in_asset, EvmToken) and in_asset.evm_address == log_event.address:
+                    fee_asset = in_asset
+                elif isinstance(out_asset, EvmToken) and out_asset.evm_address == log_event.address:  # noqa: E501
+                    fee_asset = out_asset
+                fee_raw = hex_or_bytes_to_int(log_event.data)
+                break
 
         if fee_raw is not None and fee_asset is not None:
-            # update the in_event to adjust its balance since the amount used in fees
-            # was also received as part of the swap
             fee_amount = asset_normalized_value(amount=fee_raw, asset=fee_asset)
-            in_event.balance.amount += fee_amount
-            in_event.notes = f'Receive {in_event.balance.amount} {fee_asset.symbol} as the result of a swap in paraswap'  # noqa: E501
+            if fee_asset == in_asset:
+                # update the in_event to adjust its balance since the amount used in fees
+                # was also received as part of the swap
+                in_event.balance.amount += fee_amount
+                in_event.notes = f'Receive {in_event.balance.amount} {fee_asset.symbol} as the result of a swap in paraswap'  # noqa: E501
 
             # And now create a new event for the fee
             fee_event = self.base.make_event_from_transaction(
