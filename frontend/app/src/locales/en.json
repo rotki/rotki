@@ -2242,6 +2242,11 @@
     },
     "usage_guide": "Usage Guide"
   },
+  "explorer_input": {
+    "validation": {
+      "https": "Only https urls are allowed"
+    }
+  },
   "explorers": {
     "address": "Addresses",
     "address_url": "Addresses will open at {addressUrl}",

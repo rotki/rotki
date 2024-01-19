@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, url as urlValidator } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
+
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = defineProps<{
   value: string;
 }>();
@@ -8,37 +16,45 @@ const emit = defineEmits<{
   (e: 'save-data', value?: string): void;
 }>();
 
-const { value } = toRefs(props);
+const { t } = useI18n();
 
-const model = computed({
-  get() {
-    return get(value);
-  },
-  set(value) {
-    emit('input', value);
-  },
-});
-
-const attrs = useAttrs();
-
-function isValid(entry: string | null): boolean {
-  return !entry ? false : entry.length > 0;
-}
+const url = useSimpleVModel(props, emit);
 
 function saveData(value?: string) {
   emit('save-data', value);
 }
+
+const isHttps = (value: string) => !value || value.startsWith('https');
+
+const rules = {
+  url: {
+    urlValidator,
+    https: helpers.withMessage(
+      t('explorer_input.validation.https'),
+      isHttps,
+    ),
+  },
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    url,
+  },
+  { $autoDirty: true },
+);
 </script>
 
 <template>
   <div class="flex items-start gap-4">
     <RuiTextField
-      v-model="model"
+      v-model="url"
       class="flex-1"
       variant="outlined"
       color="primary"
       clearable
-      v-bind="attrs"
+      :error-messages="toMessages(v$.url)"
+      v-bind="$attrs"
       v-on="
         // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
         $listeners
@@ -49,7 +65,7 @@ function saveData(value?: string) {
       variant="text"
       class="mt-1"
       icon
-      :disabled="!isValid(value)"
+      :disabled="v$.$invalid"
       @click="saveData(value)"
     >
       <RuiIcon name="save-line" />
