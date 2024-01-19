@@ -1933,18 +1933,18 @@ def assert_binance_import_results(rotki: Rotkehlchen):
 
 def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
     expected_trades = [
-        Trade(
+        Trade(  # Sell 1875.64 USDC for 1 ETH
             timestamp=Timestamp(1659085200),
             location=Location.BINANCE,
             base_asset=A_USDC,
             quote_asset=A_ETH,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('1.0000')),
-            rate=Price(FVal('1875.64')),
+            amount=AssetAmount(FVal('1875.64')),
+            rate=Price(FVal('0.000533151351005523447996417222921242882429464076261969247830074001407519566654582')),
             fee=None,
             fee_currency=None,
             notes='Trade USDC for ETH',
-        ), Trade(
+        ), Trade(  # Buy 4.3241 BTC with 392.8870 LTC
             timestamp=Timestamp(1659171600),
             location=Location.KRAKEN,
             base_asset=A_BTC,
@@ -1955,14 +1955,14 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
             fee=None,
             fee_currency=None,
             notes='Trade LTC for BTC',
-        ), Trade(
+        ), Trade(  # Sell 20 UNI for 880 DAI
             timestamp=Timestamp(1659344400),
             location=Location.KUCOIN,
             base_asset=A_UNI,
             quote_asset=A_DAI,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('880.0000')),
-            rate=Price(FVal('0.0227272727272727272727272727272727272727272727272727272727272727272727272727273')),
+            amount=AssetAmount(FVal('20')),
+            rate=Price(FVal('44')),
             fee=Fee(FVal('0.1040')),
             fee_currency=A_USD,
             notes='Trade UNI for DAI',

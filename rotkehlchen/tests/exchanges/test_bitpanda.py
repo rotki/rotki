@@ -1,58 +1,16 @@
-import json
-import warnings as test_warnings
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-import requests
 
-from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC, A_USDT
-from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import jsonloads_list
-
-
-def test_bitpanda_exchange_assets_are_known():
-    """Since normal Bitpanda API has no endpoint listing supposrted assets
-    https://developers.bitpanda.com/platform/#bitpanda-public-api
-
-    Bitpanda PRO leasts some of the same assets but not all. So this test catches some,
-    but unfortunately not all assets
-    """
-    request_url = 'https://api.exchange.bitpanda.com/public/v1/currencies'
-    try:
-        response = requests.get(request_url)
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(
-            f'Bitpanda get request at {request_url} connection error: {e!s}.',
-        ) from e
-
-    if response.status_code != 200:
-        raise RemoteError(
-            f'Bitpanda query responded with error status code: {response.status_code} '
-            f'and text: {response.text}',
-        )
-    try:
-        response_list = jsonloads_list(response.text)
-    except json.JSONDecodeError as e:
-        raise RemoteError(f'Bitpanda returned invalid JSON response: {response.text}') from e
-
-    for entry in response_list:
-        try:
-            asset_from_bitpanda(entry['code'])
-        except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} in bitpanda. '
-                f'Support for it has to be added',
-            ))
 
 
 WALLETS_RESPONSE = """{"data":[
