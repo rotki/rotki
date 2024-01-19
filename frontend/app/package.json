@@ -25,6 +25,7 @@
     "postuninstall": "electron-builder install-app-deps",
     "serve": "node scripts/serve.js --web",
     "serve:backend": "node scripts/start-backend.js",
+    "test:contract": "node scripts/contract.js",
     "test:integration": "node scripts/e2e.js",
     "test:integration-ci": "node scripts/e2e.js --ci",
     "test:unit": "cross-env TZ=UTC VITE_TEST=true vitest --dir tests/unit --coverage",

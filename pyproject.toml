@@ -30,6 +30,7 @@ include = ["rotkehlchen*"]
 
 [project.scripts]
 rotkehlchen = "rotkehlchen.__main__:main"
+rotkehlchen_mock = "rotkehlchen_mock.__main__:main"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
