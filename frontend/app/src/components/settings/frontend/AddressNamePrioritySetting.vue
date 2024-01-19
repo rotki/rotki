@@ -51,20 +51,18 @@ const { t } = useI18n();
       {{ t('address_book.hint.priority.title') }}
     </div>
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       setting="addressNamePriority"
       @finished="finishEditing()"
     >
       <PrioritizedList
         :value="currentAddressNamePriorities"
         :all-items="availableCurrentAddressNamePriorities()"
-        :item-data-name="
-          t('address_name_priority_setting.data_name').toString()
-        "
+        :item-data-name="t('address_name_priority_setting.data_name')"
         :disable-add="true"
         :disable-delete="true"
         :status="{ error, success }"
-        @input="update($event)"
+        @input="updateImmediate($event)"
       />
     </SettingsOption>
   </div>
