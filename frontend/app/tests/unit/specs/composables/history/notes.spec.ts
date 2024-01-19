@@ -3,7 +3,12 @@ import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetSymbol: vi.fn().mockImplementation(identifier => identifier),
+    assetSymbol: vi.fn().mockImplementation((identifier) => {
+      if (isEvmIdentifier(identifier))
+        return 'USDC';
+
+      return identifier;
+    }),
   }),
 }));
 
@@ -267,6 +272,25 @@ describe('composables::history/notes', () => {
         type: NoteType.BLOCK,
         address: `${blockNumber}`,
         showHashLink: true,
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
+  it('with evm asset identifier', () => {
+    const notes = 'Sell eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA';
+
+    const formatted = get(formatNotes({ notes }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Sell',
+      },
+      {
+        type: NoteType.WORD,
+        word: 'USDC',
       },
     ];
 

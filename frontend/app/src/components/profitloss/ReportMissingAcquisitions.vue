@@ -37,10 +37,13 @@ const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
     const endDate = sortedAcquisitions.at(-1)?.time;
     assert(endDate, 'end date is missing');
 
+    const totalAmountMissing = bigNumberSum(sortedAcquisitions.map(({ missingAmount }) => missingAmount));
+
     return {
       asset: key,
       startDate,
       endDate,
+      totalAmountMissing,
       acquisitions: sortedAcquisitions,
     };
   });
@@ -72,6 +75,15 @@ const headers = computed<DataTableHeader[]>(() => {
         'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions',
       ).toString(),
       value: 'total_missing_acquisition',
+      align: 'end',
+      ...pinnedClass,
+    },
+    {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.total_missing',
+      ).toString(),
+      value: 'total_amount_missing',
+      align: 'end',
       sortable: false,
       ...pinnedClass,
     },
@@ -161,12 +173,17 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       <template #item.total_missing_acquisition="{ item }">
         {{ item.acquisitions.length }}
       </template>
+      <template #item.total_amount_missing="{ item }">
+        <AmountDisplay
+          class="text-rui-error"
+          :value="item.totalAmountMissing"
+        />
+      </template>
       <template #item.action="{ item }">
         <div class="flex flex-col items-center gap-1">
           <VMenu offset-y>
             <template #activator="{ on }">
               <RuiButton
-                size="sm"
                 variant="text"
                 icon
                 v-on="on"
@@ -243,7 +260,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             </template>
             <template #item.missingAmount="{ item: childItem }">
               <AmountDisplay
-                pnl
+                class="text-rui-error"
                 :value="childItem.missingAmount"
               />
             </template>
