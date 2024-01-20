@@ -65,6 +65,8 @@ CB_VERSION = '2019-08-25'  # the latest api version we know rotki works fine for
 def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
     """Turn information from a conversion into a trade
 
+    Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
+
     Mary raise:
     - UnknownAsset due to Asset instantiation
     - DeserializationError due to unexpected format of dict entries
@@ -81,7 +83,7 @@ def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> T
     timestamp = deserialize_timestamp_from_date(trade_a['updated_at'], 'iso8601', 'coinbase')
     tx_amount = AssetAmount(abs(deserialize_asset_amount(trade_a['amount']['amount'])))
     tx_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
-    native_amount = deserialize_asset_amount(trade_b['amount']['amount'])
+    native_amount = abs(deserialize_asset_amount(trade_b['amount']['amount']))
     native_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
@@ -599,6 +601,8 @@ class Coinbase(ExchangeInterface):
     def _process_normal_trade(self, event: dict[str, Any], trades: list[Trade]) -> None:
         """Turns a coinbase transaction into a rotki trade and adds it to the list.
 
+        Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
+
         https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/api-transactions#transaction-types
         If the coinbase transaction is not a trade related transaction nothing happens.
         """
@@ -619,14 +623,14 @@ class Coinbase(ExchangeInterface):
             trade_type = TradeType.deserialize(event['type'])
             amount = AssetAmount(abs(deserialize_asset_amount(event['amount']['amount'])))
             tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
-            native_amount = deserialize_asset_amount(event['native_amount']['amount'])
+            native_amount = abs(deserialize_asset_amount(event['native_amount']['amount']))
             native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
             # rate is how much you get/give in quotecurrency if you buy/sell 1 unit of basecurrency
             rate = Price(native_amount / amount)
 
             fee_amount = fee_asset = None
             if 'fee' in event:
-                fee_amount = deserialize_fee(event['fee']['amount'])
+                fee_amount = abs(deserialize_fee(event['fee']['amount']))
                 fee_asset = asset_from_coinbase(event['fee']['currency'], time=timestamp)
 
             trades.append(Trade(
@@ -638,7 +642,7 @@ class Coinbase(ExchangeInterface):
                 trade_type=trade_type,
                 amount=amount,
                 rate=rate,
-                fee=fee_amount,
+                fee=fee_amount,  # type: ignore  # abs() doesn't propagate Fee type
                 fee_currency=fee_asset,
                 link=str(event['id']),
             ))
