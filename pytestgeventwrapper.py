@@ -1,5 +1,9 @@
-from gevent import monkey  # isort:skip # noqa
+from gevent import monkey, queue  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
+from urllib3.connectionpool import ConnectionPool
+# Try to see if we will see no more deadlocks with this
+# https://github.com/gevent/gevent/issues/1957#issuecomment-1902072588
+ConnectionPool.QueueCls = queue.LifoQueue
 
 import sys
 
