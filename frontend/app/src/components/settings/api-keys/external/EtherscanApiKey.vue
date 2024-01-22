@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { camelCase } from 'lodash-es';
-import { externalLinks } from '@/data/external-links';
 import { isEtherscanKey } from '@/types/external';
+import { etherscanLinks } from '@/data/external-links';
 
 const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);
@@ -37,7 +37,7 @@ function removeEtherscanNotification() {
 const link = computed(() => {
   const location = camelCase(get(evmChain));
   if (isEtherscanKey(location))
-    return externalLinks.etherscan[location];
+    return etherscanLinks[location];
 
   return undefined;
 });

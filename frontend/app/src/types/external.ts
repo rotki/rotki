@@ -1,7 +1,7 @@
-import { externalLinks } from '@/data/external-links';
+import { etherscanLinks } from '@/data/external-links';
 
-type EtherscanKey = keyof typeof externalLinks.etherscan;
+type EtherscanKey = keyof typeof etherscanLinks;
 
 export function isEtherscanKey(location: string): location is EtherscanKey {
-  return location in externalLinks.etherscan;
+  return location in etherscanLinks;
 }

@@ -45,7 +45,8 @@ function getFlattenedValues(obj: Record<string, any>): string[] {
 const linkCheckPromises = getFlattenedValues(externalLinks).map(checkLink);
 
 // Wait for all promises to settle
-await Promise.all(linkCheckPromises).then(() => {
+// eslint-disable-next-line no-void,unicorn/prefer-top-level-await
+void Promise.all(linkCheckPromises).then(() => {
   console.log('\u001B[32m', 'All external links verified');
   process.exit(0);
 });

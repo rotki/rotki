@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash-es';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
-import { externalLinks } from '@/data/external-links';
+import { etherscanLinks } from '@/data/external-links';
 import { isEtherscanKey } from '@/types/external';
 
 export function getDomain(str: string): string {
@@ -32,8 +32,6 @@ export function getDomain(str: string): string {
   return domain;
 }
 
-const { etherscan } = externalLinks;
-
 /**
  * Returns the registration url of a specified Etherscan location and a path to the local page
  * @param {string} location
@@ -43,7 +41,7 @@ export function getEtherScanRegisterUrl(location: string) {
   const camelCaseLocation = camelCase(location);
 
   if (isEtherscanKey(camelCaseLocation)) {
-    const data = etherscan[camelCaseLocation];
+    const data = etherscanLinks[camelCaseLocation];
     return {
       external: data,
       route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
