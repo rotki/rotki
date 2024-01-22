@@ -953,7 +953,7 @@ def test_user_set_premium_credentials_errors(rotkehlchen_api_server: APIServer, 
     assert_error_response(
         response=response,
         contained_in_msg='rotki API key was rejected by server',
-        status_code=HTTPStatus.UNAUTHORIZED,
+        status_code=HTTPStatus.FORBIDDEN,
     )
 
 

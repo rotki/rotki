@@ -1246,7 +1246,7 @@ class RestAPI:
             self.rotkehlchen.set_premium_credentials(credentials)
         except PremiumAuthenticationError as e:
             result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)

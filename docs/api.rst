@@ -318,7 +318,7 @@ Handling user creation, sign-in, log-out and querying
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: API key/secret set successfully
    :statuscode 400: Provided JSON is in some way malformed. For example invalid API key format
-   :statuscode 401: Provided API key/secret does not authenticate.
+   :statuscode 403: Provided API key/secret does not authenticate.
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal rotki error
 
