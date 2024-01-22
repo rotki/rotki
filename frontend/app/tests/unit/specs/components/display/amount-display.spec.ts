@@ -345,6 +345,28 @@ describe('amountDisplay.vue', () => {
       const wrapper = createWrapper(bigNumberify(1234567.89));
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.24 M');
     });
+
+    it('`abbreviateNumber=true`, `minimumDigitToBeAbbreviated=7`', () => {
+      useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
+        abbreviateNumber: true,
+        minimumDigitToBeAbbreviated: 7,
+      });
+
+      const wrapper = createWrapper(bigNumberify(1234567.89));
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.24 M');
+    });
+
+    it('`abbreviateNumber=true`, `minimumDigitToBeAbbreviated=8`', () => {
+      useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
+        abbreviateNumber: true,
+        minimumDigitToBeAbbreviated: 8,
+      });
+
+      const wrapper = createWrapper(bigNumberify(1234567.89));
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1,234,567.89');
+    });
   });
 
   describe('check manual latest prices', () => {

@@ -87,6 +87,7 @@ const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency }
 
 const {
   abbreviateNumber,
+  minimumDigitToBeAbbreviated,
   thousandSeparator,
   decimalSeparator,
   currencyLocation,
@@ -136,7 +137,7 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
   if (!isDefined(sourceCurrency) || get(forceCurrency))
     return get(value);
 
-  const sourceCurrencyVal = get(sourceCurrency)!;
+  const sourceCurrencyVal = get(sourceCurrency);
   const currentCurrencyVal = get(currentCurrency);
   const priceAssetVal = get(priceAsset);
   const isCurrentCurrencyVal = get(isCurrentCurrency);
@@ -201,8 +202,10 @@ const decimalPlaces: ComputedRef<number> = computed(
 
 // Set exponential notation when the `realValue` is too big
 const showExponential: ComputedRef<boolean> = computed(() =>
-  get(displayValue).gt(1e15),
+  get(displayValue).gt(1e18),
 );
+
+const abbreviate = computed(() => get(abbreviateNumber) && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)));
 
 const rounding: ComputedRef<RoundingMode | undefined> = computed(() => {
   if (isDefined(sourceCurrency))
@@ -217,7 +220,7 @@ const renderedValue: ComputedRef<string> = computed(() => {
   if (get(isNaN))
     return '-';
 
-  if (get(showExponential)) {
+  if (get(showExponential) && !get(abbreviate)) {
     return fixExponentialSeparators(
       get(displayValue).toExponential(floatingPrecisionUsed, get(rounding)),
       get(thousandSeparator),
@@ -231,7 +234,7 @@ const renderedValue: ComputedRef<string> = computed(() => {
     get(thousandSeparator),
     get(decimalSeparator),
     get(rounding),
-    get(abbreviateNumber),
+    get(abbreviate),
   );
 });
 
@@ -239,7 +242,7 @@ const tooltip: ComputedRef<string | null> = computed(() => {
   if (
     get(decimalPlaces) > get(floatingPrecision)
     || get(showExponential)
-    || get(abbreviateNumber)
+    || get(abbreviate)
   ) {
     const value = get(displayValue);
     return value.toFormat(value.decimalPlaces() ?? 0);

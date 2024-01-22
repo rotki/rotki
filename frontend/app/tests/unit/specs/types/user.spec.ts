@@ -38,6 +38,7 @@ describe('types/user', () => {
       },
       currencyLocation: CurrencyLocation.BEFORE,
       abbreviateNumber: false,
+      minimumDigitToBeAbbreviated: 4,
       thousandSeparator: '|',
       decimalSeparator: '-',
       refreshPeriod: 120,
