@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
@@ -51,6 +52,14 @@ def bybit_account_mock(
                     'time': 1702310552326,
                 },
             }
+
+        if (
+            options is not None and 'startTime' in options and
+            int(options['startTime']) < (ts_now() - DAY_IN_SECONDS * 365 * 2) * 1000
+        ):
+            # simulate an error on Bybit if we query a period of time that is older than the
+            # maximum allowed in the API
+            raise RemoteError(f'Invalid startTime provided: {options["startTime"]}')
 
         return next(iterators.get(path, iter([{}])))
 
@@ -281,3 +290,16 @@ def test_assets_are_known(bybit_exchange: Bybit):
             ))
         except UnprocessableTradePair:
             test_warnings.warn(UserWarning(f'Found bybit pair that cannot be processed {ticker["symbol"]}'))  # noqa: E501
+
+
+def test_query_old_trades(bybit_exchange: Bybit) -> None:
+    """Check that we don't exceed the range that can be queried in bybit for trades"""
+    mock_fn = bybit_account_mock(is_unified=True, calls={
+        'order/history': [json.loads('{"nextPageCursor":"","category":"spot","list":[]}')] * 2,
+    })
+
+    with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
+        bybit_exchange.query_online_trade_history(
+            start_ts=Timestamp(ts_now() - DAY_IN_SECONDS * 365 * 3),
+            end_ts=Timestamp(ts_now() - DAY_IN_SECONDS * 365 - DAY_IN_SECONDS * 360),
+        )  # remoteError is raised if we don't properly query the logic

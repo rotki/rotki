@@ -312,12 +312,20 @@ class Bybit(ExchangeInterface):
         Since we have a clear limit to stop querying what we do is use the startTime/endTime keys
         to filter the data that we need.
         """
-        new_trades = []
+        new_trades: list[Trade] = []
         upper_ts, lower_ts = end_ts, Timestamp(end_ts - WEEK_IN_SECONDS)
-        two_years_ago = Timestamp(ts_now() - DAY_IN_SECONDS * 365 * 2)
-        if start_ts < two_years_ago:
-            # bybit allows to query up to two years into the past
-            start_ts = two_years_ago
+        if self.is_unified_account is True:
+            # unified account can query up to 2 years into the past
+            earliest_query_start_ts = Timestamp(ts_now() - DAY_IN_SECONDS * 365 * 2)
+        else:
+            # classic accounts can query 180 days into the past
+            earliest_query_start_ts = Timestamp(ts_now() - DAY_IN_SECONDS * 180)
+
+        if end_ts <= earliest_query_start_ts:  # 0... start_ts ... end_ts ... earliest_query_start
+            return [], (start_ts, end_ts)  # entire query out of range. Bail
+
+        if start_ts <= earliest_query_start_ts:  # 0 ... start_ts ...  earliest_query_start ... end_ts  # noqa: E501
+            start_ts = Timestamp(earliest_query_start_ts + 60 * 5)  # margin of 5 minutes to avoid possible errors in case of delay  # noqa: E501
 
         while True:
             raw_data = self._paginated_api_query(
