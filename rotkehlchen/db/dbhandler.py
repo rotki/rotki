@@ -126,7 +126,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BTCAddress,
-    ChainAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExchangeLocationID,
@@ -1075,16 +1074,22 @@ class DBHandler:
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
-        tuples = [(
-            entry.chain.value,
-            entry.address,
-            entry.label,
-        ) for entry in account_data]
+        blockchain_accounts_query = []
+        address_book_query = []
+        for entry in account_data:
+            blockchain_accounts_query.append((entry.chain.value, entry.address))
+            if entry.label is not None:
+                address_book_query.append((entry.address, entry.chain.value, entry.label))
         try:
             write_cursor.executemany(
-                'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)',
-                tuples,
+                'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+                blockchain_accounts_query,
             )
+            if len(address_book_query) > 0:
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?)',  # noqa: E501
+                    address_book_query,
+                )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'Blockchain account/s {[x.address for x in account_data]} already exist',
@@ -1104,21 +1109,22 @@ class DBHandler:
         - All accounts exist in the DB
         """
         # Update the blockchain account labels in the DB
-        tuples = [(
-            entry.label,
-            entry.address,
-            entry.chain.value,
-        ) for entry in account_data]
-        write_cursor.executemany(
-            'UPDATE blockchain_accounts SET label=? WHERE account=? AND blockchain=?;', tuples,
-        )
-        if write_cursor.rowcount != len(account_data):
-            msg = (
-                f'When updating blockchain accounts {len(account_data)} entries should '
-                f'have been edited but only {write_cursor.rowcount} were. Should not happen.'
+        bindings = [
+            (entry.address, entry.chain.value, entry.label)
+            for entry in account_data if entry.label is not None
+        ]
+        if len(bindings) > 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?);',
+                bindings,
             )
-            log.error(msg)
-            raise InputError(msg)
+            if write_cursor.rowcount != len(bindings):
+                msg = (
+                    f'When updating blockchain accounts {len(bindings)} entries should '
+                    f'have been edited but only {write_cursor.rowcount} were. Should not happen.'
+                )
+                log.error(msg)
+                raise InputError(msg)
 
         replace_tag_mappings(
             write_cursor=write_cursor,
@@ -1293,9 +1299,10 @@ class DBHandler:
         Each account entry contains address and potentially label and tags
         """
         query = cursor.execute(
-            'SELECT A.account, A.label, group_concat(B.tag_name,",") '
+            'SELECT A.account, C.name, group_concat(B.tag_name,",") '
             'FROM blockchain_accounts AS A '
             'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.blockchain || A.account '
+            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND A.blockchain IS C.blockchain '  # noqa: E501
             'WHERE A.blockchain=? GROUP BY account;',
             (blockchain.value,),
         )
@@ -2922,7 +2929,6 @@ class DBHandler:
                 BlockchainAccountData(
                     chain=xpub_data.blockchain,
                     address=x[0],
-                    label=xpub_data.label,
                     tags=xpub_data.tags,
                 )
                 for x in write_cursor
@@ -3450,19 +3456,6 @@ class DBHandler:
                 }
 
         return result
-
-    def get_blockchain_account_label(self, chain_address: ChainAddress) -> str | None:
-        """Returns the label for a specific blockchain account.
-        Returns None if either there is no label set or the account doesn't exist in database.
-        """
-        query = 'SELECT label FROM blockchain_accounts WHERE account=? AND blockchain=?'
-        bindings = (chain_address.address, chain_address.blockchain.value)
-
-        with self.conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
-            result = cursor.fetchone()
-
-        return None if result is None else result[0]
 
     def add_skipped_external_event(
             self,

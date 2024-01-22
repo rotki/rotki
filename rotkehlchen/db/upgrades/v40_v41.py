@@ -1,8 +1,10 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -123,6 +125,53 @@ def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _remove_covalent_api_key')
 
 
+def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
+    """Move all the `label` column values from `blockchain_accounts` table to the `name` column
+    of the 'address_book` table. If a `name` already exists in the `address_book` table, then
+    `address_name_priority` setting is used to determine which one to keep. Defaults to
+    `DEFAULT_ADDRESS_NAME_PRIORITY`."""
+    log.debug('Enter _move_labels_to_addressbook')
+    address_name_priority = write_cursor.execute(  # get priority settings
+        'SELECT value FROM settings WHERE name = "address_name_priority"',
+    ).fetchone()
+    if address_name_priority is not None:
+        try:
+            address_name_priority = json.loads(address_name_priority[0])
+        except json.decoder.JSONDecodeError:
+            log.error(
+                'During v40->v41 DB upgrade a non-json address_name_priority setting was found: '
+                f'{address_name_priority[0]}. Reverting to default.',
+            )
+            address_name_priority = DEFAULT_ADDRESS_NAME_PRIORITY
+    else:
+        address_name_priority = DEFAULT_ADDRESS_NAME_PRIORITY
+
+    try:
+        address_book_priority = address_name_priority.index('private_addressbook')
+        blockchain_account_priority = address_name_priority.index('blockchain_account')
+    except ValueError:
+        address_book_priority, blockchain_account_priority = 0, 1
+    labels_to_move = {  # get all the labels from `blockchain_accounts` table
+        (account, blockchain): label for account, blockchain, label in write_cursor.execute(
+            'SELECT account, blockchain, label FROM blockchain_accounts WHERE label IS NOT NULL',
+        )
+    }
+
+    if address_book_priority < blockchain_account_priority:
+        for address, blockchain in write_cursor.execute(
+            'SELECT address, blockchain FROM address_book;',
+        ):  # remove the labels_to_move that are already present in the address_book
+            labels_to_move.pop((address, blockchain), None)
+
+    write_cursor.executemany(  # insert all the prioritized labels into the `address_book` table
+        'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?)',
+        [(address, blockchain, name) for (address, blockchain), name in labels_to_move.items()],
+    )
+    # remove the `label` column from the `blockchain_accounts` table
+    write_cursor.execute('ALTER TABLE blockchain_accounts DROP COLUMN label')
+    log.debug('Exit _move_labels_to_addressbook')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
@@ -130,9 +179,10 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move non-settings and non-used query ranges to the new cache
         - Add new supported locations
         - remove any covalent api key added by the user
+        - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
@@ -145,6 +195,8 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _move_non_intervals_from_used_query_ranges_to_cache(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
+        progress_handler.new_step()
+        _move_labels_to_addressbook(write_cursor)
     progress_handler.new_step()
 
     log.debug('Finish userdb v40->v41 upgrade')

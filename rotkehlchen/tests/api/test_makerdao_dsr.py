@@ -105,7 +105,6 @@ def mock_etherscan_for_dsr(
         contracts: EvmContracts,
         account1: ChecksumEvmAddress,
         account2: ChecksumEvmAddress,
-        account3: ChecksumEvmAddress,
         original_requests_get,
         params: DSRMockParameters,
 ) -> _patch:
@@ -117,10 +116,7 @@ def mock_etherscan_for_dsr(
 
     proxy1 = make_evm_address()
     proxy2 = make_evm_address()
-    targets = [address_to_32byteshexstr(proxy1), address_to_32byteshexstr(proxy2), '0x0000000000000000000000000000000000000000000000000000000000000000']  # noqa: E501
-
-    sorted_accounts = sorted(zip([account1, account2, account3], targets, strict=True), key=lambda x: x[0])  # noqa: E501
-    proxies = [y[1] for y in sorted_accounts]
+    proxies = [address_to_32byteshexstr(proxy1), address_to_32byteshexstr(proxy2), '0x0000000000000000000000000000000000000000000000000000000000000000']  # noqa: E501
 
     account1_join1_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
@@ -293,8 +289,7 @@ def setup_tests_for_dsr(
         original_requests_get,
 ) -> DSRTestSetup:
     account1 = accounts[0]
-    account2 = accounts[2]
-    account3 = accounts[1]
+    account2 = accounts[1]
 
     current_dsr = 1000000002440418608258400030
     current_chi = 1123323222211111111111001249911111
@@ -322,7 +317,6 @@ def setup_tests_for_dsr(
         contracts=contracts,
         account1=account1,
         account2=account2,
-        account3=account3,
         original_requests_get=original_requests_get,
         params=params,
     )

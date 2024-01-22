@@ -155,7 +155,7 @@ def _blockchain_address_to_name(
         return None
 
     chain_address = cast(ChainAddress, chain_address)
-    return db.get_blockchain_account_label(chain_address=chain_address)
+    return DBAddressbook(db).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)
 
 
 def _private_addressbook_address_to_name(
