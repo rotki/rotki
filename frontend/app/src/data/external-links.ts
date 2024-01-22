@@ -9,6 +9,17 @@ const ICONS_BASE_URL
 // Cannot be checked with fetch because it always return 400
 export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 
+// Cannot be checked with fetch because it always return 403, because it needs authentication,
+// and will be redirected to the register page instead
+export const etherscanLinks = {
+  ethereum: 'https://etherscan.io/myapikey',
+  optimism: 'https://optimistic.etherscan.io/myapikey',
+  polygonPos: 'https://polygonscan.com/myapikey',
+  arbitrumOne: 'https://arbiscan.io/myapikey',
+  base: 'https://basescan.org/myapikey',
+  gnosis: 'https://gnosisscan.io/myapikey',
+};
+
 export const externalLinks = {
   premium: `${BASE_URL}products`,
   usageGuide: USAGE_GUIDE_URL,
@@ -30,14 +41,6 @@ export const externalLinks = {
   githubNewIssue: `${GITHUB_BASE_URL}issues/new/choose`,
   releases: `${GITHUB_BASE_URL}releases`,
   releasesVersion: `${GITHUB_BASE_URL}releases/tag/v$version`,
-  etherscan: {
-    ethereum: 'https://etherscan.io/myapikey',
-    optimism: 'https://optimistic.etherscan.io/myapikey',
-    polygonPos: 'https://polygonscan.com/myapikey',
-    arbitrumOne: 'https://arbiscan.io/myapikey',
-    base: 'https://basescan.org/myapikey',
-    gnosis: 'https://gnosisscan.io/myapikey',
-  },
   metamaskDownload: 'https://metamask.io/download/',
   openSeaApiKeyReference:
     'https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key',
