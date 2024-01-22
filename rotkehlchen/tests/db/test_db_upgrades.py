@@ -1963,7 +1963,24 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_40_to_41(user_data_dir):
+@pytest.mark.parametrize('address_name_priority', [
+    (  # customized to prioritized blockchain_account, no values should be replaced
+        'blockchain_account',
+        'private_addressbook',
+        'global_addressbook',
+        'ethereum_tokens',
+        'hardcoded_mappings',
+        'ens_names',
+    ), (  # blockchain_account missing, result should have two values replaced
+        'private_addressbook',
+        'global_addressbook',
+        'ethereum_tokens',
+        'hardcoded_mappings',
+        'ens_names',
+    ),
+    None,  # no setting, result should have two values replaced
+])
+def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
     """Test upgrading the DB from version 40 to version 41"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v40_rotkehlchen.db')
@@ -1975,45 +1992,47 @@ def test_upgrade_db_40_to_41(user_data_dir):
     )
     # add some settings and used_query_ranges that should/shouldn't move in the upgrade
     should_move_settings = {
-        'last_balance_save': 234,
-        'last_data_upload_ts': 345,
-        'last_data_updates_ts': 456,
-        'last_owned_assets_update': 567,
-        'last_evm_accounts_detect_ts': 678,
-        'last_spam_assets_detect_key': 789,
-        'last_augmented_spam_assets_detect_key': 890,
+        'last_balance_save': '234',
+        'last_data_upload_ts': '345',
+        'last_data_updates_ts': '456',
+        'last_owned_assets_update': '567',
+        'last_evm_accounts_detect_ts': '678',
+        'last_spam_assets_detect_key': '789',
+        'last_augmented_spam_assets_detect_key': '890',
     }
     should_not_move_settings = {
-        'version': 40,
-        'last_write_ts': 890,
-        'spam_assets_version': 901,
-        'rpc_nodes_version': 12,
-        'contracts_version': 123,
-        'global_addressbook_version': 234,
-        'accounting_rules_version': 345,
+        'version': '40',
+        'last_write_ts': '890',
+        'spam_assets_version': '901',
+        'rpc_nodes_version': '12',
+        'contracts_version': '123',
+        'global_addressbook_version': '234',
+        'accounting_rules_version': '345',
     }
+    if address_name_priority is not None:
+        should_not_move_settings['address_name_priority'] = json.dumps(address_name_priority)
     should_move_used_query_ranges = {
-        'ethwithdrawalsts_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 123,
-        'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 123,
-        'ethwithdrawalsidx_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 234,
-        f'{Location.BITSTAMP}_bitstamp1_last_cryptotx_offset': 345,
-        f'{Location.COINBASE}_coinbase1_123_last_query_ts': 456,
-        f'{Location.COINBASE}_coinbase1_123_last_query_id': 567,
-        'last_produced_blocks_query_ts': 678,
-        'last_withdrawals_exit_query_ts': 789,
-        'last_events_processing_task_ts': 890,
+        'ethwithdrawalsts_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '123',
+        'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': '123',
+        'ethwithdrawalsidx_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': '234',
+        f'{Location.BITSTAMP}_bitstamp1_last_cryptotx_offset': '345',
+        f'{Location.COINBASE}_coinbase1_123_last_query_ts': '456',
+        f'{Location.COINBASE}_coinbase1_123_last_query_id': '567',
+        'last_produced_blocks_query_ts': '678',
+        'last_withdrawals_exit_query_ts': '789',
+        'last_events_processing_task_ts': '890',
     }
     should_not_move_used_query_ranges = {
-        'coinbase_trades_Coinbase 1': 123,
-        'coinbase_margins_Coinbase 1': 234,
-        'coinbase_asset_movements_Coinbase 1': 345,
-        'balancer_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 456,
-        'balancer_events_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': 456,
-        'binance_history_events_binance1': 567,
-        'binance_lending_history_binance1': 678,
-        'yearn_vaults_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 789,
-        'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 890,
-        'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': 901,
+        'coinbase_trades_Coinbase 1': '123',
+        'coinbase_margins_Coinbase 1': '234',
+        'coinbase_asset_movements_Coinbase 1': '345',
+        'balancer_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '456',
+        'balancer_events_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': '456',
+        'binance_history_events_binance1': '567',
+        'binance_lending_history_binance1': '678',
+        'yearn_vaults_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '789',
+        'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '890',
+        'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '901',
     }
     with db_v40.conn.write_ctx() as cursor:
         assert table_exists(cursor, 'key_value_cache') is False
@@ -2025,6 +2044,21 @@ def test_upgrade_db_40_to_41(user_data_dir):
             assert names[0] in should_move_used_query_ranges | should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 0
+        assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == [
+            ('eth', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth1_blockchain_accounts'),
+            ('eth', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eth2_blockchain_accounts'),
+            ('btc', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc1_blockchain_accounts'),
+            ('btc', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'btc2_blockchain_accounts'),
+        ]
+        assert cursor.execute('SELECT * FROM address_book').fetchall() == [
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth', 'eth1_address_book'),
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
+        ]  # eth1 and btc1 already exists in address_book
+        if address_name_priority is not None:
+            cursor.execute(
+                'INSERT INTO settings(name, value) VALUES(?, ?)',
+                ('address_name_priority', json.dumps(address_name_priority)),
+            )
 
     # test external credentials are there
     with db_v40.conn.read_ctx() as cursor:
@@ -2035,6 +2069,16 @@ def test_upgrade_db_40_to_41(user_data_dir):
             name VARCHAR[30] NOT NULL PRIMARY KEY,
             api_key TEXT
             )""") is True
+        assert table_exists(
+            cursor=cursor,
+            name='blockchain_accounts',
+            schema="""CREATE TABLE IF NOT EXISTS blockchain_accounts (
+                blockchain VARCHAR[24] NOT NULL,
+                account TEXT NOT NULL,
+                label TEXT,
+                PRIMARY KEY (blockchain, account)
+            );""",
+        )
         assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2'), ('covalent', 'lollol')]  # noqa: E501
 
     db_v40.logout()
@@ -2058,9 +2102,9 @@ def test_upgrade_db_40_to_41(user_data_dir):
             assert name not in should_not_move_settings
             assert name not in should_not_move_used_query_ranges
             if name in should_move_settings:
-                assert int(value) == should_move_settings[name]
+                assert value == should_move_settings[name]
             elif name in should_move_used_query_ranges:
-                assert int(value) == should_move_used_query_ranges[name]
+                assert value == should_move_used_query_ranges[name]
             else:
                 pytest.fail(f'{name} should not end up in key_value_cache table')
         db_settings = cursor.execute('SELECT name FROM settings').fetchall()
@@ -2087,6 +2131,30 @@ def test_upgrade_db_40_to_41(user_data_dir):
             )""") is True
         assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL', None), ('blockscout', 'LOL2', None)]  # noqa: E501
 
+        # test if blockchain_accounts labels have been moved to address_book
+        if address_name_priority is None or address_name_priority[0] == 'private_addressbook':
+            assert cursor.execute('SELECT * FROM address_book').fetchall() == [
+                ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth', 'eth1_address_book'),
+                ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
+                ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eth', 'eth2_blockchain_accounts'),
+                ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'btc', 'btc2_blockchain_accounts'),
+            ]
+        else:
+            assert cursor.execute('SELECT * FROM address_book').fetchall() == [
+                ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth', 'eth1_blockchain_accounts'),
+                ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eth', 'eth2_blockchain_accounts'),
+                ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_blockchain_accounts'),
+                ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'btc', 'btc2_blockchain_accounts'),
+            ]
+        assert table_exists(
+            cursor=cursor,
+            name='blockchain_accounts',
+            schema="""CREATE TABLE IF NOT EXISTS blockchain_accounts (
+                blockchain VARCHAR[24] NOT NULL,
+                account TEXT NOT NULL,
+                PRIMARY KEY (blockchain, account)
+            );""",
+        )
     db.logout()
 
 

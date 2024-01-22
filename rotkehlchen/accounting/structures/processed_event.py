@@ -13,13 +13,22 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import EVM_LOCATIONS, ChainAddress, ChainID, Location, Price, Timestamp
+from rotkehlchen.types import (
+    EVM_LOCATIONS,
+    AddressbookType,
+    ChainAddress,
+    ChainID,
+    Location,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 T = TypeVar('T', bound='ProcessedAccountingEvent')
@@ -75,7 +84,7 @@ class ProcessedAccountingEvent:
             address=string_to_evm_address(matched_address.group()),
             blockchain=ChainID(self.location.to_chain_id()).to_blockchain(),
         )
-        name = database.get_blockchain_account_label(chain_address)
+        name = DBAddressbook(database).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)  # noqa: E501
         return f'{chain_address.address} [{name}]' if name else chain_address.address
 
     @overload
