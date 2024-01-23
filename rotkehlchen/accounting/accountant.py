@@ -71,6 +71,7 @@ class Accountant:
         # map event rules signatures to a list of event identifiers affected by them
         # used to know which events need to be invalidated when updating a rule
         self.processable_events_cache_signatures: DefaultLRUCache[int, list[int]] = DefaultLRUCache(default_factory=list, maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
+        self.ignored_asset_ids: set[str] = set()  # populated in process_history
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
@@ -138,6 +139,7 @@ class Accountant:
         # same settings through the entire task
         with self.db.conn.read_ctx() as cursor:
             db_settings = self.db.get_settings(cursor)
+            self.ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
             # Create a new pnl report in the DB to be used to save each event generated
             dbpnl = DBAccountingReports(self.db)
             first_ts = Timestamp(0) if len(events) == 0 else events[0].get_timestamp()
@@ -230,6 +232,7 @@ class Accountant:
         for pot in self.pots:  # delete rules stored in memory since they won't be needed and can be queried again from the db  # noqa: E501
             pot.events_accountant.rules_manager.clean_rules()
 
+        self.ignored_asset_ids.clear()
         return report_id
 
     def _process_event(
@@ -252,8 +255,6 @@ class Accountant:
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
-        with self.db.conn.read_ctx() as cursor:
-            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
         event = next(events_iterator, None)
         if event is None:
             return 0, prev_time
@@ -291,7 +292,7 @@ class Accountant:
             )
             return 1, prev_time
 
-        if any(x.identifier in ignored_asset_ids for x in event_assets):
+        if any(x.identifier in self.ignored_asset_ids for x in event_assets):
             log.debug(
                 'Ignoring event with ignored asset',
                 event_type=event.get_accounting_event_type(),
