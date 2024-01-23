@@ -92,19 +92,8 @@ watch(
 </script>
 
 <template>
-  <div class="grid gap-4 grid-cols-2">
-    <div class="col-span-2">
-      <RuiTextField
-        v-model="publicKey"
-        variant="outlined"
-        color="primary"
-        :disabled="disabled"
-        :label="t('eth2_input.public_key')"
-        :error-messages="toMessages(v$.publicKey)"
-        @blur="v$.publicKey.$touch()"
-      />
-    </div>
-    <div class="col-span-2 md:col-span-1">
+  <div class="grid gap-4 grid-cols-3 mt-3">
+    <div class="col-span-3 md:col-span-1">
       <AmountInput
         v-model="validatorIndex"
         outlined
@@ -115,7 +104,21 @@ watch(
       />
     </div>
 
-    <div class="col-span-2 md:col-span-1">
+    <div class="col-span-3 md:col-span-2 flex gap-4">
+      <span class="mt-4">{{ t('common.or') }}</span>
+      <RuiTextField
+        v-model="publicKey"
+        class="grow"
+        variant="outlined"
+        color="primary"
+        :disabled="disabled"
+        :label="t('eth2_input.public_key')"
+        :error-messages="toMessages(v$.publicKey)"
+        @blur="v$.publicKey.$touch()"
+      />
+    </div>
+
+    <div class="col-span-3">
       <AmountInput
         v-model="ownershipPercentage"
         outlined

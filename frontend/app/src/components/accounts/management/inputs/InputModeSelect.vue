@@ -105,6 +105,7 @@ onUnmounted(() => {
           v-if="isBitcoin"
           type="button"
           :value="InputMode.XPUB_ADD"
+          :disabled="loading"
         >
           <template #prepend>
             <RuiIcon name="key-line" />
