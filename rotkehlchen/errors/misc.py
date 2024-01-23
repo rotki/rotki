@@ -80,3 +80,15 @@ class DBSchemaError(Exception):
 
 class GreenletKilledError(Exception):
     """Raised when a greenlet is killed"""
+
+
+class AccountingError(Exception):
+    """Fatal error while processing accounting events during a PnL report"""
+
+    def __init__(self, message: str, report_id: int | None = None):
+        """
+        report_id is not mandatory since where it is used the id is not known until later.
+        It is later set
+        """
+        super().__init__(message)
+        self.report_id = report_id
