@@ -52,7 +52,7 @@ const rightColspan = useToNumber(rightPatchColspan);
     />
     <td
       :colspan="labelColspan"
-      :class="{ 'flex align-center': isMobile }"
+      :class="{ 'flex items-center': isMobile }"
     >
       <slot name="label">
         {{ label }}
@@ -62,7 +62,7 @@ const rightColspan = useToNumber(rightPatchColspan);
     <td
       v-if="slots.default"
       class="text-end"
-      :class="{ 'flex align-center': isMobile }"
+      :class="{ 'flex items-center': isMobile }"
     >
       <slot />
     </td>
