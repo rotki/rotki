@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.errors.misc import AccountingError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -118,6 +119,9 @@ class AssetAcquisitionHeapElement(NamedTuple):
     priority: FVal  # This is only used by heapq algorithm and not accessed from our code
     acquisition_event: AssetAcquisitionEvent
 
+    def __str__(self) -> str:
+        return str(self.acquisition_event)
+
 
 class BaseCostBasisMethod(metaclass=ABCMeta):
     """The base class in which every other cost basis method inherits from."""
@@ -145,7 +149,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         """Returns read-only _acquisitions"""
         return tuple(entry.acquisition_event for entry in self._acquisitions_heap)
 
-    def consume_result(self, used_amount: FVal) -> None:
+    def consume_result(self, used_amount: FVal, asset: Asset) -> None:
         """
         This function should be used to consume results of the
         currently processed event (received from __next__)
@@ -156,7 +160,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] but it was {used_amount}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] but it was {used_amount} for {asset}'  # noqa: E501
 
         self._acquisitions_heap[0].acquisition_event.remaining_amount -= used_amount
         if self._acquisitions_heap[0].acquisition_event.remaining_amount == ZERO:
@@ -222,7 +226,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                     event=acquisition_event,
                     taxable=taxable,
                 ))
-                self.consume_result(remaining_sold_amount)
+                self.consume_result(used_amount=remaining_sold_amount, asset=spending_asset)
                 remaining_sold_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy this spend
                 break
@@ -254,7 +258,10 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                 taxable=taxable,
             ))
             used_acquisitions.append(acquisition_event)
-            self.consume_result(acquisition_event.remaining_amount)
+            self.consume_result(
+                used_amount=acquisition_event.remaining_amount,
+                asset=spending_asset,
+            )
             # and since this event is going to be removed, reduce its remaining to zero
             acquisition_event.remaining_amount = ZERO
 
@@ -369,15 +376,25 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         self.current_amount += acquisition.amount
         self._count += 1
 
-    def consume_result(self, used_amount: FVal) -> None:
+    def consume_result(self, used_amount: FVal, asset: Asset) -> None:
         """
         Same as its parent function but also deducts `used_amount` from `current_amount`.
         `current_amount` is guaranteed to be greater than zero since `consume_result` is
         supposed to be called under `processing_iterator`.
         """
+        if self.current_amount == ZERO:
+            # this shouldn't happen but a user reported it in
+            # https://github.com/rotki/rotki/issues/7273. We couldn't find the reason for it so we
+            # decided to protect against it by raising an error shown in the frontend
+            log.error(f'Division by zero error when processing report using ACB. {self._acquisitions_heap}')  # noqa: E501
+            raise AccountingError(
+                f'Remaining amount error during ACB calculation for {asset}. Contact support and '
+                'provide the log file for more information',
+            )
+
         self.current_total_acb *= (self.current_amount - used_amount) / self.current_amount
         self.current_amount -= used_amount
-        super().consume_result(used_amount)
+        super().consume_result(used_amount=used_amount, asset=asset)
 
     def calculate_spend_cost_basis(
             self,
@@ -592,13 +609,19 @@ class CostBasisCalculator(CustomizableDateMixin):
         remaining_amount = amount
         for acquisition_event in asset_events.acquisitions_manager.processing_iterator():
             if remaining_amount < acquisition_event.remaining_amount:
-                asset_events.acquisitions_manager.consume_result(remaining_amount)
+                asset_events.acquisitions_manager.consume_result(
+                    used_amount=remaining_amount,
+                    asset=asset,
+                )
                 remaining_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy reduction
                 break
 
             remaining_amount -= acquisition_event.remaining_amount
-            asset_events.acquisitions_manager.consume_result(acquisition_event.remaining_amount)
+            asset_events.acquisitions_manager.consume_result(
+                used_amount=acquisition_event.remaining_amount,
+                asset=asset,
+            )
 
         if remaining_amount != ZERO:
             if not asset.is_fiat():
