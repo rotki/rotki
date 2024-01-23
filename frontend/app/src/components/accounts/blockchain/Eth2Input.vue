@@ -9,6 +9,7 @@ import {
 } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import { toMessages } from '@/utils/validation';
+import { consistOfNumbers } from '@/utils/text';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
@@ -38,6 +39,12 @@ const { t } = useI18n();
 const rules = {
   validatorIndex: {
     requiredUnlessKey: requiredUnless(logicAnd(publicKey)),
+    consistOfNumbers: helpers.withMessage(
+      t('eth2_input.validator_index.validation'),
+      (value: string) =>
+        !value || consistOfNumbers(value)
+      ,
+    ),
   },
   publicKey: {
     requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex)),
@@ -94,9 +101,10 @@ watch(
 <template>
   <div class="grid gap-4 grid-cols-3 mt-3">
     <div class="col-span-3 md:col-span-1">
-      <AmountInput
+      <RuiTextField
         v-model="validatorIndex"
-        outlined
+        variant="outlined"
+        color="primary"
         :disabled="disabled"
         :label="t('common.validator_index')"
         :error-messages="toMessages(v$.validatorIndex)"
