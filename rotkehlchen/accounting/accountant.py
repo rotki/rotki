@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import AccountingError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -202,6 +202,10 @@ class Accountant:
                     reason='inability to reach an external service at that point in time',
                 )
                 continue
+            except AccountingError as e:
+                log.error(f'Found critical error {e} when processing history. Stopping.')
+                e.report_id = report_id
+                raise
 
             if processed_events_num == 0:
                 break  # we reached the period end
