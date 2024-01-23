@@ -165,6 +165,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
+    AccountingError,
     AlreadyExists,
     DBSchemaError,
     DBUpgradeError,
@@ -1529,10 +1530,18 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
-        report_id, error_or_empty = self.rotkehlchen.process_history(
-            start_ts=from_timestamp,
-            end_ts=to_timestamp,
-        )
+        try:
+            report_id, error_or_empty = self.rotkehlchen.process_history(
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
+            )
+        except AccountingError as e:
+            return {
+                'result': e.report_id,
+                'message': str(e),
+                'status_code': HTTPStatus.CONFLICT,
+            }
+
         return {'result': report_id, 'message': error_or_empty}
 
     @async_api_call()

@@ -20,6 +20,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import AccountingError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -29,14 +30,17 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
+    wait_for_async_task,
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import (
     assert_pnl_debug_import,
+    mock_etherscan_transaction_response,
     prepare_rotki_for_history_processing_test,
     prices,
 )
@@ -201,6 +205,41 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     # because it is only for the history creation not its processing.
     # For history processing tests look at test_accounting.py and
     # test_accounting_events.py
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1]])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer'):
+    """Test that an accounting error is propagated correctly to the api"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    error_patch = patch(
+        'rotkehlchen.accounting.accountant.Accountant._process_event',
+        side_effect=AccountingError(message='mocked error'),
+    )
+    etherscan_patch = mock_etherscan_transaction_response(
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+        remote_errors=True,
+    )
+
+    with ExitStack() as stack:
+        stack.enter_context(error_patch)
+        stack.enter_context(etherscan_patch)
+
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
+            json={'from_timestamp': 0, 'to_timestamp': 1, 'async_query': True},
+        )
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(
+            rotkehlchen_api_server,
+            task_id,
+        )
+        assert outcome == {
+            'result': 1,
+            'message': 'mocked error',
+            'status_code': HTTPStatus.CONFLICT,
+        }
 
 
 @pytest.mark.parametrize('have_decoders', [True])
