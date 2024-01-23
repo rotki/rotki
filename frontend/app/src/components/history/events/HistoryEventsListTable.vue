@@ -131,7 +131,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
             {{ t('actions.history_events.missing_rule.title') }}
           </RuiTooltip>
           <HistoryEventAction
-            v-else-if="isEventAccountingRuleProcessed(item)"
+            v-else-if="!isEventAccountingRuleProcessed(item)"
             :event="item"
           />
         </RowActions>

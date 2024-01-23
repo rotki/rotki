@@ -50,7 +50,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller,
   } = useBlockchainBalancesApi();
-  const { supportsTransactions } = useSupportedChains();
+  const { getChainName, supportsTransactions } = useSupportedChains();
 
   const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
   const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
@@ -90,7 +90,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           title: t('actions.balances.detect_tokens.task.title'),
           description: t('actions.balances.detect_tokens.task.description', {
             address,
-            chain,
+            chain: get(getChainName(chain)),
           }),
           address,
           chain,
