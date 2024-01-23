@@ -11,17 +11,10 @@ from rotkehlchen.constants.assets import A_ETH, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.accounting import (
-    TIMESTAMP_0_MS,
-    TIMESTAMP_0_SEC,
-    TIMESTAMP_1_MS,
-    TIMESTAMP_1_SEC,
-    accounting_history_process,
-    assert_pnl_totals_close,
-)
+from rotkehlchen.tests.utils.accounting import accounting_history_process, assert_pnl_totals_close
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -29,12 +22,12 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('mocked_price_queries', [{
     A_WBTC.identifier: {'EUR': {
-        TIMESTAMP_0_SEC: Price(FVal(5)),
-        TIMESTAMP_1_SEC: Price(FVal(10)),
+        Timestamp(1700000000): Price(FVal(5)),
+        Timestamp(1700000001): Price(FVal(10)),
     }},
     A_ETH.identifier: {'EUR': {
-        TIMESTAMP_0_SEC: Price(FVal(0.1)),
-        TIMESTAMP_1_SEC: Price(FVal(0.1)),
+        Timestamp(1700000000): Price(FVal(0.1)),
+        Timestamp(1700000001): Price(FVal(0.1)),
     }},
 }])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
@@ -48,7 +41,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
     events = [EvmEvent(  # this event is to create cost basis for wBTC
         tx_hash=tx_hash,
         sequence_index=0,
-        timestamp=TIMESTAMP_0_MS,
+        timestamp=TimestampMS(1700000000000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
@@ -61,7 +54,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=1,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
@@ -74,7 +67,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=2,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -87,7 +80,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=3,
-        timestamp=TIMESTAMP_1_MS,
+        timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
@@ -101,13 +94,13 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
 
     accounting_history_process(
         accountant=accountant,
-        start_ts=TIMESTAMP_0_SEC,
-        end_ts=TIMESTAMP_1_SEC,
+        start_ts=Timestamp(1700000000),
+        end_ts=Timestamp(1700000001),
         history_list=events,
     )
     no_message_errors(accountant.msg_aggregator)
 
-    fee_spent_event = accountant.pots[0].processed_events[4]
+    fee_spent_event = accountant.pots[0].processed_events[3]
     if db_settings['include_fees_in_cost_basis']:
         expected_pnls = PnlTotals({
             AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal(10), free=ZERO),  # Get BTC(€5) + profit_from_selling_btc(€5)  # noqa: E501
