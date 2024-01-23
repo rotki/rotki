@@ -4,9 +4,7 @@ import { DefiProtocol, isDefiProtocol } from '@/types/modules';
 import type { ComputedRef } from 'vue';
 import type {
   DefiProtocolSummary,
-  TokenInfo,
 } from '@/types/defi/overview';
-import type { Writeable } from '@/types';
 
 export const useDefiOverviewStore = defineStore('defi/store', () => {
   const { getStatus } = useStatusUpdater(Section.DEFI_OVERVIEW);
@@ -114,9 +112,10 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         else if (
           summary[protocol].tokenInfo?.tokenName !== entry.baseBalance.tokenName
         ) {
-          const tokenInfo: Writeable<TokenInfo> = summary[protocol].tokenInfo!;
-          tokenInfo.tokenName = `${t('defi_overview.multiple_assets')}`;
-          tokenInfo.tokenSymbol = '';
+          summary[protocol].tokenInfo = {
+            tokenName: `${t('defi_overview.multiple_assets')}`,
+            tokenSymbol: '',
+          };
         }
 
         const { balance } = entry.baseBalance;
