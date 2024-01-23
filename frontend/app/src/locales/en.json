@@ -2113,6 +2113,9 @@
       "hint": "*Optional: By default it is 100%",
       "validation": "The value should be 0-100%"
     },
+    "validator_index": {
+      "validation": "Validator index can be filled with numeric value only."
+    },
     "ownership_percentage": "Ownership Percentage",
     "public_key": "Public Key"
   },
