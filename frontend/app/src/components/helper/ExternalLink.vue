@@ -46,7 +46,7 @@ const css = useCssModule();
     v-else-if="url || premium"
     :href="href"
     :target="linkTarget"
-    class="text-no-wrap"
+    class="whitespace-nowrap"
     @click="onLinkClick()"
   >
     <slot>{{ displayText }}</slot>
