@@ -41,7 +41,7 @@ const locationFile = computed<File | null>({
   },
 });
 
-const complete = logicOr(balanceFile, locationFile);
+const complete = logicAnd(balanceFile, locationFile);
 </script>
 
 <template>

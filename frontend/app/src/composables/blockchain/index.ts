@@ -23,7 +23,7 @@ export function useBlockchains() {
   const { resetDefiStatus } = useStatusStore();
   const { detectEvmAccounts: detectEvmAccountsCaller }
     = useBlockchainAccountsApi();
-  const { getChainName, supportsTransactions } = useSupportedChains();
+  const { getChainName, supportsTransactions, evmChains } = useSupportedChains();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -140,15 +140,17 @@ export function useBlockchains() {
         if (added) {
           const [address, chains] = Object.entries(added)[0];
 
-          chains.forEach((chain) => {
+          const isAll = chains.length === 1 && chains[0] === 'all';
+
+          const usedChains = isAll ? get(evmChains) : chains;
+
+          usedChains.forEach((chain) => {
             if (!isBlockchain(chain)) {
               logger.error(`${chain} was not a valid blockchain`);
               return;
             }
             startPromise(finishAddition(chain, address));
           });
-
-          const isAll = chains.length === 0 && chains[0] === 'all';
 
           notify({
             title: notificationTitle,
@@ -259,8 +261,9 @@ export function useBlockchains() {
     payload,
     modules,
   }: AddAccountsPayload): Promise<void> => {
-    if (get(isTaskRunning(TaskType.ADD_ACCOUNT))) {
-      logger.debug(`${TaskType[TaskType.ADD_ACCOUNT]} is already running.`);
+    const taskType = TaskType.ADD_ACCOUNT;
+    if (get(isTaskRunning(taskType))) {
+      logger.debug(`${TaskType[taskType]} is already running.`);
       return;
     }
     const filteredPayload = getNewAccountPayload(blockchain, payload);
