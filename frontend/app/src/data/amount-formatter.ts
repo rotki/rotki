@@ -1,11 +1,11 @@
 import { BigNumber } from '@rotki/common';
 
-const abbreviationList = [
+export const abbreviationList: [number, string][] = [
   [12, 'T'],
   [9, 'B'],
   [6, 'M'],
   [3, 'k'],
-] as const;
+];
 
 export class AmountFormatter {
   format(

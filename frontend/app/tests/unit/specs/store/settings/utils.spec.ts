@@ -49,6 +49,7 @@ describe('settings:utils', () => {
       decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
       currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
       abbreviateNumber: false,
+      minimumDigitToBeAbbreviated: 4,
       refreshPeriod: -1,
       explorers: {},
       itemsPerPage: 10,

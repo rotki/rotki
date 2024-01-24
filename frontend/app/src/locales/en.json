@@ -1056,6 +1056,12 @@
     }
   },
   "amount_display": {
+    "abbreviation": {
+      "k": "thousands",
+      "m": "millions",
+      "b": "billions",
+      "t": "trillions"
+    },
     "click_to_copy": "Click to copy",
     "copied": "Copied!",
     "manual_tooltip": "Manually defined price"
@@ -2432,6 +2438,7 @@
       "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "enable_alias_names": "Show alias name for blockchain addresses.",
+      "minimum_digit_to_be_abbreviated": "Minimum value to be abbreviated",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",

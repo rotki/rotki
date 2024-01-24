@@ -8,7 +8,7 @@ import {
   TimeFrameSetting,
 } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
-import { Constraints } from '@/data/constraints';
+import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { CurrencyLocationEnum } from '@/types/currency-location';
@@ -160,6 +160,7 @@ export const FrontendSettings = z.object({
     Defaults.DEFAULT_CURRENCY_LOCATION,
   ),
   abbreviateNumber: z.boolean().default(false),
+  minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
   refreshPeriod: z.preprocess(
     refreshPeriod =>
       Math.min(

@@ -58,6 +58,7 @@ describe('settings:frontend', () => {
             decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
             currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
             abbreviateNumber: false,
+            minimumDigitToBeAbbreviated: 4,
             refreshPeriod: -1,
             explorers: {},
             itemsPerPage: 10,
@@ -123,6 +124,7 @@ describe('settings:frontend', () => {
       },
       currencyLocation: CurrencyLocation.BEFORE,
       abbreviateNumber: false,
+      minimumDigitToBeAbbreviated: 4,
       thousandSeparator: '|',
       decimalSeparator: '-',
       refreshPeriod: 120,
@@ -194,6 +196,7 @@ describe('settings:frontend', () => {
     expect(store.decimalSeparator).toBe('-');
     expect(store.currencyLocation).toBe(CurrencyLocation.BEFORE);
     expect(store.abbreviateNumber).toBe(false);
+    expect(store.minimumDigitToBeAbbreviated).toBe(4);
     expect(store.refreshPeriod).toBe(120);
     expect(store.explorers).toStrictEqual({
       [Blockchain.ETH]: {
