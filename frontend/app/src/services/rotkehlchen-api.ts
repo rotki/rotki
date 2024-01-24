@@ -78,7 +78,7 @@ export class RotkehlchenApi {
       (response) => {
         if (response.status === 401) {
           this.cancel();
-          window.location.href = '/';
+          window.location.href = '/#/';
         }
 
         return response;
@@ -87,7 +87,7 @@ export class RotkehlchenApi {
         if (error.response) {
           if (error.response.status === 401) {
             this.cancel();
-            window.location.href = '/';
+            window.location.href = '/#/';
           }
           return Promise.reject(error.response.data);
         }
