@@ -75,17 +75,26 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
       }"
     >
       <VMain>
-        <div
+        <Transition
           v-if="!logged"
-          class="fixed top-0 left-0 w-full h-full bg-white z-[999] flex items-center justify-center"
+          enter-class="opacity-0"
+          enter-to-class="opacity-1"
+          enter-active-class="transition duration-300"
+          leave-class="opacity-1"
+          leave-to-class="opacity-0"
+          leave-active-class="transition duration-100"
         >
-          <RuiProgress
-            thickness="2"
-            color="primary"
-            variant="indeterminate"
-            circular
-          />
-        </div>
+          <div
+            class="fixed top-0 left-0 w-full h-full bg-white z-[999] flex items-center justify-center"
+          >
+            <RuiProgress
+              thickness="2"
+              color="primary"
+              variant="indeterminate"
+              circular
+            />
+          </div>
+        </Transition>
         <RouterView v-else />
       </VMain>
 
