@@ -49,17 +49,6 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
 
 <template>
   <div class="app__content rotki-light-grey">
-    <div
-      v-if="!logged"
-      class="fixed top-0 left-0 w-full h-full bg-white/[0.3] z-[999] flex items-center justify-center"
-    >
-      <RuiProgress
-        thickness="2"
-        color="primary"
-        variant="indeterminate"
-        circular
-      />
-    </div>
     <NotificationPopup />
     <AppDrawer />
 
@@ -86,7 +75,18 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
       }"
     >
       <VMain>
-        <RouterView />
+        <div
+          v-if="!logged"
+          class="fixed top-0 left-0 w-full h-full bg-white z-[999] flex items-center justify-center"
+        >
+          <RuiProgress
+            thickness="2"
+            color="primary"
+            variant="indeterminate"
+            circular
+          />
+        </div>
+        <RouterView v-else />
       </VMain>
 
       <Transition

@@ -1,3 +1,4 @@
+import { promiseTimeout } from '@vueuse/core';
 import {
   type CreateAccountPayload,
   IncompleteUpgradeError,
@@ -169,9 +170,12 @@ export const useSessionStore = defineStore('session', () => {
 
   const logout = async (navigate: boolean = true): Promise<void> => {
     set(logged, false);
+    const user = get(username); // save the username, after the await below, it is reset
+    // allow some time for the components to leave the dom completely and show loading overlay
+    await promiseTimeout(1500);
     resetTray();
     try {
-      await usersApi.logout(get(username));
+      await usersApi.logout(user);
     }
     catch (error: any) {
       logger.error(error);
