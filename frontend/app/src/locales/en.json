@@ -1056,6 +1056,12 @@
     }
   },
   "amount_display": {
+    "abbreviation": {
+      "k": "thousands",
+      "m": "millions",
+      "b": "billions",
+      "t": "trillions"
+    },
     "click_to_copy": "Click to copy",
     "copied": "Copied!",
     "manual_tooltip": "Manually defined price"
@@ -2432,7 +2438,7 @@
       "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "enable_alias_names": "Show alias name for blockchain addresses.",
-      "minimum_digit_to_be_abbreviated": "Minimum digit to be abbreviated",
+      "minimum_digit_to_be_abbreviated": "Minimum value to be abbreviated",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
@@ -2447,7 +2453,6 @@
       "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
       "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
-      "minimum_digit_to_be_abbreviated": "Minimum digit of the number to apply the abbreviation.",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
       "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
@@ -2646,10 +2651,6 @@
       },
       "language": {
         "error": "Error change language setting"
-      },
-      "minimum_digit_to_be_abbreviated": {
-        "non_empty": "Please enter the minimum digit",
-        "min_value": "Minimum digit shouldn't be less than {min}"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
