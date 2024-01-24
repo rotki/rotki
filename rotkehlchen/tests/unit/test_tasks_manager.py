@@ -479,7 +479,7 @@ def test_maybe_detect_new_spam_tokens(
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
         cursor.execute(
-            'SELECT value FROM settings WHERE name=?',
+            'SELECT value FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
