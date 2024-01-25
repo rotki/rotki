@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -2080,6 +2081,13 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
             );""",
         )
         assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2'), ('covalent', 'lollol')]  # noqa: E501
+        # verify that the history_events exists before upgrade
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 8
+        assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 8
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        ).fetchone()[0] == 1  # one event is customized
 
     db_v40.logout()
 
@@ -2155,6 +2163,9 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
                 PRIMARY KEY (blockchain, account)
             );""",
         )
+        # verify that the history_events are removed, except the one that is customized
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 1
+        assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 1
     db.logout()
 
 

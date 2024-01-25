@@ -1,6 +1,11 @@
 import json
 import logging
 from typing import TYPE_CHECKING
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
+)
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -172,6 +177,33 @@ def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _move_labels_to_addressbook')
 
 
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """Reset all decoded evm events except the customized ones."""
+    log.debug('Enter _reset_decoded_events')
+    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+        customized_events = write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        ).fetchone()[0]
+        querystr = (
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+            'ON H.identifier=E.identifier AND E.tx_hash IN '
+            '(SELECT tx_hash FROM evm_transactions))'
+        )
+        bindings: tuple = ()
+        if customized_events != 0:
+            querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+            bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+        write_cursor.execute(querystr, bindings)
+        write_cursor.execute(
+            'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+            (HISTORY_MAPPING_STATE_DECODED,),
+        )
+    log.debug('Exit _reset_decoded_events')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
@@ -182,7 +214,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
@@ -197,6 +229,8 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_new_supported_locations(write_cursor)
         progress_handler.new_step()
         _move_labels_to_addressbook(write_cursor)
+        progress_handler.new_step()
+        _reset_decoded_events(write_cursor)
     progress_handler.new_step()
 
     log.debug('Finish userdb v40->v41 upgrade')
