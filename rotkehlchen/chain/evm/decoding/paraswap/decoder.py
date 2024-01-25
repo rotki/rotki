@@ -21,7 +21,19 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import BUY_SIGNATURE, CPT_PARASWAP, SWAP_SIGNATURE as PARASWAP_SWAP_SIGNATURE
+from .constants import (
+    BUY_ON_UNISWAP_V2_FORK,
+    BUY_SIGNATURE,
+    CPT_PARASWAP,
+    DIRECT_BALANCER_V2_GIVEN_IN_SWAP,
+    DIRECT_CURVE_V1_SWAP,
+    DIRECT_CURVE_V2_SWAP,
+    DIRECT_UNI_V3_SWAP,
+    SWAP_ON_UNISWAP_V2_FACTORY,
+    SWAP_ON_UNISWAP_V2_FORK,
+    SWAP_ON_UNISWAP_V2_FORK_WITH_PERMIT,
+    SWAP_SIGNATURE as PARASWAP_SWAP_SIGNATURE,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -195,12 +207,22 @@ class ParaswapCommonDecoder(DecoderInterface):
         }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
-        return {  # swapOnUniswapV2Fork, swapOnUniswapV2ForkWithPermit, buyOnUniswapV2Fork
+        return {
             method_id: {SWAP_SIGNATURE: self._decode_uniswap_v2_swap}
-            for method_id in (b'\x0b\x86\xa4\xc1', b'n\x91S\x8b', b'\xb2\xf1\xe6\xdb')
-        } | {  # directUniV3Swap, directCurveV1Swap, directCurveV2Swap, directBalancerV2GivenInSwap
+            for method_id in (
+                SWAP_ON_UNISWAP_V2_FORK,
+                SWAP_ON_UNISWAP_V2_FACTORY,
+                SWAP_ON_UNISWAP_V2_FORK_WITH_PERMIT,
+                BUY_ON_UNISWAP_V2_FORK,
+            )
+        } | {
             method_id: {DIRECT_SWAP_SIGNATURE: self._decode_uniswap_v3_swap}
-            for method_id in (b'\xa6\x88m\xa9', b'8e\xbd\xe6', b'X\xf1Q\x00', b'\xb2/M\xb8')
+            for method_id in (
+                DIRECT_UNI_V3_SWAP,
+                DIRECT_CURVE_V1_SWAP,
+                DIRECT_CURVE_V2_SWAP,
+                DIRECT_BALANCER_V2_GIVEN_IN_SWAP,
+            )
         }
 
     @staticmethod

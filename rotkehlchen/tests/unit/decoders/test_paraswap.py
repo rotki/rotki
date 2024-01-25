@@ -1268,3 +1268,70 @@ def test_direct_uniswap_v3_swap_polygon(database, polygon_pos_inquirer, polygon_
         address=PARASWAP_AUGUSTUS_ROUTER,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x60A543647a1ecAccAADFc2DF27a2D1D74e60A39f']])
+def test_paraswap_fork_with_factory(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x90d9e615e808d5d9b62f6f072c783e9a9f8417c46fcc6665a4aadd927dc74fce')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1646086826000)
+    swap_amount, received_amount, gas_fees = '7800', '0.338822187329295101', '0.010252494'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=user_address,
+        notes=f'Burned {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=201,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_PSP,
+        balance=Balance(amount=ZERO),
+        location_label=user_address,
+        notes=f'Revoke PSP spending approval of {user_address} by 0x216B4B4Ba9F3e719726886d34a177484278Bfcae',  # noqa: E501
+        address='0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=202,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_PSP,
+        balance=Balance(amount=FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} PSP in paraswap',
+        counterparty=CPT_PARASWAP,
+        address='0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=203,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} ETH as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address='0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    )]
+    assert expected_events == events
