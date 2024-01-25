@@ -537,3 +537,22 @@ def test_maybe_augmented_detect_new_spam_tokens(
             (DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
+    """Test that we don't execute extra logic in tasks if no ethereum address is tracked"""
+    task_manager.should_schedule = True
+    for func in (
+        task_manager._maybe_update_yearn_vaults,
+        task_manager._maybe_update_ilk_cache,
+    ):
+        with (
+            patch('rotkehlchen.tasks.utils.should_run_periodic_task') as mocked_func,
+        ):
+            task_manager.potential_tasks = [func]
+            task_manager.schedule()
+            if len(task_manager.running_greenlets) != 0:
+                gevent.joinall(task_manager.running_greenlets[func])
+            assert mocked_func.call_count == 0
