@@ -649,6 +649,12 @@ class TaskManager:
         )]
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            if len(self.database.get_blockchain_accounts(cursor).get(
+                blockchain=SupportedBlockchain.ETHEREUM,
+            )) == 0:
+                return None
+
         if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
             ethereum_manager: EthereumManager = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
             return [self.greenlet_manager.spawn_and_track(
@@ -695,6 +701,12 @@ class TaskManager:
         )]
 
     def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            if len(self.database.get_blockchain_accounts(cursor).get(
+                blockchain=SupportedBlockchain.ETHEREUM,
+            )) == 0:
+                return None
+
         if should_update_protocol_cache(CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
