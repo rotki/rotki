@@ -33,16 +33,16 @@ jobs:
           repository: rotki/test-caching
           path: test-caching
       - name: Load env
-        uses: rotki/action-env@v1
+        uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       - name: Cache rotkehlchen test directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
