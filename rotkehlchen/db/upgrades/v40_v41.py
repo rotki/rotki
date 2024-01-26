@@ -9,7 +9,7 @@ from rotkehlchen.db.constants import (
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY
+from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -204,6 +204,40 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_decoded_events')
 
 
+def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
+    """
+    Removes bittrex settings and credentials from the DB.
+    Code taken from v36->v37 upgrade from ftx.
+    """
+    log.debug('Enter _remove_bittrex_data')
+    write_cursor.execute(
+        'DELETE FROM user_credentials WHERE location=?',
+        (Location.BITTREX.serialize_for_db(),),
+    )
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+        (f'{Location.BITTREX!s}\\_%', '\\'),
+    )
+    non_syncing_exchanges_in_db = write_cursor.execute(
+        'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+    ).fetchone()
+    if non_syncing_exchanges_in_db is not None:
+        try:
+            non_syncing_exchanges = json.loads(non_syncing_exchanges_in_db[0])
+        except json.JSONDecodeError as e:
+            log.error(
+                f'Failed to read setting "non_syncing_exchanges" due to {e} '
+                'during the DB upgrade to v41.',
+            )
+        else:
+            new_values = [x for x in non_syncing_exchanges if x['location'] != Location.BITTREX.serialize()]  # noqa: E501
+            write_cursor.execute(
+                'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
+                (json.dumps(new_values),),
+            )
+    log.debug('Exit _remove_bittrex_data')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
@@ -214,11 +248,13 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
         _remove_covalent_api_key(write_cursor)
+        progress_handler.new_step()
+        _remove_bittrex_data(write_cursor)
         progress_handler.new_step()
         _upgrade_external_service_credentials(write_cursor)
         progress_handler.new_step()

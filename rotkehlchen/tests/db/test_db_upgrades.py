@@ -1981,14 +1981,13 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ),
     None,  # no setting, result should have two values replaced
 ])
-def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
+def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggregator):
     """Test upgrading the DB from version 40 to version 41"""
-    msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v40_rotkehlchen.db')
     db_v40 = _init_db_with_target_version(
         target_version=40,
         user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
+        msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
     # add some settings and used_query_ranges that should/shouldn't move in the upgrade
@@ -2009,6 +2008,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
         'contracts_version': '123',
         'global_addressbook_version': '234',
         'accounting_rules_version': '345',
+        'non_syncing_exchanges': '[{"name": "Kraken 1", "location": "kraken"}]',
     }
     if address_name_priority is not None:
         should_not_move_settings['address_name_priority'] = json.dumps(address_name_priority)
@@ -2042,6 +2042,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
             assert names[0] in should_move_settings | should_not_move_settings
         cursor.execute('SELECT name FROM used_query_ranges;')
         for names in cursor:
+            if names[0].startswith('bittrex'):
+                continue  # those will be removed
             assert names[0] in should_move_used_query_ranges | should_not_move_used_query_ranges
         cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
         assert cursor.fetchone()[0] == 0
@@ -2060,6 +2062,15 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
                 'INSERT INTO settings(name, value) VALUES(?, ?)',
                 ('address_name_priority', json.dumps(address_name_priority)),
             )
+        # check that we have bittrex information that needs to be removed
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM user_credentials WHERE location=?',
+            ('D',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            (f'{Location.BITTREX!s}\\_%', '\\'),
+        ).fetchone()[0] == 3
 
     # test external credentials are there
     with db_v40.conn.read_ctx() as cursor:
@@ -2095,7 +2106,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
     db = _init_db_with_target_version(
         target_version=41,
         user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
+        msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
     # check if all the above values have been moved
@@ -2166,6 +2177,19 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority):
         # verify that the history_events are removed, except the one that is customized
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 1
         assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM user_credentials WHERE location=?',
+            ('D',),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            (f'{Location.BITTREX!s}\\_%', '\\'),
+        ).fetchone()[0] == 0
+        assert json.loads(cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            ('non_syncing_exchanges',),
+        ).fetchone()[0]) == [{'name': 'Kraken 1', 'location': 'kraken'}]
+
     db.logout()
 
 
