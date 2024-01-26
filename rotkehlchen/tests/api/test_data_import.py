@@ -28,6 +28,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_cryptocom_import_results,
     assert_cryptocom_special_events_import_results,
     assert_custom_cointracking,
+    assert_kucoin_import_results,
     assert_nexo_results,
     assert_rotki_generic_events_import_results,
     assert_rotki_generic_trades_import_results,
@@ -651,3 +652,24 @@ def test_bittrex_history_import(rotkehlchen_api_server):
         assert assert_proper_response_with_result(response) is True
 
     assert_bittrex_import_results(rotki)
+
+
+def test_kucoin_history_import(rotkehlchen_api_server):
+    """Test that data import works for both kucoin csv files"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    for filename, time_format in (
+        ('kucoin_order_history.csv', None),
+        ('kucoin_order_history_old.csv', '%Y/%m/%d %H:%M:%S'),
+    ):
+        filepath = dir_path / 'data' / filename
+        json_data = {'source': 'kucoin', 'file': str(filepath), 'timestamp_format': time_format}
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dataimportresource',
+            ), json=json_data,
+        )
+        assert assert_proper_response_with_result(response) is True
+
+    assert_kucoin_import_results(rotki)

@@ -41,7 +41,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_MCO, A_XMR
+from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_KCS, A_MCO, A_XMR, A_XTZ
 from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
@@ -2462,3 +2462,55 @@ def assert_bittrex_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         link='Imported from bittrex CSV file',
     )]
+
+
+def assert_kucoin_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing data from kucoin"""
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    expected_trades = [Trade(
+        timestamp=Timestamp(1557570437),
+        location=Location.KUCOIN,
+        base_asset=A_KCS,
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal(10.01)),
+        rate=Price(FVal(0.00015225)),
+        fee=Fee(FVal(0.00000152)),
+        fee_currency=A_BTC,
+    ), Trade(
+        timestamp=Timestamp(1557570438),
+        location=Location.KUCOIN,
+        base_asset=A_KCS,
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal(10.02)),
+        rate=Price(FVal(0.00015226)),
+        fee=Fee(FVal(0.00000153)),
+        fee_currency=A_BTC,
+    ), Trade(
+        timestamp=Timestamp(1651149360),
+        location=Location.KUCOIN,
+        base_asset=A_XTZ,
+        quote_asset=A_USDT,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal(36.4479)),
+        rate=Price(FVal(0.1025)),
+        fee=Fee(FVal(0.00373590975)),
+        fee_currency=A_USDT,
+    ), Trade(
+        timestamp=Timestamp(1651160767),
+        location=Location.KUCOIN,
+        base_asset=A_XRP,
+        quote_asset=A_USDT,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal(432.59183198)),
+        rate=Price(FVal(0.64924)),
+        fee=Fee(FVal(0.2808559209946952)),
+        fee_currency=A_USDT,
+    )]
+    assert trades == expected_trades
