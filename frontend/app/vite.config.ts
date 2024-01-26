@@ -131,6 +131,7 @@ export default defineConfig({
             include: 'src/*',
             exclude: ['node_modules', 'tests/', '**/*.d.ts'],
             extension: ['.ts', '.vue'],
+            forceBuildInstrument: true,
           }),
         ]
       : []),
