@@ -96,6 +96,7 @@ INTEGER_KEYS = (
 STRING_KEYS = (
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
+    'beacon_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
 )
@@ -113,6 +114,7 @@ CachedDBSettingsFieldNames = Literal[
     'include_gas_costs',
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
+    'beacon_rpc_endpoint',
     'main_currency',
     'date_display_format',
     'submit_usage_analytics',
@@ -170,6 +172,7 @@ class DBSettings:
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     ksm_rpc_endpoint: str = 'http://localhost:9933'
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
+    beacon_rpc_endpoint: str = ''  # must be set by user
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
@@ -226,6 +229,7 @@ class ModifiableDBSettings(NamedTuple):
     include_gas_costs: bool | None = None
     ksm_rpc_endpoint: str | None = None
     dot_rpc_endpoint: str | None = None
+    beacon_rpc_endpoint: str | None = None
     main_currency: AssetWithOracles | None = None
     date_display_format: str | None = None
     submit_usage_analytics: bool | None = None

@@ -1,19 +1,29 @@
 import logging
+from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Literal
+from typing import Any, Literal
 
 import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.chain.ethereum.modules.eth2.constants import DEFAULT_VALIDATOR_CHUNK_SIZE
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.db.filtering import (
+    EthStakingEventFilterQuery,
+    EthWithdrawalFilterQuery,
+    WithdrawalTypesFilter,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain.constants import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.types import Eth2PubKey, Timestamp
+from rotkehlchen.utils.misc import create_timestamp, get_chunks
 
 from .structures import ValidatorDailyStats
 
@@ -30,6 +40,11 @@ ETH2_GENESIS_TIMESTAMP = 1606824023
 def timestamp_to_epoch(timestamp: Timestamp) -> int:
     """Turn a unix timestamp to a beaconchain epoch"""
     return int((timestamp - ETH2_GENESIS_TIMESTAMP) / EPOCH_DURATION_SECS)
+
+
+def epoch_to_timestamp(epoch: int) -> Timestamp:
+    """Turn a beaconchain epoch to a unix timestamp"""
+    return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
 
 
 def _parse_fval(line: str, entry: str) -> FVal:
@@ -184,3 +199,49 @@ def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> 
     else:
         notes = f'Withdrew {amount} ETH from validator {validator_index}'
     return notes
+
+
+def calculate_query_chunks(
+        indices_or_pubkeys: Sequence[int | Eth2PubKey],
+        chunk_size: int = DEFAULT_VALIDATOR_CHUNK_SIZE,
+) -> list[Sequence[int | Eth2PubKey]]:
+    """Create chunks of queries.
+
+    Beaconcha.in allows up to 100 validator or public keys in one query for most calls.
+    Also has a URI length limit of ~8190, so seems no more than 80 public keys can be per call.
+
+    Beacon nodes API has as similar limit
+    https://ethereum.github.io/beacon-APIs/#/Beacon/getStateValidators
+    If you cross it they will return 414 status error.
+
+    They are creating a POST endpoint to get rid of this limit.
+    """
+    if len(indices_or_pubkeys) == 0:
+        return []
+
+    return list(get_chunks(indices_or_pubkeys, n=chunk_size))
+
+
+def create_profit_filter_queries(common_arguments: dict[str, Any]) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery]:  # noqa: E501
+    """Create the Filter queries for withdrawal events and execution layer reward events"""
+    withdrawals_filter_query = EthWithdrawalFilterQuery.make(
+        **common_arguments,
+        event_types=[HistoryEventType.STAKING],
+        event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+        entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
+        withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
+    )
+    exits_filter_query = EthWithdrawalFilterQuery.make(
+        **common_arguments,
+        event_types=[HistoryEventType.STAKING],
+        event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+        entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
+        withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
+    )
+    execution_filter_query = EthStakingEventFilterQuery.make(
+        **common_arguments,
+        event_types=[HistoryEventType.STAKING],
+        event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
+        entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_BLOCK_EVENT]),
+    )
+    return withdrawals_filter_query, exits_filter_query, execution_filter_query

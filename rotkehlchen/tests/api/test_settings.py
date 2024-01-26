@@ -191,6 +191,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = 'http://kusama.node.com:9933'
         elif setting == 'dot_rpc_endpoint':
             value = 'http://polkadot.node.com:9934'
+        elif setting == 'beacon_rpc_endpoint':
+            value = 'http://lighthouse.mynode.com:6969'
         elif setting == 'current_price_oracles':
             value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3']
         elif setting == 'historical_price_oracles':

@@ -681,6 +681,7 @@ Getting or modifying settings
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
+   :reqjson string[optional] beacon_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum consensus layer beacon node to use when contacting the consensus layer. If it can not be reached or if it is invalid beaconcha.in is used.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting whether or not to submit anonymous usage analytics to the rotki server.
@@ -8334,123 +8335,38 @@ Getting Loopring balances
    :statuscode 502: An external service used in the query such as loopring returned an unexpected result.
 
 
-Getting Eth2 Staking details
-==============================
+Getting eth2 staking performance
+=======================================
 
-.. http:PUT:: /api/(version)/blockchains/eth2/stake/details
 
-   Doing a PUT on the ETH2 stake details endpoint will return detailed information about your ETH2 staking activity and information about the earned ETH as part of withdrawals, mev rewards and new blocks.
+.. http:put:: /api/(version)/blockchains/eth2/stake/performance
+
+   Doing a PUT on the ETH2 stake performance endpoint will return the performance for all validators (or the filtered ones) in a paginated manner.
 
    .. note::
       This endpoint is only available for premium users
 
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
+      This endpoint can also be queried asynchronously by using ``"async_query": true``	      
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/eth2/stake/details HTTP/1.1
+      PUT /api/1/blockchains/eth2/stake/performance HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
-      {'validator_indices': [1111]}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "only_cache": false, "limit": 10, "offset": 10}
 
-      :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
-      :reqjson bool ignore_cache: If true then cached information from beaconchain is ignored and queried again.
-      :reqjson list[string] addresses: A list of location labels to optionally filter by. Is an EVM address and is used to filter the validator details.
-      :reqjson list[int] validator_indices: An optional list of validator indices to filter by.
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result": [{
-              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
-              "index": 9,
-	      "has_exited": true,
-              "public_key": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
-              "balance": {"amount": "0", "usd_value": "0"},
-              "performance_1d": {"amount": "0.1", "usd_value": "100"},
-              "performance_1w": {"amount": "0.7", "usd_value": "700"},
-              "performance_1m": {"amount": "3", "usd_value": "3000"},
-              "performance_1y": {"amount": "36.5", "usd_value": "36500"},
-              "performance_total": {"amount": "42.5", "usd_value": "43500"}
-          }, {
-              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
-              "index": 10,
-	      "has_exited": false,
-              "public_key": "0xa256e41f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cf14",
-              "balance": {"amount": "32.101", "usd_value": "11399"},
-              "performance_1d": {"amount": "0.1", "usd_value": "100"},
-              "performance_1w": {"amount": "0.7", "usd_value": "700"},
-              "performance_1m": {"amount": "3", "usd_value": "3000"},
-              "performance_1y": {"amount": "36.5", "usd_value": "36500"},
-              "performance_total": {"amount": "42.5", "usd_value": "43500"}
-          }, {
-              "eth1_depositor": null,
-              "index": 155,
-	      "has_exited": false,
-              "public_key": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
-              "balance": {"amount": "32", "usd_value": "19000"},
-              "performance_1d": {"amount": "0", "usd_value": "0"},
-              "performance_1w": {"amount": "0", "usd_value": "0"},
-              "performance_1m": {"amount": "0", "usd_value": "0"},
-              "performance_1y": {"amount": "0", "usd_value": "0"},
-              "performance_total": {"amount": "42.5", "usd_value": "43500"}
-        }],
-        "message": "",
-      }
-
-   :resjson details list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
-
-   :resjson eth_depositor [optional]string: The eth1 address that made the deposit for the validator. Can be missing if we can't find it yet.
-   :resjson index int: The Eth2 validator index.
-   :resjson has_exited bool: A boolean indicating if the validator has exited.
-   :resjson public_key str: The Eth2 validator public key.
-   :resjson balance object: The balance in ETH of the validator and its usd value
-   :resjson performance_1d object: How much has the validator earned in ETH (and USD equivalent value) in the past day.
-   :resjson performance_1w object: How much has the validator earned in ETH (and USD equivalent value) in the past week.
-   :resjson performance_1m object: How much has the validator earned in ETH (and USD equivalent value) in the past month.
-   :resjson performance_1y object: How much has the validator earned in ETH (and USD equivalent value) in the past year.
-   :resjson performance_total object: How much has the validator earned in ETH (and USD equivalent value) since it was activated.
-
-   :statuscode 200: Eth2 staking details successfully queried
-   :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
-   :statuscode 409: eth2 module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
-
-
-.. http:POST:: /api/(version)/blockchains/eth2/stake/details
-
-   Doing a POST on the ETH2 stake details endpoint will query the database for information about earned ETH as part of withdrawals, mev rewards and new blocks.
-
-   .. note::
-      This endpoint is only available for premium users
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      POST /api/1/blockchains/eth2/stake/details HTTP/1.1
-      Host: localhost:5042
-
-      {'validator_indices': [1111]}
-
-      :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
-      :reqjson int to_timestamp: The timestamp until which to query. Default is now.
-      :reqjson list[string] addresses: A list of location labels to optionally filter by. Is a list of EVM addresses and is used to filter the rewards.
-      :reqjson list[int] validator_indices: An optional list of validator indices to filter by.
-
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool only_cache: If false then we skip any cached values
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int[optional] from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int[optional] to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson list[optional] validator_indices: The indices of the validators to filter for
+   :reqjson list[optional] addresses: The withdrawal addresses for which to filter the results
 
    **Example Response**:
 
@@ -8461,21 +8377,51 @@ Getting Eth2 Staking details
 
       {
         "result": {
-          "withdrawn_consensus_layer_rewards": "4.2",
-          "execution_layer_rewards": "3.7",
-        },
-        "message": "",
-      }
+	    "sums": {
+		"apr": "0.0597652039949379861158979362586657031468575710584143257025001370766265371913491",
+		"execution": "0.951964836013963505",
+		"exits": "0.0014143880000005993",
+		"outstanding_consensus_pnl": "0.000829238",
+		"sum": "3.2351487110139639043",
+		"withdrawals": "2.2809402489999998"
+	    },
+	    "validators": {
+		"432840": {
+		    "apr": "0.0466762036714707128052091929912369373004480648295118244406922158753010413605874",
+		    "execution": "0.93361811418473",
+		    "exits": "0.0014143880000005993",
+		    "sum": "2.5266283731847305993",
+		    "withdrawals": "1.591595871"
+		},
+		"624729": {
+		    "apr": "0.0130890003234672733106887432674287658464095062289025012618079212013254958307617",
+		    "execution": "0.018346721829233505",
+		    "outstanding_consensus_pnl": "0.000829238",
+		    "sum": "0.708520337829233305",
+		    "withdrawals": "0.6893443779999998"
+		}
+	    },
+	    "entries_found": 2,
+	    "entries_total": 402
+	},
+	"message": ""
+    }
 
-   :resjson withdrawn_consensus_layer_rewards string: Amount of ETH collected as withdrawals from the beacon chain for the given filter.
-   :resjson execution_layer_rewards string: Amount of ETH earned as part of MEV rewards and new blocks created for the given filter.
+   :resjson object sums: Sums of all the pages of the results
+   :resjson object validator: Mapping of validator index to performance for the current page
+   :resjson string apr: The APR of returns for the given timerange for the validator.
+   :resjson string execution: The sum of execution layer ETH PnL for the validator.
+   :resjson string withdrawals: The sum of consensus layer withdrawals ETH pnl for the validator
+   :resjson string exits: The sum of the exit ETH PnL for the validator
+   :resjson string outstanding_consensus_pnl: If a recent timerange is queried we also take into account not yet withdrawn ETH gathering in the consensus layer.
+   :resjson int entries_found: The validators found for the current filter
+   :resjson int entries_total: The total number of validators found
 
-   :statuscode 200: Stats correctly queried.
+   :statuscode 200: Eth2 validator performance successfully returned.
    :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
-
+   :statuscode 502: Error connecting to a remote to query data.
 
 Getting Eth2 Staking daily stats
 =====================================
@@ -8676,7 +8622,10 @@ Getting tracked Eth2 validators
 
 .. http:get:: /api/(version)/blockchains/eth2/validators
 
-   Doing a GET on the ETH2 validators endpoint will get information on the tracked ETH2 validators. If the user is not premium they will see up to a certain limit of validators.
+   Doing a GET on the ETH2 validators endpoint will get information on the tracked ETH2 validators. If the user is not premium they will see up to a certain limit of validators. If ignore cache is false, only DB data is return. If it's true then all validator data will be refreshed and new validators will be detected.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
 
 
    **Example Request**:
@@ -8685,6 +8634,12 @@ Getting tracked Eth2 validators
 
       GET /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"ignore_cache": true, "async_query": true}
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :param bool ignore_cache: Boolean denoting whether to ignore the DB cache and refresh all validator data.
 
 
    **Example Response**:
@@ -8700,17 +8655,21 @@ Getting tracked Eth2 validators
             {
               "index":1,
               "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c",
-              "ownership_percentage": "100"
+	      "withdrawal_address": "0x23a3283f9f538a54d49139cd35c2fe0443cad3db",
             },
             {
               "index":1532,
               "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed",
-              "ownership_percentage": "50"
+              "ownership_percentage": "50",
+	      "activation_ts": 1701971000
             },
             {
               "index":5421,
               "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e",
-              "ownership_percentage": "25.75"
+              "ownership_percentage": "25.75",
+	      "withdrawal_address": "0xfa13283f9e538a84d49139cd35c2fe0443caa34f",
+	      "activation_ts": 1701972000,
+	      "withdrawable_ts": 1702572000,
             }
           ],
           "entries_found":3,
@@ -8722,12 +8681,16 @@ Getting tracked Eth2 validators
    :resjson object entries: The resulting entries list
    :resjson integer index: The index of the validator
    :resjson string public_key: The public key of the validator
-   :resjson string ownership_percentage: The ownership percentage of the validator
+   :resjson string[optional] ownership_percentage: The ownership percentage of the validator. If missing assume 100%.
+   :resjson string[optional] withdrawal_address: The withdrawal address for the validator if set.
+   :resjson integer[optional] activation_ts: If existing this is the timestamp the validator will (or has been) activate/d. If not then this is a pending validator not yet fully deposited or not yet processed by the consensus layer.
+   :resjson integer[optional] withdrawable_ts: If existing this is the timestamp the validator will (or has been) able to be completely withdrawn. In other words from which point on a full exit will happen next time it's skimmed by withdrawals. If this key exists this mean we are dealing with a validator that is exiting or has exited.
 
    :statuscode 200: Eth2 validator defaults successfully returned.
    :statuscode 401: User is not logged in.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
+   :statuscode 502: Error contacting to a remote to query data.
 
 
 Getting Pickle's DILL balances

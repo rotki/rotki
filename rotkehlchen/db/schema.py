@@ -495,11 +495,16 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+# TODO: Need to upgrade the DB and add new keys from withdrawal_address and down, add the new primary key and update/test FK connection between this and othertables. Probably also need to add a DB migration like migration_2 where we just do detect_and_refresh_validators to populate withdrawal_address ... or not sure if our current logic will refresh it automatically after some time. Need to check..  # noqa: E501
 DB_CREATE_ETH2_VALIDATORS = """
 CREATE TABLE IF NOT EXISTS eth2_validators (
-    validator_index INTEGER NOT NULL PRIMARY KEY,
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    validator_index INTEGER UNIQUE,
     public_key TEXT NOT NULL UNIQUE,
-    ownership_proportion TEXT NOT NULL
+    ownership_proportion TEXT NOT NULL,
+    withdrawal_address TEXT,
+    activation_timestamp INTEGER,
+    withdrawable_timestamp INTEGER
 );
 """
 

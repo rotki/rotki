@@ -1185,6 +1185,7 @@ class ModifiableSettingsSchema(Schema):
     # even though it gets validated since we try to connect to it
     ksm_rpc_endpoint = fields.String(load_default=None)
     dot_rpc_endpoint = fields.String(load_default=None)
+    beacon_rpc_endpoint = fields.String(load_default=None)
     main_currency = AssetField(expected_type=AssetWithOracles, load_default=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(load_default=None)
@@ -1305,6 +1306,7 @@ class ModifiableSettingsSchema(Schema):
             include_gas_costs=data['include_gas_costs'],
             ksm_rpc_endpoint=data['ksm_rpc_endpoint'],
             dot_rpc_endpoint=data['dot_rpc_endpoint'],
+            beacon_rpc_endpoint=data['beacon_rpc_endpoint'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
@@ -3097,46 +3099,24 @@ class EthStakingHistoryStats(Schema):
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
 
 
-class EthStakingHistoryStatsProfit(EthStakingHistoryStats, TimestampRangeSchema):
-    """Schema for querying ethereum staking history stats"""
-
-    def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
-        super().__init__()
-        self.chains_aggregator = chains_aggregator
+class Eth2StakePerformanceSchema(EthStakingHistoryStats, TimestampRangeSchema, AsyncIgnoreCacheQueryArgumentSchema, DBPaginationSchema):  # noqa: E501
+    """Schema for querying ethereum staking performance"""
 
     @post_load
-    def make_history_event_filter(
+    def make_staking_performance_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if (addresses := data['addresses']) is None:
-            addresses = self.chains_aggregator.queried_addresses_for_module('eth2')
+        """Just give defaults for limit and offset. Other api calls don't give defaults
+        as they are checked inside the filters and skip filter creation. In this API
+        call we do pagination outside the DB so this is needed."""
+        if data['limit'] is None:
+            data['limit'] = 10
+        if data['offset'] is None:
+            data['offset'] = 0
 
-        common_arguments = {
-            'from_ts': data['from_timestamp'],
-            'to_ts': data['to_timestamp'],
-            'location_labels': addresses,
-            'validator_indices': data['validator_indices'],
-        }
-
-        withdrawals_filter_query = EthStakingEventFilterQuery.make(
-            **common_arguments,
-            event_types=[HistoryEventType.STAKING],
-            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
-        )
-        execution_filter_query = EthStakingEventFilterQuery.make(
-            **common_arguments,
-            event_types=[HistoryEventType.STAKING],
-            event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
-            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_BLOCK_EVENT]),
-        )
-
-        return {
-            'withdrawals_filter_query': withdrawals_filter_query,
-            'execution_filter_query': execution_filter_query,
-        }
+        return data
 
 
 class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQueryArgumentSchema):

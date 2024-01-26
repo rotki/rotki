@@ -1,6 +1,6 @@
 import collections
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Generic, TypeVar
 
 KT = TypeVar('KT')  # key type
@@ -32,6 +32,9 @@ class LRUCacheWithRemove(Generic[KT, VT]):
     def clear(self) -> None:
         """Delete all entries in the cache"""
         self.cache.clear()
+
+    def __iter__(self) -> Iterator[KT]:
+        return self.cache.__iter__()
 
     def __contains__(self, key: KT) -> bool:
         return key in self.cache

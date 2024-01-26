@@ -2,6 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from typing import Any, Generic, Literal, NamedTuple, TypeVar
 
 from rotkehlchen.accounting.types import SchemaEventType
@@ -1201,8 +1202,79 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
 
 
+class WithdrawalTypesFilter(Enum):
+    ALL = auto()
+    ONLY_EXITS = auto()
+    ONLY_PARTIAL = auto()
+
+
 class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
-    pass
+
+    @classmethod
+    def make(
+            cls: type['EthWithdrawalFilterQuery'],
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
+            exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
+            validator_indices: list[int] | None = None,
+            withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
+    ) -> 'EthWithdrawalFilterQuery':
+        if entry_types is None:
+            entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]
+            entry_types = IncludeExcludeFilterData(values=entry_type_values)
+
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            event_identifiers=event_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
+            validator_indices=validator_indices,
+        )
+        if withdrawal_types_filter != WithdrawalTypesFilter.ALL:
+            filter_query.filters.append(DBEqualsFilter(
+                and_op=True,
+                column='is_exit_or_blocknumber',
+                value=0 if withdrawal_types_filter == WithdrawalTypesFilter.ONLY_PARTIAL else 1,
+            ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return ETH_STAKING_EVENT_JOIN
+
+    @staticmethod
+    def get_count_query() -> str:
+        return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
 
 
 class EthBlockEventFilterQuery(EthStakingEventFilterQuery):

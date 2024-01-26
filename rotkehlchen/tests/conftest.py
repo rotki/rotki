@@ -201,6 +201,18 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         return response
 
     vcr.before_record_response = before_record_response
+
+    def beaconchain_matcher(r1, r2):
+        """
+        Special matcher to match the path of beaconcha.in validator query
+        no matter the order of path args
+        """
+        if r1.uri.startswith('https://beaconcha.in/api/v1/validator/') and r2.uri.startswith('https://beaconcha.in/api/v1/validator/') and r1.uri[38:42] != 'eth1':  # noqa: E501
+            return set(r1.uri[38:].split(',')) == set(r2.uri[38:].split(','))
+
+        return r1.uri == r2.uri and r1.method == r2.method  # normal check
+
+    vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     return vcr
 
 

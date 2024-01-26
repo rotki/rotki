@@ -42,9 +42,9 @@ class EthereumEtherscan(Etherscan):
             self,
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
-    ) -> None:
+    ) -> set[int]:
         """Query etherscan for ethereum withdrawals of an address for a specific period
-        and save them in the DB.
+        and save them in the DB. Returns newly detected validators that were not tracked in the DB.
 
         May raise:
         - RemoteError if the etherscan query fails for some reason
@@ -52,6 +52,7 @@ class EthereumEtherscan(Etherscan):
         """
         options = self._process_timestamp_or_blockrange(period, {'sort': 'asc', 'address': address})  # noqa: E501
         last_withdrawal_idx = -1
+        touched_indices = set()
         with self.db.conn.read_ctx() as cursor:
             if (idx_result := self.db.get_dynamic_cache(
                 cursor=cursor,
@@ -63,12 +64,15 @@ class EthereumEtherscan(Etherscan):
         while True:
             result = self._query(module='account', action='txsBeaconWithdrawal', options=options)
             if (result_length := len(result)) == 0:
-                return
+                return set()
 
+            withdrawals = []
             try:
-                withdrawals = [
-                    EthWithdrawalEvent(
-                        validator_index=int(entry['validatorIndex']),
+                for entry in result:
+                    validator_index = int(entry['validatorIndex'])
+                    touched_indices.add(validator_index)
+                    withdrawals.append(EthWithdrawalEvent(
+                        validator_index=validator_index,
                         timestamp=ts_sec_to_ms(deserialize_timestamp(entry['timestamp'])),
                         balance=Balance(amount=from_gwei(deserialize_fval(
                             value=entry['amount'],
@@ -77,9 +81,10 @@ class EthereumEtherscan(Etherscan):
                         ))),
                         withdrawal_address=address,
                         is_exit=False,  # is figured out later in a periodic task
-                    ) for entry in result
-                ]
+                    ))
+
                 last_withdrawal_idx = max(last_withdrawal_idx, int(result[-1]['withdrawalIndex']))
+
             except (KeyError, ValueError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -100,11 +105,15 @@ class EthereumEtherscan(Etherscan):
                     )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 log.error(f'Could not write {result_length} withdrawals to {address} due to {e!s}')
-                return
+                return set()
 
             if (new_options := self._maybe_paginate(result=result, options=options)) is None:
                 break  # no need to paginate further
             options = new_options
+
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT validator_index from eth2_validators WHERE validator_index IS NOT NULL')  # noqa: E501
+            tracked_indices = {x[0] for x in cursor}
 
         if last_withdrawal_idx != - 1:  # let's also update index if needed
             with self.db.user_write() as write_cursor:
@@ -114,3 +123,5 @@ class EthereumEtherscan(Etherscan):
                     value=Timestamp(last_withdrawal_idx),
                     address=address,
                 )
+
+        return touched_indices - tracked_indices

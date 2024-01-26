@@ -19,7 +19,7 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
 
     with lock:
         addresses = rotki.chains_aggregator.queried_addresses_for_module('eth2')
-        eth2.fetch_and_update_eth1_validator_data(addresses)
+        eth2.detect_and_refresh_validators(addresses)
 
 
 def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument

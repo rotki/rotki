@@ -7,7 +7,7 @@ import re
 import sys
 import time
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
@@ -303,7 +303,17 @@ def address_to_bytes32(address: ChecksumEvmAddress) -> str:
 T = TypeVar('T')
 
 
+@overload
 def get_chunks(lst: list[T], n: int) -> Iterator[list[T]]:
+    ...
+
+
+@overload
+def get_chunks(lst: Sequence[T], n: int) -> Iterator[Sequence[T]]:
+    ...
+
+
+def get_chunks(lst: Sequence[T] | list[T], n: int) -> Iterator[Sequence[T]] | Iterator[list[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]

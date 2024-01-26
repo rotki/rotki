@@ -449,6 +449,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'have_premium': False,
         'ksm_rpc_endpoint': 'http://localhost:9933',
         'dot_rpc_endpoint': '',
+        'beacon_rpc_endpoint': '',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
         'version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': DEFAULT_INCLUDE_CRYPTO2CRYPTO,

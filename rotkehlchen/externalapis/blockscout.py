@@ -111,8 +111,9 @@ class Blockscout(ExternalServiceWithApiKey):
 
         return json_ret
 
-    def query_withdrawals(self, address: ChecksumEvmAddress) -> None:
-        """Query withdrawals for an ethereum address and save them in the DB
+    def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
+        """Query withdrawals for an ethereum address and save them in the DB.
+        Returns newly detected validators that were not tracked in the DB.
 
         May raise:
         - RemoteError if blockscout query fails
@@ -123,6 +124,7 @@ class Blockscout(ExternalServiceWithApiKey):
         dbevents = DBHistoryEvents(self.db)
         last_known_withdrawal_idx, index_to_write, ts_to_write = sys.maxsize, None, Timestamp(0)
         withdrawals: list[EthWithdrawalEvent] = []
+        touched_indices = set()
         with self.db.conn.read_ctx() as cursor:
             if (idx_result := self.db.get_dynamic_cache(
                 cursor=cursor,
@@ -147,8 +149,10 @@ class Blockscout(ExternalServiceWithApiKey):
                     break  # found a known one
 
                 try:
+                    validator_index = int(entry['validator_index'])
+                    touched_indices.add(validator_index)
                     withdrawals.append(EthWithdrawalEvent(
-                        validator_index=int(entry['validator_index']),
+                        validator_index=validator_index,
                         timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(entry['timestamp'])),
                         balance=Balance(amount=from_wei(deserialize_fval(
                             value=entry['amount'],
@@ -182,6 +186,10 @@ class Blockscout(ExternalServiceWithApiKey):
                     dbevents.add_history_events(write_cursor, history=withdrawals)
             break
 
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT validator_index from eth2_validators WHERE validator_index IS NOT NULL')  # noqa: E501
+            tracked_indices = {x[0] for x in cursor}
+
         if index_to_write is not None:  # let's also update index if needed
             with self.db.user_write() as write_cursor:
                 self.db.set_dynamic_cache(
@@ -196,3 +204,5 @@ class Blockscout(ExternalServiceWithApiKey):
                     value=ts_to_write,
                     address=address,
                 )
+
+        return touched_indices - tracked_indices

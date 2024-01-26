@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -9,7 +10,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -20,7 +21,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_wei, set_user_agent, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -30,23 +31,6 @@ from .constants import BEACONCHAIN_READ_TIMEOUT, BEACONCHAIN_ROOT_URL, MAX_WAIT_
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def _calculate_query_chunks(
-        indices_or_pubkeys: list[int] | list[Eth2PubKey],
-) -> list[list[int]] | list[list[Eth2PubKey]]:
-    """Create chunks of queries.
-
-    Beaconcha.in allows up to 100 validator or public keys in one query for most calls.
-    Also has a URI length limit of ~8190, so seems no more than 80 public keys can be per call.
-    """
-    if len(indices_or_pubkeys) == 0:
-        return []
-
-    n = 100
-    if isinstance(indices_or_pubkeys[0], str):
-        n = 80
-    return list(get_chunks(indices_or_pubkeys, n=n))  # type: ignore
 
 
 class BeaconChain(ExternalServiceWithApiKey):
@@ -177,11 +161,11 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def _query_chunked_endpoint(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: Sequence[int | Eth2PubKey],
             module: Literal['validator'],
             endpoint: Literal['performance'] | None,
     ) -> list[dict[str, Any]]:
-        chunks = _calculate_query_chunks(indices_or_pubkeys)
+        chunks = calculate_query_chunks(indices_or_pubkeys)
         data: list[dict[str, Any]] = []
         for chunk in chunks:
             result = self._query(
@@ -198,7 +182,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def _query_chunked_endpoint_with_pagination(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: list[int | Eth2PubKey],
             module: Literal['execution'],
             endpoint: Literal['produced'],
             limit: int,
@@ -210,7 +194,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         The offset unfortunately also starts from latest entry so no way to store
         anything to avoid extra calls at the moment.
         """
-        chunks = _calculate_query_chunks(indices_or_pubkeys)
+        chunks = calculate_query_chunks(indices_or_pubkeys)
         data: list[dict[str, Any]] = []
         for chunk in chunks:
             offset = 0
@@ -230,7 +214,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def get_validator_data(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: Sequence[int | Eth2PubKey],
     ) -> list[dict[str, Any]]:
         """Returns data for the given validators
 
@@ -248,7 +232,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def get_performance(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: list[int | Eth2PubKey],
     ) -> dict[int, ValidatorPerformance]:
         """Get the performance of all the validators given from the list of indices or pubkeys
 
@@ -282,14 +266,14 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def get_and_store_produced_blocks(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: list[int | Eth2PubKey],
     ) -> None:
         with self.produced_blocks_lock:
             return self._get_and_store_produced_blocks(indices_or_pubkeys)
 
     def _get_and_store_produced_blocks(
             self,
-            indices_or_pubkeys: list[int] | list[Eth2PubKey],
+            indices_or_pubkeys: list[int | Eth2PubKey],
     ) -> None:
         """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
@@ -381,7 +365,9 @@ class BeaconChain(ExternalServiceWithApiKey):
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.
 
-        Each entry is a tuple of (optional) validator index and pubkey
+        Each entry is a tuple of (optional) validator index and pubkey.
+
+        Index is not returned if the validator has not yet been seen by the Consensus layer
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
@@ -401,7 +387,6 @@ class BeaconChain(ExternalServiceWithApiKey):
                 ValidatorID(
                     index=x['validatorindex'],
                     public_key=x['publickey'],
-                    ownership_proportion=ONE,
                 ) for x in data
             ]
         except KeyError as e:

@@ -36,7 +36,6 @@ from rotkehlchen.chain.ethereum.modules import (
 )
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
-from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
@@ -325,8 +324,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             return module  # already activated
 
         log.debug(f'Activating {module_name} module')
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if module_name == 'eth2':
+            with self.database.conn.read_ctx() as cursor:
+                kwargs['beacon_rpc_endpoint'] = self.database.get_setting(cursor, 'beacon_rpc_endpoint')  # noqa: E501
             kwargs['beaconchain'] = self.beaconchain
         klass = _module_name_to_class(module_name)
         try:
@@ -1189,17 +1190,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 balances=defi_balances,
             )
 
-    @protect_with_lock()
-    @cache_response_timewise()
-    def get_eth2_staking_details(self) -> list['ValidatorDetails']:
-        """May raise:
-        - ModuleInactive if eth2 module is not activated
-        """
-        eth2 = self.get_module('eth2')
-        if eth2 is None:
-            raise ModuleInactive('Cant query eth2 staking details since eth2 module is not active')
-        return eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
-
     def get_eth2_daily_stats(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
@@ -1221,12 +1211,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_history_events(
+    def refresh_eth2_get_daily_stats(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> list['ValidatorDailyStats']:
-        """May raise:
+        """Refresh eth2 validator data and get and return the daily stats.
+
+        May raise:
         - ModuleInactive if eth2 module is not activated
         - RemoteError if a remote query to beacon chain fails and is not caught in the method
         """
@@ -1234,16 +1226,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 history events since eth2 module is not active')
 
-        if to_timestamp < 1607212800:  # Dec 1st UTC
+        if to_timestamp < 1607212800:  # Dec 1st 2020 UTC
             return []  # no need to bother querying before beacon chain launch
 
-        # Ask for details to detect any new validators
-        eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
-        # Create a mapping of validator index to ownership proportion
-        validators_ownership = {
-            validator.index: validator.ownership_proportion
-            for validator in self.get_eth2_validators()
-        }
+        eth2.detect_and_refresh_validators(addresses=self.queried_addresses_for_module('eth2'))
         # And now get all daily stats and create defi events for them
         with self.database.conn.read_ctx() as cursor:
             stats, _, _ = eth2.get_validator_daily_stats(
@@ -1251,27 +1237,29 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
                 only_cache=False,
             )
+            index_to_ownership = DBEth2(self.database).get_index_to_ownership(cursor)
+
         for stats_entry in stats:
             if stats_entry.pnl == ZERO:
                 continue
 
             # Take into account the validator ownership proportion if is not 100%
-            validator_ownership = validators_ownership.get(stats_entry.validator_index, ONE)
+            validator_ownership = index_to_ownership.get(stats_entry.validator_index, ONE)
             if validator_ownership != ONE:
                 stats_entry.pnl = stats_entry.pnl * validator_ownership
                 stats_entry.ownership_percentage = validator_ownership
 
         return stats
 
-    def get_eth2_validators(self) -> list[Eth2Validator]:
+    def get_eth2_validators(self, ignore_cache: bool) -> list['ValidatorDetails']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant get eth2 validators since the eth2 module is not active')
-        with self.database.conn.read_ctx() as cursor:
-            return DBEth2(self.database).get_validators(cursor)
+
+        return eth2.get_validators(ignore_cache=ignore_cache, addresses=self.queried_addresses_for_module('eth2'))  # noqa: E501
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
         """Edit a validator to modify its ownership proportion. May raise:
@@ -1281,10 +1269,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant edit eth2 validators since the eth2 module is not active')
-        DBEth2(self.database).edit_validator(
-            validator_index=validator_index,
-            ownership_proportion=ownership_proportion,
-        )
+        with self.database.user_write() as write_cursor:
+            DBEth2(self.database).edit_validator_ownership(
+                write_cursor=write_cursor,
+                validator_index=validator_index,
+                ownership_proportion=ownership_proportion,
+            )
         self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
@@ -1614,6 +1604,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def flush_eth2_cache(self) -> None:
         self.flush_cache('get_eth2_staking_details')
-        self.flush_cache('get_eth2_history_events')
+        self.flush_cache('refresh_eth2_get_daily_stats')
         self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
