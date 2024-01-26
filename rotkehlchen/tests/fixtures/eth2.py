@@ -10,6 +10,11 @@ def fixture_eth2_mock_data():
     return {}
 
 
+@pytest.fixture(name='beacon_rpc_endpoint')
+def fixture_beacon_rpc_endpoint():
+    return None
+
+
 @pytest.fixture(name='eth2')
 def fixture_eth2(
         ethereum_inquirer,
@@ -21,6 +26,8 @@ def fixture_eth2(
         network_mocking,
         eth2_mock_data,
         username,
+        beacon_rpc_endpoint,
+        inquirer,  # pylint: disable=unused-argument
 ):
     premium = None
     if start_with_valid_premium:
@@ -31,6 +38,7 @@ def fixture_eth2(
         premium=premium,
         msg_aggregator=messages_aggregator,
         beaconchain=beaconchain,
+        beacon_rpc_endpoint=beacon_rpc_endpoint,
     )
     if network_mocking is True:
         with patch_eth2_requests(eth2, eth2_mock_data):

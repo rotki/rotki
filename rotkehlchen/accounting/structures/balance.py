@@ -53,6 +53,15 @@ class Balance:
             usd_value=self.usd_value - other.usd_value,
         )
 
+    def __mul__(self, other: Any) -> 'Balance':
+        if not isinstance(other, (int | FVal)):
+            raise InputError(f'Tried to multiply balance with {type(other)}')
+
+        return Balance(
+            amount=self.amount * other,
+            usd_value=self.usd_value * other,
+        )
+
     def __neg__(self) -> 'Balance':
         return Balance(amount=-self.amount, usd_value=-self.usd_value)
 

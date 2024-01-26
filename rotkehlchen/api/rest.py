@@ -90,7 +90,6 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_ETH_TX_LIMIT,
@@ -120,7 +119,6 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
-from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
@@ -130,7 +128,6 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
-    EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -271,8 +268,11 @@ log = RotkehlchenLogsAdapter(logger)
 OK_RESULT = {'result': True, 'message': ''}
 
 
-def _wrap_in_ok_result(result: Any) -> dict[str, Any]:
-    return {'result': result, 'message': ''}
+def _wrap_in_ok_result(result: Any, status_code: HTTPStatus | None = None) -> dict[str, Any]:
+    result = {'result': result, 'message': ''}
+    if status_code:
+        result['status_code'] = status_code
+    return result
 
 
 def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
@@ -2119,46 +2119,34 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_eth2_stake_details(
+    def get_eth2_staking_performance(
             self,
-            addresses: set[ChecksumEvmAddress],
-            validator_indices: set[int],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            limit: int,
+            offset: int,
             ignore_cache: bool,
+            addresses: list[ChecksumEvmAddress] | None,
+            validator_indices: list[int] | None,
     ) -> dict[str, Any]:
+        eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
+        if eth2 is None:
+            return {'result': None, 'message': 'Cant query eth2 staking performance since eth2 module is not active', 'status_code': HTTPStatus.CONFLICT}  # noqa: E501
+
         try:
-            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details(ignore_cache=ignore_cache)  # noqa: E501
+            result = eth2.get_performance(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                limit=limit,
+                offset=offset,
+                ignore_cache=ignore_cache,
+                addresses=addresses,
+                validator_indices=validator_indices,
+            )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-        except ModuleInactive as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        if len(addresses) != 0 or len(validator_indices) != 0:
-            result = [entry for entry in result if entry.validator_index in validator_indices or entry.eth1_depositor in addresses]  # noqa: E501
-
-        current_usd_price = Inquirer().find_usd_price(A_ETH)
-        return {
-            'result': process_result_list([x.serialize(current_usd_price) for x in result]),
-            'message': '',
-        }
-
-    def get_eth2_stake_stats(
-            self,
-            withdrawals_filter_query: EthStakingEventFilterQuery,
-            execution_filter_query: EthStakingEventFilterQuery,
-    ) -> Response:
-        dbeth2 = DBEth2(self.rotkehlchen.data.db)
-        withdrawn_amount, execution_layer_rewards = dbeth2.get_validators_profit(
-            withdrawals_filter_query=withdrawals_filter_query,
-            execution_filter_query=execution_filter_query,
-        )
-        result = _wrap_in_ok_result({
-            'withdrawn_consensus_layer_rewards': str(withdrawn_amount),
-            'execution_layer_rewards': str(execution_layer_rewards),
-        })
-        return api_response(
-            result=result,
-            status_code=HTTPStatus.OK,
-        )
+        return {'result': process_result(result), 'message': ''}
 
     @async_api_call()
     def get_eth2_daily_stats(
@@ -2185,11 +2173,14 @@ class RestAPI:
             }
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def get_eth2_validators(self) -> Response:
+    @async_api_call()
+    def get_eth2_validators(self, ignore_cache: bool) -> dict[str, Any]:
         try:
-            validators = self.rotkehlchen.chains_aggregator.get_eth2_validators()
+            validators = self.rotkehlchen.chains_aggregator.get_eth2_validators(ignore_cache=ignore_cache)  # noqa: E501
         except ModuleInactive as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         limit = -1
         entries_found = len(validators)
@@ -2197,15 +2188,11 @@ class RestAPI:
             limit = FREE_VALIDATORS_LIMIT
             validators = validators[:4]
 
-        result = _wrap_in_ok_result({
+        return _wrap_in_ok_result(result={
             'entries': [x.serialize() for x in validators],
             'entries_found': entries_found,
             'entries_limit': limit,
-        })
-        return api_response(
-            result=result,
-            status_code=HTTPStatus.OK,
-        )
+        }, status_code=HTTPStatus.OK)
 
     @async_api_call()
     def add_eth2_validator(
@@ -3483,7 +3470,7 @@ class RestAPI:
                     indices = [row[0] for row in cursor]
                 if len(indices) != 0:
                     log.debug(f'Querying information for validator indices {indices}')
-                    eth2.beaconchain.get_and_store_produced_blocks(indices)
+                    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(indices)
                     eth2.combine_block_with_tx_events()
         except RemoteError as e:
             return wrap_in_fail_result(

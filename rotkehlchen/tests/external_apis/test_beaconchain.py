@@ -2,7 +2,8 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.externalapis.beaconchain.service import BeaconChain, _calculate_query_chunks
+from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 
 @pytest.fixture(scope='session', name='session_beaconchain')
@@ -27,7 +28,7 @@ def test_get_performance_single(session_beaconchain):
 
 def test_query_chunks_empty_list():
     """Test that one of the endpoints works with empty list"""
-    assert _calculate_query_chunks([]) == []
+    assert calculate_query_chunks([]) == []
 
 
 def test_get_performance_more_than_100(session_beaconchain):

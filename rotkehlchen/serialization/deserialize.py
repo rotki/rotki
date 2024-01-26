@@ -495,6 +495,18 @@ def deserialize_int(value: str | int) -> int:
     return result
 
 
+def deserialize_str(value: Any) -> str:
+    """
+    Deserialize str from an entry
+    May raise:
+    - DeserializationError if value is not a string
+    """
+    if not isinstance(value, str):
+        raise DeserializationError(f'Could not deserialize {value} as string')
+
+    return value
+
+
 X = TypeVar('X')
 Y = TypeVar('Y')
 

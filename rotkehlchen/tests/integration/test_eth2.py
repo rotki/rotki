@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -146,19 +146,19 @@ def test_block_production(eth2: 'Eth2', database):
     vindex1_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
     vindex2_address = string_to_evm_address('0x76b23B82c8dCf1635a9DF63Fe6D9AafAaF042A9B')
     with database.user_write() as write_cursor:
-        dbeth2.add_validators(write_cursor, [
-            Eth2Validator(
-                index=vindex1,
+        dbeth2.add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=vindex1,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
                 ownership_proportion=ONE,
-            ), Eth2Validator(
-                index=vindex2,
+            ), ValidatorDetails(
+                validator_index=vindex2,
                 public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),
                 ownership_proportion=ONE,
             ),
         ])
 
-    eth2.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
+    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
 
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
@@ -333,19 +333,16 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
     ]
 
     with database.user_write() as write_cursor:
-        dbeth2.add_validators(write_cursor, [
-            Eth2Validator(
-                index=active_index,
+        dbeth2.add_or_update_validators(write_cursor=write_cursor, validators=[
+            ValidatorDetails(
+                validator_index=active_index,
                 public_key=Eth2PubKey('0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c'),
-                ownership_proportion=ONE,
-            ), Eth2Validator(
-                index=exited_index,
+            ), ValidatorDetails(
+                validator_index=exited_index,
                 public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
-                ownership_proportion=ONE,
-            ), Eth2Validator(
-                index=slashed_index,
+            ), ValidatorDetails(
+                validator_index=slashed_index,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
-                ownership_proportion=ONE,
             ),
         ])
 

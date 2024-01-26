@@ -21,17 +21,20 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
 
 
-class ValidatorID(NamedTuple):
-    # not using index due to : https://github.com/python/mypy/issues/9043
-    index: int | None  # type: ignore  # may be null if the index is not yet determined
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ValidatorID:
+    index: int | None
     public_key: Eth2PubKey
-    ownership_proportion: FVal
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, NamedTuple) and self.public_key == other.public_key  # type: ignore  # ignore is due to isinstance not recognized
 
     def __hash__(self) -> int:
         return hash(self.public_key)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ValidatorID) and self.public_key == other.public_key
+
+
+class ValidatorWithOwnershipID(ValidatorID):
+    ownership_proportion: FVal
 
 
 Eth2ValidatorDBTuple = tuple[int, str, str]
@@ -75,7 +78,7 @@ class ValidatorDailyStats(AccountingEventMixin):
     validator_index: int  # keeping the index here so it can be shown in accounting
     timestamp: Timestamp
     pnl: FVal = ZERO  # Value in ETH
-    ownership_percentage: FVal = ONE  # customized by get_eth2_history_events
+    ownership_percentage: FVal = ONE  # customized by refresh_eth2_get_daily_stats
 
     def __str__(self) -> str:
         return f'ETH2 validator {self.validator_index} daily stats'
@@ -215,21 +218,60 @@ DEPOSITING_VALIDATOR_PERFORMANCE = ValidatorPerformance(
 )
 
 
-class ValidatorDetails(NamedTuple):
-    validator_index: int | None
-    public_key: str
-    eth1_depositor: ChecksumEvmAddress | None
-    has_exited: bool
-    performance: ValidatorPerformance
+VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
+VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
 
-    def serialize(self, eth_usd_price: FVal) -> dict[str, Any]:
-        return {
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ValidatorDetails:
+    validator_index: int | None  # can be None if no index has yet been created due to not yet being seen by the consensys layer  # noqa: E501
+    public_key: Eth2PubKey
+    withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x1 credentials
+    eth1_depositor: ChecksumEvmAddress | None = None  # can be None if we have not yet populated it. TODO: Does it make sense to have this? There can be multiple depositors # noqa: E501
+    activation_ts: Timestamp | None = None  # activation timestamp. None if not activated yet.
+    withdrawable_ts: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
+    ownership_proportion: FVal = ONE  # [0, 1] proportion of ownership user has on the validator
+
+    def __hash__(self) -> int:
+        return hash(self.public_key)
+
+    def serialize(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
             'index': self.validator_index,
             'public_key': self.public_key,
-            'eth1_depositor': self.eth1_depositor,
-            'has_exited': self.has_exited,
-            **self.performance.serialize(eth_usd_price),
         }
+        if self.ownership_proportion != ONE:
+            data['ownership_percentage'] = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
+
+        for name in ('activation_ts', 'withdrawable_ts', 'withdrawal_address'):
+            if (value := getattr(self, name)) is not None:
+                data[name] = value
+
+        return data
+
+    def serialize_for_db(self) -> VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP:
+        """Serialize for DB insertion without touching the ownership proportion since
+        the place this is inserted in the DB should not modify ownership"""
+        return (
+            self.validator_index,
+            self.public_key,
+            str(self.ownership_proportion),
+            self.withdrawal_address,
+            self.activation_ts,
+            self.withdrawable_ts,
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, result: VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP) -> 'ValidatorDetails':  # noqa: E501
+        return cls(
+            validator_index=result[0],
+            public_key=result[1],
+            eth1_depositor=None,  # not saved in the DB
+            ownership_proportion=FVal(result[2]),
+            withdrawal_address=result[3],
+            activation_ts=result[4],
+            withdrawable_ts=result[5],
+        )
 
 
 def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str]:

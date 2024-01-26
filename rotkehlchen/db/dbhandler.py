@@ -204,6 +204,7 @@ class DBHandler:
             'ongoing_upgrade_from_version': (int, None),
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
+            'beacon_rpc_endpoint': (str, None),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -401,6 +402,10 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> list['ExchangeLocationID']:  # noqa: E501
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['beacon_rpc_endpoint']) -> str:
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
@@ -412,8 +417,9 @@ class DBHandler:
                 'ongoing_upgrade_from_version',
                 'last_data_migration',
                 'non_syncing_exchanges',
+                'beacon_rpc_endpoint',
             ],
-    ) -> int | None | (Timestamp | (bool | AssetWithOracles)) | list['ExchangeLocationID']:
+    ) -> int | None | (Timestamp | (bool | AssetWithOracles)) | list['ExchangeLocationID'] | str:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
