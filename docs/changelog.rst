@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
+* :bug:`7359` NFTs should be queried and displayed properly again.
 * :bug:`7362` Filtering by customized events in the free version should work fine again.
 * :bug:`-` Premium sync failure will now appear in the toolbar indicator instead of showing a notification.
 * :bug:`-` Importing sell trades via rotki generic trades CSV import will now work properly again.
