@@ -80,7 +80,7 @@ class DBAddressbook:
         Add every entry of entries to the address book table.
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
-    """
+        """
         # We iterate here with for loop instead of executemany in order to catch
         # which identifier is duplicated
         for entry in entries:

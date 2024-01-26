@@ -11556,6 +11556,7 @@ Get mappings from addressbook
           "name_substring": "neighbour",
           "addresses": [
             {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth"},
+            {"address": "bc1qamhqfr5z2ypehv0sqq784hzgd6ws2rjf6v46w8", "blockchain": "btc"},
             {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"}
            ]
         }
@@ -11563,7 +11564,7 @@ Get mappings from addressbook
     :reqjson int[optional] limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
     :reqjson int[optional] offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
     :reqjson str[optional] name_substring: The substring to use as filter for the name to be found in the addressbook.
-    :reqjson str[optional] blockchain: The chain in which to use the provided name.
+    :reqjson str[optional] blockchain: The blockchain in which to use the provided name.
     :reqjson object[optional] addresses: List of addresses that the backend should find names for.
 
     **Example Response**
@@ -11576,6 +11577,7 @@ Get mappings from addressbook
         {
             "result": {
               "entries": [
+                { "address": "bc1qamhqfr5z2ypehv0sqq784hzgd6ws2rjf6v46w8", "name": "mtgox", "blockchain": "btc" },
                 { "address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "My dear friend Tom", "blockchain": "eth" },
                 { "address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Neighbour Frank", "blockchain": "eth" }
                ],
@@ -11659,13 +11661,14 @@ Update mappings in the addressbook
         {
           "entries": [
             {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "Dude ABC"},
+            {"address": "13EcxFSXEFmJfxGXSQYLfgEXXGZBSF1P753MyHauw5NV4tAV", "name": "Polkacomma"},
             {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Dude XYZ"}
           ]
         }
 
     :reqjson object entries: A list of entries to be updated in the addressbook.
     :reqjson str address: The address that will be tracked in the addressbook.
-    :reqjson str[optional] blockchain: The chain in which to use the provided name.
+    :reqjson str[optional] blockchain: The blockchain in which to use the provided name.
     :reqjson str name: Name to be used.
 
     **Example Response**
@@ -11713,7 +11716,7 @@ Delete mappings in the addressbook
 
     :reqjson object entries: A list of addresses to be deleted from the addressbook
     :reqjson str address: The address that will be deleted in the addressbook.
-    :reqjson str[optional] blockchain: The chain for which to delete the name mapping. If is not provided the names for all the chains will be deleted.
+    :reqjson str[optional] blockchain: The blockchain for which to delete the name mapping. If is not provided the names for all the chains will be deleted.
 
     **Example Response**
 

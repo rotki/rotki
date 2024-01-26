@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.exchanges.data_structures import Trade
@@ -20,6 +21,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BTCAddress,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -38,6 +40,9 @@ from rotkehlchen.utils.misc import ts_now
 
 DEFAULT_START_TS = Timestamp(1451606400)
 ZERO_TIMESTAMP_MS = TimestampMS(0)
+ADDRESS_ETH = string_to_evm_address('0x9D904063e7e120302a13C6820561940538a2Ad57')
+ADDRESS_MULTICHAIN = string_to_evm_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67')
+ADRESS_OP = string_to_evm_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B')
 
 
 def make_random_bytes(size: int) -> bytes:
@@ -170,24 +175,39 @@ def generate_events_response(
 def make_addressbook_entries() -> list[AddressbookEntry]:
     return [
         AddressbookEntry(
-            address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
+            address=ADDRESS_ETH,
             name='My dear friend Fred',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(
-            address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
+            address=ADDRESS_MULTICHAIN,
             name='Neighbour Thomas',
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
         AddressbookEntry(
-            address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
+            address=ADDRESS_MULTICHAIN,
             name='Neighbour Thomas but in Ethereum',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(
-            address=to_checksum_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B'),
+            address=ADRESS_OP,
             name='Secret agent Rose',
             blockchain=SupportedBlockchain.OPTIMISM,
+        ),
+        AddressbookEntry(
+            address=BTCAddress('bc1qamhqfr5z2ypehv0sqq784hzgd6ws2rjf6v46w8'),
+            name='Secret btc address',
+            blockchain=SupportedBlockchain.BITCOIN,
+        ),
+        AddressbookEntry(
+            address=BTCAddress('pquqql0e3pd8598g52k3gvsc6ls9zsv705z20neple'),
+            name='Public bch address',
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
+        ),
+        AddressbookEntry(
+            address=SubstrateAddress('13EcxFSXEFmJfxGXSQYLfgEXXGZBSF1P753MyHauw5NV4tAV'),
+            name='Polkadot address',
+            blockchain=SupportedBlockchain.POLKADOT,
         ),
     ]
 
