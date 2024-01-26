@@ -477,10 +477,10 @@ defineExpose({
         @click="expand(row)"
       />
     </template>
-    <template #group.header="{ group, groupValue, isOpen, toggle }">
+    <template #group.header="{ header, isOpen, toggle }">
       <AccountGroupHeader
-        :group="groupValue"
-        :items="getItems(group.xpub, group.derivationPath)"
+        :group="header.identifier"
+        :items="getItems(header.group.xpub, header.group.derivationPath)"
         :expanded="isOpen"
         :loading="loading"
         @expand-clicked="toggle()"
