@@ -465,7 +465,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
         return self.value
 
-    def get_chain_type(self) -> str:
+    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2']:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
             return 'evm'
@@ -819,7 +819,7 @@ class CostBasisMethod(SerializableEnumNameMixin):
 
 
 class AddressbookEntry(NamedTuple):
-    address: ChecksumEvmAddress
+    address: BlockchainAddress
     name: str
     blockchain: SupportedBlockchain | None
 

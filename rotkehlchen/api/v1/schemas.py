@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Final, Literal, get_args
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
 import marshmallow
 import webargs
@@ -2561,7 +2561,7 @@ class OptionalAddressesListSchema(Schema):
 
 
 class AddressWithOptionalBlockchainSchema(Schema):
-    address = EvmAddressField(required=True)
+    address = fields.String(required=True)
     blockchain = BlockchainField(load_default=None)
 
     @post_load()
@@ -2569,11 +2569,53 @@ class AddressWithOptionalBlockchainSchema(Schema):
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Any:
+    ) -> OptionalChainAddress:
+        if (
+            data['blockchain'] is not None and
+            cast(SupportedBlockchain, data['blockchain']).get_chain_type() == 'evm'
+        ):
+            try:
+                address = to_checksum_address(data['address'])
+            except ValueError as e:
+                raise ValidationError(
+                    f'Given value {data["address"]} is not a valid {data["blockchain"]} address',
+                    field_name='address',
+                ) from e
+        else:
+            address = data['address']
+
         return OptionalChainAddress(
-            address=data['address'],
+            address=address,
             blockchain=data['blockchain'],
         )
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """
+        Check that bitcoin and polkadot addresses are correct when the blockchain
+        param is provided. EVM chains are checked in the post_load logic where we checksum
+        the address if it is not.
+        """
+        if data['blockchain'] is None:
+            return
+
+        blockchain = cast(SupportedBlockchain, data['blockchain'])
+        supported_blockchain_type = blockchain.get_chain_type()
+        if ((
+            supported_blockchain_type == 'bitcoin' and
+            is_valid_btc_address(data['address']) is False
+        ) or (
+            supported_blockchain_type == 'substrate' and
+            is_valid_substrate_address(chain=blockchain, value=data['address']) is False  # type: ignore  # expects polkadot or kusama
+        )):
+            raise ValidationError(
+                f'Given value {data["address"]} is not a {blockchain} address',
+                field_name='address',
+            )
 
 
 class OptionalAddressesWithBlockchainsListSchema(Schema):
@@ -2619,11 +2661,8 @@ class QueryAddressbookSchema(
         }
 
 
-class AddressbookEntrySchema(Schema):
-    address = EvmAddressField(required=True)
+class AddressbookEntrySchema(AddressWithOptionalBlockchainSchema):
     name = fields.String(required=True)
-    # Need None option here in case the user wants to update all the entries for the address.
-    blockchain = BlockchainField(load_default=None)
 
     @post_load()
     def transform_data(
@@ -2631,10 +2670,11 @@ class AddressbookEntrySchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
+        optional_chain_addresses = super().transform_data(data)
         return AddressbookEntry(
-            address=data['address'],
+            address=optional_chain_addresses.address,
             name=data['name'],
-            blockchain=data['blockchain'],
+            blockchain=optional_chain_addresses.blockchain,
         )
 
 
