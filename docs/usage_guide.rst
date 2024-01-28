@@ -62,6 +62,10 @@ To do that you must follow the instructions described in the previous section, a
 
 See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with rotki Server (this option is disabled by default).
 
+Keep in mind that syncing only involves the user database, and not the global database. The global database keeps all assets data, global addressook for names and historical prices. It is highly recommended to also manually move it. It is located in the :ref:`rotki_data_directory`.
+
+Another alternative instead of moving the entire global DB is to use the :ref:`export-import-user-assets` function.
+
 
 Use an account from a different installation
 =============================================
@@ -560,6 +564,9 @@ To delete a backup you can press the trash can icon on the database row.
 
 The download button provides an easy way to save the backups locally, and it can be
 especially helpful if you run the docker instance on a remote machine.
+
+
+.. _export-import-user-assets:
 
 Exporting and importing user assets
 -------------------------------------
