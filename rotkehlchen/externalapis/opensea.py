@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import re
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import gevent
 import requests
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 ASSETS_MAX_LIMIT = 50  # according to opensea docs
-CONTRACTS_MAX_LIMIT = 300  # according to opensea docs
+CONTRACTS_MAX_LIMIT = 200  # according to opensea docs
 
 
 ERC721_RE = re.compile(r'eip155:1/erc721:(.*?)/(.*)')
@@ -100,52 +100,32 @@ class Opensea(ExternalServiceWithApiKey):
         self.session = requests.session()
         self.session.headers.update({
             'Content-Type': 'application/json',
-            # Their API seems to get limited by cloudflare after 1-2 requests ... unless
-            # the user agent is a browser. We lose nothing by doing this and may revert if they fix
-            # https://twitter.com/LefterisJP/status/1483017589869711364
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',  # noqa: E501
         })
         self.collections: dict[str, Collection] = {}
         self.backup_key: str | None = None
         self.ethereum_inquirer = ethereum_inquirer
         self.eth_asset = ethereum_inquirer.native_token
 
-    @overload
     def _query(
             self,
-            endpoint: Literal['assets', 'collectionstats', 'asset'],
+            endpoint: Literal['assets', 'collectionstats', 'asset', 'collection'],
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
-        ...
-
-    @overload
-    def _query(
-            self,
-            endpoint: Literal['collections'],
-            options: dict[str, Any] | None = None,
-            timeout: tuple[int, int] | None = None,
-    ) -> list[dict[str, Any]]:
-        ...
-
-    def _query(
-            self,
-            endpoint: Literal['assets', 'collections', 'collectionstats', 'asset'],
-            options: dict[str, Any] | None = None,
-            timeout: tuple[int, int] | None = None,
-    ) -> list[dict[str, Any]] | dict[str, Any]:
         """May raise RemoteError"""
         api_key = self._get_api_key()
         if api_key is not None:
             self.session.headers.update({'X-API-KEY': api_key})
 
         if endpoint == 'collectionstats':
-            query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore
+            query_str = f'https://api.opensea.io/api/v2/collections/{options["name"]}/stats'  # type: ignore
+        elif endpoint == 'collection':
+            query_str = f'https://api.opensea.io/api/v2/collections/{options["collection_slug"]}'  # type: ignore
         elif endpoint == 'asset':
-            query_str = f'https://api.opensea.io/api/v1/asset/{options["address"]}/{options["item_id"]}'  # type: ignore
+            query_str = f'https://api.opensea.io/api/v2/chain/ethereum/contract/{options["address"]}/nfts/{options["item_id"]}'  # type: ignore
             options = None
         else:
-            query_str = f'https://api.opensea.io/api/v1/{endpoint}'
+            query_str = f'https://api.opensea.io/api/v2/chain/ethereum/account/{options["address"]}/nfts'  # type: ignore
 
         backoff = 1
         backoff_limit = 33
@@ -246,38 +226,35 @@ class Opensea(ExternalServiceWithApiKey):
             collection = None
             # NFT might not be part of a collection
             if 'collection' in entry:
-                saved_entry = self.collections.get(entry['collection']['name'])
+                saved_entry = self.collections.get(entry['collection'])
                 if saved_entry is None:
                     # we haven't got this collection in memory. Query opensea for info
                     self.gather_account_collections(account=owner_address)
                     # try to get the info again
-                    saved_entry = self.collections.get(entry['collection']['name'])
+                    saved_entry = self.collections.get(entry['collection'])
 
                 if saved_entry:
                     collection = saved_entry
                     if saved_entry.floor_price is not None:
                         floor_price = saved_entry.floor_price
                 else:  # should not happen. That means collections endpoint doesnt return anything
-                    collection_data = entry['collection']
-                    collection = Collection(
-                        name=collection_data['name'],
-                        banner_image=collection_data['banner_image_url'],
-                        description=collection_data['description'],
-                        large_image=collection_data['large_image_url'],
+                    raise UnknownAsset(
+                        f'Could not find collection {entry["collection"]} in opensea collections '
+                        f'endpoint',
                     )
 
             price_in_eth = max(last_price_in_eth, floor_price)
             price_in_usd = price_in_eth * eth_usd_price
-            token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
-            if entry['asset_contract']['asset_contract_type'] == 'semi-fungible':
+            token_id = entry['contract'] + '_' + entry['identifier']
+            if entry['token_standard'] == 'erc1155':
                 token_id += f'_{owner_address!s}'
             return NFT(  # can raise KeyError due to arg init
                 token_identifier=NFT_DIRECTIVE + token_id,
-                background_color=entry['background_color'],
+                background_color=None,
                 image_url=entry['image_url'],
                 name=entry['name'],
-                external_link=entry['external_link'],
-                permalink=entry['permalink'],
+                external_link=entry['metadata_url'],
+                permalink=entry['opensea_url'],
                 price_eth=price_in_eth,
                 price_usd=price_in_usd,
                 collection=collection,
@@ -287,59 +264,63 @@ class Opensea(ExternalServiceWithApiKey):
 
     def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
         """Gathers account collection information and keeps them in memory"""
-        offset = 0
-        options = {'offset': offset, 'limit': CONTRACTS_MAX_LIMIT, 'asset_owner': account}
+        options = {'next': None, 'limit': ASSETS_MAX_LIMIT, 'address': account}
 
         raw_result: list[dict[str, Any]] = []
         while True:
-            result = self._query(endpoint='collections', options=options)
-            raw_result.extend(result)
-            if len(result) != CONTRACTS_MAX_LIMIT:
+            result = self._query(endpoint='assets', options=options)
+            raw_result.extend(result['nfts'])
+            if len(result['nfts']) != ASSETS_MAX_LIMIT:
                 break
 
             # else continue by paginating
-            offset += CONTRACTS_MAX_LIMIT
-            options['offset'] = offset
+            options['next'] = result['next']
 
         for entry in raw_result:
-            if len(entry['primary_asset_contracts']) == 0:
+            options = {'collection_slug': entry['collection']}
+            collection = self._query(endpoint='collection', options=options)
+            if len(collection['contracts']) == 0:
                 continue  # skip if no contract (opensea makes everything a collection of 1)
-            name = entry['name']
-            if name in self.collections:
+            slug = collection['collection']
+            if slug in self.collections:
                 continue  # do not requery already queried collection
 
             # To get the floor price we need to query a different endpoint since opensea are idiots
             # https://github.com/rotki/rotki/issues/3676
-            stats_result = self._query(endpoint='collectionstats', options={'name': entry['slug']})
+            stats_result = self._query(
+                endpoint='collectionstats', options={'name': entry['collection']},
+            )
+            log.debug(stats_result)
+            _floor_price = (
+                stats_result['total']['floor_price'] or stats_result['total']['average_price']
+            )
             floor_price = deserialize_optional_to_optional_fval(
-                value=stats_result['stats']['floor_price'],
+                value=_floor_price,
                 name='floor price',
                 location='opensea',
             )
-            self.collections[name] = Collection(
-                name=name,
-                banner_image=entry['banner_image_url'],
-                description=entry['description'],
-                large_image=entry['large_image_url'],
+            self.collections[slug] = Collection(
+                name=collection['name'],
+                banner_image=collection['banner_image_url'],
+                description=collection['description'],
+                large_image=collection['image_url'],
                 floor_price=floor_price,
             )
 
     def get_account_nfts(self, account: ChecksumEvmAddress) -> list[NFT]:
         """May raise RemoteError"""
-        offset = 0
-        options = {'order_direction': 'desc', 'offset': offset, 'limit': ASSETS_MAX_LIMIT, 'owner': account}  # noqa: E501
+        options = {'next': None, 'limit': ASSETS_MAX_LIMIT, 'address': account}
         eth_usd_price = Inquirer.find_usd_price(A_ETH)
 
         raw_result = []
         while True:
             result = self._query(endpoint='assets', options=options)
-            raw_result.extend(result['assets'])
-            if len(result['assets']) != ASSETS_MAX_LIMIT:
+            raw_result.extend(result['nfts'])
+            if len(result['nfts']) != ASSETS_MAX_LIMIT:
                 break
 
             # else continue by paginating
-            offset += ASSETS_MAX_LIMIT
-            options['offset'] = offset
+            options['next'] = result['next']
 
         nfts = []
         for entry in raw_result:
