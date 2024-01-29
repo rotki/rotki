@@ -229,7 +229,6 @@ def has_tracked_addresses(
         blockchain: SupportedBlockchain,
         database: 'DBHandler',
 ) -> bool:
-    """Returns true if we are tracking any address for the blockchain"""
     with database.conn.read_ctx() as cursor:
         return database.get_blockchain_accounts(cursor).get(
             blockchain=blockchain,

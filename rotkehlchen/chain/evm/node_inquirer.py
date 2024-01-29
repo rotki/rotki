@@ -1464,7 +1464,7 @@ class UpdatableCacheDataMixin(LockableQueryMixIn):
         ):
             return False
 
-        new_data = query_method(inquirer=self)
+        new_data = query_method(inquirer=self, cache_type=cache_type)
         if new_data is None:
             return False
         with GlobalDBHandler().conn.write_ctx() as write_cursor:

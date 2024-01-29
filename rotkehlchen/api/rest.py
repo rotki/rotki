@@ -83,12 +83,12 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
-from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
-    query_velodrome_data,
+from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
+    query_velodrome_like_data,
     save_velodrome_data_to_cache,
 )
+from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -4356,10 +4356,12 @@ class RestAPI:
     def refresh_general_cache(self) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
+        base_inquierer = self.rotkehlchen.chains_aggregator.base.node_inquirer
         caches = (
             ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
-            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
+            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
+            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquierer),  # noqa: E501
         )
         for (cache, cache_type, query_method, save_method, inquirer) in caches:
             if inquirer.ensure_cache_data_is_updated(

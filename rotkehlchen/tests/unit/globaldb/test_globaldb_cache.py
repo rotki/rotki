@@ -18,12 +18,12 @@ from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     CURVE_API_URLS,
     read_curve_pools_and_gauges,
 )
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
-    query_velodrome_data,
+from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
+    query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
     save_velodrome_data_to_cache,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -185,7 +185,7 @@ def test_velodrome_cache(optimism_inquirer):
 
     optimism_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.VELODROME_POOL_ADDRESS,
-        query_method=query_velodrome_data,
+        query_method=query_velodrome_like_data,
         save_method=save_velodrome_data_to_cache,
     )  # populates cache, addressbook and assets tables
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
