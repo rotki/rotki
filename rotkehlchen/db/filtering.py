@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import Any, Generic, Literal, NamedTuple, TypeVar, cast
+from typing import Any, Generic, Literal, NamedTuple, TypeVar
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -31,6 +31,11 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+
+class InvalidFilter(Exception):
+    """Raised if an invalid filter combination has been given"""
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -418,11 +423,10 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
     def accounts(self) -> list[EvmAccount] | None:
-        if self.join_clause is None:
+        if not isinstance(self.join_clause, DBEvmTransactionJoinsFilter):
             return None
 
-        ethaddress_filter = cast('DBEvmTransactionJoinsFilter', self.join_clause)
-        return ethaddress_filter.accounts
+        return self.join_clause.accounts
 
     @property
     def chain_id(self) -> SUPPORTED_CHAIN_IDS | None:
@@ -443,6 +447,9 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             tx_hash: EVMTxHash | None = None,
             chain_id: SUPPORTED_CHAIN_IDS | None = None,
     ) -> 'EvmTransactionsFilterQuery':
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
 
@@ -466,6 +473,9 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
         else:
             if accounts is not None:
+                if filter_query.join_clause is not None:  # atm "should not happen"
+                    raise InvalidFilter('Unable to filter by account due to conflicting filter')
+
                 filter_query.join_clause = DBEvmTransactionJoinsFilter(
                     and_op=False,
                     accounts=accounts,
@@ -887,6 +897,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
     ) -> T_HistoryBaseEntryFilterQ:
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
 
@@ -898,6 +911,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             group_by_field='event_identifier',
         )
         if customized_events_only is True:
+            if filter_query.join_clause is not None:  # atm "should not happen"
+                raise InvalidFilter('Unable to filter by customized events due to conflicting filter')  # noqa: E501
+
             filter_query.join_clause = HistoryEventCustomizedOnlyJoinsFilter(and_op=True)
 
         filters: list[DBFilter] = []
