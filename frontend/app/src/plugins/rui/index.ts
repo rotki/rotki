@@ -31,6 +31,7 @@ import {
   RiCheckboxMultipleLine,
   RiCloseLine,
   RiCloudLine,
+  RiCloudOffLine,
   RiCodeBoxLine,
   RiCoinLine,
   RiCoinsLine,
@@ -327,6 +328,7 @@ Vue.use(RuiPlugin, {
     RiQuillPenLine,
     RiFileInfoLine,
     RiListCheck2,
-    RiEqualizerLine
+    RiEqualizerLine,
+    RiCloudOffLine
   ]
 });

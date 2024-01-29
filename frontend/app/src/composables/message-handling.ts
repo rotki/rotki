@@ -8,7 +8,6 @@ import {
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
-  type DbUploadResult,
   type EvmTransactionQueryData,
   type EvmUndecodedTransactionsData,
   type HistoryEventsQueryData,
@@ -22,7 +21,6 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import router from '@/router';
-import { SYNC_UPLOAD } from '@/types/session/sync';
 
 export const useMessageHandling = () => {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
@@ -37,7 +35,7 @@ export const useMessageHandling = () => {
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
-  const { showSyncConfirmation } = useSync();
+  const { uploadStatus } = useSync();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -171,27 +169,6 @@ export const useMessageHandling = () => {
     };
   };
 
-  const handleDbUploadMessage = (data: DbUploadResult): Notification | null => {
-    const { actionable, message, uploaded } = data;
-
-    if (!actionable || uploaded) {
-      return null;
-    }
-
-    return {
-      title: t('notification_messages.db_upload_result.title'),
-      message: t('notification_messages.db_upload_result.message', {
-        reason: message
-      }),
-      severity: Severity.WARNING,
-      priority: Priority.ACTION,
-      action: {
-        label: t('notification_messages.db_upload_result.action'),
-        action: () => showSyncConfirmation(SYNC_UPLOAD)
-      }
-    };
-  };
-
   const handleAccountingRuleConflictMessage = (
     data: AccountingRuleConflictData
   ): Notification => {
@@ -260,7 +237,7 @@ export const useMessageHandling = () => {
         ignoreCache: true
       });
     } else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
-      addNotification(handleDbUploadMessage(message.data));
+      set(uploadStatus, message.data);
     } else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
     } else {

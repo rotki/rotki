@@ -14,13 +14,14 @@ const {
   confirmChecked,
   displaySyncConfirmation,
   syncAction,
+  uploadStatus,
   cancelSync,
   forceSync,
   showSyncConfirmation
 } = useSync();
 const { href, onLinkClick } = useLinks();
 
-const premium = usePremium();
+const { premium, premiumSync } = storeToRefs(usePremiumStore());
 
 const pending = ref<boolean>(false);
 const visible = ref<boolean>(false);
@@ -46,6 +47,24 @@ const icon = computed(() => {
     return tick ? 'download-cloud-2-line' : 'download-cloud-line';
   }
   return tick ? 'upload-cloud-2-line' : 'upload-cloud-line';
+});
+
+const showAutoUploadOffWarning = computed<boolean>(() => {
+  if (!isDefined(uploadStatus)) {
+    return false;
+  }
+  return !get(uploadStatus).uploaded;
+});
+
+const tooltip = computed<string>(() => {
+  if (get(showAutoUploadOffWarning)) {
+    const title = t('sync_indicator.db_upload_result.title');
+    const message = t('sync_indicator.db_upload_result.message', {
+      reason: get(uploadStatus)?.message
+    });
+    return `${title}: ${message}`;
+  }
+  return t('sync_indicator.menu_tooltip');
 });
 
 const showConfirmation = (action: SyncAction) => {
@@ -84,12 +103,28 @@ watch(isSyncing, (current, prev) => {
       >
         <template #activator="{ on }">
           <MenuTooltipButton
-            :tooltip="t('sync_indicator.menu_tooltip')"
+            :tooltip="tooltip"
             class-name="secondary--text text--lighten-4"
             :on-menu="on"
           >
-            <RuiIcon v-if="isSyncing" :name="icon" color="primary" />
-            <RuiIcon v-else name="cloud-line" />
+            <RuiBadge
+              :value="showAutoUploadOffWarning"
+              color="warning"
+              dot
+              placement="top"
+              offset-y="4"
+              size="lg"
+              class="flex items-center"
+            >
+              <RuiIcon
+                v-if="showAutoUploadOffWarning"
+                name="cloud-off-line"
+                color="warning"
+              />
+              <RuiIcon v-else-if="!premiumSync" name="cloud-off-line" />
+              <RuiIcon v-else-if="isSyncing" :name="icon" color="primary" />
+              <RuiIcon v-else name="cloud-line" />
+            </RuiBadge>
           </MenuTooltipButton>
         </template>
         <div class="pa-4 md:w-[250px] w-full">
@@ -102,6 +137,17 @@ watch(isSyncing, (current, prev) => {
               {{ t('common.never') }}
             </span>
           </div>
+          <RuiAlert v-if="uploadStatus" type="warning" class="my-2">
+            <template #title>
+              {{ t('sync_indicator.db_upload_result.title') }}
+            </template>
+
+            {{
+              t('sync_indicator.db_upload_result.message', {
+                reason: uploadStatus.message
+              })
+            }}
+          </RuiAlert>
           <SyncButtons :pending="pending" @action="showConfirmation($event)" />
         </div>
       </VMenu>
