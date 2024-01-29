@@ -187,8 +187,8 @@ class Opensea(ExternalServiceWithApiKey):
     ) -> 'NFT':
         """May raise:
 
-        - DeserializationError if the given dict can't be deserialized
-        - UnknownAsset if the given payment token isn't known
+        - DeserializationError if the given dict can't be deserialized or
+        we couldn't read the collection.
         """
         if not isinstance(entry, dict):
             raise DeserializationError(
@@ -238,7 +238,7 @@ class Opensea(ExternalServiceWithApiKey):
                     if saved_entry.floor_price is not None:
                         floor_price = saved_entry.floor_price
                 else:  # should not happen. That means collections endpoint doesnt return anything
-                    raise UnknownAsset(
+                    raise DeserializationError(
                         f'Could not find collection {entry["collection"]} in opensea collections '
                         f'endpoint',
                     )
