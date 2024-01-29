@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, Literal, NamedTuple, Optional
 
 from rotkehlchen.chain.ethereum.modules.convex.constants import BOOSTER
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -32,12 +32,15 @@ class ConvexPoolData(NamedTuple):
     pool_name: str
 
 
-def get_existing_pools(cursor: 'DBCursor') -> set[ChecksumEvmAddress]:
+def get_existing_pools(
+        cursor: 'DBCursor',
+        cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
+) -> set[ChecksumEvmAddress]:
     """Returns all the convex pool rewards address stored in cache"""
     return {
         string_to_evm_address(address) for address in globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=(CacheType.CONVEX_POOL_ADDRESS,),
+            key_parts=(cache_type,),
         )
     }
 
@@ -65,7 +68,10 @@ def read_convex_data_from_cache() -> tuple[dict[ChecksumEvmAddress, str]]:
     """Reads convex pools and names from global db cache tables."""
     pools: dict[ChecksumEvmAddress, str] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        for pool_address in get_existing_pools(cursor):
+        for pool_address in get_existing_pools(
+            cursor=cursor,
+            cache_type=CacheType.CONVEX_POOL_ADDRESS,
+        ):
             if (pool_name := globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.CONVEX_POOL_NAME, pool_address),
@@ -122,7 +128,10 @@ def query_convex_data_from_chain(
     return queried_convex_pools_info
 
 
-def query_convex_data(inquirer: 'EthereumInquirer') -> list[ConvexPoolData] | None:
+def query_convex_data(
+        inquirer: 'EthereumInquirer',
+        cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
+) -> list[ConvexPoolData] | None:
     """
     Queries chain for all convex rewards pools and returns a list of the mappings not cached
 
@@ -130,7 +139,7 @@ def query_convex_data(inquirer: 'EthereumInquirer') -> list[ConvexPoolData] | No
     - RemoteError if failed to query chain
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        existing_pools = get_existing_pools(cursor)
+        existing_pools = get_existing_pools(cursor=cursor, cache_type=cache_type)
 
     try:
         convex_pools = query_convex_data_from_chain(

@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -17,10 +17,11 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+    from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import VelodromePoolData
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import VelodromePoolData
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -32,6 +33,22 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+CACHE_QUERY_METHOD_TYPE = (
+    Callable[
+        [
+            'OptimismInquirer | BaseInquirer',
+            Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
+        ],
+        list['VelodromePoolData'] | None] |
+    Callable[
+        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS]],
+        list | None,
+    ] |
+    Callable[
+        ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS]],
+        list | None,
+    ]
+)
 
 
 class DecoderInterface(metaclass=ABCMeta):
@@ -196,7 +213,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
             self,
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
-            query_data_method: Callable[['OptimismInquirer'], list['VelodromePoolData'] | None] | Callable[['EthereumInquirer'], list | None],  # noqa: E501
+            query_data_method: CACHE_QUERY_METHOD_TYPE,
             save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
             read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
     ) -> None:

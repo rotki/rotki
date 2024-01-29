@@ -10,8 +10,10 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -358,6 +360,17 @@ def fixture_optimism_transactions(
     )
 
 
+@pytest.fixture(name='base_transactions')
+def fixture_base_transactions(
+        database,
+        base_inquirer,
+):
+    return BaseTransactions(
+        base_inquirer=base_inquirer,
+        database=database,
+    )
+
+
 @pytest.fixture(name='optimism_transaction_decoder')
 def fixture_optimism_transaction_decoder(
         database,
@@ -369,6 +382,20 @@ def fixture_optimism_transaction_decoder(
             database=database,
             optimism_inquirer=optimism_inquirer,
             transactions=optimism_transactions,
+        )
+
+
+@pytest.fixture(name='base_transaction_decoder')
+def fixture_base_transaction_decoder(
+        database,
+        base_inquirer,
+        base_transactions,
+):
+    with patch_decoder_reload_data():
+        yield BaseTransactionDecoder(
+            database=database,
+            base_inquirer=base_inquirer,
+            transactions=base_transactions,
         )
 
 

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -302,6 +302,7 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
     """
     all_api_pools = []
     for api_url in CURVE_API_URLS:
+        log.debug(f'Querying curve api {api_url}')
         response_json = request_get_dict(api_url)
         if response_json['success'] is False:
             raise RemoteError(f'Curve api endpoint {api_url} returned failure. Response: {response_json}')  # noqa: E501
@@ -431,7 +432,10 @@ def query_curve_data_from_chain(
     return new_pools
 
 
-def query_curve_data(inquirer: 'EthereumInquirer') -> list[CurvePoolData] | None:
+def query_curve_data(
+        inquirer: 'EthereumInquirer',
+        cache_type: Literal[CacheType.CURVE_LP_TOKENS],
+) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
 
@@ -447,7 +451,7 @@ def query_curve_data(inquirer: 'EthereumInquirer') -> list[CurvePoolData] | None
     with GlobalDBHandler().conn.read_ctx() as cursor:
         existing_pools = [
             string_to_evm_address(address)
-            for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
+            for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=(cache_type,))
         ]
     try:
         pools_data: list[CurvePoolData] | None = query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501

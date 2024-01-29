@@ -37,4 +37,5 @@ WORLD_TO_BITPANDA = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GTC',  # noqa: E501
     evm_address_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FTT',  # noqa: E501
     evm_address_to_identifier('0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82', ChainID.BINANCE, EvmTokenKind.ERC20): 'CAKE',  # noqa: E501
+    evm_address_to_identifier('0x3506424F91fD33084466F402d5D97f05F8e3b4AF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CHZ',  # noqa: E501
 }

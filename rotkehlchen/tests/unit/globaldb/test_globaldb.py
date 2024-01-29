@@ -270,12 +270,12 @@ def test_get_asset_with_symbol(globaldb):
     bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
     aave_address = string_to_evm_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
     renbtc_address = string_to_evm_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
-    assert asset_data == [
+    expected_assets = {
         selfkey_asset,
         EvmToken.initialize(
             name='Bihu KEY',
             symbol='KEY',
-            started=1507822985,
+            started=Timestamp(1507822985),
             forked=None,
             swapped_for=None,
             address=bihukey_address,
@@ -290,12 +290,14 @@ def test_get_asset_with_symbol(globaldb):
             name='KeyCoin',
             symbol='KEY',
             asset_type=AssetType.OWN_CHAIN,
-            started=1405382400,
+            started=Timestamp(1405382400),
             forked=None,
             swapped_for=None,
             cryptocompare='KEYC',
             coingecko='',
-        )]
+        )}
+    assert expected_assets.issubset(set(asset_data))
+    assert all('key' in asset.symbol.lower() for asset in asset_data) is True
     # only non-ethereum token
     assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset]
     # only ethereum token

@@ -79,6 +79,7 @@ YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
 VELODROME_POOL_PROTOCOL = 'velodrome_pool'
+AERODROME_POOL_PROTOCOL = 'aerodrome_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
 
@@ -556,6 +557,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...
 CHAIN_IDS_WITH_BALANCE_PROTOCOLS = Literal[
     ChainID.ETHEREUM,
     ChainID.OPTIMISM,
+    ChainID.BASE,
 ]
 
 SUPPORTED_EVM_CHAINS = Literal[
@@ -937,6 +939,8 @@ class CacheType(Enum):
     CURVE_POOL_UNDERLYING_TOKENS = auto()  # get underlying tokens by pool address
     VELODROME_POOL_ADDRESS = auto()  # get pool address information
     VELODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
+    AERODROME_POOL_ADDRESS = auto()  # get pool address information
+    AERODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
     ENS_NAMEHASH = auto()  # map ENS namehash -> ens name
     ENS_LABELHASH = auto()  # map ENS labelhash -> ens name
     CONVEX_POOL_ADDRESS = auto()  # get convex pool addr
@@ -947,7 +951,7 @@ class CacheType(Enum):
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
         # `_` with ` ` and we don't need spaces here
         # TODO: Shorten all cache types not only velodrome
-        if 'VELODROME' in self.name:
+        if self.name.startswith(('VELODROME', 'AERODROME')):
             parts = self.name.split('_')
             return parts[0][:4] + parts[1][0]  # Shorten the name that is stored in the db to save space. For example: VELODROME_POOL_ADDRESS -> VELOP  # noqa: E501
         return self.name
@@ -971,6 +975,8 @@ GeneralCacheType = Literal[
     CacheType.CURVE_POOL_UNDERLYING_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,
     CacheType.VELODROME_GAUGE_ADDRESS,
+    CacheType.AERODROME_POOL_ADDRESS,
+    CacheType.AERODROME_GAUGE_ADDRESS,
     CacheType.CONVEX_POOL_ADDRESS,
     CacheType.SPAM_ASSET_FALSE_POSITIVE,
 ]

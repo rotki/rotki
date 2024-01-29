@@ -20,10 +20,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROME_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.chain.optimism.modules.velodrome.decoder import (
-    SWAP_V2 as VELODROME_SWAP_SIGNATURE,
-)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 

@@ -16,6 +16,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -174,6 +175,7 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
 CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (CurveBalances, ConvexBalances, ThegraphBalances, OctantBalances),
     ChainID.OPTIMISM: (VelodromeBalances,),
+    ChainID.BASE: (AerodromeBalances,),
 }
 
 
@@ -974,6 +976,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.BASE)
+        self._query_protocols_with_balance(chain_id=ChainID.BASE)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1019,7 +1022,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         inquirer = self.get_chain_manager(chain).node_inquirer  # type: ignore  # chain's type here is a subset of the type expected by get_chain_manager
         existing_balances = self.balances.get(chain)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
-            protocol_with_balance: ProtocolWithBalance = protocol(  # type: ignore  # protocol here is an implementation of the abstract class not the abstract class itself
+            protocol_with_balance: ProtocolWithBalance = protocol(
                 database=self.database,
                 evm_inquirer=inquirer,
                 chain_id=chain_id,
