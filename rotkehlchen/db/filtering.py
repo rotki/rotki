@@ -856,7 +856,7 @@ class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
     def prepare(self) -> tuple[list[str], list[Any]]:
         query = (
             'INNER JOIN history_events_mappings '
-            'ON history_events_mappings.parent_identifier = history_events.identifier '
+            'ON history_events_mappings.parent_identifier = history_events_identifier '
             'WHERE history_events_mappings.name = ? AND history_events_mappings.value = ?'
         )
         bindings: list[str | int] = [HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED]

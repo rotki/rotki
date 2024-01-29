@@ -54,7 +54,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
+# Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
+HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
 HISTORY_BASE_ENTRY_LENGTH = 12
 
 EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address, extra_data'
