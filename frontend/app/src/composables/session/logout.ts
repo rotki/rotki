@@ -1,5 +1,6 @@
 export const useSessionStateCleaner = () => {
   const { logged } = storeToRefs(useSessionAuthStore());
+  const { uploadStatus } = useSync();
   const { start, stop } = useMonitorStore();
 
   watch(logged, (logged, wasLogged) => {
@@ -9,6 +10,7 @@ export const useSessionStateCleaner = () => {
       }
       return;
     }
+    set(uploadStatus, null);
     stop();
     resetState();
   });

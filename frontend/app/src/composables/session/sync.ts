@@ -7,6 +7,7 @@ import {
   SYNC_UPLOAD,
   type SyncAction
 } from '@/types/session/sync';
+import type { DbUploadResult } from '@/types/websocket-messages';
 
 export const useSync = createSharedComposable(() => {
   const { isTaskRunning, awaitTask } = useTaskStore();
@@ -15,6 +16,13 @@ export const useSync = createSharedComposable(() => {
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
   const confirmChecked = ref(false);
+  const uploadStatus = useSessionStorage<DbUploadResult>(
+    'rotki.upload_status',
+    null,
+    {
+      serializer
+    }
+  );
 
   const showSyncConfirmation = (action: SyncAction) => {
     set(syncAction, action);
@@ -86,6 +94,7 @@ export const useSync = createSharedComposable(() => {
     syncAction,
     confirmChecked,
     displaySyncConfirmation,
+    uploadStatus,
     forceSync,
     cancelSync,
     showSyncConfirmation

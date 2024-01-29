@@ -3073,11 +3073,6 @@
     "backend": {
       "title": "Backend"
     },
-    "db_upload_result": {
-      "action": "Force push",
-      "message": "We could not complete the upload because {reason}",
-      "title": "Database sync failed"
-    },
     "missing_api_key": {
       "action": "Εισάγετε κλειδί",
       "message": "Δεν έχετε διαμορφώσει ένα κλειδί API {location} {service}. Τα ερωτήματα rotki {location} {service} θα εξακολουθούν να λειτουργούν αλλά θα είναι πολύ αργά. Εάν δεν χρησιμοποιείτε τον δικό σας κόμβο {location}, συνιστάται να μεταβείτε στο {url}, να δημιουργήσετε ένα κλειδί API και, στη συνέχεια, να το εισαγάγετε στη ρύθμιση διαπιστευτηρίων εξωτερικής υπηρεσίας του rotki",
@@ -3670,6 +3665,10 @@
       "message_download_relogin": "After performing the pull, a manual re-login will be required.",
       "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
       "title": "Force Push | Force Pull"
+    },
+    "db_upload_result": {
+      "message": "We could not complete the upload because {reason}",
+      "title": "Database sync failed"
     }
   },
   "table_filter": {
