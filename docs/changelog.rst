@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7362` Filtering by customized events in the free version should work fine again.
 * :bug:`-` Premium sync failure will now appear in the toolbar indicator instead of showing a notification.
 * :bug:`-` Importing sell trades via rotki generic trades CSV import will now work properly again.
 * :bug:`-` All Gnosis bridge dai events from ethereum to gnosis chain should now be decoded properly.

@@ -1,5 +1,7 @@
 from typing import Any
 
+import pytest
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.accounting.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
@@ -217,7 +219,10 @@ def test_read_write_events_from_db(database):
                 assert event == expected_event
 
 
-def test_read_write_customized_events_from_db(database: DBHandler) -> None:
+@pytest.mark.parametrize(
+    ('has_premium', 'group_by_event_ids'), [(True, False), (True, True), (False, False), (False, True)],  # noqa: E501
+)
+def test_read_write_customized_events_from_db(database: DBHandler, has_premium: bool, group_by_event_ids: bool) -> None:  # noqa: E501
     """Tests filtering for fetching only the customized events"""
     db = DBHistoryEvents(database)
     history_data = {
@@ -261,14 +266,15 @@ def test_read_write_customized_events_from_db(database: DBHandler) -> None:
 
     with db.db.conn.read_ctx() as cursor:
         for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers, strict=True):  # noqa: E501
-            events = db.get_history_events(
+            events = db.get_history_events(  # type: ignore
                 cursor=cursor,
                 filter_query=filtering_class.make(**filter_args),
-                has_premium=True,
-                group_by_event_ids=False,
+                has_premium=has_premium,
+                group_by_event_ids=group_by_event_ids,
             )
-            filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # noqa: E501
-            assert filtered_ids == expected_ids
+            if group_by_event_ids is False:  # don't check the grouping case. Just make sure no exception is raised  # noqa: E501
+                filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # noqa: E501
+                assert filtered_ids == expected_ids
 
 
 def test_delete_last_event(database):
