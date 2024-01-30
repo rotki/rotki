@@ -10,7 +10,11 @@ module.exports = rotki({
   },
   stylistic: true,
   vuetify: true,
-  rotki: true,
+  rotki: {
+    overrides: {
+      '@rotki/no-deprecated-components': ['warn', { legacy: true }],
+    },
+  },
   cypress: {
     testDirectory: path.join('app', 'tests', 'e2e'),
   },
