@@ -387,9 +387,7 @@ class DBHistoryEvents:
                     f'{base_prefix} * FROM (SELECT COUNT(*), {base_suffix} '
                     f'{free_query_group_by} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '
                 )
-            else:
-                # if we don't group them but still apply free limit, then apply this limit on DISTINCT event_identifiers in a subquery  # noqa: E501
-                # so that we have enough sub_events in the outer filters in prepared_query
+            else:  # if we don't group them but still apply free limit, then apply this limit only on any event_identifiers that fall inside the limit  # noqa: E501
                 base_query = (
                     f'{base_prefix} * FROM (SELECT {base_suffix} WHERE event_identifier IN '
                     f'(SELECT DISTINCT event_identifier FROM history_events {free_query_group_by} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)) '  # noqa: E501
