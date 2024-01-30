@@ -88,7 +88,7 @@ class AccountingError(Exception):
     def __init__(self, message: str, report_id: int | None = None):
         """
         report_id is not mandatory since where it is used the id is not known until later.
-        It is later set
+        It is later set.
         """
         super().__init__(message)
         self.report_id = report_id

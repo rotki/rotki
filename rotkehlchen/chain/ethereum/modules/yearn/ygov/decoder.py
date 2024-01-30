@@ -82,6 +82,7 @@ class YearnygovDecoder(DecoderInterface):
                 break
 
     def _decode_stake(self, context: 'DecoderContext') -> None:
+        """Decode depositing the crv pool token in the gov contract"""
         staked_amount = token_normalized_value_decimals(
             token_amount=hex_or_bytes_to_int(context.tx_log.data),
             token_decimals=18,

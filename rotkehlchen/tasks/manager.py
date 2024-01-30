@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.ethereum.utils import has_tracked_addresses, should_update_protocol_cache
 from rotkehlchen.constants.timing import (
     AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
@@ -649,11 +649,11 @@ class TaskManager:
         )]
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
-        with self.database.conn.read_ctx() as cursor:
-            if len(self.database.get_blockchain_accounts(cursor).get(
-                blockchain=SupportedBlockchain.ETHEREUM,
-            )) == 0:
-                return None
+        if has_tracked_addresses(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            database=self.database,
+        ) is False:
+            return None
 
         if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
             ethereum_manager: EthereumManager = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
@@ -701,11 +701,11 @@ class TaskManager:
         )]
 
     def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
-        with self.database.conn.read_ctx() as cursor:
-            if len(self.database.get_blockchain_accounts(cursor).get(
-                blockchain=SupportedBlockchain.ETHEREUM,
-            )) == 0:
-                return None
+        if has_tracked_addresses(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            database=self.database,
+        ) is False:
+            return None
 
         if should_update_protocol_cache(CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
             return [self.greenlet_manager.spawn_and_track(

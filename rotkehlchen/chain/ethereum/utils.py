@@ -24,12 +24,13 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import UNIQUE_CACHE_KEYS, CacheType, ChecksumEvmAddress
+from rotkehlchen.types import UNIQUE_CACHE_KEYS, CacheType, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.opensea import Opensea
 
 
@@ -219,3 +220,14 @@ def try_download_ens_avatar(
     avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists
     with open(avatars_dir / f'{ens_name}.png', 'wb') as f:
         f.write(avatar)
+
+
+def has_tracked_addresses(
+        blockchain: SupportedBlockchain,
+        database: 'DBHandler',
+) -> bool:
+    """Returns true if we are tracking any address for the blockchain"""
+    with database.conn.read_ctx() as cursor:
+        return database.get_blockchain_accounts(cursor).get(
+            blockchain=blockchain,
+        ) != 0
