@@ -279,8 +279,6 @@ class Opensea(ExternalServiceWithApiKey):
         for entry in raw_result:
             options = {'collection_slug': entry['collection']}
             collection = self._query(endpoint='collection', options=options)
-            if len(collection['contracts']) == 0:
-                continue  # skip if no contract (opensea makes everything a collection of 1)
             slug = collection['collection']
             if slug in self.collections:
                 continue  # do not requery already queried collection
