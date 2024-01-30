@@ -37,6 +37,15 @@ export function useForm<T = void>() {
     set(postSubmitFunc, func);
   };
 
+  const setOpenDialog = (dialog: boolean) => {
+    set(openDialog, dialog);
+  };
+
+  const closeDialog = () => {
+    setOpenDialog(false);
+    set(valid, true);
+  };
+
   const trySubmit = async (): Promise<T | void> => {
     set(submitting, true);
     const result = await checkBeforeSubmission<T>(get(submitFunc), v$, valid);
@@ -48,15 +57,6 @@ export function useForm<T = void>() {
 
     set(submitting, false);
     return result;
-  };
-
-  const setOpenDialog = (dialog: boolean) => {
-    set(openDialog, dialog);
-  };
-
-  const closeDialog = () => {
-    setOpenDialog(false);
-    set(valid, true);
   };
 
   return {

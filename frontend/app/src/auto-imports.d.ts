@@ -164,6 +164,8 @@ declare global {
   const isRef: typeof import('vue')['isRef']
   const isTaskCancelled: typeof import('./utils/index')['isTaskCancelled']
   const isTransactionEvent: typeof import('./utils/report')['isTransactionEvent']
+  const isValidBchAddress: typeof import('./utils/text')['isValidBchAddress']
+  const isValidBtcAddress: typeof import('./utils/text')['isValidBtcAddress']
   const isValidDate: typeof import('./utils/date')['isValidDate']
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
   const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
@@ -905,6 +907,8 @@ declare module 'vue' {
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
+    readonly isValidBchAddress: UnwrapRef<typeof import('./utils/text')['isValidBchAddress']>
+    readonly isValidBtcAddress: UnwrapRef<typeof import('./utils/text')['isValidBtcAddress']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
@@ -1639,6 +1643,8 @@ declare module '@vue/runtime-core' {
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
+    readonly isValidBchAddress: UnwrapRef<typeof import('./utils/text')['isValidBchAddress']>
+    readonly isValidBtcAddress: UnwrapRef<typeof import('./utils/text')['isValidBtcAddress']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>

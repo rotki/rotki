@@ -1018,8 +1018,7 @@
       "no_suggestions_available": "Aucune suggestion disponible",
       "validation": {
         "address": "Le champ d'adresse ne peut pas être vide",
-        "name": "Le champ de nom ne peut pas être vide",
-        "valid": "Veuillez saisir une adresse ETH valide"
+        "name": "Le champ de nom ne peut pas être vide"
       }
     },
     "hint": {

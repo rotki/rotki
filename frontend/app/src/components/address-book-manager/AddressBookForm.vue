@@ -12,9 +12,12 @@ const props = withDefaults(
     value: AddressBookPayload;
     edit: boolean;
     enableForAllChains?: boolean;
+    isEvmChain?: boolean;
+    errorMessages: { address?: string[]; name?: string[] };
   }>(),
   {
     enableForAllChains: false,
+    isEvmChain: false,
   },
 );
 
@@ -25,6 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { errorMessages } = toRefs(props);
 
 const name = useSimplePropVModel(props, 'name', emit);
 const address = useSimplePropVModel(props, 'address', emit);
@@ -44,10 +48,6 @@ const rules = {
       t('address_book.form.validation.address'),
       required,
     ),
-    isValidEthAddress: helpers.withMessage(
-      t('address_book.form.validation.valid'),
-      isValidEthAddress,
-    ),
   },
   name: {
     required: helpers.withMessage(
@@ -65,7 +65,7 @@ const v$ = setValidation(
     address,
     name,
   },
-  { $autoDirty: true },
+  { $autoDirty: true, $externalResults: errorMessages },
 );
 
 const { getBlockie } = useBlockie();
@@ -88,20 +88,20 @@ const { getBlockie } = useBlockie();
       </template>
     </VSelect>
     <ChainSelect
-      evm-only
       :model-value="blockchain"
-      :disabled="edit || enableForAllChains"
+      :disabled="edit"
+      exclude-eth-staking
       @update:model-value="blockchain = $event"
     />
     <RuiCheckbox
       v-model="enabledForAllChains"
-      :disabled="edit"
+      :disabled="edit || !isEvmChain"
       color="primary"
       class="-my-2"
       :label="t('address_book.form.labels.for_all_chain')"
     />
     <ComboboxWithCustomInput
-      v-model="address"
+      v-model.trim="address"
       outlined
       :label="t('address_book.form.labels.address')"
       :items="addressSuggestions"
@@ -109,6 +109,7 @@ const { getBlockie } = useBlockie();
       :disabled="edit"
       :error-messages="toMessages(v$.address)"
       auto-select-first
+      clearable
     >
       <template #prepend-inner>
         <span>
@@ -141,7 +142,8 @@ const { getBlockie } = useBlockie();
       </template>
     </ComboboxWithCustomInput>
     <RuiTextField
-      v-model="name"
+      v-model.trim="name"
+      class="mt-2"
       variant="outlined"
       color="primary"
       :label="t('common.name')"

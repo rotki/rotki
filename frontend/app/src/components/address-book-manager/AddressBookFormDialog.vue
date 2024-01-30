@@ -5,6 +5,8 @@ const props = defineProps<{
   value: AddressBookPayload;
   enableForAllChains: boolean;
   editMode: boolean;
+  isEvmChain?: boolean;
+  errorMessages: { address?: string[]; name?: string[] };
 }>();
 
 const emit = defineEmits<{
@@ -40,8 +42,9 @@ const { t } = useI18n();
     <AddressBookForm
       v-model="model"
       :edit="editMode"
-      :enable-for-all-chains="enabledForAllChains"
-      @update:enable-for-all-chains="enabledForAllChains = $event"
+      :is-evm-chain="isEvmChain"
+      :enable-for-all-chains.sync="enabledForAllChains"
+      :error-messages="errorMessages"
     />
   </BigDialog>
 </template>

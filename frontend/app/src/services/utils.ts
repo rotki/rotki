@@ -80,8 +80,8 @@ export function validWithParamsSessionAndExternalService(
 
 /**
  * Used to validate a status. This validation considers valid responses the following
- * codes 200, 409, or 502. This validation method should be used with requests that require
- * a logged-in user (code 409) or include the usage of external services 502.
+ * codes 200, 400, 401, 403, 409, or 502. This validation method should be used with requests that require
+ * a logged-in user (code 401) or include the usage of external services 502.
  *
  * An example of a valid use-case for this validator would be fetching all the defi data from
  * the Zerion SDK.
@@ -90,7 +90,7 @@ export function validWithParamsSessionAndExternalService(
  * @return The validity of the status code
  */
 export function validWithSessionAndExternalService(status: number): boolean {
-  return isValid([200, 401, 403, 409, 502], status);
+  return isValid([200, 400, 401, 403, 409, 502], status);
 }
 
 /**

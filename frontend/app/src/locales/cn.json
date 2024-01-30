@@ -893,8 +893,7 @@
       "no_suggestions_available": "没有可用的建议",
       "validation": {
         "address": "地址栏不能为空",
-        "name": "name字段不能为空",
-        "valid": "请输入有效的ETH地址"
+        "name": "name字段不能为空"
       }
     },
     "hint": {

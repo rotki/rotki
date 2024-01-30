@@ -227,21 +227,35 @@ export function isValidEthAddress(address?: string): boolean {
   if (!address)
     return false;
 
-  return !!/^0x[\dA-Fa-f]{40}$/.test(address);
+  return /^0x[\dA-Fa-f]{40}$/.test(address);
+}
+
+export function isValidBtcAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  return /^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address);
+}
+
+export function isValidBchAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  return /^(bitcoincash:)?[pq][\da-z]{41}$/i.test(address);
 }
 
 export function isValidTxHash(address?: string): boolean {
   if (!address)
     return false;
 
-  return !!/^0x[\dA-Fa-f]{64}$/.test(address);
+  return /^0x[\dA-Fa-f]{64}$/.test(address);
 }
 
 export function consistOfNumbers(text?: string): boolean {
   if (!text)
     return false;
 
-  return !!/^\d+$/.test(text);
+  return /^\d+$/.test(text);
 }
 
 // Transform HTML code entities such as &bull; into “•”

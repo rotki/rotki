@@ -12,12 +12,14 @@ const props = withDefaults(
     disabled?: boolean;
     dense?: boolean;
     evmOnly?: boolean;
+    excludeEthStaking?: boolean;
   }>(),
   {
     modelValue: null,
     disabled: false,
     dense: false,
     evmOnly: false,
+    excludeEthStaking: false,
   },
 );
 
@@ -27,7 +29,7 @@ const emit = defineEmits<{
 
 const rootAttrs = useAttrs();
 
-const { evmOnly, modelValue } = toRefs(props);
+const { evmOnly, modelValue, excludeEthStaking } = toRefs(props);
 
 const { isModuleEnabled } = useModules();
 
@@ -42,7 +44,7 @@ const items = computed(() => {
 
   let data: string[] = get(supportedChains).map(({ id }) => id);
 
-  if (!isEth2Enabled)
+  if (!isEth2Enabled || get(excludeEthStaking))
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
 
   if (get(evmOnly))

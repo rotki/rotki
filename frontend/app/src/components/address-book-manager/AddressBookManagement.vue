@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ApiValidationError } from '@/types/api/errors';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Ref } from 'vue';
 import type {
@@ -27,79 +28,21 @@ const emptyForm: () => AddressBookPayload = () => ({
 });
 
 const { setSubmitFunc, setOpenDialog, closeDialog } = useAddressBookForm();
-
-function openForm(item: AddressBookEntry | null = null) {
-  set(editMode, !!item);
-  if (item) {
-    set(formPayload, {
-      ...item,
-      location: get(location),
-    });
-    set(enableForAllChains, !item.blockchain);
-  }
-  else {
-    const newForm = emptyForm();
-    set(formPayload, {
-      ...newForm,
-    });
-  }
-  setOpenDialog(true);
-}
-
-const resetForm = function () {
-  closeDialog();
-  set(formPayload, emptyForm());
-  set(enableForAllChains, false);
-};
+const { isEvm } = useSupportedChains();
 
 const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
+const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
+
+const isEvmChain = computed(() => {
+  const chain = get(formPayload).blockchain;
+
+  return !!chain && get(isEvm(chain));
+});
 
 const { getAddressBook, addAddressBook, updateAddressBook }
   = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
-
-async function save() {
-  try {
-    const formVal = get(formPayload);
-    const enableForAllChainsVal = get(enableForAllChains);
-    const payload = {
-      address: formVal.address.trim(),
-      name: formVal.name,
-      blockchain: enableForAllChainsVal ? null : formVal.blockchain,
-    };
-    const location = formVal.location;
-    if (get(editMode))
-      await updateAddressBook(location, [payload]);
-    else
-      await addAddressBook(location, [payload]);
-
-    set(tab, location === 'global' ? 0 : 1);
-    if (!enableForAllChainsVal)
-      set(selectedChain, formVal.blockchain);
-
-    closeDialog();
-    await fetchData();
-    return true;
-  }
-  catch (error: any) {
-    const values = { message: error.message };
-    const title = get(editMode)
-      ? t('address_book.actions.edit.error.title')
-      : t('address_book.actions.add.error.title');
-    const description = get(editMode)
-      ? t('address_book.actions.edit.error.description', values)
-      : t('address_book.actions.add.error.description', values);
-    setMessage({
-      title,
-      description,
-      success: false,
-    });
-    return false;
-  }
-}
-
-setSubmitFunc(save);
 
 const {
   filters,
@@ -130,12 +73,93 @@ const {
   },
 );
 
+function openForm(item: AddressBookEntry | null = null) {
+  set(editMode, !!item);
+  if (item) {
+    set(formPayload, {
+      ...item,
+      location: get(location),
+    });
+    set(enableForAllChains, !item.blockchain);
+  }
+  else {
+    const newForm = emptyForm();
+    set(formPayload, {
+      ...newForm,
+    });
+  }
+  setOpenDialog(true);
+}
+
+const resetForm = function () {
+  closeDialog();
+  set(formPayload, emptyForm());
+  set(enableForAllChains, false);
+  set(errorMessages, {});
+};
+
+async function save() {
+  try {
+    const { blockchain, address, name, location } = get(formPayload);
+    const payload = {
+      address,
+      name,
+      blockchain: get(enableForAllChains) && get(isEvmChain) ? null : blockchain,
+    };
+    if (get(editMode))
+      await updateAddressBook(location, [payload]);
+    else
+      await addAddressBook(location, [payload]);
+
+    set(tab, location === 'global' ? 0 : 1);
+
+    closeDialog();
+    await fetchData();
+    return true;
+  }
+  catch (error: any) {
+    let errors = error.message;
+
+    if (error instanceof ApiValidationError)
+      errors = error.getValidationErrors(get(formPayload));
+
+    if (typeof errors === 'string') {
+      const values = { message: error.message };
+      const title = get(editMode)
+        ? t('address_book.actions.edit.error.title')
+        : t('address_book.actions.add.error.title');
+      const description = get(editMode)
+        ? t('address_book.actions.edit.error.description', values)
+        : t('address_book.actions.add.error.description', values);
+      setMessage({
+        title,
+        description,
+        success: false,
+      });
+    }
+    else {
+      set(errorMessages, errors);
+    }
+    return false;
+  }
+}
+
+setSubmitFunc(save);
+
 onMounted(async () => {
   await fetchData();
 });
 
 watch(location, async () => {
   await fetchData();
+});
+
+watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
+  if (blockchain !== oldBlockchain)
+    set(errorMessages, {});
+
+  if (!get(isEvmChain))
+    set(enableForAllChains, false);
 });
 </script>
 
@@ -159,11 +183,12 @@ watch(location, async () => {
     <RuiCard>
       <div class="flex flex-row flex-wrap items-center justify-end gap-2">
         <ChainSelect
-          evm-only
           :model-value="selectedChain"
           hide-details
           class="flex-1 max-w-full md:max-w-[15rem]"
+          clearable
           dense
+          exclude-eth-staking
           @update:model-value="selectedChain = $event"
         />
 
@@ -216,9 +241,10 @@ watch(location, async () => {
 
     <AddressBookFormDialog
       v-model="formPayload"
-      :enable-for-all-chains="enableForAllChains"
+      :enable-for-all-chains.sync="enableForAllChains"
       :edit-mode="editMode"
-      @update:enable-for-all-chains="enableForAllChains = $event"
+      :error-messages="errorMessages"
+      :is-evm-chain="isEvmChain"
       @reset="resetForm()"
     />
   </TablePageLayout>

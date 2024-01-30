@@ -95,30 +95,23 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
       if (get(loopring))
         return { ...item, index };
 
+      const display = get(addressNameSelector(item.address, item.chain)) || item.label || item.address;
+
       const row = {
         ...item,
-        display: item.label || item.address,
+        display,
         index,
       };
 
       if (!get(hasTokenDetection))
         return row;
 
-      const {
-        label,
-        address,
-        chain,
-        display: displayText,
-        balance: chainBalance,
-      } = row;
+      const { address, balance: chainBalance } = row;
 
       const { total } = get(getEthDetectedTokensInfo(blockchain, address));
-      const display = get(addressNameSelector(address, chain)) || displayText;
 
       const rowWithTokens = {
         ...row,
-        label,
-        display,
         numOfDetectedTokens: total,
       };
 
