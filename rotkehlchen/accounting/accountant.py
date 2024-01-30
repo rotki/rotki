@@ -71,7 +71,7 @@ class Accountant:
         # map event rules signatures to a list of event identifiers affected by them
         # used to know which events need to be invalidated when updating a rule
         self.processable_events_cache_signatures: DefaultLRUCache[int, list[int]] = DefaultLRUCache(default_factory=list, maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
-        self.ignored_asset_ids: set[str] = set()  # populated in process_history
+        self.ignored_asset_ids: set[str] = set()  # populated in process_history so that we load them in memory once during accounting and not reload them from the DB for every single event processing  # noqa: E501
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
@@ -236,7 +236,7 @@ class Accountant:
         for pot in self.pots:  # delete rules stored in memory since they won't be needed and can be queried again from the db  # noqa: E501
             pot.events_accountant.rules_manager.clean_rules()
 
-        self.ignored_asset_ids.clear()
+        self.ignored_asset_ids.clear()  # clean ignored assets from memory once PnL report run concludes  # noqa: E501
         return report_id
 
     def _process_event(

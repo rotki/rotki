@@ -6,7 +6,6 @@ Changelog
 * :feature:`7018` rotki will now save the labels for a blockchain account in the address book. If a name is already present in the address book for that blockchain account, Name Priority setting in 'Frontend-only Settings' section is used to determine which one to keep. Addressbook is prioritized by default.
 * :feature:`-` rotki is now available in French.
 * :feature:`7214` Swaps done through Paraswap Augustus on Ethereum, Arbitrum, Optimism, Polygon, and Base chains, will now get properly decoded in the history view and will be taken into account during accounting.
-* :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :feature:`7027` Monerium transactions are now decoded as mints and burns. If the user provides monerium credentials then a periodic task pulls data from the monerium API and the transactions are enriched with actual banking data and/or with bridging data from chain to chain.
 * :feature:`7176` The exported CSV for PnL Report now contains a label of the address in notes, if available.
 * :feature:`7146` The exported CSV for PnL Report now contains an Asset column with symbols.
@@ -15,6 +14,8 @@ Changelog
 * :feature:`-`  Bridging transactions across all EVM chains done via socket will now be decoded properly.
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`4841` The rotki data directory is now more organized.
+* :feature:`1574` Interactions with the ygov.finance contract are now decoded.
+* :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
 * :bug:`-` Importing sell trades via rotki generic trades CSV import will now work properly again.
 * :bug:`-` All Gnosis bridge dai events from ethereum to gnosis chain should now be decoded properly.
