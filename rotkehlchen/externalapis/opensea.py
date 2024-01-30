@@ -362,7 +362,7 @@ class Opensea(ExternalServiceWithApiKey):
                     'item_id': item_id,
                 },
             )
-            return result['image_url']
+            return result['nft']['image_url']
         except (RemoteError, KeyError) as e:
             msg = str(e)
             if isinstance(e, KeyError):

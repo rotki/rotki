@@ -182,7 +182,10 @@ def _get_response_image(response: requests.adapters.Response) -> bytes:
     if response.status_code != HTTPStatus.OK:
         raise RemoteError(f'{response.url} failed with {response.status_code}')
     content_type = response.headers.get('Content-Type')
-    if content_type is None or content_type.startswith('image') is False:
+    if (
+        content_type is None or
+        content_type != 'null' and content_type.startswith('image') is False  # cloudflare removes the content type and sets it to null  # noqa: E501
+    ):
         raise RemoteError(f'{response.url} return non-image content type {content_type}')
 
     return response.content

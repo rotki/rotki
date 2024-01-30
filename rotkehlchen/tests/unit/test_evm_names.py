@@ -203,6 +203,6 @@ def test_download_ens_avatar(ethereum_inquirer, opensea):
             tempdir / 'tewshi.eth.png',
             tempdir / 'nebolax.eth.png',
         }
-        downloaded_hash = file_md5(tempdir / 'nebolax.eth.png')
+        downloaded_hash = file_md5(tempdir / 'mafeoza.eth.png')
         expected_hash = file_md5(Path(__file__).parent.parent / 'data' / 'example_ens_avatar.png')
         assert downloaded_hash == expected_hash, 'Downloaded avatar should match the expected avatar'  # noqa: E501
