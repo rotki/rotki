@@ -14,7 +14,7 @@ export const useDarkMode = createSharedComposable(() => {
 
   const getColorScheme = (palette: Record<string, string>) => ({
     DEFAULT: hexToRgbPoints(palette['500']).join(', '),
-    lighter: hexToRgbPoints(palette['400']).join(', '),
+    lighter: hexToRgbPoints(palette['300']).join(', '),
     darker: hexToRgbPoints(palette['600']).join(', '),
   });
 
