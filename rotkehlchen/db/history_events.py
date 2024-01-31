@@ -19,7 +19,16 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    ETH_STAKING_EVENT_FIELDS,
+    ETH_STAKING_FIELD_LENGTH,
+    EVM_EVENT_FIELDS,
+    EVM_FIELD_LENGTH,
+    HISTORY_BASE_ENTRY_FIELDS,
+    HISTORY_BASE_ENTRY_LENGTH,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
@@ -52,17 +61,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-# Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
-HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
-HISTORY_BASE_ENTRY_LENGTH = 12
-
-EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address, extra_data'
-EVM_FIELD_LENGTH = 5
-
-ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
-ETH_STAKING_FIELD_LENGTH = 2
 
 
 def maybe_filter_ignore_asset(
@@ -615,7 +613,7 @@ class DBHistoryEvents:
         """
         prepared_query, bindings = query_filter.prepare(with_pagination=False)
         # we need to select everything because any column could be used in the filter
-        query = 'SELECT * ' + query_filter.get_join_query() + prepared_query
+        query = f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()} {prepared_query}'  # noqa: E501
         if group_by_event_ids:
             query = f'SELECT event_identifier FROM ({query}) GROUP BY event_identifier'
         query = f'SELECT COUNT(*) FROM ({query})'
@@ -632,7 +630,7 @@ class DBHistoryEvents:
             free_query_group_by = maybe_filter_ignore_asset(query_filter)
             count_with_limit = cursor.execute(
                 f'SELECT COUNT(*) FROM ('
-                f'SELECT * {query_filter.get_join_query()}{free_query_group_by}'  # we take the groups before the limit has been applied  # noqa: E501
+                f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()}{free_query_group_by}'  # we take the groups before the limit has been applied  # noqa: E501
                 'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'
                 f'){prepared_query}',
                 [entries_limit] + bindings,  # add limit's binding before prepared_query's bindings

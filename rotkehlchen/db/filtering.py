@@ -14,7 +14,13 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    ETH_STAKING_EVENT_FIELDS,
+    EVM_EVENT_FIELDS,
+    HISTORY_BASE_ENTRY_FIELDS,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -1013,8 +1019,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
 
     @staticmethod
     @abstractmethod
-    def get_count_query() -> str:
-        """Returns the count query needed for this particular type of history event filter"""
+    def get_columns() -> str:
+        """Returns all the fields/columns of this query. There is places where just using
+        * does not work due to ambiguous fields. This method helps with that."""
 
 
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1025,8 +1032,8 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
         return 'FROM history_events '
 
     @staticmethod
-    def get_count_query() -> str:
-        return 'SELECT COUNT(*) FROM history_events '
+    def get_columns() -> str:
+        return HISTORY_BASE_ENTRY_FIELDS
 
 
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1119,8 +1126,8 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return EVM_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
 
 
 class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
@@ -1187,8 +1194,8 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
         return ETH_STAKING_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
 
 
 class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
@@ -1264,8 +1271,8 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
         return ETH_DEPOSIT_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_DEPOSIT_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
