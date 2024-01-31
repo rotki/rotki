@@ -11,6 +11,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import (
@@ -275,6 +276,13 @@ def test_read_write_customized_events_from_db(database: DBHandler, has_premium: 
             if group_by_event_ids is False:  # don't check the grouping case. Just make sure no exception is raised  # noqa: E501
                 filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # noqa: E501
                 assert filtered_ids == expected_ids
+
+            db.get_history_events_count(  # don't check result, just check for exception
+                cursor=cursor,
+                query_filter=filtering_class.make(**filter_args),
+                group_by_event_ids=group_by_event_ids,
+                entries_limit=None if has_premium else FREE_HISTORY_EVENTS_LIMIT,
+            )
 
 
 def test_delete_last_event(database):

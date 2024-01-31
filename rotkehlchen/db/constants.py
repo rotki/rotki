@@ -51,3 +51,14 @@ class UpdateType(Enum):
             return cls(value[:-8])  # length of the _version suffix
         except ValueError as e:
             raise DeserializationError(f'Failed to deserialize UpdateTypevalue {value}') from e
+
+
+# Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
+HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
+HISTORY_BASE_ENTRY_LENGTH = 12
+
+EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address, extra_data'
+EVM_FIELD_LENGTH = 5
+
+ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
+ETH_STAKING_FIELD_LENGTH = 2
