@@ -2862,6 +2862,12 @@
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
       "line_two": "Uphold vous permet d'exporter un fichier d'activité. Il peut être trouvé sous 'activité' dans le coin supérieur droit de la liste d'activité.",
       "name": "Uphold"
+    },
+    "kucoin": {
+      "import": "Importer {0} de Kucoin",
+      "import_types": "métiers",
+      "line_one": "Nous prenons en charge l'importation de fichiers de type csv.",
+      "name": "Kucoin"
     }
   },
   "input_mode_select": {

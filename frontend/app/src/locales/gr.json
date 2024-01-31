@@ -2583,6 +2583,12 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
       "name": "Uphold"
+    },
+    "kucoin": {
+      "import": "Εισαγωγή {0} από Kucoin",
+      "import_types": "συναλλαγές",
+      "line_one": "Υποστηρίζουμε την εισαγωγή εμπορικών συναλλαγών τύπου αρχείου csv.",
+      "name": "Kucoin"
     }
   },
   "input_mode_select": {
