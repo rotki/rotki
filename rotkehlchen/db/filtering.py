@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import Any, Generic, Literal, NamedTuple, TypeVar, cast
+from typing import Any, Generic, Literal, NamedTuple, TypeVar
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -11,7 +11,13 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    ETH_STAKING_EVENT_FIELDS,
+    EVM_EVENT_FIELDS,
+    HISTORY_BASE_ENTRY_FIELDS,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
@@ -33,6 +39,11 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+
+class InvalidFilter(Exception):
+    """Raised if an invalid filter combination has been given"""
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -420,11 +431,10 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
     def accounts(self) -> list[EvmAccount] | None:
-        if self.join_clause is None:
+        if not isinstance(self.join_clause, DBEvmTransactionJoinsFilter):
             return None
 
-        ethaddress_filter = cast('DBEvmTransactionJoinsFilter', self.join_clause)
-        return ethaddress_filter.accounts
+        return self.join_clause.accounts
 
     @property
     def chain_id(self) -> SUPPORTED_CHAIN_IDS | None:
@@ -445,6 +455,9 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             tx_hash: EVMTxHash | None = None,
             chain_id: SUPPORTED_CHAIN_IDS | None = None,
     ) -> 'EvmTransactionsFilterQuery':
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
 
@@ -468,6 +481,9 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
         else:
             if accounts is not None:
+                if filter_query.join_clause is not None:  # atm "should not happen"
+                    raise InvalidFilter('Unable to filter by account due to conflicting filter')
+
                 filter_query.join_clause = DBEvmTransactionJoinsFilter(
                     and_op=False,
                     accounts=accounts,
@@ -859,7 +875,7 @@ class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
     def prepare(self) -> tuple[list[str], list[Any]]:
         query = (
             'INNER JOIN history_events_mappings '
-            'ON history_events_mappings.parent_identifier = history_events.identifier '
+            'ON history_events_mappings.parent_identifier = history_events_identifier '
             'WHERE history_events_mappings.name = ? AND history_events_mappings.value = ?'
         )
         bindings: list[str | int] = [HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED]
@@ -890,6 +906,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
     ) -> T_HistoryBaseEntryFilterQ:
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
 
@@ -901,6 +920,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             group_by_field='event_identifier',
         )
         if customized_events_only is True:
+            if filter_query.join_clause is not None:  # atm "should not happen"
+                raise InvalidFilter('Unable to filter by customized events due to conflicting filter')  # noqa: E501
+
             filter_query.join_clause = HistoryEventCustomizedOnlyJoinsFilter(and_op=True)
 
         filters: list[DBFilter] = []
@@ -1000,8 +1022,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
 
     @staticmethod
     @abstractmethod
-    def get_count_query() -> str:
-        """Returns the count query needed for this particular type of history event filter"""
+    def get_columns() -> str:
+        """Returns all the fields/columns of this query. There is places where just using
+        * does not work due to ambiguous fields. This method helps with that."""
 
 
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1012,8 +1035,8 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
         return 'FROM history_events '
 
     @staticmethod
-    def get_count_query() -> str:
-        return 'SELECT COUNT(*) FROM history_events '
+    def get_columns() -> str:
+        return HISTORY_BASE_ENTRY_FIELDS
 
 
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1106,8 +1129,8 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return EVM_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
 
 
 class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
@@ -1174,8 +1197,8 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
         return ETH_STAKING_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
 
 
 class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
@@ -1251,8 +1274,8 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
         return ETH_DEPOSIT_EVENT_JOIN
 
     @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_DEPOSIT_EVENT_JOIN}'
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

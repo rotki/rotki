@@ -391,7 +391,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 9
+    assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
     for event in result['entries']:
@@ -474,7 +474,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 8
-    assert result['entries_found'] == 8
+    assert result['entries_found'] == 5
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
 
@@ -495,7 +495,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         assert result['entries_total'] == 6
 
     # test pagination and exclude_ignored_assets without group by event ids works
-    for exclude_ignored_assets, found in ((True, 3), (False, 9)):
+    for exclude_ignored_assets, events_found, sub_events_found in ((True, 2, 3), (False, 6, 9)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -504,10 +504,28 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             json={'group_by_event_ids': False, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': exclude_ignored_assets},  # noqa: E501
         )
         result = assert_proper_response_with_result(response)
-        assert len(result['entries']) == min(found, 5)
-        assert result['entries_found'] == found
+        assert len(result['entries']) == min(sub_events_found, 5)
+        assert result['entries_found'] == events_found
         assert result['entries_limit'] == 100
         assert result['entries_total'] == 9
+
+    # test pagination works fine with/without exclude_ignored_assets filter with/without premium
+    db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    with db_history_events.db.user_write() as cursor:
+        for limit, exclude_ignored, total, found in (
+            (None, False, 6, 6),  # premium without ignoring assets, we get all the events
+            (None, True, 2, 2),  # premium with ignoring assets (ETH), we get only 2 events
+            (3, False, 6, 3),  # free limit (3) without ignoring assets, total events are 6 but we get only 3 (limited)  # noqa: E501
+            (2, True, 2, 2),  # free limit (2) with ignoring assets, total events are 2, all shown (limit not exceeded)  # noqa: E501
+            (1, False, 6, 1),  # free limit (1) without ignoring assets, total events are 6 but we get only 1 (limited)  # noqa: E501
+            (1, True, 2, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
+        ):
+            assert db_history_events.get_history_events_count(
+                cursor=cursor,
+                group_by_event_ids=True,
+                query_filter=HistoryEventFilterQuery.make(exclude_ignored_assets=exclude_ignored),
+                entries_limit=limit,
+            ) == (total, found)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

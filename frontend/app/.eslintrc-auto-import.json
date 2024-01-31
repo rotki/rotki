@@ -738,6 +738,7 @@
     "watchTriggerable": true,
     "watchWithFilter": true,
     "whenever": true,
-    "zeroBalance": true
+    "zeroBalance": true,
+    "serializer": true
   }
 }

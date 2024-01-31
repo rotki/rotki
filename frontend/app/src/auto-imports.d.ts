@@ -241,6 +241,7 @@ declare global {
   const sanitizeAddress: typeof import('./utils/text')['sanitizeAddress']
   const saveBackendUrl: typeof import('./utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./composables/backend')['saveUserOptions']
+  const serializer: typeof import('./composables/dynamic-messages')['serializer']
   const set: typeof import('@vueuse/shared')['set']
   const setActivePinia: typeof import('pinia')['setActivePinia']
   const setLastLogin: typeof import('./utils/account-management')['setLastLogin']
@@ -980,6 +981,7 @@ declare module 'vue' {
     readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
+    readonly serializer: UnwrapRef<typeof import('./composables/dynamic-messages')['serializer']>
     readonly set: UnwrapRef<typeof import('@vueuse/shared')['set']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setLastLogin: UnwrapRef<typeof import('./utils/account-management')['setLastLogin']>
@@ -1712,6 +1714,7 @@ declare module '@vue/runtime-core' {
     readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
+    readonly serializer: UnwrapRef<typeof import('./composables/dynamic-messages')['serializer']>
     readonly set: UnwrapRef<typeof import('@vueuse/shared')['set']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setLastLogin: UnwrapRef<typeof import('./utils/account-management')['setLastLogin']>

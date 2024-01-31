@@ -8,7 +8,6 @@ import {
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
-  type DbUploadResult,
   type EvmTransactionQueryData,
   type EvmUndecodedTransactionsData,
   type HistoryEventsQueryData,
@@ -22,7 +21,6 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import router from '@/router';
-import { SYNC_UPLOAD } from '@/types/session/sync';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 export function useMessageHandling() {
@@ -38,7 +36,7 @@ export function useMessageHandling() {
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
-  const { showSyncConfirmation } = useSync();
+  const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -291,7 +289,11 @@ export function useMessageHandling() {
       });
     }
     else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
-      addNotification(handleDbUploadMessage(message.data));
+      if (get(uploadStatusAlreadyHandled))
+        return;
+
+      set(uploadStatus, message.data);
+      set(uploadStatusAlreadyHandled, true);
     }
     else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));

@@ -17,6 +17,12 @@ Changelog
 * :feature:`1574` Interactions with the ygov.finance contract are now decoded.
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
+
+* :release:`1.31.3 <2023-12-31>`
+* :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
+* :bug:`7359` NFTs should be queried and displayed properly again.
+* :bug:`7362` Filtering by customized events in the free version should work fine again.
+* :bug:`-` Premium sync failure will now appear in the toolbar indicator instead of showing a notification.
 * :bug:`-` Importing sell trades via rotki generic trades CSV import will now work properly again.
 * :bug:`-` All Gnosis bridge dai events from ethereum to gnosis chain should now be decoded properly.
 * :bug:`7526` Liquity trove LUSD borrowing fee and stability pool LQTY frontend fee will now be properly shown and processed by rotki.

@@ -36,7 +36,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON, UNISWAP_LABEL
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -60,7 +59,7 @@ UNISWAP_ROUTERS = {UNISWAP_AUTO_ROUTER_V1, UNISWAP_AUTO_ROUTER_V2, UNISWAP_UNIVE
 
 class CryptoAssetAmount(NamedTuple):
     """This is used to represent a pair of resolved crypto asset to an amount."""
-    asset: 'CryptoAsset'
+    asset: 'EvmToken'
     amount: FVal
 
 
@@ -87,6 +86,20 @@ def _find_from_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] 
     if from_asset is None:
         return None
     return from_asset, from_amount
+
+
+def _compare_with_maybe_eth_token(
+        event_asset: 'Asset',
+        pool_token: 'EvmToken',
+) -> tuple[bool, str]:
+    """
+    Compares an asset with a pool token, considering ETH equal to WETH. It returns the symbol
+    of the asset to be used to avoid having extra resolutions
+    """
+    if pool_token == A_WETH and event_asset == A_ETH:
+        return True, 'ETH'
+
+    return event_asset == pool_token, pool_token.symbol
 
 
 def _find_to_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] | None:
@@ -407,7 +420,7 @@ class Uniswapv3Decoder(DecoderInterface):
         resolved_assets_and_amounts: list[CryptoAssetAmount] = []
         # index 2 -> first token in pair; index 3 -> second token in pair
         for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw), strict=True):  # noqa: E501
-            token_with_data: CryptoAsset = get_or_create_evm_token(
+            token_with_data = get_or_create_evm_token(
                 userdb=self.evm_inquirer.database,
                 evm_address=token,
                 chain_id=ChainID.ETHEREUM,
@@ -415,7 +428,6 @@ class Uniswapv3Decoder(DecoderInterface):
                 evm_inquirer=self.evm_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
             )
-            token_with_data = self.eth if token_with_data == A_WETH else token_with_data
             resolved_assets_and_amounts.append(CryptoAssetAmount(
                 asset=token_with_data,
                 amount=asset_normalized_value(amount, token_with_data),
@@ -424,8 +436,12 @@ class Uniswapv3Decoder(DecoderInterface):
         found_event_for_token0 = found_event_for_token1 = False
         for event in context.decoded_events:
             # search for the event of the first token
+            token_0_matches_asset, maybe_event_asset_symbol = _compare_with_maybe_eth_token(
+                event_asset=event.asset,
+                pool_token=resolved_assets_and_amounts[0].asset,
+            )
             if (
-                event.asset == resolved_assets_and_amounts[0].asset and
+                token_0_matches_asset is True and
                 event.balance.amount == resolved_assets_and_amounts[0].amount and
                 event.event_type == from_event_type[0] and
                 event.event_subtype == from_event_type[1]
@@ -436,14 +452,18 @@ class Uniswapv3Decoder(DecoderInterface):
                 event.counterparty = CPT_UNISWAP_V3
                 event.notes = notes.format(
                     amount=event.balance.amount,
-                    asset=resolved_assets_and_amounts[0].asset.symbol,
+                    asset=maybe_event_asset_symbol,
                     pool_id=liquidity_pool_id,
                 )
                 continue
 
             # search for the event of the second token
+            token_1_matches_asset, maybe_event_asset_symbol = _compare_with_maybe_eth_token(
+                event_asset=event.asset,
+                pool_token=resolved_assets_and_amounts[1].asset,
+            )
             if (
-                event.asset == resolved_assets_and_amounts[1].asset and
+                token_1_matches_asset is True and
                 event.balance.amount == resolved_assets_and_amounts[1].amount and
                 event.event_type == from_event_type[0] and
                 event.event_subtype == from_event_type[1]
@@ -454,7 +474,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 event.counterparty = CPT_UNISWAP_V3
                 event.notes = notes.format(
                     amount=event.balance.amount,
-                    asset=resolved_assets_and_amounts[1].asset.symbol,
+                    asset=maybe_event_asset_symbol,
                     pool_id=liquidity_pool_id,
                 )
                 continue

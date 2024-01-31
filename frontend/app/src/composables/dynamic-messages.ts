@@ -7,7 +7,7 @@ import {
 } from '@/types/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 
-const serializer = {
+export const serializer = {
   read: (v: any) => (v ? JSON.parse(v) : null),
   write: (v: any) => JSON.stringify(v),
 };

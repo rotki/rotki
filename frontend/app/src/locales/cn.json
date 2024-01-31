@@ -3111,11 +3111,6 @@
     "backend": {
       "title": "后端"
     },
-    "db_upload_result": {
-      "action": "强力推",
-      "message": "我们无法完成上传，因为{reason}",
-      "title": "数据库同步失败"
-    },
     "missing_api_key": {
       "action": "回车键",
       "get_key": "获取 API 密钥",
@@ -3750,6 +3745,10 @@
       "message_download_relogin": "执行拉取后，需要手动重新登录。",
       "message_upload": "通过强制推送，任何先前驻留在 rotki 服务器中的同步数据都将被覆盖。没有办法恢复任何被覆盖的数据，或恢复此操作。执行此操作时请小心，因为它可能会导致意外数据 损失。通过继续，您承认您了解使用此操作的危险。",
       "title": "强制推 | 强制拉"
+    },
+    "db_upload_result": {
+      "message": "我们无法完成上传，因为{reason}",
+      "title": "数据库同步尝试不成功"
     }
   },
   "table_filter": {
