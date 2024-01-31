@@ -143,7 +143,7 @@ defineExpose({
         v-model="price"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
-        outlined
+        variant="outlined"
         :label="t('common.price')"
       />
       <AssetSelect

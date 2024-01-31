@@ -5,10 +5,12 @@ const props = withDefaults(
   defineProps<{
     integer?: boolean;
     value?: string;
+    hideDetails?: boolean;
   }>(),
   {
     integer: false,
     value: '',
+    hideDetails: false,
   },
 );
 
@@ -100,10 +102,12 @@ function onFocus() {
 </script>
 
 <template>
-  <VTextField
+  <RuiTextField
     ref="textInput"
+    color="primary"
     :value="currentValue"
     v-bind="attrs"
+    :hide-details="hideDetails"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       filteredListeners($listeners)
@@ -127,5 +131,5 @@ function onFocus() {
         :name="slot"
       />
     </template>
-  </VTextField>
+  </RuiTextField>
 </template>

@@ -96,6 +96,8 @@ watch(
     emit('update:validator', validator);
   },
 );
+
+const percentageSymbol = '%';
 </script>
 
 <template>
@@ -129,14 +131,17 @@ watch(
     <div class="col-span-3">
       <AmountInput
         v-model="ownershipPercentage"
-        outlined
+        variant="outlined"
         placeholder="100"
         :label="t('eth2_input.ownership_percentage')"
         :hint="t('eth2_input.ownership.hint')"
-        suffix="%"
         :error-messages="toMessages(v$.ownershipPercentage)"
         @blur="v$.ownershipPercentage.$touch()"
-      />
+      >
+        <template #append>
+          {{ percentageSymbol }}
+        </template>
+      </AmountInput>
     </div>
   </div>
 </template>

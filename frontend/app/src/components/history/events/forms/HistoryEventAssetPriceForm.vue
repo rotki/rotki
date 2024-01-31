@@ -295,8 +295,7 @@ defineExpose({
       />
       <AmountInput
         v-model="amountModel"
-        outlined
-        required
+        variant="outlined"
         data-cy="amount"
         :label="t('common.amount')"
         :error-messages="toMessages(v$.amount)"

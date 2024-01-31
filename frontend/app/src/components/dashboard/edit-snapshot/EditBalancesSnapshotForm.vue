@@ -154,13 +154,13 @@ function updateAsset(asset: string) {
       <AmountInput
         v-model="amount"
         :disabled="assetType === 'nft'"
-        outlined
+        variant="outlined"
         :label="t('common.amount')"
         :error-messages="toMessages(v$.amount)"
       />
       <AmountInput
         v-model="usdValue"
-        outlined
+        variant="outlined"
         :label="
           t('common.value_in_symbol', {
             symbol: currencySymbol,

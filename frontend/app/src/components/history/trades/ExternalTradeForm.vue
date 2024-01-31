@@ -363,8 +363,7 @@ onMounted(setEditMode);
     <div class="mt-2">
       <AmountInput
         v-model="amount"
-        required
-        outlined
+        variant="outlined"
         class="mb-2"
         :error-messages="toMessages(v$.amount)"
         data-cy="amount"
@@ -373,7 +372,7 @@ onMounted(setEditMode);
         @blur="v$.amount.$touch()"
       />
       <TwoFieldsAmountInput
-        class="mb-5"
+        class="-mb-5"
         :primary-value.sync="rate"
         :secondary-value.sync="quoteAmount"
         :loading="fetching"
@@ -391,7 +390,7 @@ onMounted(setEditMode);
       />
       <div
         v-if="shouldRenderSummary"
-        class="flex items-center gap-2 text-caption text-rui-success -mt-4 -mb-6 ml-3"
+        class="flex items-center gap-2 text-caption text-rui-success -mt-5 -mb-5 ml-3"
       >
         <RuiIcon
           size="16"
@@ -468,7 +467,7 @@ onMounted(setEditMode);
         ref="feeInput"
         v-model="fee"
         class="external-trade-form__fee"
-        outlined
+        variant="outlined"
         data-cy="fee"
         :required="!!feeCurrency"
         :label="t('external_trade_form.fee.label')"

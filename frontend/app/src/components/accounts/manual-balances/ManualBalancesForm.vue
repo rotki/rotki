@@ -283,7 +283,7 @@ onMounted(async () => {
       :label="t('common.amount')"
       :error-messages="toMessages(v$.amount)"
       class="manual-balances-form__amount"
-      outlined
+      variant="outlined"
       autocomplete="off"
       :disabled="submitting"
       @blur="v$.amount.$touch()"

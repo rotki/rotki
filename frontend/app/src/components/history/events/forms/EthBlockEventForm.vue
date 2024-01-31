@@ -259,8 +259,7 @@ const feeRecipientSuggestions = computed(() =>
       />
       <AmountInput
         v-model="blockNumber"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="blockNumber"
         :label="t('transactions.events.form.block_number.label')"
@@ -269,8 +268,7 @@ const feeRecipientSuggestions = computed(() =>
       />
       <AmountInput
         v-model="validatorIndex"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"

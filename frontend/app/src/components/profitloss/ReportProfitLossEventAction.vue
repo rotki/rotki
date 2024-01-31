@@ -146,7 +146,7 @@ async function updatePrice() {
           />
           <AmountInput
             v-model="price"
-            outlined
+            variant="outlined"
             :loading="fetchingPrice"
             :disabled="fetchingPrice"
             :label="t('common.price')"

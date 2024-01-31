@@ -53,7 +53,7 @@ const css = useCssModule();
           class="general-settings__fields__scramble-multiplier"
           :label="t('frontend_settings.label.scramble_multiplier')"
           :hint="t('frontend_settings.subtitle.scramble_multiplier')"
-          outlined
+          variant="outlined"
           :disabled="!scrambleData"
           :success-messages="success"
           :error-messages="error"
