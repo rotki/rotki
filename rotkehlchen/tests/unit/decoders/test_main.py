@@ -59,6 +59,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Gitcoin',
         'Gitcoinv2',
         'Golem',
+        'Juicebox',
         'Kyber',
         'Liquity',
         'Lockedgno',
@@ -159,6 +160,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'paraswap',
         'ygov',
         'socket',
+        'juicebox',
     }
 
 
