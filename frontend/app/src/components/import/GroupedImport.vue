@@ -98,6 +98,14 @@ const sources = [
     ),
   },
   {
+    identifier: 'kucoin',
+    name: t('import_data.kucoin.name'),
+    logo: './assets/images/protocols/kucoin.svg',
+    form: defineAsyncComponent(
+      () => import('@/components/import/KucoinImport.vue'),
+    ),
+  },
+  {
     identifier: 'custom',
     name: t('import_data.custom.name'),
     icon: 'file-text-line',
