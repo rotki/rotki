@@ -2623,6 +2623,12 @@
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "line_two": "Uphold 让您导出一个交易文件。它可以在活动列表右上角的活动下找到。",
       "name": "Uphold"
+    },
+    "kucoin": {
+      "import": "从 Kucoin 导入 {0}",
+      "import_types": "行业",
+      "line_one": "我们支持导入各行业的 csv 文件类型。",
+      "name": "Kucoin"
     }
   },
   "input_mode_select": {
