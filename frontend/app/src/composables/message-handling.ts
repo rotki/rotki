@@ -186,30 +186,6 @@ export function useMessageHandling() {
     };
   };
 
-  const handleDbUploadMessage = (data: DbUploadResult): Notification | null => {
-    const { actionable, message, uploaded } = data;
-
-    if (uploaded)
-      return null;
-
-    return {
-      title: t('notification_messages.db_upload_result.title'),
-      message: t('notification_messages.db_upload_result.message', {
-        reason: message,
-      }),
-      severity: actionable ? Severity.INFO : Severity.ERROR,
-      priority: Priority.ACTION,
-      group: NotificationGroup.DB_UPLOAD_RESULT,
-      display: true,
-      action: actionable
-        ? {
-            label: t('notification_messages.db_upload_result.action'),
-            action: () => showSyncConfirmation(SYNC_UPLOAD),
-          }
-        : undefined,
-    };
-  };
-
   const handleAccountingRuleConflictMessage = (
     data: AccountingRuleConflictData,
   ): Notification => {
@@ -364,7 +340,6 @@ export function useMessageHandling() {
   };
 
   return {
-    handleDbUploadMessage,
     handleMessage,
     consume,
   };

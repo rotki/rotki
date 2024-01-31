@@ -3391,11 +3391,6 @@
     "backend": {
       "title": "Backend"
     },
-    "db_upload_result": {
-      "action": "Forcer la mise en ligne",
-      "message": "Nous n'avons pas pu terminer le téléchargement car {reason}",
-      "title": "Échec de la synchronisation de la base de données"
-    },
     "missing_api_key": {
       "action": "Entrer la clé",
       "get_key": "Obtenir la clé API",
@@ -4037,6 +4032,10 @@
       "message_download_relogin": "Après la procédure de tirage, une reconnexion manuelle sera requise.",
       "message_upload": "En forçant la poussée, toutes les données synchronisées précédemment dans le serveur Rotki seront écrasées. Il n'est pas possible de récupérer des données effacées ou d'annuler cette action. Veuillez faire preuve de prudence lors de l'exécution de cette action car elle peut entraîner une perte de données involontaire. En procédant, vous reconnaissez que vous comprenez les risques associés à cette action.",
       "title": "Forcer la poussée | Forcer le tirage"
+    },
+    "db_upload_result": {
+      "message": "Nous n'avons pas pu terminer le téléchargement car {reason}",
+      "title": "Échec de la synchronisation de la base de données"
     }
   },
   "table_filter": {

@@ -104,9 +104,6 @@ export default defineConfig({
         'src/utils/**',
       ],
       vueTemplate: true,
-      eslintrc: {
-        enabled: true,
-      },
       injectAtEnd: true,
     }),
     Components({
