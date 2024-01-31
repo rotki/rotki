@@ -276,8 +276,7 @@ const depositorSuggestions = computed(() =>
       />
       <AmountInput
         v-model="validatorIndex"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
@@ -324,8 +323,7 @@ const depositorSuggestions = computed(() =>
 
       <AmountInput
         v-model="sequenceIndex"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="sequenceIndex"
         :label="t('transactions.events.form.sequence_index.label')"

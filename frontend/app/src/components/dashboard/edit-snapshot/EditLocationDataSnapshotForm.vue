@@ -62,7 +62,7 @@ const v$ = setValidation(
     />
     <AmountInput
       v-model="value"
-      outlined
+      variant="outlined"
       :label="
         t('common.value_in_symbol', {
           symbol: currencySymbol,

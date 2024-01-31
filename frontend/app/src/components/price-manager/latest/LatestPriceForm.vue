@@ -101,7 +101,7 @@ const v$ = setValidation(
     </div>
     <AmountInput
       v-model="price"
-      outlined
+      variant="outlined"
       :error-messages="toMessages(v$.price)"
       :label="t('common.price')"
     />

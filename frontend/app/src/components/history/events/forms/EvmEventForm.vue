@@ -448,8 +448,7 @@ const addressSuggestions = computed(() =>
     <div class="grid md:grid-cols-3 gap-4">
       <AmountInput
         v-model="sequenceIndex"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="sequenceIndex"
         :label="t('transactions.events.form.sequence_index.label')"

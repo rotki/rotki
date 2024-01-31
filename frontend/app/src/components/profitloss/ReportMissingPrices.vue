@@ -206,12 +206,12 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
               v-model="item.price"
               :class="$style.input"
               class="mb-n2"
-              dense
+              size="sm"
               :disabled="item.useRefreshedHistoricalPrice"
               :placeholder="
                 t('profit_loss_report.actionable.missing_prices.input_price')
               "
-              outlined
+              variant="outlined"
               :success-messages="
                 item.saved
                   ? [

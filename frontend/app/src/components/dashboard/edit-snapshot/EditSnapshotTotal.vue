@@ -179,7 +179,7 @@ const suggestionsLabel = computed(() => ({
       <div class="mb-4">
         <AmountInput
           v-model="total"
-          outlined
+          variant="outlined"
           :error-messages="toMessages(v$.total)"
         />
 

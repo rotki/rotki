@@ -352,8 +352,7 @@ const locationLabelSuggestions = computed(() =>
       />
       <AmountInput
         v-model="sequenceIndex"
-        outlined
-        required
+        variant="outlined"
         integer
         data-cy="sequenceIndex"
         :label="t('transactions.events.form.sequence_index.label')"

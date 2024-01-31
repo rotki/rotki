@@ -103,7 +103,7 @@ watch([enabled, multiplier], setData);
             @change="changePrivacyMode($event)"
           />
         </div>
-        <div class="scrambler flex border-t border-default pt-4">
+        <div class="scrambler flex items-center border-t border-default pt-4">
           <SettingsOption
             #default="{ updateImmediate: updateScramble }"
             class="scrambler-toggle"
@@ -279,7 +279,7 @@ watch([enabled, multiplier], setData);
       @apply px-4 mb-4;
 
       &-toggle {
-        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l;
+        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
 
         :deep(svg) {
           @apply text-white;

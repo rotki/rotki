@@ -179,7 +179,7 @@ setSubmitFunc(save);
         v-model="weight"
         :disabled="state.owned"
         :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
-        outlined
+        variant="outlined"
         hide-details
         class="shrink ml-2 w-[8rem]"
       />
