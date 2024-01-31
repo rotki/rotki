@@ -35,7 +35,7 @@ export const useMessageHandling = () => {
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
-  const { uploadStatus } = useSync();
+  const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -237,7 +237,11 @@ export const useMessageHandling = () => {
         ignoreCache: true
       });
     } else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
+      if (get(uploadStatusAlreadyHandled)) {
+        return;
+      }
       set(uploadStatus, message.data);
+      set(uploadStatusAlreadyHandled, true);
     } else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
     } else {
