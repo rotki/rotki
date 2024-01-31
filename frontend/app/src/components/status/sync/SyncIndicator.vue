@@ -17,7 +17,8 @@ const {
   uploadStatus,
   cancelSync,
   forceSync,
-  showSyncConfirmation
+  showSyncConfirmation,
+  clearUploadStatus
 } = useSync();
 const { href, onLinkClick } = useLinks();
 
@@ -73,6 +74,9 @@ const showConfirmation = (action: SyncAction) => {
 };
 
 const performSync = async () => {
+  if (get(syncAction) === SYNC_UPLOAD) {
+    clearUploadStatus();
+  }
   resume();
   set(pending, true);
   await forceSync(logout);
@@ -137,17 +141,32 @@ watch(isSyncing, (current, prev) => {
               {{ t('common.never') }}
             </span>
           </div>
-          <RuiAlert v-if="uploadStatus" type="warning" class="my-2">
-            <template #title>
-              {{ t('sync_indicator.db_upload_result.title') }}
-            </template>
+          <div
+            v-if="uploadStatus"
+            class="flex flex-col my-2 p-2 gap-2 border border-rui-warning rounded-[0.25rem]"
+          >
+            <div class="flex gap-1">
+              <div class="font-medium">
+                {{ t('sync_indicator.db_upload_result.title') }}
+              </div>
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                @click="clearUploadStatus()"
+              >
+                <RuiIcon name="close-line" />
+              </RuiButton>
+            </div>
 
-            {{
-              t('sync_indicator.db_upload_result.message', {
-                reason: uploadStatus.message
-              })
-            }}
-          </RuiAlert>
+            <div class="text-secondary">
+              {{
+                t('sync_indicator.db_upload_result.message', {
+                  reason: uploadStatus.message
+                })
+              }}
+            </div>
+          </div>
           <SyncButtons :pending="pending" @action="showConfirmation($event)" />
         </div>
       </VMenu>

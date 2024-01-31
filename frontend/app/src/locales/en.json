@@ -3976,7 +3976,7 @@
     },
     "db_upload_result": {
       "message": "We could not complete the upload because {reason}",
-      "title": "Database sync failed"
+      "title": "Database sync attempt unsuccessful"
     }
   },
   "table_filter": {

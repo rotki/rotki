@@ -3763,7 +3763,7 @@
     },
     "db_upload_result": {
       "message": "我们无法完成上传，因为{reason}",
-      "title": "数据库同步失败"
+      "title": "数据库同步尝试不成功"
     }
   },
   "table_filter": {
