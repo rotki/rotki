@@ -102,8 +102,8 @@ async function save() {
   try {
     const { blockchain, address, name, location } = get(formPayload);
     const payload = {
-      address,
-      name,
+      address: address.trim(),
+      name: name.trim(),
       blockchain: get(enableForAllChains) && get(isEvmChain) ? null : blockchain,
     };
     if (get(editMode))
@@ -201,7 +201,7 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
         </div>
       </div>
 
-      <div class="flex flex-row items-end gap-2">
+      <div class="flex flex-row items-end gap-2 mb-4">
         <RuiTabs
           v-model="tab"
           color="primary"

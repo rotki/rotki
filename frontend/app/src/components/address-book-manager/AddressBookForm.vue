@@ -101,7 +101,7 @@ const { getBlockie } = useBlockie();
       :label="t('address_book.form.labels.for_all_chain')"
     />
     <ComboboxWithCustomInput
-      v-model.trim="address"
+      v-model="address"
       outlined
       :label="t('address_book.form.labels.address')"
       :items="addressSuggestions"
@@ -142,7 +142,7 @@ const { getBlockie } = useBlockie();
       </template>
     </ComboboxWithCustomInput>
     <RuiTextField
-      v-model.trim="name"
+      v-model="name"
       class="mt-2"
       variant="outlined"
       color="primary"
