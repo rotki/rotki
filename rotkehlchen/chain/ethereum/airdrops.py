@@ -26,6 +26,7 @@ from rotkehlchen.constants.assets import (
     A_LDO,
     A_PSP,
     A_SDL,
+    A_SHU,
     A_TORN,
     A_UNI,
     A_VCOW,
@@ -36,7 +37,8 @@ from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, FValWithTolerance
+from rotkehlchen.types import ChecksumEvmAddress, FValWithTolerance, Timestamp
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,7 @@ class Airdrop(NamedTuple):
     url: str
     name: str
     icon: str
+    cutoff_time: Timestamp | None = None
 
 
 AIRDROPS: dict[str, Airdrop] = {
@@ -174,11 +177,19 @@ AIRDROPS: dict[str, Airdrop] = {
         icon='cow.svg',
     ),
     'diva': Airdrop(
-        csv_url='https://raw.githubusercontent.com/rotki/data/develop/airdrops/diva.csv',
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/diva.csv',
         asset=A_DIVA,
         url='https://claim.diva.community/',
         name='DIVA',
         icon='diva.svg',
+    ),
+    'shutter': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/shutter.csv',
+        asset=A_SHU,
+        url='https://claim.shutter.network/',
+        name='SHU',
+        icon='shutter.png',
+        cutoff_time=Timestamp(1721000000),  # Sun Jul 14 2024 23:33:20 UTC
     ),
 }
 
@@ -292,8 +303,8 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
             response = requests.get(url=AIRDROPS[name][0], timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Gist request failed due to {e!s}') from e
+        content = response.text
         try:
-            content = response.text
             if (
                 not csv.Sniffer().has_header(content) or
                 len(response.content) < SMALLEST_AIRDROP_SIZE
@@ -381,7 +392,12 @@ def check_airdrops(
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     data_dir = database.user_data_dir.parent
     airdrop_tuples = []
+    current_time = ts_now()
     for protocol_name, airdrop_data in AIRDROPS.items():
+        if airdrop_data.cutoff_time is not None and current_time > airdrop_data.cutoff_time:
+            log.debug(f'Skipping {protocol_name} airdrop since it is not claimable after {airdrop_data.cutoff_time}')  # noqa: E501
+            continue
+
         for row in get_airdrop_data(protocol_name, data_dir):
             if len(row) < 2:
                 raise UnableToDecryptRemoteData(
@@ -398,6 +414,7 @@ def check_airdrops(
                 'sdl',
                 'cow_mainnet',
                 'cow_gnosis',
+                'shutter',
             }:
                 amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
             if addr in addresses:
