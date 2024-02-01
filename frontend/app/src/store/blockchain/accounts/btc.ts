@@ -73,9 +73,21 @@ export const useBtcAccountsStore = defineStore(
       set(bch, removeBtcTags(bch, tag));
     };
 
+    const getAddresses = (items: BtcAccountData) =>
+      [
+        ...items.standalone.map(({ address }) => address),
+        ...items.xpubs.flatMap(({ addresses }) => addresses ?? []).map(({ address }) => address),
+      ].filter(uniqueStrings);
+
+    const btcAddresses: ComputedRef<string[]> = computed(() => getAddresses(get(btc)));
+
+    const bchAddresses: ComputedRef<string[]> = computed(() => getAddresses(get(bch)));
+
     return {
       btc,
       bch,
+      btcAddresses,
+      bchAddresses,
       deleteXpub,
       removeTag,
       update,

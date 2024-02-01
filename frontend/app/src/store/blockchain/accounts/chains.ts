@@ -44,6 +44,18 @@ export const useChainsAccountsStore = defineStore(
         set(gnosis, data);
     };
 
+    const ksmAddresses: ComputedRef<string[]> = computed(() =>
+      get(ksm).map(({ address }) => address),
+    );
+
+    const dotAddresses: ComputedRef<string[]> = computed(() =>
+      get(dot).map(({ address }) => address),
+    );
+
+    const avaxAddresses: ComputedRef<string[]> = computed(() =>
+      get(avax).map(({ address }) => address),
+    );
+
     const optimismAddresses: ComputedRef<string[]> = computed(() =>
       get(optimism).map(({ address }) => address),
     );
@@ -73,6 +85,9 @@ export const useChainsAccountsStore = defineStore(
       arbitrum,
       base,
       gnosis,
+      ksmAddresses,
+      dotAddresses,
+      avaxAddresses,
       optimismAddresses,
       polygonAddresses,
       arbitrumAddresses,
