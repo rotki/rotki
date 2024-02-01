@@ -169,12 +169,13 @@ export const useAddressesNamesStore = defineStore(
       reset: resetAddressesNames,
     } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-    const getAddressesWithoutNames = (): string[] => {
-      const entries = unknown.keys();
-      return [...entries]
+    const getAddressesWithoutNames = (blockchain?: MaybeRef<Blockchain | null>): ComputedRef<string[]> => computed(() => {
+      const chain = get(blockchain);
+      const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
+      return entries
         .map(entry => entry.split('#')[0])
         .filter(uniqueStrings);
-    };
+    });
 
     const addressNameSelector = (
       address: MaybeRef<string>,
