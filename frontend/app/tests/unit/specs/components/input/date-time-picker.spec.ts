@@ -41,6 +41,7 @@ describe('dateTimePicker.vue', () => {
           template: '<span><slot name="activator"/><slot /></span>',
         },
         VAutocomplete: VAutocompleteStub,
+        TransitionGroup: '<span><slot /></span>',
       },
       ...options,
     });
@@ -52,15 +53,15 @@ describe('dateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/202');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2021');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
   });
 
   it('should allow seconds value to be optional', async () => {
@@ -69,7 +70,7 @@ describe('dateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
   });
 
   it('should allow milliseconds value to be also inputted', async () => {
@@ -82,7 +83,7 @@ describe('dateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12.333');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
     expect(wrapper.emitted().input?.[0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
@@ -92,7 +93,7 @@ describe('dateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:123');
     await wrapper.vm.$nextTick();
@@ -102,7 +103,7 @@ describe('dateTimePicker.vue', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '12/12/2021 12:12:12',
     );
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
   });
 
   it('should not allow future datetime', async () => {
@@ -118,11 +119,11 @@ describe('dateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2023');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2022');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
   });
 
   it('should set now', async () => {
@@ -191,12 +192,15 @@ describe('dateTimePicker.vue', () => {
         '12/12/2021 19:12:12',
       );
 
-      await wrapper.find('input').setValue('12/12/2021 23:59:59');
-
+      await wrapper.find('input').setValue('');
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:59']);
+      await wrapper.find('input').setValue('12/12/2021 23:59:12');
+      await get(wrapper.vm._setupState.imask).updateValue();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:12']);
     });
 
     it('should not allow future datetime', async () => {
@@ -219,19 +223,19 @@ describe('dateTimePicker.vue', () => {
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+      expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 00:59:59');
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+      expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 01:00:01');
 
       await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+      expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
     });
 
     it('should set input in the correct timezone', async () => {

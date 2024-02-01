@@ -2112,8 +2112,7 @@
     },
     "buy_quote": "With",
     "date": {
-      "hint": "Time the trade took place",
-      "label": "Time"
+      "hint": "Time the trade took place"
     },
     "fee": {
       "hint": "[Optional] Fee if any of the trade that occurred",

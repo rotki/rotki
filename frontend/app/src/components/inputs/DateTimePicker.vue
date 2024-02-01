@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import IMask, { type AnyMaskedOptions, type InputMask, MaskedRange } from 'imask';
+import IMask, { type InputMask, MaskedRange } from 'imask';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { timezones } from '@/data/timezones';
@@ -17,7 +17,6 @@ const props = withDefaults(
     limitNow?: boolean;
     allowEmpty?: boolean;
     milliseconds?: boolean;
-    outlined?: boolean;
     disabled?: boolean;
     errorMessages?: string[];
     hideDetails?: boolean;
@@ -30,7 +29,6 @@ const props = withDefaults(
     limitNow: false,
     allowEmpty: false,
     milliseconds: false,
-    outlined: false,
     disabled: false,
     errorMessages: () => [],
     hideDetails: false,
@@ -248,7 +246,7 @@ function initImask() {
   const convertPattern = (pattern: string) =>
     pattern.replace(/[\s/:]/g, match => `${match}\``);
 
-  const mask: AnyMaskedOptions[] = [
+  const mask = [
     {
       mask: convertPattern(get(dateOnlyFormat)),
       blocks: {
@@ -339,16 +337,17 @@ function filteredListeners(listeners: any) {
 </script>
 
 <template>
-  <VTextField
+  <RuiTextField
     ref="inputField"
     :value="currentValue"
     :label="label"
     :hint="hint"
     :disabled="disabled"
     :hide-details="hideDetails"
-    prepend-inner-icon="mdi-calendar"
+    prepend-icon="calendar-line"
     :persistent-hint="persistentHint"
-    :outlined="outlined"
+    variant="outlined"
+    color="primary"
     :error-messages="toMessages(v$.date)"
     @focus="focus()"
     v-on="
@@ -369,9 +368,10 @@ function filteredListeners(listeners: any) {
           <RuiButton
             variant="text"
             type="button"
+            :disabled="disabled"
             icon
             size="sm"
-            class="-mt-2 !p-1.5"
+            class="!p-1.5"
             v-on="on"
           >
             <RuiIcon name="earth-line" />
@@ -381,7 +381,7 @@ function filteredListeners(listeners: any) {
         <div :class="css.menu">
           <VAutocomplete
             v-model="selectedTimezone"
-            label="Select timezone"
+            :label="t('date_time_picker.select_timezone')"
             class="pa-4 pb-0"
             outlined
             persistent-hint
@@ -395,15 +395,16 @@ function filteredListeners(listeners: any) {
         data-cy="date-time-picker__set-now-button"
         variant="text"
         type="button"
+        :disabled="disabled"
         icon
         size="sm"
-        class="-mt-2 !p-1.5"
+        class="!p-1.5"
         @click="setNow()"
       >
-        <RuiIcon name="time-line" />
+        <RuiIcon name="map-pin-time-line" />
       </RuiButton>
     </template>
-  </VTextField>
+  </RuiTextField>
 </template>
 
 <style module lang="scss">
