@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7357` rotki will now properly detect and decode Shutter token airdrop and delegation.
 * :feature:`-` Transactions contributing to Juicebox campaigns, such as the Free Alexey and Roman from Tornado, are now properly decoded.
 * :feature:`-` Octant epoch reward claiming transactions are now properly decoded.
 * :feature:`6460` rotki will now properly import the trades from the CSVs that are exported from Kucoin.

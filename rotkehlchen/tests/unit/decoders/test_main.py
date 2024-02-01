@@ -78,6 +78,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Paraswap',
         'PickleFinance',
         'Safemultisig',
+        'Shutter',
         'SocketBridgeDecoder',
         'Stakedao',
         'Sushiswap',
@@ -161,6 +162,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'ygov',
         'socket',
         'juicebox',
+        'shutter',
     }
 
 

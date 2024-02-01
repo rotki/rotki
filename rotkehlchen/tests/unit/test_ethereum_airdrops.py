@@ -1,11 +1,12 @@
+import datetime
 from unittest.mock import Mock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, POAP_AIRDROPS, check_airdrops
+from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, POAP_AIRDROPS, Airdrop, check_airdrops
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_UNI
+from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_SHU, A_UNI
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
@@ -14,13 +15,16 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import Location, TimestampMS
 
-TEST_ADDR1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-TEST_ADDR2 = '0x51985CE8BB9AB1708746b24e22e37CD7A980Ec24'
+TEST_ADDR1 = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
+TEST_ADDR2 = string_to_evm_address('0x51985CE8BB9AB1708746b24e22e37CD7A980Ec24')
 NOT_CSV_WEBPAGE = {
-    'test': (
-        'https://github.com/rotki/yabirgb',
-        A_UNI,
-        'https://github.com',
+    'test': Airdrop(
+        csv_url='https://github.com/rotki/yabirgb',
+        asset=A_UNI,
+        url='https://github.com',
+        name='Yabirgb',
+        icon='yabirgb.png',
+        cutoff_time=None,
     ),
 }
 
@@ -36,7 +40,8 @@ def _fixture_airdrop_list(airdrop_list):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_check_airdrops(ethereum_accounts, database):
+@pytest.mark.freeze_time()
+def test_check_airdrops(ethereum_accounts, database, freezer):
     # create airdrop claim events to test the claimed attribute
     tolerance_for_amount_check = FVal('0.1')
     claim_events = [
@@ -84,6 +89,8 @@ def test_check_airdrops(ethereum_accounts, database):
                 f'address,tokens\n{TEST_ADDR1},84000\n',
             AIRDROPS['grain'][0]:
                 f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
+            AIRDROPS['shutter'][0]:
+                f'address,tokens\n{TEST_ADDR2},394857029384576349787465\n',
         }
         mock_response = Mock()
         mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
@@ -92,6 +99,9 @@ def test_check_airdrops(ethereum_accounts, database):
         mock_response.content = mock_response.text.encode('utf-8')
         return mock_response
 
+    freezer.move_to(datetime.datetime.fromtimestamp(  # testing just on the cutoff time of shutter
+        AIRDROPS['shutter'].cutoff_time, tz=datetime.UTC),
+    )
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),
@@ -118,7 +128,7 @@ def test_check_airdrops(ethereum_accounts, database):
         'claimed': False,
     }
 
-    assert len(data[TEST_ADDR2]) == 2
+    assert len(data[TEST_ADDR2]) == 3
     assert data[TEST_ADDR2]['uniswap'] == {
         'amount': '400.050642',
         'asset': A_UNI,
@@ -131,6 +141,27 @@ def test_check_airdrops(ethereum_accounts, database):
         'link': 'https://claim.harvest.finance/',
         'claimed': False,
     }
+    assert data[TEST_ADDR2]['shutter'] == {
+        'amount': '394857.029384576349787465',
+        'asset': A_SHU,
+        'link': 'https://claim.shutter.network/',
+        'claimed': False,
+    }
+
+    freezer.move_to(datetime.datetime.fromtimestamp(  # after cutoff time of shutter
+        AIRDROPS['shutter'].cutoff_time + 1, tz=datetime.UTC),
+    )
+    with (
+        patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),
+    ):
+        data = check_airdrops(
+            addresses=[TEST_ADDR2],
+            database=database,
+            tolerance_for_amount_check=tolerance_for_amount_check,
+        )
+    assert len(data[TEST_ADDR2]) == 2
+    assert 'shutter' not in data[TEST_ADDR2]
 
     # Test cache files are created
     for protocol_name in AIRDROPS:
