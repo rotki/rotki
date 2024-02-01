@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { some } from 'lodash-es';
+import { isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { chainSection } from '@/types/blockchain';
@@ -52,6 +53,7 @@ const { getEthDetectedTokensInfo, detectingTokens }
   = useTokenDetection(blockchain);
 const { getNativeAsset, supportsTransactions } = useSupportedChains();
 const { assetSymbol } = useAssetInfoRetrieval();
+const { addressNameSelector } = useAddressesNamesStore();
 
 const section = computed<Section>(() =>
   get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)],
@@ -70,9 +72,7 @@ const sort: Ref<DataTableSortData> = ref({
 
 const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
-const isBtcNetwork = computed<boolean>(() =>
-  [Blockchain.BTC, Blockchain.BCH].includes(get(blockchain)),
-);
+const isBtcNetwork = computed<boolean>(() => isBtcChain(get(blockchain)));
 
 const hasTokenDetection: ComputedRef<boolean> = computed(() =>
   supportsTransactions(get(blockchain)),
@@ -176,8 +176,6 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
       }),
     ),
 );
-
-const { addressNameSelector } = useAddressesNamesStore();
 
 const collapsedXpubBalances = computed<Balance>(() => {
   const balance = zeroBalance();
