@@ -86,6 +86,7 @@ export function userSettings(): UserSettingsApi {
     dateInputFormat,
     graphZeroBased,
     showGraphRangeSelector,
+    itemsPerPage,
   } = storeToRefs(useFrontendSettingsStore());
 
   return {
@@ -100,6 +101,7 @@ export function userSettings(): UserSettingsApi {
     scrambleData,
     shouldShowAmount,
     shouldShowPercentage,
+    itemsPerPage,
   };
 }
 

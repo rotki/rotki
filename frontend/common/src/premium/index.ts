@@ -125,6 +125,7 @@ export interface UserSettingsApi {
   privacyMode: Ref<number>;
   graphZeroBased: Ref<boolean>;
   showGraphRangeSelector: Ref<boolean>;
+  itemsPerPage: Ref<number>;
 }
 
 export interface SettingsApi {
