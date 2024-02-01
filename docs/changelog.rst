@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` Transactions contributing to Juicebox campaigns, such as the Free Alexey and Roman from Tornado, are now properly decoded.
+* :feature:`-` Octant epoch reward claiming transactions are now properly decoded.
 * :feature:`6460` rotki will now properly import the trades from the CSVs that are exported from Kucoin.
 * :feature:`7018` rotki will now save the labels for a blockchain account in the address book. If a name is already present in the address book for that blockchain account, Name Priority setting in 'Frontend-only Settings' section is used to determine which one to keep. Addressbook is prioritized by default.
 * :feature:`-` rotki is now available in French.

@@ -1,7 +1,10 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -9,21 +12,18 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.constants.assets import A_GLM
+from rotkehlchen.constants.assets import A_ETH, A_GLM
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import CPT_OCTANT, OCTANT_DEPOSITS
+from .constants import CPT_OCTANT, LOCKED, OCTANT_DEPOSITS, OCTANT_REWARDS, UNLOCKED, WITHDRAWN
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
-
-LOCKED = b'L\x00(\x1b\x0b\xce!\xcdpd N\x92\x14m\x97,5\x9c7C\xb9\xa5\x03\xf48\xb42^\xfa\xaf\x14'
-UNLOCKED = b"\xc8f\xd6!,X\xa2H\nm\xa1O\x1b\xdb\xaa\xe0\xc1'\xcd\xc8)d\t\x15z#\xb9h\x14\x90f\xce"
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,7 +44,7 @@ class OctantDecoder(DecoderInterface):
         )
         self.glm = A_GLM.resolve_to_evm_token()
 
-    def _decode_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_locker_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (LOCKED, UNLOCKED):
             return DEFAULT_DECODING_OUTPUT
 
@@ -81,13 +81,45 @@ class OctantDecoder(DecoderInterface):
                 event.notes = f'{verb} {event.balance.amount} GLM {preposition} Octant'
                 event.sequence_index = context.tx_log.log_index + 1  # push it after approval if any  # noqa: E501
                 break
+        else:
+            log.error(f'Could not find corresponding GLM transfer for Octant {verb} at: {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_reward_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != WITHDRAWN:
+            return DEFAULT_DECODING_OUTPUT
+
+        user = hex_or_bytes_to_address(context.tx_log.data[0:32])
+        if not self.base.is_tracked(user):
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        epoch = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        amount = token_normalized_value_decimals(raw_amount, 18)  # always ETH
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.asset == A_ETH and
+                    event.location_label == user and
+                    event.balance.amount == amount
+            ):
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_OCTANT
+                event.notes = f'Claim {event.balance.amount} ETH as Octant epoch {epoch} reward'
+                break
+        else:
+            log.error(f'Could not find corresponding ETH receive transaction for Octant rewards withdrawal at: {context.transaction.tx_hash.hex()}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {OCTANT_DEPOSITS: (self._decode_events,)}
+        return {
+            OCTANT_DEPOSITS: (self._decode_locker_events,),
+            OCTANT_REWARDS: (self._decode_reward_events,),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

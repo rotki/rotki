@@ -1,7 +1,11 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.octant.constants import CPT_OCTANT, OCTANT_DEPOSITS
+from rotkehlchen.chain.ethereum.modules.octant.constants import (
+    CPT_OCTANT,
+    OCTANT_DEPOSITS,
+    OCTANT_REWARDS,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_GLM
 from rotkehlchen.fval import FVal
@@ -109,6 +113,51 @@ def test_unlock_glm(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Unlock {amount_str} GLM from Octant',
             counterparty=CPT_OCTANT,
             address=OCTANT_DEPOSITS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd1B8dB70Ded72dB850713b2ce7e1A4FfAfAD95d1']])
+def test_claim_rewards(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xfc9b4ca277dcfd8000830aee13f8785b15516ce55a432c0d68f1bbdc0f599a49')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1706775971000)
+    gas_str = '0.000818835884130552'
+    amount_str = '7.989863001451442888'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Claim {amount_str} ETH as Octant epoch 2 reward',
+            counterparty=CPT_OCTANT,
+            address=OCTANT_REWARDS,
         ),
     ]
     assert events == expected_events
