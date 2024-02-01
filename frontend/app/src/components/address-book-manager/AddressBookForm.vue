@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { each } from 'lodash-es';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required } from '@vuelidate/validators';
 import { isValidEthAddress, toSentenceCase } from '@/utils/text';
 import { toMessages } from '@/utils/validation';
@@ -36,10 +38,36 @@ const location = useSimplePropVModel(props, 'location', emit);
 const blockchain = useSimplePropVModel(props, 'blockchain', emit);
 const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
+const { btcAddresses, bchAddresses } = storeToRefs(useBtcAccountsStore());
+const { ethAddresses } = storeToRefs(useEthAccountsStore());
+const {
+  ksmAddresses,
+  dotAddresses,
+  avaxAddresses,
+  optimismAddresses,
+  polygonAddresses,
+  arbitrumAddresses,
+  baseAddresses,
+  gnosisAddresses,
+} = storeToRefs(useChainsAccountsStore());
 const addressesNamesStore = useAddressesNamesStore();
-const { getAddressesWithoutNames } = addressesNamesStore;
+const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
 
-const addressSuggestions = getAddressesWithoutNames();
+const addresses = computed<Record<string, string[]>>(() => ({
+  [Blockchain.BTC]: get(btcAddresses),
+  [Blockchain.BCH]: get(bchAddresses),
+  [Blockchain.ETH]: get(ethAddresses),
+  [Blockchain.KSM]: get(ksmAddresses),
+  [Blockchain.DOT]: get(dotAddresses),
+  [Blockchain.AVAX]: get(avaxAddresses),
+  [Blockchain.OPTIMISM]: get(optimismAddresses),
+  [Blockchain.POLYGON_POS]: get(polygonAddresses),
+  [Blockchain.ARBITRUM_ONE]: get(arbitrumAddresses),
+  [Blockchain.BASE]: get(baseAddresses),
+  [Blockchain.GNOSIS]: get(gnosisAddresses),
+}));
+
+const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations: AddressBookLocation[] = ['global', 'private'];
 
 const rules = {
@@ -69,6 +97,26 @@ const v$ = setValidation(
 );
 
 const { getBlockie } = useBlockie();
+
+function fetchNames() {
+  const addressMap = get(addresses);
+
+  each(Blockchain, (chain) => {
+    addressMap[chain]?.forEach(address => get(addressNameSelector(address, chain)));
+  });
+}
+
+/**
+ * if new suggestions does not include last suggested and selected address, reset address
+ */
+watch(addressSuggestions, (suggestions, oldSuggestions) => {
+  const chainAddress = get(address);
+  if (get(blockchain) && oldSuggestions.includes(chainAddress) && !suggestions.includes(chainAddress))
+    set(address, '');
+});
+
+watchEffect(fetchNames);
+onMounted(fetchNames);
 </script>
 
 <template>
