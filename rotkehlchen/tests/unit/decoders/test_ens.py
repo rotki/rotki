@@ -11,11 +11,9 @@ from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_REGISTRAR_CONTROLLER_2,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -23,13 +21,11 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     EvmTokenKind,
-    EvmTransaction,
     Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -115,203 +111,97 @@ def test_mint_ens_name(database, ethereum_inquirer):
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
+def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts):
     """
     Test that text changed for an address that is no longer
     pointed to by an ENS name does not break
     """
-    tx_hash = deserialize_evm_tx_hash('0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598')  # noqa: E501
-    transaction = EvmTransaction(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=0,
-        block_number=0,
-        from_address=ethereum_accounts[0],
-        to_address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
-        value=ZERO,
-        gas=0,
-        gas_price=0,
-        gas_used=0,
-        input_data=b'',
-        nonce=0,
+    tx_hex = deserialize_evm_tx_hash('0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
     )
-    receipt = EvmTxReceipt(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=289,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000375726c0000000000000000000000000000000000000000000000000000000000'),
-                address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),
-                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),
-                    hexstring_to_bytes('0xb68b5f5089998f2978a1dcc681e8ef27962b90d5c26c4c0b9c1945814ffa5ef0'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=290,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000066176617461720000000000000000000000000000000000000000000000000000'),
-                address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),
-                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),
-                    hexstring_to_bytes('0xd1f86c93d831119ad98fe983e643a7431e4ac992e3ead6e3007f4dd1adf66343'),
-                ],
-            ),
-        ],
-    )
-
-    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events, _ = ethereum_transaction_decoder._decode_transaction(
-        transaction=transaction,
-        tx_receipt=receipt,
-    )
-    expected_events = [
-        EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=0,
-            timestamp=0,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
-            notes='Burned 0 ETH for gas',
-            counterparty=CPT_GAS,
-            identifier=None,
-            extra_data=None,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=290,
-            timestamp=0,
+    timestamp = TimestampMS(1664548859000)
+    gas_str = '0.00655101156241161'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    )]
+    for seqindex, attribute in [
+            (290, 'url'), (291, 'avatar'), (292, 'description'), (293, 'com.discord'),
+            (294, 'com.github'), (295, 'com.reddit'), (296, 'com.twitter'), (297, 'org.telegram'),
+    ]:
+        expected_events.append(EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=seqindex,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
-            notes='Set ENS url attribute for nebolax.eth',
+            location_label=user_address,
+            notes=f'Set ENS {attribute} attribute for nebolax.eth',
             counterparty=CPT_ENS,
-            identifier=None,
-            extra_data=None,
             address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=291,
-            timestamp=0,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
-            notes='Set ENS avatar attribute for nebolax.eth',
-            counterparty=CPT_ENS,
-            identifier=None,
-            extra_data=None,
-            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
-        ),
-    ]
+        ))
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
+def test_set_resolver(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
-    transaction = EvmTransaction(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=0,
-        block_number=0,
-        from_address=ethereum_accounts[0],
-        to_address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
-        value=ZERO,
-        gas=0,
-        gas_price=0,
-        gas_used=0,
-        input_data=b'',
-        nonce=0,
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
     )
-    receipt = EvmTxReceipt(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=269,
-                data=hexstring_to_bytes('0x000000000000000000000000084b1c3c81545d370f3634392de611caabff8148'),
-                address=string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82'),
-                    hexstring_to_bytes('0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'),
-                    hexstring_to_bytes('0xa5809490c7b97cf8ebf6dd2d9667569d617a4fdcccaf3dd7b4e74fbcdeda8fb0'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=270,
-                data=hexstring_to_bytes('0x000000000000000000000000a2c122be93b0074270ebee7f6b7292c7deb45047'),
-                address=string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0x335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0'),
-                    hexstring_to_bytes('0x9c74c6eee8c468cc09629fac3a5d83791d48b57b4f8ec0841dd847fd6f0a1d20'),
-                ],
-            ),
-        ],
-    )
+    timestamp = TimestampMS(1660047719000)
+    gas_str = '0.001069480808983134'
 
-    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events, _ = ethereum_transaction_decoder._decode_transaction(
-        transaction=transaction,
-        tx_receipt=receipt,
-    )
-
-    expected_events = [
-        EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=0,
-            timestamp=0,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes='Burned 0 ETH for gas',
-            counterparty=CPT_GAS,
-            identifier=None,
-            extra_data=None,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=271,
-            timestamp=0,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
-            location_label=user_address,
-            notes='Set ENS address for nebolax.eth',
-            counterparty=CPT_ENS,
-            identifier=None,
-            extra_data=None,
-            address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
-        ),
-    ]
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=271,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Set ENS address for nebolax.eth',
+        counterparty=CPT_ENS,
+        address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
+    )]
     assert events == expected_events
 
 
