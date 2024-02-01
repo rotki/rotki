@@ -88,8 +88,9 @@ def test_name():
     assert exchange.name == 'kraken1'
 
 
-def test_coverage_of_kraken_balances(kraken):
-    got_assets = set(kraken.online_api_query('Assets').keys())
+def test_coverage_of_kraken_balances():
+    response = requests.get('https://api.kraken.com/0/public/Assets')
+    got_assets = set(response.json()['result'].keys())
     expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED))
     # Special/staking assets and which assets they should map to
     special_assets = {

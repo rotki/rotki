@@ -9,7 +9,7 @@ import logging
 import operator
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -83,7 +83,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
-KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
@@ -259,7 +258,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
     def _validate_single_api_key_action(
             self,
-            method_str: str,
+            method_str: Literal['Balance', 'TradesHistory', 'Ledgers'],
             req: dict[str, Any] | None = None,
     ) -> tuple[bool, str]:
         try:
@@ -297,29 +296,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         else:
             self.call_counter += 1
 
-    def _query_public(self, method: str, req: dict | None = None) -> dict | str:
-        """API queries that do not require a valid key/secret pair.
-
-        Arguments:
-        method -- API method name (string, no default)
-        req    -- additional API request parameters (default: {})
-        """
-        if req is None:
-            req = {}
-        urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
-        try:
-            response = self.session.post(urlpath, data=req, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
-
-        self._manage_call_counter(method)
-        return _check_and_get_response(response, method)
-
     def api_query(self, method: str, req: dict | None = None) -> dict:
         tries = KRAKEN_QUERY_TRIES
-        query_method = (
-            self._query_public if method in KRAKEN_PUBLIC_METHODS else self._query_private
-        )
         while tries > 0:
             if self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit:
                 # If we are close to the limit, check how much our call counter reduced
@@ -347,7 +325,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 data=req,
                 call_counter=self.call_counter,
             )
-            result = query_method(method, req)
+            result = self._query_private(method, req)
             if isinstance(result, str):
                 # Got a recoverable error
                 backoff_in_seconds = int(KRAKEN_BACKOFF_DIVIDEND / tries)
@@ -475,7 +453,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
     def query_until_finished(
             self,
-            endpoint: str,
+            endpoint: Literal['Ledgers'],
             keyname: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -590,7 +568,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
     def _query_endpoint_for_period(
             self,
-            endpoint: str,
+            endpoint: Literal['Ledgers'],
             start_ts: Timestamp,
             end_ts: Timestamp,
             offset: int | None = None,
