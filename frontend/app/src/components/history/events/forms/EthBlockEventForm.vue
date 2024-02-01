@@ -247,7 +247,6 @@ const feeRecipientSuggestions = computed(() =>
       <DateTimePicker
         v-model="datetime"
         class="md:col-span-2"
-        outlined
         :label="t('transactions.events.form.datetime.label')"
         persistent-hint
         limit-now

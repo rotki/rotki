@@ -264,7 +264,6 @@ const depositorSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        outlined
         :label="t('transactions.events.form.datetime.label')"
         persistent-hint
         limit-now

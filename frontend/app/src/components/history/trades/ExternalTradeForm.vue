@@ -297,10 +297,9 @@ onMounted(setEditMode);
   >
     <DateTimePicker
       v-model="datetime"
-      outlined
       limit-now
       data-cy="date"
-      :label="t('external_trade_form.date.label')"
+      :label="t('common.datetime')"
       persistent-hint
       :hint="t('external_trade_form.date.hint')"
       :error-messages="errorMessages.timestamp"

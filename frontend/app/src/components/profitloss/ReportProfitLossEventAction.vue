@@ -139,7 +139,6 @@ async function updatePrice() {
           />
           <DateTimePicker
             :value="datetime"
-            outlined
             disabled
             hide-details
             :label="t('common.datetime')"

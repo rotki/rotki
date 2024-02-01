@@ -534,7 +534,6 @@ setSubmitFunc(save);
             <VExpansionPanelContent>
               <DateTimePicker
                 v-model="started"
-                outlined
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"
                 :disabled="submitting"

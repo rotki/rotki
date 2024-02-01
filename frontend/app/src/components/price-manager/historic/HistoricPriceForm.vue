@@ -137,7 +137,6 @@ const v$ = setValidation(
     </i18n>
     <DateTimePicker
       :value="date"
-      outlined
       :label="t('common.datetime')"
       :disabled="edit"
       :error-messages="toMessages(v$.date)"

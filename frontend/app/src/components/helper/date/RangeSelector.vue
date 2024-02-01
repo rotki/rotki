@@ -103,12 +103,11 @@ watch(v$, ({ $invalid }) => {
     />
     <div
       v-if="custom"
-      class="grid md:grid-cols-2 gap-4"
+      class="grid md:grid-cols-2 gap-4 mt-1.5"
     >
       <div>
         <DateTimePicker
           :value="value.start"
-          outlined
           :label="t('generate.labels.start_date')"
           limit-now
           allow-empty
@@ -119,7 +118,6 @@ watch(v$, ({ $invalid }) => {
       <div>
         <DateTimePicker
           :value="value.end"
-          outlined
           :label="t('generate.labels.end_date')"
           limit-now
           :error-messages="toMessages(v$.end)"
