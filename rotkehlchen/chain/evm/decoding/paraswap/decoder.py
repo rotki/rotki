@@ -25,10 +25,6 @@ from .constants import (
     BUY_ON_UNISWAP_V2_FORK,
     BUY_SIGNATURE,
     CPT_PARASWAP,
-    DIRECT_BALANCER_V2_GIVEN_IN_SWAP,
-    DIRECT_CURVE_V1_SWAP,
-    DIRECT_CURVE_V2_SWAP,
-    DIRECT_UNI_V3_SWAP,
     SWAP_ON_UNISWAP_V2_FACTORY,
     SWAP_ON_UNISWAP_V2_FORK,
     SWAP_ON_UNISWAP_V2_FORK_WITH_PERMIT,
@@ -173,8 +169,11 @@ class ParaswapCommonDecoder(DecoderInterface):
         - Simple Buy
         - Simple Swap
         - Multi Swap
-        - Mega Swap"""
-        if context.tx_log.topics[0] not in {PARASWAP_SWAP_SIGNATURE, BUY_SIGNATURE}:
+        - Mega Swap
+        - Direct Swap on Uniswap V3
+        - Direct Swap on Curve V1 and V2
+        - Direct Swap on Balancer V2"""
+        if context.tx_log.topics[0] not in {PARASWAP_SWAP_SIGNATURE, BUY_SIGNATURE, DIRECT_SWAP_SIGNATURE}:  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         return self._decode_swap(
@@ -189,14 +188,6 @@ class ParaswapCommonDecoder(DecoderInterface):
             context=context,
             receiver=hex_or_bytes_to_address(context.tx_log.topics[2]),
             sender=context.transaction.from_address,
-        )
-
-    def _decode_uniswap_v3_swap(self, context: DecoderContext) -> DecodingOutput:
-        """This decodes swaps done directly on Uniswap V3 pools"""
-        return self._decode_swap(
-            context=context,
-            receiver=hex_or_bytes_to_address(context.tx_log.topics[1]),
-            sender=hex_or_bytes_to_address(context.tx_log.data[96:128]),
         )
 
     # -- DecoderInterface methods
@@ -214,14 +205,6 @@ class ParaswapCommonDecoder(DecoderInterface):
                 SWAP_ON_UNISWAP_V2_FACTORY,
                 SWAP_ON_UNISWAP_V2_FORK_WITH_PERMIT,
                 BUY_ON_UNISWAP_V2_FORK,
-            )
-        } | {
-            method_id: {DIRECT_SWAP_SIGNATURE: self._decode_uniswap_v3_swap}
-            for method_id in (
-                DIRECT_UNI_V3_SWAP,
-                DIRECT_CURVE_V1_SWAP,
-                DIRECT_CURVE_V2_SWAP,
-                DIRECT_BALANCER_V2_GIVEN_IN_SWAP,
             )
         }
 
