@@ -265,11 +265,18 @@ export function useMessageHandling() {
       });
     }
     else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
-      if (get(uploadStatusAlreadyHandled))
-        return;
+      const uploaded = message.data.uploaded;
+      if (uploaded) {
+        set(uploadStatus, undefined);
+        set(uploadStatusAlreadyHandled, false);
+      }
+      else {
+        if (get(uploadStatusAlreadyHandled))
+          return;
 
-      set(uploadStatus, message.data);
-      set(uploadStatusAlreadyHandled, true);
+        set(uploadStatus, message.data);
+        set(uploadStatusAlreadyHandled, true);
+      }
     }
     else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
