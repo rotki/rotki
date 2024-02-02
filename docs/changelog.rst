@@ -9,6 +9,7 @@ Changelog
 * :feature:`7018` rotki will now save the labels for a blockchain account in the address book. If a name is already present in the address book for that blockchain account, Name Priority setting in 'Frontend-only Settings' section is used to determine which one to keep. Addressbook is prioritized by default.
 * :feature:`-` rotki is now available in French.
 * :feature:`-` Aerodrome transactions in BASE will now be properly supported.
+* :feature:`-` Notes for governance votes will include the reasoning if it was provided in the transaction when voting on-chain.
 * :feature:`7214` Swaps done through Paraswap Augustus on Ethereum, Arbitrum, Optimism, Polygon, and Base chains, will now get properly decoded in the history view and will be taken into account during accounting.
 * :feature:`7027` Monerium transactions are now decoded as mints and burns. If the user provides monerium credentials then a periodic task pulls data from the monerium API and the transactions are enriched with actual banking data and/or with bridging data from chain to chain.
 * :feature:`7176` The exported CSV for PnL Report now contains a label of the address in notes, if available.
