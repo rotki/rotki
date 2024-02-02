@@ -171,12 +171,14 @@ watch(isSyncing, (current, prev) => {
               </RuiButton>
             </div>
 
-            <div class="text-secondary">
-              {{
-                t('sync_indicator.db_upload_result.message', {
-                  reason: uploadStatus.message,
-                })
-              }}
+            <div class="text-rui-text-secondary text-sm">
+              <i18n path="sync_indicator.db_upload_result.message">
+                <template #reason>
+                  <b>
+                    {{ uploadStatus.message }}
+                  </b>
+                </template>
+              </i18n>
             </div>
           </div>
           <SyncButtons

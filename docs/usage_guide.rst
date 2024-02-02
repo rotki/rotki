@@ -113,6 +113,17 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
 
 You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be :file:`~/.local/share/rotki/data`. The global db is then :file:`~/.local/share/rotki/data/global/global.db`. Manually move it to the equivalent location in the new system.
 
+.. image:: images/rotki_premium_manual_db_sync.png
+   :alt: Manual DB sync
+   :align: center
+
+You can also manually sync your database by clicking the "cloud" icon in the toolbar.
+
+.. image:: images/rotki_premium_automatic_db_sync_failed.png
+   :alt: Manual DB sync
+   :align: center
+
+If the automatic database sync fails, a message will appear here. For certain types of messages, such as ``Remote database larger than the local one``, the message merely serves as a warning, and you can still perform a "force push" by clicking the button.
 
 Upgrading rotki after a very long time
 ========================================
