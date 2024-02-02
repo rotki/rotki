@@ -1,20 +1,22 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -141,8 +143,11 @@ class DecoderInterface(metaclass=ABCMeta):
         return {}
 
 
-VOTE_CAST_WITH_PARAMS = b'\xe2\xba\xbf\xba\xc5\x88\x9ap\x9bc\xbb\x7fY\x8b2N\x08\xbcZO\xb9\xecd\x7f\xb3\xcb\xc9\xec\x07\xeb\x87\x12'  # noqa: E501
-VOTE_CAST = b'\xb8\xe18\x88}\n\xa1;\xabD~\x82\xde\x9d\\\x17w\x04\x1e\xcd!\xca6\xba\x82O\xf1\xe6\xc0}\xdd\xa4'  # noqa: E501
+VOTE_CAST_WITH_PARAMS: Final = b'\xe2\xba\xbf\xba\xc5\x88\x9ap\x9bc\xbb\x7fY\x8b2N\x08\xbcZO\xb9\xecd\x7f\xb3\xcb\xc9\xec\x07\xeb\x87\x12'  # noqa: E501
+VOTE_CAST: Final = b'\xb8\xe18\x88}\n\xa1;\xabD~\x82\xde\x9d\\\x17w\x04\x1e\xcd!\xca6\xba\x82O\xf1\xe6\xc0}\xdd\xa4'  # noqa: E501
+EMPTY_REASON: Final = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
+VOTE_CAST_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"}],"name":"VoteCast","type":"event"}'  # noqa: E501
+VOTE_CAST_WITH_PARAMS_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"bytes","name":"params","type":"bytes"}],"name":"VoteCastWithParams","type":"event"}'  # noqa: E501
 
 
 class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
@@ -169,16 +174,31 @@ class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
 
     def _decode_vote_cast(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a vote cast event"""
-        if context.tx_log.topics[0] not in (VOTE_CAST, VOTE_CAST_WITH_PARAMS):
+        if context.tx_log.topics[0] == VOTE_CAST:
+            event_abi = VOTE_CAST_ABI
+        elif context.tx_log.topics[0] == VOTE_CAST_WITH_PARAMS:
+            event_abi = VOTE_CAST_WITH_PARAMS_ABI
+        else:
             return DEFAULT_DECODING_OUTPUT  # for params event is same + params argument. Ignore it
 
         voter_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(voter_address):
             return DEFAULT_DECODING_OUTPUT
 
-        proposal_id = str(hex_or_bytes_to_int(context.tx_log.data[:32]))
-        supports = bool(hex_or_bytes_to_int(context.tx_log.data[32:64]))
-        notes = f'Voted {"FOR" if supports else "AGAINST"} {self.protocol} governance proposal {self.proposals_url}/{proposal_id}'  # noqa: E501
+        try:
+            _, decoded_data = decode_event_data_abi_str(context.tx_log, event_abi)
+        except DeserializationError as e:
+            log.error(
+                f'Failed to decode vote_cast event ABI at '
+                f'{context.transaction.tx_hash.hex()} due to {e}',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        proposal_id, supports, notes_reason = decoded_data[0], decoded_data[1], ''
+        if len(decoded_data[3]) != 0:
+            notes_reason = f' with reasoning: {decoded_data[3]}'
+
+        notes = f'Voted {"FOR" if supports else "AGAINST"} {self.protocol} governance proposal {self.proposals_url}/{proposal_id}{notes_reason}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
