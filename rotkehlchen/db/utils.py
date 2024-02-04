@@ -72,7 +72,7 @@ def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Con
         """
         @wraps(method)
         def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
-            if kwargs.get('write_cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
+            if kwargs.get('write_cursor') or (len(args) != 0 and isinstance(args[0], DBCursor)):
                 return method(self, *args, **kwargs)
 
             # else we need to wrap this in a new writable cursor
@@ -107,7 +107,7 @@ def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate[
         """
         @wraps(method)
         def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
-            if kwargs.get('cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
+            if kwargs.get('cursor') or (len(args) != 0 and isinstance(args[0], DBCursor)):
                 return method(self, *args, **kwargs)
 
             # else we need to wrap this in a new read only cursor

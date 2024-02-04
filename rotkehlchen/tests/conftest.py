@@ -11,7 +11,7 @@ from enum import auto
 from http import HTTPStatus
 from json import JSONDecodeError
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen  # noqa: S404
 from typing import TYPE_CHECKING, Any
 
 import py
@@ -193,8 +193,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
 
     def before_record_response(response: dict[str, Any]) -> dict[str, Any] | None:
         if (
-            'RECORD_CASSETTES' in os.environ and
-            response['status']['code'] != HTTPStatus.OK or
+            ('RECORD_CASSETTES' in os.environ and response['status']['code'] != HTTPStatus.OK) or
             is_etherscan_rate_limited(response)
         ):
             return None

@@ -263,15 +263,9 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        mappings: dict['ChecksumEvmAddress', tuple[Any, ...]] = {
-            address: (self._decode_vote_action,) for address in self.voting_impl_addresses
-        }
-        mappings |= {
-            address: (self._decode_round_action,) for address in self.round_impl_addresses
-        }
-        mappings |= {
-            address: (self._decode_payout_action,) for address in self.payout_strategy_addresses
-        }
+        mappings: dict['ChecksumEvmAddress', tuple[Any, ...]] = dict.fromkeys(self.voting_impl_addresses, (self._decode_vote_action,))  # noqa: E501
+        mappings |= dict.fromkeys(self.round_impl_addresses, (self._decode_round_action,))
+        mappings |= dict.fromkeys(self.payout_strategy_addresses, (self._decode_payout_action,))
         if self.project_registry:
             mappings[self.project_registry] = (self._decode_project_action,)
         return mappings

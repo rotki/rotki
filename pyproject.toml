@@ -172,10 +172,13 @@ ignore = [
     "PLR0911", # too many return statements -- we dont care
     "PLR0912", # too many branches -- we dont care
     "PLR0917", # too many positional arguments -- we dont care
+    "PLR1702", # too many nested blocks -- we dont care
     "PLR6201", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322
     "PLR6301", # could be a staticmethod or function -- breaks for interfaces
     "PLC0415", # we need to fix non top level imports and enable this
     "PLC1901", # we prefer direct comparison to empty string for explicitness
+    "PLC2701", # unfortunately we do import private methods/vars from web3.py and webargs
+    "PLC2801", # false positive complain for dunder set (though we use it in a hacky way)
     # Some bandit rules we don't check for
     "S101",  # asserts are fine
     "S103",  # permissive mask on file/directory

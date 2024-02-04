@@ -6,7 +6,7 @@ import os
 import platform
 import shutil
 import stat
-import subprocess
+import subprocess  # noqa: S404
 import sys
 import urllib.request
 from collections.abc import Callable, Generator

@@ -14,7 +14,7 @@ We should probably open bug reports to pylint for all of these at some point.
 """
 import io
 import re
-import subprocess
+import subprocess  # noqa: S404
 from collections import defaultdict
 from pathlib import Path
 from typing import NamedTuple

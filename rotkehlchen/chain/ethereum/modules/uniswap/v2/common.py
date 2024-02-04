@@ -131,7 +131,7 @@ def decode_uniswap_v2_like_swap(
                     amount=amount_in,
                     asset=crypto_asset,
                 )) or
-                event.asset == A_ETH and spend_eth + received_eth == event.balance.amount
+                (event.asset == A_ETH and spend_eth + received_eth == event.balance.amount)
             )
         ):
             event.event_type = HistoryEventType.TRADE

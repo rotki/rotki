@@ -1075,8 +1075,8 @@ class RestAPI:
             }
 
         if (
-                premium_api_key != '' and premium_api_secret == '' or
-                premium_api_secret != '' and premium_api_key == ''
+                (premium_api_key != '' and premium_api_secret == '') or
+                (premium_api_secret != '' and premium_api_key == '')
         ):
             return {
                 'result': None,
@@ -4480,7 +4480,7 @@ class RestAPI:
             serialized_event = event.serialize_for_csv()
             serialized_history_events.append(serialized_event)
             # maintain insertion order without storing extra info
-            headers.update({key: None for key in serialized_event})
+            headers.update(dict.fromkeys(serialized_event))
 
         if directory_path is None:  # on download
             with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501

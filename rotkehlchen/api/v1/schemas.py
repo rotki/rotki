@@ -2211,7 +2211,7 @@ class ExchangeRatesSchema(AsyncQueryArgumentSchema):
 
 
 class WatcherSchema(Schema):
-    type = fields.String(required=True)  # noqa: A003  # it's okay to shadow builtin here
+    type = fields.String(required=True)
     args = fields.Dict(required=True)
 
 
@@ -3291,8 +3291,8 @@ class MultipleAccountingRuleConflictsResolutionSchema(Schema):
     ) -> None:
         """Check that the endpoint receives either conflicts or solve_all_using"""
         if (
-            data['conflicts'] is None and data['solve_all_using'] is None or
-            data['conflicts'] is not None and data['solve_all_using'] is not None
+            (data['conflicts'] is None and data['solve_all_using'] is None) or
+            (data['conflicts'] is not None and data['solve_all_using'] is not None)
         ):
             raise ValidationError(
                 message='Conflict resolution can either choose to solve all or a subset but not both or none',  # noqa: E501

@@ -160,8 +160,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
                 event.location_label == account and
                 event.event_type == base_event_type and
                 (
-                    verb_text == 'increase' and
-                    event.balance.amount == transferred_amount or
+                    (verb_text == 'increase' and event.balance.amount == transferred_amount) or
                     verb_text == 'decrease'  # when it is a decrease we don't know the amount that will be received  # noqa: E501
                 ) and
                 _asset_matches(token=path_token, event_asset=event.asset)

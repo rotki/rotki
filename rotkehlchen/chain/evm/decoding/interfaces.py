@@ -263,7 +263,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         # pair each new address in each cache container to the method decoding its logic
         for data_diff, method in zip(cache_diff, self._cache_mapping_methods(), strict=True):  # size should be correct if inheriting decoder is implemented properly  # noqa: E501
-            new_decoding_mapping |= {address: (method,) for address in data_diff}
+            new_decoding_mapping |= dict.fromkeys(data_diff, (method,))
 
         return new_decoding_mapping
 

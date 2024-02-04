@@ -1,13 +1,13 @@
 __all__ = [
+    'MODULE_NAME_TO_PATH',
     'Balancer',
+    'Liquity',
     'Loopring',
     'MakerdaoDsr',
     'MakerdaoVaults',
+    'PickleFinance',
     'YearnVaults',
     'YearnVaultsV2',
-    'Liquity',
-    'PickleFinance',
-    'MODULE_NAME_TO_PATH',
 ]
 
 # to avoid some circular imports some of the paths are moved in a mapping here

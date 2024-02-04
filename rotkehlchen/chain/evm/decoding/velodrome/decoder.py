@@ -249,12 +249,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         return DecodingOutput(refresh_balances=found_event_modifying_balances)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            address: (self._decode_pool_events,)
-            for address in self.pools
-        }
-        mapping.update({  # addresses of pools and gauges don't intersect, so combining like this is fine  # noqa: E501
-            gauge_address: (self._decode_gauge_events,)
-            for gauge_address in self.gauges
-        })
+        mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(self.pools, (self._decode_pool_events,))  # noqa: E501
+        mapping.update(dict.fromkeys(self.gauges, (self._decode_gauge_events,)))
         return mapping
