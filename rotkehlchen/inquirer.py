@@ -446,7 +446,7 @@ class Inquirer:
                 isinstance(oracle_instance, CurrentPriceOracleInterface) and
                 (
                     oracle_instance.rate_limited_in_last(DEFAULT_RATE_LIMIT_WAITING_TIME) is True or  # noqa: E501
-                    isinstance(oracle_instance, PenalizablePriceOracleMixin) and oracle_instance.is_penalized() is True  # noqa: E501
+                    (isinstance(oracle_instance, PenalizablePriceOracleMixin) and oracle_instance.is_penalized() is True)  # noqa: E501
                 )
             ):
                 continue

@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # noqa: S404
 import sys
 from http import HTTPStatus
 

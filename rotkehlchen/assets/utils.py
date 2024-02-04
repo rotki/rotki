@@ -258,7 +258,7 @@ def get_or_create_evm_token(
 
             is_spam_token = (
                 protocol == SPAM_PROTOCOL or
-                protocol is None and check_if_spam_token(symbol=symbol, name=name)
+                (protocol is None and check_if_spam_token(symbol=symbol, name=name))
             )
 
             # Store the information in the database

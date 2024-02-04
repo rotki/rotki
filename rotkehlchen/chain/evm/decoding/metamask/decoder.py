@@ -72,11 +72,8 @@ class MetamaskCommonDecoder(DecoderInterface):
         out_event = in_event = None
         for event in context.decoded_events:
             if (
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.SPEND or
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.location_label == sender
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND) or  # noqa: E501
+                    (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.location_label == sender)  # noqa: E501
             ):  # find the send event
                 event.counterparty = CPT_METAMASK_SWAPS
                 event.event_type = HistoryEventType.TRADE
@@ -95,9 +92,9 @@ class MetamaskCommonDecoder(DecoderInterface):
                 event.sequence_index = context.tx_log.log_index
                 in_event = event
             elif (
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.SPEND and
-                event.counterparty in AMM_POSSIBLE_COUNTERPARTIES
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype == HistoryEventSubType.SPEND and
+                    event.counterparty in AMM_POSSIBLE_COUNTERPARTIES
             ):  # It is possible that in the same transaction we find events
                 # decoded by another amm such as uniswap and then the metamask decoder
                 # (as it appears at the end). In those cases we need to

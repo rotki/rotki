@@ -1,6 +1,6 @@
 import collections
 import os
-import pickle
+import pickle  # noqa: S403
 import sys
 import threading
 import time

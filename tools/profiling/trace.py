@@ -1,7 +1,7 @@
 import datetime
 import gc
 import os
-import pickle
+import pickle  # noqa: S403
 import time
 import tracemalloc
 from types import FrameType

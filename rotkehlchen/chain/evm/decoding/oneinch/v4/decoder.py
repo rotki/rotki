@@ -122,7 +122,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
 
             if (
                 event.event_type == HistoryEventType.RECEIVE or
-                event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE  # It can happen that a leg of the swap was processed by a previous decoder like uniswap # noqa: E501
+                (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)  # It can happen that a leg of the swap was processed by a previous decoder like uniswap # noqa: E501
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
@@ -133,7 +133,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
             elif (
                 (
                     event.event_type == HistoryEventType.SPEND or
-                    event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND  # noqa: E501
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)  # noqa: E501
                 ) and
                 event.event_subtype != HistoryEventSubType.FEE
             ):

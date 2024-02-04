@@ -152,8 +152,8 @@ class CSVExporter(CustomizableDateMixin):
         cost_basis = f'{cost_basis_column}{index}'
 
         should_count_entire_spend_formula = (
-            name == 'taxable' and event.timestamp >= self.start_ts or
-            name == 'free' and event.timestamp < self.start_ts
+            (name == 'taxable' and event.timestamp >= self.start_ts) or
+            (name == 'free' and event.timestamp < self.start_ts)
         )
         if event.count_entire_amount_spend and should_count_entire_spend_formula:
             equation = (

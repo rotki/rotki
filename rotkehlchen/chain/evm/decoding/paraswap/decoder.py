@@ -76,10 +76,8 @@ class ParaswapCommonDecoder(DecoderInterface):
             if sender != event.location_label:  # in this case, it's not a valid send/receive event
                 continue
             if (
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.SPEND or
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE
+                (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND) or  # noqa: E501
+                (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE)  # noqa: E501
             ):  # find the send event
                 event.counterparty = CPT_PARASWAP
                 event.event_type = HistoryEventType.TRADE
@@ -88,10 +86,8 @@ class ParaswapCommonDecoder(DecoderInterface):
                 # not modifying event.notes here since that's done after partial refund below
                 out_event = event
             elif (
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.RECEIVE or
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE
+                (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE) or  # noqa: E501
+                (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE)  # noqa: E501
             ):  # find the receive event
                 event.counterparty = CPT_PARASWAP
                 event.event_type = HistoryEventType.TRADE

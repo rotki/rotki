@@ -1,11 +1,11 @@
 __all__ = [
     'BALANCER_EVENTS_PREFIX',
+    'Balancer',
     'BalancerBPTEventPoolToken',
     'BalancerEvent',
     'BalancerPoolBalance',
     'BalancerPoolEventsBalance',
     'BalancerPoolTokenBalance',
-    'Balancer',
 ]
 
 from .balancer import Balancer

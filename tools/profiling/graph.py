@@ -33,7 +33,7 @@ import argparse
 #   zooming
 import collections
 import datetime
-import pickle
+import pickle  # noqa: S403
 from contextlib import suppress
 from itertools import chain
 from typing import Any

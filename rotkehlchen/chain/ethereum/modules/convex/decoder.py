@@ -287,8 +287,8 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             CVX_REWARDS: (self._decode_pool_events,),
             CVXCRV_REWARDS: (self._decode_pool_events,),
         }
-        pools = {pool: (self._decode_pool_events,) for pool in self.pools}
-        virtual_rewards = {addr: (self._decode_pool_events,) for addr in CONVEX_VIRTUAL_REWARDS}
+        pools = dict.fromkeys(self.pools, (self._decode_pool_events,))
+        virtual_rewards = dict.fromkeys(CONVEX_VIRTUAL_REWARDS, (self._decode_pool_events,))
         decoder_mappings.update(pools)
         decoder_mappings.update(virtual_rewards)
         return decoder_mappings

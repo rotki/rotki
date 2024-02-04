@@ -568,4 +568,4 @@ class Uniswapv3Decoder(DecoderInterface):
         return {CPT_UNISWAP_V3: [(0, self._routers_post_decoding)]}
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {router_address: CPT_UNISWAP_V3 for router_address in UNISWAP_ROUTERS}
+        return dict.fromkeys(UNISWAP_ROUTERS, CPT_UNISWAP_V3)
