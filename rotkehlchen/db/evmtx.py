@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
-from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
+from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX, HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
@@ -137,15 +137,26 @@ class DBEvmTx:
             self,
             parent_tx_hash: EVMTxHash,
             blockchain: SupportedBlockchain,
+            from_address: ChecksumEvmAddress | None = None,
+            to_address: ChecksumEvmAddress | None = None,
     ) -> list[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
         chain_id = blockchain.to_chain_id()
         cursor = self.db.conn.cursor()
+
+        address_filter, bindings = '', [parent_tx_hash, chain_id.serialize_for_db()]
+        if from_address is not None:
+            address_filter += ' AND ITX.from_address=?'
+            bindings.append(from_address)
+        if to_address is not None:
+            address_filter += ' AND ITX.to_address=?'
+            bindings.append(to_address)
+
         results = cursor.execute(
             'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value '
             'FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
-            'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?',
-            (parent_tx_hash, chain_id.serialize_for_db()),
+            'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?'
+            f'{address_filter}', bindings,
         )
         transactions = []
         for result in results:
@@ -155,7 +166,7 @@ class DBEvmTx:
                 trace_id=result[0],
                 from_address=result[1],
                 to_address=result[2],
-                value=result[3],
+                value=int(result[3]),
             )
             transactions.append(tx)
 
@@ -507,6 +518,11 @@ class DBEvmTx:
         write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value=?',
             [(x, HISTORY_MAPPING_STATE_DECODED) for x in tx_ids],
+        )
+        # Delete any key_value_cache entries
+        write_cursor.executemany(
+            'DELETE FROM key_value_cache WHERE name LIKE ?',
+            [(f'{EXTRAINTERNALTXPREFIX}_{tx_hash.hex()}%',) for tx_hash in tx_hashes],
         )
 
     def get_queried_range(

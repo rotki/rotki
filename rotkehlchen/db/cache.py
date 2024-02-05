@@ -1,6 +1,9 @@
+from collections.abc import Callable
 from typing import TypedDict, Unpack, overload
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
 
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
 
 
@@ -36,14 +39,29 @@ class AddressArgType(TypedDict):
     address: ChecksumEvmAddress
 
 
+class ExtraTxArgType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.EXTRA_INTERNAL_TX`"""
+    tx_hash: str  # using str instead of EVMTxHash because DB schema is in TEXT
+    receiver: ChecksumEvmAddress
+
+
+def _deserialize_int_from_str(value: str) -> int | None:
+    return int(value)
+
+
+def _deserialize_timestamp_from_str(value: str) -> Timestamp | None:
+    return Timestamp(int(value))
+
+
 class DBCacheDynamic(Enum):
     """It contains all the formattable keys that depend on a variable
     that can be stored in the `key_value_cache` table"""
-    LAST_CRYPTOTX_OFFSET = '{location}_{location_name}_last_cryptotx_offset'
-    LAST_QUERY_TS = '{location}_{location_name}_{account_id}_last_query_ts'
-    LAST_QUERY_ID = '{location}_{location_name}_{account_id}_last_query_id'
-    WITHDRAWALS_TS = 'ethwithdrawalsts_{address}'
-    WITHDRAWALS_IDX = 'ethwithdrawalsidx_{address}'
+    LAST_CRYPTOTX_OFFSET = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
+    LAST_QUERY_TS = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
+    LAST_QUERY_ID = '{location}_{location_name}_{account_id}_last_query_id', _deserialize_int_from_str  # noqa: E501
+    WITHDRAWALS_TS = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
+    WITHDRAWALS_IDX = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
+    EXTRA_INTERNAL_TX = f'{EXTRAINTERNALTXPREFIX}_{{tx_hash}}_{{receiver}}', string_to_evm_address
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -57,10 +75,18 @@ class DBCacheDynamic(Enum):
     def get_db_key(self, **kwargs: Unpack[AddressArgType]) -> str:
         ...
 
+    @overload
+    def get_db_key(self, **kwargs: Unpack[ExtraTxArgType]) -> str:
+        ...
+
     def get_db_key(self, **kwargs: str) -> str:
         """Get the key that is used in the DB schema for the given kwargs.
 
         May Raise KeyError if incompatible kwargs are passed. Pass the kwargs according to the
         supported overloads only. The potential KeyError is handled by type checking. It is
         considered a programming error and it is not handled explicitly."""
-        return self.value.format(**kwargs)
+        return self.value[0].format(**kwargs)
+
+    @property
+    def deserialize_callback(self) -> Callable[[str], int | Timestamp | ChecksumEvmAddress | None]:
+        return self.value[1]

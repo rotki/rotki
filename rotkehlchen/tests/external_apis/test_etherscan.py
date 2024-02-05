@@ -9,6 +9,7 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -145,6 +146,31 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             blockchain=SupportedBlockchain.ETHEREUM,
         )
 
+        assert dbtx.get_evm_internal_transactions(  # filter using from_address
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            from_address=ZERO_ADDRESS,
+        ) == dbtx.get_evm_internal_transactions(  # filter using to_address
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            to_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
+        ) == dbtx.get_evm_internal_transactions(  # filter using both from_address and to_address
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            from_address=ZERO_ADDRESS,
+            to_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
+        ) == internal_tx_in_db  # filter using none of from_address and to_address
+
+        assert dbtx.get_evm_internal_transactions(  # filter using different from_address
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            from_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
+        ) == dbtx.get_evm_internal_transactions(  # filter using different to_address
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            to_address=ZERO_ADDRESS,
+        ) == []
+
     assert regular_tx_in_db == [
         EvmTransaction(
             tx_hash=GENESIS_HASH,
@@ -182,7 +208,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             trace_id=0,
             from_address=ZERO_ADDRESS,
             to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
-            value='327600000000000000000',
+            value=327600000000000000000,
         ),
     ]
 

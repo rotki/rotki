@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -22,7 +23,15 @@ from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEvmAddress, EvmTokenKind, EVMTxHash, Timestamp
+from rotkehlchen.types import (
+    CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    SPAM_PROTOCOL,
+    ChecksumEvmAddress,
+    EvmInternalTransaction,
+    EvmTokenKind,
+    EVMTxHash,
+    Timestamp,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -248,8 +257,8 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def _query_and_save_internal_transactions_for_range_or_parent_hash(
             self,
-            address: ChecksumEvmAddress | None,
             period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
     ) -> None:
         """Helper function to abstract internal tx querying for different range types
@@ -540,6 +549,59 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         tx_data = cursor.execute(query, bindings).fetchone()
         tx_receipt = self.dbevmtx.get_receipt(cursor, tx_hash, self.evm_inquirer.chain_id)
         return tx_data, tx_receipt  # type: ignore  # tx_data can't be None here
+
+    def get_and_ensure_internal_txns_of_parent_in_db(
+            self,
+            tx_hash: 'EVMTxHash',
+            from_address: 'ChecksumEvmAddress',
+            to_address: 'ChecksumEvmAddress',
+            user_address: 'ChecksumEvmAddress',
+    ) -> list[EvmInternalTransaction]:
+        """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
+        them. `to_address` and `user_address` are used to check if they have been queried before,
+        to avoid querying them again if there was no internal transaction.
+
+        May raise:
+        - RemoteError if there is a problem querying the data sources or transaction hash does
+        not exist."""
+        db_internal_txs = self.dbevmtx.get_evm_internal_transactions(
+            parent_tx_hash=tx_hash,
+            blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
+            from_address=from_address,
+            to_address=to_address,
+        )
+        if len(db_internal_txs) > 0:
+            return db_internal_txs
+
+        # check cache if this parent hash was queried before for this receiver and affected address
+        with self.database.conn.read_ctx() as cursor:
+            affected_address = self.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+                tx_hash=tx_hash.hex(),
+                receiver=to_address,
+            )
+        if affected_address == user_address:  # if we have queried them before
+            return []
+
+        # else query again and save the DB cache to avoid querying it again
+        self._query_and_save_internal_transactions_for_range_or_parent_hash(
+            period_or_hash=tx_hash,
+        )
+        with self.database.user_write() as write_cursor:
+            self.database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+                tx_hash=tx_hash.hex(),
+                receiver=to_address,
+                value=user_address,
+            )
+        return self.dbevmtx.get_evm_internal_transactions(
+            parent_tx_hash=tx_hash,
+            blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
+            from_address=from_address,
+            to_address=to_address,
+        )
 
     def get_or_create_transaction(
             self,

@@ -120,7 +120,7 @@ class EthereumEtherscan(Etherscan):
                 self.db.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=DBCacheDynamic.WITHDRAWALS_IDX,
-                    value=Timestamp(last_withdrawal_idx),
+                    value=last_withdrawal_idx,
                     address=address,
                 )
 

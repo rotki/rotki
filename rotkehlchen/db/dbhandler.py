@@ -48,6 +48,7 @@ from rotkehlchen.db.cache import (
     AddressArgType,
     DBCacheDynamic,
     DBCacheStatic,
+    ExtraTxArgType,
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
@@ -55,6 +56,7 @@ from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
+    EXTRAINTERNALTXPREFIX,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
@@ -685,14 +687,14 @@ class DBHandler:
             cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             **kwargs: Unpack[LabeledLocationArgsType],
-    ) -> Timestamp | None:
+    ) -> int | None:
         ...
 
     @overload
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_QUERY_TS, DBCacheDynamic.LAST_QUERY_ID],
+            name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> Timestamp | None:
         ...
@@ -701,9 +703,36 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.WITHDRAWALS_TS, DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.LAST_QUERY_ID],
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
+            **kwargs: Unpack[ExtraTxArgType],
+    ) -> ChecksumEvmAddress | None:
         ...
 
     def get_dynamic_cache(
@@ -711,20 +740,20 @@ class DBHandler:
             cursor: 'DBCursor',
             name: DBCacheDynamic,
             **kwargs: str,
-    ) -> Timestamp | None:
+    ) -> int | Timestamp | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
         ).fetchone()
-        return None if value is None else Timestamp(int(value[0]))
+        return None if value is None else name.deserialize_callback(value[0])
 
     @overload
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
-            value: Timestamp,
+            value: int,
             **kwargs: Unpack[LabeledLocationArgsType],
     ) -> None:
         ...
@@ -733,7 +762,7 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_QUERY_TS, DBCacheDynamic.LAST_QUERY_ID],
+            name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> None:
@@ -743,9 +772,39 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.WITHDRAWALS_TS, DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.LAST_QUERY_ID],
+            value: int,
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             value: Timestamp,
             **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
+            value: ChecksumEvmAddress,
+            **kwargs: Unpack[ExtraTxArgType],
     ) -> None:
         ...
 
@@ -753,7 +812,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             name: DBCacheDynamic,
-            value: Timestamp,
+            value: int | Timestamp | ChecksumEvmAddress,
             **kwargs: str,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
@@ -2031,6 +2090,10 @@ class DBHandler:
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
+        )
+        write_cursor.execute(
+            f'DELETE FROM key_value_cache WHERE name LIKE "{EXTRAINTERNALTXPREFIX}_%" AND value = ?',  # noqa: E501
+            (address,),
         )
 
         dbtx = DBEvmTx(self)

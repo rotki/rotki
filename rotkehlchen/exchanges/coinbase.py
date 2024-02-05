@@ -457,7 +457,7 @@ class Coinbase(ExchangeInterface):
                     location_name=self.name,
                     account_id=account_id,
                 )) is not None:
-                    last_query = int(result)
+                    last_query = result
 
                 if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
                     continue  # if no update since last query or last query recent stop

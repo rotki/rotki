@@ -576,7 +576,7 @@ class TaskManager:
         with self.database.conn.read_ctx() as cursor:
             end_timestamps = cursor.execute(
                 'SELECT value FROM key_value_cache WHERE name LIKE ?',
-                (DBCacheDynamic.WITHDRAWALS_TS.value.replace('{address}', '%'),),
+                (DBCacheDynamic.WITHDRAWALS_TS.value[0].replace('{address}', '%'),),
             ).fetchall()
 
         should_query = False
