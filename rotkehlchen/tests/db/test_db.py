@@ -421,22 +421,26 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     with data.db.conn.read_ctx() as cursor:
         ignored_assets_before = data.db.get_ignored_asset_ids(cursor)
 
-    result, _ = data.add_ignored_assets([A_DAO])
-    assert result
-    result, _ = data.add_ignored_assets([A_DOGE])
-    assert result
-    result, _ = data.add_ignored_assets([A_DOGE])
-    assert result is None
+    success, already = data.add_ignored_assets([A_DAO])
+    assert success == {A_DAO}
+    assert len(already) == 0
+    success, already = data.add_ignored_assets([A_DOGE])
+    assert success == {A_DOGE}
+    assert len(already) == 0
+    success, already = data.add_ignored_assets([A_DOGE])
+    assert already == {A_DOGE}
+    assert len(success) == 0
 
     with data.db.conn.read_ctx() as cursor:
         ignored_asset_ids = data.db.get_ignored_asset_ids(cursor)
         assert ignored_asset_ids - ignored_assets_before == {A_DAO.identifier, A_DOGE.identifier}
         # Test removing asset that is not in the list
-        result, msg = data.remove_ignored_assets([A_RDN])
-        assert 'not in ignored assets' in msg
-        assert result is None
-        result, _ = data.remove_ignored_assets([A_DOGE])
-        assert result
+        success, already = data.remove_ignored_assets([A_RDN])
+        assert already == {A_RDN}
+        assert len(success) == 0
+        success, already = data.remove_ignored_assets([A_DOGE])
+        assert success == {A_DOGE}
+        assert len(already) == 0
         assert data.db.get_ignored_asset_ids(cursor) - ignored_assets_before == {A_DAO.identifier}
 
         # With nothing inserted in settings make sure default values are returned
@@ -1043,8 +1047,9 @@ def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instruct
     assert FVal(assets[2].usd_value) > FVal(assets[3].usd_value)
 
     # test that ignored assets are not ignored in the value distribution by location
-    result, _ = data.add_ignored_assets([A_BTC])
-    assert result
+    success, already = data.add_ignored_assets([A_BTC])
+    assert success == {A_BTC}
+    assert len(already) == 0
     assets = data.db.get_latest_asset_value_distribution()
     assert len(assets) == 3
     assert FVal(assets[0].usd_value) > FVal(assets[1].usd_value)

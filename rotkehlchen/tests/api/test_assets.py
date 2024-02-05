@@ -157,7 +157,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_ignored_assets = set(ignored_assets)
-    assert expected_ignored_assets == set(result)
+    assert expected_ignored_assets == set(result['successful'])
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
@@ -179,11 +179,12 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
                 'ignoredassetsresource',
             ), json={'assets': [A_GNO.identifier, 'XMR']},
         )
-        assets_after_deletion = {A_RDN.identifier}
         result = assert_proper_response_with_result(response)
-        assert assets_after_deletion == set(result)
+        assert set(result['successful']) == {A_GNO.identifier, 'XMR'}
+        assert len(result['no_action']) == 0
 
         # check that the changes are reflected
+        assets_after_deletion = {A_RDN.identifier}
         assert rotki.data.db.get_ignored_asset_ids(cursor) == assets_after_deletion
         # Query for ignored assets and check that the response returns them
         response = requests.get(
@@ -271,23 +272,18 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
         # Test the adding an already existing asset or removing a non-existing asset is an error
-        if method == 'put':
-            asset = A_RDN.identifier
-            expected_msg = f'{A_RDN.identifier} is already in ignored assets'
-        else:
-            asset = 'ETH'
-            expected_msg = 'ETH is not in ignored assets'
+        asset = A_RDN.identifier if method == 'put' else 'ETH'
         response = getattr(requests, method)(
             api_url_for(
                 rotkehlchen_api_server,
                 'ignoredassetsresource',
             ), json={'assets': [asset]},
         )
-        assert_error_response(
-            response=response,
-            contained_in_msg=expected_msg,
-            status_code=HTTPStatus.CONFLICT,
-        )
+        result = assert_proper_response_with_result(response)
+        assert result == {
+            'successful': [],
+            'no_action': [asset],
+        }
         # Check that assets did not get modified
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
