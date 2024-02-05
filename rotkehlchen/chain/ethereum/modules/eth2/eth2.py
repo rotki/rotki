@@ -40,7 +40,7 @@ from .constants import (
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
-from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID
+from .structures import ValidatorDailyStats, ValidatorDetailsWithStatus, ValidatorID
 from .utils import create_profit_filter_queries, scrape_validator_daily_stats
 
 if TYPE_CHECKING:
@@ -432,7 +432,7 @@ class Eth2(EthereumModule):
             self,
             ignore_cache: bool,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> list[ValidatorDetails]:
+    ) -> list[ValidatorDetailsWithStatus]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
 
@@ -441,7 +441,7 @@ class Eth2(EthereumModule):
             self.detect_and_refresh_validators(addresses)
 
         with self.database.conn.read_ctx() as cursor:
-            return DBEth2(self.database).get_validators(cursor)
+            return DBEth2(self.database).get_validators_with_status(cursor)
 
     def add_validator(
             self,

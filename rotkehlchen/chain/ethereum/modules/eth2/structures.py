@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple
+from enum import StrEnum, auto
+from typing import TYPE_CHECKING, Any, NamedTuple, Self
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -262,7 +263,7 @@ class ValidatorDetails:
         )
 
     @classmethod
-    def deserialize_from_db(cls, result: VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP) -> 'ValidatorDetails':  # noqa: E501
+    def deserialize_from_db(cls, result: VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP) -> Self:
         return cls(
             validator_index=result[0],
             public_key=result[1],
@@ -272,6 +273,33 @@ class ValidatorDetails:
             activation_ts=result[4],
             withdrawable_ts=result[5],
         )
+
+
+class ValidatorStatus(StrEnum):
+    PENDING = auto()
+    ACTIVE = auto()
+    EXITING = auto()
+    EXITED = auto()
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ValidatorDetailsWithStatus(ValidatorDetails):
+    status: ValidatorStatus = ValidatorStatus.ACTIVE
+
+    def serialize(self) -> dict[str, Any]:
+        result = super().serialize()
+        result['status'] = str(self.status)
+        return result
+
+    def determine_status(self, exited_indices: set[int]) -> None:
+        if self.validator_index in exited_indices:
+            self.status = ValidatorStatus.EXITED
+        elif self.withdrawable_ts is not None:
+            self.status = ValidatorStatus.EXITING
+        elif self.activation_ts is not None:
+            self.status = ValidatorStatus.ACTIVE
+        else:
+            self.status = ValidatorStatus.PENDING
 
 
 def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str]:

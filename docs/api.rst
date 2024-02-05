@@ -8656,12 +8656,14 @@ Getting tracked Eth2 validators
               "index":1,
               "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c",
 	      "withdrawal_address": "0x23a3283f9f538a54d49139cd35c2fe0443cad3db",
+	      "status": "pending",
             },
             {
               "index":1532,
               "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed",
               "ownership_percentage": "50",
-	      "activation_ts": 1701971000
+	      "activation_ts": 1701971000,
+	      "status": "active"
             },
             {
               "index":5421,
@@ -8670,6 +8672,7 @@ Getting tracked Eth2 validators
 	      "withdrawal_address": "0xfa13283f9e538a84d49139cd35c2fe0443caa34f",
 	      "activation_ts": 1701972000,
 	      "withdrawable_ts": 1702572000,
+	      "status": "exited"
             }
           ],
           "entries_found":3,
@@ -8681,6 +8684,7 @@ Getting tracked Eth2 validators
    :resjson object entries: The resulting entries list
    :resjson integer index: The index of the validator
    :resjson string public_key: The public key of the validator
+   :resjson string status: The status of the validator. Can be one of ``"pending"``, ``"active"``, ``"exiting"`` and ``"exited"``.
    :resjson string[optional] ownership_percentage: The ownership percentage of the validator. If missing assume 100%.
    :resjson string[optional] withdrawal_address: The withdrawal address for the validator if set.
    :resjson integer[optional] activation_ts: If existing this is the timestamp the validator will (or has been) activate/d. If not then this is a pending validator not yet fully deposited or not yet processed by the consensus layer.
