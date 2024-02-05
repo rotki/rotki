@@ -1981,24 +1981,15 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(list(result)), status_code=HTTPStatus.OK)
 
     def add_ignored_assets(self, assets_to_ignore: list[Asset]) -> Response:
-        """
-        Add the provided assets to the list of ignored assets. It fails if any of them
-        was already ignored.
-        """
-        result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets_to_ignore)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        result_dict = _wrap_in_result(list(result), msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        """Add the provided assets to the list of ignored assets"""
+        newly_ignored, already_ignored = self.rotkehlchen.data.add_ignored_assets(assets=assets_to_ignore)  # noqa: E501
+        result = {'successful': list(newly_ignored), 'no_action': list(already_ignored)}
+        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
     def remove_ignored_assets(self, assets: list[Asset]) -> Response:
-        result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        result_dict = _wrap_in_result(list(result), msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        succeeded, no_action = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
+        result = {'successful': list(succeeded), 'no_action': list(no_action)}
+        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: list[str]) -> Response:
         try:

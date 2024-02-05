@@ -19,7 +19,7 @@ from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -362,8 +362,8 @@ def toggle_ignore_an_asset(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # check if the asset is already ignored
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_asset_ids(cursor)
-    already_ignored = asset_to_ignore.identifier in result
+        ignored_assets = rotki.data.db.get_ignored_asset_ids(cursor)
+    already_ignored = asset_to_ignore.identifier in ignored_assets
 
     if already_ignored:
         # remove the asset from the ignored list
@@ -373,9 +373,8 @@ def toggle_ignore_an_asset(
                 'ignoredassetsresource',
             ), json={'assets': [asset_to_ignore.identifier]},
         )
-        assert response.status_code == 200
-        response_result = response.json().get('result', [])
-        assert asset_to_ignore.identifier not in response_result
+        result = assert_proper_response_with_result(response)
+        assert asset_to_ignore.identifier not in result
 
         with rotki.data.db.conn.read_ctx() as cursor:
             result = rotki.data.db.get_ignored_asset_ids(cursor)
@@ -390,8 +389,8 @@ def toggle_ignore_an_asset(
         ), json={'assets': [asset_to_ignore.identifier]},
     )
     assert response.status_code == 200
-    response_result = response.json().get('result', [])
-    assert asset_to_ignore.identifier in response_result
+    result = assert_proper_response_with_result(response)
+    assert asset_to_ignore.identifier in result['successful']
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_ignored_asset_ids(cursor)

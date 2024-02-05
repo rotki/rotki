@@ -513,7 +513,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
         json={'assets': [NFT_ID_FOR_TEST_ACC4]},
     )
     result = assert_proper_response_with_result(response)
-    assert NFT_ID_FOR_TEST_ACC4 in result
+    assert NFT_ID_FOR_TEST_ACC4 in result['successful']
 
     # query the nfts endpoint and verify that the nft is not present
     with get_all_nft_data_patch:
@@ -545,7 +545,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
         json={'assets': [NFT_ID_FOR_TEST_ACC4]},
     )
     result = assert_proper_response_with_result(response)
-    assert NFT_ID_FOR_TEST_ACC4 not in result
+    assert result['successful'] == [NFT_ID_FOR_TEST_ACC4]
 
     # query the nfts endpoint again and verify that the nft is present
     with get_all_nft_data_patch:

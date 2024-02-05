@@ -10100,15 +10100,15 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["eip155:1/erc20:0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "eip155:1/erc20:0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413", "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"]
+          "result": {"successful":[],"no_action":["eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6"]},
           "message": ""
       }
 
-   :resjson list result: A list of asset names that are currently ignored.
+   :resjson list successful: A list of asset identifiers that were added to the list of ignored assets.
+   :resjson list no_action: A list of assets that were already ignored and no action was taken on them.
    :statuscode 200: Assets successfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 401: User is not logged in.
-   :statuscode 409: One of the assets provided is already on the list.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/assets/ignored/
@@ -10136,15 +10136,15 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["eip155:1/erc20:0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7"]
+          "result": {"successful":[],"no_action":["ETH"]},
           "message": ""
       }
 
-   :resjson list result: A list of asset names that are currently ignored.
+   :resjson list successful: A list of asset identifier that were removed from the list of ignored assets.
+   :resjson list no_action: A list of assets that weren't ignored and no action was taken on them.
    :statuscode 200: Assets successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 401: User is not logged in.
-   :statuscode 409: One of the assets provided is not on the list.
    :statuscode 500: Internal rotki error
 
 

@@ -6,6 +6,7 @@ import tempfile
 import zlib
 from pathlib import Path
 
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt, encrypt
@@ -121,47 +122,47 @@ class DataHandler:
         self.username = username
         return user_data_dir
 
-    def add_ignored_assets(self, assets: list[Asset]) -> tuple[set[str] | None, str]:
+    def add_ignored_assets(self, assets: list[Asset]) -> tuple[set[Asset], set[Asset]]:
         """Adds ignored assets to the DB.
 
-        If any of the given assets is already in the DB the function does nothing
-        and returns an error message.
-
-        Returns the ignored asset identifiers after addition for success and `None`, msg for error
+        Returns the set of assets that have been ignored and the set of assets that were already
+        ignored.
         """
+        already_ignored, to_ignore = set(), set()
         with self.db.conn.read_ctx() as cursor:
             ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
             for asset in assets:
                 if asset.identifier in ignored_asset_ids:
-                    msg = f'{asset.identifier} is already in ignored assets'
-                    return None, msg
+                    already_ignored.add(asset)
+                else:
+                    to_ignore.add(asset)
 
-            with self.db.user_write() as write_cursor:
-                for asset in assets:
-                    self.db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
+        with self.db.user_write() as write_cursor:
+            for asset in to_ignore:
+                self.db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
 
-            return self.db.get_ignored_asset_ids(cursor), ''
+        return to_ignore, already_ignored
 
-    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[set[str] | None, str]:
+    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[set[Asset], set[Asset]]:
         """Removes ignored assets from the DB.
 
-        If any of the given assets is not in the DB the call function does nothing
-        and returns an error message.
-
-        Returns the ignored asset identifiers after removal for success and `None`, msg for error
+        Returns the set of assets that have been unignored and the set of assets that weren't
+        ignored.
         """
+        not_ignored, to_unignore = set(), set()
         with self.db.conn.read_ctx() as cursor:
             ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
             for asset in assets:
                 if asset.identifier not in ignored_asset_ids:
-                    msg = f'{asset.identifier} is not in ignored assets'
-                    return None, msg
+                    not_ignored.add(asset)
+                else:
+                    to_unignore.add(asset)
 
-            with self.db.user_write() as write_cursor:
-                for asset in assets:
-                    self.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=asset)
+        with self.db.user_write() as write_cursor:
+            for asset in to_unignore:
+                self.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=asset)
 
-            return self.db.get_ignored_asset_ids(cursor), ''
+        return to_unignore, not_ignored
 
     def get_users(self) -> dict[str, str]:
         """Returns a dict with all users in the system.
