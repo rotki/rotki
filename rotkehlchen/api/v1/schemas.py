@@ -23,6 +23,7 @@ from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_t
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
+from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -134,6 +135,7 @@ from .fields import (
     PositiveAmountField,
     PriceField,
     SerializableEnumField,
+    StrEnumField,
     TaxFreeAfterPeriodField,
     TimestampField,
     TimestampMSField,
@@ -3101,6 +3103,10 @@ class EthStakingHistoryStats(Schema):
 
 class Eth2StakePerformanceSchema(EthStakingHistoryStats, TimestampRangeSchema, AsyncIgnoreCacheQueryArgumentSchema, DBPaginationSchema):  # noqa: E501
     """Schema for querying ethereum staking performance"""
+    status = StrEnumField(
+        enum_class=PerformanceStatusFilter,
+        load_default=PerformanceStatusFilter.ALL,
+    )
 
     @post_load
     def make_staking_performance_query(

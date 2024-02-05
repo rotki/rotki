@@ -40,7 +40,12 @@ from .constants import (
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
-from .structures import ValidatorDailyStats, ValidatorDetailsWithStatus, ValidatorID
+from .structures import (
+    PerformanceStatusFilter,
+    ValidatorDailyStats,
+    ValidatorDetailsWithStatus,
+    ValidatorID,
+)
 from .utils import create_profit_filter_queries, scrape_validator_daily_stats
 
 if TYPE_CHECKING:
@@ -80,7 +85,7 @@ class Eth2(EthereumModule):
         self.withdrawals_query_lock = Semaphore()
         # This is a cache that is kept only for the last performance cache address, indices args
         self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
-        self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None] = (None, None)  # noqa: E501
+        self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter] = (None, None, PerformanceStatusFilter.ALL)  # noqa: E501
 
     def _get_closest_performance_cache_key(
             self,
@@ -133,6 +138,7 @@ class Eth2(EthereumModule):
             ignore_cache: bool,
             addresses: list[ChecksumEvmAddress] | None = None,
             validator_indices: list[int] | None = None,
+            status: PerformanceStatusFilter = PerformanceStatusFilter.ALL,
     ) -> dict[str, Any]:
         """Calculate and return the performance since the given timestamp for each validator.
 
@@ -147,7 +153,7 @@ class Eth2(EthereumModule):
 
         if (
                 not ignore_cache and
-                self.performance_cache_args == (addresses, validator_indices) and
+                self.performance_cache_args == (addresses, validator_indices, status) and
                 (result := self.performance_cache.get(cache_key))
         ):  # return pagination on cached data
             return {
@@ -159,14 +165,25 @@ class Eth2(EthereumModule):
 
         common_arguments: dict[str, Any] = {'from_ts': from_ts}
         index_to_pubkey = {}
+        dbeth2 = DBEth2(self.database)
+        all_validator_indices = []
+        processing_validators = all_validator_indices
         if validator_indices is not None:
-            common_arguments['validator_indices'] = validator_indices
+            processing_validators = validator_indices
+            common_arguments['validator_indices'] = processing_validators
+        elif status != PerformanceStatusFilter.ALL:
+            with self.database.conn.read_ctx() as cursor:
+                if status == PerformanceStatusFilter.ACTIVE:
+                    processing_validators = list(dbeth2.get_active_validator_indices(cursor))
+                else:  # can only be EXITED
+                    processing_validators = list(dbeth2.get_exited_validator_indices(cursor))
+                common_arguments['validator_indices'] = processing_validators
+
         if addresses is not None:
             common_arguments['location_labels'] = addresses
 
         withdrawals_filter_query, exits_filter_query, execution_filter_query = create_profit_filter_queries(common_arguments)  # noqa: E501
 
-        dbeth2 = DBEth2(self.database)
         with self.database.conn.read_ctx() as cursor:
             withdrawals_amounts, exits_pnl, execution_rewards_amounts = dbeth2.get_validators_profit(  # noqa: E501
                 cursor=cursor,
@@ -191,7 +208,6 @@ class Eth2(EthereumModule):
                 sums[key_label] += amount
                 sums['sum'] += amount
 
-        all_validator_indices = []
         with self.database.conn.read_ctx() as cursor:
             for entry in cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE validator_index IS NOT NULL'):  # noqa: E501
                 index_to_pubkey[entry[0]] = entry[1]
@@ -225,7 +241,7 @@ class Eth2(EthereumModule):
         sums['apr'] = (YEAR_IN_SECONDS * sums['sum']) / profit_duration
         result = {'validators': pnls, 'sums': sums}
         self.performance_cache.add(cache_key, result)  # save cache & return pagination on the data
-        self.performance_cache_args = (addresses, validator_indices)
+        self.performance_cache_args = (addresses, validator_indices, status)
         return {
             'validators': dict(list(result['validators'].items())[offset: offset + limit]),
             'sums': result['sums'],

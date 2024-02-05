@@ -1,6 +1,7 @@
 import logging
 import urllib
 from collections.abc import Mapping, Sequence
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal
 
@@ -457,6 +458,40 @@ class SerializableEnumField(fields.Field):
             result = self.enum_class.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
+
+        return result
+
+
+class StrEnumField(fields.Field):
+    """A field that takes a python 3.11+ StrEnum"""
+    def __init__(self, enum_class: type[StrEnum], **kwargs: Any) -> None:
+        """We give all possible types as unions instead of just type[SerializableEnumMixin]
+        due to this bug https://github.com/python/mypy/issues/4717
+        Normally it should have sufficed to give just the former.
+        """
+        self.enum_class = enum_class
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: SerializableEnumMixin,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str:
+        return value.value
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> Any:
+        try:
+            result = self.enum_class(value)
+        except ValueError as e:
+            raise ValidationError(f'Illegal value {value} for {self.enum_class}') from e
 
         return result
 

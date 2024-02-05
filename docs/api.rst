@@ -8367,6 +8367,7 @@ Getting eth2 staking performance
    :reqjson int[optional] to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list[optional] validator_indices: The indices of the validators to filter for
    :reqjson list[optional] addresses: The withdrawal addresses for which to filter the results
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
 
    **Example Response**:
 
