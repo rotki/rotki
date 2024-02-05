@@ -6,6 +6,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
+    ValidatorDetailsWithStatus,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import ONE, ZERO
@@ -156,6 +157,20 @@ class DBEth2:
             'activation_timestamp, withdrawable_timestamp FROM eth2_validators;',
         )
         return [ValidatorDetails.deserialize_from_db(x) for x in cursor]
+
+    def get_validators_with_status(self, cursor: 'DBCursor') -> list[ValidatorDetailsWithStatus]:
+        result: list[ValidatorDetailsWithStatus] = []
+        exited_indices = self.get_exited_validator_indices(cursor)
+        cursor.execute(
+            'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
+            'activation_timestamp, withdrawable_timestamp FROM eth2_validators;',
+        )
+        for entry in cursor:
+            validator = ValidatorDetailsWithStatus.deserialize_from_db(entry)
+            validator.determine_status(exited_indices)
+            result.append(validator)
+
+        return result
 
     def get_active_validator_indices(self, cursor: 'DBCursor') -> set[int]:
         """Returns the indices of the tracked validators that we know have not exited

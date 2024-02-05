@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDailyStats,
-        ValidatorDetails,
+        ValidatorDetailsWithStatus,
     )
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
@@ -1251,7 +1251,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return stats
 
-    def get_eth2_validators(self, ignore_cache: bool) -> list['ValidatorDetails']:
+    def get_eth2_validators(self, ignore_cache: bool) -> list['ValidatorDetailsWithStatus']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
