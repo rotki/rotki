@@ -2100,6 +2100,29 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0] == 1  # one event is customized
 
+        # test eth2 validators and daily stats are there
+        assert table_exists(
+            cursor=cursor,
+            name='eth2_validators',
+            schema="""CREATE TABLE IF NOT EXISTS eth2_validators (
+                validator_index INTEGER NOT NULL PRIMARY KEY,
+                public_key TEXT NOT NULL UNIQUE,
+                ownership_proportion TEXT NOT NULL
+            );""",
+        )
+        validators_data = [
+            (42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0'),  # noqa: E501
+            (1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35'),  # noqa: E501
+            (5232, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * from eth2_validators').fetchall() == validators_data
+        daily_stats = [
+            (42, 1707001200, '0.001'), (1232, 1707001200, '0.0005'), (5232, 1707001200, '0.0009'),
+            (42, 1706914800, '0.0201'), (1232, 1706914800, '0.0008'), (5232, 1706914800, '0.001'),
+            (42, 1706828400, '0.00075'), (1232, 1706828400, '0.00052'), (5232, 1706828400, '0.00083'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * from eth2_daily_staking_details').fetchall() == daily_stats
+
     db_v40.logout()
 
     # Execute upgrade
@@ -2109,6 +2132,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
+    assert messages_aggregator.consume_errors() == []
+    assert messages_aggregator.consume_warnings() == []
     # check if all the above values have been moved
     with db.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
@@ -2189,6 +2214,23 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             'SELECT value FROM settings WHERE name=?',
             ('non_syncing_exchanges',),
         ).fetchone()[0]) == [{'name': 'Kraken 1', 'location': 'kraken'}]
+
+        # verify that the new eth2 validators table and data is there
+        assert table_exists(
+            cursor=cursor,
+            name='eth2_validators',
+            schema="""CREATE TABLE IF NOT EXISTS eth2_validators (
+                identifier INTEGER NOT NULL PRIMARY KEY,
+                validator_index INTEGER UNIQUE,
+                public_key TEXT NOT NULL UNIQUE,
+                ownership_proportion TEXT NOT NULL,
+                withdrawal_address TEXT,
+                activation_timestamp INTEGER,
+                withdrawable_timestamp INTEGER
+            );""",
+        )
+        assert cursor.execute('SELECT validator_index, public_key, ownership_proportion from eth2_validators').fetchall() == validators_data  # noqa: E501
+        assert cursor.execute('SELECT * from eth2_daily_staking_details').fetchall() == daily_stats
 
     db.logout()
 

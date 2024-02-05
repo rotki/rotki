@@ -736,7 +736,11 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'],
+    allow_playback_repeats=True,
+    match_on=['beaconchain_matcher'],
+)
 @pytest.mark.freeze_time('2024-02-04 00:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

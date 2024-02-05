@@ -1,12 +1,12 @@
 import json
 import logging
 from typing import TYPE_CHECKING
+
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
     HISTORY_MAPPING_STATE_DECODED,
 )
-
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
@@ -238,6 +238,29 @@ def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _remove_bittrex_data')
 
 
+def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
+    """
+    Upgrade the eth2 validators DB table while preserving eth2 daily stats table.
+    Foreign keys off so that recreation of table does not delete all daily stats"""
+    log.debug('Enter _upgrade_eth2_validators')
+    write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='eth2_validators',
+        schema="""identifier INTEGER NOT NULL PRIMARY KEY,
+        validator_index INTEGER UNIQUE,
+        public_key TEXT NOT NULL UNIQUE,
+        ownership_proportion TEXT NOT NULL,
+        withdrawal_address TEXT,
+        activation_timestamp INTEGER,
+        withdrawable_timestamp INTEGER""",
+        insert_order='(validator_index, public_key, ownership_proportion)',
+        insert_columns='validator_index, public_key, ownership_proportion',
+    )
+    write_cursor.executescript('PRAGMA foreign_keys = ON;')
+    log.debug('Exit _upgrade_eth2_validators')
+
+
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
@@ -248,7 +271,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(9)
+    progress_handler.set_total_steps(10)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
@@ -267,6 +290,8 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _move_labels_to_addressbook(write_cursor)
         progress_handler.new_step()
         _reset_decoded_events(write_cursor)
-    progress_handler.new_step()
+        progress_handler.new_step()
+        _upgrade_eth2_validators(write_cursor)
+        progress_handler.new_step()
 
     log.debug('Finish userdb v40->v41 upgrade')
