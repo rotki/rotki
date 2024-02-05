@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT, FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -1265,6 +1266,24 @@ def test_query_transactions_check_decoded_events(
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
 
+    # Also add a cache entry for a transaction
+    with rotki.data.db.user_write() as write_cursor:
+        random_receiver_in_cache = make_evm_address()
+        random_user_address = make_evm_address()
+        rotki.data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            value=random_user_address,
+            tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            receiver=random_receiver_in_cache,
+        )
+        assert rotki.data.db.get_dynamic_cache(  # ensure it's properly set
+            cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            receiver=random_receiver_in_cache,
+        ) == random_user_address
+
     # Now let's check DB tables to see they will get modified at purging
     with rotki.data.db.conn.read_ctx() as cursor:
         for name, count in (
@@ -1290,6 +1309,14 @@ def test_query_transactions_check_decoded_events(
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True)
+
+        # Check if related cache is removed
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            receiver=random_receiver_in_cache,
+        ) is None
 
     assert customized_events[0].serialize() == tx4_events[0]['entry']
     assert customized_events[1].serialize() == tx2_events[1]['entry']

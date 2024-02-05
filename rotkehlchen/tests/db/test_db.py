@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -26,7 +27,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
@@ -81,7 +82,7 @@ from rotkehlchen.tests.utils.constants import (
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_evm_tx_hash
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -354,6 +355,20 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             blockchain=SupportedBlockchain.POLYGON_POS,
             tokens=[A_POLYGON_POS_MATIC],
         )
+        random_tx_hash_in_cache = make_evm_tx_hash()
+        data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            value=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
+            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+        )
+        assert data.db.get_dynamic_cache(  # ensure it's properly set
+            cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
+            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+        ) == string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
 
     with data.db.conn.read_ctx() as cursor:
         accounts = data.db.get_blockchain_accounts(cursor)
@@ -392,6 +407,12 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
+        assert data.db.get_dynamic_cache(
+            cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
+            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+        ) is None
         # Remove only the polygon account
         data.db.remove_single_blockchain_accounts(
             write_cursor,

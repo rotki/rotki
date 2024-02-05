@@ -16,6 +16,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -51,6 +53,7 @@ class ParaswapCommonDecoder(DecoderInterface):
             fee_receiver_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
+        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
         self.router_address = router_address
         self.fee_receiver_address = fee_receiver_address
 
@@ -60,10 +63,7 @@ class ParaswapCommonDecoder(DecoderInterface):
             receiver: ChecksumEvmAddress,
             sender: ChecksumEvmAddress,
     ) -> DecodingOutput:
-        """This function is used to decode the swap done by paraswap.
-        At the moment it does not decode the fee in ETH. For example:
-        etherscan.io/tx/0xeeea20b39f157fe59fa4904fd4b62f8971188b53d05c6831e0ed67ee157e40c2
-        TODO Note: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=49582891"""
+        """This function is used to decode the swap done by paraswap."""
         if not self.base.any_tracked((sender, receiver)):
             return DEFAULT_DECODING_OUTPUT
 
@@ -130,6 +130,20 @@ class ParaswapCommonDecoder(DecoderInterface):
                     fee_asset = out_asset
                 fee_raw = hex_or_bytes_to_int(log_event.data)
                 break
+        else:  # if no fee is found yet, check if fee is paid through internal transactions in the native token  # noqa: E501
+            try:
+                internal_fee_txs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
+                    tx_hash=context.transaction.tx_hash,
+                    from_address=self.router_address,
+                    to_address=self.fee_receiver_address,
+                    user_address=sender,
+                )
+            except RemoteError as e:
+                log.error(f'Failed to get internal transactions for paraswap swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
+            else:
+                if len(internal_fee_txs) > 0:
+                    fee_raw = internal_fee_txs[0].value  # assuming only one tx from router to fee claimer  # noqa: E501
+                    fee_asset = self.base.evm_inquirer.native_token
 
         if fee_raw is not None and fee_asset is not None:
             fee_amount = asset_normalized_value(amount=fee_raw, asset=fee_asset)

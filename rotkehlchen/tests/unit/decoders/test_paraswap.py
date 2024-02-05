@@ -125,7 +125,7 @@ def test_simple_swap_eth_fee(database, ethereum_inquirer, ethereum_accounts):
     )
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1704806231000)
-    swap_amount, received_amount, gas_fees = '3.020129914302378395', '2.990432283065311187', '0.00680806307180382'  # noqa: E501
+    swap_amount, received_amount, gas_fees, paraswap_fee = '3.020129914302378395', '3.019113864780728103', '0.00680806307180382', '0.028681581715416916'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -164,9 +164,20 @@ def test_simple_swap_eth_fee(database, ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} ETH as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(paraswap_fee)),
+        location_label=user_address,
+        notes=f'Spend {paraswap_fee} ETH as a paraswap fee',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
     )]
-    # TODO: it should also expect a fee event here, but it's not supported yet
-    # https://github.com/orgs/rotki/projects/11?pane=issue&itemId=49582891
     assert expected_events == events
 
 

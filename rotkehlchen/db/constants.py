@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal
+from typing import Final, Literal
 
 from rotkehlchen.errors.serialization import DeserializationError
 
@@ -60,3 +60,5 @@ EVM_FIELD_LENGTH = 5
 
 ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH = 2
+
+EXTRAINTERNALTXPREFIX: Final = 'extrainternaltx'

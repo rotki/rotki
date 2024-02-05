@@ -372,7 +372,7 @@ class Bitstamp(ExchangeInterface):
                 self.db.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                    value=Timestamp(options['offset']),
+                    value=options['offset'],
                     location=self.location.serialize(),
                     location_name=self.name,
                 )
