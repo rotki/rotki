@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     '0x23F02E9272EAc1F12F5be76D48b4a15323778f08', '0xCb2a5c130709a4C6c4BA39368879A523C0060c71',
 ]])
 @pytest.mark.parametrize('query_method', ['etherscan', 'blockscout'])
-@pytest.mark.freeze_time('2023-11-19 19:58:00 GMT')
+@pytest.mark.freeze_time('2024-02-04 23:50:00 GMT')
 def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     """Test that when withdrawals are queried, they are properly saved in the DB.
 
@@ -49,7 +49,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
             group_by_event_ids=False,
         )
 
-    assert len(events) == 74
+    assert len(events) == 94
     account0_events, account1_events = 0, 0
     for idx, x in enumerate(events):
         assert isinstance(x, EthWithdrawalEvent)
@@ -129,8 +129,8 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
         assert isinstance(x.balance.amount, FVal)
         assert FVal('0.01') <= x.balance.amount <= FVal('0.06')
 
-    assert account0_events == 37
-    assert account1_events == 37
+    assert account0_events == 47
+    assert account1_events == 47
 
 
 @pytest.mark.vcr()

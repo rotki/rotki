@@ -727,7 +727,7 @@ def test_eth_validators_performance(eth2, database):
 
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=10, offset=0, ignore_cache=True)  # noqa: E501
 
-    assert set(performance.keys()) == {'sums', 'validators'}
+    assert set(performance.keys()) == {'sums', 'validators', 'entries_found', 'entries_total'}
     expected_sums = {
         'execution': block_reward_1 + mev_reward_1 + block_reward_2 + mev_reward_2 + no_mev_block_reward_2,  # noqa: E501
         'exits': exit_1 - 32,
@@ -798,6 +798,8 @@ def test_eth_validators_performance_recent(eth2, database):
     outstanding_pnl_v2 = FVal('0.013201266')
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=ts_now(), limit=10, offset=0, ignore_cache=False)  # noqa: E501
     assert performance == {
+        'entries_found': 2,
+        'entries_total': 2,
         'sums': {
             'apr': FVal('0.00497218371300232822046044531103879577396521140372369920821979326342974424955260'),  # noqa: E501
             'execution': block_reward_1,
@@ -1074,3 +1076,35 @@ def test_get_active_validator_indices(database):
 
     with database.conn.read_ctx() as cursor:
         assert dbeth2.get_active_validator_indices(cursor) == {active_index, noevents_index}
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'],
+    match_on=['beaconchain_matcher'],
+)
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2024-02-05 09:00:00 GMT')
+def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
+    """In v40->v41 upgrade the validator table changed, and more columns were addedd.
+    Most of them were optional but in normal operation they would be detected.
+    Adding this test to make sure this happens.
+    """
+    with eth2.database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO eth2_validators('
+            'validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
+            [
+                (42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0'),  # noqa: E501
+                (1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35'),  # noqa: E501
+                (5232, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0'),  # noqa: E501
+            ],
+        )
+
+    eth2.detect_and_refresh_validators([])
+
+    with eth2.database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT * from eth2_validators').fetchall() == [
+            (4, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None),  # noqa: E501
+            (5, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None),  # noqa: E501
+            (6, 5232, '0xb0ac2e604e8a961e3247e80d3e493ac7fb9e3a5616e5190e2febcb717550bd50d3bcfdb03e079ef649b16d0d37acc3bb', '1', '0x347A70cb4Ff0297102DC549B044c41bD61e22718', 1606824023, None),  # noqa: E501
+        ]
