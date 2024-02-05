@@ -8,9 +8,10 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
     GMX_ROUTER_ADDRESS,
     GMX_VAULT_ADDRESS,
 )
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_GMX
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -185,3 +186,125 @@ def test_decrease_short_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_acc
             address=string_to_evm_address('0x11D62807dAE812a0F1571243460Bf94325F43BB7'),
         ),
     ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xB5E10681aA81cd65D74912015220999044b9520C']])
+def test_stake_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+    evmhash = deserialize_evm_tx_hash('0x682aa15cb8d49021ae5b12c89f6d0138387c4819b1a31b80f67b70aac55d199c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address = arbitrum_one_accounts[0]
+    gas_amount, staked_amount = '0.0000631134', '15.9'
+    approve_amount = '115792089237316195423570985008687907853269984665640564039169.929301629384984299'  # noqa: E501
+    timestamp = TimestampMS(1707120778000)
+    sgmx_address = string_to_evm_address('0x908C4D94D34924765f1eDc22A1DD098397c59dD4')
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_GMX,
+            balance=Balance(FVal(approve_amount)),
+            location_label=user_address,
+            notes=f'Set GMX spending approval of {user_address} by {sgmx_address} to {approve_amount}',  # noqa: E501
+            address=sgmx_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_GMX,
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes=f'Stake {staked_amount} GMX in GMX',
+            counterparty=CPT_GMX,
+            address=sgmx_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x908C4D94D34924765f1eDc22A1DD098397c59dD4'),
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes='Receive 15.9 sGMX after staking in GMX',
+            counterparty=CPT_GMX,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0x908C4D94D34924765f1eDc22A1DD098397c59dD4'),
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes=f'Stake {staked_amount} sGMX in GMX',
+            counterparty=CPT_GMX,
+            address=string_to_evm_address('0x4d268a7d4C16ceB5a606c173Bd974984343fea13'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x4d268a7d4C16ceB5a606c173Bd974984343fea13'),
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes=f'Receive {staked_amount} sbGMX after staking in GMX',
+            counterparty=CPT_GMX,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0x4d268a7d4C16ceB5a606c173Bd974984343fea13'),
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes=f'Stake {staked_amount} sbGMX in GMX',
+            counterparty=CPT_GMX,
+            address=string_to_evm_address('0xd2D1162512F927a7e282Ef43a362659E4F2a728F'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0xd2D1162512F927a7e282Ef43a362659E4F2a728F'),
+            balance=Balance(FVal(staked_amount)),
+            location_label=user_address,
+            notes=f'Receive {staked_amount} sbfGMX after staking in GMX',
+            counterparty=CPT_GMX,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events

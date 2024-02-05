@@ -11,7 +11,9 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
     EXECUTE_DECREASE_TOPIC,
     EXECUTE_INCREASE_ABI,
     GMX_POSITION_ROUTER,
+    GMX_REWARD_ROUTER,
     GMX_ROUTER_ADDRESS,
+    STAKE_GMX,
     SWAP_TOPIC,
 )
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -197,12 +199,49 @@ class GmxDecoder(ArbitrumDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_stake(self, context: DecoderContext) -> DecodingOutput:
+        """Decode staking events in the GMX protocol for the GMX asset"""
+        if context.tx_log.topics[0] != STAKE_GMX:
+            return DEFAULT_DECODING_OUTPUT
+
+        account = hex_or_bytes_to_address(context.tx_log.data[0:32])
+        token_addrs = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+
+        staked_token = self.base.get_or_create_evm_asset(address=token_addrs)
+        amount = asset_normalized_value(amount=amount_raw, asset=staked_token)
+
+        for event in context.decoded_events:
+            if (
+                event.location_label == account and
+                event.event_type == HistoryEventType.SPEND and
+                event.balance.amount == amount
+            ):
+                event.counterparty = CPT_GMX
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                # the contract when staking GMX also creates transfers for (sGMX, sbGMX, sbfGMX)
+                asset = event.asset.resolve_to_crypto_asset()
+                event.notes = f'Stake {amount} {asset.symbol} in GMX'
+            elif (
+                event.location_label == account and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.balance.amount == amount
+            ):
+                event.counterparty = CPT_GMX
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                asset = event.asset.resolve_to_crypto_asset()
+                event.notes = f'Receive {event.balance.amount} {asset.symbol} after staking in GMX'
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             GMX_ROUTER_ADDRESS: (self._decode_swap_event,),
             GMX_POSITION_ROUTER: (self.decode_position_change,),
+            GMX_REWARD_ROUTER: (self._decode_stake,),
         }
 
     @staticmethod
