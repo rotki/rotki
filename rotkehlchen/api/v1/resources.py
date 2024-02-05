@@ -174,6 +174,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
@@ -1894,6 +1895,7 @@ class Eth2StakePerformanceResource(BaseMethodView):
             ignore_cache: bool,
             addresses: list[ChecksumEvmAddress] | None,
             validator_indices: list[int] | None,
+            status: PerformanceStatusFilter,
     ) -> Response:
         return self.rest_api.get_eth2_staking_performance(
             async_query=async_query,
@@ -1904,6 +1906,7 @@ class Eth2StakePerformanceResource(BaseMethodView):
             ignore_cache=ignore_cache,
             addresses=addresses,
             validator_indices=validator_indices,
+            status=status,
         )
 
 

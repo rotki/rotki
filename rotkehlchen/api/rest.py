@@ -74,6 +74,7 @@ from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     save_curve_data_to_cache,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
@@ -2128,6 +2129,7 @@ class RestAPI:
             ignore_cache: bool,
             addresses: list[ChecksumEvmAddress] | None,
             validator_indices: list[int] | None,
+            status: PerformanceStatusFilter,
     ) -> dict[str, Any]:
         eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
         if eth2 is None:
@@ -2142,6 +2144,7 @@ class RestAPI:
                 ignore_cache=ignore_cache,
                 addresses=addresses,
                 validator_indices=validator_indices,
+                status=status,
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}

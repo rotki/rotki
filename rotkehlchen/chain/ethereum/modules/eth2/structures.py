@@ -308,3 +308,9 @@ def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str
         'amount': str(normalized_value),
         'usd_value': str(normalized_value * eth_usd_price),
     }
+
+
+class PerformanceStatusFilter(StrEnum):
+    ALL = auto()
+    ACTIVE = auto()
+    EXITED = auto()

@@ -183,7 +183,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2024-02-04 19:20:00 GMT')
+@pytest.mark.freeze_time('2024-02-05 22:41:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(rotkehlchen_api_server):
     # Add ETH1 account and detect validators it deposited
@@ -214,6 +214,7 @@ def test_staking_performance(rotkehlchen_api_server):
         withdrawable_ts=Timestamp(1706386007),
         status=ValidatorStatus.EXITING,  # since we don't have withdrawals information yet
     )
+    total_validators, active_validators, exited_validators = 402, 259, 143
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -260,31 +261,31 @@ def test_staking_performance(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result == {
         'sums': {
-            'apr': '0.0597652039949379861158979362586657031468575710584143257025001370766265371913491',  # noqa: E501
+            'apr': '0.0598080162973492711722261095458136559176555794121516200767156057061497568559050',  # noqa: E501
             'execution': '0.951964836013963505',
             'exits': '0.0014143880000005993',
-            'outstanding_consensus_pnl': '0.000829238',
-            'sum': '3.2351487110139639043',
+            'outstanding_consensus_pnl': '0.003333439',
+            'sum': '3.2376529120139639043',
             'withdrawals': '2.2809402489999998',
         },
         'validators': {
             '432840': {
-                'apr': '0.0466762036714707128052091929912369373004480648295118244406922158753010413605874',  # noqa: E501
+                'apr': '0.0466735116540885403833826177391315838983054123763424870753861445524620160608692',  # noqa: E501
                 'execution': '0.93361811418473',
                 'exits': '0.0014143880000005993',
                 'sum': '2.5266283731847305993',
                 'withdrawals': '1.591595871',
             },
             '624729': {
-                'apr': '0.0130890003234672733106887432674287658464095062289025012618079212013254958307617',  # noqa: E501
+                'apr': '0.0131345046432607307888434918066820720193501670358091330013294611536877407950358',  # noqa: E501
                 'execution': '0.018346721829233505',
-                'outstanding_consensus_pnl': '0.000829238',
-                'sum': '0.708520337829233305',
+                'outstanding_consensus_pnl': '0.003333439',
+                'sum': '0.711024538829233305',
                 'withdrawals': '0.6893443779999998',
             },
         },
         'entries_found': 2,
-        'entries_total': 402,
+        'entries_total': total_validators,
     }
 
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -294,14 +295,14 @@ def test_staking_performance(rotkehlchen_api_server):
         page, last_validator, count = 0, 0, 0
         while True:
             response = requests.put(
-                api_url_for(  # query performance first for only the 2 validators above
+                api_url_for(
                     rotkehlchen_api_server,
                     'eth2stakeperformanceresource',
                 ), json={'limit': 10, 'offset': 0 + page},
             )
             result = assert_proper_response_with_result(response)
-            assert result['entries_found'] == 402
-            assert result['entries_total'] == 402
+            assert result['entries_found'] == total_validators
+            assert result['entries_total'] == total_validators
             assert len(result['validators']) in (10, 2)
             for index, entry in result['validators'].items():
                 validator_index = int(index)
@@ -316,6 +317,19 @@ def test_staking_performance(rotkehlchen_api_server):
             page += 10
 
         assert get_balances.call_count == 1  # make sure cache works
+
+    # now filter by validator state
+    for status, expected_num in (('active', active_validators), ('exited', exited_validators)):
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2stakeperformanceresource',
+            ), json={'limit': 500, 'offset': 0, 'status': status},
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_found'] == expected_num
+        assert len(result['validators']) == expected_num
+        assert result['entries_total'] == total_validators
 
 
 @pytest.mark.skipif(
