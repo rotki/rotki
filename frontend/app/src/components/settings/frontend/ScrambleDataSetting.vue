@@ -63,7 +63,6 @@ const css = useCssModule();
             <RuiButton
               variant="text"
               icon
-              class="-mt-3"
               :disabled="!scrambleData"
               @click="randomMultiplier()"
             >

@@ -27,6 +27,7 @@ const GeneralSettings = z.object({
   submitUsageAnalytics: z.boolean(),
   ksmRpcEndpoint: z.string(),
   dotRpcEndpoint: z.string(),
+  beaconRpcEndpoint: z.string(),
   balanceSaveFrequency: z.preprocess(
     balanceSaveFrequency =>
       Math.min(
@@ -141,6 +142,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     balanceSaveFrequency: settings.balanceSaveFrequency,
     ksmRpcEndpoint: settings.ksmRpcEndpoint,
     dotRpcEndpoint: settings.dotRpcEndpoint,
+    beaconRpcEndpoint: settings.beaconRpcEndpoint,
     submitUsageAnalytics: settings.submitUsageAnalytics,
     activeModules: settings.activeModules,
     btcDerivationGapLimit: settings.btcDerivationGapLimit,

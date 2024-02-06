@@ -2545,6 +2545,7 @@
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
+      "beacon_rpc_endpoint": "RPC Endpoint for the ETH consensus layer beacon node",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
@@ -2605,6 +2606,11 @@
         "invalid_frequency": "Frequency must be between {start} and {end} hours",
         "non_empty": "Please enter the number of hours",
         "success": "Data save frequency set to {frequency} hours"
+      },
+      "beacon_rpc": {
+        "error": "There was an error setting the RPC endpoint for the ETH consensus layer",
+        "success_set": "The RPC endpoint for the ETH consensus layer was set to {endpoint}",
+        "success_unset": "The RPC endpoint for the ETH consensus layer was successfully unset"
       },
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",

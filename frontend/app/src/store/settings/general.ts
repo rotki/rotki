@@ -26,6 +26,9 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const dotRpcEndpoint: ComputedRef<string> = computed(
     () => settings.dotRpcEndpoint,
   );
+  const beaconRpcEndpoint: ComputedRef<string> = computed(
+    () => settings.beaconRpcEndpoint,
+  );
   const balanceSaveFrequency: ComputedRef<number> = computed(
     () => settings.balanceSaveFrequency,
   );
@@ -97,6 +100,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     submitUsageAnalytics,
     ksmRpcEndpoint,
     dotRpcEndpoint,
+    beaconRpcEndpoint,
     balanceSaveFrequency,
     dateDisplayFormat,
     currency,

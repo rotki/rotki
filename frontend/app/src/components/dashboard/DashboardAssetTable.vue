@@ -219,6 +219,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       :rows="filtered"
       :loading="loading"
       :sort.sync="sort"
+      :search="search"
       :sort-modifiers="{ external: true }"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
