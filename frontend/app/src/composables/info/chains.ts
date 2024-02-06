@@ -74,6 +74,9 @@ export const useSupportedChains = createSharedComposable(() => {
   const getEvmChainName = (chain: Blockchain): string | null =>
     get(evmChainsData).find(x => x.id === chain)?.evmChainName || null;
 
+  const getChainInfoByName = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
+    computed(() => get(supportedChains).find(({ name }) => name.toLowerCase() === get(chain).toLowerCase()) || null);
+
   const getChainInfoById = (
     chain: MaybeRef<string>,
   ): ComputedRef<ChainInfo | null> =>
@@ -129,6 +132,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getEvmChainName,
     getChain,
     getChainInfoById,
+    getChainInfoByName,
     getChainName,
     getChainImageUrl,
     isEvm,
