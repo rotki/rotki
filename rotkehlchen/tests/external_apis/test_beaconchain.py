@@ -11,32 +11,9 @@ def fixture_session_beaconchain(messages_aggregator):
     return BeaconChain(database=None, msg_aggregator=messages_aggregator)
 
 
-def _assert_valid_performance_entry(entry):
-    """Can't really test for an actual balance so just test it's a valid int"""
-    assert entry.balance >= 0
-    assert isinstance(entry.performance_1d, int)
-    assert isinstance(entry.performance_1w, int)
-    assert isinstance(entry.performance_1m, int)
-    assert isinstance(entry.performance_1y, int)
-    assert isinstance(entry.performance_total, int)
-
-
-def test_get_performance_single(session_beaconchain):
-    performance_map = session_beaconchain.get_performance([9])
-    _assert_valid_performance_entry(performance_map[9])
-
-
 def test_query_chunks_empty_list():
     """Test that one of the endpoints works with empty list"""
     assert calculate_query_chunks([]) == []
-
-
-def test_get_performance_more_than_100(session_beaconchain):
-    indices = list(range(1, 105))
-    performance_map = session_beaconchain.get_performance(indices)
-    assert len(indices) == len(performance_map)
-    for index in indices:
-        _assert_valid_performance_entry(performance_map[index])
 
 
 def test_get_eth1_validator_indices_single(session_beaconchain):

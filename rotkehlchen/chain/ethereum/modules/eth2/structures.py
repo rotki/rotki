@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -188,35 +188,6 @@ class ValidatorDailyStats(AccountingEventMixin):
             taxable=True,
         )
         return 1
-
-
-class ValidatorPerformance(NamedTuple):
-    balance: int  # in gwei
-    performance_1d: int  # in gwei
-    performance_1w: int  # in gwei
-    performance_1m: int  # in gwei
-    performance_1y: int  # in gwei
-    performance_total: int  # in gwei
-
-    def serialize(self, eth_usd_price: FVal) -> dict[str, dict[str, str]]:
-        return {
-            'balance': _serialize_gwei_with_price(self.balance, eth_usd_price),
-            'performance_1d': _serialize_gwei_with_price(self.performance_1d, eth_usd_price),
-            'performance_1w': _serialize_gwei_with_price(self.performance_1w, eth_usd_price),
-            'performance_1m': _serialize_gwei_with_price(self.performance_1m, eth_usd_price),
-            'performance_1y': _serialize_gwei_with_price(self.performance_1y, eth_usd_price),
-            'performance_total': _serialize_gwei_with_price(self.performance_total, eth_usd_price),
-        }
-
-
-DEPOSITING_VALIDATOR_PERFORMANCE = ValidatorPerformance(
-    balance=32000000000,
-    performance_1d=0,
-    performance_1w=0,
-    performance_1m=0,
-    performance_1y=0,
-    performance_total=0,
-)
 
 
 VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501

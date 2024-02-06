@@ -4,7 +4,7 @@ import operator
 from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 
 import requests
 
@@ -36,17 +36,45 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class BeaconNode:
+    """Represents a connection to a beacon node"""
 
     def __init__(self, rpc_endpoint: str) -> None:
-        self.rpc_endpoint = rpc_endpoint.rstrip('/')
-        self.session = requests.session()
+        """Initialize the connection to the beacon node.
 
+        May raise:
+        - RemoteError if we can't connect to the given rpc endpoint
+        """
+        self.session = requests.session()
+        self.set_rpc_endpoint(rpc_endpoint)
+
+    def set_rpc_endpoint(self, rpc_endpoint: str) -> None:
+        """May raise:
+        - RemoteError if we can't connect to the given rpc endpoint
+        """
+        self.rpc_endpoint = rpc_endpoint.rstrip('/')
+        result = self.query('/eth/v1/node/version')
+        try:
+            version = result['version']
+        except KeyError as e:
+            raise RemoteError(f'Failed to parse the node version response from {rpc_endpoint}') from e  # noqa: E501
+
+        log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
+
+    @overload
+    def query(self, querystr: Literal['/eth/v1/node/version']) -> dict:  # type: ignore  # not sure how to fix the overlapping type at overload here
+        ...
+
+    @overload
     def query(self, querystr: str) -> list[dict]:
+        ...
+
+    def query(self, querystr: str) -> list[dict] | dict:
         """
         May raise:
         - RemoteError due to problems querying the node
         """
         querystr = self.rpc_endpoint + '/' + querystr
+        log.debug(f'Querying beacon node {querystr}')
         try:
             response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
@@ -94,8 +122,22 @@ class BeaconInquirer:
     def __init__(self, rpc_endpoint: str | None, beaconchain: 'BeaconChain') -> None:
         self.node = None
         if rpc_endpoint:  # truthy check on purpose as empty string can also get here
-            self.node = BeaconNode(rpc_endpoint)
+            try:
+                self.node = BeaconNode(rpc_endpoint)
+            except RemoteError:
+                log.error(f'Failed to connect to beacon node at {rpc_endpoint}')
+
         self.beaconchain = beaconchain
+
+    def set_rpc_endpoint(self, rpc_endpoint: str) -> None:
+        """Tries to set the rpc node for the beacon node
+        May raise:
+        - RemoteError if we can't connect to the given rpc endpoint
+        """
+        if self.node is not None:
+            self.node.set_rpc_endpoint(rpc_endpoint=rpc_endpoint)
+        else:
+            self.node = BeaconNode(rpc_endpoint=rpc_endpoint)
 
     def get_balances(
             self,
@@ -115,7 +157,7 @@ class BeaconInquirer:
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
-                    querystr='/eth/v1/beacon/states/head/validators?id={chunk}}',
+                    querystr='/eth/v1/beacon/states/head/validators?id={chunk}',
                 )
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator balances via a beacon node failed due to {e!s}')

@@ -9,7 +9,7 @@ import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -229,40 +229,6 @@ class BeaconChain(ExternalServiceWithApiKey):
             module='validator',
             endpoint=None,
         )
-
-    def get_performance(
-            self,
-            indices_or_pubkeys: list[int | Eth2PubKey],
-    ) -> dict[int, ValidatorPerformance]:
-        """Get the performance of all the validators given from the list of indices or pubkeys
-
-        Queries in chunks of 100 due to api limitations
-
-        May raise:
-        - RemoteError due to problems querying beaconcha.in API
-        """
-        data = self._query_chunked_endpoint(
-            indices_or_pubkeys=indices_or_pubkeys,
-            module='validator',
-            endpoint='performance',
-        )
-        performance = {}
-        for entry in data:
-            try:
-                index = entry['validatorindex']
-                performance[index] = ValidatorPerformance(
-                    balance=entry.get('balance', 0),
-                    performance_1d=entry.get('performance1d', 0),
-                    performance_1w=entry.get('performance7d', 0),
-                    performance_1m=entry.get('performance31d', 0),
-                    performance_1y=entry.get('performance365d', 0),
-                    performance_total=entry.get('performancetotal', 0),
-                )
-            except KeyError as e:
-                log.error(f'Skipping validator from performance endpoint due to unknown key {e} in entry: {entry}')  # noqa: E501
-                continue
-
-        return performance
 
     def get_and_store_produced_blocks(
             self,
