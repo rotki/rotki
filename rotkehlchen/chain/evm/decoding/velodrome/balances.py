@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 
 class VelodromeLikeBalances(ProtocolWithGauges):
@@ -26,13 +25,11 @@ class VelodromeLikeBalances(ProtocolWithGauges):
             self,
             database: DBHandler,
             evm_inquirer: 'OptimismInquirer | BaseInquirer',
-            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
             counterparty: PROTOCOLS_WITH_BALANCES,
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
-            chain_id=chain_id,
             counterparty=counterparty,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
             gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501

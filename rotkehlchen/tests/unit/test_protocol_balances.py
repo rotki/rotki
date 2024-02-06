@@ -6,11 +6,12 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT
+from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT, A_STETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -42,7 +43,6 @@ def test_curve_balances(
     curve_balances_inquirer = CurveBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     curve_balances = curve_balances_inquirer.query_balances()
     user_balance = curve_balances[ethereum_accounts[0]]
@@ -71,7 +71,6 @@ def test_convex_gauges_balances(
     convex_balances_inquirer = ConvexBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
@@ -107,7 +106,6 @@ def test_convex_staking_balances(
     convex_balances_inquirer = ConvexBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
@@ -142,7 +140,6 @@ def test_convex_staking_balances_without_gauges(
     convex_balances_inquirer = ConvexBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
@@ -171,7 +168,6 @@ def test_velodrome_v2_staking_balances(
     balances_inquirer = VelodromeBalances(
         database=database,
         evm_inquirer=optimism_inquirer,
-        chain_id=ChainID.OPTIMISM,
     )
     balances = balances_inquirer.query_balances()  # queries the gauge balance of the address if the address has interacted with a known gauge  # noqa: E501
     user_balance = balances[optimism_accounts[0]]
@@ -204,7 +200,6 @@ def test_thegraph_balances(
     thegraph_balances_inquirer = ThegraphBalances(
         database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     thegraph_balances = thegraph_balances_inquirer.query_balances()
     user_balance = thegraph_balances[ethereum_accounts[0]]
@@ -232,8 +227,34 @@ def test_octant_balances(
     octant_balances_inquirer = OctantBalances(
         database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
-        chain_id=ChainID.ETHEREUM,
     )
     octant_balances = octant_balances_inquirer.query_balances()
     user_balance = octant_balances[ethereum_accounts[0]]
     assert user_balance[A_GLM.resolve_to_evm_token()] == Balance(amount=FVal('1000'), usd_value=FVal('1500'))  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x15AcAA0E27b70AfE3D7631cDAf5516BCAbE3bc0F']])
+def test_eigenlayer_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'OptimismTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    database = ethereum_transaction_decoder.database
+    tx_hex = deserialize_evm_tx_hash('0x89981857ab9f31369f954ae332ffd910e1f3c8efe531efde5f26666316855591')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    assert len(events) == 2
+    balances_inquirer = EigenlayerBalances(
+        database=database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[ethereum_accounts[0]][A_STETH.resolve_to_evm_token()] == Balance(
+        amount=FVal('0.114063122816914142'),
+        usd_value=FVal('0.1710946842253712130'),
+    )

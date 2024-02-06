@@ -54,6 +54,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Diva',
         'Dxdaomesa',
         'Eas',
+        'Eigenlayer',
         'Ens',
         'Eth2',
         'Gitcoin',
@@ -163,6 +164,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'socket',
         'juicebox',
         'shutter',
+        'eigenlayer',
     }
 
 

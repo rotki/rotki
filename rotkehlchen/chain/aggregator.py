@@ -36,6 +36,7 @@ from rotkehlchen.chain.ethereum.modules import (
 )
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
@@ -172,7 +173,13 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
     'Compound': True,
 }
 CHAIN_TO_BALANCE_PROTOCOLS = {
-    ChainID.ETHEREUM: (CurveBalances, ConvexBalances, ThegraphBalances, OctantBalances),
+    ChainID.ETHEREUM: (
+        CurveBalances,
+        ConvexBalances,
+        ThegraphBalances,
+        OctantBalances,
+        EigenlayerBalances,
+    ),
     ChainID.OPTIMISM: (VelodromeBalances,),
     ChainID.BASE: (AerodromeBalances,),
 }
@@ -1026,9 +1033,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             protocol_with_balance: ProtocolWithBalance = protocol(
                 database=self.database,
                 evm_inquirer=inquirer,
-                chain_id=chain_id,
             )
-            protocol_balances = protocol_with_balance.query_balances()
+            try:
+                protocol_balances = protocol_with_balance.query_balances()
+            except RemoteError as e:
+                log.error(f'Failed to query balances for {protocol} due to {e}. Skipping')
+                continue
+
             for address, asset_balances in protocol_balances.items():
                 address_balances = existing_balances[address]  # type: ignore  # chain's type is a subset of the type expected by balances.get so existing_balances is of the correct type here
                 for asset, balance in asset_balances.items():

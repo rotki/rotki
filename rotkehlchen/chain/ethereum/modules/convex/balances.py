@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,12 +33,10 @@ class ConvexBalances(ProtocolWithGauges):
             self,
             database: DBHandler,
             evm_inquirer: 'EvmNodeInquirer',
-            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
-            chain_id=chain_id,
             counterparty=CPT_CONVEX,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
             gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501

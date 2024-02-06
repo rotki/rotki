@@ -20,7 +20,6 @@ from .constants import CONTRACT_STAKING, CPT_THEGRAPH
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -31,12 +30,10 @@ class ThegraphBalances(ProtocolWithBalance):
             self,
             database: DBHandler,
             evm_inquirer: 'EthereumInquirer',
-            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
-            chain_id=chain_id,
             counterparty=CPT_THEGRAPH,
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
