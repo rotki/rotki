@@ -1189,7 +1189,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                             usd_value=ZERO,
                         ),
                         notes=notes,
-                        event_type=event_type,
+                        event_type=event_type if event_type != HistoryEventType.RECEIVE else HistoryEventType.SPEND,  # in instant swaps @tewshi found that fees can also be in the receive part  # noqa: E501
                         event_subtype=HistoryEventSubType.FEE,
                     )))
                     # Increase the fee index to not have duplicates in the case of having a normal

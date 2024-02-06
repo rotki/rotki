@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Fix an issue where kraken instant swaps could have an invalid type for fee events.
+
 * :release:`1.31.3 <2023-12-31>`
 * :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
 * :bug:`7359` NFTs should be queried and displayed properly again.
