@@ -10,6 +10,7 @@ Changelog
 * :feature:`6460` rotki will now properly import the trades from the CSVs that are exported from Kucoin.
 * :feature:`7018` rotki will now save the labels for a blockchain account in the address book. If a name is already present in the address book for that blockchain account, Name Priority setting in 'Frontend-only Settings' section is used to determine which one to keep. Addressbook is prioritized by default.
 * :feature:`-` rotki is now available in French.
+* :feature:`-` Tokens deposited in EigenLayer will now be tracked.
 * :feature:`-` Aerodrome transactions in BASE will now be properly supported.
 * :feature:`-` Notes for governance votes will include the reasoning if it was provided in the transaction when voting on-chain.
 * :feature:`7214` Swaps done through Paraswap Augustus on Ethereum, Arbitrum, Optimism, Polygon, and Base chains, will now get properly decoded in the history view and will be taken into account during accounting.

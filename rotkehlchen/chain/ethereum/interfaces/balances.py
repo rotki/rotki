@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -36,6 +35,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'velodrome',
     'thegraph',
     'octant',
+    'eigenlayer',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 
@@ -52,14 +52,12 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
             self,
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
-            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
             counterparty: PROTOCOLS_WITH_BALANCES,
             deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
     ):
         self.counterparty = counterparty
         self.event_db = DBHistoryEvents(database)
         self.evm_inquirer = evm_inquirer
-        self.chain_id = chain_id
         self.deposit_event_types = deposit_event_types
 
     def addresses_with_activity(
@@ -74,7 +72,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
             products=products,
-            location=Location.from_chain_id(self.chain_id),
+            location=Location.from_chain_id(self.evm_inquirer.chain_id),
         )
         with self.event_db.db.conn.read_ctx() as cursor:
             events = self.event_db.get_history_events(
@@ -114,12 +112,11 @@ class ProtocolWithGauges(ProtocolWithBalance):
             self,
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
-            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
             counterparty: PROTOCOLS_WITH_BALANCES,
             deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
             gauge_deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
     ):
-        super().__init__(database=database, evm_inquirer=evm_inquirer, chain_id=chain_id, counterparty=counterparty, deposit_event_types=deposit_event_types)  # noqa: E501
+        super().__init__(database=database, evm_inquirer=evm_inquirer, counterparty=counterparty, deposit_event_types=deposit_event_types)  # noqa: E501
         self.gauge_deposit_event_types = gauge_deposit_event_types
 
     def addresses_with_gauge_deposits(self) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
@@ -150,7 +147,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
 
             # Now map the gauge to the underlying token
             for lp_token, balance in gauges_balances.items():
-                lp_token_price = Inquirer().find_usd_price(lp_token)
+                lp_token_price = Inquirer.find_usd_price(lp_token)
                 balances[lp_token] += Balance(
                     amount=balance,
                     usd_value=lp_token_price * balance,
