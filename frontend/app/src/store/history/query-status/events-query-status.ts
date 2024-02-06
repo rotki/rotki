@@ -9,6 +9,12 @@ export const useEventsQueryStatusStore = defineStore(
     const createKey = ({ location, name }: HistoryEventsQueryData) =>
       location + name;
 
+    const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
+      item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;
+
+    const { queryStatus, isAllFinished, removeQueryStatus, resetQueryStatus }
+      = useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
+
     const setQueryStatus = (data: HistoryEventsQueryData): void => {
       const status = { ...get(queryStatus) };
       const key = createKey(data);
@@ -19,12 +25,6 @@ export const useEventsQueryStatusStore = defineStore(
       };
       set(queryStatus, status);
     };
-
-    const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
-      item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;
-
-    const { queryStatus, isAllFinished, removeQueryStatus, resetQueryStatus }
-      = useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
 
     return {
       queryStatus,
