@@ -4,9 +4,22 @@ import type { AsyncComponent, Ref } from 'vue';
 
 const { t } = useI18n();
 
-interface RpcSettingTab {
+interface ChainRpcSettingTab {
   chain: Blockchain;
   component: AsyncComponent;
+}
+
+interface CustomRpcSettingTab {
+  id: string;
+  name: string;
+  image: string;
+  component: AsyncComponent;
+}
+
+type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
+
+function isChain(item: RpcSettingTab): item is ChainRpcSettingTab {
+  return 'chain' in item;
 }
 
 const rpcSettingTab: Ref<number> = ref(0);
@@ -36,6 +49,14 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
       () => import('@/components/settings/general/rpc/DotRpcSetting.vue'),
     ),
   },
+  {
+    id: 'eth_consensus_layer',
+    name: 'ETH Beacon Node',
+    image: './assets/images/protocols/ethereum.svg',
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/BeaconchainRpcSetting.vue'),
+    ),
+  },
 ]);
 </script>
 
@@ -49,31 +70,57 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
       <RuiTabs
         v-model="rpcSettingTab"
         color="primary"
+        class="!h-auto"
       >
         <RuiTab
           v-for="tab in rpcSettingTabs"
-          :key="tab.chain"
+          :key="isChain(tab) ? tab.chain : tab.id"
+          class="!py-3"
         >
-          <ChainDisplay
-            :chain="tab.chain"
-            dense
+          <LocationDisplay
+            v-if="isChain(tab)"
+            :open-details="false"
+            :identifier="tab.chain"
           />
+
+          <div
+            v-else
+            class="flex flex-col items-center gap-1"
+          >
+            <AppImage
+              :src="tab.image"
+              size="24px"
+              contain
+              class="icon-bg p-[0.1rem]"
+            />
+            <span class="capitalize text-rui-text-secondary -mb-1">
+              {{ tab.name }}
+            </span>
+          </div>
         </RuiTab>
       </RuiTabs>
       <RuiDivider class="mb-4" />
       <RuiTabItems v-model="rpcSettingTab">
         <template #default>
-          <RuiTabItem
+          <template
             v-for="tab in rpcSettingTabs"
-            :key="tab.chain"
           >
-            <template #default>
-              <Component
-                :is="tab.component"
-                :chain="tab.chain"
-              />
-            </template>
-          </RuiTabItem>
+            <RuiTabItem
+              :key="isChain(tab) ? tab.chain : tab.id"
+            >
+              <template #default>
+                <Component
+                  :is="tab.component"
+                  v-if="isChain(tab)"
+                  :chain="tab.chain"
+                />
+                <Component
+                  :is="tab.component"
+                  v-else
+                />
+              </template>
+            </RuiTabItem>
+          </template>
         </template>
       </RuiTabItems>
     </div>

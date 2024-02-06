@@ -21,6 +21,7 @@ export const Defaults = {
   FLOATING_PRECISION: 2,
   KSM_RPC_ENDPOINT: 'http://localhost:9933',
   DOT_RPC_ENDPOINT: '', // same as Kusama, must be set by user
+  BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user
   BALANCE_SAVE_FREQUENCY: 24,
   ANONYMOUS_USAGE_ANALYTICS: true,
   DEFAULT_QUERY_PERIOD: 5,

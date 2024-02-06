@@ -11,6 +11,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     uiFloatingPrecision: Defaults.FLOATING_PRECISION,
     ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
     dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
+    beaconRpcEndpoint: Defaults.BEACON_RPC_ENDPOINT,
     balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,
     dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
     submitUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
