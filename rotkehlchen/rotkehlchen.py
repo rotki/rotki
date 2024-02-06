@@ -1059,6 +1059,8 @@ class Rotkehlchen:
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
+        # TODO: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=52425560
+        # For those rpc endpoints improve the logic and make it similar to EVM rpc endpoints
         if settings.ksm_rpc_endpoint is not None:
             result, msg = self.chains_aggregator.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
             if not result:
@@ -1067,6 +1069,14 @@ class Rotkehlchen:
         if settings.dot_rpc_endpoint is not None:
             result, msg = self.chains_aggregator.set_dot_rpc_endpoint(settings.dot_rpc_endpoint)
             if not result:
+                return False, msg
+
+        if settings.beacon_rpc_endpoint is not None and (eth2 := self.chains_aggregator.get_module('eth2')) is not None:  # noqa: E501
+            try:
+                eth2.beacon_inquirer.set_rpc_endpoint(settings.beacon_rpc_endpoint)
+            except RemoteError as e:
+                msg = str(e)
+                log.error(f'Failed to connect to given beacon node {settings.beacon_rpc_endpoint} due to {msg}')  # noqa: E501
                 return False, msg
 
         if settings.btc_derivation_gap_limit is not None:
