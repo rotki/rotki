@@ -736,7 +736,7 @@ def test_eth_validators_performance(eth2, database):
     }
     for check_key in ('execution', 'exits', 'sum', 'withdrawals'):
         assert performance['sums'][check_key] == expected_sums[check_key]
-    assert performance['sums']['apr'].is_close(FVal('0.264206133835969099415'))
+    assert performance['sums']['apr'].is_close(FVal('0.00412822186909020241811060649139005241062636710576993131056417104116726771999922'))  # noqa: E501
 
     assert set(performance['validators'].keys()) == {vindex1, vindex2}
     expected_vindex1 = {
@@ -744,21 +744,21 @@ def test_eth_validators_performance(eth2, database):
         'exits': exit_1 - 32,
         'sum': block_reward_1 + mev_reward_1 + withdrawal_1 + (exit_1 - 32),
     }
-    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.1884547248340478890935'))  # noqa: E501
+    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
     expected_vindex2 = {
         'execution': block_reward_2 + mev_reward_2 + no_mev_block_reward_2,
         'sum': block_reward_2 + mev_reward_2 + no_mev_block_reward_2,
     }
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.0757514090019212103219314'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00236723212073703914884664148457331676693260211659534522703679738024976190937018'))  # noqa: E501
 
     # Check pagination and that cache works
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=1, offset=0, ignore_cache=False)  # noqa: E501
     assert set(performance['validators'].keys()) == {vindex1}
-    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.1884547248340478890935'))  # noqa: E501
+    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
 
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=2, offset=1, ignore_cache=False)  # noqa: E501
     assert set(performance['validators'].keys()) == {vindex2}
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.0757514090019212103219314'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00236723212073703914884664148457331676693260211659534522703679738024976190937018'))  # noqa: E501
 
 
 @pytest.mark.vcr()
@@ -801,18 +801,18 @@ def test_eth_validators_performance_recent(eth2, database):
         'entries_found': 2,
         'entries_total': 2,
         'sums': {
-            'apr': FVal('0.00497218371300232822046044531103879577396521140372369920821979326342974424955260'),  # noqa: E501
+            'apr': FVal('0.0000776903705156613784446944579849811839682064281831828001284342697410897538992595'),  # noqa: E501
             'execution': block_reward_1,
             'outstanding_consensus_pnl': outstanding_pnl_v1 + outstanding_pnl_v2,
             'sum': block_reward_1 + outstanding_pnl_v1 + outstanding_pnl_v2,
         }, 'validators': {
             vindex1: {
-                'apr': FVal('0.00472827968417725880151267849015720859748218458723907966196481250066843416551589'),  # noqa: E501
+                'apr': FVal('0.000147758740130539337547271202817412768671318268351221239436400390645888567672372'),  # noqa: E501
                 'execution': block_reward_1,
                 'outstanding_consensus_pnl': outstanding_pnl_v1,
                 'sum': block_reward_1 + outstanding_pnl_v1,
             }, vindex2: {
-                'apr': FVal('0.000243904028825069418947766820881587176483026816484619546254980762761310084036708'),  # noqa: E501
+                'apr': FVal('0.00000762200090078341934211771315254959926509458801514436082046814883629094012614712'),  # noqa: E501
                 'outstanding_consensus_pnl': outstanding_pnl_v2,
                 'sum': outstanding_pnl_v2,
             },
