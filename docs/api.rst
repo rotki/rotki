@@ -10140,7 +10140,7 @@ Dealing with ignored assets
           "message": ""
       }
 
-   :resjson list successful: A list of asset identifier that were removed from the list of ignored assets.
+   :resjson list successful: A list of asset identifiers that were removed from the list of ignored assets.
    :resjson list no_action: A list of assets that weren't ignored and no action was taken on them.
    :statuscode 200: Assets successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
