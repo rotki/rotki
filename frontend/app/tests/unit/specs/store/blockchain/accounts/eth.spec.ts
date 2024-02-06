@@ -46,7 +46,7 @@ describe('store::blockchain/accounts/eth', () => {
     entries: [
       {
         ...payload,
-        validatorIndex: parseInt(payload.validatorIndex),
+        index: parseInt(payload.validatorIndex),
       },
     ],
     entriesFound: 1,

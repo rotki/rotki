@@ -452,8 +452,7 @@ declare global {
   const useEmptyOrSome: typeof import('./composables/utils/useEmptyOrSome/index')['useEmptyOrSome']
   const useEth2Api: typeof import('./composables/api/staking/eth2')['useEth2Api']
   const useEth2DailyStats: typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']
-  const useEth2Rewards: typeof import('./composables/staking/eth2/rewards')['useEth2Rewards']
-  const useEth2StakingStore: typeof import('./store/staking/eth2')['useEth2StakingStore']
+  const useEth2Staking: typeof import('./composables/staking/eth2/eth2')['useEth2Staking']
   const useEthAccountBalances: typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']
   const useEthAccountsStore: typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']
   const useEthBalancesStore: typeof import('./store/blockchain/balances/eth')['useEthBalancesStore']
@@ -641,7 +640,6 @@ declare global {
   const useSpamAsset: typeof import('./composables/assets/spam')['useSpamAsset']
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
   const useSpeechSynthesis: typeof import('@vueuse/core')['useSpeechSynthesis']
-  const useStaking: typeof import('./composables/staking/index')['useStaking']
   const useStatisticsApi: typeof import('./composables/api/statistics/statistics-api')['useStatisticsApi']
   const useStatisticsStore: typeof import('./store/statistics/index')['useStatisticsStore']
   const useStatusStore: typeof import('./store/status')['useStatusStore']
@@ -1195,8 +1193,7 @@ declare module 'vue' {
     readonly useEmptyOrSome: UnwrapRef<typeof import('./composables/utils/useEmptyOrSome/index')['useEmptyOrSome']>
     readonly useEth2Api: UnwrapRef<typeof import('./composables/api/staking/eth2')['useEth2Api']>
     readonly useEth2DailyStats: UnwrapRef<typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']>
-    readonly useEth2Rewards: UnwrapRef<typeof import('./composables/staking/eth2/rewards')['useEth2Rewards']>
-    readonly useEth2StakingStore: UnwrapRef<typeof import('./store/staking/eth2')['useEth2StakingStore']>
+    readonly useEth2Staking: UnwrapRef<typeof import('./composables/staking/eth2/eth2')['useEth2Staking']>
     readonly useEthAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']>
     readonly useEthAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']>
     readonly useEthBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/eth')['useEthBalancesStore']>
@@ -1384,7 +1381,6 @@ declare module 'vue' {
     readonly useSpamAsset: UnwrapRef<typeof import('./composables/assets/spam')['useSpamAsset']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
-    readonly useStaking: UnwrapRef<typeof import('./composables/staking/index')['useStaking']>
     readonly useStatisticsApi: UnwrapRef<typeof import('./composables/api/statistics/statistics-api')['useStatisticsApi']>
     readonly useStatisticsStore: UnwrapRef<typeof import('./store/statistics/index')['useStatisticsStore']>
     readonly useStatusStore: UnwrapRef<typeof import('./store/status')['useStatusStore']>
@@ -1931,8 +1927,7 @@ declare module '@vue/runtime-core' {
     readonly useEmptyOrSome: UnwrapRef<typeof import('./composables/utils/useEmptyOrSome/index')['useEmptyOrSome']>
     readonly useEth2Api: UnwrapRef<typeof import('./composables/api/staking/eth2')['useEth2Api']>
     readonly useEth2DailyStats: UnwrapRef<typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']>
-    readonly useEth2Rewards: UnwrapRef<typeof import('./composables/staking/eth2/rewards')['useEth2Rewards']>
-    readonly useEth2StakingStore: UnwrapRef<typeof import('./store/staking/eth2')['useEth2StakingStore']>
+    readonly useEth2Staking: UnwrapRef<typeof import('./composables/staking/eth2/eth2')['useEth2Staking']>
     readonly useEthAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']>
     readonly useEthAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']>
     readonly useEthBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/eth')['useEthBalancesStore']>
@@ -2120,7 +2115,6 @@ declare module '@vue/runtime-core' {
     readonly useSpamAsset: UnwrapRef<typeof import('./composables/assets/spam')['useSpamAsset']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
-    readonly useStaking: UnwrapRef<typeof import('./composables/staking/index')['useStaking']>
     readonly useStatisticsApi: UnwrapRef<typeof import('./composables/api/statistics/statistics-api')['useStatisticsApi']>
     readonly useStatisticsStore: UnwrapRef<typeof import('./store/statistics/index')['useStatisticsStore']>
     readonly useStatusStore: UnwrapRef<typeof import('./store/status')['useStatusStore']>

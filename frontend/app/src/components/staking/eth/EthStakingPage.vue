@@ -1,99 +1,72 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import type { ComputedRef } from 'vue';
-import type {
-  Eth2DailyStatsPayload,
-  EthStakingFilter,
-  EthStakingPayload,
-  EthStakingPeriod,
-} from '@rotki/common/lib/staking/eth2';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import type { EthStakingFilter, EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const section = Section.STAKING_ETH2;
 
-const period: Ref<EthStakingPeriod> = ref({});
-const selection: Ref<EthStakingFilter> = ref({
+const period = ref<EthStakingPeriod>();
+const selection = ref<EthStakingFilter>({
   validators: [],
 });
 
-const store = useEth2StakingStore();
-const { details } = storeToRefs(store);
-const { fetchStakingDetails } = store;
+const {
+  performance,
+  performanceLoading,
+  pagination: performancePagination,
+  refreshPerformance,
+} = useEth2Staking();
 
 const { isModuleEnabled } = useModules();
 
 const enabled = isModuleEnabled(module);
 const {
   dailyStats,
-  fetchDailyStats,
-  syncStakingStats,
   dailyStatsLoading,
   pagination,
+  refreshStats,
 } = useEth2DailyStats();
-const { rewards, fetchRewards, loading: rewardsLoading } = useEth2Rewards();
 
-const { isLoading, shouldShowLoadingScreen, setStatus } = useStatusStore();
+const { isLoading, setStatus } = useStatusStore();
 
-const detailsLoading = shouldShowLoadingScreen(section);
 const primaryRefreshing = isLoading(section);
 
-const { eth2Validators } = storeToRefs(useEthAccountsStore());
+const accountsStore = useEthAccountsStore();
+const { eth2Validators } = storeToRefs(accountsStore);
+const { stakingBalances } = storeToRefs(useEthBalancesStore());
+const { fetchBlockchainBalances } = useBlockchainBalances();
 
-const ownership = computed(() => {
+const ownership = computed<Record<string, string>>(() => {
   const ownership: Record<string, string> = {};
-  for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
-    .entries)
-    ownership[validatorIndex] = ownershipPercentage;
-
-  return ownership;
-});
-
-const validatorFilter: ComputedRef<EthStakingPayload> = computed(() => {
-  const filter = get(selection);
-
-  if ('accounts' in filter) {
-    return {
-      addresses: filter.accounts.map(({ address }) => address),
-    };
+  for (const { index, ownershipPercentage } of get(eth2Validators).entries) {
+    if (ownershipPercentage)
+      ownership[index] = ownershipPercentage;
   }
-
-  return {
-    validatorIndices: filter.validators.map(
-      ({ validatorIndex }) => validatorIndex,
-    ),
-  };
-});
-
-const dailyStatsPayload: ComputedRef<Eth2DailyStatsPayload> = computed(() => {
-  const payload = get(pagination);
-  const { fromTimestamp, toTimestamp } = get(period);
-  return {
-    ...payload,
-    fromTimestamp,
-    toTimestamp,
-  };
+  return ownership;
 });
 
 const premium = usePremium();
 const { t } = useI18n();
 
-async function refreshStats(userInitiated: boolean): Promise<void> {
-  await fetchDailyStats(get(dailyStatsPayload));
-  const success = await syncStakingStats(userInitiated);
-  if (success) {
-    // We unref here to make sure that we use the latest pagination
-    await fetchDailyStats(get(dailyStatsPayload));
-  }
-}
-
 async function refresh(userInitiated = false): Promise<void> {
-  const filterBy = get(validatorFilter);
+  const refreshValidators = async () => {
+    await fetchBlockchainBalances({
+      ignoreCache: true,
+      blockchain: Blockchain.ETH2,
+    });
+    await accountsStore.fetchEth2Validators();
+  };
+
+  const validatorRefresh: Promise<void>[] = (userInitiated ? [refreshValidators()] : []);
+
   await Promise.allSettled([
     refreshStats(userInitiated),
-    fetchRewards(filterBy),
-    fetchStakingDetails(userInitiated, { ...filterBy, ...get(period) }),
+    refreshPerformance(userInitiated),
+    ...validatorRefresh,
   ]);
 }
 
@@ -103,33 +76,11 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  store.$reset();
   setStatus({
     section,
     status: Status.NONE,
   });
 });
-
-watch(validatorFilter, async (filter) => {
-  await Promise.allSettled([
-    fetchRewards({ ...filter, ...get(period) }),
-    fetchStakingDetails(false, filter),
-  ]);
-});
-
-watch(period, async (period) => {
-  await fetchRewards({ ...get(validatorFilter), ...period });
-});
-
-async function refreshClick() {
-  await refresh();
-  if (isDefined(pagination)) {
-    set(pagination, {
-      ...get(pagination),
-      onlyCache: false,
-    });
-  }
-}
 </script>
 
 <template>
@@ -158,7 +109,7 @@ async function refreshClick() {
                 variant="outlined"
                 color="primary"
                 :loading="primaryRefreshing || dailyStatsLoading"
-                @click="refreshClick()"
+                @click="refresh(true)"
               >
                 <template #prepend>
                   <RuiIcon name="refresh-line" />
@@ -173,24 +124,22 @@ async function refreshClick() {
 
       <EthStaking
         :refreshing="primaryRefreshing"
-        :secondary-refreshing="false"
         :validators="eth2Validators.entries"
+        :balances="stakingBalances"
         :filter="selection"
-        :period="period"
-        :rewards="rewards"
-        :rewards-loading="rewardsLoading"
-        :eth2-details="details"
-        :eth2-details-loading="detailsLoading"
-        :eth2-stats="dailyStats"
-        :eth2-stats-loading="dailyStatsLoading"
+        :period.sync="period"
+        :performance="performance"
+        :performance-loading="performanceLoading"
+        :performance-pagination.sync="performancePagination"
+        :stats="dailyStats"
+        :stats-loading="dailyStatsLoading"
+        :stats-pagination.sync="pagination"
         :ownership="ownership"
-        :pagination="pagination"
-        @update:stats-pagination="pagination = $event"
       >
         <template #selection>
           <EthValidatorFilter
             v-model="selection"
-            @update:period="period = $event"
+            :period.sync="period"
           />
         </template>
       </EthStaking>

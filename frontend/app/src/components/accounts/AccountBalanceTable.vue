@@ -394,7 +394,7 @@ defineExpose({
       v-if="isEth2"
       #item.ownershipPercentage="{ row }"
     >
-      <PercentageDisplay :value="row.ownershipPercentage" />
+      <PercentageDisplay :value="row.ownershipPercentage ?? '100'" />
     </template>
     <template
       v-if="hasTokenDetection && !loopring"

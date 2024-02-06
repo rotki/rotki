@@ -105,7 +105,7 @@ export function useEthAccountBalances() {
       const accounts: AccountWithBalanceAndSharedOwnership[] = [];
       const state = get(balances).eth2;
 
-      for (const { publicKey, validatorIndex, ownershipPercentage } of get(
+      for (const { publicKey, index, ownershipPercentage } of get(
         eth2Validators,
       ).entries) {
         const validatorBalances = state[publicKey];
@@ -121,7 +121,7 @@ export function useEthAccountBalances() {
           address: publicKey,
           chain: Blockchain.ETH2,
           balance,
-          label: validatorIndex.toString() ?? '',
+          label: index.toString() ?? '',
           tags: [],
           ownershipPercentage,
         });

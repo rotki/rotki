@@ -43,7 +43,7 @@ const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
       >
         {{ t('common.validator_index') }}:
       </span>
-      {{ scrambleIdentifier(validator.validatorIndex) }}
+      {{ scrambleIdentifier(validator.index) }}
     </div>
   </div>
 </template>

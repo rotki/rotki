@@ -248,7 +248,7 @@ export function useBlockchainAccountsApi() {
       '/blockchains/eth2/validators',
       {
         data: snakeCaseTransformer({
-          validators: validators.map(({ validatorIndex }) => validatorIndex),
+          validators: validators.map(({ index }) => index),
         }),
         validateStatus: validWithSessionStatus,
       },

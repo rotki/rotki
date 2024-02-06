@@ -5,16 +5,18 @@ import type {
   EthStakingPeriod,
 } from '@rotki/common/lib/staking/eth2';
 
-defineProps<{
+const props = defineProps<{
   value: EthStakingFilter;
+  period: EthStakingPeriod | undefined;
 }>();
 
 const emit = defineEmits<{
   (e: 'input', value: EthStakingFilter): void;
-  (e: 'update:period', value: EthStakingPeriod): void;
+  (e: 'update:period', value?: EthStakingPeriod): void;
 }>();
 
 const filterType: Ref<EthStakingFilterType> = ref('validator');
+const periodModel = useVModel(props, 'period', emit);
 
 watch(filterType, type =>
   emit('input', type === 'validator' ? { validators: [] } : { accounts: [] }));
@@ -47,7 +49,7 @@ const { t } = useI18n();
               value="address"
               class="!py-2"
             >
-              {{ t('eth2_page.toggle.depositor') }}
+              {{ t('eth2_page.toggle.withdrawal') }}
             </RuiButton>
           </template>
         </RuiButtonGroup>
@@ -60,7 +62,7 @@ const { t } = useI18n();
         :filter-type="filterType"
         @input="emit('input', $event)"
       />
-      <EthValidatorRangeFilter @update:period="emit('update:period', $event)" />
+      <EthValidatorRangeFilter :period.sync="periodModel" />
     </div>
   </div>
 </template>

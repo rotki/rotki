@@ -1,8 +1,8 @@
 import {
   Eth2DailyStats,
   type Eth2DailyStatsPayload,
-  Eth2StakingRewards,
   type EthStakingPayload,
+  EthStakingPerformanceResponse,
 } from '@rotki/common/lib/staking/eth2';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -14,13 +14,14 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useEth2Api() {
-  const fetchStakingDetails = async (
-    payload: EthStakingPayload,
-  ): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
-      '/blockchains/eth2/stake/details',
+  const stakingPerformanceQuery = async <T extends EthStakingPerformanceResponse | PendingTask> (
+    payload: EthStakingPayload & { ignoreCache: boolean },
+    asyncQuery: boolean = false,
+  ): Promise<T> => {
+    const response = await api.instance.put<ActionResult<T>>(
+      '/blockchains/eth2/stake/performance',
       snakeCaseTransformer({
-        asyncQuery: true,
+        asyncQuery,
         ...nonEmptyProperties(payload),
       }),
       {
@@ -30,21 +31,19 @@ export function useEth2Api() {
     return handleResponse(response);
   };
 
-  const fetchStakingDetailRewards = async (
+  const fetchStakingPerformance = async (
     payload: EthStakingPayload,
-  ): Promise<Eth2StakingRewards> => {
-    const response = await api.instance.post<ActionResult<Eth2StakingRewards>>(
-      '/blockchains/eth2/stake/details',
-      snakeCaseTransformer(nonEmptyProperties(payload)),
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
-    return Eth2StakingRewards.parse(handleResponse(response));
+  ): Promise<EthStakingPerformanceResponse> => {
+    const data = await stakingPerformanceQuery({ ...payload, ignoreCache: false });
+    return EthStakingPerformanceResponse.parse(data);
   };
 
+  const refreshStakingPerformance = async (
+    payload: EthStakingPayload,
+  ): Promise<PendingTask> => await stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
+
   const stakingStatsQuery = async <T>(
-    payload: any,
+    payload: Eth2DailyStatsPayload,
     asyncQuery: boolean,
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
@@ -76,8 +75,8 @@ export function useEth2Api() {
   };
 
   return {
-    fetchStakingDetailRewards,
-    fetchStakingDetails,
+    fetchStakingPerformance,
+    refreshStakingPerformance,
     refreshStakingStats,
     fetchStakingStats,
   };

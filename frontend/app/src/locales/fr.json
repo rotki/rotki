@@ -2117,7 +2117,7 @@
   "eth2_page": {
     "no_premium": "Le staking ETH est",
     "toggle": {
-      "depositor": "Dépositaire",
+      "withdrawal": "Dépositaire",
       "hint": "Changer le mode de filtrage et d'affichage entre les validateurs ETH2 et les adresses ETH1",
       "key": "Validateur"
     }

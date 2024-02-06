@@ -2128,13 +2128,13 @@
   "eth2_page": {
     "no_premium": "ETH Staking is",
     "toggle": {
-      "depositor": "Depositor",
+      "withdrawal": "Withdrawal Address",
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
       "key": "Validator"
     }
   },
   "eth2_validator_filter": {
-    "label": "Select Depositor address"
+    "label": "Select Withdrawal address"
   },
   "eth2_validator_limit_row": {
     "label": "Validators"
@@ -3570,6 +3570,7 @@
       "rewards": "@:common.rewards"
     },
     "eth2_staking": {
+      "active_validators": "Active Validators",
       "based_of_performance": "Based of performance of",
       "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
       "daily": {
@@ -3583,7 +3584,22 @@
         "validator": "Validator"
       },
       "overview": "Overview",
+      "performance": {
+        "index": "Index",
+        "status": "Status",
+        "apr": "APR",
+        "outstanding": "Outstanding",
+        "withdrawals": "Withdrawn",
+        "execution": "Execution"
+      },
+      "status": {
+        "all": "All",
+        "active": "Active",
+        "exited": "Exited"
+      },
       "ranges": {
+        "all": "All Time",
+        "custom": "Custom",
         "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
@@ -3592,9 +3608,9 @@
       "rewards": {
         "consensus": {
           "description": "Based on the current price of ETH",
-          "title": "Consensus Layer Rewards"
+          "title": "Outstanding Consensus Layer Rewards"
         },
-        "el": "Execution Layer",
+        "el": "Execution Layer Rewards",
         "withdrawn_cl": "Withdrawn from consensus layer"
       },
       "staking_per_beacon_chain": "Staking per Validator",
