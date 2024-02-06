@@ -59,6 +59,7 @@ const evmOrEthDepositEvent = computed(
           :no-link="!!onlineEvent"
           :text="event.locationLabel"
           :chain="chain"
+          :location="event.location"
           :disable-scramble="!!onlineEvent"
         />
       </div>

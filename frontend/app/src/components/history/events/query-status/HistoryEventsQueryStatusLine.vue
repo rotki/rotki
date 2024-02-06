@@ -18,6 +18,7 @@ const { getItemTranslationKey } = useEventsQueryStatus();
           :text="item.name"
           no-link
           :show-icon="false"
+          :location="item.location"
           disable-scramble
         />
       </div>

@@ -23,6 +23,7 @@ const props = withDefaults(
     type?: keyof ExplorerUrls;
     disableScramble?: boolean;
     hideAliasName?: boolean;
+    location?: string;
   }>(),
   {
     showIcon: true,
@@ -39,21 +40,28 @@ const props = withDefaults(
     type: 'address',
     disableScramble: false,
     hideAliasName: false,
+    location: undefined,
   },
 );
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName }
+const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName, location }
   = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier }
   = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
-const { getChain } = useSupportedChains();
+const { getChain, getChainInfoByName } = useSupportedChains();
 
 const { addressNameSelector } = useAddressesNamesStore();
-const addressName = addressNameSelector(text, chain);
+const addressName = computed(() => {
+  const name = get(location);
+  if (name && !get(getChainInfoByName(name)))
+    return null;
+
+  return get(addressNameSelector(text, chain));
+});
 
 const blockchain = computed(() => {
   if (isDefined(evmChain))
