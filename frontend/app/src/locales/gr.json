@@ -1907,17 +1907,6 @@
     "ownership_percentage": "Ownership Percentage",
     "public_key": "Public Key"
   },
-  "eth2_page": {
-    "no_premium": "ETH Staking is",
-    "toggle": {
-      "depositor": "Depositor",
-      "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
-      "key": "Validator"
-    }
-  },
-  "eth2_validator_filter": {
-    "label": "Select Depositor address"
-  },
   "eth2_validator_limit_row": {
     "label": "Validators"
   },

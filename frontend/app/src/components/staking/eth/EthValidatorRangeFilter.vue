@@ -9,8 +9,12 @@ import {
 import type { EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
 import type { ComputedRef } from 'vue';
 
+const props = defineProps<{
+  period: EthStakingPeriod | undefined;
+}>();
+
 const emit = defineEmits<{
-  (e: 'update:period', value: EthStakingPeriod): void;
+  (e: 'update:period', value?: EthStakingPeriod): void;
 }>();
 
 enum Eth2StakingFilterKeys {
@@ -75,8 +79,27 @@ function updateFilters(updatedFilters: Filters) {
   assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
   assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
 
-  emit('update:period', { fromTimestamp, toTimestamp });
+  emit('update:period', {
+    fromTimestamp: fromTimestamp ? parseInt(fromTimestamp) : undefined,
+    toTimestamp: toTimestamp ? parseInt(toTimestamp) : undefined,
+  });
 }
+
+watch(() => props.period, (period) => {
+  const updatedFilters = { ...get(filters) };
+
+  if (period?.fromTimestamp)
+    updatedFilters.fromTimestamp = period.fromTimestamp.toString();
+  else
+    delete updatedFilters.fromTimestamp;
+
+  if (period?.toTimestamp)
+    updatedFilters.toTimestamp = period.toTimestamp.toString();
+  else
+    delete updatedFilters.toTimestamp;
+
+  set(filters, updatedFilters);
+});
 </script>
 
 <template>

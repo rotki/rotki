@@ -4,6 +4,7 @@ import { type EthChains, isEthChain } from '@/types/blockchain/chains';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import type { StakingBalance } from '@rotki/common/lib/staking/eth2';
 import type { MaybeRef } from '@vueuse/core';
 import type { BigNumber } from '@rotki/common';
 import type {
@@ -44,6 +45,21 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { t } = useI18n();
+
+  const stakingBalances = computed<StakingBalance[]>(() => {
+    const balancesRef = get(balances);
+    const ethStakingBalances = balancesRef[Blockchain.ETH2];
+    if (Object.keys(ethStakingBalances).length === 0)
+      return [];
+
+    return Object.entries(ethStakingBalances).map(([publicKey, balance]) => {
+      const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
+      return {
+        publicKey,
+        ...balance.assets[ETH2_ASSET],
+      };
+    });
+  });
 
   const getLoopringAssetBalances = (
     address: MaybeRef<string> = ref(''),
@@ -227,6 +243,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     loopring,
     totals,
     liabilities,
+    stakingBalances,
     update,
     updatePrices,
     getLoopringAssetBalances,

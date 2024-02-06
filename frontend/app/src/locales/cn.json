@@ -1947,13 +1947,13 @@
   "eth2_page": {
     "no_premium": "ETH 質押是",
     "toggle": {
-      "depositor": "存款人",
+      "withdrawal": "提币地址",
       "hint": "在 ETH 抵押驗證器和 ETH1 地址之間切換過濾和顯示模式",
       "key": "验证器"
     }
   },
   "eth2_validator_filter": {
-    "label": "选择存款人地址"
+    "label": "选择提款地址"
   },
   "eth2_validator_limit_row": {
     "label": "信标链验证者"

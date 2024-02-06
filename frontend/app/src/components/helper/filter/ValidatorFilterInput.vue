@@ -24,9 +24,9 @@ function input(value: Eth2ValidatorEntry[]) {
   emit('input', value);
 }
 
-function filter({ publicKey, validatorIndex }: Eth2ValidatorEntry, queryText: string) {
+function filter({ publicKey, index }: Eth2ValidatorEntry, queryText: string) {
   return publicKey.includes(queryText)
-    || validatorIndex.toString().includes(queryText);
+    || index.toString().includes(queryText);
 }
 
 function removeValidator(validator: Eth2ValidatorEntry) {

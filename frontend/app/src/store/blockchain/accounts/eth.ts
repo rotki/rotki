@@ -183,7 +183,7 @@ export const useEthAccountsStore = defineStore(
 
         return {
           address: validator.publicKey,
-          label: validator.validatorIndex.toString() ?? '',
+          label: validator.index.toString() ?? '',
           tags: [],
           chain: Blockchain.ETH2,
         };

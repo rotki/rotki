@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Balance, NumericString, Percentage } from '../../index';
+import { Balance, type BigNumber, NumericString, Percentage } from '../../index';
 import type { GeneralAccount } from '../../account';
 
 const Eth2DailyStat = z.object({
@@ -19,50 +19,54 @@ export const Eth2DailyStats = z.object({
 
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
 
-const Eth2Detail = z.object({
-  eth1Depositor: z.string().nullable(),
-  publicKey: z.string(),
-  index: z.number(),
-  hasExited: z.boolean(),
-  balance: Balance,
-  performance1d: Balance,
-  performance1w: Balance,
-  performance1m: Balance,
-  performance1y: Balance,
-  performanceTotal: Balance,
+const EthStakingStats = z.object({
+  apr: NumericString.optional(),
+  execution: NumericString.optional(),
+  exits: NumericString.optional(),
+  sum: NumericString.optional(),
+  withdrawals: NumericString.optional(),
+  outstandingConsensusPnl: NumericString.optional(),
 });
 
-export type Eth2Detail = z.infer<typeof Eth2Detail>;
+export type EthStakingStats = z.infer<typeof EthStakingStats>;
 
-export const Eth2Details = z.array(Eth2Detail);
+export const EthStakingPerformanceResponse = z.object({
+  sums: EthStakingStats,
+  validators: z.record(EthStakingStats),
+  entriesTotal: z.number(),
+  entriesFound: z.number(),
+});
 
-export type Eth2Details = z.infer<typeof Eth2Details>;
+export type EthStakingPerformanceResponse = z.infer<typeof EthStakingPerformanceResponse>;
 
-export interface Eth2DailyStatsPayload {
-  readonly limit: number;
-  readonly offset: number;
-  readonly orderByAttributes: string[];
-  readonly ascending: boolean[];
-  readonly validators?: number[];
-  readonly fromTimestamp?: string;
-  readonly toTimestamp?: string;
-  readonly onlyCache?: boolean;
-}
+export type EthStakingValidatorPerformance = EthStakingStats & {
+  index: number;
+  status?: string;
+  total?: BigNumber;
+};
 
-export interface EthStakingPayload {
+export type EthStakingPerformance = Omit<EthStakingPerformanceResponse, 'validators'> & {
+  validators: EthStakingValidatorPerformance[];
+};
+
+export type EthValidatorStatus = 'all' | 'exited' | 'active';
+
+export interface EthStakingPayload extends EthStakingPeriod {
+  limit: number;
+  offset: number;
   validatorIndices?: number[];
   addresses?: string[];
-  ignoreCache?: boolean;
+  status?: EthValidatorStatus;
 }
 
-export interface EthStakingRewardsPayload
-  extends EthStakingPayload,
-  EthStakingPeriod {}
-
 const Validator = z.object({
-  validatorIndex: z.number(),
+  index: z.number(),
   publicKey: z.string(),
-  ownershipPercentage: Percentage,
+  status: z.string(),
+  ownershipPercentage: Percentage.optional(),
+  withdrawalAddress: z.string().optional(),
+  activationTs: z.number().nonnegative().optional(),
+  withdrawalTs: z.number().nonnegative().optional(),
 });
 
 export type Eth2ValidatorEntry = z.infer<typeof Validator>;
@@ -74,13 +78,6 @@ export const Eth2Validators = z.object({
 });
 
 export type Eth2Validators = z.infer<typeof Eth2Validators>;
-
-export const Eth2StakingRewards = z.object({
-  withdrawnConsensusLayerRewards: NumericString,
-  executionLayerRewards: NumericString,
-});
-
-export type Eth2StakingRewards = z.infer<typeof Eth2StakingRewards>;
 
 interface EthStakingDepositorFilter {
   accounts: GeneralAccount[];
@@ -96,7 +93,23 @@ export type EthStakingFilter =
 
 export type EthStakingFilterType = 'address' | 'validator';
 
+export interface StakingBalance {
+  publicKey: string;
+  usdValue: BigNumber;
+  amount: BigNumber;
+}
+
 export interface EthStakingPeriod {
-  fromTimestamp?: string;
-  toTimestamp?: string;
+  fromTimestamp?: number;
+  toTimestamp?: number;
+}
+
+export interface Eth2DailyStatsPayload extends EthStakingPeriod {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttributes: string[];
+  readonly ascending: boolean[];
+  readonly validatorIndices?: number[];
+  readonly addresses?: string[];
+  readonly onlyCache?: boolean;
 }

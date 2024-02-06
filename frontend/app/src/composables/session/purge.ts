@@ -1,12 +1,11 @@
 import { Purgeable } from '@/types/session/purge';
-import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import type { Module } from '@/types/modules';
 import type { TaskMeta } from '@/types/task';
 
 export function useSessionPurge() {
   const { resetState } = useDefiStore();
-  const { reset } = useStaking();
 
   const { refreshGeneralCacheTask } = useSessionApi();
 
@@ -33,8 +32,6 @@ export function useSessionPurge() {
       resetState((value as Module) || Purgeable.DECENTRALIZED_EXCHANGES);
     }
     else if (purgeable === Purgeable.DEFI_MODULES) {
-      const isEth2 = value === Module.ETH2;
-      reset(isEth2 ? value : undefined);
       resetState((value as Module) || Purgeable.DEFI_MODULES);
     }
     else if (purgeable === Purgeable.EVM_TRANSACTIONS) {

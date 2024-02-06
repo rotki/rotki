@@ -1,8 +1,11 @@
+import { TaskType } from '@/types/task-type';
+import { Section, Status } from '@/types/status';
 import type {
   Eth2DailyStats,
   Eth2DailyStatsPayload,
 } from '@rotki/common/lib/staking/eth2';
 import type { MaybeRef } from '@vueuse/core';
+import type { TaskMeta } from '@/types/task';
 
 export function useEth2DailyStats() {
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
@@ -15,7 +18,76 @@ export function useEth2DailyStats() {
 
   const pagination: Ref<Eth2DailyStatsPayload> = ref(defaultPagination());
 
-  const { fetchStakingStats, syncStakingStats } = useEth2StakingStore();
+  const premium = usePremium();
+  const { awaitTask } = useTaskStore();
+  const { notify } = useNotificationsStore();
+  const { t } = useI18n();
+
+  const api = useEth2Api();
+
+  const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
+    if (!get(premium))
+      return false;
+
+    const taskType = TaskType.STAKING_ETH2_STATS;
+
+    const { fetchDisabled, setStatus } = useStatusUpdater(Section.STAKING_ETH2_STATS);
+
+    if (fetchDisabled(userInitiated))
+      return false;
+
+    const defaults: Eth2DailyStatsPayload = {
+      limit: 0,
+      offset: 0,
+      ascending: [false],
+      orderByAttributes: ['timestamp'],
+      onlyCache: false,
+    };
+
+    try {
+      const { taskId } = await api.refreshStakingStats(defaults);
+
+      const taskMeta: TaskMeta = {
+        title: t('actions.eth2_staking_stats.task.title'),
+        description: t('actions.eth2_staking_stats.task.description'),
+      };
+
+      await awaitTask<Eth2DailyStats, TaskMeta>(
+        taskId,
+        taskType,
+        taskMeta,
+        true,
+      );
+      setStatus(Status.LOADED);
+      return true;
+    }
+    catch (error: any) {
+      setStatus(Status.NONE);
+
+      if (!isTaskCancelled(error)) {
+        notify({
+          title: t('actions.eth2_staking_stats.error.title'),
+          message: t('actions.eth2_staking_stats.error.message', {
+            message: error.message,
+          }),
+          display: true,
+        });
+      }
+    }
+
+    return false;
+  };
+
+  const fetchStakingStats = async (
+    payload: MaybeRef<Eth2DailyStatsPayload>,
+  ): Promise<Eth2DailyStats> => {
+    assert(get(premium));
+
+    return await api.fetchStakingStats({
+      ...get(payload),
+      onlyCache: true,
+    });
+  };
 
   const {
     state: dailyStats,
@@ -42,6 +114,15 @@ export function useEth2DailyStats() {
     await execute(0, payload);
   };
 
+  async function refreshStats(userInitiated: boolean): Promise<void> {
+    await fetchDailyStats(get(pagination));
+    const success = await syncStakingStats(userInitiated);
+    if (success) {
+      // We unref here to make sure that we use the latest pagination
+      await fetchDailyStats(get(pagination));
+    }
+  }
+
   watch(pagination, pagination => fetchDailyStats(pagination));
 
   return {
@@ -49,6 +130,7 @@ export function useEth2DailyStats() {
     dailyStats,
     dailyStatsLoading,
     fetchDailyStats,
+    refreshStats,
     syncStakingStats,
   };
 }
