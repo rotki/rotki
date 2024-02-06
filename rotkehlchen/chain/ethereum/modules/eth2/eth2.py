@@ -164,9 +164,18 @@ class Eth2(EthereumModule):
             }
 
         common_arguments: dict[str, Any] = {'from_ts': from_ts}
-        index_to_pubkey = {}
+        index_to_pubkey, index_to_activation_ts, index_to_withdrawable_ts = {}, {}, {}
         dbeth2 = DBEth2(self.database)
         all_validator_indices = []
+        with self.database.conn.read_ctx() as cursor:
+            for entry in cursor.execute('SELECT validator_index, public_key, activation_timestamp, withdrawable_timestamp FROM eth2_validators WHERE validator_index IS NOT NULL'):  # noqa: E501
+                index_to_pubkey[entry[0]] = entry[1]
+                if entry[2] is not None:
+                    index_to_activation_ts[entry[0]] = entry[2]
+                if entry[3] is not None:
+                    index_to_withdrawable_ts[entry[0]] = entry[3]
+                all_validator_indices.append(entry[0])
+            pubkey_to_index = {x[1]: x[0] for x in cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
         processing_validators = all_validator_indices
         if validator_indices is not None:
             processing_validators = validator_indices
@@ -208,18 +217,12 @@ class Eth2(EthereumModule):
                 sums[key_label] += amount
                 sums['sum'] += amount
 
-        with self.database.conn.read_ctx() as cursor:
-            for entry in cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE validator_index IS NOT NULL'):  # noqa: E501
-                index_to_pubkey[entry[0]] = entry[1]
-                all_validator_indices.append(entry[0])
-            pubkey_to_index = {x[1]: x[0] for x in cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
-
         # if we check until a recent timestamp we should also take into account
         # outstanding rewards not yet withdrawn
         now = ts_now()
         if now - to_ts <= DAY_IN_SECONDS:
             balances = self.beacon_inquirer.get_balances(
-                indices_or_pubkeys=validator_indices if validator_indices is not None else all_validator_indices,  # noqa: E501
+                indices_or_pubkeys=list(processing_validators),
             )
             for pubkey, balance in balances.items():
                 entry = pnls[pubkey_to_index[pubkey]]
@@ -235,10 +238,17 @@ class Eth2(EthereumModule):
                 entry['sum'] = entry.get('sum', ZERO) + outstanding_pnl
                 sums['sum'] += outstanding_pnl
 
-        profit_duration = to_ts - from_ts
-        for data in pnls.values():
-            data['apr'] = (YEAR_IN_SECONDS * data['sum']) / profit_duration
-        sums['apr'] = (YEAR_IN_SECONDS * sums['sum']) / profit_duration
+        sum_apr, count_apr = ZERO, ZERO
+        for vindex, data in pnls.items():
+            profit_from_ts = max(index_to_activation_ts.get(vindex, from_ts), from_ts)
+            profit_to_ts = min(index_to_withdrawable_ts.get(vindex, to_ts), to_ts)
+            data['apr'] = ((YEAR_IN_SECONDS * data['sum']) / (profit_to_ts - profit_from_ts)) / 32
+            sum_apr += data['apr']
+            count_apr += 1
+
+        if count_apr != ZERO:
+            sums['apr'] = sum_apr / count_apr
+
         result = {'validators': pnls, 'sums': sums}
         self.performance_cache.add(cache_key, result)  # save cache & return pagination on the data
         self.performance_cache_args = (addresses, validator_indices, status)
