@@ -31,10 +31,10 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     assets: string[] | string,
   ): Promise<ActionStatus> => {
     try {
-      const ignored = await addIgnoredAssets(
+      const { successful, noAction } = await addIgnoredAssets(
         Array.isArray(assets) ? assets : [assets],
       );
-      set(ignoredAssets, ignored);
+      set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
       return { success: true };
     }
     catch (error: any) {
@@ -54,10 +54,10 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     assets: string[] | string,
   ): Promise<ActionStatus> => {
     try {
-      const ignored = await removeIgnoredAssets(
+      const { successful, noAction } = await removeIgnoredAssets(
         Array.isArray(assets) ? assets : [assets],
       );
-      set(ignoredAssets, ignored);
+      set(ignoredAssets, get(ignoredAssets).filter(asset => ![...successful, ...noAction].includes(asset)));
       return { success: true };
     }
     catch (error: any) {
