@@ -1308,7 +1308,7 @@ def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:
     """
     If the packaged db is modified and the wal mode is activated users can have issues
     when the database is in a read only device. To avoid such issues we need to ensure
-    that no new files are created and this is why we prevent from shipping the database
+    that no new files are created and this is why we prevent from shipping the dpackaged database
     in WAL mode.
     """
     with globaldb.packaged_db_conn().cursor() as cursor:
