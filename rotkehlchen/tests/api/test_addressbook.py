@@ -222,6 +222,11 @@ def test_insert_into_addressbook(
             name='name 2',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
+        AddressbookEntry(
+            address=BTCAddress('qzcnx0z2l9ncs7el5fcwgufv4mrng605ngc8p5csqn'),
+            name='name 3',
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
+        ),
     ]
     response = requests.put(
         api_url_for(
@@ -241,11 +246,11 @@ def test_insert_into_addressbook(
         existing_entries = [
             AddressbookEntry(
                 address=generated_entries[0].address,
-                name='name 3',
+                name='name 4',
                 blockchain=SupportedBlockchain.ETHEREUM,
             ), AddressbookEntry(
                 address=to_checksum_address('0xa500A944c0dff775Ad89Ec28C82b20d4BF60A0b4'),
-                name='name 4',
+                name='name 5',
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
         ]
