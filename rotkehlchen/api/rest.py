@@ -1297,7 +1297,7 @@ class RestAPI:
 
     def query_list_of_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
         """Query assets using the provided filter_query and return them in a paginated format"""
-        assets, assets_found = GlobalDBHandler().retrieve_assets(userdb=self.rotkehlchen.data.db, filter_query=filter_query)  # noqa: E501
+        assets, assets_found = GlobalDBHandler.retrieve_assets(userdb=self.rotkehlchen.data.db, filter_query=filter_query)  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
             assets_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -1314,7 +1314,7 @@ class RestAPI:
 
     def get_assets_mappings(self, identifiers: list[str]) -> Response:
         try:
-            asset_mappings, asset_collections = GlobalDBHandler().get_assets_mappings(identifiers)
+            asset_mappings, asset_collections = GlobalDBHandler.get_assets_mappings(identifiers)
             nft_mappings = self.rotkehlchen.data.db.get_nft_mappings(identifiers)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
@@ -1329,7 +1329,7 @@ class RestAPI:
         )
 
     def search_assets(self, filter_query: AssetsFilterQuery) -> Response:
-        result = GlobalDBHandler().search_assets(
+        result = GlobalDBHandler.search_assets(
             db=self.rotkehlchen.data.db,
             filter_query=filter_query,
         )
@@ -1373,7 +1373,6 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
     def add_user_asset(self, asset: AssetWithOracles) -> Response:
-        globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
         if isinstance(asset, EvmToken):
@@ -1383,7 +1382,7 @@ class RestAPI:
             except UnknownAsset:
                 identifiers = None
         else:
-            identifiers = globaldb.check_asset_exists(asset)
+            identifiers = GlobalDBHandler.check_asset_exists(asset)
 
         if identifiers is not None:
             return api_response(
@@ -1393,7 +1392,7 @@ class RestAPI:
                 status_code=HTTPStatus.CONFLICT,
             )
         try:
-            globaldb.add_asset(asset)
+            GlobalDBHandler.add_asset(asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1406,7 +1405,7 @@ class RestAPI:
 
     def edit_user_asset(self, asset: AssetWithOracles) -> Response:
         try:
-            GlobalDBHandler().edit_user_asset(asset)
+            GlobalDBHandler.edit_user_asset(asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1425,7 +1424,7 @@ class RestAPI:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.rotkehlchen.data.db.delete_asset_identifier(write_cursor, identifier)
 
-            GlobalDBHandler().delete_asset_by_identifier(identifier)
+            GlobalDBHandler.delete_asset_by_identifier(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -3036,7 +3035,7 @@ class RestAPI:
 
     @staticmethod
     def _get_oracle_cache(oracle: HistoricalPriceOracle) -> dict[str, Any]:
-        cache_data = GlobalDBHandler().get_historical_price_data(oracle)
+        cache_data = GlobalDBHandler.get_historical_price_data(oracle)
         result = _wrap_in_ok_result(cache_data)
         result['status_code'] = HTTPStatus.OK
         return result
@@ -3143,7 +3142,7 @@ class RestAPI:
             timestamp=timestamp,
             price=price,
         )
-        added = GlobalDBHandler().add_single_historical_price(historical_price)
+        added = GlobalDBHandler.add_single_historical_price(historical_price)
         if added:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
         return api_response(
@@ -3165,7 +3164,7 @@ class RestAPI:
             timestamp=timestamp,
             price=price,
         )
-        edited = GlobalDBHandler().edit_manual_price(historical_price)
+        edited = GlobalDBHandler.edit_manual_price(historical_price)
         if edited:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
         return api_response(
@@ -3179,7 +3178,7 @@ class RestAPI:
             to_asset: Asset | None,
     ) -> Response:
         return api_response(
-            _wrap_in_ok_result(GlobalDBHandler().get_manual_prices(from_asset, to_asset)),
+            _wrap_in_ok_result(GlobalDBHandler.get_manual_prices(from_asset, to_asset)),
             status_code=HTTPStatus.OK,
         )
 
@@ -3189,7 +3188,7 @@ class RestAPI:
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Response:
-        deleted = GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
+        deleted = GlobalDBHandler.delete_manual_price(from_asset, to_asset, timestamp)
         if deleted:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
         return api_response(
@@ -3240,7 +3239,7 @@ class RestAPI:
             from_asset: Asset | None,
             to_asset: Asset | None,
     ) -> Response:
-        prices = GlobalDBHandler().get_all_manual_latest_prices(
+        prices = GlobalDBHandler.get_all_manual_latest_prices(
             from_asset=from_asset,
             to_asset=to_asset,
         )
@@ -3290,7 +3289,7 @@ class RestAPI:
             )
             return make_response_from_dict(module_query_result)
         try:
-            pairs_to_invalidate = GlobalDBHandler().add_manual_latest_price(
+            pairs_to_invalidate = GlobalDBHandler.add_manual_latest_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 price=price,
@@ -3314,7 +3313,7 @@ class RestAPI:
             )
             return make_response_from_dict(module_query_result)
         try:
-            pairs_to_invalidate = GlobalDBHandler().delete_manual_latest_price(asset=asset)
+            pairs_to_invalidate = GlobalDBHandler.delete_manual_latest_price(asset=asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
         Inquirer().remove_cache_prices_for_asset(pairs_to_invalidate)
@@ -3322,8 +3321,8 @@ class RestAPI:
         return api_response(OK_RESULT)
 
     def get_database_info(self) -> Response:
-        globaldb_schema_version = GlobalDBHandler().get_schema_version()
-        globaldb_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        globaldb_schema_version = GlobalDBHandler.get_schema_version()
+        globaldb_assets_version = GlobalDBHandler.get_setting_value(ASSETS_VERSION_KEY, 0)
         result_dict = {
             'globaldb': {
                 'globaldb_schema_version': globaldb_schema_version,
