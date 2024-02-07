@@ -388,3 +388,37 @@ def test_query_no_withdrawals(
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
         assert cursor.execute('SELECT name FROM key_value_cache').fetchone()[0] == 'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
+def test_beacon_node_rpc_queries(eth2: 'Eth2'):
+    # Test setting rpc endpoint both with/without trailing slash. Also unsetting
+    eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969')  # without trailing slash
+    assert eth2.beacon_inquirer.node is not None
+    eth2.beacon_inquirer.set_rpc_endpoint('')  # unset beacon rpc endpoint
+    assert eth2.beacon_inquirer.node is None
+    eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969/')  # type: ignore  # with trailing slash -- not sure why it says this is unreachable
+    assert eth2.beacon_inquirer.node is not None
+
+    # now let's test balances
+    indices = list(range(1074000, 1074100))
+    validators = [Eth2PubKey('0xa2f870e998e823e5c53527407dd4d17ca80de5416fc756154cd68862a0a8ada2910e4b2bf2c7a5152bd20e5e06900b7e')] + indices  # noqa: E501
+
+    with patch.object(eth2.beacon_inquirer.beaconchain, '_query', wraps=eth2.beacon_inquirer.beaconchain._query) as beaconchain_query:  # noqa: E501
+        balances = eth2.beacon_inquirer.get_balances(indices_or_pubkeys=validators)
+        assert beaconchain_query.call_count == 0, 'beaconcha.in should not have been queried'
+        assert len(balances) == len(validators)
+        assert all(x.amount > 32 for x in balances.values())
+
+        # now let's test validator data
+        validator_data = eth2.beacon_inquirer.get_validator_data(validators)
+        assert len(validator_data) == len(validators)
+        for entry in validator_data:
+            if entry.public_key == validators[0]:
+                assert entry.validator_index == 1086866
+            else:
+                assert entry.validator_index in indices
+
+        assert beaconchain_query.call_count == 0, 'beaconcha.in should not have been queried'
