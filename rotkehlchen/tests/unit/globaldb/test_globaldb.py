@@ -1302,3 +1302,16 @@ def test_assets_in_same_collection(globaldb: GlobalDBHandler):
 
     # check an asset with no related assets
     assert globaldb.get_assets_in_same_collection(identifier=A_ETH.identifier) == (A_ETH,)
+
+
+def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:
+    """
+    If the packaged db is modified and the wal mode is activated users can have issues
+    when the database is in a read only device. To avoid such issues we need to ensure
+    that no new files are created and this is why we prevent from shipping the database
+    in WAL mode.
+    """
+    with globaldb.packaged_db_conn().cursor() as cursor:
+        journal_mode = cursor.execute('PRAGMA journal_mode').fetchone()[0]
+
+    assert journal_mode == 'delete'

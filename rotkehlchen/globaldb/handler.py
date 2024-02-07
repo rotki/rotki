@@ -237,6 +237,23 @@ class GlobalDBHandler:
         if self._packaged_db_conn is not None:
             self._packaged_db_conn.close()
 
+    def _wal_checkpoint(self) -> None:
+        """
+        Commit wal file. If database is locked we ignore it. This is needed when attaching
+        databases and we want to have up to date information. It can happen that if two tasks
+        are spawned in a short time and both of them try to commit the WAL one of them finds
+        the database locked. This doesn't prevent any query later from executing.
+
+        https://www.sqlite.org/pragma.html#pragma_wal_checkpoint
+        """
+        try:
+            self.conn.execute('PRAGMA wal_checkpoint(PASSIVE);')
+        except sqlite3.OperationalError as e:
+            if 'database table is locked' in (err := str(e)):
+                log.warning(f'Could not commit globaldb wal file. Ignoring. {err}')
+            else:
+                raise
+
     @staticmethod
     def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""
@@ -368,9 +385,9 @@ class GlobalDBHandler:
 
         with userdb.conn.read_ctx() as cursor:
             globaldb = GlobalDBHandler()
-            globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
+            globaldb._wal_checkpoint()
             cursor.execute(
-                f'ATTACH DATABASE "file:{globaldb.filepath()!s}?more=ro" AS globaldb KEY "";',
+                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
             )
             try:
                 # get all underlying tokens
@@ -477,11 +494,11 @@ class GlobalDBHandler:
         query, bindings = filter_query.prepare()
         query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
         resolved_eth = A_ETH.resolve_to_crypto_asset()
-        globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
+        globaldb._wal_checkpoint()
         with db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
-                f'ATTACH DATABASE "file:{globaldb.filepath()!s}?more=ro" AS globaldb KEY "";',
+                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
             )
             try:
                 cursor.execute(query, bindings)

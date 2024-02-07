@@ -55,7 +55,7 @@ def _search_only_assets_levenstein(
     globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
     with db.conn.critical_section():  # needed due to ATTACH. Must not context switch out of this
         cursor.execute(
-            f'ATTACH DATABASE "file:{globaldb.filepath()!s}?more=ro" AS globaldb KEY "";',
+            f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
         )
         try:
             query, bindings = filter_query.prepare('assets')
