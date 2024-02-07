@@ -415,7 +415,7 @@ def _add_blockchain_accounts_test_start(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
-def test_add_blockchain_accounts(
+def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not always the same
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
@@ -530,13 +530,12 @@ def test_add_blockchain_accounts(
         {'address': '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv'},
         {'address': 'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'},
     ]})
-    expected_bch_accounts = {
+    assert_proper_response(response)
+    assert set(rotki.chains_aggregator.accounts.bch) == {
         '1H9EndxvYSibvnDSsxZRYvuqZaCcRXdRcB',
         '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv',
         'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g',
     }
-    assert set(rotki.chains_aggregator.accounts.bch) == expected_bch_accounts
-    assert_proper_response(response)
 
     # Check that the BCH accounts are present in the DB
     with rotki.data.db.conn.read_ctx() as cursor:

@@ -17,7 +17,10 @@ from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.base.constants import BASE_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
+from rotkehlchen.chain.bitcoin.bch.utils import (
+    is_valid_bitcoin_cash_address,
+    validate_bch_address_input,
+)
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
@@ -1732,7 +1735,11 @@ def _validate_blockchain_account_schemas(
         for account_data in data['accounts']:
             address = address_getter(account_data)
             # ENS domain will be checked in the transformation step
-            if not address.endswith('.eth') and not is_valid_btc_address(address):
+            if not (
+                address.endswith('.eth') or
+                is_valid_btc_address(address) or
+                is_valid_bitcoin_cash_address(address)
+            ):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
                     field_name='address',
@@ -2608,12 +2615,14 @@ class AddressWithOptionalBlockchainSchema(Schema):
             return
 
         blockchain = cast(SupportedBlockchain, data['blockchain'])
-        supported_blockchain_type = blockchain.get_chain_type()
         if ((
-            supported_blockchain_type == 'bitcoin' and
+            blockchain == SupportedBlockchain.BITCOIN and
             is_valid_btc_address(data['address']) is False
         ) or (
-            supported_blockchain_type == 'substrate' and
+            blockchain == SupportedBlockchain.BITCOIN_CASH and
+            is_valid_bitcoin_cash_address(data['address']) is False
+        ) or (
+            blockchain.get_chain_type() == 'substrate' and
             is_valid_substrate_address(chain=blockchain, value=data['address']) is False  # type: ignore  # expects polkadot or kusama
         )):
             raise ValidationError(
