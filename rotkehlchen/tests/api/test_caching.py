@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
     """Checks that clearing the cache for avatars and icons work as expected."""
