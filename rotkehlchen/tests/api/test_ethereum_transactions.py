@@ -53,7 +53,6 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_tx_hash,
 )
 from rotkehlchen.tests.utils.mock import MockResponse, mock_evm_chains_with_transactions
-from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -286,6 +285,8 @@ def remove_added_event_fields(returned_events):
     return returned_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2024-02-07 23:00:00 GMT')
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
@@ -299,22 +300,19 @@ def test_query_transactions(rotkehlchen_api_server):
 
     This test uses real data.
     """
-    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Check that we get all transactions
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
-        ), json={'async_query': async_query, 'evm_chain': 'ethereum'},
+        ), json={'async_query': True, 'evm_chain': 'ethereum'},
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert outcome['message'] == ''
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert outcome['message'] == ''
+    result = outcome['result']
+
     expected_result = EXPECTED_AFB7_TXS + EXPECTED_4193_TXS
     expected_result.sort(key=lambda x: x['timestamp'])
     expected_result.reverse()
@@ -355,21 +353,17 @@ def test_query_transactions(rotkehlchen_api_server):
                 rotkehlchen_api_server,
                 'evmtransactionsresource',
             ), json={
-                'async_query': async_query,
+                'async_query': True,
                 'from_timestamp': 1461399856,
                 'to_timestamp': 1494458860,
                 'evm_chain': 'ethereum',
                 'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
             },
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
-
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        result = outcome['result']
         assert mock_call.call_count == 0
 
     result_entries = [x['entry'] for x in result['entries']]
@@ -382,20 +376,17 @@ def test_query_transactions(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'evmtransactionsresource',
         ), json={
-            'async_query': async_query,
+            'async_query': True,
             'data': [{
                 'evm_chain': 'ethereum',
                 'tx_hashes': hashes,
             }],
         },
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert outcome['message'] == ''
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert outcome['message'] == ''
+    result = outcome['result']
     assert result is True
 
     dbevmtx = DBEvmTx(rotki.data.db)
@@ -464,6 +455,7 @@ def test_query_transactions(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -841,8 +833,13 @@ def test_query_transactions_from_to_address(
             assert result['entries_total'] == 3
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
+@pytest.mark.freeze_time('2024-02-07 23:00:00 GMT')
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('ethereum_accounts', [[  # just 2 random addresses
+    '0x21c4E3dDf1b6EcbC32C883dbe2e360fCb5848689',
+    '0xf2C7D395Ac78FB6868aB449B64969B3500938A4d',
+]])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_removed_address(
@@ -926,20 +923,12 @@ def test_query_transactions_removed_address(
 
     _write_transactions_to_db(db=db, transactions=transactions[0:2] + transactions[3:], extra_transactions=transactions[2:], ethereum_accounts=ethereum_accounts, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
 
-    # Now remove the first account (do the mocking to not query etherscan for balances)
-    setup = setup_balances(
-        rotki,
-        ethereum_accounts=ethereum_accounts,
-        btc_accounts=[],
-        eth_balances=['10000', '10000'],
-    )
-    with ExitStack() as stack:
-        setup.enter_ethereum_patches(stack)
-        response = requests.delete(api_url_for(
-            rotkehlchen_api_server,
-            'blockchainsaccountsresource',
-            blockchain='ETH',
-        ), json={'accounts': [ethereum_accounts[0]]})
+    # Now remove the first account
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [ethereum_accounts[0]]})
     assert_proper_response_with_result(response)
 
     # Check that only the 3 remaining transactions from the other account are returned
@@ -1040,6 +1029,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert result['entries_total'] == 2
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2022-01-21 22:19:26 GMT')
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -1627,6 +1618,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     assert result['entries'][0]['entry']['balance']['amount'] == '0'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
