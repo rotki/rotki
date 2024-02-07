@@ -370,7 +370,7 @@ class GlobalDBHandler:
             globaldb = GlobalDBHandler()
             globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
             cursor.execute(
-                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
+                f'ATTACH DATABASE "file:{globaldb.filepath()!s}?more=ro" AS globaldb KEY "";',
             )
             try:
                 # get all underlying tokens
@@ -481,7 +481,7 @@ class GlobalDBHandler:
         with db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
-                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
+                f'ATTACH DATABASE "file:{globaldb.filepath()!s}?more=ro" AS globaldb KEY "";',
             )
             try:
                 cursor.execute(query, bindings)
