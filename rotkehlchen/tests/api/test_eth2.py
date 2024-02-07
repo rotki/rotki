@@ -96,7 +96,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 
     # filter by validator_index
     queried_validators = [new_index_1, 9]
-    json = {'only_cache': True, 'validators': queried_validators}
+    json = {'only_cache': True, 'validator_indices': queried_validators}
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -112,7 +112,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     queried_validators = [new_index_1, 9]
     from_ts = 1704397571
     to_ts = 1706211971
-    json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts}  # noqa: E501
+    json = {'only_cache': True, 'validator_indices': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts}  # noqa: E501
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -144,7 +144,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert full_sum_pnl.is_close(calculated_sum_pnl)
 
     # filter by validator_index and timestamp and add pagination
-    json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
+    json = {'only_cache': True, 'validator_indices': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
