@@ -3,6 +3,7 @@ import { some } from 'lodash-es';
 import {
   CUSTOM_ASSET,
   EVM_TOKEN,
+  IgnoredAssetHandlingType,
   type IgnoredAssetsHandlingType,
 } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
@@ -100,6 +101,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     key: 'actions',
   },
 ]);
+
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
@@ -117,6 +119,14 @@ function updateExpanded(expandedAssets: SupportedAsset[]) {
 }
 
 const ignoredFilter = useKebabVModel(props, 'ignoredFilter', emit);
+
+const disabledIgnoreActions = computed(() => {
+  const { ignoredAssetsHandling } = get(ignoredFilter);
+  return ({
+    ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
+    unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
+  });
+});
 
 const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 
@@ -138,7 +148,7 @@ function getAsset(item: SupportedAsset) {
 }
 
 const { setMessage } = useMessageStore();
-const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { isAssetIgnored, ignoreAsset, unignoreAsset, fetchIgnoredAssets } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
   = useWhitelistedAssetsStore();
 
@@ -228,6 +238,7 @@ function expand(item: SupportedAsset) {
       <div class="flex flex-row gap-2">
         <IgnoreButtons
           :disabled="selected.length === 0"
+          :disabled-actions="disabledIgnoreActions"
           @ignore="massIgnore($event)"
         />
         <div
@@ -250,6 +261,7 @@ function expand(item: SupportedAsset) {
       <AssetStatusFilter
         v-model="ignoredFilter"
         :count="ignoredAssets.length"
+        @refresh:ignored="fetchIgnoredAssets()"
       />
 
       <div class="w-full md:w-[25rem]">

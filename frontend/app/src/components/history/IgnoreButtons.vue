@@ -1,5 +1,8 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false });
+withDefaults(defineProps<{
+  disabled?: boolean;
+  disabledActions?: { ignore?: boolean; unIgnore?: boolean };
+}>(), { disabled: false, disabledActions: undefined });
 
 const emit = defineEmits<{ (e: 'ignore', ignored: boolean): void }>();
 
@@ -16,7 +19,7 @@ const { t } = useI18n();
         <RuiButton
           class="min-w-[90px]"
           variant="outlined"
-          :disabled="disabled"
+          :disabled="disabled || disabledActions?.ignore"
           @click="emit('ignore', true)"
         >
           {{ t('ignore_buttons.ignore') }}
@@ -32,7 +35,7 @@ const { t } = useI18n();
         <RuiButton
           class="min-w-[90px]"
           variant="outlined"
-          :disabled="disabled"
+          :disabled="disabled || disabledActions?.unIgnore"
           @click="emit('ignore', false)"
         >
           {{ t('ignore_buttons.unignore') }}
