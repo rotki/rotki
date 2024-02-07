@@ -8445,7 +8445,7 @@ Getting Eth2 Staking daily stats
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validators": [0, 15, 23542], "only_cache": false}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "only_cache": false}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
@@ -8455,7 +8455,7 @@ Getting Eth2 Staking daily stats
    :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson list(string) validators: Optionally filter entries validator indices. If missing data for all validators are returned.
+   :reqjson list(string) validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
 
    **Example Response**:
 

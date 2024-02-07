@@ -337,7 +337,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 
     with mock_scrape_validator_daily_stats(network_mocking) as stats_call:
         filter_query = Eth2DailyStatsFilterQuery.make(
-            validators=[validator_index],
+            validator_indices=[validator_index],
             from_ts=Timestamp(1613606300),
             to_ts=Timestamp(1614038500),
         )

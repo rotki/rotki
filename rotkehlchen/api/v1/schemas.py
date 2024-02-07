@@ -2454,7 +2454,7 @@ class Eth2DailyStatsSchema(
         DBPaginationSchema,
         DBOrderBySchema,
 ):
-    validators = fields.List(fields.Integer(), load_default=None)
+    validator_indices = fields.List(fields.Integer(), load_default=None)
 
     @validates_schema
     def validate_eth2_daily_stats_schema(
@@ -2497,7 +2497,7 @@ class Eth2DailyStatsSchema(
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            validators=data['validators'],
+            validator_indices=data['validator_indices'],
         )
         return {
             'async_query': data['async_query'],

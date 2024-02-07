@@ -770,7 +770,7 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset: int | None = None,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
-            validators: list[int] | None = None,
+            validator_indices: list[int] | None = None,
     ) -> 'Eth2DailyStatsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -790,7 +790,7 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         )
         filters.extend((
             filter_query.timestamp_filter,
-            DBEth2ValidatorIndicesFilter(and_op=True, validators=validators)))
+            DBEth2ValidatorIndicesFilter(and_op=True, validators=validator_indices)))
         filter_query.filters = filters
         return filter_query
 
