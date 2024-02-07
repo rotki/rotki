@@ -163,7 +163,7 @@ class Eth2(EthereumModule):
                 'entries_found': len(result['validators']),
             }
 
-        common_arguments: dict[str, Any] = {'from_ts': from_ts}
+        common_arguments: dict[str, Any] = {'from_ts': from_ts, 'to_ts': to_ts}
         index_to_pubkey, index_to_activation_ts, index_to_withdrawable_ts = {}, {}, {}
         dbeth2 = DBEth2(self.database)
         all_validator_indices = []
@@ -240,11 +240,14 @@ class Eth2(EthereumModule):
 
         sum_apr, count_apr = ZERO, ZERO
         for vindex, data in pnls.items():
+            count_apr += 1
+            if (validator_sum := data.get('sum')) is None:
+                continue
+
             profit_from_ts = max(index_to_activation_ts.get(vindex, from_ts), from_ts)
             profit_to_ts = min(index_to_withdrawable_ts.get(vindex, to_ts), to_ts)
-            data['apr'] = ((YEAR_IN_SECONDS * data['sum']) / (profit_to_ts - profit_from_ts)) / 32
+            data['apr'] = ((YEAR_IN_SECONDS * validator_sum) / (profit_to_ts - profit_from_ts)) / 32  # noqa: E501
             sum_apr += data['apr']
-            count_apr += 1
 
         if count_apr != ZERO:
             sums['apr'] = sum_apr / count_apr

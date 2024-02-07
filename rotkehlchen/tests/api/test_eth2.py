@@ -183,7 +183,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2024-02-05 22:41:00 GMT')
+@pytest.mark.freeze_time('2024-02-07 19:40:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(rotkehlchen_api_server):
     # Add ETH1 account and detect validators it deposited
@@ -261,11 +261,11 @@ def test_staking_performance(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result == {
         'sums': {
-            'apr': '0.0444223559831881762199367054545293998721330985631738087437208693791654565204493',  # noqa: E501
+            'apr': '0.0444042841157007031873394391943143775074695859997579668922574154515896365592520',  # noqa: E501
             'execution': '0.951964836013963505',
             'exits': '0.0014143880000005993',
-            'outstanding_consensus_pnl': '0.003333439',
-            'sum': '3.2376529120139639043',
+            'outstanding_consensus_pnl': '0.007455575',
+            'sum': '3.2417750480139639043',
             'withdrawals': '2.2809402489999998',
         },
         'validators': {
@@ -277,10 +277,10 @@ def test_staking_performance(rotkehlchen_api_server):
                 'withdrawals': '1.591595871',
             },
             '624729': {
-                'apr': '0.0302857150335238345172334728152828361565047550861063141604901800399839130770217',  # noqa: E501
+                'apr': '0.030249571298548888452038940294852791427177729959274630457563272184832273154627',  # noqa: E501
                 'execution': '0.018346721829233505',
-                'outstanding_consensus_pnl': '0.003333439',
-                'sum': '0.711024538829233305',
+                'outstanding_consensus_pnl': '0.007455575',
+                'sum': '0.715146674829233305',
                 'withdrawals': '0.6893443779999998',
             },
         },
@@ -330,6 +330,18 @@ def test_staking_performance(rotkehlchen_api_server):
         assert result['entries_found'] == expected_num
         assert len(result['validators']) == expected_num
         assert result['entries_total'] == total_validators
+
+    # now filter by time range
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2stakeperformanceresource',
+        ), json={'limit': 500, 'offset': 0, 'from_timestamp': 1704063600, 'to_timestamp': 1706742000},  # noqa: E501
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 313
+    assert len(result['validators']) == 313
+    assert result['entries_total'] == total_validators
 
 
 @pytest.mark.skipif(
