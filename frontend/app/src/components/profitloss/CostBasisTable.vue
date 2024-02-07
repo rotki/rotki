@@ -91,7 +91,7 @@ const matchedAcquisitions = computed(
         <VExpansionPanel>
           <VExpansionPanelHeader>
             <template #default="{ open }">
-              <div class="primary--text font-bold">
+              <div class="text-rui-primary font-bold">
                 {{
                   open
                     ? t('profit_loss_events.cost_basis.hide')

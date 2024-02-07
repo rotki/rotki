@@ -79,7 +79,10 @@ const blockEvent = isEthBlockEventRef(eventGroup);
 
 <template>
   <Fragment>
-    <td colspan="1" />
+    <td
+      colspan="1"
+      class="px-0"
+    />
     <td :colspan="colspan - 1">
       <HistoryEventsListTable
         v-if="!showDropdown"
@@ -102,7 +105,7 @@ const blockEvent = isEthBlockEventRef(eventGroup);
             class="!w-auto !p-0 !h-12 !min-h-[3rem]"
           >
             <template #default="{ open }">
-              <div class="primary--text font-bold">
+              <div class="text-rui-primary font-bold">
                 {{
                   open
                     ? t('transactions.events.view.hide')

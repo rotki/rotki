@@ -101,10 +101,14 @@ function filter(chain: Blockchain, queryText: string) {
         v-if="!search"
         :chain="item"
         :dense="dense"
+        class="!py-0"
       />
     </template>
     <template #item="{ item }">
-      <ChainDisplay :chain="item" />
+      <ChainDisplay
+        :chain="item"
+        :dense="dense"
+      />
     </template>
   </VAutocomplete>
 </template>

@@ -306,7 +306,7 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
 
       <div
         v-if="visibleNfts.length === 0"
-        class="min-h-[60vh] flex justify-center items-center text--secondary text-h6"
+        class="min-h-[60vh] flex justify-center items-center text-rui-text-secondary text-h6"
       >
         {{ t('nft_gallery.empty_filter') }}
       </div>

@@ -31,7 +31,7 @@ const slots = useSlots();
     </div>
     <div
       v-if="slots.default"
-      class="text-subtitle-2 text--secondary"
+      class="text-subtitle-2 text-rui-text-secondary"
     >
       <slot />
     </div>

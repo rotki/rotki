@@ -125,8 +125,6 @@ const chartSectionHeight = computed<string>(() => {
   const height = 208 + (get(showGraphRangeSelector) ? 60 : 0);
   return `${height}px`;
 });
-
-const { dark } = useTheme();
 </script>
 
 <template>
@@ -154,8 +152,8 @@ const { dark } = useTheme();
           />
           <span
             v-else
-            :class="[balanceClass, !dark ? 'white--text' : 'black--text']"
-            class="pa-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px]"
+            :class="balanceClass"
+            class="py-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px] text-white dark:text-rui-light-text"
           >
             <span>
               <RuiIcon :name="indicator" />

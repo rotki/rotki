@@ -21,14 +21,14 @@ const exchangeLocationRoute = computed(() => {
   <RouterLink :to="exchangeLocationRoute">
     <ListItem
       :id="`${location}_box`"
-      class="exchange-box__item group py-1"
+      class="exchange-box__item group py-1 px-6"
     >
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">
           <LocationDisplay
             :identifier="location"
             icon
-            size="30px"
+            size="26px"
           />
         </div>
       </template>

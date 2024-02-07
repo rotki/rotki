@@ -109,7 +109,7 @@ const v$ = setValidation(
       v-if="price && fromAsset && toAsset"
       tag="div"
       path="price_form.latest.hint"
-      class="text-caption text-rui-success -mt-8 pb-1 pl-3"
+      class="text-caption text-rui-success -mt-7 pb-1 pl-3"
     >
       <template #fromAsset>
         <strong>

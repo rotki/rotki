@@ -158,6 +158,7 @@ onMounted(async () => {
       row-attr="identifier"
       :loading="loading"
       outlined
+      dense
     >
       <template #item.name="{ row }">
         <div class="flex flex-row items-center">

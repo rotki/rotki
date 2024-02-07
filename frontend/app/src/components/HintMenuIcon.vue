@@ -38,7 +38,7 @@ const attrs = useAttrs();
       </RuiButton>
     </template>
     <div
-      class="pa-4"
+      class="p-4"
       :class="menuClass"
     >
       <slot> {{ text }} </slot>

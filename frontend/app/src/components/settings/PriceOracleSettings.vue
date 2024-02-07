@@ -79,7 +79,7 @@ const { t } = useI18n();
       {{ t('price_oracle_settings.subtitle') }}
     </template>
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-2 gap-4">
       <SettingsOption
         #default="{ error, success, update }"
         setting="currentPriceOracles"

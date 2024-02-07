@@ -21,10 +21,10 @@ importers:
         version: 2.0.0(eslint@8.56.0)
       '@rotki/eslint-config':
         specifier: 2.4.4
-        version: 2.4.4(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.3.1)(@vue/compiler-sfc@3.4.15)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2)
+        version: 2.4.4(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.3.2)(@vue/compiler-sfc@3.4.15)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2)
       '@rotki/eslint-plugin':
-        specifier: 0.3.1
-        version: 0.3.1(eslint@8.56.0)(typescript@5.2.2)
+        specifier: 0.3.2
+        version: 0.3.2(eslint@8.56.0)(typescript@5.2.2)
       argparse:
         specifier: 2.0.1
         version: 2.0.1
@@ -2591,7 +2591,7 @@ packages:
       rollup: 2.79.1
     dev: true
 
-  /@rotki/eslint-config@2.4.4(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.3.1)(@vue/compiler-sfc@3.4.15)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2):
+  /@rotki/eslint-config@2.4.4(@intlify/eslint-plugin-vue-i18n@2.0.0)(@rotki/eslint-plugin@0.3.2)(@vue/compiler-sfc@3.4.15)(eslint-plugin-cypress@2.15.1)(eslint-plugin-vuetify@1.1.0)(eslint@8.56.0)(typescript@5.2.2):
     resolution: {integrity: sha512-31z0ty/a8omSKCnCDtw2kXSoIhTuy7uOa39RbcvZjlFSeMr7jF1ANickoV7YYCZVGz/Ygm9xgnR7Y51LAS5ctg==}
     engines: {node: '>=16 <19', pnpm: '>=8 <9'}
     peerDependencies:
@@ -2618,7 +2618,7 @@ packages:
       '@eslint-types/typescript-eslint': 6.18.1
       '@eslint-types/unicorn': 50.0.1
       '@intlify/eslint-plugin-vue-i18n': 2.0.0(eslint@8.56.0)
-      '@rotki/eslint-plugin': 0.3.1(eslint@8.56.0)(typescript@5.2.2)
+      '@rotki/eslint-plugin': 0.3.2(eslint@8.56.0)(typescript@5.2.2)
       '@stylistic/eslint-plugin': 1.5.4(eslint@8.56.0)(typescript@5.2.2)
       '@typescript-eslint/eslint-plugin': 6.19.1(@typescript-eslint/parser@6.19.1)(eslint@8.56.0)(typescript@5.2.2)
       '@typescript-eslint/parser': 6.19.1(eslint@8.56.0)(typescript@5.2.2)
@@ -2665,8 +2665,8 @@ packages:
       - vitest
     dev: true
 
-  /@rotki/eslint-plugin@0.3.1(eslint@8.56.0)(typescript@5.2.2):
-    resolution: {integrity: sha512-zN6vozimrrpUtFp2hpnXV2jJfmzzZi5pf7wF/rPibLMXzL62LWKSBvST5/I8iK+b3BIvpGfIHo5Jkvb4OZTu5A==}
+  /@rotki/eslint-plugin@0.3.2(eslint@8.56.0)(typescript@5.2.2):
+    resolution: {integrity: sha512-LE8e0NhjmDJiwinqZwPAX0vLYMuC5yAm6k37gG3W5c7797Re7y1MieFIkQeeVFmLcY0GmT0XMOBonXZKerG2UA==}
     engines: {node: '>=20', pnpm: '>=8 <9'}
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0

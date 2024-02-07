@@ -140,11 +140,11 @@ watch(isSyncing, (current, prev) => {
             </RuiBadge>
           </MenuTooltipButton>
         </template>
-        <div class="pa-4 md:w-[250px] w-full">
+        <div class="p-4 md:w-[250px] w-full">
           <div class="font-medium">
             {{ t('sync_indicator.last_data_upload') }}
           </div>
-          <div class="py-2 text--secondary">
+          <div class="py-2 text-rui-text-secondary">
             <DateDisplay
               v-if="lastDataUpload"
               :timestamp="lastDataUpload"

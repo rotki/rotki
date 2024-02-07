@@ -20,7 +20,7 @@ const visible = ref(false);
           <RuiIcon name="question-line" />
         </RuiButton>
       </template>
-      <div class="pa-4 max-w-[20rem] flex flex-col gap-2">
+      <div class="p-4 max-w-[20rem] flex flex-col gap-2">
         <div>
           <b>{{ t('address_book.hint.global') }}</b>
           {{ t('address_book.hint.global_description') }}

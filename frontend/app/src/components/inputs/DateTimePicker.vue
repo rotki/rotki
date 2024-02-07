@@ -382,7 +382,7 @@ function filteredListeners(listeners: any) {
           <VAutocomplete
             v-model="selectedTimezone"
             :label="t('date_time_picker.select_timezone')"
-            class="pa-4 pb-0"
+            class="!p-4 pb-0"
             outlined
             persistent-hint
             menu-pros="auto"

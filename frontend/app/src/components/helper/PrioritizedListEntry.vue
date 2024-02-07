@@ -11,7 +11,7 @@ const props = withDefaults(
     size?: string;
   }>(),
   {
-    size: '40px',
+    size: '32px',
   },
 );
 
@@ -53,15 +53,13 @@ const labels: { [keys in PrioritizedListId]: string } = {
 
 <template>
   <div class="flex items-center gap-3">
-    <AdaptiveWrapper v-if="data.icon">
-      <AppImage
-        :width="size"
-        contain
-        :max-height="size"
-        :min-height="size"
-        :src="data.icon"
-      />
-    </AdaptiveWrapper>
+    <AppImage
+      v-if="data.icon"
+      :size="size"
+      contain
+      :src="data.icon"
+      class="icon-bg"
+    />
     <div v-if="labels[data.identifier]">
       {{ labels[data.identifier] }}
     </div>

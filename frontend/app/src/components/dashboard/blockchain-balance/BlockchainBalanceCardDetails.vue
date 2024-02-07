@@ -23,7 +23,7 @@ const css = useCssModule();
     <ListItem
       :id="`${child.protocol}_box`"
       :key="child.protocol"
-      class="blockchain-balance-box__item group py-1"
+      class="blockchain-balance-box__item group py-1 pr-6"
       :class="css['sub-item']"
     >
       <template #avatar>
@@ -54,11 +54,11 @@ const css = useCssModule();
 <style module lang="scss">
 .sub-item {
   @apply relative;
-  @apply pl-14 #{!important};
+  @apply pl-16 #{!important};
 
   &:after {
     @apply absolute opacity-50 border-rui-text-secondary border-b border-l;
-    @apply w-4 min-h-[1rem] h-[40%] top-[15%] left-8;
+    @apply w-4 min-h-[1rem] h-[40%] top-[15%] left-10;
     content: '';
   }
 }

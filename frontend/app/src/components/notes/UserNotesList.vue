@@ -287,7 +287,7 @@ onMounted(async () => {
                 </RuiButton>
               </div>
 
-              <div class="text--secondary note__content">
+              <div class="text-rui-text-secondary note__content">
                 {{ note.content }}
               </div>
 
@@ -331,7 +331,7 @@ onMounted(async () => {
               >
                 <i18n
                   path="notes_menu.last_updated"
-                  class="note__datetime text--secondary font-italic flex-1"
+                  class="note__datetime text-rui-text-secondary font-italic flex-1"
                 >
                   <template #datetime>
                     <DateDisplay :timestamp="note.lastUpdateTimestamp" />

@@ -138,7 +138,7 @@ watch(errorMessage, message => onError(message));
 <template>
   <div class="flex flex-row">
     <div
-      class="pa-4 border border-default rounded-md w-full"
+      class="p-4 border border-default rounded-md w-full"
       :class="{ 'border-primary': active }"
       @dragover.prevent
       @drop="onDrop($event)"
@@ -190,7 +190,7 @@ watch(errorMessage, message => onError(message));
             @change="onSelect($event)"
           />
           <div
-            class="flex flex-col mt-2 text-center justify-center text-caption text--secondary w-full"
+            class="flex flex-col mt-2 text-center justify-center text-caption text-rui-text-secondary w-full"
           >
             <template v-if="file">
               <i18n
@@ -230,9 +230,9 @@ watch(errorMessage, message => onError(message));
         </template>
 
         <template v-else>
-          <RuiIcon
-            name="checkbox-circle-line"
-            color="primary"
+          <SuccessDisplay
+            success
+            size="24"
           />
           <div
             class="mt-2"

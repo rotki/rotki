@@ -13,7 +13,7 @@ defineProps<{ item: Item }>();
     class="flex flex-row items-center gap-2"
   >
     <AppImage
-      class="icon-bg p-[0.1rem]"
+      class="icon-bg"
       :src="item.icon"
       contain
       size="24px"

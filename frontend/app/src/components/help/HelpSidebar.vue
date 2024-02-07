@@ -95,7 +95,7 @@ const { smAndDown } = useDisplay();
     temporary
     hide-overlay
   >
-    <div class="flex justify-between items-center pa-4">
+    <div class="flex justify-between items-center p-4">
       <div class="text-h6">
         {{ t('help_sidebar.title') }}
       </div>

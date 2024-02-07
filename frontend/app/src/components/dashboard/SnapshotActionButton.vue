@@ -112,7 +112,7 @@ async function importSnapshot() {
         {{ t('snapshot_action_button.snapshot_title') }}
       </div>
 
-      <div class="pt-2 text--secondary">
+      <div class="pt-2 text-rui-text-secondary">
         <DateDisplay
           v-if="lastBalanceSave"
           :timestamp="lastBalanceSave"

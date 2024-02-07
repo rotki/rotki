@@ -142,7 +142,7 @@ onUnmounted(() => {
             />
           </div>
         </template>
-        <div class="pa-4 text-caption">
+        <div class="p-4 text-caption">
           <div>
             {{ t('input_mode_select.metamask_import.missing_tooltip.title') }}
           </div>

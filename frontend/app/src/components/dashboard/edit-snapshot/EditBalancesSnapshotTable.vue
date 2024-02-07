@@ -390,7 +390,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 pa-4 border-b border-default">
+    <div class="grid md:grid-cols-2 p-4 border-b border-default">
       <AssetSelect
         v-model="assetSearch"
         outlined

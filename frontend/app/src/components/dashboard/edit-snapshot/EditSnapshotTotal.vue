@@ -183,7 +183,7 @@ const suggestionsLabel = computed(() => ({
           :error-messages="toMessages(v$.total)"
         />
 
-        <div class="text--secondary text-caption">
+        <div class="text-rui-text-secondary text-caption">
           <i18n path="dashboard.snapshot.edit.dialog.total.warning">
             <template #amount>
               <AmountDisplay
@@ -219,7 +219,7 @@ const suggestionsLabel = computed(() => ({
 
           <div
             v-if="key === 'location'"
-            class="text--secondary text-caption"
+            class="text-rui-text-secondary text-caption"
           >
             {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
           </div>

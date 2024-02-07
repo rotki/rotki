@@ -45,15 +45,19 @@ const css = useCssModule();
         :alt="location.name"
         contain
         :size="size"
-        class="icon-bg p-[0.1rem]"
+        class="icon-bg"
       />
-      <RuiIcon
+      <div
         v-else
-        color="secondary"
-        class="icon-bg p-[0.1rem]"
-        :size="size"
-        :name="location.icon"
-      />
+        class="icon-bg"
+      >
+        <RuiIcon
+          color="secondary"
+          :size="size"
+          :name="location.icon"
+        />
+      </div>
+
       <span
         v-if="!icon"
         class="capitalize text-rui-text-secondary"

@@ -58,14 +58,6 @@ input {
 .theme {
   &--light {
     --border-color: rgba(0, 0, 0, 0.12);
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
-
-    .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(
-        .primary
-      ) {
-      /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
-      background-color: transparent;
-    }
   }
 
   &--dark {
@@ -79,12 +71,6 @@ input {
   }
 }
 
-.v-btn {
-  &--fixed {
-    @apply z-[4];
-  }
-}
-
 .v-menu {
   &__content {
     @apply bg-white dark:bg-neutral-900;
@@ -93,10 +79,6 @@ input {
 
 .v-data-table {
   @apply bg-transparent dark:bg-neutral-900 #{!important};
-}
-
-.v-tab {
-  @apply uppercase;
 }
 
 .v-card {
@@ -126,16 +108,14 @@ input {
   }
 }
 
-
 .skeleton {
   @apply animate-pulse bg-gray-200 dark:bg-gray-800
 }
 
 .icon-bg {
-  @apply dark:rounded-md dark:bg-white;
+  @apply dark:rounded-md dark:bg-white p-[0.1rem];
 }
 
 .blur {
   filter: blur(0.75em);
-
 }

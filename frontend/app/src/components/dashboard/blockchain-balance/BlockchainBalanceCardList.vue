@@ -39,7 +39,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
       <ListItem
         data-cy="blockchain-balance__summary"
         :data-location="total.chain"
-        class="group py-1"
+        class="group py-1 px-6"
       >
         <template #avatar>
           <div class="grayscale group-hover:grayscale-0">

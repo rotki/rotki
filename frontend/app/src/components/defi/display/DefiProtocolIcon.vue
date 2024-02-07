@@ -63,7 +63,7 @@ const css = useCssModule();
         />
         <span
           v-if="mode === 'label' || mode === 'both'"
-          class="text--secondary"
+          class="text-rui-text-secondary"
           :class="css.label"
         >
           {{ toSentenceCase(name) }}

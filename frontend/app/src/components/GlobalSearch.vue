@@ -447,12 +447,13 @@ onBeforeMount(async () => {
                 size="26px"
                 :item="item.location.identifier"
               />
-              <img
+              <AppImage
                 v-else-if="item.image"
-                :alt="item.location.name"
-                class="object-contain icon-bg"
-                width="30"
+                class="icon-bg"
                 :src="item.image"
+                :alt="item.location.name"
+                contain
+                size="26px"
               />
             </template>
             <span class="ml-3">
@@ -511,15 +512,15 @@ onBeforeMount(async () => {
         <template #append>
           <div
             v-if="loading"
-            class="mt-n1 h-full flex items-center"
+            class="h-full flex items-center"
           >
             <RuiProgress
               class="asset-select__loading"
               circular
               color="primary"
               variant="indeterminate"
-              thickness="3"
-              size="30"
+              thickness="2"
+              size="20"
             />
           </div>
         </template>

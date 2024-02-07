@@ -31,6 +31,7 @@ withDefaults(
           v-if="protocolIcon"
           contain
           alt="Protocol Logo"
+          class="icon-bg"
           size="36px"
           :src="protocolIcon"
         />

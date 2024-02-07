@@ -167,6 +167,8 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
   }
   set(refreshing, false);
 }
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -175,7 +177,7 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned,
+        [css['table--pinned']]: isPinned,
       }"
       :headers="headers"
       :items="formattedItems"
@@ -201,14 +203,16 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
           <td :class="isPinned ? 'px-2' : ''">
             <DateDisplay :timestamp="item.time" />
           </td>
-          <td :class="isPinned ? 'px-2 py-1' : 'py-3'">
+          <td
+            class="pb-1"
+            :class="isPinned ? '!p-2' : 'py-3'"
+          >
             <AmountInput
               v-model="item.price"
-              :class="$style.input"
-              class="mb-n2"
-              size="sm"
+              :class="css.input"
+              dense
               :disabled="item.useRefreshedHistoricalPrice"
-              :placeholder="
+              :label="
                 t('profit_loss_report.actionable.missing_prices.input_price')
               "
               variant="outlined"
@@ -238,7 +242,7 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
                     <RuiButton
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
-                      class="-mr-3 !py-[0.625rem]"
+                      class="-mr-3 !py-[0.625rem] rounded-l-none"
                       size="sm"
                       color="primary"
                       @click="refreshHistoricalPrice(item)"
@@ -279,17 +283,6 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
 }
 
 .input {
-  min-width: 150px;
-
-  :global {
-    .v-input {
-      &__append-inner {
-        display: flex !important;
-        align-self: stretch !important;
-        align-items: center;
-        margin-top: 0 !important;
-      }
-    }
-  }
+  min-width: 120px;
 }
 </style>

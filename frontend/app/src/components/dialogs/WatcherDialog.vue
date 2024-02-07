@@ -235,7 +235,6 @@ function cancel() {
 }
 
 const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
-const percent = '%';
 </script>
 
 <template>
@@ -316,7 +315,7 @@ const percent = '%';
               @input="loadedWatchers[key].args.ratio = $event"
             >
               <template #append>
-                {{ percent }}
+                {{ t('percentage_display.symbol') }}
               </template>
             </RuiTextField>
           </div>
@@ -366,7 +365,7 @@ const percent = '%';
               variant="outlined"
             >
               <template #append>
-                {{ percent }}
+                {{ t('percentage_display.symbol') }}
               </template>
             </RuiTextField>
           </div>

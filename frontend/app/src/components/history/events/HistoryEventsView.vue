@@ -107,8 +107,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     text: '',
     value: 'ignoredInAccounting',
     sortable: false,
-    class: 'pa-0',
-    cellClass: 'pa-0',
+    class: '!p-0',
+    cellClass: '!p-0',
     width: '0px',
   },
   {
