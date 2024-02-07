@@ -52,9 +52,9 @@ class BeaconNode:
         - RemoteError if we can't connect to the given rpc endpoint
         """
         self.rpc_endpoint = rpc_endpoint.rstrip('/')
-        result = self.query('/eth/v1/node/version')
+        result = self.query('eth/v1/node/version')
         try:
-            version = result['version']
+            version = result['version']  # type: ignore  # related to the overload problem below
         except KeyError as e:
             raise RemoteError(f'Failed to parse the node version response from {rpc_endpoint}') from e  # noqa: E501
 
@@ -134,6 +134,10 @@ class BeaconInquirer:
         May raise:
         - RemoteError if we can't connect to the given rpc endpoint
         """
+        if rpc_endpoint == '':  # special case for unsetting
+            self.node = None
+            return
+
         if self.node is not None:
             self.node.set_rpc_endpoint(rpc_endpoint=rpc_endpoint)
         else:
@@ -157,14 +161,15 @@ class BeaconInquirer:
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
-                    querystr='/eth/v1/beacon/states/head/validators?id={chunk}',
+                    querystr='eth/v1/beacon/states/head/validators?id={chunk}',
                 )
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator balances via a beacon node failed due to {e!s}')
             else:
                 for entry in node_results:
-                    amount = from_gwei(entry['balance'])
+                    amount = from_gwei(int(entry['balance']))
                     balance_mapping[entry['validator']['pubkey']] = Balance(amount, amount * usd_price)  # noqa: E501
+                return balance_mapping
 
         # else we have to query beaconcha.in
         for entry in self.beaconchain.get_validator_data(indices_or_pubkeys):
@@ -197,7 +202,7 @@ class BeaconInquirer:
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
-                    querystr='/eth/v1/beacon/states/head/validators?id={chunk}}',
+                    querystr='eth/v1/beacon/states/head/validators?id={chunk}',
                 )
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator data via a beacon node failed due to {e!s}')
