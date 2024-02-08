@@ -73,10 +73,11 @@ jobs:
         run: pnpm run --filter rotki test:integration-ci --browser chrome
         working-directory: ./frontend
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           flags: frontend_integration
           env_vars: GROUP
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: failure()

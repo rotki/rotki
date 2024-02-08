@@ -64,15 +64,17 @@ onMounted(async () => {
 });
 
 const intersections = ref({
-  [BalanceType.ASSET]: false,
+  [BalanceType.ASSET]: true,
   [BalanceType.LIABILITY]: false,
 });
 
 function updateWhenRatio(entries: IntersectionObserverEntry[], value: BalanceType) {
-  set(intersections, {
-    ...get(intersections),
-    [value]: entries[0].isIntersecting,
-  });
+  if (entries.length > 0) {
+    set(intersections, {
+      ...get(intersections),
+      [value]: entries.at(-1)!.isIntersecting,
+    });
+  }
 }
 
 const observers = {
@@ -84,7 +86,7 @@ const observers = {
 
 const context = computed(() => {
   const intersect = get(intersections);
-  return intersect.liability ? BalanceType.LIABILITY : BalanceType.ASSET;
+  return intersect.asset ? BalanceType.ASSET : BalanceType.LIABILITY;
 });
 
 const threshold = [1];
