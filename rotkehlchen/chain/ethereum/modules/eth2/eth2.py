@@ -166,7 +166,7 @@ class Eth2(EthereumModule):
         common_arguments: dict[str, Any] = {'from_ts': from_ts, 'to_ts': to_ts}
         index_to_pubkey, index_to_activation_ts, index_to_withdrawable_ts = {}, {}, {}
         dbeth2 = DBEth2(self.database)
-        all_validator_indices = []
+        all_validator_indices = set()
         with self.database.conn.read_ctx() as cursor:
             for entry in cursor.execute('SELECT validator_index, public_key, activation_timestamp, withdrawable_timestamp FROM eth2_validators WHERE validator_index IS NOT NULL'):  # noqa: E501
                 index_to_pubkey[entry[0]] = entry[1]
@@ -174,22 +174,39 @@ class Eth2(EthereumModule):
                     index_to_activation_ts[entry[0]] = entry[2]
                 if entry[3] is not None:
                     index_to_withdrawable_ts[entry[0]] = entry[3]
-                all_validator_indices.append(entry[0])
+                all_validator_indices.add(entry[0])
             pubkey_to_index = {x[1]: x[0] for x in cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
-        processing_validators = all_validator_indices
+
+        to_filter_indices, to_query_indices = None, None
         if validator_indices is not None:
-            processing_validators = validator_indices
-            common_arguments['validator_indices'] = processing_validators
-        elif status != PerformanceStatusFilter.ALL:
+            to_filter_indices = set(validator_indices)
+            to_query_indices = to_filter_indices
+
+        if status != PerformanceStatusFilter.ALL:
             with self.database.conn.read_ctx() as cursor:
                 if status == PerformanceStatusFilter.ACTIVE:
-                    processing_validators = list(dbeth2.get_active_validator_indices(cursor))
+                    got_indices = dbeth2.get_active_validator_indices(cursor)
                 else:  # can only be EXITED
-                    processing_validators = list(dbeth2.get_exited_validator_indices(cursor))
-                common_arguments['validator_indices'] = processing_validators
+                    got_indices = dbeth2.get_exited_validator_indices(cursor)
+
+            to_filter_indices = got_indices if to_filter_indices is None else to_filter_indices | got_indices  # noqa: E501
+            to_query_indices = got_indices if to_query_indices is None else to_query_indices | got_indices  # noqa: E501
 
         if addresses is not None:
-            common_arguments['location_labels'] = addresses
+            with self.database.conn.read_ctx() as cursor:
+                associated_indices = dbeth2.get_associated_with_addresses_validator_indices(
+                    cursor=cursor,
+                    addresses=addresses,
+                )
+            to_query_indices = associated_indices if to_query_indices is None else to_query_indices | associated_indices  # noqa: E501
+            # also add the to_filter_indices since this will enable deposit association
+            # to validator index by address. We need to do this instead of adding
+            # addresses to common_arguments since then we would be ANDing the filters
+            # which would end up returning no values for many validators
+            to_filter_indices = associated_indices if to_filter_indices is None else to_filter_indices | associated_indices  # noqa: E501
+
+        if to_filter_indices is not None:
+            common_arguments['validator_indices'] = list(to_filter_indices)
 
         withdrawals_filter_query, exits_filter_query, execution_filter_query = create_profit_filter_queries(common_arguments)  # noqa: E501
 
@@ -220,9 +237,12 @@ class Eth2(EthereumModule):
         # if we check until a recent timestamp we should also take into account
         # outstanding rewards not yet withdrawn
         now = ts_now()
+        if to_query_indices is None:
+            to_query_indices = all_validator_indices
+
         if now - to_ts <= DAY_IN_SECONDS:
             balances = self.beacon_inquirer.get_balances(
-                indices_or_pubkeys=list(processing_validators),
+                indices_or_pubkeys=list(to_query_indices),
             )
             for pubkey, balance in balances.items():
                 entry = pnls[pubkey_to_index[pubkey]]

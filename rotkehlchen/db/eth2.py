@@ -20,7 +20,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -199,6 +199,24 @@ class DBEth2:
         cursor.execute(
             'SELECT validator_index FROM eth_staking_events_info WHERE is_exit_or_blocknumber=1',
         )  # checking against literal 1 is safe since block 1 was not mined during PoS
+        return {x[0] for x in cursor}
+
+    def get_associated_with_addresses_validator_indices(
+            self,
+            cursor: 'DBCursor',
+            addresses: list[ChecksumEvmAddress],
+    ) -> set[int]:
+        """Returns indices of validators that are associated with the given addresses.
+
+        Association means either it's a withdrawal address for any validator or
+        has been used as a fee recipient for a validator or deposited to a validator.
+        """
+        questionmarks = '?' * len(addresses)
+        cursor.execute(
+            f'SELECT S.validator_index FROM eth_staking_events_info S LEFT JOIN '
+            f'history_events H on S.identifier=H.identifier WHERE H.location_label IN '
+            f'({",".join(questionmarks)})', addresses,
+        )
         return {x[0] for x in cursor}
 
     def set_validator_exit(
