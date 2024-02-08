@@ -26,6 +26,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: '',
     key: 'isWorth',
+    cellClass: '!text-xs !text-rui-text-secondary',
   },
   {
     label: t('common.price'),

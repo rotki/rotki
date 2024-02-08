@@ -307,7 +307,7 @@ const slots = useSlots();
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
-        <div class="pa-4">
+        <div class="p-4">
           <div
             v-for="(proxies, key, index) in proxyInformation"
             :key="key"

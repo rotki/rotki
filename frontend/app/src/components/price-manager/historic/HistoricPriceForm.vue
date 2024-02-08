@@ -85,7 +85,7 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <form class="flex flex-col gap-2">
+  <form class="flex flex-col gap-4">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AssetSelect
         :value="value.fromAsset"
@@ -114,7 +114,7 @@ const v$ = setValidation(
       v-if="price && fromAsset && toAsset"
       tag="div"
       path="price_form.historic.hint"
-      class="text-caption text-rui-success -mt-8 pb-1 pl-3"
+      class="text-caption text-rui-success -mt-9 pl-3"
     >
       <template #fromAsset>
         <strong>

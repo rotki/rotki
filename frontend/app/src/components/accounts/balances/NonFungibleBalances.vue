@@ -262,6 +262,7 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
             v-model="selected"
             row-attr="id"
             outlined
+            dense
             :cols="tableHeaders"
             :rows="data"
             :sort.sync="sort"

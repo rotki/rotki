@@ -96,8 +96,6 @@ watch(
     emit('update:validator', validator);
   },
 );
-
-const percentageSymbol = '%';
 </script>
 
 <template>
@@ -139,7 +137,7 @@ const percentageSymbol = '%';
         @blur="v$.ownershipPercentage.$touch()"
       >
         <template #append>
-          {{ percentageSymbol }}
+          {{ t('percentage_display.symbol') }}
         </template>
       </AmountInput>
     </div>

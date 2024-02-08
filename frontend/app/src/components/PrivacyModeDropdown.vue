@@ -72,7 +72,7 @@ watch([enabled, multiplier], setData);
         </MenuTooltipButton>
         <RuiButton
           data-cy="privacy-menu"
-          class="privacy-mode-dropdown__expander pa-0"
+          class="privacy-mode-dropdown__expander"
           icon
           variant="text"
           size="sm"

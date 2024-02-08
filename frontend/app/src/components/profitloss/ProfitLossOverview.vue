@@ -41,13 +41,13 @@ const { t } = useI18n();
           class="text-rui-text-secondary font-medium border-b border-default text-xs"
         >
           <tr>
-            <th class="text-left pa-4">
+            <th class="text-left p-4">
               {{ t('common.type') }}
             </th>
-            <th class="text-right pa-4">
+            <th class="text-right p-4">
               {{ t('profit_loss_overview.headers.tax_free_profit_loss') }}
             </th>
-            <th class="text-right pa-4">
+            <th class="text-right p-4">
               {{ t('profit_loss_overview.headers.taxable_profit_loss') }}
             </th>
           </tr>
@@ -58,10 +58,10 @@ const { t } = useI18n();
             :key="key"
             class="border-default border-b"
           >
-            <td class="pa-4">
+            <td class="p-4">
               {{ pluralizeLastWord(toCapitalCase(key)) }}
             </td>
-            <td class="text-right pa-4">
+            <td class="text-right p-4">
               <AmountDisplay
                 pnl
                 force-currency
@@ -71,7 +71,7 @@ const { t } = useI18n();
                 :fiat-currency="report.settings.profitCurrency"
               />
             </td>
-            <td class="text-right pa-4">
+            <td class="text-right p-4">
               <AmountDisplay
                 pnl
                 force-currency
@@ -85,14 +85,14 @@ const { t } = useI18n();
           <tr v-if="Object.keys(report.overview).length === 0">
             <td
               colspan="3"
-              class="pa-4 h-[3rem]"
+              class="p-4 h-[3rem]"
             />
           </tr>
           <tr class="border-t border-default font-medium">
-            <td class="pa-4">
+            <td class="p-4">
               {{ t('common.total') }}
             </td>
-            <td class="text-right pa-4">
+            <td class="text-right p-4">
               <AmountDisplay
                 pnl
                 force-currency
@@ -102,7 +102,7 @@ const { t } = useI18n();
                 :fiat-currency="report.settings.profitCurrency"
               />
             </td>
-            <td class="text-right pa-4">
+            <td class="text-right p-4">
               <AmountDisplay
                 pnl
                 force-currency

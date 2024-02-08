@@ -161,6 +161,7 @@ function showDeleteConfirmation(id: number) {
     </template>
     <RuiDataTable
       outlined
+      dense
       :loading="loading"
       :cols="cols"
       row-attr="id"

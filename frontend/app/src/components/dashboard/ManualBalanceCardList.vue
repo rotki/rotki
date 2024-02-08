@@ -17,7 +17,7 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
   <RouterLink :to="manualBalancesRoute">
     <ListItem
       data-cy="manual-balance__summary"
-      class="group py-1"
+      class="group py-1 px-6"
       :data-location="name"
     >
       <template #avatar>
@@ -25,7 +25,7 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
           <LocationDisplay
             :identifier="name"
             icon
-            size="24px"
+            size="26px"
           />
         </div>
       </template>

@@ -37,8 +37,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       text: '',
       value: 'ignoredInAccounting',
       sortable: false,
-      class: !overview ? 'pa-0' : 'pr-0',
-      cellClass: !overview ? 'pa-0' : 'pr-0',
+      class: !overview ? '!p-0' : '',
+      cellClass: !overview ? '!p-0' : '',
     },
     {
       text: t('common.location'),

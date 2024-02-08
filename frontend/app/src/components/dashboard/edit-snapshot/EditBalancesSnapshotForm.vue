@@ -104,7 +104,7 @@ function updateAsset(asset: string) {
       :error-messages="toMessages(v$.category)"
     />
     <div>
-      <div class="text--secondary text-caption">
+      <div class="text-rui-text-secondary text-caption">
         {{ t('common.asset') }}
       </div>
       <div>

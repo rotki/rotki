@@ -180,11 +180,11 @@ const css = useCssModule();
 
       <div
         v-if="premium"
-        class="flex flex-row gap-2"
+        class="flex items-center gap-2"
       >
-        <RuiIcon
-          name="checkbox-circle-line"
-          color="success"
+        <SuccessDisplay
+          success
+          size="24"
         />
         {{ t('premium_settings.premium_active') }}
       </div>

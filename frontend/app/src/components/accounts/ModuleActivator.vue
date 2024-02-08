@@ -87,7 +87,7 @@ const loading = isAccountOperationRunning();
         </RuiButton>
       </template>
     </RuiButtonGroup>
-    <div class="text-caption text--secondary">
+    <div class="text-caption text-rui-text-secondary">
       {{ t('module_activator.hint') }}
     </div>
   </div>

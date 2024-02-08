@@ -162,7 +162,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         <thead>
           <tr>
             <th class="w-10" />
-            <th class="w-[3.75rem] text-center">
+            <th class="w-8 px-0 text-center">
               {{ t('common.priority') }}
             </th>
             <th class="ps-6">
@@ -174,7 +174,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         <tbody>
           <tr v-if="noResults">
             <td colspan="4">
-              <div class="flex justify-center pa-3 text-h6">
+              <div class="flex justify-center p-3 text-h6">
                 {{ t('prioritized_list.item.empty', itemNameTr) }}
               </div>
             </td>
@@ -182,9 +182,10 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           <tr
             v-for="(identifier, index) in value"
             :key="identifier"
+            class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900"
           >
             <td>
-              <div class="flex flex-col py-2">
+              <div class="flex flex-col">
                 <RuiButtonGroup
                   variant="outlined"
                   size="sm"
@@ -194,6 +195,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                   <template #default>
                     <RuiButton
                       :id="`move-up-${identifier}`"
+                      class="!px-2"
                       :disabled="isFirst(identifier)"
                       @click="move(identifier, false)"
                     >
@@ -201,6 +203,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                     </RuiButton>
                     <RuiButton
                       :id="`move-down-${identifier}`"
+                      class="!px-2"
                       :disabled="isLast(identifier)"
                       @click="move(identifier, true)"
                     >
@@ -210,7 +213,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                 </RuiButtonGroup>
               </div>
             </td>
-            <td class="text-center">
+            <td class="text-center px-0">
               {{ index + 1 }}
             </td>
             <td>

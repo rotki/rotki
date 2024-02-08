@@ -91,7 +91,7 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
               :src="tab.image"
               size="24px"
               contain
-              class="icon-bg p-[0.1rem]"
+              class="icon-bg"
             />
             <span class="capitalize text-rui-text-secondary -mb-1">
               {{ tab.name }}

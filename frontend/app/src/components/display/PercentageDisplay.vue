@@ -42,7 +42,7 @@ const { t } = useI18n();
 
 <template>
   <div
-    class="flex percentage-display flex-nowrap"
+    class="flex percentage-display items-baseline gap-1 flex-nowrap"
     :class="{
       'justify-start': justify === 'start',
       'justify-end': justify === 'end',
@@ -62,7 +62,7 @@ const { t } = useI18n();
       v-if="!!value"
       :style="assetStyle"
       :class="assetPadding ? 'mr-1' : null"
-      class="ml-1 text-sm"
+      class="text-sm"
     >
       {{ t('percentage_display.symbol') }}
     </div>

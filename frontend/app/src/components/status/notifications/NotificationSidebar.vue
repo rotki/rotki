@@ -90,10 +90,12 @@ const notificationStyle = {
               />
             </RuiButton>
           </template>
-          <span>{{ t('notification_sidebar.close_tooltip') }}</span>
+          <span>
+            {{ t('notification_sidebar.close_tooltip') }}
+          </span>
         </RuiTooltip>
         <div
-          class="flex-1 uppercase text--secondary text-caption font-medium"
+          class="flex-1 uppercase text-rui-text-secondary text-caption font-medium"
         >
           {{ t('notification_sidebar.title') }}
         </div>

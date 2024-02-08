@@ -703,7 +703,7 @@ function abortLogin() {
     @apply flex flex-col justify-stretch space-y-8 pt-6;
 
     &__footer {
-      @apply flex items-center justify-center text-rui-text-secondary;
+      @apply flex flex-wrap gap-1 sm:gap-0 items-center justify-center text-rui-text-secondary;
     }
   }
 }

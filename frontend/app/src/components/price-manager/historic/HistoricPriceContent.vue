@@ -27,6 +27,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: '',
     key: 'wasWorth',
+    cellClass: '!text-xs !text-rui-text-secondary',
   },
   {
     label: t('common.price'),
@@ -42,6 +43,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: '',
     key: 'on',
+    cellClass: '!text-xs !text-rui-text-secondary',
   },
   {
     label: t('common.datetime'),
