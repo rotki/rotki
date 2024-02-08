@@ -17,7 +17,7 @@ const { t } = useI18n();
     >
       <template #activator>
         <RuiButton
-          class="min-w-[90px]"
+          class="min-w-[5.625rem]"
           variant="outlined"
           :disabled="disabled || disabledActions?.ignore"
           @click="emit('ignore', true)"
@@ -33,7 +33,7 @@ const { t } = useI18n();
     >
       <template #activator>
         <RuiButton
-          class="min-w-[90px]"
+          class="min-w-[5.625rem]"
           variant="outlined"
           :disabled="disabled || disabledActions?.unIgnore"
           @click="emit('ignore', false)"
