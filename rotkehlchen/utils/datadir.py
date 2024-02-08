@@ -98,8 +98,8 @@ def maybe_restructure_rotki_data_directory(data_dir: Path) -> None:
                 other_paths.append(x)
                 continue
 
-            if (x / USERDB_NAME).exists():
-                user_paths.append(x)
+            if (x / USERDB_NAME).exists():  # putting first to never lose any
+                user_paths.append(x)  # user data in case they use weird user names
             elif x.name == 'global_data':
                 global_path = x
             elif x.name == 'airdrops':
@@ -113,8 +113,9 @@ def maybe_restructure_rotki_data_directory(data_dir: Path) -> None:
             else:
                 other_paths.append(x)
 
-        except PermissionError:
+        except PermissionError as e:
             # ignore directories that can't be accessed
+            log.debug(f'Ignoring directory {x} during data dir restructuring due to {e!s}')
             continue
 
     # create the user_data directory and move users there
