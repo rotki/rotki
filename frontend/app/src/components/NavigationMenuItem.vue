@@ -95,7 +95,7 @@ const css = useCssModule();
         </div>
       </template>
       <div
-        v-if="parent"
+        v-if="parent && !mini"
         :class="css.toggle"
       >
         <RuiIcon

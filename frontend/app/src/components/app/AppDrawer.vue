@@ -11,6 +11,7 @@ const { appBarColor } = useTheme();
     v-model="showDrawer"
     width="300"
     class="app__navigation-drawer"
+    :class="{ 'app__navigation-drawer--mini': isMini }"
     fixed
     :mini-variant="isMini"
     :color="appBarColor"
@@ -58,19 +59,13 @@ const { appBarColor } = useTheme();
   }
 
   &__navigation-drawer {
-    padding-bottom: 48px;
+    padding-bottom: 3rem;
 
     &__version {
       position: fixed;
       bottom: 0;
       width: 100%;
     }
-  }
-}
-
-.v-navigation-drawer {
-  &--is-mobile {
-    padding-top: 60px !important;
   }
 }
 </style>
