@@ -68,6 +68,12 @@ def fixture_empty_global_addressbook() -> bool:
     return False
 
 
+@pytest.fixture(name='remove_global_assets')
+def fixture_remove_global_assets() -> list[str]:
+    """Asset identifiers to remove from the globalDB"""
+    return []
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
@@ -93,6 +99,7 @@ def _initialize_fixture_globaldb(
         globaldb_migrations,
         run_globaldb_migrations,
         empty_global_addressbook,
+        remove_global_assets,
 ) -> GlobalDBHandler:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -131,6 +138,13 @@ def _initialize_fixture_globaldb(
         with globaldb.conn.write_ctx() as cursor:
             cursor.execute('DELETE FROM address_book')
 
+    if len(remove_global_assets) > 0:
+        with globaldb.conn.write_ctx() as cursor:
+            cursor.executemany(
+                'DELETE FROM assets WHERE identifier=?;',
+                [(asset,) for asset in remove_global_assets],
+            )
+
     return globaldb
 
 
@@ -145,6 +159,7 @@ def fixture_globaldb(
         globaldb_migrations,
         run_globaldb_migrations,
         empty_global_addressbook,
+        remove_global_assets,
 ):
     globaldb = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -156,6 +171,7 @@ def fixture_globaldb(
         globaldb_migrations=globaldb_migrations,
         run_globaldb_migrations=run_globaldb_migrations,
         empty_global_addressbook=empty_global_addressbook,
+        remove_global_assets=remove_global_assets,
     )
     yield globaldb
 

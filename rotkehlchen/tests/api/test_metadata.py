@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
+import pytest
 
 import requests
 
-from rotkehlchen.chain.ethereum.airdrops import AIRDROPS
+from rotkehlchen.chain.ethereum.airdrops import fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import SupportedBlockchain
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+@pytest.mark.vcr()
 def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that all the endpoints that query mappings or metadata from the backend work fine"""
 
@@ -21,7 +23,9 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
             'name': airdrop.name,
             'icon': airdrop.icon,
         }
-        for identifier, airdrop in AIRDROPS.items()
+        for identifier, airdrop in fetch_airdrops_metadata(
+            database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        )[0].items()
     ]
     airdrops_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),

@@ -63,7 +63,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, check_airdrops
+from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -168,7 +168,6 @@ from rotkehlchen.errors.misc import (
     RemoteError,
     SystemPermissionError,
     TagConstraintError,
-    UnableToDecryptRemoteData,
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
@@ -2267,7 +2266,7 @@ class RestAPI:
                 database=self.rotkehlchen.data.db,
                 tolerance_for_amount_check=FVal('0.00000000000001000'),
             )
-        except (RemoteError, UnableToDecryptRemoteData) as e:
+        except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except OSError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.INSUFFICIENT_STORAGE)
@@ -4385,12 +4384,15 @@ class RestAPI:
     def get_airdrops_metadata(self) -> Response:
         """Returns a list of airdrops metadata"""
         result = []
-        for identifier, airdrop in AIRDROPS.items():
-            result.append({
-                'identifier': identifier,
-                'name': airdrop.name,
-                'icon': airdrop.icon,
-            })
+        try:
+            for identifier, airdrop in fetch_airdrops_metadata(self.rotkehlchen.data.db)[0].items():  # noqa: E501
+                result.append({
+                    'identifier': identifier,
+                    'name': airdrop.name,
+                    'icon': airdrop.icon,
+                })
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
         return api_response(result=_wrap_in_ok_result(result=result))
 
     def get_defi_metadata(self) -> Response:
