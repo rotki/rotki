@@ -123,7 +123,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
       - name: Get pnpm store directory
@@ -237,7 +237,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
       - name: Get pnpm store directory
@@ -312,7 +312,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
       - name: Get pnpm store directory
