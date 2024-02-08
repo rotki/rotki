@@ -91,10 +91,17 @@ const focused: Ref<boolean> = ref(false);
       v-bind="rootAttrs"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
-      :loading="!reversed && loading"
       @input="updatePrimaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
+    />
+
+    <RuiProgress
+      class="relative z-[1]"
+      :class="{ 'opacity-0': !loading }"
+      variant="indeterminate"
+      thickness="4"
+      color="primary"
     />
 
     <AmountInput
@@ -109,7 +116,6 @@ const focused: Ref<boolean> = ref(false);
       v-bind="rootAttrs"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
-      :loading="reversed && loading"
       @input="updateSecondaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
@@ -135,7 +141,7 @@ const focused: Ref<boolean> = ref(false);
   @apply relative;
 
   > * {
-    margin: -0.5px 0;
+    margin: -1px 0;
   }
 
   :deep(label) {
@@ -183,7 +189,7 @@ const focused: Ref<boolean> = ref(false);
 }
 
 .swap-button {
-  @apply absolute right-5 top-14 transform -translate-y-1/2;
+  @apply absolute right-5 top-14 transform -translate-y-1/2 z-[1];
 }
 
 .theme {
