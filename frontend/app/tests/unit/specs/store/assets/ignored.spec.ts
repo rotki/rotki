@@ -2,7 +2,7 @@ vi.mock('@/composables/api/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({
     getIgnoredAssets: vi.fn().mockResolvedValue([]),
     addIgnoredAssets: vi.fn().mockResolvedValue([]),
-    removeIgnoredAssets: vi.fn().mockResolvedValue([]),
+    removeIgnoredAssets: vi.fn().mockResolvedValue({ successful: [], noAction: [] }),
   }),
 }));
 
@@ -29,16 +29,19 @@ describe('store::assets/ignored', () => {
   });
 
   it('should add ignored asset', async () => {
-    vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue([
-      'ETH',
-      'DAI',
-    ]);
+    vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue({ successful: ['ETH', 'DAI'], noAction: [] });
     await store.ignoreAsset('DAI');
     expect(useAssetIgnoreApi().addIgnoredAssets).toHaveBeenCalledWith(['DAI']);
   });
 
   it('should remove ignored asset', async () => {
-    vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue(['ETH']);
+    vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue({ successful: ['ETH'], noAction: [] });
+    await store.ignoreAsset('DAI');
+    expect(useAssetIgnoreApi().addIgnoredAssets).toHaveBeenCalledWith(['DAI']);
+  });
+
+  it('should not ignored asset if already ignored', async () => {
+    vi.mocked(useAssetIgnoreApi().addIgnoredAssets).mockResolvedValue({ successful: ['ETH', 'DAI'], noAction: ['DAI'] });
     await store.ignoreAsset('DAI');
     expect(useAssetIgnoreApi().addIgnoredAssets).toHaveBeenCalledWith(['DAI']);
   });

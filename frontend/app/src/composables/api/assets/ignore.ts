@@ -5,6 +5,7 @@ import {
   validWithoutSessionStatus,
 } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { IgnoredAssetResponse } from '@/types/asset';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useAssetIgnoreApi() {
@@ -19,8 +20,8 @@ export function useAssetIgnoreApi() {
     return handleResponse(response);
   };
 
-  const addIgnoredAssets = async (assets: string[]): Promise<string[]> => {
-    const response = await api.instance.put<ActionResult<string[]>>(
+  const addIgnoredAssets = async (assets: string[]): Promise<IgnoredAssetResponse> => {
+    const response = await api.instance.put<ActionResult<IgnoredAssetResponse>>(
       '/assets/ignored',
       snakeCaseTransformer({
         assets,
@@ -30,11 +31,11 @@ export function useAssetIgnoreApi() {
       },
     );
 
-    return handleResponse(response);
+    return IgnoredAssetResponse.parse(handleResponse(response));
   };
 
-  const removeIgnoredAssets = async (assets: string[]): Promise<string[]> => {
-    const response = await api.instance.delete<ActionResult<string[]>>(
+  const removeIgnoredAssets = async (assets: string[]): Promise<IgnoredAssetResponse> => {
+    const response = await api.instance.delete<ActionResult<IgnoredAssetResponse>>(
       '/assets/ignored',
       {
         data: {
@@ -44,7 +45,7 @@ export function useAssetIgnoreApi() {
       },
     );
 
-    return handleResponse(response);
+    return IgnoredAssetResponse.parse(handleResponse(response));
   };
 
   return {

@@ -17,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'input', value: Model): void;
+  (e: 'refresh:ignored'): void;
 }>();
 
 const { t } = useI18n();
@@ -36,6 +37,9 @@ const handlingSelection = computed({
         ...props.value,
         ignoredAssetsHandling: value,
       });
+
+      if (value === IgnoredAssetHandlingType.SHOW_ONLY)
+        emit('refresh:ignored');
     }
   },
 });

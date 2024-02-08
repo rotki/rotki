@@ -105,6 +105,13 @@ export const IgnoredAssetHandlingType = {
 export type IgnoredAssetsHandlingType =
   (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
 
+export const IgnoredAssetResponse = z.object({
+  successful: z.array(z.string()),
+  noAction: z.array(z.string()),
+});
+
+export type IgnoredAssetResponse = z.infer<typeof IgnoredAssetResponse>;
+
 export const EvmNativeToken = ['ETH'];
 
 export function isEvmNativeToken(asset: string) {

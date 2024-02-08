@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 
 const props = defineProps<{
   selected: string[];
@@ -24,6 +24,14 @@ const internalValue = computed({
   },
 });
 
+const disabledIgnoreActions = computed(() => {
+  const ignoredAssetsHandling = get(internalValue);
+  return ({
+    ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
+    unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
+  });
+});
+
 function massIgnore(ignored: boolean) {
   emit('mass-ignore', ignored);
 }
@@ -36,6 +44,7 @@ const { t } = useI18n();
     <div class="flex flex-row gap-2">
       <IgnoreButtons
         :disabled="selected.length === 0"
+        :disabled-actions="disabledIgnoreActions"
         @ignore="massIgnore($event)"
       />
       <div
