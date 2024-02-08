@@ -240,11 +240,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                self.msg_aggregator.add_warning(
-                    f'Failed to query some transactions for {address} '
-                    f'on {self.evm_inquirer.chain_name}. '
-                    f'Please check the logs.',
-                )
                 return
 
         log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
@@ -351,11 +346,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                self.msg_aggregator.add_warning(
-                    f'Failed to query some internal transactions for {address} '
-                    f'on {self.evm_inquirer.chain_name}. '
-                    f'Please check the logs.',
-                )
                 return
 
         log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
@@ -426,11 +416,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
-                )
-                self.msg_aggregator.add_warning(
-                    f'Failed to query some token transactions for {address} '
-                    f'on {self.evm_inquirer.chain_name}. '
-                    f'Please check the logs.',
                 )
 
         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
@@ -748,7 +733,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 try:
                     tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
                 except RemoteError as e:
-                    self.msg_aggregator.add_warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {e!s}. Skipping...')  # noqa: E501
+                    log.warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {e!s}. Skipping...')  # noqa: E501
                     continue
 
                 with self.database.user_write() as write_cursor:

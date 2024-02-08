@@ -193,11 +193,10 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
         ],
     )
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 9
+    assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 2
     assert all('kraken' in e for e in errors)
-    assert 'Failed to query some token transactions for' in warnings[2]
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
     # For history processing tests look at test_accounting.py and
