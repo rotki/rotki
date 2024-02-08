@@ -12816,6 +12816,7 @@ Getting Metadata For Airdrops
 
    :statuscode 200: Information was correctly returned
    :statuscode 500: Internal rotki error
+   :statuscode 502: Failed to fetch airdrop metadata from rotki's data repository.
 
 Getting Metadata For Defi Protocols
 ==========================================
