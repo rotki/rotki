@@ -47,6 +47,7 @@ from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
 )
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
@@ -2214,6 +2215,12 @@ class AssetIconUploadSchema(Schema):
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
+class EthStakingHistoryStats(Schema):
+    """Schema for querying ethereum staking history stats"""
+    addresses = DelimitedOrNormalList(EvmAddressField, load_default=None)
+    validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+
+
 class ExchangeRatesSchema(AsyncQueryArgumentSchema):
     currencies = DelimitedOrNormalList(
         MaybeAssetField(expected_type=AssetWithOracles),
@@ -2460,8 +2467,12 @@ class Eth2DailyStatsSchema(
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
+        EthStakingHistoryStats,
 ):
-    validator_indices = fields.List(fields.Integer(), load_default=None)
+
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.database = dbhandler
 
     @validates_schema
     def validate_eth2_daily_stats_schema(
@@ -2494,6 +2505,20 @@ class Eth2DailyStatsSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        validator_indices = data['validator_indices']
+        if validator_indices or data['addresses']:
+            associated_indices = set()
+            given_indices = set() if validator_indices is None else set(validator_indices)
+            if (addresses := data['addresses']):
+                dbeth2 = DBEth2(self.database)
+                with self.database.conn.read_ctx() as cursor:
+                    associated_indices = dbeth2.get_associated_with_addresses_validator_indices(
+                        cursor=cursor,
+                        addresses=addresses,
+                    )
+
+            validator_indices = list(associated_indices | given_indices)
+
         filter_query = Eth2DailyStatsFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
                 data=data,
@@ -2504,7 +2529,7 @@ class Eth2DailyStatsSchema(
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            validator_indices=data['validator_indices'],
+            validator_indices=validator_indices,
         )
         return {
             'async_query': data['async_query'],
@@ -3102,12 +3127,6 @@ class ClearAvatarsCacheSchema(Schema):
         fields.String(required=True, validate=lambda x: x.endswith('.eth')),
         load_default=None,
     )
-
-
-class EthStakingHistoryStats(Schema):
-    """Schema for querying ethereum staking history stats"""
-    addresses = DelimitedOrNormalList(EvmAddressField, load_default=None)
-    validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
 
 
 class Eth2StakePerformanceSchema(EthStakingHistoryStats, TimestampRangeSchema, AsyncIgnoreCacheQueryArgumentSchema, DBPaginationSchema):  # noqa: E501
