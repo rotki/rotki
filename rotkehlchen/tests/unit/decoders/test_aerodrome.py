@@ -27,11 +27,6 @@ A_AERO = Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631')
 WETH_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WSTETH_POOL_ADDRESS = string_to_evm_address('0xA6385c73961dd9C58db2EF0c4EB98cE4B60651e8')
 WSTETH_GAUGE_ADDRESS = string_to_evm_address('0xDf7c8F17Ab7D47702A4a4b6D951d2A4c90F99bf4')
-WSTETH_POOL_TOKEN = Asset(evm_address_to_identifier(
-    address=WSTETH_POOL_ADDRESS,
-    chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
-))
 VELO_V2_TOKEN = evm_address_to_identifier(
     address=string_to_evm_address('0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
     chain_id=ChainID.OPTIMISM,

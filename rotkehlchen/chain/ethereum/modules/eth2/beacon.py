@@ -237,7 +237,6 @@ class BeaconInquirer:
             details.append(ValidatorDetails(
                 validator_index=deserialize_int(entry[index_key]),
                 public_key=Eth2PubKey(deserialize_str(valuegetter(entry, 'pubkey'))),
-                eth1_depositor=None,
                 withdrawal_address=withdrawal_address,
                 activation_ts=activation_ts,
                 withdrawable_ts=withdrawable_ts,

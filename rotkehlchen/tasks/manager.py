@@ -158,6 +158,7 @@ class TaskManager:
             self._maybe_detect_new_spam_tokens,
             self._maybe_augmented_detect_new_spam_tokens,
             self._maybe_query_monerium,
+            self._maybe_update_owned_assets,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)

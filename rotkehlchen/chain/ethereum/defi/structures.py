@@ -1,5 +1,4 @@
-from collections.abc import Callable
-from typing import Literal, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.types import ChecksumEvmAddress
@@ -29,14 +28,16 @@ class DefiProtocolBalances(NamedTuple):
     underlying_balances: list[DefiBalance]
 
 
-# Type of the argument given to functions that need the defi balances
-GIVEN_DEFI_BALANCES = (
-    dict[ChecksumEvmAddress, list[DefiProtocolBalances]] |
-    Callable[[], dict[ChecksumEvmAddress, list[DefiProtocolBalances]]]
-)
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-# Type of the argument given to functions that need the eth balances
-GIVEN_ETH_BALANCES = (
-    dict[ChecksumEvmAddress, BalanceSheet] |
-    Callable[[], dict[ChecksumEvmAddress, BalanceSheet]]
-)
+    # Type of the argument given to functions that need the defi balances
+    GIVEN_DEFI_BALANCES = (
+        dict[ChecksumEvmAddress, list[DefiProtocolBalances]] |
+        Callable[[], dict[ChecksumEvmAddress, list[DefiProtocolBalances]]]
+    )
+    # Type of the argument given to functions that need the eth balances
+    GIVEN_ETH_BALANCES = (
+        dict[ChecksumEvmAddress, BalanceSheet] |
+        Callable[[], dict[ChecksumEvmAddress, BalanceSheet]]
+    )
