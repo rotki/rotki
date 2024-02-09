@@ -15,11 +15,12 @@ from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp
-from rotkehlchen.utils.misc import from_gwei
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
+
+    VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -34,37 +35,7 @@ class ValidatorID:
         return isinstance(other, ValidatorID) and self.public_key == other.public_key
 
 
-class ValidatorWithOwnershipID(ValidatorID):
-    ownership_proportion: FVal
-
-
 Eth2ValidatorDBTuple = tuple[int, str, str]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class Eth2Validator:
-    index: int
-    public_key: Eth2PubKey
-    ownership_proportion: FVal = ONE
-
-    def serialize_for_db(self) -> Eth2ValidatorDBTuple:
-        return self.index, self.public_key, str(self.ownership_proportion)
-
-    @classmethod
-    def deserialize_from_db(cls, result: Eth2ValidatorDBTuple) -> 'Eth2Validator':
-        return cls(
-            index=result[0],
-            public_key=Eth2PubKey(result[1]),
-            ownership_proportion=FVal(result[2]),
-        )
-
-    def serialize(self) -> dict[str, Any]:
-        percentage_value = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
-        return {
-            'validator_index': self.index,
-            'public_key': self.public_key,
-            'ownership_percentage': percentage_value,
-        }
 
 
 ValidatorDailyStatsDBTuple = tuple[
@@ -190,16 +161,11 @@ class ValidatorDailyStats(AccountingEventMixin):
         return 1
 
 
-VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
-VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
-
-
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ValidatorDetails:
     validator_index: int | None  # can be None if no index has yet been created due to not yet being seen by the consensys layer  # noqa: E501
     public_key: Eth2PubKey
     withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x1 credentials
-    eth1_depositor: ChecksumEvmAddress | None = None  # can be None if we have not yet populated it. TODO: Does it make sense to have this? There can be multiple depositors # noqa: E501
     activation_ts: Timestamp | None = None  # activation timestamp. None if not activated yet.
     withdrawable_ts: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
     ownership_proportion: FVal = ONE  # [0, 1] proportion of ownership user has on the validator
@@ -221,7 +187,7 @@ class ValidatorDetails:
 
         return data
 
-    def serialize_for_db(self) -> VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP:
+    def serialize_for_db(self) -> 'VALIDATOR_DETAILS_DB_TUPLE':
         """Serialize for DB insertion without touching the ownership proportion since
         the place this is inserted in the DB should not modify ownership"""
         return (
@@ -234,11 +200,10 @@ class ValidatorDetails:
         )
 
     @classmethod
-    def deserialize_from_db(cls, result: VALIDATOR_DETAILS_DB_TUPLE_WITH_OWNERSHIP) -> Self:
+    def deserialize_from_db(cls, result: 'VALIDATOR_DETAILS_DB_TUPLE') -> Self:
         return cls(
             validator_index=result[0],
             public_key=result[1],
-            eth1_depositor=None,  # not saved in the DB
             ownership_proportion=FVal(result[2]),
             withdrawal_address=result[3],
             activation_ts=result[4],
@@ -271,14 +236,6 @@ class ValidatorDetailsWithStatus(ValidatorDetails):
             self.status = ValidatorStatus.ACTIVE
         else:
             self.status = ValidatorStatus.PENDING
-
-
-def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str]:
-    normalized_value = from_gwei(value)
-    return {
-        'amount': str(normalized_value),
-        'usd_value': str(normalized_value * eth_usd_price),
-    }
 
 
 class PerformanceStatusFilter(StrEnum):

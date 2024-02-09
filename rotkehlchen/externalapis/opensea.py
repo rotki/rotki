@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import re
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import gevent
 import requests
@@ -33,11 +33,10 @@ from rotkehlchen.user_messages import MessagesAggregator
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-ASSETS_MAX_LIMIT = 50  # according to opensea docs
-CONTRACTS_MAX_LIMIT = 200  # according to opensea docs
+ASSETS_MAX_LIMIT: Final = 50  # according to opensea docs
 
 
-ERC721_RE = re.compile(r'eip155:1/erc721:(.*?)/(.*)')
+ERC721_RE: Final = re.compile(r'eip155:1/erc721:(.*?)/(.*)')
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

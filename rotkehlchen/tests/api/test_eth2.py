@@ -88,10 +88,8 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert total_stats == result['entries_found']
     full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
-    calculated_sum_usd_value = ZERO
     for entry in result['entries']:
         calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
     assert full_sum_pnl.is_close(calculated_sum_pnl)
 
     # filter by validator_index
@@ -125,11 +123,9 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert len(result['entries']) == result['entries_found']
     full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
-    calculated_sum_usd_value = ZERO
     next_page_times = []
     for idx, entry in enumerate(result['entries']):
         calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
         assert entry['validator_index'] in queried_validators
         time = entry['timestamp']
         assert time >= from_ts
@@ -158,10 +154,8 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     # Check the sum pnl values here and see that they include only values from the current page
     full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
-    calculated_sum_usd_value = ZERO
     for idx, entry in enumerate(result['entries']):
         calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
         assert entry['validator_index'] in queried_validators
         time = entry['timestamp']
         assert time >= from_ts
@@ -217,10 +211,8 @@ def test_eth2_daily_stats_filter_by_address(rotkehlchen_api_server, ethereum_acc
     assert total_stats == result['entries_found']
     full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
-    calculated_sum_usd_value = ZERO
     for entry in result['entries']:
         calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
     assert full_sum_pnl.is_close(calculated_sum_pnl)
 
     # Query withdrawals/block productions to get events for address matching to work

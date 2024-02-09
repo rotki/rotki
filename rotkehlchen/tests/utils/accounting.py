@@ -30,8 +30,6 @@ if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.google import GoogleService
 
 
-TIMESTAMP_0_MS = TimestampMS(0)
-TIMESTAMP_0_SEC = Timestamp(0)
 TIMESTAMP_1_MS = TimestampMS(1000)
 TIMESTAMP_1_SEC = Timestamp(1)
 

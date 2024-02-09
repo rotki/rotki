@@ -6,7 +6,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import symbol_to_evm_token
 from rotkehlchen.chain.ethereum.constants import ETH_MANTISSA
-from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants import ZERO
@@ -27,6 +26,7 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
@@ -105,7 +105,7 @@ class Compound(EthereumModule):
 
     def get_balances(
             self,
-            given_defi_balances: GIVEN_DEFI_BALANCES,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
     ) -> dict[ChecksumEvmAddress, dict[str, dict[CryptoAsset, CompoundBalance]]]:
         compound_balances = {}
         now = ts_now()
@@ -198,7 +198,7 @@ class Compound(EthereumModule):
     def _process_events(
             self,
             events: list[EvmEvent],
-            given_defi_balances: GIVEN_DEFI_BALANCES,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
     ) -> tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
         """Processes all events and returns a dictionary of earned balances totals"""
         assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
@@ -304,7 +304,7 @@ class Compound(EthereumModule):
 
     def get_stats_for_addresses(
             self,
-            given_defi_balances: GIVEN_DEFI_BALANCES,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
             addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
