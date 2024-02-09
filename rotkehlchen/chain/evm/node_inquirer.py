@@ -24,9 +24,9 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
     ERC20_PROPERTIES,
     ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,

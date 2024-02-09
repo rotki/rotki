@@ -212,7 +212,8 @@ class MakerdaoDsr(HasDSProxy):
                     break
                 except DeserializationError:
                     value = None
-        return value * RAY  # turn it from DAI to RAD
+
+        return value * RAY if value is not None else None  # turn it from DAI to RAD
 
     def _historical_dsr_for_account(
             self,

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
