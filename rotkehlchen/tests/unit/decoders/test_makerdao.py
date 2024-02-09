@@ -1,8 +1,8 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_SDAI, CPT_VAULT
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_SDAI
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SDAI
 from rotkehlchen.fval import FVal
