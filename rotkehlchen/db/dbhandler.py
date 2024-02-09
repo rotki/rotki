@@ -705,7 +705,7 @@ class DBHandler:
             cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
             **kwargs: Unpack[LabeledLocationIdArgsType],
-    ) -> int | None:
+    ) -> str | None:
         ...
 
     @overload
@@ -740,7 +740,7 @@ class DBHandler:
             cursor: 'DBCursor',
             name: DBCacheDynamic,
             **kwargs: str,
-    ) -> int | Timestamp | ChecksumEvmAddress | None:
+    ) -> int | Timestamp | str | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
