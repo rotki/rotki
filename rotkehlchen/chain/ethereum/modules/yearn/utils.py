@@ -120,10 +120,14 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         try:
             block_data = ethereum_inquirer.get_block_by_number(vault['inception'])
             block_timestamp = Timestamp(read_integer(block_data, 'timestamp', 'yearn vault query'))
-        except (KeyError, DeserializationError) as e:
+        except (KeyError, DeserializationError, RemoteError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'missing key {msg}'
+
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '
-                f'missing key {e!s}. Vault: {vault}. Skipping...',
+                f'{msg}. Vault: {vault}. Skipping...',
             )
             continue
 
