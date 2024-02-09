@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from typing import TypedDict, Unpack, overload
+
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
-
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
 
@@ -58,7 +58,7 @@ class DBCacheDynamic(Enum):
     that can be stored in the `key_value_cache` table"""
     LAST_CRYPTOTX_OFFSET = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
     LAST_QUERY_TS = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
-    LAST_QUERY_ID = '{location}_{location_name}_{account_id}_last_query_id', _deserialize_int_from_str  # noqa: E501
+    LAST_QUERY_ID = '{location}_{location_name}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
     WITHDRAWALS_TS = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
     WITHDRAWALS_IDX = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX = f'{EXTRAINTERNALTXPREFIX}_{{tx_hash}}_{{receiver}}', string_to_evm_address
