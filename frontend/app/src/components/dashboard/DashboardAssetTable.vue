@@ -10,6 +10,7 @@ import type {
 import type {
   DataTableColumn,
   DataTableSortData,
+  TablePaginationData,
 } from '@rotki/ui-library-compat';
 import type { Ref } from 'vue';
 import type { Nullable } from '@/types';
@@ -162,6 +163,31 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
 
   return headers;
 });
+
+const pagination = ref({
+  page: 1,
+  itemsPerPage: 10,
+});
+
+function setPage(page: number) {
+  set(pagination, {
+    ...get(pagination),
+    page,
+  });
+}
+
+function setTablePagination(event: TablePaginationData | undefined) {
+  if (!isDefined(event))
+    return;
+
+  const { page, limit } = event;
+  set(pagination, {
+    page,
+    itemsPerPage: limit,
+  });
+}
+
+watch(search, () => setPage(1));
 </script>
 
 <template>
@@ -219,15 +245,20 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       :rows="filtered"
       :loading="loading"
       :sort.sync="sort"
-      :search="search"
       :sort-modifiers="{ external: true }"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
+      :pagination="{
+        page: pagination.page,
+        limit: pagination.itemsPerPage,
+        total: filtered.length,
+      }"
       :sticky-offset="64"
       row-attr="asset"
       sticky-header
       single-expand
       outlined
+      @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">
         <AssetDetails

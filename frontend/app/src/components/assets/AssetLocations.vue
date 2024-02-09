@@ -160,6 +160,7 @@ const headers = computed<DataTableColumn[]>(() => {
       :cols="headers"
       :rows="visibleAssetLocations"
       outlined
+      dense
       row-attr="location"
       :sort.sync="sort"
       :loading="detailsLoading"
