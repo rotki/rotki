@@ -59,6 +59,7 @@ const chain = Blockchain.ETH;
       :title="t('liquity_lending.trove_events')"
     />
     <HistoryEventsView
+      v-else
       use-external-account-filter
       :section-title="t('liquity_lending.trove_events')"
       :protocols="['liquity']"

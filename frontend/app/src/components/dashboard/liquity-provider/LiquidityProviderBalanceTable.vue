@@ -229,7 +229,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 
         <div
           v-else
-          class="flex items-center py-4"
+          class="flex items-center py-2"
         >
           <LpPoolIcon
             :type="row.lpType"

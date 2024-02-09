@@ -177,7 +177,7 @@ onMounted(async () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row flex-wrap items-center gap-2 mb-4">
+      <div class="flex flex-row flex-wrap items-start gap-2 mb-4">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
           multiple
