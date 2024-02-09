@@ -323,19 +323,23 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
           <div class="flex items-center gap-2 justify-end">
             <RuiButton
               variant="text"
-              size="sm"
               icon
               @click="editWatcher(loadedWatchers[key])"
             >
-              <RuiIcon :name="existingWatchersIcon(watcher.identifier)" />
+              <RuiIcon
+                :name="existingWatchersIcon(watcher.identifier)"
+                size="20"
+              />
             </RuiButton>
             <RuiButton
               variant="text"
               icon
-              size="sm"
               @click="deleteWatcher(watcher.identifier)"
             >
-              <RuiIcon name="delete-bin-5-line" />
+              <RuiIcon
+                name="delete-bin-5-line"
+                size="20"
+              />
             </RuiButton>
           </div>
         </div>
@@ -383,12 +387,16 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
       </div>
 
       <template #footer>
-        <div class="text-caption flex-grow py-2 px-4 mb-4">
+        <RuiAlert
+          v-if="validationStatus"
+          :type="validationStatus"
+        >
           {{ validationMessage }}
-        </div>
+        </RuiAlert>
+        <div class="grow" />
         <RuiButton
           color="primary"
-          class="watcher-dialog__buttons__close"
+          class="watcher-dialog__buttons__close mt-4"
           @click="cancel()"
         >
           {{ t('common.actions.close') }}

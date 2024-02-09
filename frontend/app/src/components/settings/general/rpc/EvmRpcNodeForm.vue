@@ -170,7 +170,6 @@ setSubmitFunc(save);
         persistent-hint
         :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
         step="1"
-        class="grow"
         thumb-label
         @change="state.weight = $event"
         @blur="v$.weight.$touch()"
@@ -181,9 +180,12 @@ setSubmitFunc(save);
         :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
         variant="outlined"
         hide-details
-        class="shrink ml-2 w-[8rem]"
-      />
-      {{ t('rpc_node_form.weight_per_hundred') }}
+        class="w-[8rem] [&>div]:min-w-0"
+      >
+        <template #append>
+          {{ t('rpc_node_form.weight_per_hundred') }}
+        </template>
+      </AmountInput>
     </div>
 
     <VSwitch

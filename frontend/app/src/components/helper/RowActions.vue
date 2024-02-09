@@ -54,6 +54,7 @@ const justify = computed(() => {
       v-if="!noEdit"
       v-bind="tooltipProps"
       :disabled="!editTooltip"
+      tooltip-class="max-w-[20rem]"
     >
       <template #activator>
         <RuiButton
@@ -75,6 +76,7 @@ const justify = computed(() => {
       v-if="!noDelete"
       v-bind="tooltipProps"
       :disabled="!deleteTooltip"
+      tooltip-class="max-w-[20rem]"
     >
       <template #activator>
         <RuiButton

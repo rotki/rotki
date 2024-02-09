@@ -247,7 +247,7 @@ This is the symbol that will be separating the floating part of the number. For 
 Use abbreviations for large numbers.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If this setting is enabled, it will abbreviate large numbers. For example, ``1.234.567`` will be displayed as ``1.23 M``.
+If this setting is enabled, large numbers will be abbreviated. For example, "1,234,567" will be displayed as "1.23 M". You can also set the minimum value to be abbreviated; for instance, you might choose to abbreviate numbers above 1 million but not those below it.
 
 Currency location
 ^^^^^^^^^^^^^^^^^^^^
@@ -293,6 +293,10 @@ Connecting to a Polkadot Client
 
 Just like with kusama you can set the rpc endpoint of a Polkadot node you would like to connect to here.
 
+Connecting to a ETH consensus layer beacon node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can set the RPC endpoint for the ethereum consensus layer beacon node to use when contacting the consensus layer. If it cannot be reached or if it is invalid, beaconcha.in will be used.
 
 Price Oracle settings
 ---------------------
@@ -626,15 +630,11 @@ Querying historical prices from oracles such as cryptocompare and coingecko is s
 You can request the creation of such a cache by going to the Oracle cache section, selecting the oracle, the from asset of the pair, the to asset of the pair and then pressing the Cache pair prices.
 
 
-.. image:: images/sc_historical_price_cache1.png
+.. image:: images/sc_historical_price_cache.png
    :alt: Creating a historical price cache
    :align: center
 
 Users can also manage the existing historical price cache entries. They can inspect when does the historical price data start, when does it end and if they want they can delete the cache by pressing the trash button.
-
-.. image:: images/sc_historical_price_cache2.png
-   :alt: Managing the historical price cache
-   :align: center
 
 .. _customize-module-settings:
 
@@ -654,20 +654,20 @@ query the specified addresses for the enabled modules. This can considerably imp
 Activating/Deactivating Modules
 ----------------------------------
 
-You can see all modules in the table (2). Some modules are activated by default.
+You can see all modules in the table. Some modules are activated by default.
 You can enable/disable a module by toggling the switch on the right.
 After enabling or disabling a module you need to re-login again for the changes to take effect.
 
 Selecting Addresses
 ----------------------
 
-In order to limit the querying only to selected addresses instead of all the eligible ones you can go to the "Select Accounts"
-and click on the module you are interested in (3). The module address selection (4) for this module should be visible.
+.. image:: images/module_settings_select_address.png
+   :alt: Select address for modules
+   :align: center
 
-Search for each address you are interested in and then select each one from the dropdown menu. The selected addresses should
-be visible in the same way as the modules above. To remove an address you need to press the (x) button at the end of the entry.
+To limit querying to only selected addresses instead of all eligible ones, you can click the "edit/pencil" button on the module. This will display a dialog to select the addresses.
 
-If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration and considerably slow down retrieving data from the app.
+If no addresses are selected for a module, this means that Rotki will check all eligible addresses, which can increase the total query duration and considerably slow down data retrieval from the app.
 
 Changing the backend settings
 ====================================
@@ -1227,6 +1227,11 @@ The list of currently supported airdrops is:
 - ENS
 - ParaSwap
 - Saddle finance
+- Shapeshift
+- Paraswap
+- Cow
+- Diva
+- Shutter
 
 Snapshots
 =========
