@@ -2,12 +2,13 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
+import { Section } from '@/types/status';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import type { EthStakingFilter, EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
-const section = Section.STAKING_ETH2;
+const performanceSection = Section.STAKING_ETH2;
+const statsSection = Section.STAKING_ETH2_STATS;
 
 const period = ref<EthStakingPeriod>();
 const selection = ref<EthStakingFilter>({
@@ -31,23 +32,17 @@ const {
   refreshStats,
 } = useEth2DailyStats();
 
-const { isLoading, setStatus } = useStatusStore();
+const { isLoading } = useStatusStore();
 
-const primaryRefreshing = isLoading(section);
+const performanceRefreshing = isLoading(performanceSection);
+const statsRefreshing = isLoading(statsSection);
+
+const refreshing = logicOr(performanceRefreshing, statsRefreshing, isLoading(Section.BLOCKCHAIN_ETH2));
 
 const accountsStore = useEthAccountsStore();
 const { eth2Validators } = storeToRefs(accountsStore);
 const { stakingBalances } = storeToRefs(useEthBalancesStore());
 const { fetchBlockchainBalances } = useBlockchainBalances();
-
-const ownership = computed<Record<string, string>>(() => {
-  const ownership: Record<string, string> = {};
-  for (const { index, ownershipPercentage } of get(eth2Validators).entries) {
-    if (ownershipPercentage)
-      ownership[index] = ownershipPercentage;
-  }
-  return ownership;
-});
 
 const premium = usePremium();
 const { t } = useI18n();
@@ -73,13 +68,6 @@ async function refresh(userInitiated = false): Promise<void> {
 onMounted(async () => {
   if (get(enabled))
     await refresh(false);
-});
-
-onUnmounted(() => {
-  setStatus({
-    section,
-    status: Status.NONE,
-  });
 });
 </script>
 
@@ -108,7 +96,7 @@ onUnmounted(() => {
               <RuiButton
                 variant="outlined"
                 color="primary"
-                :loading="primaryRefreshing || dailyStatsLoading"
+                :loading="refreshing"
                 @click="refresh(true)"
               >
                 <template #prepend>
@@ -123,7 +111,7 @@ onUnmounted(() => {
       </template>
 
       <EthStaking
-        :refreshing="primaryRefreshing"
+        :refreshing="performanceRefreshing"
         :validators="eth2Validators.entries"
         :balances="stakingBalances"
         :filter="selection"
@@ -134,7 +122,6 @@ onUnmounted(() => {
         :stats="dailyStats"
         :stats-loading="dailyStatsLoading"
         :stats-pagination.sync="pagination"
-        :ownership="ownership"
       >
         <template #selection>
           <EthValidatorFilter

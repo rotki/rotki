@@ -44,6 +44,7 @@ export function useEth2Staking() {
     };
 
     try {
+      setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
       const { taskId } = await api.refreshStakingPerformance(defaults);
       await awaitTask<EthStakingPerformanceResponse, TaskMeta>(
         taskId,

@@ -10,6 +10,8 @@ const Eth2DailyStat = z.object({
 
 export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>;
 
+export type EthStakingDailyStats = Eth2DailyStat & { ownershipPercentage?: string };
+
 export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
   entriesFound: z.number().nonnegative(),
@@ -18,6 +20,10 @@ export const Eth2DailyStats = z.object({
 });
 
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
+
+export type EthStakingDailyStatData = Omit<Eth2DailyStats, 'entries'> & {
+  entries: EthStakingDailyStats[];
+};
 
 const EthStakingStats = z.object({
   apr: NumericString.optional(),

@@ -3570,7 +3570,7 @@
       "rewards": "@:common.rewards"
     },
     "eth2_staking": {
-      "active_validators": "Active Validators",
+      "active_validators": "{status} Validators",
       "based_of_performance": "Based of performance of",
       "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
       "daily": {

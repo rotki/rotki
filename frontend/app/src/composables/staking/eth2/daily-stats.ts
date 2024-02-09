@@ -1,10 +1,7 @@
+import { type MaybeRef, objectOmit } from '@vueuse/core';
 import { TaskType } from '@/types/task-type';
 import { Section, Status } from '@/types/status';
-import type {
-  Eth2DailyStats,
-  Eth2DailyStatsPayload,
-} from '@rotki/common/lib/staking/eth2';
-import type { MaybeRef } from '@vueuse/core';
+import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common/lib/staking/eth2';
 import type { TaskMeta } from '@/types/task';
 
 export function useEth2DailyStats() {
@@ -24,6 +21,8 @@ export function useEth2DailyStats() {
   const { t } = useI18n();
 
   const api = useEth2Api();
+
+  const { eth2Validators } = storeToRefs(useEthAccountsStore());
 
   const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
     if (!get(premium))
@@ -45,6 +44,7 @@ export function useEth2DailyStats() {
     };
 
     try {
+      setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
       const { taskId } = await api.refreshStakingStats(defaults);
 
       const taskMeta: TaskMeta = {
@@ -90,7 +90,7 @@ export function useEth2DailyStats() {
   };
 
   const {
-    state: dailyStats,
+    state,
     execute,
     isLoading: dailyStatsLoading,
   } = useAsyncState<Eth2DailyStats, MaybeRef<Eth2DailyStatsPayload>[]>(
@@ -107,6 +107,23 @@ export function useEth2DailyStats() {
       delay: 0,
     },
   );
+
+  const dailyStats = computed<EthStakingDailyStatData>(() => {
+    const dailyStats = get(state);
+    const validators = get(eth2Validators).entries;
+    return {
+      ...objectOmit(dailyStats, ['entries']),
+      entries: dailyStats.entries.map((stat) => {
+        const ownershipPercentage = validators.find(
+          validator => validator.index === stat.validatorIndex,
+        )?.ownershipPercentage;
+        return ({
+          ...stat,
+          ownershipPercentage,
+        });
+      }),
+    };
+  });
 
   const fetchDailyStats = async (
     payload: Eth2DailyStatsPayload,
