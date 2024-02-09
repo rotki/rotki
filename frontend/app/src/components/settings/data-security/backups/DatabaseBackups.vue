@@ -118,6 +118,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
     :rows="items"
     row-attr="id"
     outlined
+    dense
     :sort.sync="sort"
     :cols="tableHeaders"
     :loading="loading"

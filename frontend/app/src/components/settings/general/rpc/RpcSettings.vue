@@ -75,7 +75,7 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
         <RuiTab
           v-for="tab in rpcSettingTabs"
           :key="isChain(tab) ? tab.chain : tab.id"
-          class="!py-3"
+          class="!pb-3"
         >
           <LocationDisplay
             v-if="isChain(tab)"
