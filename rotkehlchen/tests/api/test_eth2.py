@@ -177,6 +177,80 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
+@pytest.mark.freeze_time('2024-02-09 11:23:00 GMT')
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xfAD07927C990a52e434909c9Bb1f0EC785a68F00',  # withdrawal address of index 1
+    '0x24a81Dc9767348800852EF3625376e9238AbFA42',  # withdrawal address of index 2
+]])
+def test_eth2_daily_stats_filter_by_address(rotkehlchen_api_server, ethereum_accounts):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # for daily stats let's have 2 validators with different withdrawal addresses
+    index_1, index_2 = 1118011, 1118010
+    for index in (index_1, index_2):
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ), json={'validator_index': index},
+        )
+        assert_simple_ok_response(response)
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+
+    # query daily stats, first without cache -- requesting all
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json={'only_cache': False},
+    )
+    result = assert_proper_response_with_result(response)
+    total_stats = len(result['entries'])
+    assert total_stats == result['entries_total']
+    assert total_stats == result['entries_found']
+    full_sum_pnl = FVal(result['sum_pnl'])
+    calculated_sum_pnl = ZERO
+    calculated_sum_usd_value = ZERO
+    for entry in result['entries']:
+        calculated_sum_pnl += FVal(entry['pnl']['amount'])
+        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
+    assert full_sum_pnl.is_close(calculated_sum_pnl)
+
+    # Query withdrawals/block productions to get events for address matching to work
+    for query_type in ('block_productions', 'eth_withdrawals'):
+        response = requests.post(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'eventsonlinequeryresource',
+            ), json={'query_type': query_type},
+        )
+        assert_simple_ok_response(response)
+
+    # now filter by address
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json={'only_cache': False, 'addresses': [ethereum_accounts[0]]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_total'] == total_stats
+    assert result['entries_found'] == total_stats / 2
+    assert len(result['entries']) == total_stats / 2
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'],
+    allow_playback_repeats=True,
+    match_on=['beaconchain_matcher'],
+)
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x61874850cC138e5e198d5756cF70e6EFED6aD464',  # withdrawal address of detected validator
     '0xbfEC7fc8DaC449a482b593Eb0aE28CfeAb49902c',  # withdrawal address of exited validator

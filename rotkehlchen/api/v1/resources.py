@@ -1820,10 +1820,14 @@ class DataImportResource(BaseMethodView):
 
 
 class Eth2DailyStatsResource(BaseMethodView):
-    post_schema = Eth2DailyStatsSchema()
+
+    def make_post_schema(self) -> Eth2DailyStatsSchema:
+        return Eth2DailyStatsSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_premium_user(active_check=False)
-    @use_kwargs(post_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_post_schema, location='json_and_query')
     def post(
             self,
             filter_query: Eth2DailyStatsFilterQuery,

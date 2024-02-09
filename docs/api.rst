@@ -8366,7 +8366,7 @@ Getting eth2 staking performance
    :reqjson int[optional] from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int[optional] to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list[optional] validator_indices: The indices of the validators to filter for
-   :reqjson list[optional] addresses: The withdrawal addresses for which to filter the results
+   :reqjson list[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
    :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
 
    **Example Response**:
@@ -8445,7 +8445,7 @@ Getting Eth2 Staking daily stats
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "only_cache": false}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"],  "only_cache": false}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
@@ -8455,7 +8455,8 @@ Getting Eth2 Staking daily stats
    :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson list(string) validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
+   :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
+   :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
 
    **Example Response**:
 
