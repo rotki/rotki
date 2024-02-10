@@ -2622,7 +2622,12 @@ class DBHandler:
 
     def replace_asset_identifier(self, source_identifier: str, target_asset: Asset) -> None:
         """Replaces a given source identifier either both in the global or the local
-        user DB with another given asset.
+        user DB with another given asset. There is some limitations/checks for the
+        source and target. This is not checked here but at the api level. The limitations are:
+        - source and target should not both be EVM assets
+        - source and target should not be the same
+
+        DO NOT call this without these checks as it will put the DBs in an inconsistent state.
 
         May raise:
         - UnknownAsset if the source_identifier can be found nowhere

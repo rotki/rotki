@@ -23,6 +23,7 @@ Changelog
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
 * :feature:`7399` Transactions involving the Savings xDAI contract at gnosis will now be properly decoded.
+* :bug:`-` It should no longer be possible to merge the same asset to itself, thus botching the asset in your database.
 
 * :release:`1.31.3 <2023-12-31>`
 * :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.

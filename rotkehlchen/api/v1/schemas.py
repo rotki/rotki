@@ -2180,7 +2180,13 @@ class AssetsReplaceSchema(Schema):
     ) -> None:
         if data['source_identifier'].startswith(EVM_CHAIN_DIRECTIVE):
             raise ValidationError(
-                message="Can't merge two evm tokens",
+                message="Can't replace an evm token",
+                field_name='source_identifier',
+            )
+
+        if data['source_identifier'] == data['target_asset'].identifier:
+            raise ValidationError(
+                message="Can't merge the same asset to itself",
                 field_name='source_identifier',
             )
 

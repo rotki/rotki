@@ -737,7 +737,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
     )
     assert_simple_ok_response(response)
 
-    # after the replacement. Check that the manual balance is changed an is now queriable
+    # after the replacement. Check that the manual balance is changed and is now queriable
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -791,6 +791,23 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         contained_in_msg=f'Unknown asset {notexisting_id} provided',
         status_code=HTTPStatus.CONFLICT,
     )
+
+    # add a user asset
+    user_asset = {
+        'asset_type': 'own chain',
+        'name': 'My token',
+        'symbol': 'DYM',
+        'started': 5,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=user_asset,
+    )
+    result = assert_proper_response_with_result(response)
+    user_asset_id = result['identifier']
 
     # Test that trying to replace an asset that's used as a foreign key elsewhere in
     # the global DB does not work, error is returned and no changes happen
@@ -868,25 +885,27 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 
     # try to merge combinations of EVM tokens/other assets. When the source is a evm token it
     # should fail to avoid users from breaking assets in history events and other places
-    for asset_a, asset_b, should_succeed in (
-        (A_DAI, A_USDC, False),  # evm -> evm
-        (A_DAI, A_BTC, False),  # evm -> normal
-        (A_DOT, A_USDC, True),  # normal -> evm
-        (A_BTC, A_BCH, True),  # normal -> normal
+    for asset_a, asset_b, maybe_error in (
+        (A_DAI.identifier, A_USDC.identifier, "Can't replace an evm token"),  # evm -> evm
+        (A_DAI.identifier, A_BTC.identifier, "Can't replace an evm token"),  # evm -> normal
+        (A_DOT.identifier, A_USDC.identifier, ''),  # normal -> evm
+        (A_BTC.identifier, A_BCH.identifier, ''),  # normal -> normal
+        (user_asset_id, user_asset_id, "Can't merge the same asset to itself"),  # Same user asset as source and target  # noqa: E501
+        (A_BCH.identifier, A_BCH.identifier, "Can't merge the same asset to itself"),  # Same asset as source and target  # noqa: E501
     ):
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'assetsreplaceresource',
             ),
-            json={'source_identifier': asset_a.identifier, 'target_asset': asset_b.identifier},
+            json={'source_identifier': asset_a, 'target_asset': asset_b},
         )
-        if should_succeed:
+        if not maybe_error:
             assert_proper_response(response)
         else:
             assert_error_response(
                 response=response,
-                contained_in_msg="Can't merge two evm tokens",
+                contained_in_msg=maybe_error,
                 status_code=HTTPStatus.BAD_REQUEST,
             )
 
