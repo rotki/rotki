@@ -18,6 +18,7 @@ Changelog
 * :feature:`7092` Users of metamask swaps will now see them properly decoded in the history view and have them taken into account during accounting.
 * :feature:`-`  Bridging transactions across all EVM chains done via socket will now be decoded properly.
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
+* :feature:`-` Arbitrum's governance votes should now be decoded properly.
 * :feature:`4841` The rotki data directory is now more organized.
 * :feature:`1574` Interactions with the ygov.finance contract are now decoded.
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
