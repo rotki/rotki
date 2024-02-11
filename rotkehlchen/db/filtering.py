@@ -525,13 +525,13 @@ class DBIgnoreValuesFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEth2ValidatorIndicesFilter(DBFilter):
     """A filter for Eth2 validator indices"""
-    validators: list[int] | None
+    validators: set[int] | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.validators is None:
             return [], []
         questionmarks = '?' * len(self.validators)
-        return [f'validator_index IN ({",".join(questionmarks)})'], self.validators
+        return [f'validator_index IN ({",".join(questionmarks)})'], list(self.validators)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -770,7 +770,7 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset: int | None = None,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
-            validator_indices: list[int] | None = None,
+            validator_indices: set[int] | None = None,
     ) -> 'Eth2DailyStatsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]

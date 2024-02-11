@@ -239,6 +239,13 @@ class ValidatorDetailsWithStatus(ValidatorDetails):
 
 
 class PerformanceStatusFilter(StrEnum):
+    """A smaller subset of validator statuses used by the frontend filtering
+
+    Pending does not make sense for the places this is called as validators have no performance
+    or daily stats. And since this is where we filter for now we use this also
+    for the validators endpoint for consistency. If we want to filter by all statuses
+    we can do it in the future.
+    """
     ALL = auto()
     ACTIVE = auto()
     EXITED = auto()

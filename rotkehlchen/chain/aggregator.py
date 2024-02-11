@@ -1251,7 +1251,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return stats
 
-    def get_eth2_validators(self, ignore_cache: bool) -> list['ValidatorDetailsWithStatus']:
+    def get_eth2_validators(
+            self,
+            ignore_cache: bool,
+            validator_indices: set[int] | None,
+    ) -> list['ValidatorDetailsWithStatus']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1259,7 +1263,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant get eth2 validators since the eth2 module is not active')
 
-        return eth2.get_validators(ignore_cache=ignore_cache, addresses=self.queried_addresses_for_module('eth2'))  # noqa: E501
+        return eth2.get_validators(
+            ignore_cache=ignore_cache,
+            addresses=self.queried_addresses_for_module('eth2'),
+            validator_indices=validator_indices,
+        )
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
         """Edit a validator to modify its ownership proportion. May raise:

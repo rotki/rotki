@@ -75,6 +75,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    Eth2ValidatorsGetSchema,
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
@@ -1846,12 +1847,25 @@ class Eth2ValidatorsResource(BaseMethodView):
     patch_schema = Eth2ValidatorPatchSchema()
     put_schema = Eth2ValidatorPutSchema()
     delete_schema = Eth2ValidatorDeleteSchema()
-    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
+
+    def make_get_schema(self) -> Eth2ValidatorsGetSchema:
+        return Eth2ValidatorsGetSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json')
-    def get(self, async_query: bool, ignore_cache: bool) -> Response:
-        return self.rest_api.get_eth2_validators(async_query=async_query, ignore_cache=ignore_cache)  # noqa: E501
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            ignore_cache: bool,
+            validator_indices: set[int] | None,
+    ) -> Response:
+        return self.rest_api.get_eth2_validators(
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+            validator_indices=validator_indices,
+        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
@@ -1885,10 +1899,13 @@ class Eth2ValidatorsResource(BaseMethodView):
 
 class Eth2StakePerformanceResource(BaseMethodView):
 
-    put_schema = Eth2StakePerformanceSchema()
+    def make_put_schema(self) -> Eth2StakePerformanceSchema:
+        return Eth2StakePerformanceSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_premium_user(active_check=False)
-    @use_kwargs(put_schema, location='json')
+    @resource_parser.use_kwargs(make_put_schema, location='json_and_query')
     def put(
             self,
             async_query: bool,

@@ -2167,9 +2167,16 @@ class RestAPI:
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     @async_api_call()
-    def get_eth2_validators(self, ignore_cache: bool) -> dict[str, Any]:
+    def get_eth2_validators(
+            self,
+            ignore_cache: bool,
+            validator_indices: set[int] | None,
+    ) -> dict[str, Any]:
         try:
-            validators = self.rotkehlchen.chains_aggregator.get_eth2_validators(ignore_cache=ignore_cache)  # noqa: E501
+            validators = self.rotkehlchen.chains_aggregator.get_eth2_validators(
+                ignore_cache=ignore_cache,
+                validator_indices=validator_indices,
+            )
         except ModuleInactive as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:

@@ -2221,10 +2221,59 @@ class AssetIconUploadSchema(Schema):
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
-class EthStakingHistoryStats(Schema):
-    """Schema for querying ethereum staking history stats"""
+class EthStakingCommonFilterSchema(Schema):
+    """Schema for querying ethereum staking common filters"""
     addresses = DelimitedOrNormalList(EvmAddressField, load_default=None)
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+    status = StrEnumField(
+        enum_class=PerformanceStatusFilter,
+        load_default=PerformanceStatusFilter.ALL,
+    )
+
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.database = dbhandler
+
+    def get_filtered_indices(
+            self,
+            addresses: list[ChecksumEvmAddress] | None,
+            given_indices: list[int] | None,
+            status: PerformanceStatusFilter,
+    ) -> set[int] | None:
+        """Filter the indices of the validators to forward only validator indices
+        further in the code. This is used only by validators endpoint and daily stats endpoint.
+
+        The performance endpoint does not call this and does this logic inside the
+        performance calculation since it's needed for the cache.
+
+        What's more it's important to note that status Pending would only count from
+        the moment they are seen by the beacon chain as that's when a validator index exists.
+        """
+        validator_indices, associated_indices, status_indices = set(), set(), set()
+        no_filter = True
+        if given_indices:
+            validator_indices = set(given_indices)
+            no_filter = False
+
+        dbeth2 = DBEth2(self.database)
+        if addresses:
+            with self.database.conn.read_ctx() as cursor:
+                associated_indices = dbeth2.get_associated_with_addresses_validator_indices(
+                    cursor=cursor,
+                    addresses=addresses,
+                )
+            no_filter = False
+
+        if status != PerformanceStatusFilter.ALL:
+            with self.database.conn.read_ctx() as cursor:
+                if status == PerformanceStatusFilter.ACTIVE:
+                    status_indices = dbeth2.get_active_validator_indices(cursor)
+                else:  # can only be EXITED
+                    status_indices = dbeth2.get_exited_validator_indices(cursor)
+
+            no_filter = False
+
+        return None if no_filter else validator_indices | associated_indices | status_indices
 
 
 class ExchangeRatesSchema(AsyncQueryArgumentSchema):
@@ -2467,18 +2516,34 @@ class Eth2ValidatorPatchSchema(Schema):
     ownership_percentage = FloatingPercentageField(required=True)
 
 
+class Eth2ValidatorsGetSchema(EthStakingCommonFilterSchema, AsyncIgnoreCacheQueryArgumentSchema):
+
+    @post_load
+    def make_eth_validators_get_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        validator_indices = self.get_filtered_indices(
+            addresses=data['addresses'],
+            given_indices=data['validator_indices'],
+            status=data['status'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'ignore_cache': data['ignore_cache'],
+            'validator_indices': validator_indices,
+        }
+
+
 class Eth2DailyStatsSchema(
         AsyncQueryArgumentSchema,
         TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
-        EthStakingHistoryStats,
+        EthStakingCommonFilterSchema,
 ):
-
-    def __init__(self, dbhandler: 'DBHandler') -> None:
-        super().__init__()
-        self.database = dbhandler
 
     @validates_schema
     def validate_eth2_daily_stats_schema(
@@ -2511,20 +2576,11 @@ class Eth2DailyStatsSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        validator_indices = data['validator_indices']
-        if validator_indices or data['addresses']:
-            associated_indices = set()
-            given_indices = set() if validator_indices is None else set(validator_indices)
-            if (addresses := data['addresses']):
-                dbeth2 = DBEth2(self.database)
-                with self.database.conn.read_ctx() as cursor:
-                    associated_indices = dbeth2.get_associated_with_addresses_validator_indices(
-                        cursor=cursor,
-                        addresses=addresses,
-                    )
-
-            validator_indices = list(associated_indices | given_indices)
-
+        validator_indices = self.get_filtered_indices(
+            addresses=data['addresses'],
+            given_indices=data['validator_indices'],
+            status=data['status'],
+        )
         filter_query = Eth2DailyStatsFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
                 data=data,
@@ -3135,12 +3191,13 @@ class ClearAvatarsCacheSchema(Schema):
     )
 
 
-class Eth2StakePerformanceSchema(EthStakingHistoryStats, TimestampRangeSchema, AsyncIgnoreCacheQueryArgumentSchema, DBPaginationSchema):  # noqa: E501
+class Eth2StakePerformanceSchema(
+        EthStakingCommonFilterSchema,
+        TimestampRangeSchema,
+        AsyncIgnoreCacheQueryArgumentSchema,
+        DBPaginationSchema,
+):
     """Schema for querying ethereum staking performance"""
-    status = StrEnumField(
-        enum_class=PerformanceStatusFilter,
-        load_default=PerformanceStatusFilter.ALL,
-    )
 
     @post_load
     def make_staking_performance_query(
@@ -3156,11 +3213,10 @@ class Eth2StakePerformanceSchema(EthStakingHistoryStats, TimestampRangeSchema, A
         if data['offset'] is None:
             data['offset'] = 0
 
+        if data['validator_indices'] is not None:
+            data['validator_indices'] = set(data['validator_indices'])
+
         return data
-
-
-class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQueryArgumentSchema):
-    """Schema for querying ethereum staking history details"""
 
 
 class SkippedExternalEventsExportSchema(Schema):

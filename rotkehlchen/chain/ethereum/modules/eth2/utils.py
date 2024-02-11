@@ -108,6 +108,9 @@ def scrape_validator_daily_stats(
     May raise:
     - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
     """
+    if exit_ts is not None and last_known_timestamp > exit_ts:
+        return []  # nothing new to add
+
     url = f'{BEACONCHAIN_ROOT_URL}/validator/{validator_index}/stats'
     response = _query_page(url, 'stats')
     log.debug(f'Got beaconcha.in stats results for {validator_index=}. Processing it.')
@@ -136,7 +139,7 @@ def scrape_validator_daily_stats(
                 except ValueError as e:
                     raise RemoteError(f'Failed to parse {date} to timestamp') from e
 
-                if timestamp <= last_known_timestamp or (exit_ts is not None and timestamp > exit_ts):  # noqa: E501
+                if timestamp <= last_known_timestamp:
                     return stats  # we are done
 
                 column_pos += 1

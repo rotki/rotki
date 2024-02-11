@@ -481,16 +481,19 @@ class Eth2(EthereumModule):
             self,
             ignore_cache: bool,
             addresses: Sequence[ChecksumEvmAddress],
+            validator_indices: set[int] | None,
     ) -> list[ValidatorDetailsWithStatus]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
+
+        Also optionally filter returned data by a set of validator_indices
 
         May raise RemoteError due to beaconcha.in or beacon node connection"""
         if ignore_cache:
             self.detect_and_refresh_validators(addresses)
 
         with self.database.conn.read_ctx() as cursor:
-            return DBEth2(self.database).get_validators_with_status(cursor)
+            return DBEth2(self.database).get_validators_with_status(cursor, validator_indices)
 
     def add_validator(
             self,
