@@ -551,11 +551,15 @@ def test_ownership_proportion(eth2: 'Eth2', database):
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, validators)
 
-    result = eth2.get_validators(ignore_cache=True, addresses=[ADDR1, ADDR2])
+    result = eth2.get_validators(ignore_cache=True, addresses=[ADDR1, ADDR2], validator_indices=None)  # noqa: E501
     assert result[0].validator_index == 9 and result[0].ownership_proportion == FVal(0.5), 'Proportion from the DB should be used'  # noqa: E501
     assert result[1].validator_index == 997 and result[1].ownership_proportion == ONE, 'Since this validator is new, the proportion should be ONE'  # noqa: E501
     assert result[2].validator_index == 1647 and result[2].ownership_proportion == FVal(0.7), 'Proportion from the DB should be used'  # noqa: E501
     assert result[3].validator_index == 1757 and result[3].ownership_proportion == FVal(0.9), 'Proportion from the DB should be used'  # noqa: E501
+
+    # also test filtering by index
+    result = eth2.get_validators(ignore_cache=True, addresses=[], validator_indices={9, 1757})
+    assert [x.validator_index for x in result] == [9, 1757]
 
 
 def test_deposits_pubkey_re(eth2: 'Eth2', database):

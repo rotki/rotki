@@ -158,7 +158,11 @@ class DBEth2:
         )
         return [ValidatorDetails.deserialize_from_db(x) for x in cursor]
 
-    def get_validators_with_status(self, cursor: 'DBCursor') -> list[ValidatorDetailsWithStatus]:
+    def get_validators_with_status(
+            self,
+            cursor: 'DBCursor',
+            validator_indices: set[int] | None,
+    ) -> list[ValidatorDetailsWithStatus]:
         result: list[ValidatorDetailsWithStatus] = []
         exited_indices = self.get_exited_validator_indices(cursor)
         cursor.execute(
@@ -169,6 +173,9 @@ class DBEth2:
             validator = ValidatorDetailsWithStatus.deserialize_from_db(entry)
             validator.determine_status(exited_indices)
             result.append(validator)
+
+        if validator_indices is not None:
+            result = [x for x in result if x.validator_index is not None and x.validator_index in validator_indices]  # noqa: E501
 
         return result
 

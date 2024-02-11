@@ -8357,7 +8357,7 @@ Getting eth2 staking performance
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "only_cache": false, "limit": 10, "offset": 10}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "only_cache": false, "status": "all", "limit": 10, "offset": 10}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool only_cache: If false then we skip any cached values
@@ -8445,7 +8445,7 @@ Getting Eth2 Staking daily stats
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"],  "only_cache": false}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"],  "status": "all", "only_cache": false}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
@@ -8457,6 +8457,7 @@ Getting Eth2 Staking daily stats
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
    :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
 
    **Example Response**:
 
@@ -8641,7 +8642,10 @@ Getting tracked Eth2 validators
       {"ignore_cache": true, "async_query": true}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :param bool ignore_cache: Boolean denoting whether to ignore the DB cache and refresh all validator data.
+   :reqjson bool ignore_cache: Boolean denoting whether to ignore the DB cache and refresh all validator data.
+   :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
+   :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
 
 
    **Example Response**:
