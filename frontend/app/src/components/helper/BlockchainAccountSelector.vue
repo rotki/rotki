@@ -252,7 +252,10 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             class="blockchain-account-selector__list__item flex items-center justify-between grow"
           >
             <div class="blockchain-account-selector__list__item__address-label">
-              <RuiChip class="text-truncate" size="sm">
+              <RuiChip
+                class="text-truncate"
+                size="sm"
+              >
                 <AccountDisplay
                   :account="data.item"
                   :hide-chain-icon="hideChainIcon"

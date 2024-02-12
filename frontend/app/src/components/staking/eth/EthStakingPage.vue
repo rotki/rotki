@@ -4,13 +4,13 @@ import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import type { EthStakingFilter, EthStakingPeriod } from '@rotki/common/lib/staking/eth2';
+import type { EthStakingCombinedFilter, EthStakingFilter } from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
 const statsSection = Section.STAKING_ETH2_STATS;
 
-const period = ref<EthStakingPeriod>();
+const filter = ref<EthStakingCombinedFilter>();
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
@@ -114,8 +114,8 @@ onMounted(async () => {
         :refreshing="performanceRefreshing"
         :validators="eth2Validators.entries"
         :balances="stakingBalances"
-        :filter="selection"
-        :period.sync="period"
+        :accounts="selection"
+        :filter.sync="filter"
         :performance="performance"
         :performance-loading="performanceLoading"
         :performance-pagination.sync="performancePagination"
@@ -126,7 +126,7 @@ onMounted(async () => {
         <template #selection>
           <EthValidatorFilter
             v-model="selection"
-            :period.sync="period"
+            :filter.sync="filter"
           />
         </template>
       </EthStaking>

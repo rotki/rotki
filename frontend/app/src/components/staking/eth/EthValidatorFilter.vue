@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import type {
+  EthStakingCombinedFilter,
   EthStakingFilter,
   EthStakingFilterType,
-  EthStakingPeriod,
 } from '@rotki/common/lib/staking/eth2';
 
 const props = defineProps<{
   value: EthStakingFilter;
-  period: EthStakingPeriod | undefined;
+  filter: EthStakingCombinedFilter | undefined;
 }>();
 
 const emit = defineEmits<{
   (e: 'input', value: EthStakingFilter): void;
-  (e: 'update:period', value?: EthStakingPeriod): void;
+  (e: 'update:filter', value?: EthStakingCombinedFilter): void;
 }>();
 
-const filterType: Ref<EthStakingFilterType> = ref('validator');
-const periodModel = useVModel(props, 'period', emit);
+const filterType = ref<EthStakingFilterType>('validator');
+const filterModel = useVModel(props, 'filter', emit);
 
 watch(filterType, type =>
   emit('input', type === 'validator' ? { validators: [] } : { accounts: [] }));
@@ -62,7 +62,7 @@ const { t } = useI18n();
         :filter-type="filterType"
         @input="emit('input', $event)"
       />
-      <EthValidatorRangeFilter :period.sync="periodModel" />
+      <EthValidatorCombinedFilter :filter.sync="filterModel" />
     </div>
   </div>
 </template>
