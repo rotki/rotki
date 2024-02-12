@@ -2,10 +2,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { type BrowserWindow, Menu, Tray, app } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
-import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import type { TrayUpdate } from '@/electron-main/ipc';
-import type { Nullable } from '@/types';
 
 type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
@@ -14,12 +12,7 @@ export class TrayManager {
   private readonly getWindow: WindowProvider;
   private readonly closeApp: () => void;
   private tooltip = '';
-  private _tray: Nullable<Tray> = null;
-
-  private get tray(): Tray {
-    assert(this._tray);
-    return this._tray;
-  }
+  private tray?: Tray = undefined;
 
   constructor(getWindow: WindowProvider, closeApp: () => void) {
     this.getWindow = getWindow;
@@ -63,7 +56,7 @@ export class TrayManager {
   }
 
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
-    if (!this._tray)
+    if (!this.tray)
       return;
 
     if (up === undefined) {
@@ -100,7 +93,7 @@ export class TrayManager {
 
   private setIcon(iconName: string) {
     const iconPath = path.join(TrayManager.iconPath, iconName);
-    this.tray.setImage(iconPath);
+    this.tray?.setImage(iconPath);
   }
 
   private showHide(win: BrowserWindow) {
@@ -112,21 +105,21 @@ export class TrayManager {
       app.focus();
     }
 
-    this.tray.setContextMenu(this.buildMenu(win.isVisible()));
+    this.tray?.setContextMenu(this.buildMenu(win.isVisible()));
   }
 
   private hidden = () => {
-    this.tray.setContextMenu(this.buildMenu(false, this.tooltip));
+    this.tray?.setContextMenu(this.buildMenu(false, this.tooltip));
   };
 
   private shown = () => {
-    this.tray.setContextMenu(this.buildMenu(true, this.tooltip));
+    this.tray?.setContextMenu(this.buildMenu(true, this.tooltip));
   };
 
   build() {
     const icon = isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png';
     const iconPath = path.join(TrayManager.iconPath, icon);
-    this._tray = new Tray(iconPath);
+    this.tray = new Tray(iconPath);
     this.tray.setToolTip('rotki is running');
 
     this.tray.setContextMenu(this.buildMenu(true));
@@ -135,8 +128,10 @@ export class TrayManager {
   }
 
   destroy() {
-    this._tray?.destroy();
-    this._tray = null;
+    if (this.tray) {
+      this.tray.destroy();
+      this.tray = undefined;
+    }
   }
 
   listen() {
