@@ -22,6 +22,7 @@ const props = withDefaults(
     showIgnored?: boolean;
     hideDetails?: boolean;
     includeNfts?: boolean;
+    asset?: AssetInfoWithId | NftAsset;
   }>(),
   {
     items: () => [],
@@ -39,18 +40,15 @@ const props = withDefaults(
     showIgnored: false,
     hideDetails: false,
     includeNfts: false,
+    asset: undefined,
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string): void }>();
+const emit = defineEmits<{ (e: 'input', value: string): void; (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
 
 const { items, showIgnored, excludes, errorMessages, value, includeNfts }
   = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
-
-function input(value: string) {
-  emit('input', value || '');
-}
 
 const autoCompleteInput = ref(null);
 const search = ref<string>('');
@@ -110,6 +108,11 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   catch (error_: any) {
     set(error, error_.message);
   }
+}
+
+function input(value: string) {
+  emit('input', value || '');
+  emit('update:asset', get(visibleAssets)?.find(asset => asset.identifier === value));
 }
 
 let pending: AbortController | null = null;
