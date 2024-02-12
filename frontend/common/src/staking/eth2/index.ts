@@ -110,6 +110,10 @@ export interface EthStakingPeriod {
   toTimestamp?: number;
 }
 
+export interface EthStakingCombinedFilter extends EthStakingPeriod {
+  status?: EthValidatorStatus;
+}
+
 export interface Eth2DailyStatsPayload extends EthStakingPeriod {
   readonly limit: number;
   readonly offset: number;

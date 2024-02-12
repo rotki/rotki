@@ -20,6 +20,9 @@
     "release_notes": "What's new",
     "user_agent": "User Agent:"
   },
+  "eth_validator_combined_filter": {
+    "status": "Filter by the status of the validator"
+  },
   "account_balance_table": {
     "liabilities": "Liabilities",
     "loopring": "Loopring"
