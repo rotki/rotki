@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorStatus,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -196,7 +197,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == 5
-    # Check the sum pnl values here and see that they include only values from the current page
+    # Check sum pnl values here and see that they include more values than just the current page
     full_sum_pnl = FVal(result['sum_pnl'])
     calculated_sum_pnl = ZERO
     for idx, entry in enumerate(result['entries']):
@@ -208,6 +209,27 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 
         if idx <= 4:
             assert time == next_page_times[idx]
+    assert full_sum_pnl > calculated_sum_pnl
+
+    # query all stats, again without cache and make sure no external queries happen
+    # since last time they were queried was recent
+    with patch('rotkehlchen.chain.ethereum.modules.eth2.utils.scrape_validator_daily_stats', wraps=scrape_validator_daily_stats) as scraper:  # noqa: E501
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2dailystatsresource',
+            ), json={'only_cache': False},
+        )
+        assert scraper.call_count == 0
+
+    result = assert_proper_response_with_result(response)
+    total_stats = len(result['entries'])
+    assert total_stats == result['entries_total']
+    assert total_stats == result['entries_found']
+    full_sum_pnl = FVal(result['sum_pnl'])
+    calculated_sum_pnl = ZERO
+    for entry in result['entries']:
+        calculated_sum_pnl += FVal(entry['pnl']['amount'])
     assert full_sum_pnl.is_close(calculated_sum_pnl)
 
 
