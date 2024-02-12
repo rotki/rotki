@@ -57,21 +57,20 @@ const locations = computed<TradeLocationData[]>(() => {
       $listeners
     "
   >
-    <template #item="{ item, attrs, on }">
+    <template #item="{ item, attrs }">
       <LocationIcon
         :id="`balance-location__${item.identifier}`"
         v-bind="attrs"
         horizontal
         :item="item.identifier"
-        v-on="on"
       />
     </template>
-    <template #selection="{ item, attrs, on }">
+    <template #selection="{ item, attrs }">
       <LocationIcon
+        class="pr-2"
         v-bind="attrs"
         horizontal
         :item="item.identifier"
-        v-on="on"
       />
     </template>
   </VAutocomplete>
