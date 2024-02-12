@@ -11,6 +11,7 @@ from rotkehlchen.tests.fixtures.greenlets import *  # noqa: F403
 from rotkehlchen.tests.fixtures.history import *  # noqa: F403
 from rotkehlchen.tests.fixtures.messages import *  # noqa: F403
 from rotkehlchen.tests.fixtures.networking import *  # noqa: F403
+from rotkehlchen.tests.fixtures.oracles import *  # noqa: F403
 from rotkehlchen.tests.fixtures.pylint import *  # noqa: F403
 from rotkehlchen.tests.fixtures.rotkehlchen import *  # noqa: F403
 from rotkehlchen.tests.fixtures.taskmanager import *  # noqa: F403

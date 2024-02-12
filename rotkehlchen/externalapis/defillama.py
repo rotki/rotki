@@ -40,7 +40,6 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.all_coins_cache: dict[str, dict[str, Any]] | None = None
         self.last_rate_limit = 0
 
     def _query(
@@ -295,7 +294,3 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             price=price,
         )])
         return price
-
-    def all_coins(self) -> dict[str, dict[str, Any]]:
-        """no op for defillama. Required for the interface"""
-        return {}

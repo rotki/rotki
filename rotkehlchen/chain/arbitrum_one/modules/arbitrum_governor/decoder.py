@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-GOVERNOR_ADDRESS = string_to_evm_address('0xf07DeD9dC292157749B6Fd268E37DF6EA38395B9')
+GOVERNOR_ADDRESS: Final = string_to_evm_address('0xf07DeD9dC292157749B6Fd268E37DF6EA38395B9')
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

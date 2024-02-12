@@ -60,9 +60,9 @@ def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[Histo
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_historical_data_use_cached_price(data_dir, database, historical_price_test_data):  # pylint: disable=unused-argument  # noqa: E501
+def test_cryptocompare_historical_data_use_cached_price(database, historical_price_test_data):  # pylint: disable=unused-argument
     """Test that the cryptocompare cache is used"""
-    cc = Cryptocompare(data_directory=data_dir, database=database)
+    cc = Cryptocompare(database=database)
     with patch.object(cc, 'query_endpoint_histohour') as histohour_mock:
         result = cc.query_historical_price(
             from_asset=A_ETH,
@@ -99,7 +99,7 @@ def check_cc_result(result: list, forward: bool):
 @pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer):
+def test_cryptocompare_histohour_data_going_forward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
 
     This test checks that doing an additional query in the future works properly
@@ -109,7 +109,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     btc_start_ts = 1279940400
     now_ts = btc_start_ts + 3600 * 2000 + 122
     freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
-    cc = Cryptocompare(data_directory=data_dir, database=database)
+    cc = Cryptocompare(database=database)
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
@@ -143,7 +143,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
 @pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer):
+def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
 
     This test checks that doing an additional query in the past workd properly
@@ -173,7 +173,7 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     globaldb.add_historical_prices(cache_data)
 
     freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
-    cc = Cryptocompare(data_directory=data_dir, database=database)
+    cc = Cryptocompare(database=database)
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
@@ -213,7 +213,6 @@ def test_cryptocompare_dao_query(cryptocompare):
 ])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_historical_data_price(
-        data_dir,
         database,
         from_asset,
         to_asset,
@@ -223,7 +222,7 @@ def test_cryptocompare_historical_data_price(
     """Test that the cryptocompare histohour data retrieval works and price is returned
 
     """
-    cc = Cryptocompare(data_directory=data_dir, database=database)
+    cc = Cryptocompare(database=database)
     # Get lots of historical prices from at least 1 query after the ts we need
     cc.query_and_store_historical_data(
         from_asset=from_asset.resolve(),

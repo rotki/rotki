@@ -10,8 +10,8 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
 @pytest.fixture(name='cryptocompare')
-def fixture_cryptocompare(data_dir, database):
-    return Cryptocompare(data_directory=data_dir, database=database)
+def fixture_cryptocompare(database):
+    return Cryptocompare(database=database)
 
 
 @pytest.fixture(scope='session', name='session_coingecko')

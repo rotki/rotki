@@ -249,7 +249,7 @@ def _create_inquirer(
     # of existing user for some tests
     inquirer = Inquirer(
         data_dir=data_directory,
-        cryptocompare=Cryptocompare(data_directory=data_directory, database=None),
+        cryptocompare=Cryptocompare(database=None),
         coingecko=Coingecko(),
         defillama=Defillama(),
         manualcurrent=ManualCurrentOracle(),

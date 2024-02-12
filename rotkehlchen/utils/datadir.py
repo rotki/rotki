@@ -95,7 +95,10 @@ def maybe_restructure_rotki_data_directory(data_dir: Path) -> None:
     for x in data_dir.iterdir():
         try:
             if not x.is_dir():
-                other_paths.append(x)
+                if x.name == 'cryptocompare_coinlist.json':
+                    x.unlink()  # no longer needed -- is in DB cache
+                else:
+                    other_paths.append(x)
                 continue
 
             if (x / USERDB_NAME).exists():  # putting first to never lose any
