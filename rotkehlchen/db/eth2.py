@@ -107,11 +107,11 @@ class DBEth2:
 
         Returns a tuple with the following in order:
          - A list of the daily stats
-         - How many are the total entries found for the filter
+         - How many are the total entries found for the filter (ignoring pagination)
          - Sum of ETH gained/lost for the filter
         """
         stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
-        query, bindings = filter_query.prepare(with_pagination=True)
+        query, bindings = filter_query.prepare(with_pagination=False)
         # TODO: A weakness of this query is that it does not take into account the
         # ownership proportion of the validator in the PnL here
         query = f'SELECT COUNT(*), SUM(pnl) FROM (SELECT * FROM  eth2_daily_staking_details {query})'  # noqa: E501
