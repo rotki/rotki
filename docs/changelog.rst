@@ -20,6 +20,7 @@ Changelog
 * :feature:`7051` Users will be able to add a custom price directly from the asset overview page.
 * :feature:`-` Arbitrum's governance votes should now be decoded properly.
 * :feature:`4841` The rotki data directory is now more organized.
+* :feature:`-` Transactions that have interacted with the WXDAI contract are now properly decoded.
 * :feature:`1574` Interactions with the ygov.finance contract are now decoded.
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.

@@ -21,17 +21,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROME_SWAP_SIGNATURE
+from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-
-from rotkehlchen.chain.ethereum.modules.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
