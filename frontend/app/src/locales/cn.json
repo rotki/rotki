@@ -2928,6 +2928,7 @@
       "label": "目标",
       "non_empty": "目标资产不能为空"
     },
+    "target_hint": "标识符：{identifier}",
     "title": "合并资产"
   },
   "message": {

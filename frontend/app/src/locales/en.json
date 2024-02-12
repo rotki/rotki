@@ -3223,6 +3223,7 @@
       "label": "Target",
       "non_empty": "The target asset cannot be empty"
     },
+    "target_hint": "Identifier: {identifier}",
     "title": "Merge Assets"
   },
   "message": {

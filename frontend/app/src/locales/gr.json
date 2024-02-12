@@ -2858,21 +2858,22 @@
     }
   },
   "merge_dialog": {
-    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
-    "error": "Merge was not successful",
-    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
-    "merge": "Merge",
+    "done": "Η συγχώνευση περιουσιακών στοιχείων ολοκληρώθηκε. Το παλιό περιουσιακό στοιχείο θα εξακολουθεί να εμφανίζεται στο frontend. Για να βεβαιωθείτε ότι το νέο εμφανίζεται παντού, είτε επανεκκινήστε την εφαρμογή είτε ανανεώστε χειροκίνητα τις ισορροπίες σε κάθε θέση που εμφανίζεται το παλιό asset.",
+    "error": "Η συγχώνευση δεν ήταν επιτυχής",
+    "hint": "Το αρχικό περιουσιακό στοιχείο θα συγχωνευτεί στο περιουσιακό στοιχείο-στόχο και θα ενημερωθούν όλες οι χρήσεις του",
+    "merge": "συγχώνευση",
     "source": {
-      "label": "Source",
-      "non_empty": "The source identifier cannot not be empty"
+      "label": "Πηγή",
+      "non_empty": "Το αναγνωριστικό πηγής δεν μπορεί να είναι κενό"
     },
-    "source_hint": "The asset identifier that you want to merge into the target",
-    "subtitle": "Merge two assets",
+    "source_hint": "Το αναγνωριστικό περιουσιακού στοιχείου που θέλετε να συγχωνεύσετε στο στόχο",
+    "subtitle": "Συγχώνευση δύο περιουσιακών στοιχείων",
     "target": {
-      "label": "Target",
-      "non_empty": "The target asset cannot be empty"
+      "label": "Στόχος",
+      "non_empty": "Το περιουσιακό στοιχείο-στόχος δεν μπορεί να είναι κενό"
     },
-    "title": "Merge Assets"
+    "target_hint": "Αναγνωριστικό: {identifier}",
+    "title": "Συγχώνευση περιουσιακών στοιχείων"
   },
   "message": {
     "error": {
