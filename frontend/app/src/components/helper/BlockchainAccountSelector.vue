@@ -227,6 +227,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             v-bind="data.attrs"
             clickable
             closeable
+            size="sm"
             class="m-0.5"
             @click:close="data.parent.selectItem(data.item)"
           >
@@ -251,7 +252,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             class="blockchain-account-selector__list__item flex items-center justify-between grow"
           >
             <div class="blockchain-account-selector__list__item__address-label">
-              <RuiChip class="text-truncate">
+              <RuiChip class="text-truncate" size="sm">
                 <AccountDisplay
                   :account="data.item"
                   :hide-chain-icon="hideChainIcon"

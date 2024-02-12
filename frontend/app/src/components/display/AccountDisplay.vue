@@ -58,11 +58,11 @@ const { t } = useI18n();
       >
         <VAvatar
           left
-          size="28px"
+          size="24px"
         >
           <ChainIcon
             v-if="account.chain && account.chain !== 'ALL'"
-            size="24px"
+            size="22px"
             :chain="account.chain"
           />
           <RuiTooltip
@@ -73,7 +73,7 @@ const { t } = useI18n();
             <template #activator>
               <RuiIcon name="links-line" />
             </template>
-            <span>{{ t('common.multi_chain') }}</span>
+            {{ t('common.multi_chain') }}
           </RuiTooltip>
         </VAvatar>
       </div>
