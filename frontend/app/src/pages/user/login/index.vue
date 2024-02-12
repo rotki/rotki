@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
+import { externalLinks } from '@/data/external-links';
 import type { LoginCredentials } from '@/types/login';
 
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
@@ -51,6 +52,7 @@ onMounted(async () => fetchMessages());
         <RuiLogo
           :class="css.logo__mobile"
           text
+          :custom-src="externalLinks.logo.drawer"
         />
         <div :class="css.wrapper">
           <div data-cy="account-management">
@@ -89,7 +91,10 @@ onMounted(async () => fetchMessages());
     <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
       <div>
         <span :class="css.logo">
-          <RuiLogo class="w-8 !h-8" />
+          <RuiLogo
+            class="w-8 !h-8"
+            :custom-src="externalLinks.logo.drawer"
+          />
         </span>
         <h2 class="text-h3 font-light xl:text-h2 mb-6">
           {{ header.header }}
