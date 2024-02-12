@@ -1,8 +1,6 @@
 import logging
-import os
 from collections import deque
 from json.decoder import JSONDecodeError
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gevent
@@ -39,6 +37,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -49,12 +48,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.interfaces import HistoricalPriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
-from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -190,16 +189,15 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):  # noqa: E501
-    def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
-        HistoricalPriceOracleInterface.__init__(self, oracle_name='cryptocompare')
+class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOracleMixin):  # noqa: E501
+    def __init__(self, database: Optional['DBHandler']) -> None:
+        HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='cryptocompare')
         ExternalServiceWithApiKey.__init__(
             self,
             database=database,
             service_name=ExternalService.CRYPTOCOMPARE,
         )
         PenalizablePriceOracleMixin.__init__(self)
-        self.data_directory = data_directory
         self.session = requests.session()
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
@@ -817,41 +815,15 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
 
     def all_coins(self) -> dict[str, dict[str, Any]]:
         """
-        Gets the mapping of all the cryptocompare coins
+        Gets the mapping of all the cryptocompare coins.
 
         May raise:
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
-        # Get coin list of cryptocompare
-        invalidate_cache = True
-        coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
-        if os.path.isfile(coinlist_cache_path):
-            log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
-            invalidate_cache = False
-            try:
-                data = jsonloads_dict(Path(coinlist_cache_path).read_text(encoding='utf8'))
-            except JSONDecodeError:
-                invalidate_cache = True
-            else:
-                now = ts_now()
-                # If we got a cache and its over a month old then requery cryptocompare
-                if data['time'] < now and now - data['time'] > 2629800:
-                    log.info('Cryptocompare coinlist cache is now invalidated')
-                    invalidate_cache = True
-                    data = data['data']
-
-        if invalidate_cache:
+        if (data := self.maybe_get_cached_coinlist(considered_recent_secs=WEEK_IN_SECONDS)) is None:  # noqa: E501
             data = self._api_query('all/coinlist')
-
-            # Also save the cache
-            with open(coinlist_cache_path, 'w', encoding='utf8') as f:
-                now = ts_now()
-                log.info('Writing coinlist cache', timestamp=now)
-                write_data = {'time': now, 'data': data}
-                f.write(rlk_jsondumps(write_data))
-        else:  # in any case take the data. Must exist due to else
-            data = data['data']
+            self.cache_coinlist(data)
 
         # As described in the docs
         # https://min-api.cryptocompare.com/documentation?key=Other&cat=allCoinsWithContentEndpoint

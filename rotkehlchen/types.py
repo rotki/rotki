@@ -946,6 +946,7 @@ class CacheType(Enum):
     CONVEX_POOL_ADDRESS = auto()  # get convex pool addr
     CONVEX_POOL_NAME = auto()  # map convex pool rewards address -> pool name
     SPAM_ASSET_FALSE_POSITIVE = auto()  # assets that shouldn't be marked as spam automatically
+    COINLIST = auto()  # coinlist / all coins cache for various oracles
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -965,6 +966,7 @@ UniqueCacheType = Literal[
     CacheType.ENS_NAMEHASH,
     CacheType.ENS_LABELHASH,
     CacheType.CONVEX_POOL_NAME,
+    CacheType.COINLIST,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

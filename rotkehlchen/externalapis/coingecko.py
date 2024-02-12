@@ -17,7 +17,7 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.interfaces import HistoricalPriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
@@ -498,14 +498,13 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 ]
 
 
-class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
+class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOracleMixin):
 
     def __init__(self) -> None:
-        HistoricalPriceOracleInterface.__init__(self, oracle_name='coingecko')
+        HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         set_user_agent(self.session)
-        self.all_coins_cache: dict[str, dict[str, Any]] | None = None
         self.last_rate_limit = 0
 
     @overload
@@ -622,11 +621,11 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         May raise:
         - RemoteError if there is an error with reaching coingecko
         """
-        if self.all_coins_cache is None:
+        if (data := self.maybe_get_cached_coinlist(considered_recent_secs=DAY_IN_SECONDS)) is None:
+            data = {}
             response = self._query(module='coins/list')
-            self.all_coins_cache = {}
             for entry in response:
-                if entry['id'] in self.all_coins_cache:
+                if entry['id'] in data:
                     log.warning(
                         f'Found duplicate coingecko identifier {entry["id"]} when querying '
                         f'the list of coingecko assets. Ignoring...',
@@ -634,9 +633,11 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                     continue
 
                 identifier = entry.pop('id')
-                self.all_coins_cache[identifier] = entry
+                data[identifier] = entry
 
-        return self.all_coins_cache
+            self.cache_coinlist(data)
+
+        return data
 
     @staticmethod
     def check_vs_currencies(

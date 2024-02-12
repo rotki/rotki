@@ -39,7 +39,11 @@ from rotkehlchen.types import EvmTokenKind, Location
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_add_user_assets(rotkehlchen_api_server, globaldb):
+@pytest.mark.parametrize('coingecko_cache_coinlist', [{
+    'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
+}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
+def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
     """Test that the endpoint for adding a user asset works"""
 
     user_asset1 = {
@@ -227,7 +231,11 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_editing_user_assets(rotkehlchen_api_server, globaldb):
+@pytest.mark.parametrize('coingecko_cache_coinlist', [{
+    'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
+}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
+def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
     """Test that the endpoint for editing user assets works"""
 
     user_asset1 = {
@@ -417,9 +425,12 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_deleting_user_assets(rotkehlchen_api_server, globaldb):
+@pytest.mark.parametrize('coingecko_cache_coinlist', [{
+    'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
+}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
+def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
     """Test that the endpoint for deleting a user asset works"""
-
     user_asset1 = {
         'asset_type': 'own chain',
         'name': 'foo token',

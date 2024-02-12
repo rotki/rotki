@@ -26,6 +26,7 @@ def _create_old_directory_structure(data_dir):
     global_data.mkdir(parents=True, exist_ok=True)
     (global_data / GLOBALDB_NAME).touch()
 
+    (data_dir / 'cryptocompare_coinlist.json').touch()  # add coinlist to see it deleted
     for user in USERS:
         user_dir = data_dir / user
         user_dir.mkdir(parents=True, exist_ok=True)
@@ -81,6 +82,8 @@ def _assert_directory_structure(data_dir):
     """Asserts that the directory structure has been properly migrated"""
     for x in data_dir.iterdir():
         assert x.is_dir() and x.name in ('users', 'app', 'global', 'images', 'restructuring_remnants')  # noqa: E501
+
+    assert not (data_dir / 'cryptocompare_coinlist.json').exists()
 
     # assert the proper directory structure for users
     users_dir = data_dir / 'users'
