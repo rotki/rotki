@@ -7,8 +7,9 @@ from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.modules.wxdai.constants import CPT_WXDAI
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH, A_WXDAI, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -347,4 +348,120 @@ def test_weth_interaction_errors(database, ethereum_inquirer):
             address=string_to_evm_address('0xe66B31678d6C16E9ebf358268a790B763C133750'),
         ),
     ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_wxdai_unwrap(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xa6af9ea737de26c87a36367fd896a8fe471049f4c18ac909901336aaccbf2369')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1707739650000)
+    gas_amount, unwrapped_amount = '0.0000886822502438', '555.374747825771664891'
+    wxdai_address = A_WXDAI.resolve_to_evm_token().evm_address
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WXDAI,
+            balance=Balance(amount=FVal(unwrapped_amount)),
+            location_label=user_address,
+            notes=f'Unwrap {unwrapped_amount} WXDAI',
+            counterparty=CPT_WXDAI,
+            address=wxdai_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(unwrapped_amount)),
+            location_label=user_address,
+            notes=f'Receive {unwrapped_amount} XDAI',
+            counterparty=CPT_WXDAI,
+            address=wxdai_address,
+        ),
+    ]
+
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0xd6f585378F3232E440B165AD56658bFcA76D1B32']])
+def test_wxdai_wrap(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x8cf8362f36e5a76912bc05ef804c0ea4b4f2de54700afe9ced99aa486f3dd0e8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1707744465000)
+    gas_amount, wrapped_amount = '0.0000586761', '103'
+    wxdai_address = A_WXDAI.resolve_to_evm_token().evm_address
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(wrapped_amount)),
+            location_label=user_address,
+            notes=f'Wrap {wrapped_amount} XDAI in WXDAI',
+            counterparty=CPT_WXDAI,
+            address=wxdai_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_WXDAI,
+            balance=Balance(amount=FVal(wrapped_amount)),
+            location_label=user_address,
+            notes=f'Receive {wrapped_amount} WXDAI',
+            counterparty=CPT_WXDAI,
+            address=wxdai_address,
+        ),
+    ]
+
     assert events == expected_events
