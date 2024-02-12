@@ -2843,21 +2843,22 @@
     }
   },
   "merge_dialog": {
-    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
-    "error": "Merge was not successful",
-    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
-    "merge": "Merge",
+    "done": "La fusión de activos se ha completado. El activo antiguo seguirá apareciendo en el frontend. Para asegurarse de que el nuevo se muestra en todas partes, reinicie la aplicación o actualice manualmente los saldos en cada lugar en el que aparezca el activo antiguo",
+    "error": "La fusión no se ha realizado correctamente",
+    "hint": "El activo de origen se fusionará con el activo de destino y se actualizarán todos sus usos",
+    "merge": "Fusionar",
     "source": {
-      "label": "Source",
-      "non_empty": "The source identifier cannot not be empty"
+      "label": "Fuente",
+      "non_empty": "El identificador de la fuente no puede no estar vacío"
     },
-    "source_hint": "The asset identifier that you want to merge into the target",
-    "subtitle": "Merge two assets",
+    "source_hint": "El identificador de activo que se desea fusionar en el destino",
+    "subtitle": "Fusionar dos activos",
     "target": {
       "label": "Target",
-      "non_empty": "The target asset cannot be empty"
+      "non_empty": "El activo de destino no puede estar vacío"
     },
-    "title": "Merge Assets"
+    "target_hint": "Identificador: {identifier}",
+    "title": "Fusionar activos"
   },
   "message": {
     "error": {

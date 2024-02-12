@@ -3197,6 +3197,7 @@
       "label": "Cible",
       "non_empty": "L'actif cible ne peut pas être vide"
     },
+    "target_hint": "Identifiant: {identifier}",
     "title": "Fusionner les actifs"
   },
   "message": {
