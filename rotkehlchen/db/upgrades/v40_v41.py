@@ -130,6 +130,16 @@ def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _remove_covalent_api_key')
 
 
+def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
+    """Remove events that were created by error in the kraken logic"""
+    log.debug('Enter _remove_bad_kraken_events')
+    write_cursor.execute(
+        'DELETE FROM history_events WHERE location=? AND type=? AND subtype=?',
+        ('B', 'informational', 'fee'),
+    )
+    log.debug('Exit _remove_bad_kraken_events')
+
+
 def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     """Move all the `label` column values from `blockchain_accounts` table to the `name` column
     of the 'address_book` table. If a `name` already exists in the `address_book` table, then
@@ -271,7 +281,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     log.debug('Enter userdb v40->v41 upgrade')
-    progress_handler.set_total_steps(10)
+    progress_handler.set_total_steps(11)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
@@ -292,6 +302,8 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _reset_decoded_events(write_cursor)
         progress_handler.new_step()
         _upgrade_eth2_validators(write_cursor)
+        progress_handler.new_step()
+        _remove_bad_kraken_events(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finish userdb v40->v41 upgrade')

@@ -2093,7 +2093,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         )
         assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL'), ('blockscout', 'LOL2'), ('covalent', 'lollol')]  # noqa: E501
         # verify that the history_events exists before upgrade
-        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 8
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 10
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = "B"').fetchone()[0] == 2  # kraken events: one valid and one that needs to be removed # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 8
         assert cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
@@ -2200,7 +2201,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             );""",
         )
         # verify that the history_events are removed, except the one that is customized
-        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 1
+        # and the kraken informational event
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 2
         assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
