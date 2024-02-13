@@ -677,6 +677,15 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     )
     assert_simple_ok_response(response)
 
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 'etc', 'target_asset': 'ETC'},
+    )
+    assert_error_response(response)  # same identifier with different casing, not allowed
+
     # after the replacement. Check that the manual balance is changed
     if not only_in_globaldb:
         response = requests.get(
