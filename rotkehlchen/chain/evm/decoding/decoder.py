@@ -864,7 +864,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             return DEFAULT_DECODING_OUTPUT
 
         for idx, action_item in enumerate(action_items):
-            if action_item.asset == found_token and action_item.amount == transfer.balance.amount and action_item.from_event_type == transfer.event_type and action_item.from_event_subtype == transfer.event_subtype:  # noqa: E501
+            if (
+                    action_item.asset == found_token and
+                    action_item.from_event_type == transfer.event_type and
+                    action_item.from_event_subtype == transfer.event_subtype and
+                    (action_item.amount is None or action_item.amount == transfer.balance.amount) and  # noqa: E501
+                    (action_item.location_label is None or action_item.location_label == transfer.location_label)  # noqa: E501
+            ):
                 if action_item.action == 'skip':
                     action_items.pop(idx)
                     return DEFAULT_DECODING_OUTPUT

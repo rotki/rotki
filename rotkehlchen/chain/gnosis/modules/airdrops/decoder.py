@@ -2,9 +2,8 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.cowswap.interfaces import CowswapAirdropDecoder
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.constants.assets import A_GNOSIS_VCOW
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AirdropsDecoder(CowswapAirdropDecoder):
+class AirdropsDecoder(DecoderInterface):
 
     def __init__(
             self,
@@ -28,7 +27,6 @@ class AirdropsDecoder(CowswapAirdropDecoder):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            vcow=A_GNOSIS_VCOW,
         )
 
     # -- DecoderInterface methods

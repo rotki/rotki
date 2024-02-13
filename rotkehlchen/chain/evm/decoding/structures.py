@@ -18,7 +18,8 @@ class ActionItem(NamedTuple):
     from_event_type: 'HistoryEventType'
     from_event_subtype: 'HistoryEventSubType'
     asset: 'Asset'
-    amount: 'FVal'
+    amount: Optional['FVal'] = None
+    location_label: str | None = None
     to_event_type: Optional['HistoryEventType'] = None
     to_event_subtype: Optional['HistoryEventSubType'] = None
     to_notes: str | None = None

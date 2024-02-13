@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
-from rotkehlchen.constants.assets import A_ETH, A_WETH
+from rotkehlchen.constants.assets import A_COW, A_ETH, A_VCOW, A_WETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -28,4 +28,6 @@ class CowswapDecoder(CowswapCommonDecoder):
             msg_aggregator=msg_aggregator,
             native_asset=A_ETH,
             wrapped_native_asset=A_WETH,
+            vcow_token=A_VCOW,
+            cow_token=A_COW,
         )

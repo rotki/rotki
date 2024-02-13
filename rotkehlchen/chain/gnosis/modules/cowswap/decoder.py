@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
-from rotkehlchen.constants.assets import A_WXDAI, A_XDAI
+from rotkehlchen.constants.assets import A_GNOSIS_COW, A_GNOSIS_VCOW, A_WXDAI, A_XDAI
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -28,4 +28,6 @@ class CowswapDecoder(CowswapCommonDecoder):
             msg_aggregator=msg_aggregator,
             native_asset=A_XDAI,
             wrapped_native_asset=A_WXDAI,
+            vcow_token=A_GNOSIS_VCOW,
+            cow_token=A_GNOSIS_COW,
         )
