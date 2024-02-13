@@ -92,13 +92,11 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
       return !!address && selectedTags.every(tag => tags.includes(tag));
     })
     .map((item, index) => {
-      if (get(loopring))
-        return { ...item, index };
-
       const display = get(addressNameSelector(item.address, item.chain)) || item.label || item.address;
 
       const row = {
         ...item,
+        ...item.balance,
         display,
         index,
       };
@@ -118,21 +116,21 @@ const rows = computed<IndexedBlockchainAccountWithBalance[]>(() =>
       if (!get(isEth))
         return rowWithTokens;
 
-      const assetBalances = get(getLoopringBalances(address));
+      const loopringBalances = get(getLoopringBalances(address));
 
-      if (assetBalances.length === 0)
+      if (loopringBalances.length === 0)
         return rowWithTokens;
 
       const loopringEth
-        = assetBalances.find(
+        = loopringBalances.find(
           ({ asset }) => asset === Blockchain.ETH.toUpperCase(),
         )?.amount ?? Zero;
 
-      const usdValue = bigNumberSum(
-        assetBalances.map(({ usdValue }) => usdValue),
-      ).plus(chainBalance.usdValue);
-
       const amount = chainBalance.amount.plus(loopringEth);
+
+      const usdValue = bigNumberSum(
+        loopringBalances.map(({ usdValue }) => usdValue),
+      ).plus(chainBalance.usdValue);
 
       return {
         ...rowWithTokens,
@@ -262,17 +260,17 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     });
   }
 
-  if (get(hasTokenDetection) && !get(loopring)) {
-    headers.push({
-      label: t('account_balances.headers.num_of_detected_tokens'),
-      key: 'numOfDetectedTokens',
-      cellClass: 'py-0',
-      sortable: true,
-      align: 'end',
-    });
-  }
-
   if (!get(loopring)) {
+    if (get(hasTokenDetection)) {
+      headers.push({
+        label: t('account_balances.headers.num_of_detected_tokens'),
+        key: 'numOfDetectedTokens',
+        cellClass: 'py-0',
+        sortable: true,
+        align: 'end',
+      });
+    }
+
     headers.push({
       label: t('common.actions_text'),
       key: 'actions',
