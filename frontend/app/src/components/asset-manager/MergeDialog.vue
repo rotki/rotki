@@ -137,6 +137,7 @@ function input(value: boolean) {
           :label="t('merge_dialog.target.label')"
           :disabled="pending"
           :asset.sync="target"
+          :excludes="sourceIdentifier ? [sourceIdentifier] : []"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
           persistent-hint
           @focus="clearErrors()"

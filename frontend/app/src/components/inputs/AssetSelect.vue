@@ -74,20 +74,20 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   const knownAssets = get(assets);
 
   const includeIgnored = get(showIgnored);
-  return knownAssets.filter((asset: AssetInfoWithId) => {
-    const unIgnored = includeIgnored || !get(isAssetIgnored(asset.identifier));
+  return knownAssets.filter(({ identifier }: AssetInfoWithId) => {
+    const unIgnored = includeIgnored || !get(isAssetIgnored(identifier));
 
     const included
       = itemsVal && itemsVal.length > 0
-        ? itemsVal.includes(asset.identifier)
+        ? itemsVal.includes(identifier)
         : true;
 
     const excluded
       = excludesVal && excludesVal.length > 0
-        ? excludesVal.includes(asset.identifier)
+        ? excludesVal.some(excludedId => identifier.toLowerCase() === excludedId?.toLowerCase())
         : false;
 
-    return !!asset.identifier && unIgnored && included && !excluded;
+    return !!identifier && unIgnored && included && !excluded;
   });
 });
 
@@ -110,9 +110,13 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   }
 }
 
+function getVisibleAsset(identifier: string) {
+  return get(visibleAssets)?.find(asset => asset.identifier === identifier);
+}
+
 function input(value: string) {
   emit('input', value || '');
-  emit('update:asset', get(visibleAssets)?.find(asset => asset.identifier === value));
+  emit('update:asset', getVisibleAsset(value));
 }
 
 let pending: AbortController | null = null;
@@ -167,6 +171,12 @@ onMounted(async () => {
 
 watch(value, async () => {
   await checkValue();
+});
+
+watch(visibleAssets, () => {
+  const identifier = get(value);
+  if (identifier && !getVisibleAsset(identifier))
+    input('');
 });
 </script>
 
