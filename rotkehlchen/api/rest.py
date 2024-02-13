@@ -99,6 +99,7 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
+    AIRDROPS_TOLERANCE,
     AVATARIMAGESDIR_NAME,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
@@ -2264,7 +2265,7 @@ class RestAPI:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                 database=self.rotkehlchen.data.db,
-                tolerance_for_amount_check=FVal('0.00000000000001000'),
+                tolerance_for_amount_check=AIRDROPS_TOLERANCE,
             )
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)

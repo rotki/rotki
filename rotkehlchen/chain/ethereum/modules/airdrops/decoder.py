@@ -1,10 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
@@ -12,12 +14,22 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_BADGER,
+    A_CVX,
+    A_ELFI,
+    A_ENS,
+    A_FOX,
+    A_FPIS,
+    A_UNI,
+)
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -38,25 +50,45 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
-UNISWAP_DISTRIBUTOR = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
-UNISWAP_TOKEN_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
+UNISWAP_DISTRIBUTOR: Final = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
+UNISWAP_TOKEN_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
-BADGERHUNT = string_to_evm_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
-BADGER_HUNT_EVENT = b'\x8e\xaf\x15aI\x08\xa4\xe9\x02!A\xfeJYk\x1a\xb0\xcbr\xab2\xb2P#\xe3\xda*E\x9c\x9a3\\'  # noqa: E501
+BADGERHUNT: Final = string_to_evm_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
+BADGER_HUNT_EVENT: Final = b'\x8e\xaf\x15aI\x08\xa4\xe9\x02!A\xfeJYk\x1a\xb0\xcbr\xab2\xb2P#\xe3\xda*E\x9c\x9a3\\'  # noqa: E501
 
-ONEINCH = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
-ONEINCH_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
+ONEINCH: Final = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
+ONEINCH_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
-FPIS = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
-CONVEX = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
-FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
+FPIS: Final = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
+CONVEX: Final = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
+FPIS_CONVEX_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
 
-FOX_DISTRIBUTOR = string_to_evm_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d')
-FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
+FOX_DISTRIBUTORS: Final = (
+    string_to_evm_address('0x91B9A78658273913bf3F5444Cb5F2592d1123eA7'),
+    string_to_evm_address('0xB90381DAE1a72528660278100C5Aa44e1108ceF7'),
+    string_to_evm_address('0x7BC08798465B8475Db9BCA781C2Fd6063A09320D'),
+    string_to_evm_address('0xd28b7Ca9c6Bf8BB82Ea3d7F9948304F7C0B4e907'),
+    string_to_evm_address('0xCd966F6F78100CB9e02724bb6A82081D078Cc37A'),
+    string_to_evm_address('0xa6c22196309eF252232a0C62951fcEC1FE3b26FB'),
+    string_to_evm_address('0xa4A3603000F5495F924A5C474AF67622B6b9c8Fa'),
+    string_to_evm_address('0xf4BBE639CCEd35210dA2018b0A31f4E1449B2a8a'),
+    string_to_evm_address('0x164D113F46676CA92d54537aC5aF10aC20940b94'),
+    string_to_evm_address('0x02FfdC5bfAbe5c66BE067ff79231585082CA5fe2'),
+    string_to_evm_address('0xd1Fa5AA6AD65eD6FEA863c2e7fB91e731DcD559F'),
+    string_to_evm_address('0x01F89EB04481052A75D32D726Cc5b6B2f567001D'),
+    string_to_evm_address('0x2977F92D5BaddfB411beb642F97d125aA55C000A'),
+    string_to_evm_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d'),
+    string_to_evm_address('0x0DCDc346ADF5a808F8e683C31BA89fA6C6E5775D'),
+    string_to_evm_address('0x4C20CDAdBcaE364Edc03E2B90F09eB97d08ce3C8'),
+)
+FOX_CLAIMED: Final = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
 
-ELFI_LOCKING = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
-ELFI_VOTE_CHANGE = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
+ELFI_LOCKING: Final = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
+ELFI_ADDRESS: Final = string_to_evm_address('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d')
+ELFI_VOTE_CHANGE: Final = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
 
+ENS_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
+ENS_ADDRESS: Final = string_to_evm_address('0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72')
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -75,13 +107,6 @@ class AirdropsDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.uni = A_UNI.resolve_to_evm_token()
-        self.fox = A_FOX.resolve_to_evm_token()
-        self.badger = A_BADGER.resolve_to_evm_token()
-        self.oneinch = A_1INCH.resolve_to_evm_token()
-        self.convex = A_CVX.resolve_to_evm_token()
-        self.fpis = A_FPIS.resolve_to_evm_token()
-        self.elfi = A_ELFI.resolve_to_evm_token()
 
     def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
@@ -89,13 +114,16 @@ class AirdropsDecoder(DecoderInterface):
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.uni)
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # uni 18 decimals
+        )
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
                 user_address=user_address,
                 amount=amount,
-                asset=self.fox,
+                asset=A_UNI,
                 counterparty=CPT_UNISWAP,
             ):
                 break
@@ -107,14 +135,17 @@ class AirdropsDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.fox)
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # fox 18 decimals
+        )
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
                 user_address=user_address,
                 amount=amount,
-                asset=self.fox,
+                asset=A_FOX,
                 counterparty=CPT_SHAPESHIFT,
             ):
                 break
@@ -126,14 +157,17 @@ class AirdropsDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.badger)
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # badger 18 decimals
+        )
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
                 user_address=user_address,
                 amount=amount,
-                asset=self.badger,
+                asset=A_BADGER,
                 counterparty=CPT_BADGER,
             ):
                 break
@@ -145,14 +179,17 @@ class AirdropsDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.oneinch)
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # 1inch 18 decimals
+        )
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
                 user_address=user_address,
                 amount=amount,
-                asset=self.oneinch,
+                asset=A_1INCH,
                 counterparty=CPT_ONEINCH,
             ):
                 break
@@ -169,20 +206,23 @@ class AirdropsDecoder(DecoderInterface):
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+
         if airdrop == CPT_CONVEX:
-            amount = asset_normalized_value(
-                amount=raw_amount,
-                asset=self.convex,
+            amount = token_normalized_value_decimals(
+                token_amount=raw_amount,
+                token_decimals=DEFAULT_TOKEN_DECIMALS,  # convex 18 decimals
             )
             note_location = 'from convex airdrop'
             counterparty = CPT_CONVEX
+            airdrop_asset = A_CVX
         else:
-            amount = asset_normalized_value(
-                amount=raw_amount,
-                asset=self.fpis,
+            amount = token_normalized_value_decimals(
+                token_amount=raw_amount,
+                token_decimals=DEFAULT_TOKEN_DECIMALS,  # fpis 18 decimals
             )
             note_location = 'from FPIS airdrop'
             counterparty = CPT_FRAX
+            airdrop_asset = A_FPIS
 
         for event in context.decoded_events:
             notes = event.notes
@@ -195,7 +235,7 @@ class AirdropsDecoder(DecoderInterface):
                 event=event,
                 user_address=user_address,
                 amount=amount,
-                asset=self.fpis,
+                asset=airdrop_asset,
                 counterparty=counterparty,
                 notes=notes,
             ):
@@ -213,7 +253,10 @@ class AirdropsDecoder(DecoderInterface):
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         delegate_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.elfi)
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # elfi 18 decimals
+        )
 
         # now we need to find the transfer, but can't use decoded events
         # since the transfer is from one of at least 2 airdrop contracts to
@@ -226,7 +269,7 @@ class AirdropsDecoder(DecoderInterface):
 
             transfer_raw = hex_or_bytes_to_int(other_log.data[0:32])
             if (
-                other_log.address == self.elfi.evm_address and
+                other_log.address == ELFI_ADDRESS and
                 transfer_raw == raw_amount
             ):
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
@@ -235,7 +278,7 @@ class AirdropsDecoder(DecoderInterface):
                     tx_log=context.tx_log,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.AIRDROP,
-                    asset=self.elfi,
+                    asset=A_ELFI,
                     balance=Balance(amount=amount),
                     location_label=user_address,
                     notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
@@ -246,6 +289,32 @@ class AirdropsDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_ens_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != ENS_CLAIM:
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        amount = token_normalized_value_decimals(
+            token_amount=raw_amount,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # ens 18 decimals
+        )
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        return DecodingOutput(
+            action_items=[
+                ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    location_label=user_address,
+                    asset=A_ENS,
+                    amount=amount,
+                    to_event_subtype=HistoryEventSubType.AIRDROP,
+                    to_counterparty=CPT_ENS,
+                    to_notes=f'Claim {amount} ENS from {CPT_ENS} airdrop',
+                ),
+            ],
+        )
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
@@ -255,9 +324,9 @@ class AirdropsDecoder(DecoderInterface):
             ONEINCH: (self._decode_oneinch_claim,),
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),
-            FOX_DISTRIBUTOR: (self._decode_fox_claim,),
             ELFI_LOCKING: (self._decode_elfi_claim,),
-        }
+            ENS_ADDRESS: (self._decode_ens_claim,),
+        } | dict.fromkeys(FOX_DISTRIBUTORS, (self._decode_fox_claim,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
@@ -294,4 +363,5 @@ class AirdropsDecoder(DecoderInterface):
                 image='element_finance.png',
             ),
             COWSWAP_CPT_DETAILS,  # done by cowswap decoder. Stays here since we query airdrop counterparties in some places ... perhaps rethink this. It's not a good abstraction  # noqa: E501
+            ENS_CPT_DETAILS,
         )

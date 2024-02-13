@@ -4,9 +4,13 @@ from rotkehlchen.fval import FVal
 
 CURRENCYCONVERTER_API_KEY = 'a5a6494d168cb0bb93b3'
 
-ZERO = FVal(0)
-ONE = FVal(1)
-EXP18 = FVal(1e18)
+ZERO: Final = FVal(0)
+ONE: Final = FVal(1)
+EXP18: Final = FVal(1e18)
+# Tolerance used when querying claims in the database since we need to cast
+# to float and we can loose precision in SQL. With lower tolerance the ens
+# airdrop fails to get detected.
+AIRDROPS_TOLERANCE: Final = FVal(10e-13)
 
 # Could also try to extend HTTPStatus but looks complicated
 # https://stackoverflow.com/questions/45028991/best-way-to-extend-httpstatus-with-custom-value
