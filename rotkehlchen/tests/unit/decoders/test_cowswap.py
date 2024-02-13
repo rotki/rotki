@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x31b6020CeF40b72D1e53562229c1F9200d00CC12']])
 def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
@@ -85,7 +85,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x34938Bd809BDf57178df6DF523759B4083A29190']])
 def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
@@ -146,7 +146,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcFeA48Cf6Ba36e0328a6Ead0fdB4C2642D21c59d']])
 def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xe2d6aa636623989061f1d762b19ca6fe6bc0edb5a890cf5a934a8fc6d42dcaca')  # noqa: E501
@@ -207,7 +207,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1',
     '0x34938Bd809BDf57178df6DF523759B4083A29190',
@@ -334,7 +334,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcFeA48Cf6Ba36e0328a6Ead0fdB4C2642D21c59d']])
 def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x3619cc8d8f60541df0ea7d96d923efa4c783f53491af0d3ed1ed31de9fe15bcf')  # noqa: E501
@@ -376,7 +376,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_place_xdai_order(database, gnosis_inquirer, gnosis_accounts):
     tx_hex = deserialize_evm_tx_hash('0x0fa7c5936310a7fefa2b62597aea88fd152f73e736eee805d26e9337f461bc4f')  # noqa: E501
@@ -418,7 +418,7 @@ def test_place_xdai_order(database, gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xdc4CaDC65123Ebd371887CaD59Cc8c6F8F6fC29c']])
 def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x5769b4634ae26ec93aebc80a50e0676b0793af485041b249652bd7ee6703a9f5')  # noqa: E501
@@ -460,7 +460,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xb0e83C2D71A991017e0116d58c5765Abc57384af']])
 def test_invalidate_gnosis_order(database, gnosis_inquirer, gnosis_accounts):
     tx_hex = deserialize_evm_tx_hash('0x68927e822317242ac1c0a0c71f2303725fc998164f1bb812f61b3053ef2a9a02')  # noqa: E501
@@ -502,7 +502,7 @@ def test_invalidate_gnosis_order(database, gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4DD2a258130673a2d4242FaC1C5E5f82d1A0888d']])
 def test_refund_eth_order(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x424f29ad7b865d764d89fe28767a7f34d177cad71cc123a2a8c0209aa0b70fda')  # noqa: E501
@@ -532,7 +532,7 @@ def test_refund_eth_order(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x402633Ec0283F58415bcbe5b48e7F44338a349eb']])
 def test_refund_gnosis_order(database, gnosis_inquirer, gnosis_accounts):
     tx_hex = deserialize_evm_tx_hash('0xb37be7c154ef4fb0fd291c647c21013abb10428181e64ba1c6305b77df929d0e')  # noqa: E501
@@ -562,7 +562,7 @@ def test_refund_gnosis_order(database, gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_swap_gnosis_tokens(database, gnosis_inquirer, gnosis_accounts):
     tx_hex = deserialize_evm_tx_hash('0x024e1da9dc2bf7ff88dd22643857979fcd954103860698203257b6db27778482')  # noqa: E501
@@ -623,7 +623,7 @@ def test_swap_gnosis_tokens(database, gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf393fb8C4BbF7e37f583D0593AD1d1b2443E205c']])
 def test_ethereum_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8d33a6f1c37da1e2b77a4595425360361b6db79ec8811ff2eef810ebb9942044')  # noqa: E501
@@ -665,7 +665,7 @@ def test_ethereum_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_gnosis_claim_airdrop(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -703,5 +703,115 @@ def test_gnosis_claim_airdrop(database, gnosis_inquirer, gnosis_accounts):
             tx_hash=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x773d161310d07CaFC6f767Ca24f43e52163b9BE6']])
+def test_ethereum_vested_claim(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xb6b58ea77542bfeec311c2df5707fe002b62c5a5d648aa17892d680f4e0d6e07')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1704960791000)
+    gas, amount = '0.001562177312628784', '4278.42414719412947787'
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_VCOW,
+            balance=Balance(FVal(amount)),
+            location_label=user_address,
+            notes=f'Exchange {amount} vested vCOW for COW',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0xD057B63f5E69CF1B929b356b579Cba08D7688048'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'),
+            balance=Balance(FVal(amount)),
+            location_label=user_address,
+            notes=f'Claim {amount} COW from vesting tokens',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_gnosis_vested_claim(database, gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x57ecb8f87eed5548cb375ea695531d6849843d6217771a5c25c957058a460243')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = gnosis_accounts[0]
+    timestamp = TimestampMS(1707738405000)
+    gas, amount = '0.000520287498374868', '99.807039723201809834'
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_GNOSIS_VCOW,
+            balance=Balance(FVal(amount)),
+            location_label=user_address,
+            notes=f'Exchange {amount} vested vCOW for COW',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:100/erc20:0x177127622c4A00F3d409B75571e12cB3c8973d3c'),
+            balance=Balance(FVal(amount)),
+            location_label=user_address,
+            notes=f'Claim {amount} COW from vesting tokens',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x177127622c4A00F3d409B75571e12cB3c8973d3c'),
         ),
     ]

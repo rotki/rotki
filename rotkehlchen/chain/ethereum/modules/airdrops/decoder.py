@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.cowswap.interfaces import CowswapAirdropDecoder
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -17,16 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import (
-    A_1INCH,
-    A_BADGER,
-    A_CVX,
-    A_ELFI,
-    A_FOX,
-    A_FPIS,
-    A_UNI,
-    A_VCOW,
-)
+from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -71,7 +62,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AirdropsDecoder(CowswapAirdropDecoder):
+class AirdropsDecoder(DecoderInterface):
 
     def __init__(
             self,
@@ -83,7 +74,6 @@ class AirdropsDecoder(CowswapAirdropDecoder):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            vcow=A_VCOW,
         )
         self.uni = A_UNI.resolve_to_evm_token()
         self.fox = A_FOX.resolve_to_evm_token()
@@ -267,7 +257,7 @@ class AirdropsDecoder(CowswapAirdropDecoder):
             CONVEX: (self._decode_fpis_claim, 'convex'),
             FOX_DISTRIBUTOR: (self._decode_fox_claim,),
             ELFI_LOCKING: (self._decode_elfi_claim,),
-        } | super().addresses_to_decoders()
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
@@ -303,5 +293,5 @@ class AirdropsDecoder(CowswapAirdropDecoder):
                 label='Element Finance',
                 image='element_finance.png',
             ),
-            COWSWAP_CPT_DETAILS,
+            COWSWAP_CPT_DETAILS,  # done by cowswap decoder. Stays here since we query airdrop counterparties in some places ... perhaps rethink this. It's not a good abstraction  # noqa: E501
         )
