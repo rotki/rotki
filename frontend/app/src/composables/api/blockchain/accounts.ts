@@ -2,12 +2,14 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type Eth2ValidatorEntry,
   Eth2Validators,
+  type EthValidatorFilter,
 } from '@rotki/common/lib/staking/eth2';
 import { type Nullable, onlyIfTruthy } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
+  paramsSerializer,
   validAuthorizedStatus,
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService,
@@ -216,11 +218,13 @@ export function useBlockchainAccountsApi() {
     return handleResponse(response);
   };
 
-  const getEth2Validators = async (): Promise<Eth2Validators> => {
+  const getEth2Validators = async (payload: EthValidatorFilter = {}): Promise<Eth2Validators> => {
     const response = await api.instance.get<ActionResult<Eth2Validators>>(
       '/blockchains/eth2/validators',
       {
+        params: snakeCaseTransformer(nonEmptyProperties(payload)),
         validateStatus: validWithSessionStatus,
+        paramsSerializer,
       },
     );
     const result = handleResponse(response);

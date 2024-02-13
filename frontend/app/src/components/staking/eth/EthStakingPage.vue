@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { objectOmit } from '@vueuse/core';
+import { isEmpty } from 'lodash-es';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import type { EthStakingCombinedFilter, EthStakingFilter } from '@rotki/common/lib/staking/eth2';
+import { TaskType } from '@/types/task-type';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import type { BigNumber } from '@rotki/common';
+import type { Eth2Validators, EthStakingCombinedFilter, EthStakingFilter } from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
@@ -14,6 +18,8 @@ const filter = ref<EthStakingCombinedFilter>();
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
+
+const total = ref<BigNumber>(Zero);
 
 const {
   performance,
@@ -33,12 +39,22 @@ const {
 } = useEth2DailyStats();
 
 const { isLoading } = useStatusStore();
+const { isTaskRunning } = useTaskStore();
 
 const performanceRefreshing = isLoading(performanceSection);
 const statsRefreshing = isLoading(statsSection);
+const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
+  queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+});
 
-const refreshing = logicOr(performanceRefreshing, statsRefreshing, isLoading(Section.BLOCKCHAIN_ETH2));
+const refreshing = logicOr(
+  performanceRefreshing,
+  statsRefreshing,
+  isLoading(Section.BLOCKCHAIN_ETH2),
+  blockProductionLoading,
+);
 
+const { getEth2Validators } = useBlockchainAccountsApi();
 const accountsStore = useEthAccountsStore();
 const { eth2Validators } = storeToRefs(accountsStore);
 const { stakingBalances } = storeToRefs(useEthBalancesStore());
@@ -48,26 +64,57 @@ const premium = usePremium();
 const { t } = useI18n();
 
 async function refresh(userInitiated = false): Promise<void> {
-  const refreshValidators = async () => {
+  const refreshValidators = async (userInitiated: boolean) => {
     await fetchBlockchainBalances({
-      ignoreCache: true,
+      ignoreCache: userInitiated,
       blockchain: Blockchain.ETH2,
     });
     await accountsStore.fetchEth2Validators();
   };
 
-  const validatorRefresh: Promise<void>[] = (userInitiated ? [refreshValidators()] : []);
+  const updatePerformance = async (userInitiated = false): Promise<void> => {
+    await refreshPerformance(userInitiated);
+    // if the number of validators is bigger than the total entries in performance
+    // force a refresh of performance to pick the missing performance entries.
+    const totalValidators = get(eth2Validators).entriesFound;
+    const totalPerformanceEntries = get(performance).entriesTotal;
+    if (totalValidators > totalPerformanceEntries) {
+      logger.log(`forcing refresh validators: ${totalValidators}/performance: ${totalPerformanceEntries}`);
+      await refreshPerformance(true);
+    }
+  };
 
+  await refreshValidators(userInitiated);
   await Promise.allSettled([
+    updatePerformance(userInitiated),
     refreshStats(userInitiated),
-    refreshPerformance(userInitiated),
-    ...validatorRefresh,
   ]);
 }
+
+function setTotal(validators: Eth2Validators) {
+  const publicKeys = validators.entries.map(x => x.publicKey);
+  const totalStakedAmount = get(stakingBalances)
+    .filter(x => publicKeys.includes(x.publicKey))
+    .reduce((sum, item) => sum.plus(item.amount), Zero);
+  set(total, totalStakedAmount);
+}
+
+watch([selection, filter] as const, async ([selection, filter]) => {
+  const statusFilter = filter ? objectOmit(filter, ['fromTimestamp', 'toTimestamp']) : {};
+  const accounts = 'accounts' in selection
+    ? { addresses: selection.accounts.map(x => x.address) }
+    : { validatorIndices: selection.validators.map(x => x.index) };
+
+  const combinedFilter = nonEmptyProperties({ ...statusFilter, ...accounts });
+
+  const validators = isEmpty(combinedFilter) ? get(eth2Validators) : await getEth2Validators(combinedFilter);
+  setTotal(validators);
+});
 
 onMounted(async () => {
   if (get(enabled))
     await refresh(false);
+  setTotal(get(eth2Validators));
 });
 </script>
 
@@ -112,8 +159,7 @@ onMounted(async () => {
 
       <EthStaking
         :refreshing="performanceRefreshing"
-        :validators="eth2Validators.entries"
-        :balances="stakingBalances"
+        :total="total"
         :accounts="selection"
         :filter.sync="filter"
         :performance="performance"

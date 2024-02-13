@@ -114,6 +114,12 @@ export interface EthStakingCombinedFilter extends EthStakingPeriod {
   status?: EthValidatorStatus;
 }
 
+export interface EthValidatorFilter {
+  readonly validatorIndices?: number[];
+  readonly addresses?: string[];
+  readonly status?: EthValidatorStatus;
+}
+
 export interface Eth2DailyStatsPayload extends EthStakingPeriod {
   readonly limit: number;
   readonly offset: number;
