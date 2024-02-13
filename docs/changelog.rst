@@ -26,6 +26,7 @@ Changelog
 * :feature:`1574` Interactions with the ygov.finance contract are now decoded.
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
+* :bug:`-`  Whether an airdrop has been claimed or not will be properly detected again for the supported airdrops.
 * :feature:`7399` Transactions involving the Savings xDAI contract at gnosis will now be properly decoded.
 * :bug:`-` It should no longer be possible to merge the same asset to itself, thus botching the asset in your database.
 * :feature:`-` Transactions burning vested vCOW to claim COW tokens will now be properly decoded for both gnosis chain and ethereum mainnet.

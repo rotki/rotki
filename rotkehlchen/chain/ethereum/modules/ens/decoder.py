@@ -32,7 +32,7 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .constants import CPT_ENS
+from .constants import CPT_ENS, ENS_CPT_DETAILS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -440,4 +440,4 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_ENS, label='ens', image='ens.svg'),)
+        return (ENS_CPT_DETAILS,)

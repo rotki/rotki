@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_GOVERNOR,
@@ -13,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.ens.decoder import (
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ENS, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -704,6 +705,50 @@ def test_set_attribute_for_non_primary_name(database, ethereum_inquirer, ethereu
             notes='Set ENS avatar attribute for hania.eth',
             counterparty=CPT_ENS,
             address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB']])
+def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xb892797f63943dbf75e9e8a86515e9a4a964dcb6930dad10e93b526a2a648e6d')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    gas_str, claimed_amount = '0.014281582073130576', '88.217476134335168512'
+    timestamp = TimestampMS(1637313773000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=161,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=A_ENS,
+            balance=Balance(amount=FVal(claimed_amount)),
+            location_label=user_address,
+            notes=f'Claim {claimed_amount} ENS from ens airdrop',
+            counterparty=CPT_ENS,
+            address=ENS_ADDRESS,
         ),
     ]
     assert events == expected_events

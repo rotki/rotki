@@ -3,13 +3,15 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_UNISWAP
+from rotkehlchen.chain.ethereum.modules.airdrops.decoder import UNISWAP_DISTRIBUTOR
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_UNI, A_USDC
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -1045,6 +1047,51 @@ def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x3163Bb273E8D9960Ce003fD542bF26b4C529f515']])
+def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x0e50e7374e0ffbe0aea82dbe94a04ab0da3981f3bfb1a66927eb250c7aff29e3')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1600446008000)
+    gas_amount, claimed_amount = '0.027890731101011885', '408.638074'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=163,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=A_UNI,
+            balance=Balance(amount=FVal(claimed_amount)),
+            location_label=user_address,
+            notes=f'Claim {claimed_amount} UNI from uniswap airdrop',
+            counterparty=CPT_UNISWAP,
+            address=UNISWAP_DISTRIBUTOR,
         ),
     ]
     assert events == expected_events

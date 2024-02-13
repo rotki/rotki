@@ -57,6 +57,15 @@ class Airdrop(NamedTuple):
     cutoff_time: Timestamp | None = None
 
 
+class AirdropClaimEventQueryParams(NamedTuple):
+    """Params used in the SQL query to detect as claimed an airdrop"""
+    event_type: HistoryEventType
+    event_subtype: HistoryEventSubType
+    location_label: ChecksumEvmAddress
+    asset: CryptoAsset
+    tolerance: FValWithTolerance
+
+
 def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dict[str, Airdrop]:
     """Parses the airdrops' data from airdrops metadata index. Also, creates the new token if
     it's not present in the DB.
@@ -209,7 +218,7 @@ def get_poap_airdrop_data(poap_airdrop_path: str, name: str, data_dir: Path) -> 
 
 
 def calculate_claimed_airdrops(
-        airdrop_data: Sequence[tuple[ChecksumEvmAddress, CryptoAsset, FValWithTolerance]],
+        airdrop_data: Sequence[AirdropClaimEventQueryParams],
         database: DBHandler,
 ) -> Sequence[tuple[ChecksumEvmAddress, str, FVal]]:
     """Calculates which of the given airdrops have been claimed.
@@ -219,22 +228,27 @@ def calculate_claimed_airdrops(
     if len(airdrop_data) == 0:
         return []
 
-    query_parts = []
-    bindings = [HistoryEventType.RECEIVE.serialize(), HistoryEventSubType.AIRDROP.serialize()]
+    query_parts, bindings = [], []
     for airdrop_info in airdrop_data:
-        amount_with_tolerance = airdrop_info[2]
-        amount = amount_with_tolerance.value
-        half_range = amount_with_tolerance.tolerance / 2
-        query_parts.append('events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?')  # noqa: E501
-        bindings.extend([airdrop_info[0], airdrop_info[1].serialize(), str(amount - half_range), str(amount + half_range)])  # noqa: E501
+        amount = airdrop_info.tolerance.value
+        half_range = airdrop_info.tolerance.tolerance / 2
+        query_parts.append('(events.type=? AND events.subtype=? AND events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?)')  # noqa: E501
+        bindings.extend(
+            [
+                airdrop_info.event_type.serialize(),
+                airdrop_info.event_subtype.serialize(),
+                airdrop_info.location_label,
+                airdrop_info.asset.serialize(),
+                str(amount - half_range),
+                str(amount + half_range),
+            ],
+        )
 
     query_part = ' OR '.join(query_parts)
     with database.conn.read_ctx() as cursor:
         return cursor.execute(
             'SELECT events.location_label, events.asset, events.amount '
-            'FROM history_events AS events '
-            'WHERE events.type=? AND events.subtype=? '
-            f'AND {query_part}',
+            f'FROM history_events AS events WHERE {query_part}',
             tuple(bindings),
         ).fetchall()
 
@@ -259,6 +273,14 @@ def check_airdrops(
         if airdrop_data.cutoff_time is not None and current_time > airdrop_data.cutoff_time:
             log.debug(f'Skipping {protocol_name} airdrop since it is not claimable after {airdrop_data.cutoff_time}')  # noqa: E501
             continue
+
+        # In the shutter airdrop the claim of the vested SHU is decoded as informational/none
+        if protocol_name == 'shutter':
+            claim_event_type = HistoryEventType.INFORMATIONAL
+            claim_event_subtype = HistoryEventSubType.NONE
+        else:
+            claim_event_type = HistoryEventType.RECEIVE
+            claim_event_subtype = HistoryEventSubType.AIRDROP
 
         for row in get_airdrop_data(airdrop_data.csv_path, protocol_name, parent_data_dir):
             if len(row) < 2:
@@ -285,14 +307,18 @@ def check_airdrops(
                     'link': airdrop_data[2],
                     'claimed': False,
                 }
-                airdrop_tuples.append((
-                    string_to_evm_address(addr),
-                    airdrop_data.asset,
-                    FValWithTolerance(
-                        value=FVal(amount),
-                        tolerance=tolerance_for_amount_check,
+                airdrop_tuples.append(
+                    AirdropClaimEventQueryParams(
+                        event_type=claim_event_type,
+                        event_subtype=claim_event_subtype,
+                        location_label=string_to_evm_address(addr),
+                        asset=airdrop_data.asset,
+                        tolerance=FValWithTolerance(
+                            value=FVal(amount),
+                            tolerance=tolerance_for_amount_check,
+                        ),
                     ),
-                ))
+                )
 
     asset_to_protocol = {item[1].identifier: protocol for protocol, item in airdrops.items()}
     claim_events_tuple = calculate_claimed_airdrops(
