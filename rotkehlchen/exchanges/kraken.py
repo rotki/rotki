@@ -1176,7 +1176,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         receive_spend_events[event.event_identifier].append((idx, event))
                     else:
                         group_events.append((idx, event))
-                if fee_amount != ZERO:
+                if event_type != HistoryEventType.INFORMATIONAL and fee_amount != ZERO:  # avoid processing ignored events with fees that were converted to informational  # noqa: E501
                     group_events.append((idx, HistoryEvent(
                         event_identifier=identifier,
                         sequence_index=current_fee_index,

@@ -27,6 +27,7 @@ Changelog
 * :bug:`7276` Fix the issue where Uniswap v3 positions are counted twice for the net worth.
 * :bug:`7147` rotki should no longer query price multiple times for the same asset across different chains.
 * :feature:`7399` Transactions involving the Savings xDAI contract at gnosis will now be properly decoded.
+* :bug:`-` Incorrectly processed kraken events should no longer occur.
 * :bug:`-` It should no longer be possible to merge the same asset to itself, thus botching the asset in your database.
 * :feature:`-` Transactions burning vested vCOW to claim COW tokens will now be properly decoded for both gnosis chain and ethereum mainnet.
 

@@ -2,6 +2,7 @@ import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 import gevent
@@ -39,6 +40,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
@@ -64,10 +66,14 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.exchanges import kraken_to_world_pair, try_get_first_exchange
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
+from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def _check_trade_history_events_order(db, expected):
@@ -1002,3 +1008,62 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     assert FVal('0.000069900000').is_close(
         FVal(with_eth2_staking_overview.get(str(AccountingEventType.STAKING))['taxable']),
     )
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+    """Test that we correctly ignore fees in events that we currently ignore as margin trades"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    kraken = cast(MockKraken, try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN))
+    input_ledger = """
+    {
+        "ledger":{
+            "XXX": {
+                "aclass": "currency",
+                "amount": "1.0000",
+                "asset": "ZEUR",
+                "balance": "25.2825",
+                "fee": "0.0710",
+                "refid": "XXXXXXXXXXXX",
+                "time": 1636738550.7562,
+                "type": "margin",
+                "subtype": ""
+            }
+        },
+        "count": 1
+    }
+    """
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    kraken.random_ledgers_data = False
+    with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
+        kraken.query_kraken_ledgers(
+            cursor=cursor,
+            start_ts=1636737550,
+            end_ts=1636739550,
+        )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+
+    assert events == [
+        HistoryEvent(
+            identifier=1,
+            event_identifier='XXXXXXXXXXXX',
+            sequence_index=0,
+            timestamp=TimestampMS(1636738550756),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_EUR,
+            balance=Balance(amount=ONE),
+            location_label='mockkraken',
+            notes='margin',
+        ),
+    ]
