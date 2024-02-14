@@ -8802,7 +8802,8 @@ Querying ethereum airdrops
                      "amount": "400",
                      "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
                      "link": "https://app.uniswap.org/",
-                     "claimed": true
+                     "claimed": true,
+                     "icon_url": "https://raw.githubusercontent.com/rotki/data/main/airdrops/icons/uniswap.svg"
                   }
             },
             "message": ""
@@ -12799,7 +12800,8 @@ Getting Metadata For Airdrops
             {
                "identifier": "uniswap",
                "name": "Uniswap",
-               "icon": "uniswap.svg"
+               "icon": "uniswap.svg",
+               "icon_url": "https://raw.githubusercontent.com/rotki/data/main/airdrops/icons/uniswap.svg"
             },
             {
                "identifier": "1inch",

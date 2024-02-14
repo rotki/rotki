@@ -4392,6 +4392,8 @@ class RestAPI:
                     'name': airdrop.name,
                     'icon': airdrop.icon,
                 })
+                if airdrop.icon_url is not None:
+                    result[-1]['icon_url'] = airdrop.icon_url
         except RemoteError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
         return api_response(result=_wrap_in_ok_result(result=result))

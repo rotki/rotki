@@ -22,7 +22,7 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
             'identifier': identifier,
             'name': airdrop.name,
             'icon': airdrop.icon,
-        }
+        } | ({'icon_url': airdrop.icon_url} if airdrop.icon_url is not None else {})
         for identifier, airdrop in fetch_airdrops_metadata(
             database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
         )[0].items()
