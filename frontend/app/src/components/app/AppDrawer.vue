@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
+import { externalAssets } from '@/data/external-links';
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
@@ -24,7 +24,7 @@ const { appBarColor } = useTheme();
     >
       <RuiLogo
         :text="!isMini"
-        :custom-src="externalLinks.logo.drawer"
+        :custom-src="externalAssets.logo.drawer"
       />
     </div>
     <NavigationMenu :is-mini="isMini" />

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { externalLinks } from '@/data/external-links';
+import { externalAssets } from '@/data/external-links';
 import type {
   CreateAccountPayload,
   LoginCredentials,
@@ -88,7 +88,7 @@ function confirm() {
       <div :class="css.register__wrapper">
         <div class="flex flex-col items-center">
           <RuiLogo
-            :custom-src="externalLinks.logo.drawer"
+            :custom-src="externalAssets.logo.drawer"
           />
           <h4 class="text-h4 mb-3 mt-8">
             {{ t('create_account.title') }}
