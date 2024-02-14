@@ -16,7 +16,7 @@ const props = withDefaults(
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
   toAsset: '',
-  price: '0',
+  price: '',
 });
 
 const form: Ref<ManualPriceFormPayload> = ref(emptyPrice());

@@ -61,7 +61,6 @@ const {
   refreshing,
   deletePrice,
   refreshCurrentPrices,
-  getLatestPrices,
 } = useLatestPrices(t, filter);
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
@@ -73,7 +72,7 @@ function showDeleteConfirmation(item: ManualPrice) {
       title: t('price_table.delete.dialog.title'),
       message: t('price_table.delete.dialog.message'),
     },
-    () => deletePrice(item, true),
+    () => deletePrice(item),
   );
 }
 
@@ -93,14 +92,9 @@ function openForm(selectedEntry: ManualPrice | null = null) {
   setOpenDialog(true);
 }
 
-async function refreshDataAndPrices(refresh = false) {
-  await getLatestPrices();
-  await refreshCurrentPrices(refresh);
-}
-
 onMounted(async () => {
-  await refreshDataAndPrices();
-  setPostSubmitFunc(() => refreshDataAndPrices(true));
+  await refreshCurrentPrices();
+  setPostSubmitFunc(() => refreshCurrentPrices());
 
   const query = get(route).query;
 
@@ -125,7 +119,7 @@ onMounted(async () => {
             color="primary"
             variant="outlined"
             :loading="loading || refreshing"
-            @click="refreshDataAndPrices(true)"
+            @click="refreshCurrentPrices()"
           >
             <template #prepend>
               <RuiIcon name="refresh-line" />

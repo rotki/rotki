@@ -59,7 +59,7 @@ function showDeleteConfirmation() {
 }
 
 onMounted(() => {
-  setPostSubmitFunc(() => refreshCurrentPrices(true));
+  setPostSubmitFunc(() => refreshCurrentPrices());
 });
 </script>
 

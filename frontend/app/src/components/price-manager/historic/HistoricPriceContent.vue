@@ -60,7 +60,7 @@ const headers = computed<DataTableColumn[]>(() => [
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
   toAsset: '',
-  price: '0',
+  price: '',
   timestamp: 0,
 });
 
