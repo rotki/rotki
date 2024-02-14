@@ -2,6 +2,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { objectOmit } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
+import dayjs from 'dayjs';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -21,6 +22,8 @@ const selection = ref<EthStakingFilter>({
 
 const total = ref<BigNumber>(Zero);
 
+const lastRefresh = useSessionStorage('rotki.staking.last_refresh', 0);
+
 const {
   performance,
   performanceLoading,
@@ -35,6 +38,7 @@ const {
   dailyStats,
   dailyStatsLoading,
   pagination,
+  refresh: reloadStats,
   refreshStats,
 } = useEth2DailyStats();
 
@@ -49,7 +53,6 @@ const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
 
 const refreshing = logicOr(
   performanceRefreshing,
-  statsRefreshing,
   isLoading(Section.BLOCKCHAIN_ETH2),
   blockProductionLoading,
 );
@@ -62,6 +65,11 @@ const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const premium = usePremium();
 const { t } = useI18n();
+
+function shouldRefreshDailyStats() {
+  const threshold = dayjs().subtract(1, 'hour').unix();
+  return get(lastRefresh) < threshold;
+};
 
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {
@@ -85,10 +93,17 @@ async function refresh(userInitiated = false): Promise<void> {
   };
 
   await refreshValidators(userInitiated);
+  const statsRefresh: Promise<void>[] = (
+    (!get(statsRefreshing) && shouldRefreshDailyStats())
+      ? [refreshStats(userInitiated)]
+      : [reloadStats()]
+  );
   await Promise.allSettled([
     updatePerformance(userInitiated),
-    refreshStats(userInitiated),
+    ...statsRefresh,
   ]);
+  set(lastRefresh, dayjs().unix());
+  setTotal(get(eth2Validators));
 }
 
 function setTotal(validators: Eth2Validators) {

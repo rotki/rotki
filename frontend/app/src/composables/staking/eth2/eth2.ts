@@ -133,12 +133,10 @@ export function useEth2Staking() {
   async function refreshPerformance(userInitiated: boolean): Promise<void> {
     await fetchPerformance(get(pagination));
 
-    if (userInitiated) {
-      const success = await syncEthStakingPerformance(userInitiated);
-      if (success) {
-        // We unref here to make sure that we use the latest pagination
-        await fetchPerformance(get(pagination));
-      }
+    const success = await syncEthStakingPerformance(userInitiated);
+    if (success) {
+      // We unref here to make sure that we use the latest pagination
+      await fetchPerformance(get(pagination));
     }
   }
 
