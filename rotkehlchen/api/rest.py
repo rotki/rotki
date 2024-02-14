@@ -3296,14 +3296,14 @@ class RestAPI:
             )
             return make_response_from_dict(module_query_result)
         try:
-            pairs_to_invalidate = GlobalDBHandler.add_manual_latest_price(
+            assets_to_invalidate = GlobalDBHandler.add_manual_latest_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 price=price,
             )
         except InputError as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
-        Inquirer().remove_cache_prices_for_asset(pairs_to_invalidate)
+        Inquirer.remove_cache_prices_for_asset(assets_to_invalidate)
 
         return api_response(OK_RESULT)
 
@@ -3320,10 +3320,10 @@ class RestAPI:
             )
             return make_response_from_dict(module_query_result)
         try:
-            pairs_to_invalidate = GlobalDBHandler.delete_manual_latest_price(asset=asset)
+            assets_to_invalidate = GlobalDBHandler.delete_manual_latest_price(asset=asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
-        Inquirer().remove_cache_prices_for_asset(pairs_to_invalidate)
+        Inquirer.remove_cache_prices_for_asset(assets_to_invalidate)
 
         return api_response(OK_RESULT)
 

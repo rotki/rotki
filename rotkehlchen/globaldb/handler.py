@@ -1345,16 +1345,13 @@ class GlobalDBHandler:
         return True
 
     @staticmethod
-    def add_manual_latest_price(
-            from_asset: Asset,
-            to_asset: Asset,
-            price: Price,
-    ) -> list[tuple[Asset, Asset]]:
+    def add_manual_latest_price(from_asset: Asset, to_asset: Asset, price: Price) -> set[Asset]:
         """
         Adds manual current price and turns previously known manual current price into a
         historical manual price.
 
-        Returns a list of asset pairs involving `from_asset` to invalidate their cached prices.
+        Returns a sets of asset from pairs involving `from_asset` to invalidate their
+        cached prices.
         May raise:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
@@ -1400,13 +1397,15 @@ class GlobalDBHandler:
                 # Means foreign keys failure. Should not happen since is checked by marshmallow
                 raise InputError(f'Failed to add manual current price due to: {e!s}') from e
 
+            # invalidate the cached price for the assets using manual current as type and
+            # are connected to the asset used.
             write_cursor.execute(
-                'SELECT from_asset, to_asset FROM price_history WHERE from_asset=? OR to_asset=?',
-                (from_asset.identifier, from_asset.identifier),
+                'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
             )
-            pairs_to_invalidate = [(Asset(entry[0]), Asset(entry[1])) for entry in write_cursor]
+            assets_to_invalidate = {Asset(asset) for entry in write_cursor for asset in entry}
 
-        return pairs_to_invalidate
+        return assets_to_invalidate
 
     @staticmethod
     def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:
@@ -1442,9 +1441,9 @@ class GlobalDBHandler:
             return read_cursor.fetchall()
 
     @staticmethod
-    def delete_manual_latest_price(asset: Asset) -> list[tuple[Asset, Asset]]:
+    def delete_manual_latest_price(asset: Asset) -> set[Asset]:
         """
-        Deletes manual current price from globaldb and returns the list of asset
+        Deletes manual current price from globaldb and returns the set of assets
         price pairs to be invalidated.
         May raise:
         - InputError if asset was not found in the price_history table
@@ -1455,7 +1454,7 @@ class GlobalDBHandler:
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?);',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier, asset.identifier),  # noqa: E501
             )
-            pairs_to_invalidate = [(Asset(entry[0]), Asset(entry[1])) for entry in write_cursor]
+            assets_to_invalidate = {Asset(asset) for entry in write_cursor for asset in entry}
 
             # Execute the deletion
             write_cursor.execute(
@@ -1467,7 +1466,7 @@ class GlobalDBHandler:
                     f'Not found manual current price to delete for asset {asset!s}',
                 )
 
-            return pairs_to_invalidate
+            return assets_to_invalidate
 
     @staticmethod
     def get_manual_prices(

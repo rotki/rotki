@@ -80,7 +80,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
         Otherwise converts it to a price in `to_asset` and returns it along with a False value to
         indicate no main currency matching happened.
         """
-        manual_current_result = GlobalDBHandler().get_manual_current_price(
+        manual_current_result = GlobalDBHandler.get_manual_current_price(
             asset=from_asset,
         )
         if manual_current_result is None:
@@ -93,7 +93,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
                 if current_to_asset == main_currency:
                     return current_price, True
 
-        current_to_asset_price, _, used_main_currency = Inquirer().find_price_and_oracle(
+        current_to_asset_price, _, used_main_currency = Inquirer.find_price_and_oracle(
             from_asset=current_to_asset,
             to_asset=to_asset,
             coming_from_latest_price=True,
