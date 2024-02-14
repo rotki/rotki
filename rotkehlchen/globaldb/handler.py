@@ -1397,8 +1397,8 @@ class GlobalDBHandler:
                 # Means foreign keys failure. Should not happen since is checked by marshmallow
                 raise InputError(f'Failed to add manual current price due to: {e!s}') from e
 
-            # invalidate the cached price for the assets using manual current as type and
-            # are connected to the asset used.
+            #  invalidate the cached price for the assets that are using manual current as type and
+            # and that are connected to the given asset
             write_cursor.execute(
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
@@ -1443,8 +1443,8 @@ class GlobalDBHandler:
     @staticmethod
     def delete_manual_latest_price(asset: Asset) -> set[Asset]:
         """
-        Deletes manual current price from globaldb and returns the set of assets
-        price pairs to be invalidated.
+        Deletes manual current price from globaldb and returns the set of assets to invalidate
+
         May raise:
         - InputError if asset was not found in the price_history table
         """

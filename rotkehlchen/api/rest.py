@@ -592,6 +592,13 @@ class RestAPI:
         return self._return_external_services_response()
 
     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
+
+        if self.rotkehlchen.premium is None and ExternalService.MONERIUM in {x.service for x in services}:  # noqa: E501
+            return api_response(
+                wrap_in_fail_result('You can only use monerium with rotki premium'),
+                status_code=HTTPStatus.FORBIDDEN,
+            )
+
         self.rotkehlchen.data.db.add_external_service_credentials(services)
         return self._return_external_services_response()
 
