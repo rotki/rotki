@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from flaky import flaky
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -30,7 +29,7 @@ JUSTIN = string_to_evm_address('0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296')
 LIQUITY_POOL_DEPOSITOR = string_to_evm_address('0xFBcAFB005695afa660836BaC42567cf6917911ac')
 
 
-@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -112,6 +111,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
     }
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_WITHOUT_TROVE]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -132,6 +132,7 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
     assert ADDR_WITHOUT_TROVE not in result
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_PROXY, ADDR_WITHOUT_TROVE, LQTY_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

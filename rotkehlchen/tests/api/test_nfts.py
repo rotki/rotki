@@ -1,11 +1,9 @@
-import random
 import warnings as test_warnings
 from typing import Any
 from unittest.mock import patch
 
 import pytest
 import requests
-from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -78,24 +76,21 @@ TEST_NFT_YABIR_ETH = NFT(
 )
 
 
-@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], filter_headers=['X-API-KEY'],
+)
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
-@pytest.mark.parametrize('start_with_valid_premium', [bool(random.getrandbits(1))])
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
-    async_query = bool(random.getrandbits(1))
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsresource',
-    ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=60)
-        assert outcome['message'] == ''
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
+    ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=60)
+    assert outcome['message'] == ''
+    result = outcome['result']
 
     if len(result['addresses']) == 0:
         test_warnings.warn(UserWarning(f'Test account {TEST_ACC1} has no NFTs'))

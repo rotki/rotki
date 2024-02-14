@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 import requests
-from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
@@ -256,7 +255,6 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -532,7 +530,6 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -627,7 +624,6 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
