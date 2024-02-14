@@ -1207,7 +1207,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             only_cache: bool,
     ) -> tuple[list['ValidatorDailyStats'], int, FVal]:
         """May raise:
-        - ModuleInactive if eth2 module is not activated
+
+        - ModuleInactive if eth2 module is not activated.
+        - RemoteError if it's fetching data and sources can't be queried.
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:

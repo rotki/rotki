@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
@@ -57,10 +57,11 @@ class DBEth2:
         with self.db.conn.read_ctx() as cursor:
             stats_data = cursor.execute(
                 query_str,
-                # 2 days since stats page only appears once day is over. So if today is
-                # 27/10 19:46 the last full day it has is 26/10 00:00, which is more than a day
-                # but less than 2
-                (up_to_ts, DAY_IN_SECONDS * 2 + 1),
+                # stats page entry only appears once day is over and some times it takes
+                # a longer time to update since it counts beacon chain days.
+                # So we will put two days and more than half to be sure we don't
+                # query too often
+                (up_to_ts, DAY_IN_SECONDS * 2 + HOUR_IN_SECONDS * 18),
             ).fetchall()
             exited_data = {}
             cursor.execute(
