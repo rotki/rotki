@@ -131,13 +131,16 @@ export function useEth2DailyStats() {
     await execute(0, payload);
   };
 
-  async function refreshStats(userInitiated: boolean): Promise<void> {
+  async function refresh(): Promise<void> {
+    // We unref here to make sure that we use the latest pagination
     await fetchDailyStats(get(pagination));
+  }
+
+  async function refreshStats(userInitiated: boolean): Promise<void> {
+    await refresh();
     const success = await syncStakingStats(userInitiated);
-    if (success) {
-      // We unref here to make sure that we use the latest pagination
-      await fetchDailyStats(get(pagination));
-    }
+    if (success)
+      await refresh();
   }
 
   watch(pagination, pagination => fetchDailyStats(pagination));
@@ -146,7 +149,7 @@ export function useEth2DailyStats() {
     pagination,
     dailyStats,
     dailyStatsLoading,
-    fetchDailyStats,
+    refresh,
     refreshStats,
     syncStakingStats,
   };
