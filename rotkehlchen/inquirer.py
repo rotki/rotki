@@ -366,13 +366,8 @@ class Inquirer:
         return cache
 
     @staticmethod
-    def remove_cache_prices_for_asset(pairs_to_invalidate: list[tuple[Asset, Asset]]) -> None:
+    def remove_cache_prices_for_asset(assets_to_invalidate: set[Asset]) -> None:
         """Deletes all prices cache that contains any asset in the possible pairs."""
-        assets_to_invalidate = set()
-        for asset_a, asset_b in pairs_to_invalidate:
-            assets_to_invalidate.add(asset_a)
-            assets_to_invalidate.add(asset_b)
-
         for asset_pair in list(Inquirer._cached_current_price.cache):  # create a list to avoid mutating the map while iterating it  # noqa: E501
             if asset_pair[0] in assets_to_invalidate or asset_pair[1] in assets_to_invalidate:
                 Inquirer._cached_current_price.remove(asset_pair)
