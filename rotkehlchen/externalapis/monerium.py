@@ -73,6 +73,9 @@ class Monerium:
         If some of those transactions have not yet been pulled do nothing. Since this
         processing has no pagination and all orders will be pulled again next time this runs.
 
+        This only runs for premium users. The check is on the caller which at
+        the moment of writing is the periodic task manager.
+
         May raise:
         - RemoteError if there is trouble contacting the api
         - KeyError if a key is missing

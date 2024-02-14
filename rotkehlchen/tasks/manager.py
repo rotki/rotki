@@ -770,6 +770,9 @@ class TaskManager:
         )]
 
     def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
+        if self.chains_aggregator.premium is None:
+            return None  # should not run in free mode
+
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_MONERIUM_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
             return None
 

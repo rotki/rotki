@@ -12,6 +12,7 @@ from rotkehlchen.tests.utils.api import (
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
+@pytest.mark.parametrize('start_with_valid_premium', [True])  # for monerium
 def test_add_get_external_service(rotkehlchen_api_server):
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
@@ -238,6 +239,19 @@ def test_add_external_services_errors(rotkehlchen_api_server):
         response=response,
         contained_in_msg='monerium needs a username and password"',
         status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # monerium without premium
+    rotkehlchen_api_server.rest_api.rotkehlchen.premium = None
+    data = {'services': [{'name': 'monerium', 'username': 'Ben', 'password': 'secure'}]}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='You can only use monerium with rotki premium',
+        status_code=HTTPStatus.FORBIDDEN,
     )
 
 

@@ -31,6 +31,7 @@ def mock_monerium_and_run_periodic_task(task_manager, contents):
         return MockResponse(200, contents)
 
     timeout = 4
+    task_manager.chains_aggregator.premium = object()  # mock premium existence for monerium
     task_manager.potential_tasks = [task_manager._maybe_query_monerium]
     with gevent.Timeout(timeout), patch('requests.Session.get', side_effect=mock_monerium):
         try:

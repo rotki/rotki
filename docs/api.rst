@@ -480,6 +480,8 @@ Getting or modifying external services API credentials
    for external services such as etherscan, cryptocompare e.t.c.
    If a credential already exists for a service it is overwritten.
 
+   Some credentials like monerium can't be input if the user is not premium.
+
    Returns external service entries after the additions.
 
    **Example Request**:
@@ -497,8 +499,8 @@ Getting or modifying external services API credentials
    :reqjson list services: The services parameter is a list of services along with their api keys.
    :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"opensea"``, ``blockscout``, ``monerium``.
    :reqjsonarr string[optional] api_key: Each entry in the list should have an api_key entry except for monerium.
-   :reqjsonarr string[optional] username: The monerium entry should have a username key
-   :reqjsonarr string[optional] password: The monerium entry should have a password key
+   :reqjsonarr string[optional] username: The monerium entry should have a username key. For monerium the user should have premium.
+   :reqjsonarr string[optional] password: The monerium entry should have a password key. For monerium the user should have premium.
 
    **Example Response**:
 
@@ -519,6 +521,7 @@ Getting or modifying external services API credentials
    :statuscode 200: Saving new external service credentials was successful
    :statuscode 400: Provided JSON is in some way malformed, of invalid value provided.
    :statuscode 401: There is no logged in user
+   :statuscode 403: Logged in user does not have premium and requested to add credentials that can only work for premium.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/external_services
