@@ -17,7 +17,6 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
   const { deleteLatestPrice, fetchLatestPrices, addLatestPrice }
     = useAssetPricesApi();
   const { assetPrice } = useBalancePricesStore();
-  const { assets } = useAggregatedBalances();
   const { refreshPrices } = useBalances();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
@@ -92,16 +91,21 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     }
   };
 
+  const refreshCurrentPrices = async (additionalAssets: string[] = []) => {
+    await getLatestPrices();
+    set(refreshing, true);
+    const assetToRefresh = [...get(latestAssets), ...additionalAssets];
+    await refreshPrices(false, assetToRefresh);
+    resetStatus();
+    set(refreshing, false);
+  };
+
   const deletePrice = async (
     { fromAsset }: { fromAsset: string },
-    refetch: boolean = false,
   ) => {
     try {
       await deleteLatestPrice(fromAsset);
-      if (refetch)
-        await getLatestPrices();
-
-      await refreshCurrentPrices(true);
+      await refreshCurrentPrices([fromAsset]);
     }
     catch (error: any) {
       const notification: NotificationPayload = {
@@ -115,17 +119,6 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
       };
       notify(notification);
     }
-  };
-
-  const refreshCurrentPrices = async (refreshAll: boolean = false) => {
-    set(refreshing, true);
-    const assetToRefresh = [...get(latestAssets)];
-    if (refreshAll)
-      assetToRefresh.push(...get(assets()));
-
-    await refreshPrices(false, assetToRefresh);
-    resetStatus();
-    set(refreshing, false);
   };
 
   return {
