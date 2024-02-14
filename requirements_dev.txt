@@ -12,7 +12,6 @@ pytest-socket==0.6.0
 pytest-vcr==1.0.2
 vcrpy==5.1.0
 freezegun==1.4.0
-flaky==3.7.0
 
 
 # To test google spreadsheet uploading

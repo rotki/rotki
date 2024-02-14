@@ -8,7 +8,6 @@ from unittest.mock import patch
 import gevent
 import pytest
 import requests
-from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -41,11 +40,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.tests.utils.substrate import (
-    KUSAMA_TEST_NODES,
-    SUBSTRATE_ACC1_KSM_ADDR,
-    SUBSTRATE_ACC2_KSM_ADDR,
-)
+from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 from rotkehlchen.types import ChainID, Location, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -733,48 +728,34 @@ def test_balances_caching_mixup(
         assert result_btc['totals']['liabilities'] == {}
 
 
-@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
+@pytest.mark.vcr(match_on=['uri', 'method', 'raw_body'], allow_playback_repeats=True)
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
-@pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
-def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer') -> None:
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [[KUSAMA_TEST_NODES[0]]])
+@pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, 'Hyn23aznM9sRZEkMXDQXePi81iYTZLQRveLU5JNA5oxkuyD']])  # noqa: E501
+def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts) -> None:
     """Test query the KSM balances when multiple accounts are set up works as
     expected.
     """
-    async_query = random.choice([False, True])
-    setup = setup_balances(
-        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
-        ethereum_accounts=None,
-        btc_accounts=None,
-        eth_balances=None,
-        token_balances=None,
-        btc_balances=None,
-    )
     ksm_chain_key = SupportedBlockchain.KUSAMA.serialize()
-    with ExitStack() as stack:
-        setup.enter_blockchain_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'named_blockchain_balances_resource',
-                blockchain=ksm_chain_key,
-            ),
-            json={'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-        else:
-            result = assert_proper_response_with_result(response)
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'named_blockchain_balances_resource',
+            blockchain=ksm_chain_key,
+        ),
+        json={'async_query': True},
+    )
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
 
     # Check per account
-    account_1_balances = result['per_account'][ksm_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
+    account_1_balances = result['per_account'][ksm_chain_key][ksm_accounts[0]]
     assert 'liabilities' in account_1_balances
     asset_ksm = account_1_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
-    account_2_balances = result['per_account'][ksm_chain_key][SUBSTRATE_ACC2_KSM_ADDR]
+    account_2_balances = result['per_account'][ksm_chain_key][ksm_accounts[1]]
     assert 'liabilities' in account_2_balances
     asset_ksm = account_2_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
