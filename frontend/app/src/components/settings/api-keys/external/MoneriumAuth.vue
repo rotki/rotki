@@ -15,6 +15,8 @@ watchImmediate(credentialData, (credential) => {
   if (credential)
     set(understand, true);
 });
+
+const premium = usePremium();
 </script>
 
 <template>
@@ -25,33 +27,41 @@ watchImmediate(credentialData, (credential) => {
     <template #subheader>
       {{ t('external_services.monerium.description') }}
     </template>
-    <RuiAlert
-      type="warning"
-      class="mb-6"
-    >
-      {{ t('external_services.monerium.warning') }}
-
-      <RuiButton
-        v-if="!understand"
-        color="secondary"
-        class="mt-2"
-        size="sm"
-        @click="understand = true"
+    <template v-if="premium">
+      <RuiAlert
+        type="warning"
+        class="mb-6"
       >
-        {{ t('external_services.monerium.understand') }}
-      </RuiButton>
-    </RuiAlert>
+        {{ t('external_services.monerium.warning') }}
 
-    <ServiceWithAuth
-      v-if="understand"
-      :credential="credentialData"
-      :name="name"
-      :data-cy="name"
-      :loading="loading"
-      :tooltip="t('external_services.monerium.delete_tooltip')"
-      :status="status"
-      @save="save($event)"
-      @delete-key="confirmDelete($event)"
-    />
+        <RuiButton
+          v-if="!understand"
+          color="secondary"
+          class="mt-2"
+          size="sm"
+          @click="understand = true"
+        >
+          {{ t('external_services.monerium.understand') }}
+        </RuiButton>
+      </RuiAlert>
+
+      <ServiceWithAuth
+        v-if="understand"
+        :credential="credentialData"
+        :name="name"
+        :data-cy="name"
+        :loading="loading"
+        :tooltip="t('external_services.monerium.delete_tooltip')"
+        :status="status"
+        @save="save($event)"
+        @delete-key="confirmDelete($event)"
+      />
+    </template>
+    <template v-else>
+      <div class="flex items-center gap-2 text-body-2">
+        <PremiumLock />
+        {{ t('external_services.monerium.non_premium') }}
+      </div>
+    </template>
   </RuiCard>
 </template>
