@@ -31,8 +31,11 @@ const routes = setupLayouts([
     },
   },
   {
+    path: Routes.ROOT,
+    redirect: Routes.USER_LOGIN,
+  },
+  {
     path: Routes.DASHBOARD,
-    alias: Routes.ROOT,
     name: 'dashboard',
     component: async () => import('../pages/dashboard/index.vue'),
     meta: {

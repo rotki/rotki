@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false,
 });
 
-const emit = defineEmits<{ (e: 'skip'): void; (e: 'complete'): void }>();
+const emit = defineEmits<{ (e: 'skip'): void }>();
 
 const { headless } = toRefs(props);
 const checking: Ref<boolean> = ref(false);
@@ -111,21 +111,26 @@ async function updateAssets(resolution?: ConflictResolution) {
 
 const restarting: Ref<boolean> = ref(false);
 
+const { navigateToDashboard, navigateToUserLogin } = useAppNavigation();
+
 async function updateComplete() {
   if (get(restarting))
     return;
 
   set(restarting, true);
   const headlessVal = get(headless);
-  await logout(!headlessVal);
 
   if (headlessVal)
-    emit('complete');
+    await navigateToDashboard();
 
+  await logout(!headlessVal);
   setConnected(false);
   await restartBackend();
   await connect();
   set(restarting, false);
+
+  if (headlessVal)
+    await navigateToUserLogin();
 }
 
 const { show } = useConfirmStore();

@@ -61,7 +61,6 @@ onMounted(async () => fetchMessages());
                 <AssetUpdate
                   headless
                   @skip="navigate()"
-                  @complete="checkForAssetUpdate = false"
                 />
               </div>
               <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
