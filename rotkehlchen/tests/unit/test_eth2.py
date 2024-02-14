@@ -115,7 +115,7 @@ def test_get_validators_to_query_for_stats(database):
         pnl=ZERO,
     )])
     assert db.get_validators_to_query_for_stats(now) == [(2, 0, None), (3, 1617512800, None)]
-    assert db.get_validators_to_query_for_stats(Timestamp(1617512800 + DAY_IN_SECONDS * 2 + 2)) == [(2, 0, None), (3, 1617512800, None)]  # noqa: E501
+    assert db.get_validators_to_query_for_stats(Timestamp(1617512800 + DAY_IN_SECONDS * 2 + HOUR_IN_SECONDS * 18 + 1)) == [(2, 0, None), (3, 1617512800, None)]  # noqa: E501
 
     # Let's make validator 3 have an exit after its last stat
     dbevents = DBHistoryEvents(database)
