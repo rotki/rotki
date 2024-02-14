@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { externalLinks } from '@/data/external-links';
+import { externalAssets } from '@/data/external-links';
 
 const isDocker = import.meta.env.VITE_DOCKER;
 const { appVersion, dockerRiskAccepted } = storeToRefs(useMainStore());
@@ -81,7 +81,7 @@ const steps = [
           <RuiLogo
             class="!h-8"
             text
-            :custom-src="externalLinks.logo.drawer"
+            :custom-src="externalAssets.logo.drawer"
           />
         </div>
         <div>

@@ -44,11 +44,6 @@ export const externalLinks = {
   metamaskDownload: 'https://metamask.io/download/',
   openSeaApiKeyReference:
     'https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key',
-  logo: {
-    about: `${ICONS_BASE_URL}about_logo.png`,
-    drawer: `${ICONS_BASE_URL}drawer_logo.png`,
-    noData: `${ICONS_BASE_URL}empty_screen_logo.png`,
-  },
   nftWarning:
     'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94',
 };
