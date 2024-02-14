@@ -2326,6 +2326,7 @@
     "monerium": {
       "delete_tooltip": "Deletes the Monerium credential",
       "description": "Used to show Monerium transaction properly with relevant information.",
+      "non_premium": "Upgrade to premium to be able to use this feature",
       "title": "Monerium",
       "understand": "I understand the risk",
       "warning": "At the moment, Monerium uses basic authentication only, so these are not read-only credentials."
