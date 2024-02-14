@@ -54,6 +54,7 @@ class Airdrop(NamedTuple):
     url: str
     name: str
     icon: str
+    icon_url: str | None = None
     cutoff_time: Timestamp | None = None
 
 
@@ -114,10 +115,13 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
 
             airdrops[protocol_name] = Airdrop(
                 asset=crypto_asset,
+                # combining the base data repo url for main/develop with the path to the CSV in that repo  # noqa: E501
                 csv_path=f"{AIRDROPS_REPO_BASE}/{airdrop_data['csv_path']}",
                 url=airdrop_data['url'],
                 name=airdrop_data['name'],
                 icon=airdrop_data['icon'],
+                # combining the base data repo url for main/develop with the path to the icon in that repo  # noqa: E501
+                icon_url=f"{AIRDROPS_REPO_BASE}/{airdrop_data['icon_path']}" if 'icon_path' in airdrop_data else None,  # noqa: E501
                 cutoff_time=airdrop_data.get('cutoff_time'),
             )
         except KeyError as e:
@@ -304,9 +308,11 @@ def check_airdrops(
                 found_data[addr][protocol_name] = {  # type: ignore
                     'amount': str(amount),
                     'asset': airdrop_data.asset,
-                    'link': airdrop_data[2],
+                    'link': airdrop_data.url,
                     'claimed': False,
                 }
+                if airdrop_data.icon_url is not None:
+                    found_data[addr][protocol_name]['icon_url'] = airdrop_data.icon_url  # type: ignore
                 airdrop_tuples.append(
                     AirdropClaimEventQueryParams(
                         event_type=claim_event_type,

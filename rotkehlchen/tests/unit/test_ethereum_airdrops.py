@@ -55,6 +55,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'url': 'https://claim.harvest.finance/',
         'name': 'Grain',
         'icon': 'grain.png',
+        'icon_path': 'airdrops/icons/grain.svg',
     },
     'shapeshift': {
         'csv_path': 'airdrops/shapeshift.csv',
@@ -239,6 +240,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
         'asset': A_GRAIN,
         'link': 'https://claim.harvest.finance/',
         'claimed': False,
+        'icon_url': f'{AIRDROPS_REPO_BASE}/airdrops/icons/grain.svg',
     }
     assert data[TEST_ADDR2]['shutter'] == {
         'amount': '394857.029384576349787465',
