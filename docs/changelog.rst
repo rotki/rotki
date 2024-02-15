@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`7383` rotki will now update airdrops' data remotely without needing to update the app.
 * :bug:`7435` Fix the issue where, in rare cases, users receive a JavaScript error popup when minimizing the window.
 * :feature:`7357` rotki will now properly detect and decode Shutter token airdrop and delegation.
@@ -32,6 +33,7 @@ Changelog
 * :bug:`-` Incorrectly processed kraken events should no longer occur.
 * :bug:`-` It should no longer be possible to merge the same asset to itself, thus botching the asset in your database.
 * :feature:`-` Transactions burning vested vCOW to claim COW tokens will now be properly decoded for both gnosis chain and ethereum mainnet.
+* :bug:`-` Fix an issue where kraken instant swaps could have an invalid type for fee events.
 
 * :release:`1.31.3 <2023-12-31>`
 * :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
