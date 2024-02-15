@@ -93,10 +93,10 @@
     },
     "csv_export_settings": {
       "labels": {
-        "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
-        "have_csv_summary": "Should summary of all events be included in the all events CSV export?"
+        "export_csv_formulas": "Θα πρέπει οι τύποι να εξάγονται ως μέρος του CSV PnL;",
+        "have_csv_summary": "Θα πρέπει να περιλαμβάνεται η σύνοψη όλων των συμβάντων στην εξαγωγή CSV όλων των συμβάντων;"
       },
-      "title": "CSV Export Settings"
+      "title": "Ρυθμίσεις εξαγωγής CSV"
     },
     "messages": {
       "account_for_assets_movements": "Error setting account for assets movements: {message}",

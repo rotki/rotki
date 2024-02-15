@@ -100,7 +100,7 @@
     "csv_export_settings": {
       "labels": {
         "export_csv_formulas": "公式应该作为 PnL CSV 的一部分导出吗？",
-        "have_csv_summary": "所有事件的摘要都应该包含在所有事件的 CSV 导出中吗？"
+        "have_csv_summary": "所有事件 CSV 导出中是否应包含所有事件的摘要？"
       },
       "title": "CSV 导出设置"
     },
