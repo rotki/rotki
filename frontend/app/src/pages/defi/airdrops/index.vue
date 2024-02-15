@@ -229,7 +229,10 @@ onMounted(async () => {
           </RuiChip>
         </template>
         <template #item.source="{ row }">
-          <AirdropDisplay :source="row.source" />
+          <AirdropDisplay
+            :source="row.source"
+            :icon-url="row.iconUrl"
+          />
         </template>
         <template #item.expand="{ row }">
           <ExternalLink

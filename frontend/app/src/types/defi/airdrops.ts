@@ -39,6 +39,7 @@ const PoapDelivery = z.object({
   link: z.string(),
   claimed: z.boolean().optional().default(false),
   name: z.string(),
+  iconUrl: z.string().optional(),
 });
 
 export type PoapDelivery = z.infer<typeof PoapDelivery>;
