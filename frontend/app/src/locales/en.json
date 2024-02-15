@@ -2324,7 +2324,7 @@
       "title": "Loopring"
     },
     "monerium": {
-      "delete_tooltip": "Deletes the Monerium credential",
+      "delete_tooltip": "Deletes the Monerium credentials",
       "description": "Used to show Monerium transaction properly with relevant information.",
       "non_premium": "Upgrade to premium to be able to use this feature",
       "title": "Monerium",
@@ -2347,10 +2347,10 @@
     },
     "set_credential": {
       "error": {
-        "message": "Error while settings external service credential: {error}"
+        "message": "Error while settings external service credentials: {error}"
       },
       "success": {
-        "message": "Successfully updated the credential for {serviceName}"
+        "message": "Successfully updated the credentials for {serviceName}"
       }
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key."
