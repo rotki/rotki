@@ -98,10 +98,10 @@
     },
     "csv_export_settings": {
       "labels": {
-        "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
-        "have_csv_summary": "Should summary of all events be included in the all events CSV export?"
+        "export_csv_formulas": "¿Deben exportarse las fórmulas como parte del CSV PnL?",
+        "have_csv_summary": "¿Debería incluirse un resumen de todos los eventos en la exportación CSV de todos los eventos?"
       },
-      "title": "CSV Export Settings"
+      "title": "Configuración de la exportación CSV"
     },
     "messages": {
       "account_for_assets_movements": "Error setting account for assets movements: {message}",
