@@ -100,7 +100,7 @@
     "csv_export_settings": {
       "labels": {
         "export_csv_formulas": "Les formules doivent-elles être exportées dans le CSV PnL ?",
-        "have_csv_summary": "Le résumé de tous les événements doit-il être inclus dans l'exportation CSV de tous les événements ?"
+        "have_csv_summary": "Un résumé de tous les événements doit-il être inclus dans l'exportation CSV de tous les événements ?"
       },
       "title": "Paramètres d'exportation CSV"
     },

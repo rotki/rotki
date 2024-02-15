@@ -103,7 +103,7 @@
     "csv_export_settings": {
       "labels": {
         "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
-        "have_csv_summary": "Should the summary of all events be included in all events CSV export?"
+        "have_csv_summary": "Should a summary of all events be included in the all events CSV export?"
       },
       "title": "CSV Export Settings"
     },
