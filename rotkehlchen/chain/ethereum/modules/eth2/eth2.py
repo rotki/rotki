@@ -408,7 +408,10 @@ class Eth2(EthereumModule):
         # pull data for newly detected validators and save them in the DB
         details = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=list(untracked_validator_indices))  # noqa: E501
         with self.database.user_write() as write_cursor:
-            DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
+            DBEth2(self.database).add_or_update_validators_except_ownership(
+                write_cursor,
+                validators=details,
+            )
             self.database.set_dynamic_cache(
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.WITHDRAWALS_TS,
@@ -475,7 +478,10 @@ class Eth2(EthereumModule):
             indices_or_pubkeys=[x.index if x.index is not None else x.public_key for x in validators_to_refresh],  # noqa: E501
         )
         with self.database.user_write() as write_cursor:
-            DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
+            DBEth2(self.database).add_or_update_validators_except_ownership(
+                write_cursor,
+                validators=details,
+            )
 
     def get_validators(
             self,
@@ -613,7 +619,7 @@ class Eth2(EthereumModule):
 
         needed_validators: list[tuple[int, Timestamp]] = []
         for entry in validator_data:
-            if entry.withdrawable_ts is None:
+            if entry.withdrawable_timestamp is None:
                 continue
 
             # this is a slashed/exited validator
@@ -621,7 +627,7 @@ class Eth2(EthereumModule):
                 log.error(f'An exited validator does not contain an index: {entry}. Should never happen.')  # noqa: E501
                 continue
 
-            needed_validators.append((entry.validator_index, entry.withdrawable_ts))
+            needed_validators.append((entry.validator_index, entry.withdrawable_timestamp))
 
         if len(needed_validators) == 0:
             return
@@ -631,7 +637,7 @@ class Eth2(EthereumModule):
                 dbeth2.set_validator_exit(
                     write_cursor=write_cursor,
                     index=index,
-                    withdrawable_ts=withdrawable_ts,
+                    withdrawable_timestamp=withdrawable_ts,
                 )
 
     def refresh_activated_validators_deposits(self) -> None:

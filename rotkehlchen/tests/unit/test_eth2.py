@@ -553,9 +553,9 @@ def test_ownership_proportion(eth2: 'Eth2', database):
 
     result = eth2.get_validators(ignore_cache=True, addresses=[ADDR1, ADDR2], validator_indices=None)  # noqa: E501
     assert result[0].validator_index == 9 and result[0].ownership_proportion == FVal(0.5), 'Proportion from the DB should be used'  # noqa: E501
-    assert result[1].validator_index == 997 and result[1].ownership_proportion == ONE, 'Since this validator is new, the proportion should be ONE'  # noqa: E501
-    assert result[2].validator_index == 1647 and result[2].ownership_proportion == FVal(0.7), 'Proportion from the DB should be used'  # noqa: E501
-    assert result[3].validator_index == 1757 and result[3].ownership_proportion == FVal(0.9), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[1].validator_index == 1647 and result[1].ownership_proportion == FVal(0.7), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[2].validator_index == 1757 and result[2].ownership_proportion == FVal(0.9), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[3].validator_index == 997 and result[3].ownership_proportion == ONE, 'Since this validator is new, the proportion should be ONE'  # noqa: E501
 
     # also test filtering by index
     result = eth2.get_validators(ignore_cache=True, addresses=[], validator_indices={9, 1757})
@@ -1087,11 +1087,14 @@ def test_get_active_validator_indices(database):
     match_on=['beaconchain_matcher'],
 )
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.freeze_time('2024-02-05 09:00:00 GMT')
+@pytest.mark.freeze_time('2024-02-15 13:00:00 GMT')
 def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
     """In v40->v41 upgrade the validator table changed, and more columns were addedd.
     Most of them were optional but in normal operation they would be detected.
     Adding this test to make sure this happens.
+
+    Also testing that foreign key relation with daily stats is not causing all daily
+    stats for the
     """
     with eth2.database.user_write() as write_cursor:
         write_cursor.executemany(
@@ -1100,15 +1103,25 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
             [
                 (42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0'),  # noqa: E501
                 (1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35'),  # noqa: E501
-                (5232, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0'),  # noqa: E501
+                (5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0'),  # noqa: E501
             ],
         )
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO eth2_daily_staking_details(validator_index, timestamp, pnl)'
+            'VALUES(?, ?, ?)', [
+                (42, 1707998469, '0.01'),
+                (1232, 1707998469, '0.01'),
+                (5231, 1707998469, '0.01'),
+            ],
+        )
+        assert write_cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3  # noqa: E501
 
     eth2.detect_and_refresh_validators([])
 
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * from eth2_validators').fetchall() == [
-            (4, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None),  # noqa: E501
-            (5, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None),  # noqa: E501
-            (6, 5232, '0xb0ac2e604e8a961e3247e80d3e493ac7fb9e3a5616e5190e2febcb717550bd50d3bcfdb03e079ef649b16d0d37acc3bb', '1', '0x347A70cb4Ff0297102DC549B044c41bD61e22718', 1606824023, None),  # noqa: E501
+            (1, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None),  # noqa: E501
+            (2, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None),  # noqa: E501
+            (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1606824023, None),  # noqa: E501
         ]
+        assert cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3

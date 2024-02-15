@@ -231,7 +231,7 @@ class DBEth2:
             self,
             write_cursor: 'DBCursor',
             index: int,
-            withdrawable_ts: Timestamp,
+            withdrawable_timestamp: Timestamp,
     ) -> None:
         """If the validator has withdrawal events, find last one and mark as exit if after withdrawable ts"""  # noqa: E501
         write_cursor.execute(
@@ -243,7 +243,7 @@ class DBEth2:
         if (latest_result := write_cursor.fetchone()) is None:
             return  # no event found so nothing to do
 
-        if ts_ms_to_sec(latest_result[1]) >= withdrawable_ts:
+        if ts_ms_to_sec(latest_result[1]) >= withdrawable_timestamp:
             write_cursor.execute(
                 'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? WHERE identifier=?',
                 (1, latest_result[0]),
@@ -259,22 +259,45 @@ class DBEth2:
             validators: list[ValidatorDetails],
     ) -> None:
         """Adds or update validator data but keeps the ownership already in the DB"""
-        pubkey_to_ownership = self.get_pubkey_to_ownership(write_cursor)
-        for entry in validators:
-            entry.ownership_proportion = pubkey_to_ownership.get(entry.public_key, ONE)
-        self.add_or_update_validators(write_cursor, validators)
+        self.add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=validators,
+            updatable_attributes=('validator_index', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
+        )
 
     def add_or_update_validators(
             self,
             write_cursor: 'DBCursor',
             validators: list[ValidatorDetails],
+            updatable_attributes: tuple[str, ...] = ('validator_index', 'ownership_proportion', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
     ) -> None:
-        """Adds or updates validator data"""
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO '
-            'eth2_validators(validator_index, public_key, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp) VALUES(?, ?, ?, ?, ?, ?)',  # noqa: E501
-            [x.serialize_for_db() for x in validators],
-        )
+        """Adds or updates validator data
+
+        This used to do an INSERT OR REPLACE with an executemany. While that approach
+        was simpler and "worked" it also killed all foreign key relations and since
+        at the time of writing the daily stats have a foreign key relation to this table
+        all the daily stats were deleted.
+        """
+        for validator in validators:
+            result = write_cursor.execute(
+                'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
+                'activation_timestamp, withdrawable_timestamp FROM eth2_validators '
+                'WHERE public_key=?', (validator.public_key,),
+            ).fetchone()
+            if result is not None:  # update case
+                db_validator = ValidatorDetails.deserialize_from_db(result)
+                for attr in updatable_attributes:
+                    if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
+                        write_cursor.execute(
+                            f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
+                            (new_value, validator.public_key),
+                        )
+            else:  # insertion case
+                write_cursor.execute(
+                    'INSERT INTO '
+                    'eth2_validators(validator_index, public_key, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp) VALUES(?, ?, ?, ?, ?, ?)',  # noqa: E501
+                    validator.serialize_for_db(),
+                )
 
     def edit_validator_ownership(self, write_cursor: 'DBCursor', validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
         """Edits the ownership proportion for a validator identified by its index.

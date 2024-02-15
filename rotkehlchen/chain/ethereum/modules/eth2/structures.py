@@ -166,8 +166,8 @@ class ValidatorDetails:
     validator_index: int | None  # can be None if no index has yet been created due to not yet being seen by the consensys layer  # noqa: E501
     public_key: Eth2PubKey
     withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x1 credentials
-    activation_ts: Timestamp | None = None  # activation timestamp. None if not activated yet.
-    withdrawable_ts: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
+    activation_timestamp: Timestamp | None = None  # activation timestamp. None if not activated yet.  # noqa: E501
+    withdrawable_timestamp: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
     ownership_proportion: FVal = ONE  # [0, 1] proportion of ownership user has on the validator
 
     def __hash__(self) -> int:
@@ -181,7 +181,7 @@ class ValidatorDetails:
         if self.ownership_proportion != ONE:
             data['ownership_percentage'] = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
 
-        for name in ('activation_ts', 'withdrawable_ts', 'withdrawal_address'):
+        for name in ('activation_timestamp', 'withdrawable_timestamp', 'withdrawal_address'):
             if (value := getattr(self, name)) is not None:
                 data[name] = value
 
@@ -195,8 +195,8 @@ class ValidatorDetails:
             self.public_key,
             str(self.ownership_proportion),
             self.withdrawal_address,
-            self.activation_ts,
-            self.withdrawable_ts,
+            self.activation_timestamp,
+            self.withdrawable_timestamp,
         )
 
     @classmethod
@@ -206,8 +206,8 @@ class ValidatorDetails:
             public_key=result[1],
             ownership_proportion=FVal(result[2]),
             withdrawal_address=result[3],
-            activation_ts=result[4],
-            withdrawable_ts=result[5],
+            activation_timestamp=result[4],
+            withdrawable_timestamp=result[5],
         )
 
 
@@ -230,9 +230,9 @@ class ValidatorDetailsWithStatus(ValidatorDetails):
     def determine_status(self, exited_indices: set[int]) -> None:
         if self.validator_index in exited_indices:
             self.status = ValidatorStatus.EXITED
-        elif self.withdrawable_ts is not None:
+        elif self.withdrawable_timestamp is not None:
             self.status = ValidatorStatus.EXITING
-        elif self.activation_ts is not None:
+        elif self.activation_timestamp is not None:
             self.status = ValidatorStatus.ACTIVE
         else:
             self.status = ValidatorStatus.PENDING
