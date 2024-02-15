@@ -227,8 +227,12 @@ class Opensea(ExternalServiceWithApiKey):
             if 'collection' in entry:
                 saved_entry = self.collections.get(entry['collection'])
                 if saved_entry is None:
-                    # we haven't got this collection in memory. Query opensea for info
-                    self.gather_account_collections(account=owner_address)
+                    try:
+                        # we haven't got this collection in memory. Query opensea for info
+                        self.gather_account_collections(account=owner_address)
+                    except RemoteError as e:
+                        log.error(f'Failed to query account collections for {owner_address}. {e}')
+
                     # try to get the info again
                     saved_entry = self.collections.get(entry['collection'])
 
@@ -261,20 +265,35 @@ class Opensea(ExternalServiceWithApiKey):
         except KeyError as e:
             raise DeserializationError(f'Could not find key {e!s} when processing Opensea NFT data') from e  # noqa: E501
 
-    def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
-        """Gathers account collection information and keeps them in memory"""
+    def _consume_assets_endpoint(self, account: ChecksumEvmAddress) -> list[dict[str, Any]]:
+        """
+        Query all the nfts for the provided account and return the information
+        provided by opensea.
+        May raise:
+        - RemoteError
+        """
         options = {'next': None, 'limit': ASSETS_MAX_LIMIT, 'address': account}
-
         raw_result: list[dict[str, Any]] = []
+
         while True:
             result = self._query(endpoint='assets', options=options)
+            log.debug(f'Got Opensea response for {account} assets {result=}')
             raw_result.extend(result['nfts'])
-            if len(result['nfts']) != ASSETS_MAX_LIMIT:
+            if 'next' not in result or len(result['nfts']) != ASSETS_MAX_LIMIT:
                 break
 
             # else continue by paginating
             options['next'] = result['next']
 
+        return raw_result
+
+    def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
+        """
+        Gathers account collection information and keeps them in memory
+        May raise:
+        - RemoteError
+        """
+        raw_result = self._consume_assets_endpoint(account=account)
         for entry in raw_result:
             options = {'collection_slug': entry['collection']}
             collection = self._query(endpoint='collection', options=options)
@@ -306,20 +325,10 @@ class Opensea(ExternalServiceWithApiKey):
 
     def get_account_nfts(self, account: ChecksumEvmAddress) -> list[NFT]:
         """May raise RemoteError"""
-        options = {'next': None, 'limit': ASSETS_MAX_LIMIT, 'address': account}
         eth_usd_price = Inquirer.find_usd_price(A_ETH)
-
-        raw_result = []
-        while True:
-            result = self._query(endpoint='assets', options=options)
-            raw_result.extend(result['nfts'])
-            if len(result['nfts']) != ASSETS_MAX_LIMIT:
-                break
-
-            # else continue by paginating
-            options['next'] = result['next']
-
+        raw_result = self._consume_assets_endpoint(account=account)
         nfts = []
+
         for entry in raw_result:
             log.debug(f'Deserializing opensea nft data owned by {account=}: {entry}')
             try:
