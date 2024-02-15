@@ -183,7 +183,7 @@ export const useAddressesNamesStore = defineStore(
     ) =>
       computed<string | null>(() => {
         const addressVal = get(address);
-        if (!get(enableAliasNames))
+        if (!get(enableAliasNames) || !addressVal)
           return null;
 
         const chain = get(blockchain);
