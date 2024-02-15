@@ -30,4 +30,11 @@ WOO_NAME_TO_TOKEN_SYMBOL = {
     'FTM_WOO_2': evm_address_to_identifier('0x6626c47c00F1D87902fc13EECfaC3ed06D5E8D8a', ChainID.FANTOM, EvmTokenKind.ERC20),  # noqa: E501
     'TRON': 'TRX',
     'UATOM': 'ATOM',
+    'STFX': evm_address_to_identifier('0x9343e24716659A3551eB10Aff9472A2dcAD5Db2d', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
+    'QI': evm_address_to_identifier('0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', ChainID.AVALANCHE, EvmTokenKind.ERC20),  # noqa: E501
+    'METIS': evm_address_to_identifier('0x9E32b13ce7f2E80A01932B42553652E053D6ed8e', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
+    'C98': evm_address_to_identifier('0xAE12C5930881c53715B369ceC7606B70d8EB229f', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
+    'INJ': evm_address_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
+    'PYR': evm_address_to_identifier('0x9534ad65fb398E27Ac8F4251dAe1780B989D136e', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
+    'ZETA': evm_address_to_identifier('0xf091867EC603A6628eD83D274E835539D82e9cc8', ChainID.ETHEREUM, EvmTokenKind.ERC20),  # noqa: E501
 }

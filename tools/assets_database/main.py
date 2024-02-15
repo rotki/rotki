@@ -102,7 +102,7 @@ def main() -> None:
     # We need a user db since the spam assets get synced during user unlock and
     # they touch both the global and the user DB at the same time
     with TemporaryDirectory():
-        GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
+        globaldb = GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
         assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
         conflicts = assets_updater.perform_update(
             up_to_version=args.target_version,
@@ -112,6 +112,7 @@ def main() -> None:
         print('There were conflicts during the update. Bailing.')
         sys.exit(1)
 
+    globaldb.conn.execute('PRAGMA journal_mode=DELETE')
     # Due to the way globaldb initializes we have two of them. Clean up the extra one
     print('Cleaning up...')
     (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)

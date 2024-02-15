@@ -30,9 +30,7 @@ docker-image:
 test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_binance.py::test_binance_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_binance_us.py::test_binance_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitpanda.py::test_bitpanda_exchange_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitfinex.py::test_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bittrex.py::test_bittrex_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitstamp.py::test_bitstamp_exchange_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_coinbase.py::test_coverage_of_products
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_coinbasepro.py::test_coverage_of_products
@@ -50,6 +48,7 @@ test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_protocol_names_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_query_all_protocol_balances_for_account
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_woo.py::test_woo_assets_are_known
+	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bybit.py::test_assets_are_known
 
 create-cassettes:
 	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr rotkehlchen/tests

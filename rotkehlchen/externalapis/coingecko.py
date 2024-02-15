@@ -434,6 +434,8 @@ DELISTED_ASSETS = {
     'DON',
     'NUT',
     evm_address_to_identifier(address='0x06B884e60794Ce02AafAb13791B59A2e6A07442f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x37E8789bB9996CaC9156cD5F5Fd32599E6b91289', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
 }
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

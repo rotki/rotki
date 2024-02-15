@@ -824,6 +824,18 @@ UNSUPPORTED_KUCOIN_ASSETS = {
     'STORJDOWN',
     'LOOMUP',
     'LOOMDOWN',
+    'OPUP',
+    'OPDOWN',
+    'SEIUP',
+    'SEIDOWN',
+    'JTOUP',
+    'JTODOWN',
+    'BAKEUP',
+    'BAKEDOWN',
+    'PYTHUP',
+    'PYTHDOWN',
+    'TIAUP',
+    'TIADOWN',
 }
 
 # https://api.iconomi.com/v1/assets marks delisted assets

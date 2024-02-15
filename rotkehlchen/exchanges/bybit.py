@@ -13,6 +13,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
+from rotkehlchen.assets.exchanges_mappings.bybit import FIVE_LETTER_ASSETS_BYBIT, SIX_LETTER_ASSETS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -65,8 +66,6 @@ def bybit_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWith
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Can raise UnknownAsset if any of the pair assets are not known to rotki
     """
-    five_letter_assets = ('SUSHI', '1INCH', 'MATIC', 'TENET', 'LOOKS', 'SFUND')
-    six_letter_assets = ('KARATE', 'PSTAKE', 'PRIMAL', 'PLANET', 'PENDLE', 'PEOPLE', 'TURBOS')
     # bybit has special pairs with perpetuals/shorts of the tokens
     split_symbol = None
     if '2L' in symbol:
@@ -83,8 +82,8 @@ def bybit_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWith
         base_asset, quote_asset = pair_symbol_to_base_quote(
             symbol=symbol,
             asset_deserialize_fn=asset_from_bybit,
-            five_letter_assets=five_letter_assets,
-            six_letter_assets=six_letter_assets,
+            five_letter_assets=FIVE_LETTER_ASSETS_BYBIT,
+            six_letter_assets=SIX_LETTER_ASSETS,
         )
 
     return base_asset, quote_asset
