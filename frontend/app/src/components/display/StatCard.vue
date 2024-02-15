@@ -36,7 +36,7 @@ withDefaults(
           :src="protocolIcon"
         />
       </div>
-      <div class="grow px-4 pb-4">
+      <div class="flex-1 px-4 pb-4">
         <div class="flex items-center py-4">
           <CardTitle v-if="title">
             {{ title }}
