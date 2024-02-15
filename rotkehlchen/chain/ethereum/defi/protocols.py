@@ -37,7 +37,7 @@ DEFI_PROTOCOLS: dict[str, Protocol] = {
     'kimchi': Protocol('KIMCHI', 'kimchi.webp'),
     'sushiswap': Protocol('SushiSwap', 'sushiswap.svg'),
     'sushiswap_staking': Protocol('SushiSwap &bull; Staking', 'sushiswap.svg'),
-    'nexus_mutual': Protocol('Nexus Mutual', 'nexusmutual.svg'),
+    'nexus_mutual': Protocol('Nexus Mutual', 'nexusmutual.jpg'),
     'mooniswap': Protocol('Mooniswap', 'mooniswap.svg'),
     'matic': Protocol('Matic', 'matic.svg'),
     'aragon': Protocol('Aragon', 'aragon.svg'),
