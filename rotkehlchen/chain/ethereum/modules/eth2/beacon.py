@@ -238,8 +238,8 @@ class BeaconInquirer:
                 validator_index=deserialize_int(entry[index_key]),
                 public_key=Eth2PubKey(deserialize_str(valuegetter(entry, 'pubkey'))),
                 withdrawal_address=withdrawal_address,
-                activation_ts=activation_ts,
-                withdrawable_ts=withdrawable_ts,
+                activation_timestamp=activation_ts,
+                withdrawable_timestamp=withdrawable_ts,
             ))
 
         return details

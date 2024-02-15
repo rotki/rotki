@@ -263,18 +263,18 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
     assert_proper_response_with_result(response)
 
     detected_validator = ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1684036055),
+        activation_timestamp=Timestamp(1684036055),
         validator_index=624729,
         public_key=Eth2PubKey('0x96e3fcfa954d8fe64c2d8cac932f962d4906ff47d62875bad0b4aa2be4337dfde803004691e1cad5bd3676bcbad54123'),
         withdrawal_address=ethereum_accounts[0],
         status=ValidatorStatus.ACTIVE,
     )
     exited_validator = ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1663864919),
+        activation_timestamp=Timestamp(1663864919),
         validator_index=432840,
         public_key=Eth2PubKey('0x8007ace91d9a996e045caab473d3887b4fb11637e1cc12f4f4dcb3fc0e3707df5e960e067a891270247186590282960f'),
         withdrawal_address=ethereum_accounts[1],
-        withdrawable_ts=Timestamp(1706386007),
+        withdrawable_timestamp=Timestamp(1706386007),
         status=ValidatorStatus.EXITING,  # since we don't have withdrawals information yet
     )
     total_validators, active_validators, exited_validators = 402, 259, 143
@@ -285,7 +285,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'entries': [x.serialize() for x in (exited_validator, detected_validator)], 'entries_found': 2, 'entries_limit': -1}  # noqa: E501
+    assert result == {'entries': [x.serialize() for x in (detected_validator, exited_validator)], 'entries_found': 2, 'entries_limit': -1}  # noqa: E501
 
     # Query withdrawals/block productions
     for query_type in ('block_productions', 'eth_withdrawals'):
@@ -305,8 +305,8 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries'][0]['index'] == exited_validator.validator_index
-    assert result['entries'][0]['status'] == 'exited'
+    assert result['entries'][1]['index'] == exited_validator.validator_index
+    assert result['entries'][1]['status'] == 'exited'
 
     # now let's go for performance
     response = requests.put(
@@ -487,11 +487,11 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
         validator_pubkey = '0x800199f8f3af15a22c42ccd7185948870eceeba2d06199ea30e7e28eb976a69284e393ba2f401e8983d011534b303a57'  # noqa: E501
         assert len(result['entries']) == 1
         assert result['entries'][0] == {
-            'activation_ts': 1630893527,
+            'activation_timestamp': 1630893527,
             'index': 227858,
             'public_key': validator_pubkey,
             'status': 'exiting',
-            'withdrawable_ts': 1682749271,
+            'withdrawable_timestamp': 1682749271,
             'withdrawal_address': '0x62359ea4199fD696a81beA27676EBCC832422479',
         }
         response = requests.get(api_url_for(
@@ -553,27 +553,27 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
     assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1606824023),
+        activation_timestamp=Timestamp(1606824023),
         validator_index=4235,
         public_key=Eth2PubKey('0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84'),
-        withdrawable_ts=Timestamp(1703014103),
+        withdrawable_timestamp=Timestamp(1703014103),
         withdrawal_address=string_to_evm_address('0x865c05C13d422310d9421E4Da915B73E5289A6B1'),
         status=ValidatorStatus.EXITING,
     ), ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1606824023),
+        activation_timestamp=Timestamp(1606824023),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
         status=ValidatorStatus.ACTIVE,
     ), ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1607118167),
+        activation_timestamp=Timestamp(1607118167),
         validator_index=23948,
         public_key=Eth2PubKey('0x8a569c702a5b51894a25b261960f6b792aa35f8f67d9e1d96a52b15857cf0ee4fa30670b9bfca40e9a9dba81057ba4c7'),
-        withdrawable_ts=Timestamp(1682832983),
+        withdrawable_timestamp=Timestamp(1682832983),
         withdrawal_address=string_to_evm_address('0xf604d331d9109253fF63A00EA93DE5c0264314eF'),
         status=ValidatorStatus.EXITING,
     ), ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1609038167),
+        activation_timestamp=Timestamp(1609038167),
         validator_index=43948,
         public_key=Eth2PubKey('0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb'),
         withdrawal_address=string_to_evm_address('0xfA7F89a14d005F057107755cA18345728E2E3938'),
@@ -701,14 +701,14 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
 
     # Try to add validator with a custom ownership percentage
     custom_percentage_validators = [ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1606824023),
+        activation_timestamp=Timestamp(1606824023),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
         ownership_proportion=FVal(0.4025),
         status=ValidatorStatus.ACTIVE,
     ), ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1609038167),
+        activation_timestamp=Timestamp(1609038167),
         validator_index=43948,
         public_key=Eth2PubKey('0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb'),
         withdrawal_address=string_to_evm_address('0xfA7F89a14d005F057107755cA18345728E2E3938'),
@@ -903,13 +903,13 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1606824023),
+        activation_timestamp=Timestamp(1606824023),
         validator_index=5234,
         public_key=Eth2PubKey('0xb0456681ca4dc1a1276a9cab5915af9f9210f0eb104b4bd60164f59243b6159c3f3dab0d712cbae1360c7eb07af6a276'),
         withdrawal_address=string_to_evm_address('0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A'),
         status=ValidatorStatus.ACTIVE,
     ), ValidatorDetailsWithStatus(
-        activation_ts=Timestamp(1606824023),
+        activation_timestamp=Timestamp(1606824023),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
@@ -1200,26 +1200,26 @@ def test_get_validators(rotkehlchen_api_server):
     _prepare_clean_validators(rotkehlchen_api_server)
     # Check they are returned fine
     validator1_data = {
-        'activation_ts': 1704906839,
+        'activation_timestamp': 1704906839,
         'index': CLEAN_HISTORY_VALIDATOR1,
         'public_key': '0xb324c5869db5a524f9c3e2f3b82a786e7baa6ea150dc8f5c86a5342e6a7a5b4719ee1749c2f79e9e49d18a00f006118b',  # noqa: E501
         'status': 'active',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL1,
     }
     validator2_data = {
-        'activation_ts': 1704906839,
+        'activation_timestamp': 1704906839,
         'index': CLEAN_HISTORY_VALIDATOR2,
         'public_key': '0x874df4549e48da22326e3f5c59a2e4e2096861236c8fd9314068f9e142812c216d440ed022371cdc5c3fcc2afac11693',  # noqa: E501
         'status': 'active',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL2,
     }
     validator3_data = {
-        'activation_ts': 1680814295,
+        'activation_timestamp': 1680814295,
         'index': CLEAN_HISTORY_VALIDATOR3,
         'public_key': '0xa5de79a98e323f28de94fec045407324bbcd19bfddfe84b1cbc64df0f7bc77886f13c5bb639b2441238d2cd9c2b501d5',  # noqa: E501
         'status': 'exited',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL3,
-        'withdrawable_ts': 1706912087,
+        'withdrawable_timestamp': 1706912087,
     }
     response = requests.get(
         api_url_for(
