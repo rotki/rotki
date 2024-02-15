@@ -71,8 +71,8 @@ const Validator = z.object({
   status: z.string(),
   ownershipPercentage: Percentage.optional(),
   withdrawalAddress: z.string().optional(),
-  activationTs: z.number().nonnegative().optional(),
-  withdrawalTs: z.number().nonnegative().optional(),
+  activationTimestamp: z.number().nonnegative().optional(),
+  withdrawableTimestamp: z.number().nonnegative().optional(),
 });
 
 export type Eth2ValidatorEntry = z.infer<typeof Validator>;
