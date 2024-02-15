@@ -33,8 +33,13 @@ export const useAirdropsMetadata = createSharedComposable(() => {
 
   const getAirdropImageUrl = (identifier: Ref<string>): ComputedRef<string> =>
     computed(() => {
+      const data = get(getAirdropData(identifier));
+
+      if (data?.iconUrl)
+        return data.iconUrl;
+
       const image
-        = get(getAirdropData(identifier))?.icon ?? `${get(identifier)}.svg`;
+        = data?.icon ?? `${get(identifier)}.svg`;
 
       return `./assets/images/protocols/${image}`;
     });

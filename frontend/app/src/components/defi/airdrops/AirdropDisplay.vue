@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   source: string;
+  iconUrl?: string;
 }>();
 
 const { getAirdropName, getAirdropImageUrl } = useAirdropsMetadata();
@@ -15,7 +16,7 @@ const image = getAirdropImageUrl(source);
   <div class="flex items-center gap-4">
     <AdaptiveWrapper>
       <AppImage
-        :src="image"
+        :src="iconUrl || image"
         width="1.5rem"
         height="1.5rem"
         contain

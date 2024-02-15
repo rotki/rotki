@@ -5,9 +5,9 @@ import {
 } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
+import type { ProtocolMetadata } from '@/types/defi';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
-import type { SupportedModule } from '@/types/modules';
 
 export function useDefiApi() {
   const fetchAllDefi = async (): Promise<PendingTask> =>
@@ -27,18 +27,18 @@ export function useDefiApi() {
     return handleResponse(response);
   };
 
-  const fetchAirdropsMetadata = async (): Promise<SupportedModule[]> => {
+  const fetchAirdropsMetadata = async (): Promise<ProtocolMetadata[]> => {
     const response
-      = await api.instance.get<ActionResult<SupportedModule[]>>(
+      = await api.instance.get<ActionResult<ProtocolMetadata[]>>(
         '/airdrops/metadata',
       );
 
     return handleResponse(response);
   };
 
-  const fetchDefiMetadata = async (): Promise<SupportedModule[]> => {
+  const fetchDefiMetadata = async (): Promise<ProtocolMetadata[]> => {
     const response
-      = await api.instance.get<ActionResult<SupportedModule[]>>('/defi/metadata');
+      = await api.instance.get<ActionResult<ProtocolMetadata[]>>('/defi/metadata');
 
     return handleResponse(response);
   };

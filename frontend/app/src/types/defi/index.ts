@@ -37,6 +37,7 @@ export interface ProtocolMetadata {
   identifier: string;
   name: string;
   icon: string;
+  iconUrl?: string;
 }
 
 export interface DefiAccount<T = Blockchain> extends Account<T> {
