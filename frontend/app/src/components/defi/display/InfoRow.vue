@@ -23,6 +23,7 @@ withDefaults(
     </div>
     <slot>
       <AmountDisplay
+        class="font-bold"
         :fiat-currency="fiat ? 'USD' : undefined"
         :value="value"
         :loading="loading"
