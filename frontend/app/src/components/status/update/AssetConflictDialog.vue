@@ -43,7 +43,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const resolution: Ref<ConflictResolution> = ref({});
+const strategyModeForAll = ref<ConflictResolutionStrategy>();
 const resolutionLength = computed(() => Object.keys(get(resolution)).length);
+const isAllLocalOrRemote = computed(() => {
+  if (get(conflicts).length === 0 || get(resolutionLength) !== get(conflicts).length)
+    return undefined;
+
+  return get(strategyModeForAll);
+});
 
 function setResolution(strategy: ConflictResolutionStrategy) {
   const length = get(conflicts).length;
@@ -54,6 +61,14 @@ function setResolution(strategy: ConflictResolutionStrategy) {
   }
 
   set(resolution, resolutionStrategy);
+  set(strategyModeForAll, strategy);
+}
+
+function onStrategyChange(strategy?: ConflictResolutionStrategy) {
+  if (Object.values(get(resolution)).every(strat => strat === strategy))
+    set(strategyModeForAll, strategy);
+  else
+    set(strategyModeForAll, undefined);
 }
 
 type AssetKey = keyof SupportedAsset;
@@ -124,6 +139,7 @@ function cancel() {
       <RuiButtonGroup
         color="primary"
         variant="outlined"
+        :value="isAllLocalOrRemote"
       >
         <template #default>
           <RuiButton
@@ -187,6 +203,7 @@ function cancel() {
           v-model="resolution[conflict.identifier]"
           color="primary"
           variant="outlined"
+          @input="onStrategyChange(resolution[conflict.identifier])"
         >
           <template #default>
             <RuiButton value="local">
