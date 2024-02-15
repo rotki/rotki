@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :release:`1.32.0 <2024-02-16>`
 * :feature:`7383` rotki will now update airdrops' data remotely without needing to update the app.
 * :bug:`7435` Fix the issue where, in rare cases, users receive a JavaScript error popup when minimizing the window.
 * :feature:`7357` rotki will now properly detect and decode Shutter token airdrop and delegation.
@@ -36,7 +36,7 @@ Changelog
 * :bug:`-` Fix an issue where kraken instant swaps could have an invalid type for fee events.
 * :bug:`-` Querying coinbase data should no longer show 404 error if the user has too many accounts and tries to query trades or deposits/withdrawals.
 
-* :release:`1.31.3 <2023-12-31>`
+* :release:`1.31.3 <2024-01-31>`
 * :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
 * :bug:`7359` NFTs should be queried and displayed properly again.
 * :bug:`7362` Filtering by customized events in the free version should work fine again.
