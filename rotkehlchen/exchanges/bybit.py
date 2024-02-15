@@ -5,7 +5,6 @@ import logging
 import urllib.parse
 from collections import defaultdict
 from http import HTTPStatus
-from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import gevent
@@ -19,6 +18,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances

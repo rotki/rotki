@@ -1,5 +1,4 @@
 import logging
-from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -15,6 +14,7 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
