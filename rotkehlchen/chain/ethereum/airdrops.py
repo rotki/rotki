@@ -15,6 +15,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
@@ -168,8 +169,8 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
     )
 
 
-def get_airdrop_data(airdrop_csv_path: str, name: str, parent_data_dir: Path) -> Iterator[list[str]]:  # noqa: E501
-    airdrops_dir = parent_data_dir / 'airdrops'
+def get_airdrop_data(airdrop_csv_path: str, name: str, data_dir: Path) -> Iterator[list[str]]:
+    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.csv'
     if not filename.is_file():
@@ -200,7 +201,7 @@ def get_airdrop_data(airdrop_csv_path: str, name: str, parent_data_dir: Path) ->
 
 
 def get_poap_airdrop_data(poap_airdrop_path: str, name: str, data_dir: Path) -> dict[str, Any]:
-    airdrops_dir = data_dir / 'airdrops_poap'
+    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.json'
     if not filename.is_file():
@@ -260,6 +261,7 @@ def calculate_claimed_airdrops(
 def check_airdrops(
         addresses: Sequence[ChecksumEvmAddress],
         database: DBHandler,
+        data_dir: Path,
         tolerance_for_amount_check: FVal = ZERO,
 ) -> dict[ChecksumEvmAddress, dict]:
     """Checks airdrop data for the given list of ethereum addresses
@@ -268,7 +270,6 @@ def check_airdrops(
         - RemoteError if the remote request fails
     """
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
-    parent_data_dir = database.user_data_dir.parent
     airdrop_tuples = []
     current_time = ts_now()
     airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
@@ -286,7 +287,7 @@ def check_airdrops(
             claim_event_type = HistoryEventType.RECEIVE
             claim_event_subtype = HistoryEventSubType.AIRDROP
 
-        for row in get_airdrop_data(airdrop_data.csv_path, protocol_name, parent_data_dir):
+        for row in get_airdrop_data(airdrop_data.csv_path, protocol_name, data_dir):
             if len(row) < 2:
                 raise RemoteError(
                     f'Airdrop CSV for {protocol_name} contains an invalid row: {row}',
@@ -335,7 +336,7 @@ def check_airdrops(
         found_data[event_tuple[0]][asset_to_protocol[event_tuple[1]]]['claimed'] = True
 
     for protocol_name, poap_airdrop_data in poap_airdrops.items():
-        data_dict = get_poap_airdrop_data(poap_airdrop_data[0], protocol_name, parent_data_dir)
+        data_dict = get_poap_airdrop_data(poap_airdrop_data[0], protocol_name, data_dir)
         for addr, assets in data_dict.items():
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance

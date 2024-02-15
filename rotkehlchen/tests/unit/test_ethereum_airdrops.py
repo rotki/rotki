@@ -8,6 +8,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_INDEX, AIRDROPS_REPO_BASE, check_airdrops
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_SHU, A_UNI
+from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -121,7 +122,7 @@ def _mock_airdrop_list(url: str, timeout: int = 0):  # pylint: disable=unused-ar
     'symbol': 'NONEVM',
 }])
 @pytest.mark.parametrize('remove_global_assets', [['eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7']])  # noqa: E501
-def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
+def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, data_dir):
     # create airdrop claim events to test the claimed attribute
     tolerance_for_amount_check = FVal('0.1')
     claim_events = [
@@ -204,6 +205,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
         data = check_airdrops(
             addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2, TEST_POAP1],
             database=database,
+            data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -265,6 +267,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
         data = check_airdrops(
             addresses=[TEST_ADDR2],
             database=database,
+            data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         assert mock_get.call_count == 0  # not queried again because it was cached a second ago
@@ -279,13 +282,16 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
         data = check_airdrops(
             addresses=[TEST_ADDR2],
             database=database,
+            data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         assert mock_get.call_count == 1  # queried again because it was cached 12 hours ago
 
     # Test cache file and row is created
     for protocol_name in MOCK_AIRDROP_INDEX['airdrops']:
-        assert (database.user_data_dir.parent / 'airdrops' / f'{protocol_name}.csv').is_file()
+        assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
+    for protocol_name in MOCK_AIRDROP_INDEX['poap_airdrops']:
+        assert (data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME / f'{protocol_name}.json').is_file()
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
             cursor=cursor,
@@ -294,7 +300,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_airdrop_fail(database):
+def test_airdrop_fail(database, data_dir):
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=_mock_airdrop_list),
         pytest.raises(RemoteError),
@@ -302,4 +308,5 @@ def test_airdrop_fail(database):
         check_airdrops(
             addresses=[TEST_ADDR1],
             database=database,
+            data_dir=data_dir,
         )
