@@ -297,7 +297,7 @@ class Coinbase(ExchangeInterface):
         next_uri = f'/{self.apiversion}/{endpoint}'
         timeout = CachedSettings().get_timeout_tuple()
         if options:
-            next_uri += urlencode(options)
+            next_uri += f'?={urlencode(options)}'
         while True:
             timestamp = str(int(time.time()))
             message = timestamp + request_verb + next_uri

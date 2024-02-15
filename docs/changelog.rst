@@ -34,6 +34,7 @@ Changelog
 * :bug:`-` It should no longer be possible to merge the same asset to itself, thus botching the asset in your database.
 * :feature:`-` Transactions burning vested vCOW to claim COW tokens will now be properly decoded for both gnosis chain and ethereum mainnet.
 * :bug:`-` Fix an issue where kraken instant swaps could have an invalid type for fee events.
+* :bug:`-` Querying coinbase data should no longer show 404 error if the user has too many accounts and tries to query trades or deposits/withdrawals.
 
 * :release:`1.31.3 <2023-12-31>`
 * :bug:`-` The history events section will have correct pagination for free users, with all the events showing correct sub-events.
