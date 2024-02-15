@@ -3,6 +3,8 @@ from pathlib import Path
 from shutil import Error, copytree, move, rmtree
 
 from rotkehlchen.constants.misc import (
+    AIRDROPSDIR_NAME,
+    AIRDROPSPOAPDIR_NAME,
     ALLASSETIMAGESDIR_NAME,
     APPDIR_NAME,
     ASSETIMAGESDIR_NAME,
@@ -105,9 +107,9 @@ def maybe_restructure_rotki_data_directory(data_dir: Path) -> None:
                 user_paths.append(x)  # user data in case they use weird user names
             elif x.name == 'global_data':
                 global_path = x
-            elif x.name == 'airdrops':
+            elif x.name == AIRDROPSDIR_NAME:
                 airdrops_path = x
-            elif x.name == 'airdrops_poap':
+            elif x.name == AIRDROPSPOAPDIR_NAME:
                 airdrops_poap_path = x
             elif x.name == MISCDIR_NAME:
                 misc_path = x

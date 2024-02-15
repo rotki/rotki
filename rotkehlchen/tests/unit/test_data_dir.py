@@ -1,6 +1,8 @@
 import pytest
 
 from rotkehlchen.constants.misc import (
+    AIRDROPSDIR_NAME,
+    AIRDROPSPOAPDIR_NAME,
     AVATARIMAGESDIR_NAME,
     CUSTOMASSETIMAGESDIR_NAME,
     GLOBALDB_NAME,
@@ -36,7 +38,7 @@ def _create_old_directory_structure(data_dir):
     misc_data.mkdir(parents=True, exist_ok=True)
     (misc_data / MISC_FILE).touch()
 
-    for name in ('airdrops', 'airdrops_poap'):
+    for name in (AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME):
         subdir = data_dir / name
         subdir.mkdir(parents=True, exist_ok=True)
         for filename in AIRDROPS:
@@ -102,7 +104,7 @@ def _assert_directory_structure(data_dir):
     app_dir = data_dir / 'app'
     users = set()
     for x in app_dir.iterdir():
-        if x.name in ('airdrops', 'airdrops_poap'):
+        if x.name in (AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME):
             _assert_dir_matches(x, AIRDROPS)
         elif x.name == MISCDIR_NAME:
             assert (x / MISC_FILE).exists()
