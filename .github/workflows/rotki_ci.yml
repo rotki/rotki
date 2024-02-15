@@ -126,6 +126,29 @@ jobs:
         working-directory: ./frontend
         run: pnpm run lint
 
+  verify-icons:
+    name: 'Verify Icons'
+    needs: [ 'lint-frontend' ]
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Load env
+        uses: rotki/action-env@v2
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
+      - name: Verify icons
+        run: ./.github/scripts/icon-verify.py
+
   unittest-frontend:
     name: 'Frontend unit tests'
     needs: [ 'check-changes']
