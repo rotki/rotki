@@ -872,10 +872,7 @@ So long as you provide monerium credentials, all monerium transactions in mainne
    :alt: Monerium decorated transactions
    :align: center
 
-But there are two important pieces of information to keep in mind here.
-
-1. Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
-2. Monerium data will be pulled roughly every hour to decorate your EVM transactions. So if you just upgraded it's best to wait for the EVM events re-decoding (as mentioned in the previous section) to finish before inputting your monerium API.
+Note: Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
 
 Go to :menuselection:`API Keys --> External Services --> Monerium` and enter your credentials.
 
