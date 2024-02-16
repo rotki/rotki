@@ -860,6 +860,29 @@ After following these steps your balances in the dashboard will be updated inclu
    :alt: Loopring balances in the UI
    :align: center
 
+Monerium
+===========
+
+So long as you provide monerium credentials, all monerium transactions in mainnet, polygon and gnosis chain will be decorated with the bank data (or chain bridging), data you can also see in monerium app.
+
+1. For bank transfers from/to your address you will be able to see the destination/source IBAN along with the memo of the transfer.
+2. For automatic EURe bridging between EVM chains you will see amounts, from/to EVM chains along with from/to address.
+
+.. image:: images/monerium_transactions.png
+   :alt: Monerium decorated transactions
+   :align: center
+
+But there are two important pieces of information to keep in mind here.
+
+1. Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
+2. Monerium data will be pulled roughly every hour to decorate your EVM transactions. So if you just upgraded it's best to wait for the EVM events re-decoding (as mentioned in the previous section) to finish before inputting your monerium API.
+
+Go to :menuselection:`API Keys --> External Services --> Monerium` and enter your credentials.
+
+.. image:: images/monerium_add_key.png
+   :alt: Add monerium
+   :align: center
+
 Rotki Generic Import
 =====================
 
@@ -1505,6 +1528,21 @@ You can inspect the list of all supported assets, edit them, delete them or add 
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
+   :align: center
+
+Whitelisting of ignored assets
+================================
+
+Spam assets are a plague in EVM chains. rotki has an automatic algorithm trying to match assets as spam to not bother the user with automatically ignoring them. You can see all ignored assets in :menuselection:`Manage Assets --> Assets` and filter by ignored. A problem with automatic algorithms marking something as spam is that mistakes can be made and a legit token may be ignored.
+
+.. image:: images/asset_whitelist_filter.png
+   :alt: Filter ignored assets
+   :align: center
+
+To solve this problem we added a whitelist which you can add assets to as can be seen below. Once an asset is added to the whitelist it will be removed from the ignore list and the automatic algorithm will not mark it as spam in the future.
+
+.. image:: images/asset_whitelist_menu.png
+   :alt: Whitelist asset
    :align: center
 
 Adding/editing an asset
