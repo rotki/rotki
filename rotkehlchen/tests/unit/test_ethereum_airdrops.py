@@ -87,6 +87,13 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'icon': 'shutter.png',
         'cutoff_time': 1721000000,
     },
+    'invalid': {
+        'csv_path': 'airdrops/invalid.csv',
+        'asset_identifier': 'eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7',
+        'url': 'https://claim.invalid.community/',
+        'name': 'INVALID',
+        'icon': 'invalid.svg',
+    },
 }, 'poap_airdrops': {
     'aave_v2_pioneers': [
         'airdrops/poap/poap_aave_v2_pioneers.json',
@@ -122,7 +129,14 @@ def _mock_airdrop_list(url: str, timeout: int = 0):  # pylint: disable=unused-ar
     'symbol': 'NONEVM',
 }])
 @pytest.mark.parametrize('remove_global_assets', [['eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7']])  # noqa: E501
-def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, data_dir):
+def test_check_airdrops(
+        freezer,
+        ethereum_accounts,
+        database,
+        new_asset_data,
+        data_dir,
+        messages_aggregator,
+):
     # create airdrop claim events to test the claimed attribute
     tolerance_for_amount_check = FVal('0.1')
     claim_events = [
@@ -178,6 +192,8 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
                 f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
             f'{AIRDROPS_REPO_BASE}/airdrops/shutter.csv':
                 f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
+            f'{AIRDROPS_REPO_BASE}/airdrops/invalid.csv':
+                f'address,tokens\n{TEST_ADDR2},123\n{TEST_ADDR2},123\n\n',  # will be skipped because last row is empty  # noqa: E501
             f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
                 f'{{"{TEST_POAP1}": [\n566\n]}}',
         }
@@ -203,6 +219,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
                 (new_asset_identifier,),
             ).fetchone()[0] == 0  # asset not present before
         data = check_airdrops(
+            msg_aggregator=messages_aggregator,
             addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2, TEST_POAP1],
             database=database,
             data_dir=data_dir,
@@ -229,6 +246,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
         'link': 'https://1inch.exchange/',
         'claimed': False,
     }
+    assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
     assert len(data[TEST_ADDR2]) == 3
     assert data[TEST_ADDR2]['uniswap'] == {
@@ -265,6 +283,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get') as mock_get,
     ):
         data = check_airdrops(
+            msg_aggregator=messages_aggregator,
             addresses=[TEST_ADDR2],
             database=database,
             data_dir=data_dir,
@@ -280,6 +299,7 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get) as mock_get,  # noqa: E501
     ):
         data = check_airdrops(
+            msg_aggregator=messages_aggregator,
             addresses=[TEST_ADDR2],
             database=database,
             data_dir=data_dir,
@@ -300,12 +320,13 @@ def test_check_airdrops(freezer, ethereum_accounts, database, new_asset_data, da
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_airdrop_fail(database, data_dir):
+def test_airdrop_fail(database, data_dir, messages_aggregator):
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=_mock_airdrop_list),
         pytest.raises(RemoteError),
     ):
         check_airdrops(
+            msg_aggregator=messages_aggregator,
             addresses=[TEST_ADDR1],
             database=database,
             data_dir=data_dir,
