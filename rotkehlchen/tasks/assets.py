@@ -35,7 +35,7 @@ SYMBOL_AND_NAME_ASSETS_QUERY = (
     'common_asset_details AS C ON C.identifier = B.identifier JOIN assets as A on '
     'A.identifier=B.identifier WHERE B.PROTOCOL IS NOT ? ORDER BY C.symbol'
 )
-MULTISEND_SPAM_THRESHOLD = 5
+MULTISEND_SPAM_THRESHOLD = 10  # we cover the case of multiple token rewards in the same transactions  # noqa: E501
 
 
 def _add_spam_asset(
