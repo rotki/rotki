@@ -18,7 +18,7 @@ const { availableTags } = storeToRefs(useTagStore());
 <template>
   <div
     v-if="tags && tags.length > 0"
-    class="mt-2 flex-row flex items-center gap-2"
+    class="mt-2 flex flex-wrap items-center gap-2"
     :class="wrapperClass"
   >
     <TagIcon
