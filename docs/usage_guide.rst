@@ -860,6 +860,26 @@ After following these steps your balances in the dashboard will be updated inclu
    :alt: Loopring balances in the UI
    :align: center
 
+Monerium
+===========
+
+So long as you provide monerium credentials, all monerium transactions in mainnet, polygon and gnosis chain will be decorated with the bank data (or chain bridging), data you can also see in monerium app.
+
+1. For bank transfers from/to your address you will be able to see the destination/source IBAN along with the memo of the transfer.
+2. For automatic EURe bridging between EVM chains you will see amounts, from/to EVM chains along with from/to address.
+
+.. image:: images/monerium_transactions.png
+   :alt: Monerium decorated transactions
+   :align: center
+
+Note: Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
+
+Go to :menuselection:`API Keys --> External Services --> Monerium` and enter your credentials.
+
+.. image:: images/monerium_add_key.png
+   :alt: Add monerium
+   :align: center
+
 Rotki Generic Import
 =====================
 
@@ -1507,6 +1527,21 @@ You can inspect the list of all supported assets, edit them, delete them or add 
    :alt: Manage the list of assets
    :align: center
 
+Whitelisting of ignored assets
+================================
+
+Spam assets are a plague in EVM chains. rotki has an automatic algorithm trying to match assets as spam to not bother the user with automatically ignoring them. You can see all ignored assets in :menuselection:`Manage Assets --> Assets` and filter by ignored. A problem with automatic algorithms marking something as spam is that mistakes can be made and a legit token may be ignored.
+
+.. image:: images/asset_whitelist_filter.png
+   :alt: Filter ignored assets
+   :align: center
+
+To solve this problem we added a whitelist which you can add assets to as can be seen below. Once an asset is added to the whitelist it will be removed from the ignore list and the automatic algorithm will not mark it as spam in the future.
+
+.. image:: images/asset_whitelist_menu.png
+   :alt: Whitelist asset
+   :align: center
+
 Adding/editing an asset
 =======================
 
@@ -2145,6 +2180,21 @@ ask for the password of the database. The password used for the database is the 
 
 Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
 So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
+
+Long running tasks
+*******************
+
+A list of processing tasks is available on the notifications tray.
+
+.. image:: images/pending_tasks.png
+   :alt: running background tasks
+   :align: center
+
+It is possible to cancel a long running task, but use this feature sparingly.
+
+.. image:: images/pending_tasks_cancel.png
+   :alt: cancel background task
+   :align: center
 
 Using rotki from mobile
 ***********************
