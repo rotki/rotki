@@ -1939,7 +1939,7 @@
   "eth2_input": {
     "ownership": {
       "hint": "*可选：默认为 100%",
-      "validation": "该值应为 0-100%"
+      "validation": "该值应> 0%且<= 100%"
     },
     "ownership_percentage": "所有权百分比",
     "public_key": "公钥"

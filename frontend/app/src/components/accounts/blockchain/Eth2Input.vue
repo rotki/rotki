@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
 import {
-  and,
   helpers,
-  maxValue,
-  minValue,
   requiredUnless,
 } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
@@ -28,10 +25,11 @@ const validatorIndex = ref('');
 const publicKey = ref('');
 const ownershipPercentage = ref<string>();
 
-function updateProperties(validator: Eth2Validator | null) {
-  validatorIndex.value = validator?.validatorIndex ?? '';
-  publicKey.value = validator?.publicKey ?? '';
-  ownershipPercentage.value = validator?.ownershipPercentage ?? '';
+function updateProperties() {
+  const validatorVal = get(validator);
+  set(validatorIndex, validatorVal?.validatorIndex ?? '');
+  set(publicKey, validatorVal?.publicKey ?? '');
+  set(ownershipPercentage, validatorVal?.ownershipPercentage ?? '');
 }
 
 const { t } = useI18n();
@@ -52,7 +50,7 @@ const rules = {
   ownershipPercentage: {
     percentage: helpers.withMessage(
       t('eth2_input.ownership.validation'),
-      and(minValue(0), maxValue(100)),
+      (value: string) => !value || (Number(value) > 0 && Number(value) <= 100),
     ),
   },
 };
@@ -78,9 +76,7 @@ watch(errorMessages, (errors) => {
     get(v$).$validate();
 });
 
-onMounted(() => updateProperties(validator.value));
-
-watch(validator, updateProperties);
+watchImmediate(validator, updateProperties);
 
 watch(
   [validatorIndex, publicKey, ownershipPercentage],
@@ -126,7 +122,7 @@ watch(
       />
     </div>
 
-    <div class="col-span-3">
+    <div class="col-span-3 md:col-span-1">
       <AmountInput
         v-model="ownershipPercentage"
         variant="outlined"

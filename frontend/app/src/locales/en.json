@@ -2120,7 +2120,7 @@
   "eth2_input": {
     "ownership": {
       "hint": "*Optional: By default it is 100%",
-      "validation": "The value should be 0-100%"
+      "validation": "The value should be > 0% and <= 100%"
     },
     "validator_index": {
       "validation": "Validator index can be filled with numeric value only."
