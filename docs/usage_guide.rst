@@ -2184,6 +2184,21 @@ ask for the password of the database. The password used for the database is the 
 Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
 So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
 
+Long running tasks
+*******************
+
+A list of processing tasks is available on the notifications tray.
+
+.. image:: images/pending_tasks.png
+   :alt: running background tasks
+   :align: center
+
+It is possible to cancel a long running task, but use this feature sparingly.
+
+.. image:: images/pending_tasks_cancel.png
+   :alt: cancel background task
+   :align: center
+
 Using rotki from mobile
 ***********************
 
