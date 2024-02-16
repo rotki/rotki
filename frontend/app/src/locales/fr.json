@@ -2426,7 +2426,7 @@
       "refresh": "Définir la période de mise à jour automatique",
       "refresh_enabled": "Activé",
       "scramble": "Embrouiller les données. Utilisez ceci lors de la partage d'écrans avec d'autres personnes, par exemple lors du dépôt de rapports de bogues. NOTE : Ce paramètre ne persiste pas entre les sessions.",
-      "scramble_multiplier": "Multiplicateur utilisé lors de l'embrouillement des soldes. Cela affectera le montant et la valeur en devise.",
+      "scramble_multiplier": "Multiplicateur de brouillage",
       "show_graph_range_selector": "Afficher le sélecteur de plage pour le graphique en ligne",
       "zero_based": "Utiliser zéro comme valeur la plus faible pour les graphiques",
       "zero_based_hint": "Par défaut, la valeur la plus faible est la valeur minimale dans la période sélectionnée"
