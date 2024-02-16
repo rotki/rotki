@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Writeable } from '@/types';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
@@ -45,26 +46,28 @@ function showMessage(message: string, id: string, edit: boolean) {
 
 async function save() {
   set(pending, true);
-  const payload = get(validator);
+  const payload: Writeable<Eth2Validator | null> = get(validator);
   assert(payload);
 
   let result: ActionStatus<ValidationErrors | string>;
   const isEdit = isDefined(accountToEdit);
-  if (isEdit)
+  if (isEdit) {
+    if (!payload.ownershipPercentage)
+      payload.ownershipPercentage = '100';
+
     result = await editEth2Validator(payload);
-  else
-    result = await addEth2Validator(payload);
+  }
+  else { result = await addEth2Validator(payload); }
 
   if (result.success) {
-    if (isDefined(accountToEdit)) {
+    if (isEdit) {
       const newVar = get(accountToEdit);
-      assert('ownershipPercentage' in newVar && newVar.ownershipPercentage);
       assert(payload.publicKey);
       assert(payload.ownershipPercentage);
 
       updateEthStakingOwnership(
         payload.publicKey,
-        bigNumberify(newVar.ownershipPercentage),
+        bigNumberify('ownershipPercentage' in newVar && newVar.ownershipPercentage ? newVar.ownershipPercentage : 100),
         bigNumberify(payload.ownershipPercentage),
       );
       startPromise(fetchAccounts(Blockchain.ETH2));

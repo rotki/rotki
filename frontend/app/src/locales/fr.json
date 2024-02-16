@@ -2109,7 +2109,7 @@
   "eth2_input": {
     "ownership": {
       "hint": "*Facultatif : La valeur par défaut est de 100%",
-      "validation": "La valeur doit être de 0 à 100%"
+      "validation": "La valeur doit être > 0% et <= 100%"
     },
     "ownership_percentage": "Pourcentage de propriété",
     "public_key": "Clé publique"
