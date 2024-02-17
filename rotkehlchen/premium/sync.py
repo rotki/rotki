@@ -1,6 +1,6 @@
 import logging
 import shutil
-from enum import Enum
+from enum import Enum, auto
 from typing import Any, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -25,9 +25,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class CanSync(Enum):
-    YES = 0
-    NO = 1
-    ASK_USER = 2
+    YES = auto()
+    NO = auto()
+    ASK_USER = auto()
 
 
 class SyncCheckResult(NamedTuple):

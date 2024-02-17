@@ -62,8 +62,8 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install -r requirements_packaging.txt
+          pip3 install --upgrade uv
+          uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
       - name: Upload files
@@ -171,11 +171,11 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install --upgrade uv
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          pip3 install -r requirements_packaging.txt
+          uv pip install -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
         env:
@@ -257,8 +257,8 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"          
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install -r requirements_packaging.txt
+          pip3 install --upgrade uv
+          uv pip install --system -r requirements_packaging.txt
           echo ::endgroup::
           python .\package.py --build full
         shell: powershell
