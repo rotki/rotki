@@ -425,7 +425,7 @@ Modify user password
       }
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
-   :statuscode 200: Password changed successfull
+   :statuscode 200: Password changed successful
    :statuscode 400: Provided call is in some way malformed. For example a user who is not logged in has been specified.
    :statuscode 401: Password mismatch
    :statuscode 409: User is not logged in, or user does not exist, or db operation error

@@ -14,8 +14,7 @@ ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
 ARG PYINSTALLER_VERSION=v6.3.0
-ENV VIRTUAL_ENV="/usr/local"
-RUN pip install --upgrade --no-cache-dir uv && uv pip install setuptools wheel
+RUN pip install --upgrade --no-cache-dir uv && uv pip install --system setuptools wheel
 ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
@@ -27,7 +26,7 @@ RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.t
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
-RUN uv pip install -r requirements.txt
+RUN uv pip install --system -r requirements.txt
 
 COPY . /app
 
@@ -35,12 +34,12 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
       cd bootloader && ./waf all && cd .. && \
-      uv pip install "pyinstaller @ ."; \
+      uv pip install --system "pyinstaller @ ."; \
     else \
-      uv pip install pyinstaller==${PYINSTALLER_VERSION}; \
+      uv pip install --system pyinstaller==${PYINSTALLER_VERSION}; \
     fi
 
-RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && uv pip install "rotkehlchen @ ." && \
+RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && uv pip install --system "rotkehlchen @ ." && \
     python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
