@@ -41,6 +41,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+      - name: Install uv
+        run: |
+          pip install --upgrade uv
       - name: Cache rotkehlchen test directory
         uses: actions/cache@v4
         with:
@@ -68,13 +71,12 @@ jobs:
           (Get-Command python).Path
       - name: Install dependencies
         run: |          
-          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
-          pip install pytest-cov
-          pip install -r requirements_dev.txt
-          pip install -e .
+          uv pip install --system --upgrade wheel pytest-cov
+          uv pip install --system -r requirements_dev.txt
+          uv pip install --system -e .
       - name: Install pytest annotation plugin
         run: |     
-          pip install pytest-github-actions-annotate-failures
+          uv pip install --system pytest-github-actions-annotate-failures
       - name: Run tests
         env:
           PYTEST_ARGS: '--durations=150'

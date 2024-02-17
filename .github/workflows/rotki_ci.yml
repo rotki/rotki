@@ -151,9 +151,9 @@ jobs:
           cache: 'pip'
       - name: Install dependencies
         run: |
-          pip install --upgrade pip==${{ env.PIP_VERSION }}
-          pip install -r requirements_docs.txt
-          pip install -e .
+          pip install --upgrade uv
+          uv pip install --system -r requirements_docs.txt
+          uv pip install --system -e .
           git rev-parse HEAD
       - name: Build html docs
         run: cd docs && make html
@@ -197,12 +197,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+      - name: Set up uv
+        run: |
+          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
+          pip install --upgrade pip
+          pip install --no-cache uv
       - name: Install dependencies
         run: |
-          pip install --upgrade pip==${{ env.PIP_VERSION }}
-          pip install -r requirements_lint.txt
-          pip install -e .
+          uv pip install --system -r requirements_lint.txt
+          uv pip install --system -e .
           git rev-parse HEAD
       - name: Lint
         run: make lint
