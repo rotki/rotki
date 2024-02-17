@@ -163,7 +163,6 @@ class Eth2(EthereumModule):
                 'entries_found': len(result['validators']),
             }
 
-        common_arguments: dict[str, Any] = {'from_ts': from_ts, 'to_ts': to_ts}
         index_to_pubkey, index_to_activation_ts, index_to_withdrawable_ts = {}, {}, {}
         dbeth2 = DBEth2(self.database)
         all_validator_indices = set()
@@ -201,14 +200,19 @@ class Eth2(EthereumModule):
             to_query_indices = associated_indices if to_query_indices is None else to_query_indices | associated_indices  # noqa: E501
             # also add the to_filter_indices since this will enable deposit association
             # to validator index by address. We need to do this instead of adding
-            # addresses to common_arguments since then we would be ANDing the filters
+            # addresses to filter arguments since then we would be ANDing the filters
             # which would end up returning no values for many validators
             to_filter_indices = associated_indices if to_filter_indices is None else to_filter_indices | associated_indices  # noqa: E501
 
-        if to_filter_indices is not None:
-            common_arguments['validator_indices'] = list(to_filter_indices)
+        with self.database.conn.read_ctx() as cursor:
+            accounts = self.database.get_blockchain_accounts(cursor)
 
-        withdrawals_filter_query, exits_filter_query, execution_filter_query = create_profit_filter_queries(common_arguments)  # noqa: E501
+        withdrawals_filter_query, exits_filter_query, execution_filter_query = create_profit_filter_queries(  # noqa: E501
+            from_ts=from_ts,
+            to_ts=to_ts,
+            validator_indices=list(to_filter_indices) if to_filter_indices is not None else None,
+            tracked_addresses=accounts.eth,  # needed to exclude block recipients not tracked
+        )
 
         with self.database.conn.read_ctx() as cursor:
             withdrawals_amounts, exits_pnl, execution_rewards_amounts = dbeth2.get_validators_profit(  # noqa: E501

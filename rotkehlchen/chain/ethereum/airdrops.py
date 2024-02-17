@@ -32,6 +32,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, FValWithTolerance, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import is_production, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
@@ -174,11 +175,11 @@ def get_airdrop_data(airdrop_csv_path: str, name: str, data_dir: Path) -> Iterat
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.csv'
     if not filename.is_file():
-        # if not cached, get it from the gist
+        # if not cached, get it from the remote data repo
         try:
             response = requests.get(url=airdrop_csv_path, timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops Gist request failed due to {e!s}') from e
+            raise RemoteError(f'Airdrops CSV request failed due to {e!s}') from e
         content = response.text
         try:
             if (
@@ -205,16 +206,17 @@ def get_poap_airdrop_data(poap_airdrop_path: str, name: str, data_dir: Path) -> 
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.json'
     if not filename.is_file():
-        # if not cached, get it from the gist
+        # if not cached, get it from the remote data repo
         try:
             request = requests.get(url=f'{AIRDROPS_REPO_BASE}/{poap_airdrop_path}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'POAP airdrops Gist request failed due to {e!s}') from e
+            raise RemoteError(f'POAP airdrops JSON request failed due to {e!s}') from e
 
         try:
             json_data = jsonloads_dict(request.content.decode('utf-8'))
         except JSONDecodeError as e:
-            raise RemoteError(f'POAP airdrops Gist contains an invalid JSON {e!s}') from e
+            log.error(f"POAP airdrop {name}'s JSON is invalid {e!s}")
+            return {}
 
         with open(filename, 'w', encoding='utf8') as outfile:
             outfile.write(rlk_jsondumps(json_data))
@@ -259,6 +261,7 @@ def calculate_claimed_airdrops(
 
 
 def check_airdrops(
+        msg_aggregator: MessagesAggregator,
         addresses: Sequence[ChecksumEvmAddress],
         database: DBHandler,
         data_dir: Path,
@@ -287,11 +290,13 @@ def check_airdrops(
             claim_event_type = HistoryEventType.RECEIVE
             claim_event_subtype = HistoryEventSubType.AIRDROP
 
+        # temporarily store this protocol's data here
+        temp_found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
+        temp_airdrop_tuples = []
         for row in get_airdrop_data(airdrop_data.csv_path, protocol_name, data_dir):
             if len(row) < 2:
-                raise RemoteError(
-                    f'Airdrop CSV for {protocol_name} contains an invalid row: {row}',
-                )
+                msg_aggregator.add_warning(f'Skipping airdrop CSV for {protocol_name} because it contains an invalid row: {row}')  # noqa: E501
+                break
             addr, amount, *_ = row
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
@@ -306,15 +311,15 @@ def check_airdrops(
             }:
                 amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
             if addr in addresses:
-                found_data[addr][protocol_name] = {  # type: ignore
+                temp_found_data[addr][protocol_name] = {  # type: ignore
                     'amount': str(amount),
                     'asset': airdrop_data.asset,
                     'link': airdrop_data.url,
                     'claimed': False,
                 }
                 if airdrop_data.icon_url is not None:
-                    found_data[addr][protocol_name]['icon_url'] = airdrop_data.icon_url  # type: ignore
-                airdrop_tuples.append(
+                    temp_found_data[addr][protocol_name]['icon_url'] = airdrop_data.icon_url  # type: ignore
+                temp_airdrop_tuples.append(
                     AirdropClaimEventQueryParams(
                         event_type=claim_event_type,
                         event_subtype=claim_event_subtype,
@@ -326,6 +331,10 @@ def check_airdrops(
                         ),
                     ),
                 )
+        else:  # if all rows are valid, store them
+            airdrop_tuples.extend(temp_airdrop_tuples)
+            for temp_addr, data in temp_found_data.items():
+                found_data[temp_addr].update(data)
 
     asset_to_protocol = {item[1].identifier: protocol for protocol, item in airdrops.items()}
     claim_events_tuple = calculate_claimed_airdrops(

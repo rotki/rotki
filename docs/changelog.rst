@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`7497` In ETH staking view execution rewards should now be counted properly. MEV reward and block reward should not both be counted if recipient is not tracked.
+* :bug:`-` Invalid data in airdrops' CSVs or JSONs will now get ignored to show the rest of the valid data.
+
 * :release:`1.32.0 <2024-02-16>`
 * :feature:`7383` rotki will now update airdrops' data remotely without needing to update the app.
 * :bug:`7435` Fix the issue where, in rare cases, users receive a JavaScript error popup when minimizing the window.

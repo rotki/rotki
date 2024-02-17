@@ -241,10 +241,11 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x61874850cC138e5e198d5756cF70e6EFED6aD464',  # withdrawal address of detected validator
     '0xbfEC7fc8DaC449a482b593Eb0aE28CfeAb49902c',  # withdrawal address of exited validator
+    '0x4675C7e5BaAFBFFbca748158bEcBA61ef3b0a263',  # execution fee recipient for 432840
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2024-02-08 23:25:00 GMT')
+@pytest.mark.freeze_time('2024-02-17 17:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -277,7 +278,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
         withdrawable_timestamp=Timestamp(1706386007),
         status=ValidatorStatus.EXITING,  # since we don't have withdrawals information yet
     )
-    total_validators, active_validators, exited_validators = 402, 259, 143
+    total_validators, active_validators, exited_validators = 402, 258, 144
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -325,27 +326,26 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
 
     expected_validators_result = {
         'sums': {
-            'apr': '0.0443931202201263006106868447783673046350110514302790176714219659866470139396912',  # noqa: E501
-            'execution': '0.951964836013963505',
+            'apr': '0.0390711733712776643632006946387784579525834493111298798058751595316961517731974',  # noqa: E501
+            'execution': '0.5135720417808183',
             'exits': '0.0014143880000005993',
-            'outstanding_consensus_pnl': '0.009991843',
-            'sum': '3.2443113160139639043',
-            'withdrawals': '2.2809402489999998',
+            'outstanding_consensus_pnl': '0.011461867',
+            'sum': '2.8251388897808186993',
+            'withdrawals': '2.2986905929999998',
         },
         'validators': {
             '432840': {
-                'apr': '0.0585589969328525179226399380937759635877614420402413033269515587183469999638769',  # noqa: E501
-                'execution': '0.93361811418473',
+                'apr': '0.0488237003112313830083592875139977603583426651735722284434490481522956326987681',  # noqa: E501
+                'execution': '0.5135720417808183',
                 'exits': '0.0014143880000005993',
-                'sum': '2.5266283731847305993',
+                'sum': '2.1065823007808188993',
                 'withdrawals': '1.591595871',
             },
             '624729': {
-                'apr': '0.0302272435074000832987337514629586456822606608203167320158923732549470279155054',  # noqa: E501
-                'execution': '0.018346721829233505',
-                'outstanding_consensus_pnl': '0.009991843',
-                'sum': '0.717682942829233305',
-                'withdrawals': '0.6893443779999998',
+                'apr': '0.0293186464313239457180421017635591555468242334486875311683012709110966708476267',  # noqa: E501
+                'outstanding_consensus_pnl': '0.011461867',
+                'sum': '0.7185565889999998',
+                'withdrawals': '0.7070947219999998',
             },
         },
         'entries_found': 2,
