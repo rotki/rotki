@@ -616,14 +616,14 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
-def test_eth_validators_performance(eth2, database):
+def test_eth_validators_performance(eth2, database, ethereum_accounts):
     """Test that the performance of all multiple validators is returned fine"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
     vindex1 = 45555
-    vindex1_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
+    vindex1_address = ethereum_accounts[0]
     vindex2 = 114543
-    vindex2_address = string_to_evm_address('0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d')
+    vindex2_address = ethereum_accounts[1]
     mev_builder_address = string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')
     block_number = 15824493
     tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
@@ -654,7 +654,7 @@ def test_eth_validators_performance(eth2, database):
                 validator_index=vindex1,
                 timestamp=timestampms,
                 balance=Balance(block_reward_1),
-                fee_recipient=mev_builder_address,
+                fee_recipient=vindex1_address,
                 block_number=block_number,
                 is_mev_reward=False,
             ), EthBlockEvent(
@@ -667,7 +667,7 @@ def test_eth_validators_performance(eth2, database):
             ), EthBlockEvent(
                 validator_index=vindex2,
                 timestamp=TimestampMS(timestampms + (2 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(block_reward_2),
+                balance=Balance(block_reward_2),  # since mev builder gets it we shouldn't count it
                 fee_recipient=mev_builder_address,
                 block_number=block_number + 1,
                 is_mev_reward=False,
@@ -733,14 +733,14 @@ def test_eth_validators_performance(eth2, database):
 
     assert set(performance.keys()) == {'sums', 'validators', 'entries_found', 'entries_total'}
     expected_sums = {
-        'execution': block_reward_1 + mev_reward_1 + block_reward_2 + mev_reward_2 + no_mev_block_reward_2,  # noqa: E501
+        'execution': block_reward_1 + mev_reward_1 + mev_reward_2 + no_mev_block_reward_2,
         'exits': exit_1 - 32,
-        'sum': block_reward_1 + mev_reward_1 + withdrawal_1 + (exit_1 - 32) + block_reward_2 + mev_reward_2 + no_mev_block_reward_2,   # noqa: E501
+        'sum': block_reward_1 + mev_reward_1 + withdrawal_1 + (exit_1 - 32) + mev_reward_2 + no_mev_block_reward_2,   # noqa: E501
         'withdrawals': withdrawal_1,
     }
     for check_key in ('execution', 'exits', 'sum', 'withdrawals'):
         assert performance['sums'][check_key] == expected_sums[check_key]
-    assert performance['sums']['apr'].is_close(FVal('0.00412822186909020241811060649139005241062636710576993131056417104116726771999922'))  # noqa: E501
+    assert performance['sums']['apr'].is_close(FVal('0.00404161581589250586388450985171054082159224751613839429006282479554837399160762'))  # noqa: E501
 
     assert set(performance['validators'].keys()) == {vindex1, vindex2}
     expected_vindex1 = {
@@ -750,10 +750,10 @@ def test_eth_validators_performance(eth2, database):
     }
     check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
     expected_vindex2 = {
-        'execution': block_reward_2 + mev_reward_2 + no_mev_block_reward_2,
-        'sum': block_reward_2 + mev_reward_2 + no_mev_block_reward_2,
+        'execution': mev_reward_2 + no_mev_block_reward_2,
+        'sum': mev_reward_2 + no_mev_block_reward_2,
     }
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00236723212073703914884664148457331676693260211659534522703679738024976190937018'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
 
     # Check pagination and that cache works
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=1, offset=0, ignore_cache=False)  # noqa: E501
@@ -762,14 +762,21 @@ def test_eth_validators_performance(eth2, database):
 
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=2, offset=1, ignore_cache=False)  # noqa: E501
     assert set(performance['validators'].keys()) == {vindex2}
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00236723212073703914884664148457331676693260211659534522703679738024976190937018'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
+
+    # check that filtering by an unknown address returns nothing
+    performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=10, offset=0, addresses=[make_evm_address()], ignore_cache=True)  # noqa: E501
+    assert performance['entries_found'] == 0
+    assert performance['entries_total'] == 2
+    assert performance['sums'] == {}
+    assert performance['validators'] == {}
 
 
 @pytest.mark.vcr()
 @pytest.mark.freeze_time('2024-02-02 13:34:45 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
-def test_eth_validators_performance_recent(eth2, database):
+def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
     """Test that performance to recent time also takes into account outstanding consensus pnl"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -792,7 +799,7 @@ def test_eth_validators_performance_recent(eth2, database):
                 validator_index=vindex1,
                 timestamp=TimestampMS(1666693607000),
                 balance=Balance(block_reward_1),
-                fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
+                fee_recipient=ethereum_accounts[0],
                 block_number=15824493,
                 is_mev_reward=False,
             ),

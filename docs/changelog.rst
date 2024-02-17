@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7497` In ETH staking view execution rewards should now be counted properly. MEV reward and block reward should not both be counted if recipient is not tracked.
 * :bug:`-` Invalid data in airdrops' CSVs or JSONs will now get ignored to show the rest of the valid data.
 
 * :release:`1.32.0 <2024-02-16>`
