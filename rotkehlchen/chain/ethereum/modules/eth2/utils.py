@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Any, Literal
+from typing import Literal
 
 import gevent
 import requests
@@ -22,7 +22,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, get_chunks
 
 from .structures import ValidatorDailyStats
@@ -220,26 +220,38 @@ def calculate_query_chunks(
     return list(get_chunks(indices_or_pubkeys, n=chunk_size))
 
 
-def create_profit_filter_queries(common_arguments: dict[str, Any]) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery]:  # noqa: E501
+def create_profit_filter_queries(
+        from_ts: Timestamp,
+        to_ts: Timestamp,
+        validator_indices: list[int] | None,
+        tracked_addresses: Sequence[ChecksumEvmAddress],
+) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery]:
     """Create the Filter queries for withdrawal events and execution layer reward events"""
     withdrawals_filter_query = EthWithdrawalFilterQuery.make(
-        **common_arguments,
+        from_ts=from_ts,
+        to_ts=to_ts,
+        validator_indices=validator_indices,
         event_types=[HistoryEventType.STAKING],
         event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
         entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
         withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
     )
     exits_filter_query = EthWithdrawalFilterQuery.make(
-        **common_arguments,
+        from_ts=from_ts,
+        to_ts=to_ts,
+        validator_indices=validator_indices,
         event_types=[HistoryEventType.STAKING],
         event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
         entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
         withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
     )
     execution_filter_query = EthStakingEventFilterQuery.make(
-        **common_arguments,
+        from_ts=from_ts,
+        to_ts=to_ts,
+        validator_indices=validator_indices,
         event_types=[HistoryEventType.STAKING],
         event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
         entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_BLOCK_EVENT]),
+        location_labels=tracked_addresses,  # type: ignore  # addresses are strings
     )
     return withdrawals_filter_query, exits_filter_query, execution_filter_query
