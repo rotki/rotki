@@ -6,7 +6,7 @@ web3==6.15.1
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.1.2
 requests==2.31.0
-urllib3==2.2.0
+urllib3==2.2.1
 coincurve==18.0.0
 base58check==1.0.2
 bech32==1.2.0
@@ -17,19 +17,19 @@ py-ed25519-zebra-bindings==1.0.1
 py-bip39-bindings==0.1.11
 substrate-interface==1.7.5
 beautifulsoup4==4.12.3
-maxminddb==2.5.1
+maxminddb==2.5.2
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
 cryptography==42.0.3
-py-machineid==0.4.6
+py-machineid==0.5.1
 more-itertools==10.1.0  # for peekable iterators
 regex==2023.12.25  # used for unicode information in detection of spam tokens
 
 # For the rest api
 flask-cors==4.0.0
 flask==3.0.2
-marshmallow==3.20.1
-webargs==8.3.0
+marshmallow==3.20.2
+webargs==8.4.0
 werkzeug==3.0.1
 
 # for icon validation
@@ -41,7 +41,7 @@ polyleven==0.8
 # We used to only use this for packaging, but now use it for the version comparison functionality
 packaging==23.2
 
-bip-utils==2.9.0
+bip-utils==2.9.1
 
 #constraints
 pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
