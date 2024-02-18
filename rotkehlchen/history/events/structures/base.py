@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from enum import auto
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
@@ -82,7 +82,7 @@ class HistoryBaseEntryData(TypedDict):
 T = TypeVar('T', bound='HistoryBaseEntry')
 
 
-class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
+class HistoryBaseEntry(AccountingEventMixin, ABC):
     """
     Intended to be the base class for all types of event. All trades, deposits,
     swaps etc. are going to be made up of multiple such entries.

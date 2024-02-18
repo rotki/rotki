@@ -407,7 +407,7 @@ def mock_etherscan_query(
                     response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
             else:
-                raise AssertionError('Unexpected etherscan multicall during tests: {url}')
+                raise AssertionError(f'Unexpected etherscan multicall during tests: {url}')
 
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:
             if 'ethscan' in original_queries:

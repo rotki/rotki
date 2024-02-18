@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ModuleAccountantInterface(metaclass=ABCMeta):
+class ModuleAccountantInterface(ABC):
 
     def __init__(
             self,

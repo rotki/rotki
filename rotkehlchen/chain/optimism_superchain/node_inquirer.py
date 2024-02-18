@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import CryptoAsset
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainInquirer(EvmNodeInquirer, metaclass=ABCMeta):
+class OptimismSuperchainInquirer(EvmNodeInquirer, ABC):
     """
     An intermediary node inquirer class to be inherited by chains based on the Optimism Superchain.
 
@@ -68,7 +68,7 @@ class OptimismSuperchainInquirer(EvmNodeInquirer, metaclass=ABCMeta):
         tx_receipt['l1Fee'] = maybe_read_integer(data=tx_receipt, key='l1Fee', api=f'web3 {self.blockchain.name.lower()}')  # noqa: E501
 
 
-class DSProxyOptimismSuperchainInquirerWithCacheData(OptimismSuperchainInquirer, UpdatableCacheDataMixin, metaclass=ABCMeta):  # noqa: E501
+class DSProxyOptimismSuperchainInquirerWithCacheData(OptimismSuperchainInquirer, UpdatableCacheDataMixin, ABC):  # noqa: E501
 
     def __init__(
             self,

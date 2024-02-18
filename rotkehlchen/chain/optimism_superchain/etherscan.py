@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.optimism.types import OptimismTransaction
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainEtherscan(Etherscan, metaclass=ABCMeta):
+class OptimismSuperchainEtherscan(Etherscan, ABC):
     """
     An intermediary etherscan class to be inherited by chains based on the Optimism Superchain.
 

@@ -1,6 +1,6 @@
 import json
 import logging
-from abc import ABCMeta
+from abc import ABC
 from collections.abc import Iterator
 from enum import Enum, auto
 from http import HTTPStatus
@@ -73,7 +73,7 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
     return [x[0] for x in sorted(hashes, key=lambda x: x[1])]
 
 
-class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
+class Etherscan(ExternalServiceWithApiKey, ABC):
     """Base class for all Etherscan implementations"""
     def __init__(
             self,

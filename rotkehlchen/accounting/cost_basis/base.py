@@ -1,6 +1,6 @@
 import heapq
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -123,7 +123,7 @@ class AssetAcquisitionHeapElement(NamedTuple):
         return str(self.acquisition_event)
 
 
-class BaseCostBasisMethod(metaclass=ABCMeta):
+class BaseCostBasisMethod(ABC):
     """The base class in which every other cost basis method inherits from."""
     def __init__(self) -> None:
         self._acquisitions_heap: list[AssetAcquisitionHeapElement] = []

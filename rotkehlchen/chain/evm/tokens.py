@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
@@ -115,7 +115,7 @@ def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, lis
     return chunk_size, call_order
 
 
-class EvmTokens(metaclass=ABCMeta):
+class EvmTokens(ABC):
     def __init__(
             self,
             database: 'DBHandler',
@@ -387,7 +387,7 @@ class EvmTokens(metaclass=ABCMeta):
         """
 
 
-class EvmTokensWithDSProxy(EvmTokens, metaclass=ABCMeta):
+class EvmTokensWithDSProxy(EvmTokens, ABC):
     def __init__(
             self,
             database: 'DBHandler',

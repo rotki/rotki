@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
@@ -25,7 +25,7 @@ class AccountingEventType(SerializableEnumNameMixin):
     TRANSACTION_EVENT = auto()
 
 
-class AccountingEventMixin(metaclass=ABCMeta):
+class AccountingEventMixin(ABC):
     """Interface to be followed by all data structures that go in accounting"""
 
     @abstractmethod

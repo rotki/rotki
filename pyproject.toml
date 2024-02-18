@@ -87,6 +87,35 @@ disallow_untyped_defs = false
 preview = true  # https://docs.astral.sh/ruff/preview/
 line-length = 99
 
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+target-version = "py311"
+
+[tool.ruff.lint]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
 select = [
     "E",
     "F",
@@ -197,33 +226,14 @@ ignore = [
     "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
     "PERF203",  # we do use try/except in loops and when python 3.11 comes this is not gonna be needed due to zero cost exception handling
 ]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-]
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py311"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.flake8-quotes]
+avoid-escape = true
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
+
+[tool.ruff.lint.per-file-ignores]
 
 "tools/*" = [
     "T201",  # got prints in tools
@@ -260,12 +270,6 @@ target-version = "py311"
     "S603",  # Script called by us. No variable input
     "S607",  # Script called by us. Partial executable path is fine.
 ]
-
-[tool.ruff.flake8-quotes]
-avoid-escape = true
-docstring-quotes = "double"
-inline-quotes = "single"
-multiline-quotes = "double"
 
 # -- isort config section --
 

@@ -257,6 +257,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -4352,12 +4353,12 @@ class RestAPI:
     def refresh_general_cache(self) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
-        base_inquierer = self.rotkehlchen.chains_aggregator.base.node_inquirer
-        caches = (
+        base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
+        caches: tuple[tuple[str, CacheType, Callable, Callable, 'UpdatableCacheDataMixin'], ...] = (  # noqa: E501
             ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
-            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquierer),  # noqa: E501
+            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquirer),  # noqa: E501
         )
         for (cache, cache_type, query_method, save_method, inquirer) in caches:
             if inquirer.ensure_cache_data_is_updated(

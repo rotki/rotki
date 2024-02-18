@@ -48,7 +48,7 @@ NATIVE_ASSET_FLOW_ADDRESS: Final = string_to_evm_address('0x40A50cf069e992AA4536
 CLAIMED: Final = b'\xd46\xe9\x97=\x1eD\xd4\r\xb4\xd4\x11\x9e<w<\xad\xb12;&9\x81\x96\x8c\x14\xd3\xd1\x91\xc0\xe1H'  # noqa: E501
 
 
-class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
+class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     def __init__(
             self,

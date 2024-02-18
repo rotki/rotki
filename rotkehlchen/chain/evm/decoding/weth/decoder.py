@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -27,7 +27,7 @@ WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x
 WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
 
 
-class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
+class WethDecoderBase(DecoderInterface, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
