@@ -401,7 +401,7 @@ def is_production() -> bool:
         return False
 
     version = get_current_version().our_version
-    if 'dev' in version:
-        return False
+    if version.dev is None:
+        return True
 
-    return True
+    return False

@@ -1,8 +1,9 @@
 import platform
 import sys
+from importlib.metadata import version
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-import pkg_resources
+from packaging.version import InvalidVersion, Version
 
 from rotkehlchen.errors.misc import RemoteError
 
@@ -23,9 +24,7 @@ def get_system_spec() -> dict[str, str]:
         )
 
     system_spec = {
-        # used to be require 'rotkehlchen.__name__' but as long as setup.py
-        # target differs from package we need this
-        'rotkehlchen': pkg_resources.require('rotkehlchen')[0].version,
+        'rotkehlchen': version('rotkehlchen'),
         'python_implementation': platform.python_implementation(),
         'python_version': platform.python_version(),
         'system': system_info,
@@ -34,8 +33,8 @@ def get_system_spec() -> dict[str, str]:
 
 
 class VersionCheckResult(NamedTuple):
-    our_version: str
-    latest_version: str | None = None
+    our_version: Version
+    latest_version: Version | None = None
     download_url: str | None = None
 
 
@@ -45,29 +44,31 @@ def get_current_version(github: Optional['Github'] = None) -> VersionCheckResult
 
     If there is a remote query error return only our version.
     If there is no newer version for download returns only our current version and latest version.
-    If there is an update returns (our_version_str, latest_version_str, download_url)
+    If there is an update returns (our_version, latest_version, download_url)
     """
-    our_version_str = get_system_spec()['rotkehlchen']
-
+    our_version = Version(get_system_spec()['rotkehlchen'])
     if github is not None:
-        our_version = pkg_resources.parse_version(our_version_str)
         try:
             latest_version_str, url = github.get_latest_release()
         except RemoteError:
             # Completely ignore all remote errors. If Github has problems we just don't check now
-            return VersionCheckResult(our_version=our_version_str)
+            return VersionCheckResult(our_version=our_version)
 
-        latest_version = pkg_resources.parse_version(latest_version_str)
+        try:
+            latest_version = Version(latest_version_str)
+        except (InvalidVersion, TypeError):
+            return VersionCheckResult(our_version=our_version)
+
         if latest_version <= our_version:
             return VersionCheckResult(
-                our_version=our_version_str,
-                latest_version=latest_version_str,
+                our_version=our_version,
+                latest_version=latest_version,
             )
 
         return VersionCheckResult(
-            our_version=our_version_str,
-            latest_version=latest_version_str,
+            our_version=our_version,
+            latest_version=latest_version,
             download_url=url,
         )
 
-    return VersionCheckResult(our_version=our_version_str)
+    return VersionCheckResult(our_version=our_version)

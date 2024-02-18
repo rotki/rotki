@@ -51,11 +51,11 @@ def generate_expected_info(
 
 def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     """Test that endpoint to query the rotki version works if no new version is available"""
-    expected_version = 'v1.1.0'
+    expected_version = '1.1.0'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def patched_get_system_spec() -> dict[str, Any]:
-        return {'rotkehlchen': expected_version}
+        return {'rotkehlchen': f'v{expected_version}'}
 
     def patched_get_latest_release(_klass):
         return expected_version, f'https://github.com/rotki/rotki/releases/tag/{expected_version}'
@@ -153,7 +153,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
     assert result == generate_expected_info(
         expected_version=our_version,
         data_dir=rotki.data_dir,
-        latest_version='v99.99.99',
+        latest_version='99.99.99',
         download_url='https://github.com/rotki/rotki/releases/tag/v99.99.99',
     )
 

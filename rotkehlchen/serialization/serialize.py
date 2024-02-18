@@ -1,6 +1,7 @@
 from typing import Any
 
 from hexbytes import HexBytes
+from packaging.version import Version
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -200,7 +201,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             EvmTokenKind |
             HistoryBaseEntryType |
             EventCategory |
-            AccountingEventType
+            AccountingEventType |
+            Version
     )):
         return str(entry)
     if isinstance(entry, ChainID):

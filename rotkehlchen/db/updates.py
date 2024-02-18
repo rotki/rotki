@@ -64,7 +64,7 @@ class RotkiDataUpdater:
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
-        self.version = pversion.parse(get_current_version().our_version)
+        self.version = get_current_version().our_version
 
     def update_single(
             self,

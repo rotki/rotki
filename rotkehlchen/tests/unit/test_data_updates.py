@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from unittest.mock import patch
 
 import pytest
+from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -229,7 +230,7 @@ def fixture_data_updater(messages_aggregator, database, our_version):
     """Initialize the DataUpdater object, optionally mocking our rotki version"""
     with ExitStack() as stack:
         if our_version is not None:
-            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=our_version)))  # noqa: E501
+            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=Version(our_version))))  # noqa: E501
         return RotkiDataUpdater(
             msg_aggregator=messages_aggregator,
             user_db=database,
