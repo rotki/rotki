@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
+class EvmTransactions(ABC):  # noqa: B024
 
     def __init__(
             self,

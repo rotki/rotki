@@ -218,7 +218,7 @@ class Asset:
 
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
+class AssetWithNameAndType(Asset, abc.ABC):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 
@@ -235,7 +235,7 @@ class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
         return f'{self.identifier}({self.name})'
 
 
-class AssetWithSymbol(AssetWithNameAndType, metaclass=abc.ABCMeta):
+class AssetWithSymbol(AssetWithNameAndType, abc.ABC):
     symbol: str = field(init=False)
 
     def to_dict(self) -> dict[str, Any]:
@@ -245,7 +245,7 @@ class AssetWithSymbol(AssetWithNameAndType, metaclass=abc.ABCMeta):
         return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
 
 
-class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
+class AssetWithOracles(AssetWithSymbol, abc.ABC):
     # None means no special mapping. '' means not supported
     cryptocompare: str | None = field(init=False)
     coingecko: str | None = field(init=False)

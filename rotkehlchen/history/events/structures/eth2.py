@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
@@ -57,7 +57,7 @@ STAKING_DB_INSERT_QUERY_STR = 'eth_staking_events_info(identifier, validator_ind
 STAKING_DB_UPDATE_QUERY_STR = 'UPDATE eth_staking_events_info SET validator_index=?, is_exit_or_blocknumber=?'  # noqa: E501
 
 
-class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):  # noqa: PLW1641  # hash in superclass
+class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superclass
     """An ETH staking related event. Block production/withdrawal"""
 
     def __init__(

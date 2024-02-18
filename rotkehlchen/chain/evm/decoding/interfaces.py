@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -53,7 +53,7 @@ CACHE_QUERY_METHOD_TYPE = (
 )
 
 
-class DecoderInterface(metaclass=ABCMeta):
+class DecoderInterface(ABC):
 
     def __init__(
             self,
@@ -150,7 +150,7 @@ VOTE_CAST_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalTy
 VOTE_CAST_WITH_PARAMS_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"bytes","name":"params","type":"bytes"}],"name":"VoteCastWithParams","type":"event"}'  # noqa: E501
 
 
-class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
+class GovernableDecoderInterface(DecoderInterface, ABC):
     """Decoders of protocols that have voting in Governance
 
     Inheriting decoder classes should add the _decode_vote_cast() method
@@ -214,7 +214,7 @@ class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
         return DecodingOutput(event=event)
 
 
-class ReloadableDecoderMixin(metaclass=ABCMeta):
+class ReloadableDecoderMixin(ABC):
     """Used by decoders of protocols that use data that can be reloaded from the db or from a
     remote data source, to the decoder's memory."""
 
@@ -224,7 +224,7 @@ class ReloadableDecoderMixin(metaclass=ABCMeta):
         Returns only new mappings of addresses to decode functions"""
 
 
-class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
+class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
     """Used by decoders of protocols that have data stored in the globaldb cache
     tables. It can reload them to the decoder's memory.
     """
@@ -288,7 +288,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         return new_decoding_mapping
 
 
-class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, metaclass=ABCMeta):
+class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
     """Used by decoders of protocols that have pools and gauges stored in the globaldb cache
     tables. It can reload them to the decoder's memory.
     """

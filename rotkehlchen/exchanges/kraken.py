@@ -416,8 +416,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             except DeserializationError as e:
                 msg = str(e)
                 self.msg_aggregator.add_error(
-                    'Error processing kraken balance for {kraken_name}. Check logs '
-                    'for details. Ignoring it.',
+                    f'Error processing kraken balance for {kraken_name}. Check logs '
+                    f'for details. Ignoring it.',
                 )
                 log.error(
                     'Error processing kraken balance',

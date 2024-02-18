@@ -2802,7 +2802,7 @@ class DBHandler:
                 ) from e
 
             # else something really bad happened
-            log.error('Unexpected DB error: {msg} while adding a tag')
+            log.error(f'Unexpected DB error: {msg} while adding a tag')
             raise
 
     def edit_tag(

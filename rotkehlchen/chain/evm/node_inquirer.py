@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
@@ -173,7 +173,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EvmNodeInquirer(metaclass=ABCMeta):
+class EvmNodeInquirer(ABC):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:

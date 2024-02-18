@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainTransactions(EvmTransactions, metaclass=ABCMeta):
+class OptimismSuperchainTransactions(EvmTransactions, ABC):
     """
     An intermediary transactions class to be inherited by chains based on the Optimism Superchain.
 

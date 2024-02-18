@@ -47,13 +47,13 @@ BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
 EVENT_IDENTIFIER_PREFIX = 'BNC_'
 
 
-class BinanceEntry(metaclass=abc.ABCMeta):  # noqa: B024
+class BinanceEntry(abc.ABC):  # noqa: B024
     """This is a base BinanceEntry class
     All row combinations in the Binance csv have to be inherited from this base class
     """
 
 
-class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
+class BinanceSingleEntry(BinanceEntry, abc.ABC):
     """Children of this class represent single-row entries
     It means that all required data to create an internal representation
     is contained in one csv row
@@ -85,7 +85,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
         Should be implemented by subclass."""
 
 
-class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
+class BinanceMultipleEntry(BinanceEntry, abc.ABC):
     @abc.abstractmethod
     def are_entries(self, requested_operations: list) -> bool:
         """The subclass's method checks whether requested operations can be processed

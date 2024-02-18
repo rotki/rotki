@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
+class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
     """Base class for Oneinch v3 and v4"""
 
     def __init__(

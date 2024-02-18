@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -31,7 +31,7 @@ log = RotkehlchenLogsAdapter(logger)
 ATTESTED = b'\x8b\xf4k\xf4\xcf\xd6t\xfasZ=c\xec\x1c\x9a\xd4\x15?\x03<)\x03A\xf3\xa5\x88\xb7V\x85\x14\x1b5'  # noqa: E501
 
 
-class EASCommonDecoder(DecoderInterface, metaclass=ABCMeta):
+class EASCommonDecoder(DecoderInterface, ABC):
     """This is the Ethereum Attestation Service common decoder
 
     https://attest.sh/

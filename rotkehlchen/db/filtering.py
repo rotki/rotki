@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -289,7 +289,7 @@ class DBSubStringFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBFilterQuery(metaclass=ABCMeta):
+class DBFilterQuery(ABC):
     and_op: bool
     filters: list[DBFilter]
     join_clause: DBFilter | None = None
@@ -883,7 +883,7 @@ class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
         return [query], bindings
 
 
-class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, metaclass=ABCMeta):  # noqa: E501
+class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, ABC):
 
     @classmethod
     def make(
@@ -1134,7 +1134,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
 
 
-class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
+class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
 
     @classmethod
     def make(

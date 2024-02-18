@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class XdaiBridgeCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
+class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
 
     def __init__(
             self,

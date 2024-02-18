@@ -1,7 +1,7 @@
 import importlib
 import logging
 import pkgutil
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
@@ -117,7 +117,7 @@ class DecodingRules:
         )
 
 
-class EVMTransactionDecoder(metaclass=ABCMeta):
+class EVMTransactionDecoder(ABC):
 
     def __init__(
             self,
@@ -993,7 +993,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         and the counterparty to use if it is."""
 
 
-class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta):
+class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
     def __init__(
             self,
             database: 'DBHandler',

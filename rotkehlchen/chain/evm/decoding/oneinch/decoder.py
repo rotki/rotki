@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 from .constants import CPT_ONEINCH, ONEINCH_ICON, ONEINCH_LABEL
 
 
-class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
+class OneinchCommonDecoder(DecoderInterface, ABC):
 
     def __init__(
             self,

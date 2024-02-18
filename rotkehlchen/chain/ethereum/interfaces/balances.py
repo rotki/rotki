@@ -40,7 +40,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 
 
-class ProtocolWithBalance(metaclass=abc.ABCMeta):
+class ProtocolWithBalance(abc.ABC):
     """
     Interface for protocols that allow to lock tokens and don't return a liquid version of the
     token itself. For example curve gauges or yearn stacked eth. It only queries balances for

@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainTransactionDecoder(EVMTransactionDecoder, metaclass=ABCMeta):
+class OptimismSuperchainTransactionDecoder(EVMTransactionDecoder, ABC):
     """
     An intermediary decoder class to be inherited by chains based on the Optimism Superchain.
 
