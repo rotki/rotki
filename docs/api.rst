@@ -8380,36 +8380,36 @@ Getting eth2 staking performance
       Content-Type: application/json
 
       {
-        "result": {
-	    "sums": {
-		"apr": "0.0597652039949379861158979362586657031468575710584143257025001370766265371913491",
-		"execution": "0.951964836013963505",
-		"exits": "0.0014143880000005993",
-		"outstanding_consensus_pnl": "0.000829238",
-		"sum": "3.2351487110139639043",
-		"withdrawals": "2.2809402489999998"
-	    },
-	    "validators": {
-		"432840": {
-		    "apr": "0.0466762036714707128052091929912369373004480648295118244406922158753010413605874",
-		    "execution": "0.93361811418473",
-		    "exits": "0.0014143880000005993",
-		    "sum": "2.5266283731847305993",
-		    "withdrawals": "1.591595871"
-		},
-		"624729": {
-		    "apr": "0.0130890003234672733106887432674287658464095062289025012618079212013254958307617",
-		    "execution": "0.018346721829233505",
-		    "outstanding_consensus_pnl": "0.000829238",
-		    "sum": "0.708520337829233305",
-		    "withdrawals": "0.6893443779999998"
-		}
-	    },
-	    "entries_found": 2,
-	    "entries_total": 402
-	},
-	"message": ""
-    }
+          "result": {
+              "sums": {
+                  "apr": "0.0597652039949379861158979362586657031468575710584143257025001370766265371913491",
+                  "execution": "0.951964836013963505",
+                  "exits": "0.0014143880000005993",
+                  "outstanding_consensus_pnl": "0.000829238",
+                  "sum": "3.2351487110139639043",
+                  "withdrawals": "2.2809402489999998"
+              },
+              "validators": {
+                  "432840": {
+                      "apr": "0.0466762036714707128052091929912369373004480648295118244406922158753010413605874",
+                      "execution": "0.93361811418473",
+                      "exits": "0.0014143880000005993",
+                      "sum": "2.5266283731847305993",
+                      "withdrawals": "1.591595871"
+                  },
+                  "624729": {
+                      "apr": "0.0130890003234672733106887432674287658464095062289025012618079212013254958307617",
+                      "execution": "0.018346721829233505",
+                      "outstanding_consensus_pnl": "0.000829238",
+                      "sum": "0.708520337829233305",
+                      "withdrawals": "0.6893443779999998"
+                  }
+              },
+              "entries_found": 2,
+              "entries_total": 402
+          },
+          "message": ""
+      }
 
    :resjson object sums: Sums of all the pages of the results
    :resjson object validator: Mapping of validator index to performance for the current page
@@ -10213,8 +10213,8 @@ False positive in spam assets
       Content-Type: application/json
 
       {
-        "result": ['eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'],
-        "message": ""
+          "result": ["eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"],
+          "message": ""
       }
 
   :resjson bool result: list of the assets whitelisted.
