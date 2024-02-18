@@ -314,14 +314,12 @@ Transaction decoding process
 When the endpoint to start the task for decoding undecoded transactions is queried we send ws messages to inform about the progress.
 
 ::
+
     {
-        "type":"evm_undecoded_transactions",
-        "data":{
-            "evm_chain":"ethereum",
-            "total":2,
-            "processed":0
-        }
+        "type": "evm_undecoded_transactions",
+        "data": {evm_chain":"ethereum", "total":2, "processed":0}
     }
+
 
 - ``evm_chain``: Evm chain where the task is decoding transactions.
 - ``total``: Total number of transactions that will be decoded.
