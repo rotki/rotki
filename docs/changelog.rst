@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Binance lending positions and rewards will get properly decoded and displayed again.
 * :bug:`7488` Show tags in multi-lines when multiple to avoid horizontal scroll.
 * :bug:`7497` In ETH staking view execution rewards should now be counted properly. MEV reward and block reward should not both be counted if recipient is not tracked.
 * :bug:`-` ETH withdrawal events should now be taxable again if the setting for their treatment after withdrawals enabled is on (which is by default).

@@ -5,6 +5,7 @@ import os
 import re
 import warnings as test_warnings
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 from urllib.parse import urlencode
 
@@ -15,6 +16,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -28,7 +30,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BUSD, A_LUNA, A_RDN
+from rotkehlchen.tests.utils.constants import A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_FIATBUY_RESPONSE,
@@ -43,6 +45,9 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.utils.misc import ts_now_in_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.price import PriceHistorian
 
 
 def test_name():
@@ -189,20 +194,21 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
             ))
 
 
-def test_binance_query_balances_include_features(function_scope_binance):
+def test_binance_query_balances_include_features(function_scope_binance: Binance):
     """Test that querying binance balances includes the futures wallet"""
     binance = function_scope_binance
     with patch.object(binance.session, 'get', side_effect=mock_binance_balance_response):
         balances, msg = binance.query_balances()
 
     assert msg == ''
-    assert len(balances) == 6
+    assert len(balances) == 7
     assert balances[A_BTC].amount == FVal('4723849.39208129')
     assert balances[A_ETH].amount == FVal('4763368.68006011')
-    assert balances[A_BUSD].amount == FVal('7.49283144')
-    assert balances[A_USDT].amount == FVal('201.01')
+    assert balances[A_BUSD].amount == FVal('5.82211108')
+    assert balances[A_USDT].amount == FVal('201.01000000')
     assert balances[A_DOT].amount == FVal('500.55')
     assert balances[A_WBTC].amount == FVal('2.1')
+    assert balances[A_AXS].amount == FVal('122.09202928')
 
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
@@ -897,3 +903,85 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
         binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
 
     assert count == len(markets)
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_binance_query_lending_interests_history(
+        function_scope_binance: 'Binance',
+        price_historian: 'PriceHistorian',
+):
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+    function_scope_binance.db.add_exchange(
+        name='binance',
+        location=Location.BINANCE,
+        api_key=binance_api_key,
+        api_secret=binance_api_secret,
+    )
+    binance = function_scope_binance
+
+    def mock_my_lendings(url, timeout):  # pylint: disable=unused-argument
+        if 'simple-earn/flexible/history/rewardsRecord' in url:
+            if 'BONUS' in url:
+                return MockResponse(200, """{
+                    "rows": [{
+                        "asset": "BUSD",
+                        "rewards": "0.00006408",
+                        "projectId": "USDT001",
+                        "type": "BONUS",
+                        "time": 7775998000
+                    }],
+                    "total": 2
+                }""")
+            elif 'REALTIME' in url:
+                return MockResponse(200, """{
+                    "rows": [{
+                        "asset": "USDT",
+                        "rewards": "0.00687654",
+                        "projectId": "USDT001",
+                        "type": "REALTIME",
+                        "time": 7775999000
+                    }],
+                    "total": 2
+                }""")
+            else:
+                return MockResponse(200, """{
+                    "rows": [{
+                        "asset": "USDT",
+                        "rewards": "0.00687654",
+                        "projectId": "USDT001",
+                        "type": "REWARDS",
+                        "time": 7776000000
+                    }],
+                    "total": 1
+                }""")
+        elif 'simple-earn/locked/history/rewardsRecord' in url:
+            return MockResponse(200, """{
+                "rows": [{
+                    "positionId": "123123",
+                    "time": 0,
+                    "asset": "BNB",
+                    "lockPeriod": "30",
+                    "amount": "21312.23223"
+                }],
+                "total": 1
+            }""")
+        return MockResponse(200, '[]')
+
+    with (
+        patch.object(binance.session, 'get', side_effect=mock_my_lendings),
+        patch('rotkehlchen.exchanges.binance.PriceHistorian', price_historian),
+        binance.db.conn.cursor() as cursor,
+    ):
+        assert binance.query_lending_interests_history(
+            cursor=cursor,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(API_TIME_INTERVAL_CONSTRAINT_TS),
+        ) is False
+
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE subtype="reward";',
+        ).fetchone()[0] == 4
+
+    assert len(binance.msg_aggregator.consume_errors()) == 0
+    assert len(binance.msg_aggregator.consume_warnings()) == 0

@@ -5,9 +5,9 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from sqlite3 import IntegrityError
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
-from uuid import uuid4
 
 import gevent
 import requests
@@ -80,34 +80,33 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Binance launched at 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
 # https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
-BINANCE_LAUNCH_TS = Timestamp(1500001200)
-API_TIME_INTERVAL_CONSTRAINT_TS = 7776000  # 90 days
-BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS = 2592000  # 30 days
+BINANCE_LAUNCH_TS: Final = Timestamp(1500001200)
+API_TIME_INTERVAL_CONSTRAINT_TS: Final = 7776000  # 90 days
 
 # this determines the length of the data returned, 100 is the maximum value possible.
-BINANCE_LENDING_INTEREST_HISTORY_PAGE_SIZE = 100
+BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE: Final = 100
 
-V3_METHODS = (
+V3_METHODS: Final = (
     'account',
     'myTrades',
     'openOrders',
     'exchangeInfo',
     'time',
 )
-PUBLIC_METHODS = ('exchangeInfo', 'time')
+PUBLIC_METHODS: Final = ('exchangeInfo', 'time')
 
-RETRY_AFTER_LIMIT = 60
+RETRY_AFTER_LIMIT: Final = 60
 # Binance api error codes we check for (all below apis seem to have the same)
 # https://binance-docs.github.io/apidocs/spot/en/#error-codes-2
 # https://binance-docs.github.io/apidocs/futures/en/#error-codes-2
 # https://binance-docs.github.io/apidocs/delivery/en/#error-codes-2
-REJECTED_MBX_KEY = -2015
+REJECTED_MBX_KEY: Final = -2015
 
 
 BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 
-BINANCE_BASE_URL = 'binance.com/'
-BINANCEUS_BASE_URL = 'binance.us/'
+BINANCE_BASE_URL: Final = 'binance.com/'
+BINANCEUS_BASE_URL: Final = 'binance.us/'
 
 
 class BinancePermissionError(RemoteError):
@@ -444,6 +443,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         if isinstance(result, dict):
             if 'data' in result:
                 result = result['data']
+            elif 'rows' in result:
+                result = result['rows']
             elif 'total' in result and result['total'] == 0:
                 # This is a completely undocumented behavior of their api seen in the wild.
                 # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
@@ -534,56 +535,82 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         May raise:
         - RemoteError
         """
-        data = self.api_query_dict('sapi', 'lending/union/account')
-        positions = data.get('positionAmountVos', None)
-        if positions is None:
-            raise RemoteError(
-                f'Could not find key positionAmountVos in lending account data '
-                f'{data} returned by {self.name}.',
-            )
+        all_positions = []
+        try:
+            timestamp = ts_now_in_ms()
+            current = 1
+            while True:  # query all flexible positions
+                if len(positions := self.api_query_list(
+                    api_type='sapi',
+                    method='simple-earn/flexible/position',
+                    options={
+                        'timestamp': timestamp,
+                        'current': current,
+                        'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE,
+                    },
+                )) > 0:
+                    all_positions.append(('totalAmount', positions))
+                    current += 1
+                else:
+                    break
 
-        for entry in positions:
-            try:
-                amount = deserialize_asset_amount(entry['amount'])
-                if amount == ZERO:
+            current = 1
+            while True:  # query all locked position
+                if len(positions := self.api_query_list(
+                    api_type='sapi',
+                    method='simple-earn/locked/position',
+                    options={
+                        'timestamp': timestamp,
+                        'current': current,
+                        'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE,
+                    },
+                )) > 0:
+                    all_positions.append(('amount', positions))
+                    current += 1
+                else:
+                    break
+        except RemoteError as e:
+            raise RemoteError(
+                f'Could not query simple earn account balances at {timestamp}. {e!s}',
+            ) from e
+
+        for amount_key, positions in all_positions:
+            for entry in positions:
+                try:
+                    amount = deserialize_asset_amount(entry[amount_key])
+                    if amount == ZERO:
+                        continue
+
+                    asset = asset_from_binance(entry['asset'])
+                except (UnknownAsset, UnsupportedAsset) as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found un{"known" if isinstance(e, UnknownAsset) else "supported"} '
+                        f'{self.name} asset {e.identifier}. Ignoring its lending balance query.',
+                    )
+                    continue
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        f'Error at deserializing {self.name} asset. {msg}. '
+                        f'Ignoring its lending balance query.',
+                    )
                     continue
 
-                asset = asset_from_binance(entry['asset'])
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported {self.name} asset {e.identifier}. '
-                    f'Ignoring its lending balance query.',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unknown {self.name} asset {e.identifier}. '
-                    f'Ignoring its lending balance query.',
-                )
-                continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    f'Error at deserializing {self.name} asset. {msg}. '
-                    f'Ignoring its lending balance query.',
-                )
-                continue
+                try:
+                    usd_price = Inquirer().find_usd_price(asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing {self.name} balance entry due to inability to '
+                        f'query USD price: {e!s}. Skipping balance entry',
+                    )
+                    continue
 
-            try:
-                usd_price = Inquirer().find_usd_price(asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing {self.name} balance entry due to inability to '
-                    f'query USD price: {e!s}. Skipping balance entry',
+                balances[asset] += Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
                 )
-                continue
-
-            balances[asset] += Balance(
-                amount=amount,
-                usd_value=amount * usd_price,
-            )
 
         return balances
 
@@ -593,23 +620,28 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> bool:
-        """Queries Binance lending interest history, transforms it into `HistoryEvent` objects and saves it in the database.
+        """Queries Binance Simple Earn history, transforms it into `HistoryEvent` objects
+        and saves it in the database.
 
-        "DAILY" -> flexible savings.
-        "CUSTOMIZED_FIXED" -> fixed savings.
-        "ACTIVITY" -> fixed savings but as a result of token partners.
+        "BONUS" -> Bonus tiered APR.
+        "REALTIME" -> Real-time APR.
+        "REWARDS" -> Historical rewards.
 
         `end_ts` - `start_ts` <= 30days. This is handled using `_api_query_list_within_time_delta`
-        using `BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS` as the timedelta.
+        using `API_TIME_INTERVAL_CONSTRAINT_TS` as the timedelta.
 
         Lending Interest History Documentation:
-        https://binance-docs.github.io/apidocs/spot/en/#get-interest-history-user_data-2
+        https://binance-docs.github.io/apidocs/spot/en/#get-flexible-rewards-history-user_data
+        https://binance-docs.github.io/apidocs/spot/en/#get-locked-rewards-history-user_data
 
         May raise:
         - RemoteError
         - BinancePermissionError
-        """  # noqa: E501
+        """
         ranges = DBQueryRanges(self.db)
+        history_events_db = DBHistoryEvents(self.db)
+
+        # Query and save flexible simple earn history
         range_query_name = f'{self.location}_lending_history_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
             cursor=cursor,
@@ -618,35 +650,34 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             end_ts=end_ts,
         )
         for query_start_ts, query_end_ts in ranges_to_query:
-            events = []
-            for lending_type in ('DAILY', 'ACTIVITY', 'CUSTOMIZED_FIXED'):
+            for lending_type in ('BONUS', 'REALTIME', 'REWARDS'):
                 try:
                     response = self._api_query_list_within_time_delta(
                         api_type='sapi',
                         start_ts=query_start_ts,
-                        time_delta=BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS,
+                        time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
                         end_ts=query_end_ts,
-                        method='lending/union/interestHistory',
+                        method='simple-earn/flexible/history/rewardsRecord',
                         additional_options={
-                            'lendingType': lending_type,
-                            'size': BINANCE_LENDING_INTEREST_HISTORY_PAGE_SIZE,
+                            'type': lending_type,
+                            'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE,
                         },
                     )
                 except (RemoteError, BinancePermissionError) as e:
                     self.msg_aggregator.add_error(
-                        f'Failed to query binance lending interest history between '
+                        f'Failed to query binance flexible lending interest history between '
                         f'{query_start_ts} and {query_end_ts}. {e!s}',
                     )
                     return True
 
                 for entry in response:
                     try:
-                        interest_received = deserialize_asset_amount(entry['interest'])
+                        interest_received = deserialize_asset_amount(entry['rewards'])
                         if interest_received == ZERO:
                             continue
 
                         timestamp = TimestampMS(entry['time'])
-                        notes = f'Interest paid from {entry["lendingType"]} {entry["productName"]} savings'  # noqa: E501
+                        notes = f'Interest paid from {entry["type"]} {entry["asset"]} savings'
                     except KeyError as e:
                         self.msg_aggregator.add_error(
                             f'Missing key entry for {e!s} in {self.name} {entry}. '
@@ -671,7 +702,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         continue
 
                     try:
-                        usd_price = PriceHistorian().query_historical_price(
+                        usd_price = PriceHistorian.query_historical_price(
                             from_asset=asset,
                             to_asset=A_USD,
                             timestamp=ts_ms_to_sec(timestamp),
@@ -685,7 +716,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         usd_value = ZERO
 
                     event = HistoryEvent(
-                        event_identifier=uuid4().hex,
+                        event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash  # noqa: E501
                         sequence_index=0,  # since event_identifier is always different
                         timestamp=timestamp,
                         location=self.location,
@@ -699,18 +730,97 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.REWARD,
                     )
-                    events.append(event)
 
-            if len(events) != 0:
-                history_events_db = DBHistoryEvents(self.db)
+                    with self.db.user_write() as write_cursor:
+                        try:
+                            history_events_db.add_history_event(write_cursor, event)
+                        except (IntegrityError, DeserializationError) as e:
+                            log.error(f'Did not add lending history event {event} to the DB due to {e!s}')  # noqa: E501
+
+        # Query and save locked simple earn history
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                response = self._api_query_list_within_time_delta(
+                    api_type='sapi',
+                    start_ts=query_start_ts,
+                    time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                    end_ts=query_end_ts,
+                    method='simple-earn/locked/history/rewardsRecord',
+                    additional_options={'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE},
+                )
+            except (RemoteError, BinancePermissionError) as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to query binance locked lending interest history between '
+                    f'{query_start_ts} and {query_end_ts}. {e!s}',
+                )
+                return True
+
+            for entry in response:
+                try:
+                    interest_received = deserialize_asset_amount(entry['amount'])
+                    if interest_received == ZERO:
+                        continue
+
+                    timestamp = TimestampMS(entry['time'])
+                    notes = f'Interest paid from locked {entry["asset"]} savings'
+                except KeyError as e:
+                    self.msg_aggregator.add_error(
+                        f'Missing key entry for {e!s} in {self.name} {entry}. '
+                        f'Ignoring its lending interest history query.',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error at deserializing {self.name} asset. {e!s}. '
+                        f'Ignoring its lending interest history query.',
+                    )
+                    continue
+
+                try:
+                    asset = asset_from_binance(entry['asset'])
+                except (UnsupportedAsset, UnknownAsset) as e:
+                    error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+                    self.msg_aggregator.add_warning(
+                        f'Found {error_type} {self.name} asset {e.identifier}. '
+                        f'Ignoring its lending interest history query.',
+                    )
+                    continue
+
+                try:
+                    usd_price = PriceHistorian.query_historical_price(
+                        from_asset=asset,
+                        to_asset=A_USD,
+                        timestamp=ts_ms_to_sec(timestamp),
+                    )
+                    usd_value = usd_price * interest_received
+                except NoPriceForGivenTimestamp as e:
+                    log.warning(
+                        f'Could not find USD price of {asset} at {timestamp}. {e!s} '
+                        f'Using zero usd_value for lending history entry.',
+                    )
+                    usd_value = ZERO
+
+                event = HistoryEvent(
+                    event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash
+                    sequence_index=0,  # since event_identifier is always different
+                    timestamp=timestamp,
+                    location=self.location,
+                    location_label=self.name,  # the name of the CEX instance
+                    asset=asset,
+                    balance=Balance(
+                        amount=interest_received,
+                        usd_value=usd_value,
+                    ),
+                    notes=notes,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.REWARD,
+                )
+
                 with self.db.user_write() as write_cursor:
                     try:
-                        history_events_db.add_history_events(write_cursor, events)
-                    except InputError as e:
-                        self.msg_aggregator.add_error(
-                            f'Failed to save Binance {self.name} lending interest history from '
-                            f'{query_start_ts} to {query_end_ts} in the database. {e!s}',
-                        )
+                        history_events_db.add_history_event(write_cursor, event)
+                    except (IntegrityError, DeserializationError) as e:
+                        log.error(f'Did not add lending history event {event} to the DB due to {e!s}')  # noqa: E501
 
             with self.db.user_write() as write_cursor:
                 ranges.update_used_query_range(
@@ -1309,15 +1419,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 'capital/withdraw/history',
                 'fiat/orders',
                 'fiat/payments',
-                'lending/union/interestHistory',
+                'simple-earn/flexible/history/rewardsRecord',
+                'simple-earn/locked/history/rewardsRecord',
             ],
             additional_options: dict | None = None,
     ) -> list[dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
-
-        For 'lending/union/interestHistory', pagination is required, and it is achieved using
-        `current` parameter.
 
         Be aware of:
           - If `start_ts` equals zero, the Binance launch timestamp is used
@@ -1341,7 +1449,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             else end_ts  # Case request without offset (1 request)
         )
         while True:
-            current_page = 1
             options = {
                 'timestamp': ts_now_in_ms(),
                 'startTime': from_ts,
@@ -1349,26 +1456,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             }
             if additional_options:
                 options.update(additional_options)
-                if method == 'lending/union/interestHistory':
-                    options['current'] = current_page
 
-            if method == 'lending/union/interestHistory':
-                # to guard against an infinite loop if binance
-                last_queried_entry: tuple[str, int] = ('', 0)
-                while True:
-                    result = self.api_query_list(api_type, method, options=options)
-                    if (
-                        len(result) == 0 or
-                        last_queried_entry == (result[-1]['asset'], result[-1]['time'])
-                    ):
-                        break
-
-                    results.extend(result)
-                    options['current'] += 1
-                    last_queried_entry = (result[-1]['asset'], result[-1]['time'])
-            else:
-                result = self.api_query_list(api_type, method, options=options)
-                results.extend(result)
+            results.extend(self.api_query_list(api_type, method, options=options))
 
             # Case stop requesting
             if to_ts >= end_ts:
