@@ -2,8 +2,7 @@
 import Fragment from '@/components/helper/Fragment';
 import { externalAssets } from '@/data/external-links';
 
-const isDocker = import.meta.env.VITE_DOCKER;
-const { appVersion, dockerRiskAccepted } = storeToRefs(useMainStore());
+const { appVersion } = storeToRefs(useMainStore());
 
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { navigateToUserLogin } = useAppNavigation();
@@ -92,10 +91,6 @@ const steps = [
             :steps="steps"
           />
         </div>
-        <DockerWarning
-          v-if="!dockerRiskAccepted && isDocker"
-          class="mt-8"
-        />
       </div>
       <AccountManagementFooterText
         #default="{ copyright }"

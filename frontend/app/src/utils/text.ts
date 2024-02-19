@@ -258,6 +258,13 @@ export function consistOfNumbers(text?: string): boolean {
   return /^\d+$/.test(text);
 }
 
+export function isValidUrl(text?: string): boolean {
+  if (!text)
+    return false;
+
+  return /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(text);
+}
+
 // Transform HTML code entities such as &bull; into “•”
 export function decodeHtmlEntities(input: string): string {
   const doc = new DOMParser().parseFromString(input, 'text/html');

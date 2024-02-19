@@ -169,6 +169,7 @@ declare global {
   const isValidDate: typeof import('./utils/date')['isValidDate']
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
   const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
+  const isValidUrl: typeof import('./utils/text')['isValidUrl']
   const isVideo: typeof import('./utils/nft')['isVideo']
   const isWithdrawalEvent: typeof import('./utils/history/events')['isWithdrawalEvent']
   const isWithdrawalEventRef: typeof import('./utils/history/events')['isWithdrawalEventRef']
@@ -910,6 +911,7 @@ declare module 'vue' {
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
+    readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
     readonly isVideo: UnwrapRef<typeof import('./utils/nft')['isVideo']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
@@ -1644,6 +1646,7 @@ declare module '@vue/runtime-core' {
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
+    readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
     readonly isVideo: UnwrapRef<typeof import('./utils/nft')['isVideo']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
