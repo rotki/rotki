@@ -9,7 +9,7 @@ import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type {
   DataTableColumn,
   DataTableOptions,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type {
   AddressBookEntry,
   AddressBookLocation,
@@ -27,7 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
   (e: 'update:page', page: number): void;
-  (e: 'update:options', pagination: DataTableOptions): void;
+  (e: 'update:options', pagination: DataTableOptions<AddressBookEntry>): void;
   (e: 'refresh'): void;
 }>();
 
@@ -37,7 +37,7 @@ function setPage(page: number) {
   emit('update:page', page);
 }
 
-function updatePagination(pagination: DataTableOptions) {
+function updatePagination(pagination: DataTableOptions<AddressBookEntry>) {
   return emit('update:options', pagination);
 }
 
@@ -99,7 +99,7 @@ function edit(item: AddressBookEntry) {
   emit('edit', item);
 }
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AddressBookEntry>[]>(() => [
   {
     label: t('common.address').toString(),
     key: 'address',
@@ -139,7 +139,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             total: itemLength,
           }"
           :pagination-modifiers="{ external: true }"
-          row-attr=""
+          row-attr="address"
           outlined
           :server-items-length="itemLength"
           @update:options="updatePagination($event)"
@@ -148,7 +148,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             <AccountDisplay
               :account="{
                 address: row.address,
-                chain: row.blockchain,
+                chain: row.blockchain ?? 'ALL',
               }"
               :use-alias-name="false"
               :truncate="false"

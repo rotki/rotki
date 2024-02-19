@@ -3,19 +3,19 @@ import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
-    value?: string;
+    modelValue?: string;
     locations?: string[];
     previewLocationBalance?: Record<string, BigNumber> | null;
   }>(),
   {
-    value: '',
+    modelValue: '',
     locations: () => [],
     previewLocationBalance: null,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'input', location: string): void;
+  (e: 'update:model-value', location: string): void;
 }>();
 
 const model = useSimpleVModel(props, emit);
@@ -40,8 +40,8 @@ const { t } = useI18n();
       :menu-props="{ top: true }"
       outlined
       clearable
-      :persistent-hint="!value"
-      :hide-details="!!value"
+      :persistent-hint="!modelValue"
+      :hide-details="!!modelValue"
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
       :label="t('common.location')"
     />

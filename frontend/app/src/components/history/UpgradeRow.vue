@@ -30,9 +30,9 @@ const { xs } = useDisplay();
       :colspan="xs ? 2 : colspan"
       class="font-medium py-2"
     >
-      <i18n
+      <i18n-t
         v-if="events"
-        path="upgrade_row.events"
+        keypath="upgrade_row.events"
         tag="div"
         class="md:text-center"
       >
@@ -64,11 +64,11 @@ const { xs } = useDisplay();
             :timestamp="timeEnd"
           />
         </template>
-      </i18n>
-      <i18n
+      </i18n-t>
+      <i18n-t
         v-else
         tag="div"
-        path="upgrade_row.upgrade"
+        keypath="upgrade_row.upgrade"
         class="md:text-center"
       >
         <template #total>
@@ -87,7 +87,7 @@ const { xs } = useDisplay();
             color="primary"
           />
         </template>
-      </i18n>
+      </i18n-t>
     </td>
   </tr>
 </template>

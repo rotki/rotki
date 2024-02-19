@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common/lib/messages';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';
+
+interface Location {
+  location: string;
+  number: number;
+}
 
 const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
@@ -25,7 +30,7 @@ onMounted(() => {
 
 const { t } = useI18n();
 
-const headers: DataTableColumn[] = [
+const headers: DataTableColumn<Location>[] = [
   {
     label: t('common.location'),
     key: 'location',
@@ -41,7 +46,7 @@ const headers: DataTableColumn[] = [
   },
 ];
 
-const locationsData = computed(() =>
+const locationsData = computed<Location[]>(() =>
   Object.entries(get(skippedEvents).locations).map(([location, number]) => ({
     location,
     number,

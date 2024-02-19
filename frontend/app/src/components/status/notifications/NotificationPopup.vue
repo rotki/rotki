@@ -44,13 +44,12 @@ const { dark } = useTheme();
     v-model="visibleNotification.display"
     :class="css.popup"
     :timeout="visibleNotification.duration"
-    top
-    right
+    location="top right"
     :light="!dark"
     app
     rounded
     width="400px"
-    @input="displayed([visibleNotification.id])"
+    @update:model-value="displayed([visibleNotification.id])"
   >
     <Notification
       popup

@@ -64,12 +64,12 @@ const notificationStyle = {
     width="400px"
     absolute
     clipped
-    :value="visible"
+    :model-value="visible"
     :stateless="dialogVisible"
-    right
+    location="right"
     temporary
-    hide-overlay
-    @input="input($event)"
+    :scrim="false"
+    @update:model-value="input($event)"
   >
     <div
       v-if="visible"

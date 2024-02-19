@@ -96,7 +96,7 @@ onMounted(() => {
           v-model="refreshEnabled"
           class="mt-3"
           :label="t('frontend_settings.label.refresh_enabled')"
-          @change="update($event)"
+          @update:model-value="update($event)"
         />
       </SettingsOption>
     </div>

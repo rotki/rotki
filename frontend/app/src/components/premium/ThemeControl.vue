@@ -11,13 +11,13 @@ withDefaults(
   },
 );
 
-const { showComponents } = storeToRefs(usePremiumStore());
+const premium = usePremium();
 </script>
 
 <template>
   <div>
     <ThemeSwitch
-      v-if="showComponents"
+      v-if="premium"
       :dark-mode-enabled="darkModeEnabled"
       :in-menu="menu"
     >

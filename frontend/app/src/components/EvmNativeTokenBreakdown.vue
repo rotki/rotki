@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { BigNumber } from '@rotki/common/lib';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
 
 const props = withDefaults(
@@ -39,13 +40,13 @@ const breakdowns = computed(() => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<AssetBreakdown>> = ref({
   column: 'usdValue',
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
-  const headers: DataTableColumn[] = [
+const tableHeaders = computed<DataTableColumn<AssetBreakdown>[]>(() => {
+  const headers: DataTableColumn<AssetBreakdown>[] = [
     {
       label: t('common.location'),
       key: 'location',
@@ -97,9 +98,9 @@ function percentage(value: BigNumber) {
 
 <template>
   <RuiDataTable
+    v-model:sort="sort"
     :cols="tableHeaders"
     :rows="breakdowns"
-    :sort.sync="sort"
     :empty="{ description: t('data_table.no_data') }"
     row-attr="location"
     outlined

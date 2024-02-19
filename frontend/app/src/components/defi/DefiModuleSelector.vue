@@ -11,19 +11,19 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    value?: string;
+    modelValue?: string;
     items?: Module[];
     attach?: string;
   }>(),
   {
-    value: '',
+    modelValue: '',
     items: () => [],
     attach: undefined,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: string): void;
+  (e: 'update:model-value', value: string): void;
 }>();
 
 const model = useSimpleVModel(props, emit);
@@ -43,25 +43,18 @@ const modules = computed<SupportedModule[]>(() => {
     v-model="model"
     data-cy="defi-input"
     :items="modules"
-    :attach="attach"
     item-value="identifier"
-    item-text="name"
+    item-title="name"
     auto-select-first
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #selection="{ attrs, item }">
+    <template #selection="{ item }">
       <DefiIcon
-        v-bind="attrs"
-        :item="item"
+        :item="item.raw"
       />
     </template>
-    <template #item="{ attrs, item }">
+    <template #item="{ item }">
       <DefiIcon
-        v-bind="attrs"
-        :item="item"
+        :item="item.raw"
       />
     </template>
   </VAutocomplete>

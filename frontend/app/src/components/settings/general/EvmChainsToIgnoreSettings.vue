@@ -36,7 +36,7 @@ function getChainNames(chains: Blockchain[]) {
   return (chains ?? []).map(getEvmChainName);
 }
 
-function filter(chain: Blockchain, queryText: string) {
+function filter(chain: string, queryText: string) {
   const item = get(supportedChains).find(blockchain => blockchain.id === chain);
   if (!item)
     return false;
@@ -50,7 +50,7 @@ function filter(chain: Blockchain, queryText: string) {
   return nameIncludes || idIncludes;
 }
 
-function removeChain(chain: Blockchain) {
+function removeChain(chain: string) {
   return getChainNames(get(skippedChains).filter(c => c !== chain));
 }
 </script>
@@ -73,41 +73,40 @@ function removeChain(chain: Blockchain) {
       <VAutocomplete
         :disabled="loading"
         :items="items"
-        :filter="filter"
+        :custom-filter="filter"
         :label="t('account_form.labels.blockchain', 2)"
-        :value="skippedChains"
-        :success-messages="success"
+        :model-value="skippedChains"
+        :messages="success"
         :error-messages="error"
         :class="css['chain-select']"
         chips
-        small-chips
-        deletable-chips
+        closable-chips
         multiple
         clearable
         data-cy="account-chain-skip-detection-field"
-        outlined
+        variant="outlined"
         auto-select-first
-        @input="update(getChainNames($event))"
+        @update:model-value="update(getChainNames($event))"
       >
         <template #selection="{ item }">
           <RuiChip
             size="sm"
             variant="filled"
             closeable
-            @click:close="updateImmediate(removeChain(item))"
+            @click:close="updateImmediate(removeChain(item.raw))"
           >
             <span class="flex gap-1 -ml-1">
               <ChainIcon
-                :chain="item"
+                :chain="item.raw"
                 size="0.875rem"
               />
-              {{ getChainName(item).value }}
+              {{ getChainName(item.raw).value }}
             </span>
           </RuiChip>
         </template>
         <template #item="{ item }">
           <ChainDisplay
-            :chain="item"
+            :chain="item.raw"
             dense
           />
         </template>

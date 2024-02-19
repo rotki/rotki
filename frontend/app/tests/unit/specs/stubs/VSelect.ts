@@ -1,11 +1,11 @@
 const VSelectStub = {
   template: `
     <div>
-      <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
+      <input :value="modelValue" class="input" type="text" @input="$emit('update:model-value', $event.value)">
     </div>
   `,
   props: {
-    value: { type: String },
+    modelValue: { type: String },
   },
 };
 

@@ -1,36 +1,34 @@
 <script setup lang="ts">
-const rootAttrs = useAttrs();
+defineOptions({
+  inheritAttrs: false,
+});
+
 const { costBasisMethodData } = useCostBasisMethod();
 </script>
 
 <template>
   <VSelect
-    v-bind="rootAttrs"
-    outlined
+    v-bind="$attrs"
+    variant="outlined"
     persistent-hint
     item-value="identifier"
-    item-text="identifier"
+    item-title="identifier"
     :items="costBasisMethodData"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #item="{ item, attrs, on }">
+    <template #item="{ item, props }">
       <ListItem
         no-padding
         no-hover
-        v-bind="attrs"
-        :subtitle="item.label"
-        v-on="on"
+        v-bind="props"
+        :subtitle="item.raw.label"
       >
         <template #title>
-          <span class="uppercase">{{ item.identifier }}</span>
+          <span class="uppercase">{{ item.raw.identifier }}</span>
         </template>
       </ListItem>
     </template>
     <template #selection="{ item }">
-      <span class="font-medium uppercase">{{ item.identifier }}</span>
+      <span class="font-medium uppercase">{{ item.raw.identifier }}</span>
     </template>
   </VSelect>
 </template>

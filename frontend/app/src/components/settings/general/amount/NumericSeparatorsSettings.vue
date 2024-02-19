@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
-import Fragment from '@/components/helper/Fragment';
 import { toMessages } from '@/utils/validation';
 
 const thousandSeparator = ref<string>('');
@@ -84,51 +83,49 @@ onMounted(() => {
 </script>
 
 <template>
-  <Fragment>
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="thousandSeparator"
-      frontend-setting
-      :error-message="t('general_settings.validation.thousand_separator.error')"
-      :success-message="thousandsSuccessMessage"
-    >
-      <RuiTextField
-        v-model="thousandSeparator"
-        variant="outlined"
-        color="primary"
-        maxlength="1"
-        class="general-settings__fields__thousand-separator"
-        :label="t('general_settings.amount.label.thousand_separator')"
-        type="text"
-        :success-messages="success"
-        :error-messages="
-          error || toMessages(v$.thousandSeparator)
-        "
-        @input="callIfThousandsValid($event, update)"
-      />
-    </SettingsOption>
+  <SettingsOption
+    #default="{ error, success, update }"
+    setting="thousandSeparator"
+    frontend-setting
+    :error-message="t('general_settings.validation.thousand_separator.error')"
+    :success-message="thousandsSuccessMessage"
+  >
+    <RuiTextField
+      v-model="thousandSeparator"
+      variant="outlined"
+      color="primary"
+      maxlength="1"
+      class="general-settings__fields__thousand-separator"
+      :label="t('general_settings.amount.label.thousand_separator')"
+      type="text"
+      :success-messages="success"
+      :error-messages="
+        error || toMessages(v$.thousandSeparator)
+      "
+      @input="callIfThousandsValid($event, update)"
+    />
+  </SettingsOption>
 
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="decimalSeparator"
-      frontend-setting
-      :error-message="t('general_settings.validation.decimal_separator.error')"
-      :success-message="decimalsSuccessMessage"
-    >
-      <RuiTextField
-        v-model="decimalSeparator"
-        variant="outlined"
-        color="primary"
-        maxlength="1"
-        class="general-settings__fields__decimal-separator"
-        :label="t('general_settings.amount.label.decimal_separator')"
-        type="text"
-        :success-messages="success"
-        :error-messages="
-          error || toMessages(v$.decimalSeparator)
-        "
-        @input="callIfDecimalsValid($event, update)"
-      />
-    </SettingsOption>
-  </Fragment>
+  <SettingsOption
+    #default="{ error, success, update }"
+    setting="decimalSeparator"
+    frontend-setting
+    :error-message="t('general_settings.validation.decimal_separator.error')"
+    :success-message="decimalsSuccessMessage"
+  >
+    <RuiTextField
+      v-model="decimalSeparator"
+      variant="outlined"
+      color="primary"
+      maxlength="1"
+      class="general-settings__fields__decimal-separator"
+      :label="t('general_settings.amount.label.decimal_separator')"
+      type="text"
+      :success-messages="success"
+      :error-messages="
+        error || toMessages(v$.decimalSeparator)
+      "
+      @input="callIfDecimalsValid($event, update)"
+    />
+  </SettingsOption>
 </template>

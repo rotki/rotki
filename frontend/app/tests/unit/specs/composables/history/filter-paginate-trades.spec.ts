@@ -1,4 +1,5 @@
 import flushPromises from 'flush-promises';
+import type Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { LocationQuery } from '@/types/route';
@@ -8,12 +9,11 @@ import type {
   TradeEntry,
   TradeRequestPayload,
 } from '@/types/history/trade';
-import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+    ref({
+      query: ref({}),
     }),
   ),
   useRouter: vi.fn().mockReturnValue({

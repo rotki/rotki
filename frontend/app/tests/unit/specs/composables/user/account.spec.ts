@@ -1,6 +1,6 @@
 import { beforeAll, describe, it, vi } from 'vitest';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(),

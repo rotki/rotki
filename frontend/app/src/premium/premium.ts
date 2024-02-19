@@ -1,5 +1,31 @@
-import Vue from 'vue';
+import { app } from '@/main';
+import { setupPremium } from '@/premium/setup-premium';
+import type { Component } from 'vue';
 import type * as Chart from 'chart.js';
+
+class AsyncLock {
+  promise: Promise<void>;
+  disable: () => void;
+
+  private locked: boolean = false;
+
+  get isLocked() {
+    return this.locked;
+  }
+
+  constructor() {
+    this.disable = () => {};
+    this.promise = Promise.resolve();
+  }
+
+  enable() {
+    this.locked = true;
+    this.promise = new Promise(resolve => this.disable = () => {
+      this.locked = false;
+      resolve();
+    });
+  }
+}
 
 class ComponentLoadFailedError extends Error {
   constructor() {
@@ -19,15 +45,24 @@ if (checkIfDevelopment()) {
   findComponents().forEach(component => (window[component] = undefined));
 }
 
+const lock = new AsyncLock();
+
 async function loadComponents(): Promise<string[]> {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
+    if (lock.isLocked)
+      await lock.promise;
+
+    lock.enable();
+
     let components = findComponents();
     if (components.length > 0) {
       resolve(components);
+      lock.disable();
       return;
     }
 
+    await setupPremium();
     const api = useStatisticsApi();
     const result = await api.queryStatisticsRenderer();
     const script = document.createElement('script');
@@ -38,11 +73,13 @@ async function loadComponents(): Promise<string[]> {
 
     if (components.length === 0) {
       reject(new Error('There was no component loaded'));
+      lock.disable();
       return;
     }
 
     script.addEventListener('error', reject);
     resolve(components);
+    lock.disable();
   });
 }
 
@@ -51,13 +88,13 @@ export async function loadLibrary() {
   // @ts-expect-error
   const library = window[component];
   if (!library.installed) {
-    Vue.use(library.install);
+    app.use(library);
     library.installed = true;
   }
   return library;
 }
 
-async function load(name: string) {
+async function load(name: string): Promise<Component> {
   try {
     const library = await loadLibrary();
     if (library[name])
@@ -82,62 +119,46 @@ async function ThemeSwitchLock() {
   return import('@/components/premium/ThemeSwitchLock.vue');
 }
 
-function createFactory(component: Promise<any>, options?: { loading?: any; error?: any }) {
-  return {
-    component,
-    loading: options?.loading ?? PremiumLoading,
-    error: options?.error ?? PremiumLoadingError,
+function createFactory(component: string, options?: { loading?: Component; error?: Component }) {
+  return defineAsyncComponent({
+    loader: () => load(component),
+    loadingComponent: options?.loading ?? PremiumLoading,
+    errorComponent: options?.error ?? PremiumLoadingError,
     delay: 500,
     timeout: 30000,
-  };
-}
-
-export const PremiumStatistics = () => createFactory(load('PremiumStatistics'));
-
-export const VaultEventsList = () => createFactory(load('VaultEventsList'));
-
-export const LendingHistory = () => createFactory(load('LendingHistory'));
-
-export function CompoundLendingDetails() {
-  return createFactory(load('CompoundLendingDetails'));
-}
-
-export function CompoundBorrowingDetails() {
-  return createFactory(load('CompoundBorrowingDetails'));
-}
-
-export function YearnVaultsProfitDetails() {
-  return createFactory(load('YearnVaultsProfitDetails'));
-}
-
-export function AaveBorrowingDetails() {
-  return createFactory(load('AaveBorrowingDetails'));
-}
-
-export const AaveEarnedDetails = () => createFactory(load('AaveEarnedDetails'));
-
-export const EthStaking = () => createFactory(load('EthStaking'));
-
-export const UniswapDetails = () => createFactory(load('UniswapDetails'));
-
-export function AssetAmountAndValueOverTime() {
-  return createFactory(load('AssetAmountAndValueOverTime'));
-}
-
-export const BalancerBalances = () => createFactory(load('BalancerBalances'));
-
-export const ThemeChecker = () => createFactory(load('ThemeChecker'));
-
-export function ThemeSwitch() {
-  return createFactory(load('ThemeSwitch'), {
-    loading: ThemeSwitchLock,
-    error: ThemeSwitchLock,
   });
 }
 
-export const ThemeManager = () => createFactory(load('ThemeManager'));
+export const PremiumStatistics = createFactory('PremiumStatistics');
 
-export const Sushi = () => createFactory(load('Sushi'));
+export const CompoundLendingDetails = createFactory('CompoundLendingDetails');
+
+export const CompoundBorrowingDetails = createFactory('CompoundBorrowingDetails');
+
+export const YearnVaultsProfitDetails = createFactory('YearnVaultsProfitDetails');
+
+export const AaveBorrowingDetails = createFactory('AaveBorrowingDetails');
+
+export const AaveEarnedDetails = createFactory('AaveEarnedDetails');
+
+export const EthStaking = createFactory('EthStaking');
+
+export const UniswapDetails = createFactory('UniswapDetails');
+
+export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOverTime');
+
+export const BalancerBalances = createFactory('BalancerBalances');
+
+export const ThemeChecker = createFactory('ThemeChecker');
+
+export const ThemeSwitch = createFactory('ThemeSwitch', {
+  loading: ThemeSwitchLock,
+  error: ThemeSwitchLock,
+});
+
+export const ThemeManager = createFactory('ThemeManager');
+
+export const Sushi = createFactory('Sushi');
 
 declare global {
   interface Window {

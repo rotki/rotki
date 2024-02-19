@@ -149,14 +149,14 @@ setSubmitFunc(save);
       />
       <VCombobox
         v-model="customAssetType"
+        v-model:search-input="search"
         data-cy="type"
         :items="types"
-        outlined
+        variant="outlined"
         persistent-hint
         clearable
         :label="t('common.type')"
         :error-messages="toMessages(v$.type)"
-        :search-input.sync="search"
       />
     </div>
     <RuiTextArea

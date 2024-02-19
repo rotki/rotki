@@ -401,18 +401,18 @@ const addressSuggestions = computed(() =>
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
+      v-model:asset="asset"
+      v-model:amount="amount"
+      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
-      :asset.sync="asset"
-      :amount.sync="amount"
-      :usd-value.sync="usdValue"
     />
 
     <RuiDivider class="my-10" />
 
     <HistoryEventTypeForm
-      :event-type.sync="eventType"
-      :event-subtype.sync="eventSubtype"
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
       :counterparty="counterparty"
       :v$="v$"
     />
@@ -469,7 +469,7 @@ const addressSuggestions = computed(() =>
       <VAutocomplete
         v-model="product"
         clearable
-        outlined
+        variant="outlined"
         required
         auto-select-first
         :disabled="historyEventLimitedProducts.length === 0"
@@ -500,15 +500,15 @@ const addressSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
+    <VExpansionPanels>
+      <VExpansionPanel elevation="0">
+        <VExpansionPanelTitle
           class="p-0"
           data-cy="evm-event-form__advance-toggle"
         >
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
+        </VExpansionPanelTitle>
+        <VExpansionPanelText
           class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
         >
           <RuiTextField
@@ -525,7 +525,7 @@ const addressSuggestions = computed(() =>
             v-model="extraData"
             :label="t('transactions.events.form.extra_data.label')"
           />
-        </VExpansionPanelContent>
+        </VExpansionPanelText>
       </VExpansionPanel>
     </VExpansionPanels>
   </div>

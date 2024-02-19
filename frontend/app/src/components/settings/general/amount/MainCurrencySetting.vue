@@ -31,33 +31,32 @@ function calculateFontSize(symbol: string) {
   >
     <VSelect
       v-model="selectedCurrency"
-      outlined
+      variant="outlined"
       class="general-settings__fields__currency-selector"
       :label="t('general_settings.amount.labels.main_currency')"
-      item-text="tickerSymbol"
+      item-title="tickerSymbol"
       return-object
       :items="currencies"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event ? $event.tickerSymbol : $event)"
+      @update:model-value="update($event ? $event.tickerSymbol : $event)"
     >
-      <template #item="{ item, attrs, on }">
+      <template #item="{ item, props }">
         <ListItem
-          :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
+          :id="`currency__${item.raw.tickerSymbol.toLocaleLowerCase()}`"
           no-hover
           no-padding
           size="lg"
-          v-bind="attrs"
-          :title="item.name"
+          v-bind="props"
+          :title="item.raw.name"
           :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
-          v-on="on"
         >
           <template #avatar>
             <div
               class="font-bold text-rui-primary"
-              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+              :style="{ fontSize: calculateFontSize(item.raw.unicodeSymbol) }"
             >
-              {{ item.unicodeSymbol }}
+              {{ item.raw.unicodeSymbol }}
             </div>
           </template>
         </ListItem>

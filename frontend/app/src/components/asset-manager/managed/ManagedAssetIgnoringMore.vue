@@ -35,16 +35,16 @@ function toggleSpam() {
     <VMenu
       max-width="250px"
       min-width="200px"
-      left
+      location="left"
       offset-y
       transition="slide-y-transition"
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RuiButton
           class="!p-1"
           icon
           variant="text"
-          v-on="on"
+          v-bind="props"
         >
           <RuiIcon
             name="arrow-down-s-line"
@@ -69,6 +69,7 @@ function toggleSpam() {
           {{ t('ignore.whitelist.action.add') }}
         </RuiButton>
         <RuiButton
+
           variant="list"
           size="sm"
           @click="toggleSpam()"

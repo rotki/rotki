@@ -22,9 +22,9 @@ onMounted(() => {
       :value="!animationsEnabled"
       class="general-settings__fields__animation-enabled mt-0"
       :label="t('frontend_settings.label.animations')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

@@ -1,7 +1,13 @@
 <script lang="ts" setup>
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
+
+interface LocationData {
+  evmChain: string;
+  processed: number;
+  total: number;
+}
 
 defineProps<{
   refreshing: boolean;
@@ -51,7 +57,7 @@ async function redecodeMissingEvents() {
   await refresh();
 }
 
-const headers: DataTableColumn[] = [
+const headers: DataTableColumn<LocationData>[] = [
   {
     label: t('common.location'),
     key: 'evmChain',
@@ -72,7 +78,7 @@ const headers: DataTableColumn[] = [
   },
 ];
 
-const locationsData = computed(() =>
+const locationsData = computed<LocationData[]>(() =>
   Object.entries(get(unDecodedEventsBreakdown)).map(([evmChain, number]) => {
     const progress = get(evmUndecodedTransactionsStatus)[evmChain];
     const total = progress?.total || number;
@@ -138,9 +144,9 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             color="primary"
             :value="(data.processed / data.total) * 100"
           />
-          <i18n
+          <i18n-t
             tag="span"
-            path="transactions.events_decoding.events_processed"
+            keypath="transactions.events_decoding.events_processed"
           >
             <template #processed>
               {{ data.processed }}
@@ -148,7 +154,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             <template #total>
               {{ data.total }}
             </template>
-          </i18n>
+          </i18n-t>
         </div>
         <div v-else>
           -

@@ -168,12 +168,12 @@ watch(identifier, (assetId) => {
       </RuiButton>
     </template>
     <CustomAssetTable
+      v-model:expanded="expanded"
       :assets="state.data"
       :loading="loading"
       :server-item-length="state.found"
       :filters="filters"
       :matchers="matchers"
-      :expanded.sync="expanded"
       :options="options"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"

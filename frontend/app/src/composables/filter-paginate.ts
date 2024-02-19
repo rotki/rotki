@@ -3,7 +3,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { isEmpty, isEqual } from 'lodash-es';
 import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
-import type { DataTableOptions } from '@rotki/ui-library-compat';
+import type { DataTableOptions } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ZodSchema } from 'zod';
@@ -38,7 +38,7 @@ export function usePaginationFilters<
   X extends SearchMatcher<string, string> | void = undefined,
 >(locationOverview: MaybeRef<string | null>, mainPage: MaybeRef<boolean>, filterSchema: () => FilterSchema<W, X>, fetchAssetData: (payload: MaybeRef<U>) => Promise<S>, options: {
   onUpdateFilters?: (query: LocationQuery) => void;
-  extraParams?: ComputedRef<LocationQuery>;
+  extraParams?: ComputedRef<RawLocationQuery>;
   customPageParams?: ComputedRef<Partial<U>>;
   defaultParams?: ComputedRef<Partial<U> | undefined>;
   defaultCollection?: () => S;
@@ -51,9 +51,7 @@ export function usePaginationFilters<
   const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
-  const paginationOptions: Ref<TablePagination<V>> = ref(
-    defaultOptions<V>(options.defaultSortBy),
-  );
+  const paginationOptions: Ref<TablePagination<V>> = ref(markRaw(defaultOptions<V>(options.defaultSortBy)));
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
   const editableItem: Ref<V | undefined> = ref();
@@ -249,7 +247,7 @@ export function usePaginationFilters<
    * Returns the parsed pagination and filter query params
    * @returns {LocationQuery}
    */
-  const getQuery = (): RawLocationQuery => {
+  const getQuery = (): LocationQuery => {
     const opts = get(paginationOptions);
     assert(opts);
     const { itemsPerPage, page, sortBy, sortDesc } = opts;
@@ -312,7 +310,7 @@ export function usePaginationFilters<
    * This is for the new table from lib, when all is migrated, then we'll remove setOptions
    * @param {DataTableOptions} data
    */
-  const setTableOptions = (data: DataTableOptions) => {
+  const setTableOptions = (data: DataTableOptions<V>) => {
     const { pagination, sort } = data;
     const { page, itemsPerPage } = get(paginationOptions);
 
@@ -328,7 +326,7 @@ export function usePaginationFilters<
     setOptions({
       page: pagination?.page ?? page,
       itemsPerPage: pagination?.limit ?? itemsPerPage,
-      sortBy: sort?.column ? [sort.column as keyof V] : [],
+      sortBy: sort?.column ? [sort.column] : [],
       sortDesc: sort?.column ? [sort.direction === 'desc'] : [],
     });
   };

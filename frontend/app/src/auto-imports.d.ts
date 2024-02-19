@@ -196,8 +196,8 @@ declare global {
   const nonEmptyProperties: typeof import('./utils/data')['nonEmptyProperties']
   const onActivated: typeof import('vue')['onActivated']
   const onBeforeMount: typeof import('vue')['onBeforeMount']
-  const onBeforeRouteLeave: typeof import('vue-router/composables')['onBeforeRouteLeave']
-  const onBeforeRouteUpdate: typeof import('vue-router/composables')['onBeforeRouteUpdate']
+  const onBeforeRouteLeave: typeof import('vue-router')['onBeforeRouteLeave']
+  const onBeforeRouteUpdate: typeof import('vue-router')['onBeforeRouteUpdate']
   const onBeforeUnmount: typeof import('vue')['onBeforeUnmount']
   const onBeforeUpdate: typeof import('vue')['onBeforeUpdate']
   const onClickOutside: typeof import('@vueuse/core')['onClickOutside']
@@ -502,7 +502,7 @@ declare global {
   const useHistoryTransactionDecoding: typeof import('./composables/history/events/tx/decoding')['useHistoryTransactionDecoding']
   const useHistoryTransactions: typeof import('./composables/history/events/tx/index')['useHistoryTransactions']
   const useHistoryTransactionsForm: typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']
-  const useI18n: typeof import('./composables/usei18n')['useI18n']
+  const useI18n: typeof import('vue-i18n')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history/index')['useIgnore']
   const useIgnoredAssetsStore: typeof import('./store/assets/ignored')['useIgnoredAssetsStore']
@@ -525,7 +525,7 @@ declare global {
   const useLastLanguage: typeof import('./composables/session/language')['useLastLanguage']
   const useLatestPriceForm: typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']
   const useLatestPrices: typeof import('./composables/price-manager/latest/index')['useLatestPrices']
-  const useLink: typeof import('vue-router/composables')['useLink']
+  const useLink: typeof import('vue-router')['useLink']
   const useLinks: typeof import('./composables/links')['useLinks']
   const useLiquidityPosition: typeof import('./composables/defi/index')['useLiquidityPosition']
   const useLiquityApi: typeof import('./composables/api/defi/liquity')['useLiquityApi']
@@ -610,8 +610,8 @@ declare global {
   const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
   const useResizeObserver: typeof import('@vueuse/core')['useResizeObserver']
   const useRound: typeof import('@vueuse/math')['useRound']
-  const useRoute: typeof import('vue-router/composables')['useRoute']
-  const useRouter: typeof import('vue-router/composables')['useRouter']
+  const useRoute: typeof import('vue-router')['useRoute']
+  const useRouter: typeof import('vue-router')['useRouter']
   const useSavedFilter: typeof import('./composables/filters/saved')['useSavedFilter']
   const useScramble: typeof import('./composables/scramble')['useScramble']
   const useScreenOrientation: typeof import('@vueuse/core')['useScreenOrientation']
@@ -937,8 +937,8 @@ declare module 'vue' {
     readonly nonEmptyProperties: UnwrapRef<typeof import('./utils/data')['nonEmptyProperties']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
-    readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router/composables')['onBeforeRouteLeave']>
-    readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router/composables')['onBeforeRouteUpdate']>
+    readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
+    readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router')['onBeforeRouteUpdate']>
     readonly onBeforeUnmount: UnwrapRef<typeof import('vue')['onBeforeUnmount']>
     readonly onBeforeUpdate: UnwrapRef<typeof import('vue')['onBeforeUpdate']>
     readonly onClickOutside: UnwrapRef<typeof import('@vueuse/core')['onClickOutside']>
@@ -1243,7 +1243,7 @@ declare module 'vue' {
     readonly useHistoryTransactionDecoding: UnwrapRef<typeof import('./composables/history/events/tx/decoding')['useHistoryTransactionDecoding']>
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
     readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
-    readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
+    readonly useI18n: UnwrapRef<typeof import('vue-i18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
@@ -1266,7 +1266,7 @@ declare module 'vue' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
+    readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
@@ -1351,8 +1351,8 @@ declare module 'vue' {
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
-    readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
-    readonly useRouter: UnwrapRef<typeof import('vue-router/composables')['useRouter']>
+    readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
+    readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSavedFilter: UnwrapRef<typeof import('./composables/filters/saved')['useSavedFilter']>
     readonly useScramble: UnwrapRef<typeof import('./composables/scramble')['useScramble']>
     readonly useScreenOrientation: UnwrapRef<typeof import('@vueuse/core')['useScreenOrientation']>
@@ -1671,8 +1671,8 @@ declare module '@vue/runtime-core' {
     readonly nonEmptyProperties: UnwrapRef<typeof import('./utils/data')['nonEmptyProperties']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
-    readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router/composables')['onBeforeRouteLeave']>
-    readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router/composables')['onBeforeRouteUpdate']>
+    readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
+    readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router')['onBeforeRouteUpdate']>
     readonly onBeforeUnmount: UnwrapRef<typeof import('vue')['onBeforeUnmount']>
     readonly onBeforeUpdate: UnwrapRef<typeof import('vue')['onBeforeUpdate']>
     readonly onClickOutside: UnwrapRef<typeof import('@vueuse/core')['onClickOutside']>
@@ -1977,7 +1977,7 @@ declare module '@vue/runtime-core' {
     readonly useHistoryTransactionDecoding: UnwrapRef<typeof import('./composables/history/events/tx/decoding')['useHistoryTransactionDecoding']>
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
     readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
-    readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
+    readonly useI18n: UnwrapRef<typeof import('vue-i18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
@@ -2000,7 +2000,7 @@ declare module '@vue/runtime-core' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
+    readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
@@ -2085,8 +2085,8 @@ declare module '@vue/runtime-core' {
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
-    readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
-    readonly useRouter: UnwrapRef<typeof import('vue-router/composables')['useRouter']>
+    readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
+    readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSavedFilter: UnwrapRef<typeof import('./composables/filters/saved')['useSavedFilter']>
     readonly useScramble: UnwrapRef<typeof import('./composables/scramble')['useScramble']>
     readonly useScreenOrientation: UnwrapRef<typeof import('@vueuse/core')['useScreenOrientation']>

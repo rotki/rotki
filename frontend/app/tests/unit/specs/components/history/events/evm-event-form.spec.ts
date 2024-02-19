@@ -1,10 +1,10 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
@@ -18,7 +18,7 @@ vi.mock('json-editor-vue', () => ({
 
 describe('evmEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<EvmEventForm>;
+  let wrapper: VueWrapper<InstanceType<typeof EvmEventForm>>;
 
   const groupHeader: EvmHistoryEvent = {
     identifier: 14344,
@@ -44,16 +44,22 @@ describe('evmEventForm.vue', () => {
     txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
   };
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
+  const createWrapper = (options: ComponentMountingOptions<typeof EvmEventForm> = {}) => {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(EvmEventForm, {
-      pinia,
-      vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
+
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          'i18n-t': true,
+          'VAutocomplete': VAutocompleteStub,
+          'VCombobox': VComboboxStub,
+        },
       },
       ...options,
     });
@@ -62,7 +68,7 @@ describe('evmEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -93,12 +99,12 @@ describe('evmEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
           nextSequence: '10',
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -141,13 +147,13 @@ describe('evmEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
           editableItem: groupHeader,
           nextSequence: '10',
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -190,8 +196,8 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    wrapper = createWrapper({ props: { groupHeader } });
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -202,8 +208,8 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    wrapper = createWrapper({ props: { groupHeader } });
+    await nextTick();
     await flushPromises();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -214,8 +220,8 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    wrapper = createWrapper({ props: { groupHeader } });
+    await nextTick();
     await flushPromises();
 
     const { counterparties } = useHistoryEventMappings();
@@ -226,8 +232,8 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    wrapper = createWrapper({ props: { groupHeader } });
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -238,7 +244,7 @@ describe('evmEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const keysFromGlobalMappings = Object.keys(
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {},
@@ -254,8 +260,8 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    wrapper = createWrapper({ props: { groupHeader } });
+    await nextTick();
     await flushPromises();
 
     expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
@@ -266,7 +272,7 @@ describe('evmEventForm.vue', () => {
     await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
       value: '1inch',
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
       'disabled',
@@ -277,7 +283,7 @@ describe('evmEventForm.vue', () => {
     await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
       value: selectedCounterparty,
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const { historyEventProductsMapping } = useHistoryEventMappings();
 

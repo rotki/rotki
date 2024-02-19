@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ButtonProps } from '@rotki/ui-library-compat';
+import type { ButtonProps } from '@rotki/ui-library';
 
 defineOptions({
   inheritAttrs: false,
@@ -41,10 +41,6 @@ withDefaults(
         :size="size"
         :retain-focus-on-click="retainFocusOnClick"
         v-bind="$attrs"
-        v-on="
-          // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-          $listeners
-        "
       >
         <slot />
       </RuiButton>

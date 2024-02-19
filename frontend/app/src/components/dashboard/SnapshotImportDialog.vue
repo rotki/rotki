@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const props = withDefaults(
   defineProps<{
-    value: boolean;
+    modelValue: boolean;
     balanceFile: File | null;
     locationFile: File | null;
     loading?: boolean;
@@ -14,7 +14,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: boolean): void;
+  (e: 'update:model-value', value: boolean): void;
   (e: 'import'): boolean;
   (e: 'update:balance-file', file: File | null): void;
   (e: 'update:location-file', file: File | null): void;
@@ -50,11 +50,11 @@ const complete = logicAnd(balanceFile, locationFile);
     max-width="600"
     :persistent="persistent"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         color="primary"
         variant="outlined"
-        v-on="on"
+        v-bind="props"
       >
         <template #prepend>
           <RuiIcon name="folder-received-line" />

@@ -7,11 +7,11 @@ import type {
 } from '@rotki/common/lib/staking/eth2';
 
 defineProps<{
-  value: EthStakingFilter;
+  modelValue: EthStakingFilter;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: EthStakingFilter): void;
+  (e: 'update:model-value', value: EthStakingFilter): void;
 }>();
 
 const chain = Blockchain.ETH;
@@ -21,11 +21,11 @@ const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const { t } = useI18n();
 
 function updateValidators(validators: Eth2ValidatorEntry[]) {
-  emit('input', { validators });
+  emit('update:model-value', { validators });
 }
 
 function updateAccounts(accounts: GeneralAccount[]) {
-  emit('input', { accounts });
+  emit('update:model-value', { accounts });
 }
 
 watch(accounts, accounts => updateAccounts(accounts));
@@ -33,7 +33,7 @@ watch(accounts, accounts => updateAccounts(accounts));
 
 <template>
   <BlockchainAccountSelector
-    v-if="'accounts' in value"
+    v-if="'accounts' in modelValue"
     v-model="accounts"
     no-padding
     flat
@@ -45,8 +45,8 @@ watch(accounts, accounts => updateAccounts(accounts));
   />
   <ValidatorFilterInput
     v-else
-    :value="value.validators"
+    :model-value="modelValue.validators"
     :items="eth2Validators.entries"
-    @input="updateValidators($event)"
+    @update:model-value="updateValidators($event)"
   />
 </template>

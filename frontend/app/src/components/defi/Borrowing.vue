@@ -127,20 +127,20 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
             class="borrowing__vault-selection"
             :label="t('borrowing.select_loan')"
             chips
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
             item-key="identifier"
             :items="loans"
-            item-text="identifier"
+            item-title="identifier"
             hide-details
             clearable
             :open-on-clear="false"
           >
             <template #selection="{ item }">
-              <DefiSelectorItem :item="item" />
+              <DefiSelectorItem :item="item.raw" />
             </template>
             <template #item="{ item }">
-              <DefiSelectorItem :item="item" />
+              <DefiSelectorItem :item="item.raw" />
             </template>
           </VAutocomplete>
           <div class="p-2 text-body-2 text-rui-text-secondary">

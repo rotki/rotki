@@ -25,7 +25,7 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
     scrollable
     max-width="450px"
   >
-    <template #activator="{ on, attrs }">
+    <template #activator="{ props }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -36,8 +36,7 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
             color="primary"
             icon
             size="sm"
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
           >
             <RuiIcon name="external-link-line" />
           </RuiButton>
@@ -49,16 +48,16 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
       <template #header>
         {{ t('liquidity_pool_details.title') }}
       </template>
-      <template v-for="(token, key) in balance.assets">
+      <template
+        v-for="(token, key) in balance.assets"
+        :key="token.asset"
+      >
         <RuiDivider
           v-if="key > 0"
           :key="`${token.asset}divider`"
           class="my-3"
         />
-        <div
-          :key="token.asset"
-          class="flex items-center gap-4"
-        >
+        <div class="flex items-center gap-4">
           <AssetIcon
             :identifier="token.asset"
             size="24px"

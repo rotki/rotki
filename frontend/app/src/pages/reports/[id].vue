@@ -96,9 +96,9 @@ async function regenerateReport() {
         v-if="showUpgradeMessage"
         type="warning"
       >
-        <i18n
+        <i18n-t
           tag="div"
-          path="profit_loss_report.upgrade"
+          keypath="profit_loss_report.upgrade"
           class="text-subtitle-1"
         >
           <template #processed>
@@ -110,10 +110,10 @@ async function regenerateReport() {
               class="font-medium"
             />
           </template>
-        </i18n>
-        <i18n
+        </i18n-t>
+        <i18n-t
           tag="div"
-          path="profit_loss_report.upgrade2"
+          keypath="profit_loss_report.upgrade2"
         >
           <template #link>
             <ExternalLink
@@ -121,7 +121,7 @@ async function regenerateReport() {
               premium
             />
           </template>
-        </i18n>
+        </i18n-t>
       </RuiAlert>
       <AccountingSettingsDisplay :accounting-settings="settings" />
       <div class="flex gap-2">

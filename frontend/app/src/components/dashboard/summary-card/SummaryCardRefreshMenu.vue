@@ -34,10 +34,11 @@ const css = useCssModule();
       offset-y
       :close-on-content-click="false"
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RefreshButton
           :loading="loading"
           :tooltip="tooltip"
+          v-bind="props"
           @refresh="refresh()"
         />
         <RuiButton
@@ -45,7 +46,6 @@ const css = useCssModule();
           icon
           variant="text"
           size="sm"
-          v-on="on"
         >
           <RuiIcon
             size="16"

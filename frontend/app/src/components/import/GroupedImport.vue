@@ -128,14 +128,14 @@ const form = computed(
       <VSelect
         v-model="selectedSource"
         :label="t('import_data.select_source.title')"
-        outlined
+        variant="outlined"
         :items="sources"
         item-value="identifier"
-        item-text="name"
+        item-title="name"
         :hide-details="true"
       >
         <template
-          v-for="slotName in ['item', 'selection']"
+          v-for="slotName in ['item', 'selection'] as const"
           #[slotName]="data"
         >
           <div
@@ -145,19 +145,19 @@ const form = computed(
           >
             <AdaptiveWrapper>
               <AppImage
-                v-if="data.item.logo"
-                :src="data.item.logo"
+                v-if="data.item.raw.logo"
+                :src="data.item.raw.logo"
                 size="1.875rem"
                 contain
               />
               <RuiIcon
-                v-else-if="data.item.icon"
+                v-else-if="data.item.raw.icon"
                 size="30"
                 class="text-rui-light-text-secondary"
-                :name="data.item.icon"
+                :name="data.item.raw.icon"
               />
             </AdaptiveWrapper>
-            {{ data.item.name }}
+            {{ data.item.raw.name }}
           </div>
         </template>
       </VSelect>

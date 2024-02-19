@@ -26,11 +26,11 @@ onMounted(() => {
     <VSwitch
       v-model="calculatePastCostBasis"
       class="accounting-settings__past-cost-basis"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.calculate_past_cost_basis')"
       color="primary"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

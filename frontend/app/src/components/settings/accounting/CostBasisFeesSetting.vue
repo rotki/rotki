@@ -29,11 +29,11 @@ function getSuccessMessage(enabled: boolean) {
     <VSwitch
       v-model="includeFeesInCostBasis"
       class="accounting-settings__include-fees-in-cost-basis"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.include_fees_in_cost_basis')"
       color="primary"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

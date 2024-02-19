@@ -1,32 +1,30 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
-  type WrapperArray,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
-import { PiniaVuePlugin } from 'pinia';
 import { expect } from 'vitest';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
 import '../../../i18n';
 
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
-
 describe('prioritizedList.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof PrioritizedList>>;
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
+  const createWrapper = (options: ComponentMountingOptions<typeof PrioritizedList>) => {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PrioritizedList, {
-      pinia,
-      vuetify,
-      stubs: ['action-status-indicator'],
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: ['action-status-indicator'],
+      },
       ...options,
     });
   };
@@ -39,8 +37,8 @@ describe('prioritizedList.vue', () => {
       { identifier: 'value4' },
     ]);
     wrapper = createWrapper({
-      propsData: {
-        value: ['value1', 'value2', 'value3'],
+      props: {
+        modelValue: ['value1', 'value2', 'value3'],
         allItems,
         itemDataName: 'item data',
         disableAdd: false,
@@ -101,11 +99,11 @@ describe('prioritizedList.vue', () => {
   });
 
   const entryOrderOf = (
-    entries: WrapperArray<PrioritizedListEntry>,
+    entries: VueWrapper<InstanceType<typeof PrioritizedListEntry>>[],
   ): string[] => {
     const entryIds: string[] = [];
-    entries.wrappers.forEach(
-      (wrapper: Wrapper<PrioritizedListEntry, Element>) => {
+    entries.forEach(
+      (wrapper: VueWrapper<InstanceType<typeof PrioritizedListEntry>>) => {
         entryIds.push(wrapper.props().data.identifier);
       },
     );
@@ -113,10 +111,8 @@ describe('prioritizedList.vue', () => {
   };
 
   const emittedInputEventItems = (): string[] => {
-    // @ts-expect-error
-    expect(wrapper.emitted().input.length).toBe(1);
-    // @ts-expect-error
-    const emitted = wrapper.emitted().input[0];
+    expect(wrapper.emitted()['update:model-value'].length).toBe(1);
+    const emitted = wrapper.emitted()['update:model-value'][0];
     return emitted[0];
   };
 });

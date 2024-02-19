@@ -9,6 +9,10 @@ import type { ComputedRef } from 'vue';
 
 type AccountWithChain = GeneralAccount<BlockchainSelection>;
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     label?: string;
@@ -16,7 +20,7 @@ const props = withDefaults(
     loading?: boolean;
     usableAddresses?: string[];
     multiple?: boolean;
-    value: AccountWithChain[];
+    modelValue: AccountWithChain[];
     chains: string[];
     outlined?: boolean;
     dense?: boolean;
@@ -44,12 +48,11 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: AccountWithChain[]): void;
+  (e: 'update:model-value', value: AccountWithChain[]): void;
 }>();
 
 const {
   chains,
-  value,
   usableAddresses,
   hideOnEmptyUsable,
   multiple,
@@ -63,7 +66,7 @@ const { t } = useI18n();
 const { accounts } = useAccountBalances();
 
 const internalValue = computed(() => {
-  const accounts = get(value);
+  const accounts = props.modelValue;
   if (get(multiple))
     return accounts;
 
@@ -114,7 +117,7 @@ const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
 
 const hintText = computed(() => {
   const all = t('blockchain_account_selector.all').toString();
-  const selection = get(value);
+  const selection = props.modelValue;
   if (Array.isArray(selection))
     return selection.length > 0 ? selection.length.toString() : all;
 
@@ -132,7 +135,12 @@ const displayedAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-function filter(item: AccountWithChain, queryText: string) {
+function filter(_value: string, queryText: string, itemValue?: { raw: AccountWithChain }) {
+  const item = itemValue?.raw;
+
+  if (!item)
+    return false;
+
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
   const text = (
     get(addressNameSelector(item.address, chain)) ?? ''
@@ -166,7 +174,7 @@ function filterOutElements(
 }
 
 function input(nextValue: null | AccountWithChain | AccountWithChain[]) {
-  const previousValue = get(value);
+  const previousValue = props.modelValue;
   let result: AccountWithChain[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
@@ -179,7 +187,7 @@ function input(nextValue: null | AccountWithChain | AccountWithChain[]) {
     result = nextValue ? [nextValue] : [];
   }
 
-  emit('input', result);
+  emit('update:model-value', result);
 }
 
 const getItemKey = (item: AccountWithChain) => item.address + item.chain;
@@ -191,11 +199,11 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
   <div>
     <DefineAutocomplete>
       <VAutocomplete
-        :value="internalValue"
+        v-model:search-input="search"
+        :model-value="internalValue"
         :items="displayedAccounts"
-        :filter="filter"
+        :custom-filter="filter"
         auto-select-first
-        :search-input.sync="search"
         :multiple="multiple"
         :loading="loading"
         :disabled="loading"
@@ -205,15 +213,16 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
         return-object
         chips
         single-line
+        v-bind="$attrs"
         clearable
-        :dense="dense"
+        :density="dense ? 'compact' : undefined"
         :outlined="outlined"
-        :item-text="getItemKey"
+        :item-title="getItemKey"
         :open-on-clear="false"
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"
         class="blockchain-account-selector"
-        @input="input($event)"
+        @update:model-value="input($event)"
       >
         <template #no-data>
           <span class="text-caption px-2">
@@ -223,16 +232,17 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
         <template #selection="data">
           <RuiChip
             v-if="multiple"
-            :key="data.item.chain + data.item.address"
-            v-bind="data.attrs"
+            :key="data.item.raw.chain + data.item.raw.address"
             clickable
             closeable
             size="sm"
             class="m-0.5"
-            @click:close="data.parent.selectItem(data.item)"
+            @click:close="emit('update:model-value', Array.isArray(modelValue) ? [
+              ...modelValue, data.item.raw,
+            ] : [data.item.raw])"
           >
             <AccountDisplay
-              :account="data.item"
+              :account="data.item.raw"
               :hide-chain-icon="hideChainIcon"
             />
           </RuiChip>
@@ -241,7 +251,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
             class="overflow-x-hidden"
           >
             <AccountDisplay
-              :account="data.item"
+              :account="data.item.raw"
               :hide-chain-icon="hideChainIcon"
               class="pr-2"
             />
@@ -257,14 +267,14 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
                 size="sm"
               >
                 <AccountDisplay
-                  :account="data.item"
+                  :account="data.item.raw"
                   :hide-chain-icon="hideChainIcon"
                 />
               </RuiChip>
             </div>
             <TagDisplay
               class="mb-1"
-              :tags="data.item.tags"
+              :tags="data.item.raw.tags"
               :small="true"
             />
           </div>

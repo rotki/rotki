@@ -121,13 +121,12 @@ watch(tag, () => {
           {{ t('tag_creator.labels.foreground') }}
         </template>
         <VColorPicker
-          flat
+          elevation="0"
           class="w-full"
           data-cy="tag-creator__color-picker__foreground"
           mode="hexa"
-          hide-mode-switch
-          :value="`#${tag.foregroundColor}`"
-          @update:color="
+          :model-value="`#${tag.foregroundColor}`"
+          @update:model-value="
             changed({ foregroundColor: $event.hex.replace('#', '') })
           "
         />
@@ -137,12 +136,11 @@ watch(tag, () => {
           {{ t('tag_creator.labels.background') }}
         </template>
         <VColorPicker
-          flat
+          elevation="0"
           data-cy="tag-creator__color-picker__background"
-          hide-mode-switch
           mode="hexa"
-          :value="`#${tag.backgroundColor}`"
-          @update:color="
+          :model-value="`#${tag.backgroundColor}`"
+          @update:model-value="
             changed({ backgroundColor: $event.hex.replace('#', '') })
           "
         />

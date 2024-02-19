@@ -393,7 +393,7 @@ watch(loading, async (isLoading, wasLoading) => {
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
           <DataTable
             v-model="selected"
-            :expanded.sync="expanded"
+            v-model:expanded="expanded"
             :headers="tableHeaders"
             :items="data"
             :loading="isLoading"

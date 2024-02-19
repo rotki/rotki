@@ -1,5 +1,5 @@
-import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { type VueWrapper, mount } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
@@ -11,17 +11,21 @@ vi.mock('json-editor-vue', () => ({
 
 describe('historyEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<HistoryEventForm>;
+  let wrapper: VueWrapper<InstanceType<typeof HistoryEventForm>>;
 
   const createWrapper = () => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(HistoryEventForm, {
-      pinia,
-      vuetify,
-      stubs: {
-        VSelect: VSelectStub,
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          VSelect: VSelectStub,
+        },
       },
     });
   };
@@ -39,7 +43,7 @@ describe('historyEventForm.vue', () => {
       await entryTypeInput.trigger('input', {
         value: item,
       });
-      nextTick(() => {
+      await nextTick(() => {
         const id = item.split(/ /g).join('-');
         expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
       });

@@ -3,7 +3,7 @@ import type { Ref } from 'vue';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type {
   HistoricalPrice,
   HistoricalPriceFormPayload,
@@ -11,14 +11,14 @@ import type {
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref([
+const sort: Ref<DataTableSortData<HistoricalPrice>> = ref([
   {
     column: 'timestamp',
     direction: 'desc' as const,
   },
 ]);
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
@@ -199,13 +199,13 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         </AssetSelect>
       </div>
       <RuiDataTable
+        v-model:sort="sort"
         outlined
         dense
         :cols="headers"
         :loading="loading"
         :rows="items"
-        row-attr=""
-        :sort.sync="sort"
+        row-attr="fromAsset"
       >
         <template #item.fromAsset="{ row }">
           <AssetDetails :asset="row.fromAsset" />

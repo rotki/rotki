@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnderlyingToken } from '@rotki/common/lib/data';
 
 defineProps<{ tokens: UnderlyingToken[] }>();
 
 const { t } = useI18n();
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<UnderlyingToken>[]>(() => [
   {
     label: t('common.address'),
     key: 'address',

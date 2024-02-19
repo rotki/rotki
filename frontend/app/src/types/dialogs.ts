@@ -1,4 +1,4 @@
-import type { ContextColorsType } from '@rotki/ui-library-compat';
+import type { ContextColorsType } from '@rotki/ui-library';
 
 export const DialogType = {
   SUCCESS: 'success',

@@ -2,16 +2,16 @@
 import type { UserNote } from '@/types/notes';
 
 const props = defineProps<{
-  value: Partial<UserNote>;
+  modelValue: Partial<UserNote>;
   editMode: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', newInput: Partial<UserNote>): void;
+  (e: 'update:model-value', newInput: Partial<UserNote>): void;
   (e: 'reset'): void;
 }>();
 
-const modelValue = useSimpleVModel(props, emit);
+const model = useVModel(props, 'modelValue', emit);
 
 function resetForm() {
   emit('reset');
@@ -34,6 +34,8 @@ const { t } = useI18n();
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
-    <UserNotesForm v-model="modelValue" />
+    <UserNotesForm
+      v-model="model"
+    />
   </BigDialog>
 </template>

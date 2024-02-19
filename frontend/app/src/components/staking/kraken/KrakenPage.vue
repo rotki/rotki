@@ -73,9 +73,9 @@ const refresh = () => load(true);
         />
       </InternalLink>
 
-      <i18n
+      <i18n-t
         tag="h6"
-        path="kraken_page.page.description"
+        keypath="kraken_page.page.description"
         class="font-light text-h6 text-rui-text-secondary"
       >
         <template #link>
@@ -83,7 +83,7 @@ const refresh = () => load(true);
             {{ t('kraken_page.page.api_key') }}
           </InternalLink>
         </template>
-      </i18n>
+      </i18n-t>
     </FullSizeContent>
     <ProgressScreen v-else-if="loading">
       <template #message>

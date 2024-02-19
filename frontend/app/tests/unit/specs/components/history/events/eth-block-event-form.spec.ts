@@ -1,10 +1,10 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
@@ -13,7 +13,7 @@ import type { EthBlockEvent } from '@/types/history/events';
 
 describe('ethBlockEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<EthBlockEventForm>;
+  let wrapper: VueWrapper<InstanceType<typeof EthBlockEventForm>>;
 
   const groupHeader: EthBlockEvent = {
     identifier: 11336,
@@ -36,16 +36,18 @@ describe('ethBlockEventForm.vue', () => {
     blockNumber: 444,
   };
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
+  const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {}) => {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(EthBlockEventForm, {
-      pinia,
-      vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
+
+      global: {
+        plugins: [pinia, vuetify],
+        stubs: {
+          VAutocomplete: VAutocompleteStub,
+          VCombobox: VComboboxStub,
+        },
       },
       ...options,
     });
@@ -54,7 +56,7 @@ describe('ethBlockEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -87,11 +89,11 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -129,12 +131,12 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
           editableItem: groupHeader,
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (

@@ -83,6 +83,10 @@ function updateRenderingSetting(value: string, update: (value: any) => void) {
 }
 
 const css = useCssModule();
+
+watch(whitelistedDomainsForNftImages, (whitelist) => {
+  onChange(whitelist);
+});
 </script>
 
 <template>
@@ -97,9 +101,9 @@ const css = useCssModule();
           }}
         </template>
         <template #subheader>
-          <i18n
+          <i18n-t
             tag="div"
-            path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
+            keypath="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
           >
             <template #link>
               <ExternalLink
@@ -109,7 +113,7 @@ const css = useCssModule();
                 {{ t('common.here') }}
               </ExternalLink>
             </template>
-          </i18n>
+          </i18n-t>
         </template>
       </RuiCardHeader>
     </div>
@@ -127,12 +131,12 @@ const css = useCssModule();
         @input="updateRenderingSetting($event, update)"
       >
         <template #default>
-          <RuiRadio internal-value="all">
+          <RuiRadio value="all">
             {{
               t('general_settings.nft_setting.label.render_setting.allow_all')
             }}
           </RuiRadio>
-          <RuiRadio internal-value="whitelisted">
+          <RuiRadio value="whitelisted">
             {{
               t(
                 'general_settings.nft_setting.label.render_setting.only_allow_whitelisted',
@@ -158,12 +162,11 @@ const css = useCssModule();
           "
           persistent-hint
           chips
-          outlined
-          deletable-chips
+          variant="outlined"
+          closable-chips
           clearable
           multiple
           :disabled="renderAllNftImages === 'all'"
-          @change="onChange($event)"
         />
       </SettingsOption>
       <RuiButton

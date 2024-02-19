@@ -6,13 +6,17 @@ import {
   type AirdropDetail,
   Airdrops,
   type PoapDelivery,
+  type PoapDeliveryDetails,
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
+import type { BigNumber } from '@rotki/common';
 import type { GeneralAccount } from '@rotki/common/lib/account';
 import type { Ref } from 'vue';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';
+
+type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
@@ -20,7 +24,7 @@ const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 
-const expanded: Ref<Airdrop[]> = ref([]);
+const expanded: Ref<AirdropWithIndex[]> = ref([]);
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.unclaimed'), value: false },
@@ -38,7 +42,7 @@ const airdrops: Ref<Airdrops> = ref({});
 
 const airdropAddresses = computed(() => Object.keys(get(airdrops)));
 
-const entries = computed(() => {
+const entries = computed<AirdropWithIndex[]>(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);
   const airdrops = get(airdropList(addresses));
   return airdrops
@@ -46,10 +50,11 @@ const entries = computed(() => {
     .map((value, index) => ({
       ...value,
       index,
+      amount: value.amount ? value.amount : Zero,
     }));
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<AirdropWithIndex>[]>(() => [
   {
     label: t('airdrops.headers.source'),
     key: 'source',
@@ -142,9 +147,11 @@ async function fetchAirdrops() {
   }
 }
 
-const hasDetails = (source: string): boolean => [AIRDROP_POAP].includes(source);
+function hasDetails(details?: PoapDeliveryDetails[]): details is PoapDeliveryDetails[] {
+  return !!details && details.length > 0;
+}
 
-function expand(item: Airdrop) {
+function expand(item: AirdropWithIndex) {
   set(expanded, get(expanded).includes(item) ? [] : [item]);
 }
 
@@ -193,20 +200,20 @@ onMounted(async () => {
           :items="statusFilters"
           class="w-full flex-1"
           item-value="value"
-          item-text="text"
+          item-title="text"
           hide-details
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
         />
       </div>
 
       <RuiDataTable
+        v-model:expanded="expanded"
         outlined
         :rows="entries"
         :cols="tableHeaders"
         :loading="loading"
         single-expand
-        :expanded.sync="expanded"
         row-attr="index"
       >
         <template #item.address="{ row }">
@@ -214,7 +221,7 @@ onMounted(async () => {
         </template>
         <template #item.amount="{ row }">
           <AmountDisplay
-            v-if="!hasDetails(row.source)"
+            v-if="!hasDetails(row.details)"
             :value="row.amount"
             :asset="row.asset"
           />
@@ -236,7 +243,7 @@ onMounted(async () => {
         </template>
         <template #item.expand="{ row }">
           <ExternalLink
-            v-if="!hasDetails(row.source)"
+            v-if="!hasDetails(row.details)"
             :url="row.link"
             custom
           >
@@ -259,7 +266,7 @@ onMounted(async () => {
         </template>
         <template #expanded-item="{ row }">
           <PoapDeliveryAirdrops
-            v-if="hasDetails(row.source)"
+            v-if="hasDetails(row.details)"
             :items="row.details"
             :colspan="tableHeaders.length"
             visible

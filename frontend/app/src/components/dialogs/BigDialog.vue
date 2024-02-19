@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { DialogType, themes } from '@/types/dialogs';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -8,8 +12,8 @@ const props = withDefaults(
     display: boolean;
     loading?: boolean;
     actionDisabled?: boolean;
-    primaryAction?: string | null;
-    secondaryAction?: string | null;
+    primaryAction?: string;
+    secondaryAction?: string;
     confirmType?: DialogType;
     maxWidth?: string;
     persistent?: boolean;
@@ -18,8 +22,8 @@ const props = withDefaults(
     subtitle: '',
     loading: false,
     actionDisabled: false,
-    primaryAction: () => null,
-    secondaryAction: () => null,
+    primaryAction: undefined,
+    secondaryAction: undefined,
     confirmType: DialogType.INFO,
     maxWidth: '900px',
     persistent: false,
@@ -49,7 +53,7 @@ const css = useCssModule();
 
 <template>
   <VBottomSheet
-    :value="display"
+    :model-value="display"
     v-bind="$attrs"
     over
     :persistent="persistent"
@@ -58,7 +62,7 @@ const css = useCssModule();
     :max-width="maxWidth"
     @click:outside="!persistent && cancel()"
     @keydown.esc.stop="!persistent && cancel()"
-    @input="!persistent && cancel()"
+    @update:model-value="!persistent && cancel()"
   >
     <RuiCard
       data-cy="bottom-dialog"

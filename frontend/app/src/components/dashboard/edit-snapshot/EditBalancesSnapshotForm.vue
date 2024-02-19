@@ -117,11 +117,11 @@ function updateAsset(asset: string) {
           <template #default>
             <RuiRadio
               :label="t('dashboard.snapshot.edit.dialog.balances.token')"
-              internal-value="token"
+              value="token"
             />
             <RuiRadio
               :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
-              internal-value="nft"
+              value="nft"
             />
           </template>
         </RuiRadioGroup>
@@ -146,8 +146,8 @@ function updateAsset(asset: string) {
           class="mb-1.5"
           :error-messages="toMessages(v$.assetIdentifier)"
           :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
-          @blur="updateAsset($event.target.value)"
         />
+        <!-- @blur="updateAsset($event.target.value)" temporarily removed until we figure out what's wrong -->
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">

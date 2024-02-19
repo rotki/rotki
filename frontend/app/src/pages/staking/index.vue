@@ -78,16 +78,16 @@ onBeforeMount(async () => {
   <div class="container">
     <RuiCard>
       <VSelect
-        :value="location"
-        outlined
+        :model-value="location"
+        variant="outlined"
         hide-details
         :items="staking"
         :label="t('staking_page.dropdown_label')"
         item-value="id"
-        @change="updateLocation($event)"
+        @update:model-value="updateLocation($event)"
       >
         <template
-          v-for="slot in ['item', 'selection']"
+          v-for="slot in ['item', 'selection'] as const"
           #[slot]="data"
         >
           <div
@@ -103,10 +103,10 @@ onBeforeMount(async () => {
                 width="24px"
                 contain
                 max-height="24px"
-                :src="data.item.image"
+                :src="data.item.raw.image"
               />
             </AdaptiveWrapper>
-            {{ data.item.name }}
+            {{ data.item.raw.name }}
           </div>
         </template>
       </VSelect>

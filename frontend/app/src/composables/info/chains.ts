@@ -109,7 +109,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return Blockchain.ETH;
   };
 
-  const getChainImageUrl = (chain: MaybeRef<Blockchain>): ComputedRef<string> =>
+  const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> =>
     computed(() => {
       const chainVal = get(chain);
       const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;

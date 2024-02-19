@@ -30,9 +30,9 @@ const component: ComputedRef = computed(() => {
     class="pinned-sidebar"
     clipped
     width="560px"
-    right
+    location="right"
     temporary
-    hide-overlay
+    :scrim="false"
   >
     <div>
       <Component

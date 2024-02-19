@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import type { Ref } from 'vue';
 import type {
   AssetUpdateConflictResult,
@@ -168,60 +167,58 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Fragment>
-    <AssetUpdateSetting
-      v-if="!headless"
-      :loading="checking || applying"
-      :skipped="skipped"
-      @check="check()"
+  <AssetUpdateSetting
+    v-if="!headless"
+    :loading="checking || applying"
+    :skipped="skipped"
+    @check="check()"
+  />
+  <div v-else-if="headless">
+    <AssetUpdateStatus
+      v-if="status"
+      :status="status"
+      :remote-version="changes.upToVersion"
     />
-    <div v-else-if="headless">
-      <AssetUpdateStatus
-        v-if="status"
-        :status="status"
-        :remote-version="changes.upToVersion"
-      />
-      <AssetUpdateInlineConfirm
-        v-if="inlineConfirm"
-        class="max-w-[32rem] mx-auto"
-        :remote-version="changes.upToVersion"
-        @confirm="updateComplete()"
-      />
-    </div>
-    <div v-if="showUpdateDialog">
-      <VDialog
-        v-if="!headless"
-        :value="showUpdateDialog"
-        max-width="500"
-        persistent
-      >
-        <AssetUpdateMessage
-          :headless="headless"
-          :versions="changes"
-          @update:versions="changes = $event"
-          @confirm="updateAssets()"
-          @dismiss="skip($event)"
-        />
-      </VDialog>
+    <AssetUpdateInlineConfirm
+      v-if="inlineConfirm"
+      class="max-w-[32rem] mx-auto"
+      :remote-version="changes.upToVersion"
+      @confirm="updateComplete()"
+    />
+  </div>
+  <div v-if="showUpdateDialog">
+    <VDialog
+      v-if="!headless"
+      :model-value="showUpdateDialog"
+      max-width="500"
+      persistent
+    >
       <AssetUpdateMessage
-        v-else
-        class="max-w-[32rem] mx-auto"
         :headless="headless"
         :versions="changes"
         @update:versions="changes = $event"
         @confirm="updateAssets()"
         @dismiss="skip($event)"
       />
-    </div>
-
-    <AssetConflictDialog
-      v-if="showConflictDialog"
-      v-model="showConflictDialog"
-      :conflicts="conflicts"
-      @cancel="skip(false)"
-      @resolve="updateAssets($event)"
+    </VDialog>
+    <AssetUpdateMessage
+      v-else
+      class="max-w-[32rem] mx-auto"
+      :headless="headless"
+      :versions="changes"
+      @update:versions="changes = $event"
+      @confirm="updateAssets()"
+      @dismiss="skip($event)"
     />
-  </Fragment>
+  </div>
+
+  <AssetConflictDialog
+    v-if="showConflictDialog"
+    v-model="showConflictDialog"
+    :conflicts="conflicts"
+    @cancel="skip(false)"
+    @resolve="updateAssets($event)"
+  />
 </template>
 
 <style scoped lang="scss">

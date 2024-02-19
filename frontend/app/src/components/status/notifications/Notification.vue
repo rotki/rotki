@@ -168,6 +168,7 @@ async function doAction(id: number, action: NotificationAction) {
       <div class="flex mt-auto gap-2 mx-0.5">
         <RuiButton
           v-for="(action, index) in actions"
+
           :key="index"
           color="primary"
           variant="text"

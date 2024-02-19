@@ -56,9 +56,9 @@ const items = computed(() => {
         :hint="t('frontend_settings.subtitle.abbreviate_number')"
         color="primary"
         persistent-hint
-        :success-messages="success"
+        :messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
     <SettingsOption
@@ -71,16 +71,16 @@ const items = computed(() => {
     >
       <VSelect
         v-model="minimumDigit"
-        outlined
+        variant="outlined"
         :disabled="!abbreviate"
         data-cy="frontend-settings__fields__minimum_digit_to_be_abbreviated"
         :label="t('frontend_settings.label.minimum_digit_to_be_abbreviated')"
         item-key="value"
-        item-text="label"
+        item-title="label"
         :items="items"
-        :success-messages="success"
+        :messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
   </div>

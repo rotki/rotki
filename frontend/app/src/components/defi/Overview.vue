@@ -137,12 +137,12 @@ const imageUrl = computed(() => {
         scrollable
         max-width="450px"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <RuiButton
             size="sm"
             variant="text"
             color="primary"
-            v-on="on"
+            v-bind="props"
           >
             {{ t('common.details') }}
             <template #append>

@@ -10,7 +10,7 @@ import { debounce } from 'lodash-es';
 const props = withDefaults(
   defineProps<{
     label?: string;
-    value: Record<string, any>;
+    modelValue: Record<string, any>;
   }>(),
   {
     label: '',
@@ -18,10 +18,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', newValue: any): void;
+  (e: 'update:model-value', newValue: any): void;
 }>();
-
-const { value } = toRefs(props);
 
 const css = useCssModule();
 
@@ -31,7 +29,7 @@ const jsonEditor: Ref<JSONEditor | null> = ref(null);
 onMounted(() => {
   const onChange = debounce((updatedContent: Content) => {
     emit(
-      'input',
+      'update:model-value',
       (updatedContent as TextContent).text === undefined
         ? (updatedContent as JSONContent).json
         : (updatedContent as TextContent).text,
@@ -42,7 +40,7 @@ onMounted(() => {
     target: get(jsonEditorContainer),
     props: {
       content: {
-        json: get(value),
+        json: props.modelValue,
       },
       navigationBar: false,
       onChange,
@@ -53,7 +51,7 @@ onMounted(() => {
 });
 
 watch(
-  value,
+  props.modelValue,
   (newValue: any) => {
     const jsonEditorVal = get(jsonEditor);
     if (jsonEditorVal) {

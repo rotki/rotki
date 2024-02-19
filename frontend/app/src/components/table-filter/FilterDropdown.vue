@@ -186,13 +186,13 @@ const css = useCssModule();
         class="pb-0"
       >
         <div class="text-rui-text-secondary">
-          <i18n path="table_filter.no_suggestions">
+          <i18n-t keypath="table_filter.no_suggestions">
             <template #search>
               <span class="font-medium text-rui-primary">
                 {{ keywordSplited.key }}
               </span>
             </template>
-          </i18n>
+          </i18n-t>
         </div>
       </div>
 

@@ -224,16 +224,16 @@ watch(identifier, async (assetId) => {
       </RuiButton>
       <VMenu
         offset-y
-        left
+        location="left"
         :close-on-content-click="false"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <RuiButton
             variant="text"
             icon
             size="sm"
             class="!p-2"
-            v-on="on"
+            v-bind="props"
           >
             <RuiIcon name="more-2-fill" />
           </RuiButton>
@@ -267,6 +267,9 @@ watch(identifier, async (assetId) => {
       <MergeDialog v-model="mergeTool" />
 
       <ManagedAssetTable
+        v-model:ignored-filter="ignoredFilter"
+        v-model:expanded="expanded"
+        v-model:selected="selectedRows"
         :tokens="assets.data"
         :loading="loading"
         :change="!loading"
@@ -274,9 +277,6 @@ watch(identifier, async (assetId) => {
         :filters="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
-        :ignored-filter.sync="ignoredFilter"
-        :expanded.sync="expanded"
-        :selected.sync="selectedRows"
         :options="options"
         @refresh="fetchData()"
         @edit="edit($event)"

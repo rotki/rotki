@@ -36,16 +36,16 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       transition="slide-y-transition"
       max-width="250px"
       min-width="200px"
-      left
+      location="left"
       offset-y
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RuiButton
           variant="text"
           icon
           size="sm"
           class="!p-2"
-          v-on="on"
+          v-bind="props"
         >
           <RuiIcon
             name="more-2-fill"

@@ -3,9 +3,9 @@ import { isNft } from '@/utils/nft';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Ref } from 'vue';
-import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
 const { t } = useI18n();
 
@@ -15,9 +15,9 @@ const editMode: Ref<boolean> = ref(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const sort: Ref<DataTableSortData> = ref([]);
+const sort: Ref<DataTableSortData<ManualPriceWithUsd>> = ref([]);
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
@@ -66,7 +66,7 @@ const {
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
-function showDeleteConfirmation(item: ManualPrice) {
+function showDeleteConfirmation(item: ManualPriceWithUsd) {
   show(
     {
       title: t('price_table.delete.dialog.title'),
@@ -76,7 +76,7 @@ function showDeleteConfirmation(item: ManualPrice) {
   );
 }
 
-function openForm(selectedEntry: ManualPrice | null = null) {
+function openForm(selectedEntry: ManualPriceWithUsd | null = null) {
   set(editMode, !!selectedEntry);
   if (selectedEntry) {
     set(price, {
@@ -161,13 +161,13 @@ onMounted(async () => {
         </AssetSelect>
       </div>
       <RuiDataTable
+        v-model:sort="sort"
         outlined
         dense
         :cols="headers"
         :loading="loading"
         :rows="items"
-        row-attr=""
-        :sort.sync="sort"
+        row-attr="id"
       >
         <template #item.fromAsset="{ row }">
           <NftDetails

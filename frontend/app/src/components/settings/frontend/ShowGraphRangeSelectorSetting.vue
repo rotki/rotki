@@ -21,9 +21,9 @@ const { t } = useI18n();
       v-model="showGraphRangeSelector"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('frontend_settings.label.show_graph_range_selector')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

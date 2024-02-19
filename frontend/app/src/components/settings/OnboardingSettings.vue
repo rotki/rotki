@@ -377,37 +377,37 @@ function showResetConfirmation() {
         :hint="
           !!fileConfig.loglevel
             ? t('backend_settings.config_file_disabled')
-            : null
+            : undefined
         "
-        outlined
+        variant="outlined"
       >
         <template #item="{ item }">
           <div class="flex items-center gap-4">
             <RuiIcon
               class="text-rui-text-secondary"
-              :name="icon(item)"
+              :name="icon(item.raw)"
             />
-            {{ item.toLocaleLowerCase() }}
+            {{ item.raw.toLocaleLowerCase() }}
           </div>
         </template>
         <template #selection="{ item }">
           <div class="flex items-center gap-4">
             <RuiIcon
               class="text-rui-text-secondary"
-              :name="icon(item)"
+              :name="icon(item.raw)"
             />
-            {{ item.toLocaleLowerCase() }}
+            {{ item.raw.toLocaleLowerCase() }}
           </div>
         </template>
       </VSelect>
     </div>
 
-    <VExpansionPanels flat>
+    <VExpansionPanels>
       <VExpansionPanel>
-        <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
+        <VExpansionPanelTitle data-cy="onboarding-setting__advance-toggle">
           {{ t('backend_settings.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent>
+        </VExpansionPanelTitle>
+        <VExpansionPanelText>
           <RuiTextField
             v-model="maxLogSize"
             data-cy="max-log-size-input"
@@ -499,7 +499,7 @@ function showResetConfirmation() {
           >
             {{ t('backend_settings.log_from_other_modules.label') }}
           </RuiCheckbox>
-        </VExpansionPanelContent>
+        </VExpansionPanelText>
       </VExpansionPanel>
     </VExpansionPanels>
 

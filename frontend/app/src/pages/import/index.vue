@@ -17,9 +17,9 @@ const { t } = useI18n();
       type="warning"
       :title="t('import_data.notice_warning')"
     >
-      <i18n
+      <i18n-t
         tag="span"
-        path="import_data.notice"
+        keypath="import_data.notice"
       >
         <template #link>
           <ExternalLink
@@ -29,7 +29,7 @@ const { t } = useI18n();
             {{ t('import_data.notice_link') }}
           </ExternalLink>
         </template>
-      </i18n>
+      </i18n-t>
     </RuiAlert>
 
     <GroupedImport />

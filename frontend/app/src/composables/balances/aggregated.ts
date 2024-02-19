@@ -52,34 +52,33 @@ export function useAggregatedBalances() {
       );
     });
 
-  const assets = (hideIgnored = true): ComputedRef<string[]> =>
-    computed(() => {
-      const additional: string[] = [];
-      const liabilitiesAsset = get(liabilities(hideIgnored)).map(
-        ({ asset }) => {
-          const samePrices = samePriceAssets[asset];
-          if (samePrices)
-            additional.push(...samePrices);
-
-          return asset;
-        },
-      );
-      const assets = get(balances(hideIgnored, false)).map(({ asset }) => {
+  const assets = (hideIgnored = true) => computed<string[]>(() => {
+    const additional: string[] = [];
+    const liabilitiesAsset = get(liabilities(hideIgnored)).map(
+      ({ asset }) => {
         const samePrices = samePriceAssets[asset];
         if (samePrices)
           additional.push(...samePrices);
 
         return asset;
-      });
+      },
+    );
+    const assets = get(balances(hideIgnored, false)).map(({ asset }) => {
+      const samePrices = samePriceAssets[asset];
+      if (samePrices)
+        additional.push(...samePrices);
 
-      const lpBalances = get(lpAggregatedBalances(false));
-      const lpAssets = lpBalances
-        .map(item => item.asset)
-        .filter(item => !!item) as string[];
-
-      assets.push(...liabilitiesAsset, ...lpAssets, ...additional);
-      return assets.filter(uniqueStrings);
+      return asset;
     });
+
+    const lpBalances = get(lpAggregatedBalances(false));
+    const lpAssets = lpBalances
+      .map(item => item.asset)
+      .filter(item => !!item);
+
+    assets.push(...liabilitiesAsset, ...lpAssets, ...additional);
+    return assets.filter(uniqueStrings);
+  });
 
   const assetPriceInfo = (
     identifier: MaybeRef<string>,

@@ -3,10 +3,13 @@ import { toSentenceCase } from '@/utils/text';
 import type { Nullable } from '@rotki/common';
 import type {
   EditableMissingPrice,
+  MissingAcquisition,
+  MissingPrice,
   SelectedReport,
 } from '@/types/reports';
 import type { Pinned } from '@/types/session';
 import type { DialogType } from '@/types/dialogs';
+import type { Component } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -82,7 +85,15 @@ function pinSection() {
 
 const step = ref<number>(1);
 
-const stepperContents = computed(() => {
+const stepperContents = computed<
+  {
+    key: string;
+    title: string;
+    hint: string;
+    selector: Component;
+    items: MissingAcquisition[] | MissingPrice[];
+  }[]
+>(() => {
   const contents = [];
 
   const missingAcquisitionsLength = get(

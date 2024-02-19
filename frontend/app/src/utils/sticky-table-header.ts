@@ -83,7 +83,7 @@ class StickyTableHeader {
   };
 
   private setupClickEventMirroring(): void {
-    this.clickListener = (event: MouseEvent) => {
+    this.clickListener = async (event: MouseEvent) => {
       const target = event.target;
       if (target && target instanceof HTMLElement) {
         const cellIndex = target.closest('th')?.cellIndex;
@@ -96,7 +96,7 @@ class StickyTableHeader {
           if (firstChild && firstChild instanceof HTMLElement) {
             firstChild.click();
 
-            nextTick(() => {
+            await nextTick(() => {
               this.createClone();
               this.checkPosition(true);
             });
@@ -235,7 +235,8 @@ class StickyTableHeader {
     const headerHeight = this.header.getBoundingClientRect().height;
 
     const defaultBottom = tableRect.y + tableRect.height - headerHeight;
-    const parentBottom = document.body.getBoundingClientRect().bottom - 2 * headerHeight;
+    const parentBottom
+      = document.body.getBoundingClientRect().bottom - 2 * headerHeight;
     return Math.min(defaultBottom, parentBottom, Number.MAX_VALUE);
   }
 }

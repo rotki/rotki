@@ -318,12 +318,12 @@ onMounted(setEditMode);
         >
           <RuiRadio
             :label="t('external_trade_form.trade_type.buy')"
-            internal-value="buy"
+            value="buy"
             data-cy="trade-input-buy"
           />
           <RuiRadio
             :label="t('external_trade_form.trade_type.sell')"
-            internal-value="sell"
+            value="sell"
             data-cy="trade-input-sell"
           />
         </RuiRadioGroup>
@@ -371,9 +371,9 @@ onMounted(setEditMode);
         @blur="v$.amount.$touch()"
       />
       <TwoFieldsAmountInput
+        v-model:primary-value="rate"
+        v-model:secondary-value="quoteAmount"
         class="-mb-5"
-        :primary-value.sync="rate"
-        :secondary-value.sync="quoteAmount"
         :loading="fetching"
         :disabled="fetching"
         data-cy="trade-rate"
@@ -395,9 +395,9 @@ onMounted(setEditMode);
           size="16"
           name="chat-quote-line"
         />
-        <i18n
+        <i18n-t
           v-if="type === 'buy'"
-          path="external_trade_form.summary.buy"
+          keypath="external_trade_form.summary.buy"
         >
           <template #label>
             <strong>{{ t('external_trade_form.summary.label') }}</strong>
@@ -424,11 +424,11 @@ onMounted(setEditMode);
               />
             </strong>
           </template>
-        </i18n>
-        <i18n
+        </i18n-t>
+        <i18n-t
           v-if="type === 'sell'"
           tag="span"
-          path="external_trade_form.summary.sell"
+          keypath="external_trade_form.summary.sell"
         >
           <template #label>
             <strong>{{ t('external_trade_form.summary.label') }}</strong>
@@ -455,7 +455,7 @@ onMounted(setEditMode);
               />
             </strong>
           </template>
-        </i18n>
+        </i18n-t>
       </div>
     </div>
 

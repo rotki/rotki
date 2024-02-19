@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Tag, defaultTag } from '@/types/tags';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 withDefaults(
   defineProps<{
@@ -25,7 +25,7 @@ const search = ref<string>('');
 
 const { t } = useI18n();
 
-const headers = computed<DataTableColumn[]>(() => [
+const headers = computed<DataTableColumn<Tag>[]>(() => [
   {
     label: t('common.name'),
     key: 'name',

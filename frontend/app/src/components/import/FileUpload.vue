@@ -3,7 +3,7 @@ import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{
-    value: File | null;
+    modelValue: File | null;
     source: ImportSourceType;
     loading?: boolean;
     fileFilter?: string;
@@ -19,7 +19,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', file: File | null): void;
+  (e: 'update:model-value', file: File | null): void;
   (e: 'update:uploaded', uploaded: boolean): void;
   (e: 'update:error-message', message: string): void;
 }>();
@@ -193,8 +193,8 @@ watch(errorMessage, message => onError(message));
             class="flex flex-col mt-2 text-center justify-center text-caption text-rui-text-secondary w-full"
           >
             <template v-if="file">
-              <i18n
-                path="file_upload.selected_file"
+              <i18n-t
+                keypath="file_upload.selected_file"
                 tag="div"
               >
                 <template #name>
@@ -202,7 +202,7 @@ watch(errorMessage, message => onError(message));
                     {{ file.name }}
                   </div>
                 </template>
-              </i18n>
+              </i18n-t>
               <RuiButton
                 type="button"
                 class="mt-2"

@@ -239,7 +239,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
 
 <template>
   <VDialog
-    :value="display"
+    :model-value="display"
     persistent
     max-width="650"
     class="watcher-dialog"
@@ -268,8 +268,8 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         v-model="watcherType"
         :items="watcherTypes"
         :label="t('watcher_dialog.labels.type')"
-        dense
-        outlined
+        density="compact"
+        variant="outlined"
         required
       />
 
@@ -292,12 +292,12 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
               :items="operations"
               :label="t('watcher_dialog.labels.operation')"
               :readonly="!existingWatchersEdit[watcher.identifier]"
-              :value="loadedWatchers[key].args.op"
-              dense
+              :model-value="loadedWatchers[key].args.op"
+              density="compact"
               hide-details
-              outlined
+              variant="outlined"
               required
-              @input="loadedWatchers[key].args.op = $event"
+              @update:model-value="loadedWatchers[key].args.op = $event"
             />
 
             <RuiTextField
@@ -354,9 +354,9 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
               :disabled="!watcherType"
               :items="operations"
               :label="t('watcher_dialog.labels.operation')"
-              dense
+              density="compact"
               hide-details
-              outlined
+              variant="outlined"
               required
             />
 

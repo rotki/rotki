@@ -20,13 +20,13 @@ const { t } = useI18n();
     <VSwitch
       v-model="accountForAssetsMovements"
       class="accounting-settings__account-for-assets-movements"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
       :label="
         t('accounting_settings.trade.labels.account_for_assets_movements')
       "
       color="primary"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

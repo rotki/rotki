@@ -7,8 +7,8 @@ defineProps<{
 </script>
 
 <template>
-  <i18n
-    :path="params.message"
+  <i18n-t
+    :keypath="params.message"
     :plural="params.choice"
     tag="div"
   >
@@ -18,5 +18,5 @@ defineProps<{
     <template #location>
       {{ params.props.location }}
     </template>
-  </i18n>
+  </i18n-t>
 </template>

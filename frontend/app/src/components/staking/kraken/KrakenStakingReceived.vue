@@ -41,14 +41,12 @@ const { t } = useI18n();
           variant="outlined"
           color="primary"
         >
-          <template #default>
-            <RuiButton value="current">
-              {{ t('kraken_staking_received.switch.current') }}
-            </RuiButton>
-            <RuiButton value="historical">
-              {{ t('kraken_staking_received.switch.historical') }}
-            </RuiButton>
-          </template>
+          <RuiButton value="current">
+            {{ t('kraken_staking_received.switch.current') }}
+          </RuiButton>
+          <RuiButton value="historical">
+            {{ t('kraken_staking_received.switch.historical') }}
+          </RuiButton>
         </RuiButtonGroup>
       </div>
     </template>

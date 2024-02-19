@@ -11,12 +11,10 @@ const { appBarColor } = useTheme();
     v-model="showDrawer"
     width="300"
     class="app__navigation-drawer"
+    position="fixed"
+    :rail="isMini"
     :class="{ 'app__navigation-drawer--mini': isMini }"
-    fixed
-    :mini-variant="isMini"
     :color="appBarColor"
-    clipped
-    app
   >
     <div
       class="app__logo"

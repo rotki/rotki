@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
-import type { ComputedRef } from 'vue';
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 
 const props = withDefaults(

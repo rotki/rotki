@@ -52,7 +52,7 @@ const css = useCssModule();
   <VDialogTransition>
     <VDialog
       v-if="display"
-      :value="true"
+      :model-value="true"
       persistent
       :max-width="maxWidth"
       @keydown.esc.stop="emit('cancel')"

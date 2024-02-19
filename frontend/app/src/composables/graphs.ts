@@ -21,14 +21,14 @@ export function useGraph(canvasId: string) {
 
   const baseColor = computed(() => {
     const activeTheme = get(theme);
-    const graphColor = activeTheme.currentTheme.graph;
-    return (graphColor || '#96DFD2') as string;
+    const graphColor = activeTheme.colors.graph;
+    return (graphColor || '#96DFD2');
   });
 
   const fadeColor = computed(() => {
     const activeTheme = get(theme);
-    const graphFade = activeTheme.currentTheme.graphFade;
-    return (graphFade || white) as string;
+    const graphFade = activeTheme.colors.graphFade;
+    return (graphFade || white);
   });
 
   const gradient = computed(() => {

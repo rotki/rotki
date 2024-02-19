@@ -14,7 +14,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
 import type { Balance } from '@rotki/common';
 
 const props = withDefaults(
@@ -49,8 +49,7 @@ const rootAttrs = useAttrs();
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
-const { getEthDetectedTokensInfo, detectingTokens }
-  = useTokenDetection(blockchain);
+const { getEthDetectedTokensInfo, detectingTokens } = useTokenDetection(blockchain);
 const { getNativeAsset, supportsTransactions } = useSupportedChains();
 const { assetSymbol } = useAssetInfoRetrieval();
 const { addressNameSelector } = useAddressesNamesStore();
@@ -65,7 +64,7 @@ const loading = isLoading(get(section));
 const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
 const collapsedXpubs: Ref<XpubAccountWithBalance[]> = ref([]);
 
-const sort: Ref<DataTableSortData> = ref({
+const sort: Ref<DataTableSortData<IndexedBlockchainAccountWithBalance>> = ref({
   column: 'usdValue',
   direction: 'desc' as const,
 });
@@ -216,7 +215,7 @@ const asset: ComputedRef<string> = computed(() => {
   return get(assetSymbol(nativeAsset));
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => {
+const tableHeaders = computed<DataTableColumn<IndexedBlockchainAccountWithBalance>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
   const currencyHeader = get(hasTokenDetection)
@@ -227,7 +226,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
     ? t('account_balances.headers.validator')
     : t('common.account');
 
-  const headers: DataTableColumn[] = [
+  const headers: DataTableColumn<IndexedBlockchainAccountWithBalance>[] = [
     {
       label: accountHeader,
       key: 'display',
@@ -340,29 +339,25 @@ defineExpose({
 
 <template>
   <RuiDataTable
-    :value="selected"
     v-bind="rootAttrs"
+    v-model:expanded="expanded"
+    v-model:sort="sort"
+    v-model:collapsed="collapsedXpubs"
+    :value="selected"
     :cols="tableHeaders"
     :rows="rows"
     :loading="isAnyLoading"
     row-attr="address"
-    :expanded.sync="expanded"
-    :sort.sync="sort"
     :empty="{ description: t('data_table.no_data') }"
     :loading-text="t('account_balances.data_table.loading')"
     class="account-balances-list"
     data-cy="account-table"
     :data-location="blockchain"
-    :group="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
-    :collapsed.sync="collapsedXpubs"
+    :group="isBtcNetwork ? ['xpub', 'derivationPath'] as any : undefined"
     :sticky-offset="64"
     single-expand
     outlined
     sticky-header
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
     @input="addressesSelected($event ?? [])"
   >
     <template #item.display="{ row }">
@@ -392,7 +387,10 @@ defineExpose({
       v-if="isEth2"
       #item.ownershipPercentage="{ row }"
     >
-      <PercentageDisplay :value="row.ownershipPercentage ?? '100'" />
+      <PercentageDisplay
+        v-if="'ownershipPercentage' in row"
+        :value="row.ownershipPercentage ?? '100'"
+      />
     </template>
     <template
       v-if="hasTokenDetection && !loopring"
@@ -428,14 +426,18 @@ defineExpose({
         class-name="[&>td]:p-4 text-sm"
       >
         <template #custom-columns>
-          <td class="text-end">
+          <td
+            class="text-end"
+          >
             <AmountDisplay
               :loading="loading"
               :value="total.amount"
               :asset="blockchain"
             />
           </td>
-          <td class="text-end">
+          <td
+            class="text-end"
+          >
             <AmountDisplay
               :loading="loading"
               fiat-currency="USD"
@@ -468,6 +470,7 @@ defineExpose({
     </template>
     <template #group.header="{ header, isOpen, toggle }">
       <AccountGroupHeader
+        v-if="'xpub' in header.group && header.group.xpub"
         :group="header.identifier"
         :items="getItems(header.group.xpub, header.group.derivationPath)"
         :expanded="isOpen"

@@ -1,10 +1,10 @@
-import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { type VueWrapper, mount } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 
 describe('getPremiumButton.vue', () => {
-  let wrapper: Wrapper<GetPremiumButton>;
+  let wrapper: VueWrapper<InstanceType<typeof GetPremiumButton>>;
   let store: ReturnType<typeof usePremiumStore>;
   let pinia: Pinia;
 
@@ -14,10 +14,11 @@ describe('getPremiumButton.vue', () => {
   });
 
   const createWrapper = () => {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     return mount(GetPremiumButton, {
-      pinia,
-      vuetify,
+      global: {
+        plugins: [pinia, vuetify],
+      },
     });
   };
 

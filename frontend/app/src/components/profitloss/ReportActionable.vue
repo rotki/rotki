@@ -48,10 +48,10 @@ const { t } = useI18n();
       v-model="mainDialogOpen"
       max-width="1000"
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RuiButton
           color="error"
-          v-on="on"
+          v-bind="props"
         >
           <span class="pr-2">
             {{ t('profit_loss_report.actionable.show_issues') }}

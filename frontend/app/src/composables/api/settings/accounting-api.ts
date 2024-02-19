@@ -24,7 +24,6 @@ export function useAccountingApi() {
       ...omit(payload, ['orderByAttributes', 'ascending']),
       counterparties: counterparty ? [counterparty, null] : [null],
     };
-
     const response = await api.instance.post<
       ActionResult<CollectionResponse<AccountingRuleEntry>>
     >('/accounting/rules', snakeCaseTransformer(newPayload), {

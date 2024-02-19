@@ -14,10 +14,10 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', pairs: string[]): void }>();
+const emit = defineEmits<{ (e: 'update:selection', pairs: string[]): void }>();
 const { name, location } = toRefs(props);
 
-const input = (value: string[]) => emit('input', value);
+const updateSelection = (value: string[]) => emit('update:selection', value);
 
 const search = ref<string>('');
 const queriedMarkets = ref<string[]>([]);
@@ -25,9 +25,9 @@ const selection = ref<string[]>([]);
 const allMarkets = ref<string[]>([]);
 const loading = ref<boolean>(false);
 
-function handleInput(value: string[]) {
+function onSelectionChange(value: string[]) {
   set(selection, value);
-  input(value);
+  updateSelection(value);
 }
 
 const { t } = useI18n();
@@ -94,7 +94,7 @@ watch(search, (search) => {
         search = pairs.pop()!;
 
       const matchedPairs = pairs.filter(pair => get(allMarkets).includes(pair));
-      handleInput([...get(selection), ...matchedPairs].filter(uniqueStrings));
+      onSelectionChange([...get(selection), ...matchedPairs].filter(uniqueStrings));
     }
   }
 });
@@ -103,9 +103,9 @@ watch(search, (search) => {
 <template>
   <VAutocomplete
     v-bind="$attrs"
+    v-model:search-input="search"
     :items="allMarkets"
-    :filter="filter"
-    :search-input.sync="search"
+    :custom-filter="filter"
     multiple
     :loading="loading"
     :disabled="loading"
@@ -119,32 +119,30 @@ watch(search, (search) => {
     :open-on-clear="false"
     :label="label ? label : t('binance_market_selector.default_label')"
     :class="outlined ? 'binance-market-selector--outlined' : null"
-    item-text="address"
+    item-title="address"
     item-value="address"
     class="binance-market-selector"
-    :value="selection"
-    @input="handleInput($event)"
-    @change="search = ''"
+    :model-value="selection"
+    @update:model-value="onSelectionChange($event)"
   >
-    <template #selection="data">
+    <template #selection="{ item }">
       <RuiChip
         class="m-0.5"
         size="sm"
-        v-bind="data.attrs"
-        :click="data.select"
+        :click="onSelectionChange([...selection, item.raw])"
         closeable
-        @click:close="data.parent.selectItem(data.item)"
+        @click:close="onSelectionChange([...selection.filter(x => x === item.raw)])"
       >
-        {{ data.item }}
+        {{ item.raw }}
       </RuiChip>
     </template>
-    <template #item="data">
+    <template #item="{ item }">
       <div
         class="binance-market-selector__list__item flex justify-between grow"
       >
         <div class="binance-market-selector__list__item__address-label">
           <RuiChip size="sm">
-            {{ data.item }}
+            {{ item.raw }}
           </RuiChip>
         </div>
       </div>

@@ -14,16 +14,16 @@ const { t } = useI18n();
   <VMenu
     max-width="250px"
     min-width="200px"
-    left
+    location="left"
     offset-y
     transition="slide-y-transition"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         class="!p-2"
         icon
         variant="text"
-        v-on="on"
+        v-bind="props"
       >
         <RuiIcon
           name="more-2-fill"

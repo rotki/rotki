@@ -241,7 +241,7 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
 
     <AddressBookFormDialog
       v-model="formPayload"
-      :enable-for-all-chains.sync="enableForAllChains"
+      v-model:enable-for-all-chains="enableForAllChains"
       :edit-mode="editMode"
       :error-messages="errorMessages"
       :is-evm-chain="isEvmChain"

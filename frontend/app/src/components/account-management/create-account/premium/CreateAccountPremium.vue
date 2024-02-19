@@ -28,9 +28,9 @@ const premiumSelectionButtons = computed(() => [
 
 <template>
   <div class="space-y-6">
-    <i18n
+    <i18n-t
       tag="div"
-      path="create_account.premium.premium_question"
+      keypath="create_account.premium.premium_question"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
     >
       <template #premiumLink>
@@ -39,7 +39,7 @@ const premiumSelectionButtons = computed(() => [
           premium
         />.
       </template>
-    </i18n>
+    </i18n-t>
     <div class="mt-8 flex justify-center gap-5">
       <RuiButton
         v-for="(button, i) in premiumSelectionButtons"
@@ -63,11 +63,11 @@ const premiumSelectionButtons = computed(() => [
       </RuiButton>
     </div>
     <CreateAccountPremiumForm
+      v-model:valid="valid"
       class="mt-8"
       :loading="loading"
       :enabled="premiumEnabled"
       :form="form"
-      :valid.sync="valid"
       @update:form="emit('update:form', $event)"
     />
     <div class="grid grid-cols-2 gap-4">

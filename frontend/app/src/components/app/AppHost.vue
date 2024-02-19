@@ -36,7 +36,6 @@ watch(adaptiveLanguage, (language) => {
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
     <slot />
-    <AppPremiumManager />
   </VApp>
   <DevApp v-else />
 </template>

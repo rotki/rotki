@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 
 import '@mdi/font/css/materialdesignicons.css';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
+
+import { createVuetify } from 'vuetify';
 import {
   DARK_ACCENT,
   DARK_ERROR,
@@ -20,25 +20,19 @@ import {
   LIGHT_WARNING,
 } from '@/plugins/theme';
 
-Vue.use(Vuetify);
-
 const DARK_GREY = '#1e1e1e';
 
-const vuetify = new Vuetify({
-  icons: {
-    iconfont: 'mdi',
-  },
-  theme: {
-    options: {
-      customProperties: true,
-    },
-    themes: {
-      light: {
+export const theme = {
+  defaultTheme: 'light',
+  themes: {
+    light: {
+      dark: false,
+      colors: {
         'primary': LIGHT_PRIMARY,
-        'secondary': '#0a0908',
-        'accent': LIGHT_ACCENT,
+        'secondary': LIGHT_ACCENT,
         'graph': LIGHT_GRAPH,
         'graphFade': '#ffffff',
+
         'error': LIGHT_ERROR,
         'success': LIGHT_SUCCESS,
         'info': LIGHT_INFO,
@@ -47,9 +41,12 @@ const vuetify = new Vuetify({
         'rotki-grey': '#9fa6b2',
         'rotki-scrollbar': '#eeeeee',
       },
-      dark: {
+    },
+    dark: {
+      dark: true,
+      colors: {
         'primary': DARK_PRIMARY,
-        'accent': DARK_ACCENT,
+        'secondary': DARK_ACCENT,
         'graph': DARK_GRAPH,
         'graphFade': DARK_GREY,
         'dark': DARK_GREY,
@@ -62,6 +59,13 @@ const vuetify = new Vuetify({
       },
     },
   },
+};
+
+const vuetify = createVuetify({
+  icons: {
+    defaultSet: 'mdi',
+  },
+  theme, // todo eventually remove
 });
 
 export { vuetify };

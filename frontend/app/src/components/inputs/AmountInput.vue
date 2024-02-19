@@ -1,37 +1,29 @@
 <script setup lang="ts">
 import IMask, { type InputMask } from 'imask';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     integer?: boolean;
-    value?: string;
+    modelValue?: string;
     hideDetails?: boolean;
   }>(),
   {
     integer: false,
-    value: '',
+    modelValue: '',
     hideDetails: false,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: string): void;
+  (e: 'update:model-value', value: string): void;
 }>();
 
-const attrs = useAttrs();
-const slots = useSlots();
-
-function filteredListeners(listeners: any) {
-  return {
-    ...listeners,
-    input: () => {},
-  };
-}
-
-const { integer, value } = toRefs(props);
-const { thousandSeparator, decimalSeparator } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { integer, modelValue } = toRefs(props);
+const { thousandSeparator, decimalSeparator } = storeToRefs(useFrontendSettingsStore());
 
 const textInput: Ref<any> = ref(null);
 const imask: Ref<InputMask<any> | null> = ref(null);
@@ -48,7 +40,14 @@ onMounted(() => {
     scale: get(integer) ? 0 : 100,
   });
 
-  const propValue = get(value);
+  newImask.on('accept', () => {
+    const mask = get(imask);
+    const value = mask?.value || '';
+    set(currentValue, value);
+    emit('update:model-value', mask?.unmaskedValue || '');
+  });
+
+  const propValue = get(modelValue);
   if (propValue) {
     newImask.unmaskedValue = propValue;
     set(currentValue, newImask.value);
@@ -57,29 +56,13 @@ onMounted(() => {
   set(imask, newImask);
 });
 
-watch(value, (value) => {
+watch(modelValue, (value) => {
   const imaskVal = get(imask);
   if (imaskVal) {
     imaskVal.unmaskedValue = value;
     set(currentValue, imaskVal.value);
   }
 });
-
-watch(
-  () => get(imask)?.unmaskedValue,
-  (unmasked) => {
-    const value = get(imask)?.value || '';
-    set(currentValue, value);
-    emit('input', unmasked || '');
-  },
-);
-
-watch(
-  () => get(imask)?.value,
-  (value) => {
-    set(currentValue, value);
-  },
-);
 
 function focus() {
   const inputWrapper = get(textInput) as any;
@@ -105,30 +88,18 @@ function onFocus() {
   <RuiTextField
     ref="textInput"
     color="primary"
-    :value="currentValue"
-    v-bind="attrs"
+    :model-value="currentValue"
+    v-bind="$attrs"
     :hide-details="hideDetails"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      filteredListeners($listeners)
-    "
     @focus="onFocus()"
   >
-    <!-- Pass on all named slots -->
-    <slot
-      v-for="slot in Object.keys(slots)"
-      :slot="slot"
-      :name="slot"
-    />
-
-    <!-- Pass on all scoped slots -->
     <template
-      v-for="slot in Object.keys($scopedSlots)"
-      #[slot]="scope"
+      v-for="(_, name) in $slots"
+      #[name]="scope"
     >
       <slot
         v-bind="scope"
-        :name="slot"
+        :name="name"
       />
     </template>
   </RuiTextField>

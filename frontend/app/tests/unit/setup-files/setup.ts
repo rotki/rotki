@@ -1,6 +1,3 @@
-import { PiniaVuePlugin } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
 import RuiIconStub from '../specs/stubs/RuiIcon';
@@ -8,8 +5,6 @@ import RuiTooltipStub from '../specs/stubs/RuiTooltip';
 import { server } from './server';
 
 beforeAll(() => {
-  Vue.use(Vuetify);
-  Vue.use(PiniaVuePlugin);
   server.listen({
     onUnhandledRequest: 'warn',
   });
@@ -41,20 +36,8 @@ beforeAll(() => {
     }),
   }));
 
-  vi.mock('vue', async () => {
-    const mod = await vi.importActual<typeof import('vue')>('vue');
-    mod.default.config.devtools = false;
-    mod.default.config.productionTip = false;
-    return {
-      ...mod,
-      useListeners: vi.fn(),
-      useCssModule: vi.fn().mockReturnValue({}),
-    };
-  });
-
   vi.mock('@vueuse/core', async () => {
-    const mod
-      = await vi.importActual<typeof import('@vueuse/core')>('@vueuse/core');
+    const mod = await vi.importActual<typeof import('@vueuse/core')>('@vueuse/core');
 
     return {
       ...mod,
@@ -66,7 +49,7 @@ beforeAll(() => {
     };
   });
 
-  vi.mock('@/composables/usei18n', async () => ({
+  vi.mock('vue-i18n', async () => ({
     useI18n: () => ({
       t: mockT,
       te: mockT,
@@ -100,5 +83,5 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Global stub components
-config.stubs.RuiIcon = RuiIconStub;
-config.stubs.RuiTooltip = RuiTooltipStub;
+config.global.stubs.RuiIcon = RuiIconStub;
+config.global.stubs.RuiTooltip = RuiTooltipStub;

@@ -6,7 +6,7 @@ const props = withDefaults(
   defineProps<{
     pools: XswapPool[];
     type: LpType;
-    value: string[];
+    modelValue: string[];
     outlined?: boolean;
     dense?: boolean;
     noPadding?: boolean;
@@ -18,24 +18,29 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: string[]): void }>();
 
-const { value, type } = toRefs(props);
-const input = (value: string[]) => emit('input', value);
+const model = useSimpleVModel(props, emit);
+
+const { type } = toRefs(props);
 
 const { getPoolName } = useLiquidityPosition();
 
-function filter(item: XswapPool, queryText: string) {
+function filter(_value: string, queryText: string, itemValue?: { raw: XswapPool }) {
+  const item = itemValue?.raw;
+  if (!item)
+    return false;
+
   const searchString = queryText.toLocaleLowerCase();
   const name = getPoolName(get(type), item.assets).toLowerCase();
   return name.includes(searchString);
 }
 
 function remove(asset: XswapPool) {
-  const addresses = [...get(value)];
+  const addresses = [...get(model)];
   const index = addresses.indexOf(asset.address);
   addresses.splice(index, 1);
-  input(addresses);
+  set(model, addresses);
 }
 
 const { t } = useI18n();
@@ -49,42 +54,39 @@ const { t } = useI18n();
     class="[&>div:last-child]:overflow-hidden"
   >
     <VAutocomplete
-      :value="value"
+      v-model="model"
       :label="t('liquidity_pool_selector.label')"
       :items="pools"
-      :dense="dense"
+      :density="dense ? 'compact' : undefined"
       :outlined="outlined"
-      :filter="filter"
+      :custom-filter="filter"
       :menu-props="{ closeOnContentClick: true }"
       multiple
       clearable
-      deletable-chips
+      closable-chips
       single-line
       hide-details
       hide-selected
       item-value="address"
       chips
-      @input="input($event)"
     >
-      <template #selection="data">
+      <template #selection="{ item }">
         <RuiChip
           class="font-medium"
-          v-bind="data.attrs"
           closeable
           size="sm"
-          :input-value="data.selected"
-          @click="data.select"
-          @click:close="remove(data.item)"
+          @click="model = [...model, getPoolName(type, item.raw.assets)]"
+          @click:close="remove(item.raw)"
         >
-          {{ getPoolName(type, data.item.assets) }}
+          {{ getPoolName(type, item.raw.assets) }}
         </RuiChip>
       </template>
       <template #item="{ item }">
         <span
-          :id="`ua-${item.address.toLocaleLowerCase()}`"
+          :id="`ua-${item.raw.address.toLocaleLowerCase()}`"
           class="font-medium text-sm"
         >
-          {{ getPoolName(type, item.assets) }}
+          {{ getPoolName(type, item.raw.assets) }}
         </span>
       </template>
     </VAutocomplete>

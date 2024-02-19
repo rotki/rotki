@@ -120,8 +120,8 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
 <template>
   <form>
     <HistoryEventTypeForm
-      :event-type.sync="state.eventType"
-      :event-subtype.sync="state.eventSubtype"
+      v-model:event-type="state.eventType"
+      v-model:event-subtype="state.eventSubtype"
       :counterparty="state.counterparty"
       :v$="v$"
       disable-warning
@@ -130,7 +130,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
     <VAutocomplete
       v-model="state.counterparty"
       class="md:w-1/2"
-      outlined
+      variant="outlined"
       required
       clearable
       auto-select-first
@@ -171,10 +171,10 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
     <VAutocomplete
       v-model="state.accountingTreatment"
       class="md:w-1/2"
-      outlined
+      variant="outlined"
       :items="accountingTreatments"
       item-value="identifier"
-      item-text="label"
+      item-title="label"
       clearable
       :label="t('accounting_settings.rule.labels.accounting_treatment')"
       :error-messages="toMessages(v$.accountingTreatment)"

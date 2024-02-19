@@ -142,13 +142,15 @@ onUnmounted(() => {
       class="overflow-hidden"
     >
       <div class="overflow-auto max-h-[300px]">
-        <template v-for="(item, index) in nodes">
+        <template
+          v-for="(item, index) in nodes"
+          :key="index + item.name"
+        >
           <RuiDivider
             v-if="index !== 0"
             :key="index"
           />
           <div
-            :key="index + item.name"
             data-cy="ethereum-node"
             class="px-2 flex items-center"
           >
@@ -240,10 +242,9 @@ onUnmounted(() => {
               </div>
             </div>
             <VSwitch
-              value=""
-              :input-value="item.active"
+              :model-value="item.active"
               :disabled="isEtherscan(item)"
-              @change="onActiveChange($event, item)"
+              @update:model-value="onActiveChange($event ?? false, item)"
             />
             <RowActions
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"

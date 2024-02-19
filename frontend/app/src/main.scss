@@ -119,3 +119,10 @@ input {
 .blur {
   filter: blur(0.75em);
 }
+
+// todo: remove post migration
+/* stylelint-disable selector-class-pattern */
+
+.v-expansion-panel__shadow {
+  box-shadow: none !important;
+}

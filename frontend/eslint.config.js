@@ -3,16 +3,30 @@ const rotki = require('@rotki/eslint-config').default;
 
 module.exports = rotki({
   vue: {
-    vueVersion: 2,
+    vueVersion: 3,
+    overrides: {
+      'vue/no-deprecated-model-definition': [
+        'error',
+      ],
+      'vue/no-deprecated-v-bind-sync': 'error',
+    },
   },
   typescript: {
     tsconfigPath: 'tsconfig.json',
   },
   stylistic: true,
-  vuetify: true,
+  vuetify: {
+    overrides: {
+      'vuetify/no-deprecated-components': 'warn',
+      'vuetify/no-deprecated-props': 'warn',
+      'vuetify/no-deprecated-classes': 'off',
+    },
+  },
   rotki: {
     overrides: {
-      '@rotki/no-deprecated-components': ['warn', { legacy: true }],
+      '@rotki/no-deprecated-components': 'warn',
+      '@rotki/no-deprecated-props': 'warn',
+      '@rotki/no-legacy-library-import': 'warn',
     },
   },
   cypress: {
@@ -28,5 +42,9 @@ module.exports = rotki({
       '/transactions.query_status_events.*/',
       '/transactions.events.headers.*/',
     ],
+    overrides: {
+      '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
+      '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
+    },
   },
 });

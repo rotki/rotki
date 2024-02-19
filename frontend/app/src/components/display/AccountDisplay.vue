@@ -57,7 +57,7 @@ const { t } = useI18n();
         class="pr-1"
       >
         <VAvatar
-          left
+          start
           size="24px"
         >
           <ChainIcon

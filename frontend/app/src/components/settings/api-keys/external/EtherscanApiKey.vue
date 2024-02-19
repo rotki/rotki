@@ -64,11 +64,11 @@ const link = computed(() => {
     @save="save($event, removeEtherscanNotification)"
     @delete-key="confirmDelete($event)"
   >
-    <i18n
+    <i18n-t
       v-if="link"
       tag="div"
       class="text-rui-text-secondary text-body-2"
-      path="external_services.get_api_key"
+      keypath="external_services.get_api_key"
     >
       <template #link>
         <ExternalLink
@@ -78,6 +78,6 @@ const link = computed(() => {
           {{ t('common.here') }}
         </ExternalLink>
       </template>
-    </i18n>
+    </i18n-t>
   </ServiceKey>
 </template>

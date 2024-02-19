@@ -138,6 +138,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
   <div>
     <DataTable
       ref="tableRef"
+      v-model:expanded="expanded"
       class="table-inside-dialog"
       :class="{
         [$style['table--pinned']]: isPinned,
@@ -146,7 +147,6 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       :items="groupedMissingAcquisitions"
       item-key="asset"
       single-expand
-      :expanded.sync="expanded"
       :container="tableContainer"
       :dense="isPinned"
       multi-sort
@@ -182,11 +182,12 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       <template #item.action="{ item }">
         <div class="flex flex-col items-center gap-1">
           <VMenu offset-y>
-            <template #activator="{ on }">
+            <template #activator="{ props }">
               <RuiButton
+
                 variant="text"
                 icon
-                v-on="on"
+                v-bind="props"
               >
                 <RuiIcon
                   size="20"

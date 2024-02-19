@@ -57,9 +57,9 @@ const { t } = useI18n();
             />
           </div>
         </template>
-        <i18n
+        <i18n-t
           tag="span"
-          path="backend_mappings.events.type_direction.title"
+          keypath="backend_mappings.events.type_direction.title"
           class="whitespace-break-spaces"
         >
           <template #direction>
@@ -71,7 +71,7 @@ const { t } = useI18n();
               }}
             </span>
           </template>
-        </i18n>
+        </i18n-t>
       </RuiTooltip>
     </div>
   </div>

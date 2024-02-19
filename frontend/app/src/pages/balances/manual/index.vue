@@ -57,7 +57,7 @@ setPostSubmitFunc(postSubmit);
 const router = useRouter();
 onMounted(async () => {
   const { currentRoute } = router;
-  if (currentRoute.query.add) {
+  if (get(currentRoute).query.add) {
     add();
     await router.replace({ query: {} });
   }

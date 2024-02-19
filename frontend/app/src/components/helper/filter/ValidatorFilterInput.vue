@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
-    value: Eth2ValidatorEntry[];
+    modelValue: Eth2ValidatorEntry[];
     items: Eth2ValidatorEntry[];
     loading?: boolean;
   }>(),
@@ -13,29 +17,31 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: Eth2ValidatorEntry[]): void;
+  (e: 'update:model-value', value: Eth2ValidatorEntry[]): void;
 }>();
 
-const { value } = toRefs(props);
+const model = useSimpleVModel(props, emit);
 
 const search: Ref<string> = ref('');
 
-function input(value: Eth2ValidatorEntry[]) {
-  emit('input', value);
-}
+function filter(_value: string, queryText: string, item?: { raw: Eth2ValidatorEntry }) {
+  const raw = item?.raw;
+  if (!raw)
+    return false;
 
-function filter({ publicKey, index }: Eth2ValidatorEntry, queryText: string) {
+  const { publicKey, index } = raw;
   return publicKey.includes(queryText)
-    || index.toString().includes(queryText);
+    || index.toString().includes(queryText)
+    || false;
 }
 
 function removeValidator(validator: Eth2ValidatorEntry) {
-  const selection = [...get(value)];
+  const selection = [...props.modelValue];
   const index = selection.findIndex(v => v.publicKey === validator.publicKey);
   if (index >= 0)
     selection.splice(index, 1);
 
-  input(selection);
+  emit('update:model-value', selection);
 }
 
 const { t } = useI18n();
@@ -43,10 +49,10 @@ const { t } = useI18n();
 
 <template>
   <VAutocomplete
-    :filter="filter"
-    :value="value"
+    v-model:search-input="search"
+    v-model="model"
+    :custom-filter="filter"
     :items="items"
-    :search-input.sync="search"
     :loading="loading"
     :disabled="loading"
     hide-details
@@ -56,20 +62,18 @@ const { t } = useI18n();
     chips
     clearable
     multiple
-    solo
     flat
-    dense
-    outlined
+    density="compact"
+    variant="outlined"
     item-value="publicKey"
     :label="t('validator_filter_input.label')"
     :open-on-clear="false"
-    item-text="publicKey"
-    @input="input($event)"
+    item-title="publicKey"
   >
     <template #item="{ item }">
       <ValidatorDisplay
         class="py-2"
-        :validator="item"
+        :validator="item.raw"
       />
     </template>
     <template #selection="{ item }">
@@ -77,10 +81,10 @@ const { t } = useI18n();
         size="sm"
         class="text-truncate m-0.5"
         closeable
-        @click:close="removeValidator(item)"
+        @click:close="removeValidator(item.raw)"
       >
         <ValidatorDisplay
-          :validator="item"
+          :validator="item.raw"
           horizontal
         />
       </RuiChip>

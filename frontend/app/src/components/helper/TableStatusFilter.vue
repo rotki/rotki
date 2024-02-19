@@ -9,17 +9,13 @@ defineOptions({
     offset-y
     :close-on-content-click="false"
     v-bind="$attrs"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         class="py-2.5 px-3 !outline-rui-grey-500 dark:!outline-rui-grey-700 !text-rui-text-secondary"
         variant="outlined"
         data-cy="status-filter"
-        v-on="on"
+        v-bind="props"
       >
         <RuiIcon
           size="20"

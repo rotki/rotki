@@ -8,7 +8,7 @@ export function RuiComponentResolver(): ComponentResolver {
       if (name.startsWith(prefix)) {
         return {
           name,
-          from: '@rotki/ui-library-compat/components',
+          from: '@rotki/ui-library/components',
         };
       }
     },

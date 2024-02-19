@@ -120,12 +120,12 @@ const css = useCssModule();
     <VMenu
       v-model="open"
       offset-y
-      left
+      location="left"
       max-width="400"
       max-height="500"
       :close-on-content-click="false"
     >
-      <template #activator="{ on }">
+      <template #activator="{ props }">
         <RuiTooltip
           :popper="{ placement: 'top' }"
           :open-delay="400"
@@ -137,7 +137,7 @@ const css = useCssModule();
               color="primary"
               variant="text"
               icon
-              v-on="on"
+              v-bind="props"
             >
               <RuiIcon
                 size="20"
@@ -231,7 +231,7 @@ const css = useCssModule();
         v-else
         class="p-4"
       >
-        <i18n path="table_filter.saved_filters.empty">
+        <i18n-t keypath="table_filter.saved_filters.empty">
           <template #button>
             <RuiButton
               color="secondary"
@@ -246,7 +246,7 @@ const css = useCssModule();
               />
             </RuiButton>
           </template>
-        </i18n>
+        </i18n-t>
       </div>
     </VMenu>
   </div>

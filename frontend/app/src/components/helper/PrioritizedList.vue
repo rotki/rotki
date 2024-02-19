@@ -13,7 +13,7 @@ import type {
 
 const props = withDefaults(
   defineProps<{
-    value: PrioritizedListId[];
+    modelValue: PrioritizedListId[];
     allItems: PrioritizedListData<PrioritizedListId>;
     itemDataName: string;
     disableAdd?: boolean;
@@ -27,12 +27,13 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: PrioritizedListId[]): void }>();
-const { value, allItems, itemDataName } = toRefs(props);
-const slots = useSlots();
+const emit = defineEmits<{
+  (e: 'update:model-value', value: PrioritizedListId[]): void;
+}>();
+const { allItems, itemDataName } = toRefs(props);
 const selection = ref<Nullable<PrioritizedListId>>(null);
 
-const input = (items: PrioritizedListId[]) => emit('input', items);
+const input = (items: PrioritizedListId[]) => emit('update:model-value', items);
 
 const itemNameTr = computed(() => {
   const name = get(itemDataName);
@@ -42,16 +43,16 @@ const itemNameTr = computed(() => {
   };
 });
 
-const missing = computed<string[]>(() =>
-  get(allItems).itemIdsNotIn(get(value)),
+const missing = computed<PrioritizedListId[]>(() =>
+  get(allItems).itemIdsNotIn(props.modelValue),
 );
 
-const noResults = computed<boolean>(() => get(value).length === 0);
+const noResults = computed<boolean>(() => props.modelValue.length === 0);
 
-const isFirst = (item: string): boolean => get(value)[0] === item;
+const isFirst = (item: string): boolean => props.modelValue[0] === item;
 
 function isLast(item: string): boolean {
-  const items = get(value);
+  const items = props.modelValue;
   return items.at(-1) === item;
 }
 
@@ -62,14 +63,14 @@ function itemData(identifier: PrioritizedListId): PrioritizedListItemData<Priori
 
 function addItem() {
   assert(get(selection));
-  const items = [...get(value)];
+  const items = [...props.modelValue];
   items.push(get(selection)!);
   input(items);
   set(selection, null);
 }
 
 function move(item: PrioritizedListId, down: boolean) {
-  const items = [...get(value)];
+  const items = [...props.modelValue];
   const itemIndex = items.indexOf(item);
   const nextIndex = itemIndex + (down ? 1 : -1);
   const nextItem = items[nextIndex];
@@ -79,7 +80,7 @@ function move(item: PrioritizedListId, down: boolean) {
 }
 
 function remove(item: PrioritizedListId) {
-  const items = [...get(value)];
+  const items = [...props.modelValue];
   const itemIndex = items.indexOf(item);
   items.splice(itemIndex, 1);
   input(items);
@@ -106,7 +107,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
       no-padding
     >
       <template
-        v-if="slots.title"
+        v-if="$slots.title"
         #header
       >
         <slot name="title" />
@@ -120,7 +121,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           v-model="selection"
           class="grow"
           prepend-inner-icon="mdi-magnify"
-          outlined
+          variant="outlined"
           :no-data-text="t('prioritized_list.all_added', itemNameTr)"
           :items="missing"
           :hint="autoCompleteHint"
@@ -128,13 +129,13 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         >
           <template #selection="{ item }">
             <PrioritizedListEntry
-              :data="itemData(item)"
+              :data="itemData(item.raw)"
               size="24px"
             />
           </template>
           <template #item="{ item }">
             <PrioritizedListEntry
-              :data="itemData(item)"
+              :data="itemData(item.raw)"
               size="24px"
             />
           </template>
@@ -180,7 +181,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             </td>
           </tr>
           <tr
-            v-for="(identifier, index) in value"
+            v-for="(identifier, index) in modelValue"
             :key="identifier"
             class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900"
           >
@@ -192,24 +193,22 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                   icon
                   vertical
                 >
-                  <template #default>
-                    <RuiButton
-                      :id="`move-up-${identifier}`"
-                      class="!px-2"
-                      :disabled="isFirst(identifier)"
-                      @click="move(identifier, false)"
-                    >
-                      <RuiIcon name="arrow-up-s-line" />
-                    </RuiButton>
-                    <RuiButton
-                      :id="`move-down-${identifier}`"
-                      class="!px-2"
-                      :disabled="isLast(identifier)"
-                      @click="move(identifier, true)"
-                    >
-                      <RuiIcon name="arrow-down-s-line" />
-                    </RuiButton>
-                  </template>
+                  <RuiButton
+                    :id="`move-up-${identifier}`"
+                    class="!px-2"
+                    :disabled="isFirst(identifier)"
+                    @click="move(identifier, false)"
+                  >
+                    <RuiIcon name="arrow-up-s-line" />
+                  </RuiButton>
+                  <RuiButton
+                    :id="`move-down-${identifier}`"
+                    class="!px-2"
+                    :disabled="isLast(identifier)"
+                    @click="move(identifier, true)"
+                  >
+                    <RuiIcon name="arrow-down-s-line" />
+                  </RuiButton>
                 </RuiButtonGroup>
               </div>
             </td>

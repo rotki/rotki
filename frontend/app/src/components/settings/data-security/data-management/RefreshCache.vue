@@ -55,10 +55,10 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       <VAutocomplete
         v-model="source"
         class="flex-1"
-        outlined
+        variant="outlined"
         :label="t('data_management.refresh_cache.select_cache')"
         :items="refreshable"
-        item-text="text"
+        item-title="text"
         item-value="id"
         hide-details
         :disabled="pending"

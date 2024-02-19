@@ -22,7 +22,7 @@ function icon(module: Module): string {
 onMounted(() => {
   const currentInstance = getCurrentInstance();
   assert(currentInstance);
-  const $el = currentInstance.proxy.$el;
+  const $el = currentInstance.proxy?.$el;
   const { top: topPoint } = $el.getBoundingClientRect();
   set(top, topPoint);
 });
@@ -48,9 +48,9 @@ const { t } = useI18n();
           />
         </div>
       </div>
-      <i18n
+      <i18n-t
         tag="span"
-        path="module_not_active.not_active"
+        keypath="module_not_active.not_active"
         class="text-center text-rui-text-secondary"
       >
         <template #link>
@@ -75,7 +75,7 @@ const { t } = useI18n();
             {{ name(module) }}
           </span>
         </template>
-      </i18n>
+      </i18n-t>
     </div>
   </div>
 </template>

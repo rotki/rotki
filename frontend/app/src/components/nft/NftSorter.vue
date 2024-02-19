@@ -64,7 +64,7 @@ const sortProperties = [
         hide-details
         single-line
         dense
-        outlined
+        variant="outlined"
         :items="sortProperties"
       />
     </div>

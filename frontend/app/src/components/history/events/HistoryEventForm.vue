@@ -24,8 +24,8 @@ const entryType: Ref<HistoryEventEntryType> = ref(
   HistoryEventEntryType.HISTORY_EVENT,
 );
 
-function getEvent<T extends HistoryEvent>(event: HistoryEvent, type: HistoryEventEntryType): T | undefined {
-  if (isOfEventType<T>(event, type))
+function getEvent<T extends HistoryEvent>(event: HistoryEvent | undefined, type: HistoryEventEntryType): T | undefined {
+  if (event && isOfEventType<T>(event, type))
     return event;
 
   return undefined;
@@ -48,15 +48,15 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       data-cy="entry-type"
       :items="historyEventEntryTypes"
       :disabled="!!groupHeader"
-      outlined
+      variant="outlined"
       label="Entry Type"
       hide-details
     >
       <template #item="{ item }">
-        {{ toCapitalCase(item) }}
+        {{ toCapitalCase(item.raw) }}
       </template>
       <template #selection="{ item }">
-        {{ toCapitalCase(item) }}
+        {{ toCapitalCase(item.raw) }}
       </template>
     </VSelect>
 

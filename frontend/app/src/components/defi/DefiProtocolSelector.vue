@@ -5,9 +5,13 @@ import {
   isDefiProtocol,
 } from '@/types/modules';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
-    value?: DefiProtocol | null;
+    modelValue?: DefiProtocol | null;
     liabilities?: boolean;
   }>(),
   {
@@ -17,8 +21,10 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', protocol: DefiProtocol | null): void;
+  (e: 'update:model-value', protocol: DefiProtocol | null): void;
 }>();
+
+const model = useSimpleVModel(props, emit);
 
 const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
 const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
@@ -32,10 +38,6 @@ const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
 const { t } = useI18n();
-
-function input(_selectedProtocol: DefiProtocol | null) {
-  emit('input', _selectedProtocol);
-}
 
 const protocols = computed<DefiProtocol[]>(() => {
   if (get(liabilities))
@@ -57,39 +59,37 @@ const protocolsData = computed(() =>
 <template>
   <RuiCard>
     <VAutocomplete
-      :value="value"
-      :search-input.sync="search"
+      v-model:search-input="search"
+      v-model="model"
       :items="protocolsData"
       hide-details
       hide-selected
+      v-bind="$attrs"
       hide-no-data
       clearable
       chips
-      dense
-      outlined
+      density="compact"
+      variant="outlined"
       :open-on-clear="false"
       :label="t('defi_protocol_selector.label')"
-      item-text="name"
+      item-title="name"
       item-value="identifier"
       class="defi-protocol-selector"
-      @input="input($event)"
     >
-      <template #selection="{ attrs, item }">
+      <template #selection="{ item }">
         <DefiIcon
-          v-bind="attrs"
-          :item="item"
+          :item="item.raw"
         />
       </template>
-      <template #item="{ attrs, item }">
+      <template #item="{ item }">
         <DefiIcon
-          v-bind="attrs"
-          :item="item"
+          :item="item.raw"
         />
       </template>
     </VAutocomplete>
     <div class="p-2 text-body-2 text-rui-text-secondary">
       {{
-        value
+        model
           ? t('defi_protocol_selector.filter_specific')
           : t('defi_protocol_selector.filter_all')
       }}

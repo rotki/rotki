@@ -1,30 +1,32 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import { setActivePinia } from 'pinia';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import type { StringSuggestionMatcher } from '@/types/filtering';
 
-vi.mocked(useCssModule).mockReturnValue({
-  suggestions: 'suggestions',
-});
-
 describe('table-filter/FilterDropdown.vue', () => {
-  let wrapper: Wrapper<any>;
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
+  let wrapper: VueWrapper<InstanceType<typeof TableFilter>>;
+  const createWrapper = (options: ComponentMountingOptions<typeof TableFilter> = {}) => {
+    const vuetify = createVuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     return mount(TableFilter, {
-      pinia,
-      vuetify,
-      stubs: {
-        VCombobox: {
-          template: `
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          'i18n-t': {
+            template: `<slot/>`,
+          },
+          'VCombobox': {
+            template: `
             <div>
               <input :value="searchInput" class="search-input" type="text" @input="$emit('update:search-input', $event.value)">
               <div class="selections">
@@ -33,9 +35,10 @@ describe('table-filter/FilterDropdown.vue', () => {
               <span><slot name="no-data" /></span>
             </div>
           `,
-          props: {
-            value: { type: Array },
-            searchInput: { type: String },
+            props: {
+              value: { type: Array },
+              searchInput: { type: String },
+            },
           },
         },
       },
@@ -65,12 +68,12 @@ describe('table-filter/FilterDropdown.vue', () => {
   ];
 
   it('filter matchers', async () => {
-    const propsData = {
+    const props = {
       matchers,
       matches: {},
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
       matchers.length,
@@ -78,7 +81,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.find('.search-input').trigger('input', { value: 'ty' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(1);
     expect(wrapper.find('.suggestions > button:first-child').text()).toBe(
@@ -87,17 +90,17 @@ describe('table-filter/FilterDropdown.vue', () => {
   });
 
   it('choose suggestions', async () => {
-    const propsData = {
+    const props = {
       matchers,
       matches: {},
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
     // Set matcher to `type`
     await wrapper.find('.search-input').trigger('input', { value: 'type' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -114,7 +117,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Choose first suggestions (type 1)
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -131,11 +134,11 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.search-input')
       .trigger('input', { value: 'type = type 2' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -152,7 +155,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.selections > span:nth-child(1) div[role=button] button')
       .trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[2]).toEqual([
       { type: ['type 2'] },
@@ -163,7 +166,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.selections > span:nth-child(1) div[role=button] span')
       .trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[3]).toEqual([{}]);
     expect(
@@ -172,17 +175,17 @@ describe('table-filter/FilterDropdown.vue', () => {
   });
 
   it('choose suggestions with exclusion', async () => {
-    const propsData = {
+    const props = {
       matchers,
       matches: {},
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
     // Set matcher to `type`
     await wrapper.find('.search-input').trigger('input', { value: 'type !=' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -199,7 +202,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Choose first suggestions with exclusion (type 1)
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -213,16 +216,16 @@ describe('table-filter/FilterDropdown.vue', () => {
   });
 
   it('restore selection', async () => {
-    const propsData = {
+    const props = {
       matchers,
       matches: {
         type: ['type 1', 'type 2'],
       },
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -237,16 +240,16 @@ describe('table-filter/FilterDropdown.vue', () => {
   });
 
   it('restore selection with exclusion', async () => {
-    const propsData = {
+    const props = {
       matchers,
       matches: {
         type: '!type 1',
       },
     };
 
-    wrapper = createWrapper({ propsData });
+    wrapper = createWrapper({ props });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper

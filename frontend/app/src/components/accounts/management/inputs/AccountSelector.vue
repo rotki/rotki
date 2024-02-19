@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { isBtcChain } from '@/types/blockchain/chains';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { InputMode } from '@/types/input-mode';
@@ -36,19 +35,17 @@ function updateModelValue(value: Blockchain | null) {
 </script>
 
 <template>
-  <Fragment>
-    <ChainSelect
-      :disabled="loading || !!accountToEdit"
-      :model-value="blockchain"
-      :clearable="false"
-      @update:model-value="updateModelValue($event)"
-    />
+  <ChainSelect
+    :disabled="loading || !!accountToEdit"
+    :model-value="blockchain"
+    :clearable="false"
+    @update:model-value="updateModelValue($event)"
+  />
 
-    <InputModeSelect
-      v-if="!accountToEdit && showInputModeSelector"
-      :input-mode="inputMode"
-      :blockchain="blockchain"
-      @update:input-mode="emit('update:input-mode', $event)"
-    />
-  </Fragment>
+  <InputModeSelect
+    v-if="!accountToEdit && showInputModeSelector"
+    :input-mode="inputMode"
+    :blockchain="blockchain"
+    @update:input-mode="emit('update:input-mode', $event)"
+  />
 </template>

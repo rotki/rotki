@@ -5,41 +5,37 @@ import { toMessages } from '@/utils/validation';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{
-  value: HistoricalPriceFormPayload;
+  modelValue: HistoricalPriceFormPayload;
   edit: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', price: Partial<HistoricalPriceFormPayload>): void;
+  (e: 'update:model-value', price: Partial<HistoricalPriceFormPayload>): void;
 }>();
 
-const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const date = computed(({ value }) =>
-  value.timestamp ? convertFromTimestamp(value.timestamp) : '',
-);
-const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
-const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
+const date = computed({
+  get() {
+    const timestamp = props.modelValue.timestamp;
+    return timestamp ? convertFromTimestamp(timestamp) : '';
+  },
+  set(date: string) {
+    emit('update:model-value', {
+      ...props.modelValue,
+      timestamp: convertToTimestamp(date),
+    });
+  },
+});
 
-const price = ref<string>('');
+const fromAsset = useSimplePropVModel(props, 'fromAsset', emit);
+const toAsset = useSimplePropVModel(props, 'toAsset', emit);
+const price = useSimplePropVModel(props, 'price', emit);
+
+const fromAssetSymbol = assetSymbol(fromAsset);
+const toAssetSymbol = assetSymbol(toAsset);
+
 const numericPrice = bigNumberifyFromRef(price);
-
-function input(price: Partial<HistoricalPriceFormPayload>) {
-  emit('input', { ...get(value), ...price });
-}
-
-watch(value, (val) => {
-  set(price, val.price);
-});
-
-watch(price, (val) => {
-  input({ price: val });
-});
-
-onMounted(() => {
-  set(price, get(value).price);
-});
 
 const { t } = useI18n();
 
@@ -75,8 +71,8 @@ const { setValidation } = useHistoricPriceForm();
 const v$ = setValidation(
   rules,
   {
-    fromAsset: computed(() => get(value).fromAsset),
-    toAsset: computed(() => get(value).toAsset),
+    fromAsset,
+    toAsset,
     price,
     date,
   },
@@ -88,20 +84,18 @@ const v$ = setValidation(
   <form class="flex flex-col gap-4">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AssetSelect
-        :value="value.fromAsset"
+        v-model="fromAsset"
         :label="t('price_form.from_asset')"
         outlined
         :disabled="edit"
         :error-messages="toMessages(v$.fromAsset)"
-        @input="input({ fromAsset: $event })"
       />
       <AssetSelect
-        :value="value.toAsset"
+        v-model="toAsset"
         :label="t('price_form.to_asset')"
         :disabled="edit"
         outlined
         :error-messages="toMessages(v$.toAsset)"
-        @input="input({ toAsset: $event })"
       />
     </div>
     <AmountInput
@@ -110,20 +104,20 @@ const v$ = setValidation(
       :error-messages="toMessages(v$.price)"
       :label="t('common.price')"
     />
-    <i18n
-      v-if="price && fromAsset && toAsset"
+    <i18n-t
+      v-if="price && fromAssetSymbol && toAssetSymbol"
       tag="div"
-      path="price_form.historic.hint"
+      keypath="price_form.historic.hint"
       class="text-caption text-rui-success -mt-9 pl-3"
     >
       <template #fromAsset>
         <strong>
-          {{ fromAsset }}
+          {{ fromAssetSymbol }}
         </strong>
       </template>
       <template #toAsset>
         <strong>
-          {{ toAsset }}
+          {{ toAssetSymbol }}
         </strong>
       </template>
       <template #price>
@@ -134,13 +128,12 @@ const v$ = setValidation(
           />
         </strong>
       </template>
-    </i18n>
+    </i18n-t>
     <DateTimePicker
-      :value="date"
+      v-model="date"
       :label="t('common.datetime')"
       :disabled="edit"
       :error-messages="toMessages(v$.date)"
-      @input="input({ timestamp: convertToTimestamp($event) })"
     />
   </form>
 </template>

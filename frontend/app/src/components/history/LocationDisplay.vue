@@ -17,23 +17,26 @@ const props = withDefaults(
   },
 );
 
-const { identifier, detailPath } = toRefs(props);
+const { identifier } = toRefs(props);
 
 const { locationData } = useLocations();
 const location = locationData(identifier);
 
 const route = computed<{ path: string }>(() => {
-  if (get(detailPath))
-    return { path: get(detailPath) };
-
+  const detailPath = props.detailPath;
   const tradeLocation = get(location);
-  assert(tradeLocation);
-  const path = tradeLocation?.detailPath;
-  if (path)
-    return { path };
+  let path: string;
+  if (detailPath)
+    path = detailPath;
+  else if (tradeLocation?.detailPath)
+    path = tradeLocation.detailPath;
+  else if (tradeLocation)
+    path = Routes.LOCATIONS.replace(':identifier', tradeLocation.identifier);
+  else
+    path = '';
 
   return {
-    path: Routes.LOCATIONS.replace(':identifier', tradeLocation.identifier),
+    path,
   };
 });
 </script>

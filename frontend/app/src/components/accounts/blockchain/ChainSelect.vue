@@ -27,9 +27,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', blockchain: Blockchain | null): void;
 }>();
 
-const rootAttrs = useAttrs();
-
-const { evmOnly, modelValue, excludeEthStaking } = toRefs(props);
+const { evmOnly, excludeEthStaking } = toRefs(props);
 
 const { isModuleEnabled } = useModules();
 
@@ -38,6 +36,8 @@ const { isEvm, supportedChains } = useSupportedChains();
 const { t } = useI18n();
 
 const search = ref<string | null>(null);
+
+const model = useSimpleVModel(props, emit);
 
 const items = computed(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
@@ -57,12 +57,7 @@ function clearSearch() {
   set(search, '');
 }
 
-function updateBlockchain(blockchain: Blockchain) {
-  clearSearch();
-  emit('update:model-value', blockchain);
-}
-
-function filter(chain: Blockchain, queryText: string) {
+function filter(chain: string, queryText: string) {
   const item = get(supportedChains).find(blockchain => blockchain.id === chain);
   if (!item)
     return false;
@@ -81,32 +76,31 @@ function filter(chain: Blockchain, queryText: string) {
 
 <template>
   <VAutocomplete
-    :dense="dense"
+    v-model:search-input="search"
+    v-model="model"
+    :density="dense ? 'compact' : undefined"
     :disabled="disabled"
-    :filter="filter"
+    :custom-filter="filter"
     :items="items"
     :label="t('account_form.labels.blockchain')"
-    :search-input.sync="search"
-    :value="modelValue"
     data-cy="account-blockchain-field"
-    outlined
+    variant="outlined"
     auto-select-first
-    single-line
-    v-bind="rootAttrs"
-    @change="updateBlockchain($event)"
+    :single-line="true"
+    v-bind="$attrs"
     @blur="clearSearch()"
   >
     <template #selection="{ item }">
       <ChainDisplay
         v-if="!search"
-        :chain="item"
+        :chain="item.raw"
         :dense="dense"
         class="!py-0"
       />
     </template>
     <template #item="{ item }">
       <ChainDisplay
-        :chain="item"
+        :chain="item.raw"
         :dense="dense"
       />
     </template>

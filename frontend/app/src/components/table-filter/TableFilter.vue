@@ -180,7 +180,7 @@ async function applySuggestion() {
 
   const filter = get(suggestedFilter);
   if (filter.value) {
-    nextTick(() => applyFilter(filter));
+    await nextTick(() => applyFilter(filter));
   }
   else {
     const { key, value: keyword, exclude } = splitSearch(get(search));
@@ -362,23 +362,22 @@ const { t } = useI18n();
       >
         <VCombobox
           ref="input"
-          :value="selection"
-          outlined
-          dense
+          v-model:search-input="search"
+          :model-value="selection"
+          variant="outlined"
+          density="compact"
           chips
           :disabled="disabled"
           small-chips
-          deletable-chips
+          closable-chips
           :label="t('table_filter.label')"
-          solo
           flat
           multiple
           clearable
           hide-details
           :menu-props="{ maxHeight: '390px' }"
           prepend-inner-icon="mdi-filter-variant"
-          :search-input.sync="search"
-          @input="updateMatches($event)"
+          @update:model-value="updateMatches($event)"
           @keydown.enter="applySuggestion()"
           @keydown.up.prevent
           @keydown.up="moveSuggestion(true)"
@@ -392,12 +391,12 @@ const { t } = useI18n();
               class="font-medium !py-0 m-0.5"
               clickable
               closeable
-              @click:close="removeSelection(item)"
-              @click="clickItem(item)"
+              @click:close="removeSelection(item.raw)"
+              @click="clickItem(item.raw)"
             >
               <SuggestedItem
                 chip
-                :suggestion="item"
+                :suggestion="item.raw"
               />
             </RuiChip>
           </template>

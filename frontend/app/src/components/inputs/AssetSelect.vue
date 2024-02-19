@@ -5,6 +5,10 @@ import type { Ref } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     items?: string[];
@@ -13,7 +17,7 @@ const props = withDefaults(
     successMessages?: string;
     errorMessages?: string[];
     label?: string;
-    value?: string;
+    modelValue?: string;
     disabled?: boolean;
     outlined?: boolean;
     clearable?: boolean;
@@ -31,7 +35,7 @@ const props = withDefaults(
     successMessages: '',
     errorMessages: () => [],
     label: 'Asset',
-    value: '',
+    modelValue: '',
     disabled: false,
     outlined: false,
     clearable: false,
@@ -44,11 +48,12 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'input', value: string): void; (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
+const emit = defineEmits<{ (e: 'update:model-value', value: string): void; (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
 
-const { items, showIgnored, excludes, errorMessages, value, includeNfts }
-  = toRefs(props);
+const { items, showIgnored, excludes, errorMessages, includeNfts } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
+
+const model = useSimpleVModel(props, emit);
 
 const autoCompleteInput = ref(null);
 const search = ref<string>('');
@@ -115,7 +120,7 @@ function getVisibleAsset(identifier: string) {
 }
 
 function input(value: string) {
-  emit('input', value || '');
+  emit('update:model-value', value || '');
   emit('update:asset', getVisibleAsset(value));
 }
 
@@ -151,7 +156,7 @@ watchThrottled(
 );
 
 async function checkValue() {
-  const val = get(value);
+  const val = props.modelValue;
   if (!val)
     return;
 
@@ -169,12 +174,12 @@ onMounted(async () => {
   await checkValue();
 });
 
-watch(value, async () => {
+watch(model, async () => {
   await checkValue();
 });
 
 watch(visibleAssets, () => {
-  const identifier = get(value);
+  const identifier = props.modelValue;
   if (identifier && !getVisibleAsset(identifier))
     input('');
 });
@@ -183,20 +188,22 @@ watch(visibleAssets, () => {
 <template>
   <VAutocomplete
     ref="autoCompleteInput"
-    :value="value"
+    v-model:search-input="search"
+    v-model="model"
     :disabled="disabled"
     :items="visibleAssets"
     class="asset-select"
+    v-bind="$attrs"
     :hint="hint"
     :label="label"
     :clearable="clearable"
     :persistent-hint="persistentHint"
     :required="required"
-    :success-messages="successMessages"
+    :messages="successMessages"
+    :variant="outlined ? 'outlined' : undefined"
     :error-messages="errors"
     item-value="identifier"
-    :search-input.sync="search"
-    :item-text="assetText"
+    :item-title="assetText"
     :hide-details="hideDetails"
     :hide-no-data="loading || !search"
     auto-select-first
@@ -205,18 +212,13 @@ watch(visibleAssets, () => {
     :outlined="outlined"
     no-filter
     :class="outlined ? 'asset-select--outlined' : null"
-    v-on="
-      // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
-      $listeners
-    "
-    @input="input($event)"
     @blur="blur()"
   >
     <template #selection="{ item }">
-      <template v-if="item && item.identifier">
+      <template v-if="item.raw && item.raw.identifier">
         <NftDetails
-          v-if="item.assetType === 'nft'"
-          :identifier="item.identifier"
+          v-if="item.raw.assetType === 'nft'"
+          :identifier="item.raw.identifier"
           size="40px"
           class="overflow-hidden"
         />
@@ -229,15 +231,15 @@ watch(visibleAssets, () => {
     </template>
     <template #item="{ item }">
       <NftDetails
-        v-if="item.assetType === 'nft'"
-        :identifier="item.identifier"
+        v-if="item.raw.assetType === 'nft'"
+        :identifier="item.raw.identifier"
         size="40px"
         class="overflow-hidden"
       />
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(
-          item.identifier.toLocaleLowerCase(),
+          item.raw.identifier.toLocaleLowerCase(),
         )}`"
         class="asset-select__details"
         :asset="item"

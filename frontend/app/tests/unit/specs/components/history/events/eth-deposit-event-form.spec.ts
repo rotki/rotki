@@ -1,10 +1,10 @@
 import {
-  type ThisTypedMountOptions,
-  type Wrapper,
+  type ComponentMountingOptions,
+  type VueWrapper,
   mount,
 } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
@@ -17,7 +17,7 @@ vi.mock('json-editor-vue', () => ({
 
 describe('ethDepositEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<EthDepositEventForm>;
+  let wrapper: VueWrapper<InstanceType<typeof EthDepositEventForm>>;
 
   const groupHeader: EthDepositEvent = {
     identifier: 11344,
@@ -44,16 +44,20 @@ describe('ethDepositEventForm.vue', () => {
     validatorIndex: 223,
   };
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
+  const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {}) => {
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(EthDepositEventForm, {
-      pinia,
-      vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          VAutocomplete: VAutocompleteStub,
+          VCombobox: VComboboxStub,
+        },
       },
       ...options,
     });
@@ -62,12 +66,12 @@ describe('ethDepositEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance-toggle]')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -105,17 +109,17 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
           nextSequence: '10',
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance-toggle]')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -158,17 +162,17 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper({
-        propsData: {
+        props: {
           groupHeader,
           editableItem: groupHeader,
         },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance-toggle]')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (

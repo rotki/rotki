@@ -1,3 +1,5 @@
+import { useDisplay as display, useTheme as vTheme } from 'vuetify';
+
 export function useProxy() {
   const currentInstance = getCurrentInstance();
   assert(currentInstance?.proxy);
@@ -5,57 +7,22 @@ export function useProxy() {
 }
 
 export function useTheme() {
-  const { $vuetify } = useProxy();
-  const theme = computed(() => $vuetify.theme);
-  const dark = computed(() => $vuetify.theme.dark);
+  const vtTheme = vTheme();
+  const theme = vtTheme.current;
+  const dark = computed(() => get(theme).dark);
 
   const appBarColor = computed(() => {
     if (!get(dark))
       return 'white';
 
-    return null;
+    return undefined;
   });
 
   return {
-    $vuetify,
     theme,
     dark,
     appBarColor,
   };
 }
 
-export function useDisplay() {
-  const { $vuetify } = useProxy();
-  const mobile = computed(() => $vuetify.breakpoint.mobile);
-  const name = computed(() => $vuetify.breakpoint.name);
-  const width = computed(() => $vuetify.breakpoint.width);
-
-  const xs = computed(() => $vuetify.breakpoint.xs);
-  const sm = computed(() => $vuetify.breakpoint.sm);
-  const md = computed(() => $vuetify.breakpoint.md);
-  const lg = computed(() => $vuetify.breakpoint.lg);
-  const xl = computed(() => $vuetify.breakpoint.xl);
-  const smAndDown = computed(() => $vuetify.breakpoint.smAndDown);
-  const smAndUp = computed(() => $vuetify.breakpoint.smAndUp);
-  const mdAndDown = computed(() => $vuetify.breakpoint.mdAndDown);
-  const mdAndUp = computed(() => $vuetify.breakpoint.mdAndUp);
-  const lgAndDown = computed(() => $vuetify.breakpoint.lgAndDown);
-  const lgAndUp = computed(() => $vuetify.breakpoint.lgAndUp);
-
-  return {
-    xs,
-    sm,
-    md,
-    lg,
-    xl,
-    smAndDown,
-    smAndUp,
-    mdAndDown,
-    mdAndUp,
-    lgAndDown,
-    lgAndUp,
-    mobile,
-    name,
-    width,
-  };
-}
+export const useDisplay = () => display();

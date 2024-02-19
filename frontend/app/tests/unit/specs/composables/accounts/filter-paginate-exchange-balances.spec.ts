@@ -7,9 +7,9 @@ import type {
 } from '@/types/exchanges';
 import type Vue from 'vue';
 
-vi.mock('vue-router/composables', () => ({
+vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockReturnValue(
-    reactive({
+    ref({
       query: {},
     }),
   ),

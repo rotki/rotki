@@ -3,7 +3,7 @@ import { displayDateFormatter } from '@/data/date-formatter';
 
 const props = withDefaults(
   defineProps<{
-    timestamp: number;
+    timestamp: number | string;
     showTimezone?: boolean;
     noTime?: boolean;
     milliseconds?: boolean;
@@ -32,8 +32,9 @@ const dateFormat = computed<string>(() => {
 
 const { scrambleTimestamp } = useScramble();
 
+const numericTimestamp = useToNumber(timestamp);
 const reactiveScramble = reactify(scrambleTimestamp);
-const displayTimestamp = reactiveScramble(timestamp, milliseconds);
+const displayTimestamp = reactiveScramble(numericTimestamp, milliseconds);
 
 const date = computed(() => {
   const display = get(displayTimestamp);

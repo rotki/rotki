@@ -1,6 +1,6 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import Vuetify from 'vuetify';
+import { createVuetify } from 'vuetify';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 
 vi.mock('@/composables/electron-interop', () => {
@@ -18,17 +18,21 @@ vi.mock('@/composables/api/session/premium-credentials', () => ({
 }));
 
 describe('premiumSettings.vue', () => {
-  let wrapper: Wrapper<PremiumSettings>;
+  let wrapper: VueWrapper<InstanceType<typeof PremiumSettings>>;
   let api: ReturnType<typeof usePremiumCredentialsApi>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PremiumSettings, {
-      pinia,
-      vuetify,
-      stubs: ['v-dialog', 'i18n', 'card-title'],
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: ['v-dialog', 'i18n-t', 'card-title'],
+      },
     });
   }
 
@@ -46,9 +50,9 @@ describe('premiumSettings.vue', () => {
     await apiKey.setValue('1234');
     await apiSecret.setValue('1234');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await wrapper.find('[data-cy=premium__setup]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { premiumUserLoggedIn } = useInterop();
@@ -59,11 +63,11 @@ describe('premiumSettings.vue', () => {
     const { premium } = storeToRefs(usePremiumStore());
     set(premium, true);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
     await wrapper.find('[data-cy=premium__delete]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { confirm } = useConfirmStore();

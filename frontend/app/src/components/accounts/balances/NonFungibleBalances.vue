@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import type { Ref } from 'vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
@@ -31,12 +31,12 @@ const extraParams = computed(() => ({
   ignoredAssetsHandling: get(ignoredAssetsHandling),
 }));
 
-const sort = ref<DataTableSortData>({
+const sort = ref<DataTableSortData<NonFungibleBalanceWithLastPrice>>({
   column: 'lastPrice',
   direction: 'desc',
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const tableHeaders = computed<DataTableColumn<NonFungibleBalanceWithLastPrice>[]>(() => [
   {
     label: t('common.name'),
     key: 'name',
@@ -260,12 +260,12 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
         <template #default="{ data, itemLength, totalUsdValue }">
           <RuiDataTable
             v-model="selected"
+            v-model:sort="sort"
             row-attr="id"
             outlined
             dense
             :cols="tableHeaders"
             :rows="data"
-            :sort.sync="sort"
             :sort-modifiers="{ external: true }"
             :options="options"
             :pagination="{
@@ -284,8 +284,8 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
             <template #item.ignored="{ row }">
               <div class="flex justify-center">
                 <VSwitch
-                  :input-value="isIgnored(row.id)"
-                  @change="toggleIgnoreAsset(row.id)"
+                  :model-value="isIgnored(row.id)"
+                  @update:model-value="toggleIgnoreAsset(row.id)"
                 />
               </div>
             </template>

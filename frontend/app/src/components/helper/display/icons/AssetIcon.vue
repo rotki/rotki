@@ -2,8 +2,7 @@
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
-import type { ComputedRef } from 'vue';
-import type { StyleValue } from 'vue/types/jsx';
+import type { StyleValue } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -60,8 +59,7 @@ const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);
 
   const fiatCurrencies = get(currencies).filter(({ crypto }) => !crypto);
-  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)
-    ?.unicodeSymbol;
+  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
 });
 
 const { assetInfo } = useAssetInfoRetrieval();

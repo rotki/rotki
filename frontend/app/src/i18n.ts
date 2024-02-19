@@ -1,13 +1,9 @@
-import VueI18n, { type LocaleMessages } from 'vue-i18n';
-import { castToVueI18n, createI18n } from 'vue-i18n-bridge';
-import Vue from 'vue';
+import { createI18n } from 'vue-i18n';
 
-Vue.use(VueI18n, { bridge: true });
-
-function loadLocaleMessages(): LocaleMessages {
-  const messages: LocaleMessages = {};
+function loadLocaleMessages() {
+  const messages: Record<string, any> = {};
   try {
-    const locales = import.meta.globEager('./locales/*.json') as any;
+    const locales = import.meta.glob('./locales/*.json', { eager: true }) as any;
 
     for (const key in locales) {
       const matched = key.match(/([\w-]+)\./i);
@@ -21,18 +17,10 @@ function loadLocaleMessages(): LocaleMessages {
   return messages;
 }
 
-export default castToVueI18n(
-  createI18n(
-    {
-      legacy: false,
-      locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
-      fallbackLocale:
-        (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined)
-        || 'en',
-      messages: loadLocaleMessages(),
-      silentTranslationWarn:
-        import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
-    },
-    VueI18n,
-  ),
-);
+export default createI18n({
+  legacy: false,
+  locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
+  fallbackLocale: (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
+  messages: loadLocaleMessages(),
+  silentTranslationWarn: import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
+});

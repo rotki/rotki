@@ -68,7 +68,7 @@ const css = useCssModule();
     <div :class="css['lp-type-icon']">
       <VAvatar
         :size="20"
-        color="grey lighten-4"
+        color="grey-lighten-4"
         :class="css['lp-type-icon-avatar']"
       >
         <AppImage

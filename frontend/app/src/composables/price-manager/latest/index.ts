@@ -7,7 +7,7 @@ import { omit } from 'lodash-es';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
-import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
 export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref<string | undefined>) {
   const latestPrices = ref<ManualPrice[]>([]);
@@ -28,7 +28,7 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
       .filter(asset => asset !== CURRENCY_USD),
   );
 
-  const items = computed(() => {
+  const items = computed<ManualPriceWithUsd[]>(() => {
     const filterVal = get(filter);
     const latestPricesVal = get(latestPrices);
 
@@ -36,12 +36,13 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
       ? latestPricesVal.filter(({ fromAsset }) => fromAsset === filterVal)
       : latestPricesVal;
 
-    return filteredItems.map(item => ({
+    return filteredItems.map(((item, index) => ({
+      id: index + 1,
       ...item,
-      usdPrice: !isNft(item.fromAsset)
+      usdPrice: (!isNft(item.fromAsset)
         ? get(assetPrice(item.fromAsset))
-        : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price),
-    }));
+        : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)) || Zero,
+    } satisfies ManualPriceWithUsd)));
   });
 
   const getLatestPrices = async () => {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { externalAssets } from '@/data/external-links';
 import type { LoginCredentials } from '@/types/login';
 
@@ -46,77 +45,74 @@ onMounted(async () => fetchMessages());
 </script>
 
 <template>
-  <Fragment>
-    <section :class="css.section">
-      <div :class="css.container">
+  <section :class="css.section">
+    <div :class="css.container">
+      <RuiLogo
+        :class="css.logo__mobile"
+        text
+        :custom-src="externalAssets.logo.drawer"
+      />
+      <div :class="css.wrapper">
+        <div data-cy="account-management">
+          <UserHost>
+            <div v-if="checkForAssetUpdate">
+              <AssetUpdate
+                headless
+                @skip="navigate()"
+              />
+            </div>
+            <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
+            <LoginForm
+              v-else
+              :loading="loading"
+              :is-docker="isDocker"
+              :errors="errors"
+              @touched="errors = []"
+              @login="handleLogin($event)"
+              @backend-changed="backendChanged($event)"
+              @new-account="navigateToUserCreation()"
+            />
+          </UserHost>
+        </div>
+      </div>
+      <footer :class="css.container__footer">
+        <AccountManagementFooterText #default="{ copyright }">
+          {{ copyright }}
+        </AccountManagementFooterText>
+        <div class="ml-4">
+          <AdaptiveFooterButton />
+        </div>
+      </footer>
+    </div>
+  </section>
+  <AccountManagementAside class="p-6 hidden lg:flexlg:p-12">
+    <div>
+      <span :class="css.logo">
         <RuiLogo
-          :class="css.logo__mobile"
-          text
+          class="w-8 !h-8"
           :custom-src="externalAssets.logo.drawer"
         />
-        <div :class="css.wrapper">
-          <div data-cy="account-management">
-            <UserHost>
-              <div v-if="checkForAssetUpdate">
-                <AssetUpdate
-                  headless
-                  @skip="navigate()"
-                />
-              </div>
-              <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
-              <LoginForm
-                v-else
-                :loading="loading"
-                :is-docker="isDocker"
-                :errors="errors"
-                @touched="errors = []"
-                @login="handleLogin($event)"
-                @backend-changed="backendChanged($event)"
-                @new-account="navigateToUserCreation()"
-              />
-            </UserHost>
-          </div>
-        </div>
-        <footer :class="css.container__footer">
-          <AccountManagementFooterText #default="{ copyright }">
-            {{ copyright }}
-          </AccountManagementFooterText>
-          <div class="ml-4">
-            <AdaptiveFooterButton />
-          </div>
-        </footer>
-      </div>
-    </section>
-    <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
-      <div>
-        <span :class="css.logo">
-          <RuiLogo
-            class="w-8 !h-8"
-            :custom-src="externalAssets.logo.drawer"
-          />
-        </span>
-        <h2 class="text-h3 font-light xl:text-h2 mb-6">
-          {{ header.header }}
-        </h2>
-        <p class="text-body-2">
-          {{ header.text }}
-        </p>
-        <NewReleaseChangelog
-          v-if="showReleaseNotes"
-          class="mt-4"
-        />
-        <WelcomeMessageDisplay
-          v-else-if="welcomeMessage"
-          class="mt-6"
-          :message="welcomeMessage"
-        />
-      </div>
-      <DockerWarning
-        v-if="!dockerRiskAccepted && isDocker"
-        class="mt-8"
+      </span>
+      <h2 class="text-h3 font-light xl:text-h2 mb-6">
+        {{ header.header }}
+      </h2>
+      <p class="text-body-2">
+        {{ header.text }}
+      </p>
+      <NewReleaseChangelog
+        v-if="showReleaseNotes"
+        class="mt-4"
+      /><WelcomeMessageDisplay
+        v-else-if="welcomeMessage"
+        class="mt-6"
+        :message="welcomeMessage"
       />
-    </AccountManagementAside>
-  </Fragment>
+    </div>
+    <DockerWarning
+      v-if="!dockerRiskAccepted && isDocker"
+      class="mt-8"
+    />
+  </AccountManagementAside>
 </template>
 
 <style module lang="scss">

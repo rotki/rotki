@@ -7,9 +7,9 @@ defineProps<{
 </script>
 
 <template>
-  <i18n
+  <i18n-t
     tag="div"
-    path="profit_loss_report.report_period"
+    keypath="profit_loss_report.report_period"
     class="text-h5 mt-6"
   >
     <template #start>
@@ -24,5 +24,5 @@ defineProps<{
         class="font-medium"
       />
     </template>
-  </i18n>
+  </i18n-t>
 </template>

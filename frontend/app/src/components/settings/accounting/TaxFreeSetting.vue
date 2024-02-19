@@ -95,11 +95,11 @@ onMounted(() => {
       <VSwitch
         v-model="taxFreePeriod"
         class="accounting-settings__taxfree-period"
-        :success-messages="success"
+        :messages="success"
         :error-messages="error"
         :label="t('accounting_settings.trade.labels.tax_free')"
         color="primary"
-        @change="update($event)"
+        @update:model-value="update($event)"
       />
     </SettingsOption>
 

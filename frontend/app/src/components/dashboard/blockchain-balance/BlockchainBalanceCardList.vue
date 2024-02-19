@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import {
   type BlockchainTotal,
@@ -32,43 +31,43 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
 
 <template>
-  <Fragment>
-    <RouterLink
-      :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
+  <RouterLink
+    :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
+  >
+    <ListItem
+      data-cy="blockchain-balance__summary"
+      :data-location="total.chain"
+      class="group py-1 px-6"
     >
-      <ListItem
-        data-cy="blockchain-balance__summary"
-        :data-location="total.chain"
-        class="group py-1 px-6"
-      >
-        <template #avatar>
-          <div class="grayscale group-hover:grayscale-0">
-            <ChainIcon
-              size="24px"
-              :chain="chain"
-            />
-          </div>
-        </template>
-        <div class="flex flex-wrap justify-between gap-1 text-rui-text">
-          {{ toSentenceCase(name) }}
-          <AmountDisplay
-            show-currency="symbol"
-            fiat-currency="USD"
-            :value="amount"
-            :loading="loading"
-            class="font-medium"
+      <template #avatar>
+        <div class="grayscale group-hover:grayscale-0">
+          <ChainIcon
+            size="24px"
+            :chain="chain"
           />
         </div>
-      </ListItem>
-    </RouterLink>
-    <div v-if="total.children.length > 0">
-      <template v-for="child in total.children">
-        <BlockchainBalanceCardDetails
-          :key="child.protocol"
-          :child="child"
-          :details="childData(child.protocol)"
-        />
       </template>
-    </div>
-  </Fragment>
+      <div class="flex flex-wrap justify-between gap-1 text-rui-text">
+        {{ toSentenceCase(name) }}
+        <AmountDisplay
+          show-currency="symbol"
+          fiat-currency="USD"
+          :value="amount"
+          :loading="loading"
+          class="font-medium"
+        />
+      </div>
+    </ListItem>
+  </RouterLink>
+  <div v-if="total.children.length > 0">
+    <template
+      v-for="child in total.children"
+      :key="child.protocol"
+    >
+      <BlockchainBalanceCardDetails
+        :child="child"
+        :details="childData(child.protocol)"
+      />
+    </template>
+  </div>
 </template>

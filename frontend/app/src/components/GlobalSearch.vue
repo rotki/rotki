@@ -29,7 +29,7 @@ const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
 
 const input = ref<any>(null);
-const selected = ref<number | string>('');
+const selected = ref<number>();
 const search = ref<string>('');
 const loading = ref(false);
 const visibleItems: Ref<SearchItem[]> = ref([]);
@@ -362,7 +362,7 @@ watch(open, (open) => {
         get(input)?.$refs?.input?.focus?.();
       }, 100);
     }
-    set(selected, '');
+    set(selected, undefined);
     set(search, '');
   });
 });
@@ -402,16 +402,16 @@ onBeforeMount(async () => {
     :content-class="$style.dialog"
     transition="slide-y-transition"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <MenuTooltipButton
+        v-bind="props"
         class-name="secondary--text text--lighten-4"
         :tooltip="
           t('global_search.menu_tooltip', {
             modifier,
             key,
-          }).toString()
+          })
         "
-        v-on="on"
       >
         <RuiIcon name="search-line" />
       </MenuTooltipButton>
@@ -420,49 +420,49 @@ onBeforeMount(async () => {
       <VAutocomplete
         ref="input"
         v-model="selected"
+        v-model:search-input="search"
         no-filter
-        filled
+        variant="outlined"
         :no-data-text="t('global_search.no_actions')"
-        :search-input.sync="search"
-        :background-color="dark ? 'black' : 'white'"
+        :bg-color="dark ? 'black' : 'white'"
         hide-details
         :items="visibleItems"
         auto-select-first
         prepend-inner-icon="mdi-magnify"
         append-icon=""
         :placeholder="t('global_search.search_placeholder')"
-        @input="change($event)"
+        @update:model-value="change($event)"
       >
         <template #item="{ item }">
           <div class="flex items-center text-body-2 w-full">
             <AssetIcon
-              v-if="item.asset"
+              v-if="item.raw.asset"
               size="30px"
-              :identifier="item.asset"
+              :identifier="item.raw.asset"
             />
             <template v-else>
               <LocationIcon
-                v-if="item.location"
+                v-if="item.raw.location"
                 icon
                 size="26px"
-                :item="item.location.identifier"
+                :item="item.raw.location.identifier"
               />
               <AppImage
-                v-else-if="item.image"
+                v-else-if="item.raw.image"
                 class="icon-bg"
-                :src="item.image"
-                :alt="item.location.name"
+                :src="item.raw.image"
+                :alt="item.raw.location.name"
                 contain
                 size="26px"
               />
             </template>
             <span class="ml-3">
-              <template v-if="item.texts">
+              <template v-if="item.raw.texts">
                 <span
-                  v-for="(text, index) in item.texts"
+                  v-for="(text, index) in item.raw.texts"
                   :key="text + index"
                 >
-                  <span v-if="index === item.texts.length - 1">{{ text }}</span>
+                  <span v-if="index === item.raw.texts.length - 1">{{ text }}</span>
                   <span
                     v-else
                     class="text-rui-text-secondary"
@@ -477,12 +477,12 @@ onBeforeMount(async () => {
                 </span>
               </template>
               <template v-else>
-                {{ item.text }}
+                {{ item.raw.text }}
               </template>
             </span>
             <div class="grow" />
             <div
-              v-if="item.price"
+              v-if="item.raw.price"
               class="text-right"
             >
               <div class="text-caption">
@@ -491,11 +491,11 @@ onBeforeMount(async () => {
               <AmountDisplay
                 class="font-bold"
                 :fiat-currency="currencySymbol"
-                :value="item.price"
+                :value="item.raw.price"
               />
             </div>
             <div
-              v-if="item.total"
+              v-if="item.raw.total"
               class="text-right"
             >
               <div class="text-caption">
@@ -504,7 +504,7 @@ onBeforeMount(async () => {
               <AmountDisplay
                 class="font-bold"
                 :fiat-currency="currencySymbol"
-                :value="item.total"
+                :value="item.raw.total"
               />
             </div>
           </div>

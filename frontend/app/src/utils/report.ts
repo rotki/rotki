@@ -1,10 +1,11 @@
 import type {
   ProfitLossEvent,
   ProfitLossOverviewItem,
+  Report,
   SelectedReport,
 } from '@/types/reports';
 
-export function calculateTotalProfitLoss(item: SelectedReport): ProfitLossOverviewItem {
+export function calculateTotalProfitLoss(item: Report | SelectedReport): ProfitLossOverviewItem {
   let totalFree = Zero;
   let totalTaxable = Zero;
   for (const key in item.overview) {

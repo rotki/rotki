@@ -1,10 +1,10 @@
 import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
-import vue from '@vitejs/plugin-vue2';
+import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import DefineOptions from 'unplugin-vue-define-options/vite';
-import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
+import { Vuetify3Resolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
 import { splitVendorChunkPlugin } from 'vite';
@@ -43,7 +43,7 @@ export default defineConfig({
     environment: 'jsdom',
     server: {
       deps: {
-        inline: ['@rotki/ui-library-compat'],
+        inline: ['@rotki/ui-library', 'vuetify'],
       },
     },
     deps: {
@@ -86,14 +86,9 @@ export default defineConfig({
         '@vueuse/math',
         'pinia',
         { '@vueuse/shared': ['get', 'set'] },
+        'vue-router',
         {
-          'vue-router/composables': [
-            'useRoute',
-            'useRouter',
-            'useLink',
-            'onBeforeRouteUpdate',
-            'onBeforeRouteLeave',
-          ],
+          'vue-i18n': ['useI18n'],
         },
       ],
       dts: 'src/auto-imports.d.ts',
@@ -109,7 +104,7 @@ export default defineConfig({
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],
-      resolvers: [VuetifyResolver(), RuiComponentResolver()],
+      resolvers: [Vuetify3Resolver(), RuiComponentResolver()],
       types: [
         {
           from: 'vue-router',

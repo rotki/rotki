@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import type { ManualBalance } from '@/types/manual-balances';
+import type { ManualBalance, ManualBalanceWithValue } from '@/types/manual-balances';
 import type {
   DataTableColumn,
   DataTableSortData,
-} from '@rotki/ui-library-compat';
+} from '@rotki/ui-library';
+import type { BigNumber } from '@rotki/common';
+
+type ManualBalanceWithPrice = ManualBalanceWithValue & {
+  usdPrice: BigNumber;
+};
 
 const props = withDefaults(
   defineProps<{
     title: string;
-    balances: ManualBalance[];
+    balances: ManualBalanceWithValue[];
     loading?: boolean;
   }>(),
   { loading: false },
@@ -16,7 +21,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'refresh'): void;
-  (e: 'edit', value: ManualBalance): void;
+  (e: 'edit', value: ManualBalanceWithValue): void;
 }>();
 
 const { t } = useI18n();
@@ -24,7 +29,7 @@ const { t } = useI18n();
 const { balances } = toRefs(props);
 
 const onlyTags = ref<string[]>([]);
-const sort = ref<DataTableSortData>({
+const sort = ref<DataTableSortData<ManualBalanceWithPrice>>({
   column: 'usdValue',
   direction: 'desc',
 });
@@ -33,7 +38,7 @@ function refresh() {
   emit('refresh');
 }
 
-function edit(balance: ManualBalance) {
+function edit(balance: ManualBalanceWithValue) {
   emit('edit', balance);
 }
 
@@ -42,8 +47,8 @@ const { deleteManualBalance } = useManualBalancesStore();
 
 const { assetPrice } = useBalancePricesStore();
 
-const visibleBalances = computed<ManualBalance[]>(() => {
-  let mappedBalances: ManualBalance[];
+const visibleBalances = computed<ManualBalanceWithPrice[]>(() => {
+  let mappedBalances: ManualBalanceWithValue[];
   const selectedTags = get(onlyTags);
   if (selectedTags.length === 0) {
     mappedBalances = get(balances);
@@ -57,7 +62,7 @@ const visibleBalances = computed<ManualBalance[]>(() => {
 
   return mappedBalances.map(item => ({
     ...item,
-    usdPrice: get(assetPrice(item.asset)),
+    usdPrice: get(assetPrice(item.asset)) ?? Zero,
   }));
 });
 
@@ -75,7 +80,7 @@ function getRowClass(item: ManualBalance) {
   return `manual-balance__location__${item.location}`;
 }
 
-const cols = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
@@ -160,17 +165,16 @@ function showDeleteConfirmation(id: number) {
       </div>
     </template>
     <RuiDataTable
+      v-model:sort="sort"
       outlined
       dense
       :loading="loading"
       :cols="cols"
-      row-attr="id"
+      row-attr="identifier"
       :rows="visibleBalances"
-      :sort="sort"
       :item-class="getRowClass"
       class="manual-balances-list"
       sort-by="usdValue"
-      @update:sort="sort = $event"
     >
       <template #item.label="{ row }">
         <div
@@ -182,7 +186,7 @@ function showDeleteConfirmation(id: number) {
         >
           {{ row.label }}
         </div>
-        <div>
+        <div v-if="row.tags">
           <TagDisplay
             :tags="row.tags"
             :small="true"

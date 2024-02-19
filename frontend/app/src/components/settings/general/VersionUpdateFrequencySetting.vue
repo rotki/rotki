@@ -101,7 +101,7 @@ onMounted(() => {
         v-model="versionUpdateCheckEnabled"
         class="mt-3"
         :label="t('general_settings.labels.version_update_check_enabled')"
-        @change="callIfValid($event, update)"
+        @update:model-value="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>

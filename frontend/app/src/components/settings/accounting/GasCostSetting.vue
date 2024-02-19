@@ -19,10 +19,10 @@ const { t } = useI18n();
       v-model="gasCosts"
       class="accounting-settings__include-gas-costs"
       :label="t('accounting_settings.trade.labels.include_gas_costs')"
-      :success-messages="success"
+      :messages="success"
       :error-messages="error"
       color="primary"
-      @change="update($event)"
+      @update:model-value="update($event)"
     />
   </SettingsOption>
 </template>

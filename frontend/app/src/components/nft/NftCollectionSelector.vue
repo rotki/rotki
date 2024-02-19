@@ -1,16 +1,16 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    value?: string | null;
+    modelValue?: string | null;
     items: string[];
   }>(),
   {
-    value: null,
+    modelValue: null,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: string | null): void;
+  (e: 'update:model-value', value: string | null): void;
 }>();
 
 const model = useSimpleVModel(props, emit);
@@ -27,8 +27,8 @@ const { t } = useI18n();
     hide-details
     hide-selected
     :items="items"
-    outlined
-    dense
+    variant="outlined"
+    density="compact"
   >
     <template #selection="{ item }">
       <RuiChip

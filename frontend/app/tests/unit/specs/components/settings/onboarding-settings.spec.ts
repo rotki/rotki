@@ -1,5 +1,5 @@
-import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
+import { type VueWrapper, mount } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
 import { beforeEach } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
@@ -56,22 +56,26 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
 
 describe('onboardingSetting.vue', () => {
   let pinia: Pinia;
-  let wrapper: Wrapper<OnboardingSettings>;
+  let wrapper: VueWrapper<InstanceType<typeof OnboardingSettings>>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
+    const vuetify = createVuetify();
     return mount(OnboardingSettings, {
-      pinia,
-      vuetify,
-      stubs: {
-        VSelect: {
-          template: `
+      global: {
+        plugins: [
+          pinia,
+          vuetify,
+        ],
+        stubs: {
+          VSelect: {
+            template: `
             <div>
               <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
             </div>
           `,
-          props: {
-            value: { type: String },
+            props: {
+              value: { type: String },
+            },
           },
         },
       },
@@ -86,7 +90,7 @@ describe('onboardingSetting.vue', () => {
 
   beforeEach(async () => {
     wrapper = createWrapper();
-    await wrapper.vm.$nextTick();
+    await nextTick();
   });
 
   describe('standard settings', () => {
@@ -125,7 +129,7 @@ describe('onboardingSetting.vue', () => {
         .find('[data-cy=user-data-directory-input] input')
         .setValue(newDataDirectory);
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -157,7 +161,7 @@ describe('onboardingSetting.vue', () => {
         .find('.loglevel-input .input')
         .trigger('input', { value: 'warning' });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -184,7 +188,7 @@ describe('onboardingSetting.vue', () => {
         .find('.loglevel-input .input')
         .trigger('input', { value: 'debug' });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -202,7 +206,7 @@ describe('onboardingSetting.vue', () => {
         .find('[data-cy=onboarding-setting__advance-toggle]')
         .trigger('click');
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
     });
 
     it('use default value from info api or electron config, save button should be disabled', async () => {
@@ -234,7 +238,7 @@ describe('onboardingSetting.vue', () => {
         .find('[data-cy=sqlite-instructions-input] input')
         .setValue(5001);
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -246,13 +250,13 @@ describe('onboardingSetting.vue', () => {
         sqliteInstructions: 5001,
       });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       // reset button
       await wrapper
         .find('[data-cy=reset-max-log-size] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
@@ -261,7 +265,7 @@ describe('onboardingSetting.vue', () => {
       await wrapper
         .find('[data-cy=reset-max-log-files] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const maxLogFilesInput = wrapper.find(
         '[data-cy=max-log-files-input] input',
@@ -271,7 +275,7 @@ describe('onboardingSetting.vue', () => {
       await wrapper
         .find('[data-cy=reset-sqlite-instructions] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const sqliteInstructions = wrapper.find(
         '[data-cy=sqlite-instructions-input] input',

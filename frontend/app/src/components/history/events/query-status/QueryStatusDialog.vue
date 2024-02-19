@@ -10,11 +10,11 @@ const { t } = useI18n();
 
 <template>
   <VDialog width="1200">
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <RuiButton
         variant="text"
         class="ml-4"
-        v-on="on"
+        v-bind="props"
       >
         {{ t('common.details') }}
         <template #append>
@@ -37,7 +37,7 @@ const { t } = useI18n();
             <RuiButton
               icon
               variant="text"
-              @click="dialog.value = false"
+              @click="dialog.isActive.value = false"
             >
               <RuiIcon name="close-line" />
             </RuiButton>
