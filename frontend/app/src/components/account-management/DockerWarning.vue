@@ -11,7 +11,7 @@ function proceed() {
 </script>
 
 <template>
-  <div class="max-w-[41.25rem] mx-auto">
+  <div class="max-w-[27.5rem] mx-auto">
     <RuiAlert type="warning">
       <i18n path="docker_warning.title">
         <ExternalLink
@@ -24,7 +24,7 @@ function proceed() {
       <RuiButton
         class="mt-4"
         size="sm"
-        color="primary"
+        color="secondary"
         @click="proceed()"
       >
         {{ t('docker_warning.action') }}

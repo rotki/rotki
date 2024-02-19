@@ -1,7 +1,7 @@
 const BASE_URL = 'https://rotki.com/';
 const DOCS_BASE_URL = 'https://rotki.readthedocs.io/en/stable/';
-const USAGE_GUIDE_URL = `${DOCS_BASE_URL}/usage_guide.html`;
-const CONTRIBUTE_URL = `${DOCS_BASE_URL}/contribute.html`;
+const USAGE_GUIDE_URL = `${DOCS_BASE_URL}usage_guide.html`;
+const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribute.html`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
 const ICONS_BASE_URL
   = 'https://raw.githubusercontent.com/rotki/data/main/assets/icons/';
