@@ -324,8 +324,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 'capital/deposit' in url or
                 'capital/withdraw' in url or
                 'fiat/orders' in url or
-                'fiat/payments' in url or
-                'lending/union/interestHistory' in url
+                'fiat/payments' in url
         ):
             payload = '[]'
         else:

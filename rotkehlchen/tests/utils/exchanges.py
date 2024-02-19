@@ -270,29 +270,6 @@ BINANCE_COIN_FUTURES_BALANCES_RESPONSE = """[{"accountAlias": "boo", "asset": "E
  {"accountAlias": "boo", "asset": "EGLD", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"}
  ]"""  # noqa: E501
 
-BINANCE_LENDING_WALLET_RESPONSE = """{
-    "positionAmountVos": [
-        {
-            "amount": "75.46000000",
-            "amountInBTC": "0.01044819",
-            "amountInUSDT": "75.46000000",
-            "asset": "USDT"
-        },
-        {
-            "amount": "1.67072036",
-            "amountInBTC": "0.00023163",
-            "amountInUSDT": "1.67289230",
-            "asset": "BUSD"
-        }
-    ],
-    "totalAmountInBTC": "0.01067982",
-    "totalAmountInUSDT": "77.13289230",
-    "totalFixedAmountInBTC": "0.00000000",
-    "totalFixedAmountInUSDT": "0.00000000",
-    "totalFlexibleInBTC": "0.01067982",
-    "totalFlexibleInUSDT": "77.13289230"
-}"""
-
 
 BINANCE_MYTRADES_RESPONSE = """
 [
@@ -439,6 +416,49 @@ BINANCE_FIATWITHDRAWS_RESPONSE = """{
 }"""
 
 
+BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION = """{
+    "rows":[{
+        "totalAmount": "75.46000000",
+        "tierAnnualPercentageRate": {
+            "0-5BTC": 0.05,
+            "5-10BTC": 0.03
+        },
+        "latestAnnualPercentageRate": "0.02599895",
+        "yesterdayAirdropPercentageRate": "0.02599895",
+        "asset": "USDT",
+        "airDropAsset": "BETH",
+        "canRedeem": true,
+        "collateralAmount": "232.23123213",
+        "productId": "USDT001",
+        "yesterdayRealTimeRewards": "0.10293829",
+        "cumulativeBonusRewards": "0.22759183",
+        "cumulativeRealTimeRewards": "0.22759183",
+        "cumulativeTotalRewards": "0.45459183",
+        "autoSubscribe": true
+    }],
+    "total": 1
+}"""
+
+
+BINANCE_SIMPLE_EARN_LOCKED_POSITION = """{
+    "rows":[{
+        "positionId": "123123",
+        "projectId": "Axs*90",
+        "asset": "AXS",
+        "amount": "122.09202928",
+        "purchaseTime": "1646182276000",
+        "duration": "60",
+        "accrualDays": "4",
+        "rewardAsset": "AXS",
+        "APY": "0.23",
+        "isRenewable": true,
+        "isAutoRenew": true,
+        "redeemDate": "1732182276000"
+    }],
+    "total": 1
+}"""
+
+
 def assert_binance_balances_result(balances: dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
     assert balances['BTC']['usd_value'] is not None
@@ -512,14 +532,22 @@ def assert_poloniex_balances_result(balances: dict[str, Any]) -> None:
 def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argument
     if 'futures' in url:
         return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
-    if 'lending' in url:
-        return MockResponse(200, BINANCE_LENDING_WALLET_RESPONSE)
     if 'https://fapi' in url:
         return MockResponse(200, BINANCE_USDT_FUTURES_BALANCES_RESPONSE)
     if 'https://dapi' in url:
         return MockResponse(200, BINANCE_COIN_FUTURES_BALANCES_RESPONSE)
     if 'bswap/liquidity' in url:
         return MockResponse(200, BINANCE_POOL_BALANCES_RESPONSE)
+    if 'simple-earn/flexible/position' in url:
+        if 'current=1' in url:
+            return MockResponse(200, BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION)
+        else:
+            return MockResponse(200, '{"rows":[], "total": 1}')
+    if 'simple-earn/locked/position' in url:
+        if 'current=1' in url:
+            return MockResponse(200, BINANCE_SIMPLE_EARN_LOCKED_POSITION)
+        else:
+            return MockResponse(200, '{"rows":[], "total": 1}')
 
     # else
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
@@ -1164,84 +1192,3 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
     return base_asset, quote_asset
-
-
-def mock_api_query_for_binance_lending(
-        api_type,  # pylint: disable=unused-argument
-        method,
-        options,
-        test_vars,
-):
-    """This function mocks `api_query` method of the binance exchange.
-
-    For method 'lending/union/interestHistory', it checks that pagination is
-    respected i.e. if a range has been queried before, `current` must always be > 1,
-    otherwise `current` must be == 1.
-    """
-    if 'lending/union/interestHistory' in method:
-        if (options['startTime'], options['endTime'], options['lendingType']) not in test_vars['ranges_queried']:  # noqa: E501
-            assert options['current'] == 1
-        else:
-            assert options['current'] > 1
-
-        test_vars['ranges_queried'].add(
-            (options['startTime'], options['endTime'], options['lendingType']),
-        )
-
-        if options['lendingType'] == 'DAILY':
-            if test_vars['interest_daily_call_count'] >= 1:
-                if options['current'] == 2:
-                    test_vars['interest_daily_call_count'] += 1
-                    return [
-                        {
-                            'asset': 'BUSD',
-                            'interest': '0.00006408',
-                            'lendingType': 'DAILY',
-                            'productName': 'BUSD',
-                            'time': 1577233578100,
-                        },
-                    ]
-                return []
-
-            test_vars['interest_daily_call_count'] += 1
-            return [
-                {
-                    'asset': 'BUSD',
-                    'interest': '0.00006408',
-                    'lendingType': 'DAILY',
-                    'productName': 'BUSD',
-                    'time': 1577233578000,
-                },
-            ]
-        elif options['lendingType'] == 'CUSTOMIZED_FIXED':
-            if test_vars['interest_customized_fixed_call_count'] >= 1:
-                return []
-
-            test_vars['interest_customized_fixed_call_count'] += 1
-            return [
-                {
-                    'asset': 'USDT',
-                    'interest': '0.00687654',
-                    'lendingType': 'CUSTOMIZED_FIXED',
-                    'productName': 'USDT',
-                    'time': 1577233562000,
-                },
-            ]
-        elif options['lendingType'] == 'ACTIVITY':
-            if test_vars['interest_activity_call_count'] >= 1:
-                return []
-
-            test_vars['interest_activity_call_count'] += 1
-            return [
-                {
-                    'asset': 'DAI',
-                    'interest': '0.00987654',
-                    'lendingType': 'ACTIVITY',
-                    'productName': 'USDT',
-                    'time': 1587233562000,
-                },
-            ]
-        else:
-            raise AssertionError(f'Unknown lendingType of {options["lendingType"]}')
-    else:
-        raise AssertionError('Unexpected url.')

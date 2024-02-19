@@ -303,7 +303,7 @@ def test_query_all_balances_ignore_cache(
         )
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 3
+                assert fn.call_count == 2
             # addresses are not derived from xpubs when `ignore_cache` is False
             elif fn._mock_name == 'check_for_new_xpub_addresses':
                 assert fn.call_count == 0
@@ -328,7 +328,7 @@ def test_query_all_balances_ignore_cache(
         msg = 'call count should stay the same since cache should have been used'
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 3, msg
+                assert fn.call_count == 2, msg
             # addresses are not derived from xpubs when `ignore_cache` is False
             elif fn._mock_name == 'check_for_new_xpub_addresses':
                 assert fn.call_count == 0, msg
@@ -354,7 +354,7 @@ def test_query_all_balances_ignore_cache(
         msg = 'call count should increase since cache should have been ignored'
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 6, msg
+                assert fn.call_count == 4, msg
             # addresses are derived from xpubs when `ignore_cache` is True
             elif fn._mock_name == 'check_for_new_xpub_addresses':
                 assert fn.call_count == 2, msg  # 2 is for btc + bch
@@ -644,7 +644,7 @@ def test_multiple_balance_queries_not_concurrent(
             )
         assert eth.call_count == 1, 'eth balance query should only fire once'
         assert btc.call_count == 1, 'btc balance query should only happen once'
-        assert bn.call_count == 3, 'binance balance query should do 2 calls'
+        assert bn.call_count == 2, 'binance balance query should do 2 calls'
 
     assert_all_balances(
         result=outcome_all,
