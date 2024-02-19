@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`7488` Show tags in multi-lines when multiple to avoid horizontal scroll.
 * :bug:`7497` In ETH staking view execution rewards should now be counted properly. MEV reward and block reward should not both be counted if recipient is not tracked.
 * :bug:`-` Invalid data in airdrops' CSVs or JSONs will now get ignored to show the rest of the valid data.
 
