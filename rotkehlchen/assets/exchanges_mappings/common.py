@@ -39,4 +39,5 @@ COMMON_ASSETS_MAPPINGS: Final[dict[str, str]] = {
     'LUNA-2': 'LUNA',
     # Solana is SOL-2 in rotki
     'SOL-2': 'SOL',
+    evm_address_to_identifier('0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'STRK',  # noqa: E501
 }
