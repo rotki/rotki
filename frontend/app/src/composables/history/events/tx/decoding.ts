@@ -121,9 +121,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const clearDependedSection = () => {
-    resetStatus(Section.DEFI_LIQUITY_STAKING);
-    resetStatus(Section.DEFI_LIQUITY_STAKING_POOLS);
-    resetStatus(Section.DEFI_LIQUITY_STATISTICS);
+    resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
+    resetStatus({ section: Section.DEFI_LIQUITY_STAKING_POOLS });
+    resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
   const fetchTransactionEvents = async (

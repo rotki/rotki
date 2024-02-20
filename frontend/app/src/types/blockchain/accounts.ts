@@ -1,7 +1,6 @@
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Balance, HasBalance } from '@rotki/common';
 import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { Section } from '@/types/status';
 import type { Module } from '@/types/modules';
 
 export interface GeneralAccountData {
@@ -109,10 +108,6 @@ export interface BaseAddAccountsPayload {
 export interface AddAccountsPayload extends BaseAddAccountsPayload {
   readonly blockchain: Blockchain;
 }
-
-export type ChainSections = {
-  readonly [chain in Blockchain]: Section;
-};
 
 // todo: flatten balance
 export interface AssetBreakdown extends Partial<Balance> {

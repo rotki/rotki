@@ -141,7 +141,7 @@ export const useDefiStore = defineStore('defi', () => {
   };
 
   async function fetchAllDefi(refresh = false) {
-    const section = Section.DEFI_OVERVIEW;
+    const section = { section: Section.DEFI_OVERVIEW };
 
     if (fetchDisabled(refresh, section))
       return;

@@ -94,7 +94,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
     if (!get(activeModules).includes(Module.AAVE) || !get(premium))
       return;
 
-    const section = Section.DEFI_AAVE_HISTORY;
+    const section = { section: Section.DEFI_AAVE_HISTORY };
     const refresh = payload?.refresh;
 
     if (fetchDisabled(!!refresh, section))
@@ -139,7 +139,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
     set(balances, {});
     set(history, {});
     resetStatus();
-    resetStatus(Section.DEFI_AAVE_HISTORY);
+    resetStatus({ section: Section.DEFI_AAVE_HISTORY });
   };
 
   const addresses: ComputedRef<string[]> = computed(() =>

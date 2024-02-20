@@ -88,8 +88,8 @@ export const useEthAccountsStore = defineStore(
         if (result) {
           const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
           resetStatus();
-          resetStatus(Section.STAKING_ETH2_DEPOSITS);
-          resetStatus(Section.STAKING_ETH2_STATS);
+          resetStatus({ section: Section.STAKING_ETH2_DEPOSITS });
+          resetStatus({ section: Section.STAKING_ETH2_STATS });
         }
 
         return {

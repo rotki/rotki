@@ -24,13 +24,13 @@ export function useBtcAccountBalances() {
       chain: Blockchain.BTC,
       children: [],
       usdValue: sum(get(btcAccounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BTC)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.BTC)),
     },
     {
       chain: Blockchain.BCH,
       children: [],
       usdValue: sum(get(bchAccounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BCH)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.BCH)),
     },
   ]);
 

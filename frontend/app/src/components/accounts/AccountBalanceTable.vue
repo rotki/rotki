@@ -4,7 +4,6 @@ import { some } from 'lodash-es';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { chainSection } from '@/types/blockchain';
 import type {
   BlockchainAccountWithBalance,
   XpubAccountWithBalance,
@@ -55,12 +54,12 @@ const { getNativeAsset, supportsTransactions } = useSupportedChains();
 const { assetSymbol } = useAssetInfoRetrieval();
 const { addressNameSelector } = useAddressesNamesStore();
 
-const section = computed<Section>(() =>
-  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)],
-);
-
 const { isLoading } = useStatusStore();
-const loading = isLoading(get(section));
+const loading = computed<boolean>(() => {
+  if (get(loopring))
+    return get(isLoading(Section.L2_LOOPRING_BALANCES));
+  return get(isLoading(Section.BLOCKCHAIN, get(blockchain)));
+});
 
 const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
 const collapsedXpubs: Ref<XpubAccountWithBalance[]> = ref([]);

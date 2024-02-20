@@ -234,8 +234,8 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_BALANCER_BALANCES);
     set(balances, {});
     set(events, {});
-    resetStatus(Section.DEFI_BALANCER_BALANCES);
-    resetStatus(Section.DEFI_BALANCER_EVENTS);
+    resetStatus({ section: Section.DEFI_BALANCER_BALANCES });
+    resetStatus({ section: Section.DEFI_BALANCER_EVENTS });
   };
 
   return {

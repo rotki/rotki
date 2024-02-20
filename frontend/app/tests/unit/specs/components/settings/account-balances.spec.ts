@@ -43,7 +43,8 @@ describe('accountBalances.vue', () => {
     });
 
     useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN_ETH,
+      section: Section.BLOCKCHAIN,
+      subsection: Blockchain.ETH,
       status: Status.LOADING,
     });
 
@@ -60,7 +61,8 @@ describe('accountBalances.vue', () => {
 
     remove(1);
     useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN_ETH,
+      section: Section.BLOCKCHAIN,
+      subsection: Blockchain.ETH,
       status: Status.LOADED,
     });
     await wrapper.vm.$nextTick();

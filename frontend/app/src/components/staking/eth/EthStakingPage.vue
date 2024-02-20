@@ -53,7 +53,7 @@ const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
 
 const refreshing = logicOr(
   performanceRefreshing,
-  isLoading(Section.BLOCKCHAIN_ETH2),
+  isLoading(Section.BLOCKCHAIN, Blockchain.ETH2),
   blockProductionLoading,
 );
 

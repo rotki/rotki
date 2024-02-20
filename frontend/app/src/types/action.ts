@@ -14,6 +14,7 @@ export type ActionStatus<T = string> = ActionFailure<T> | ActionSuccess;
 
 export interface StatusPayload {
   readonly status: Status;
+  readonly subsection?: string;
   readonly section: Section;
 }
 
