@@ -95,6 +95,8 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                         decimals=new_asset_data['decimals'],
                         name=new_asset_data['name'],
                         symbol=new_asset_data['symbol'],
+                        coingecko=new_asset_data.get('coingecko'),
+                        cryptocompare=new_asset_data.get('cryptocompare'),
                     )
                 elif (asset := Asset(airdrop_data['asset_identifier'])).exists() is True:
                     crypto_asset = asset.resolve_to_crypto_asset()  # use the local values of user, if it pre-existed  # noqa: E501

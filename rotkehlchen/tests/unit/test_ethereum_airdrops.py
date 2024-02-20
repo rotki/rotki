@@ -123,10 +123,14 @@ def _mock_airdrop_list(url: str, timeout: int = 0):  # pylint: disable=unused-ar
     'symbol': 'SHU',
     'chain_id': 1,
     'decimals': 18,
+    'coingecko': 'shutter',
+    'cryptocompare': 'SHUTTER',
 }, {
     'asset_type': 'SOLANA_TOKEN',  # test with non EVM token
     'name': 'Some Non EVM Token',
     'symbol': 'NONEVM',
+    'coingecko': 'nonevm',
+    'cryptocompare': 'NONEVM',
 }])
 @pytest.mark.parametrize('remove_global_assets', [['eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7']])  # noqa: E501
 def test_check_airdrops(
@@ -225,11 +229,13 @@ def test_check_airdrops(
             data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            assert cursor.execute(
-                'SELECT COUNT(*) FROM assets WHERE identifier=?',
-                (new_asset_identifier,),
-            ).fetchone()[0] == 1  # asset present after
+
+    # verify new asset's presence and details
+    new_found_asset = AssetResolver.resolve_asset(new_asset_identifier).resolve_to_crypto_asset()
+    assert new_found_asset.name == new_asset_data['name']
+    assert new_found_asset.symbol == new_asset_data['symbol']
+    assert new_found_asset.coingecko == new_asset_data['coingecko']
+    assert new_found_asset.cryptocompare == new_asset_data['cryptocompare']
 
     # Test data is returned for the address correctly
     assert len(data) == 3
