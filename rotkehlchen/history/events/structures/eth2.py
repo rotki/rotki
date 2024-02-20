@@ -216,12 +216,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         # double deposited for a validator. We can and should combine deposit and
         # withdrawal processing by querying deposits for that validator index.
         # saving pubkey and validator index for deposits.
-
-        is_taxable = True
-        event_settings, _ = accounting.events_accountant.rules_manager.get_event_settings(self)
-        if event_settings is not None:
-            is_taxable = event_settings.taxable
-
+        # TODO: rotki/rotki/issues/7508
         name = 'Exit' if bool(self.is_exit_or_blocknumber) else 'Withdrawal'
         accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
@@ -230,7 +225,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             timestamp=self.get_timestamp_in_sec(),
             asset=self.asset,
             amount=profit_amount,
-            taxable=is_taxable,
+            taxable=accounting.events_accountant.rules_manager.eth_staking_taxable_after_withdrawal_enabled,
         )
         return 1
 

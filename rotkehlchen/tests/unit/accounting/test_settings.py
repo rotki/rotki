@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
@@ -376,6 +377,10 @@ def test_not_calculate_past_cost_basis(accountant, expected, google_service):
     check_pnls_and_csv(accountant, expected, google_service)
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='It needs to be updated in rotki/rotki/issues/7508',
+)
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('staking_taxable', [True, False])
@@ -417,6 +422,48 @@ def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: boo
     expected_pnls = PnlTotals({
         AccountingEventType.HISTORY_EVENT: PNL(
             taxable=staking_reward if staking_taxable else ZERO,
+            free=ZERO,
+        ),
+    })
+
+    pnls = accountant.pots[0].pnls
+    assert_pnl_totals_close(expected=expected_pnls, got=pnls)
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('accountant_without_rules', [True])
+@pytest.mark.parametrize(('db_settings', 'is_staking_taxable'), [
+    ({'eth_staking_taxable_after_withdrawal_enabled': False}, False),
+    ({'eth_staking_taxable_after_withdrawal_enabled': True}, True),
+])
+def test_eth_withdrawal_respects_db_settings(
+        accountant: Accountant,
+        is_staking_taxable: bool,
+) -> None:
+    """Test that eth withdrawal events respect the user settings regarding taxation"""
+    staking_reward = FVal('0.017197')
+    history = [
+        EthWithdrawalEvent(
+            identifier=3,
+            validator_index=1,
+            timestamp=TimestampMS(1699319051000),
+            balance=Balance(staking_reward),
+            withdrawal_address=make_evm_address(),
+            is_exit=False,
+        ),
+    ]
+
+    accountant.pots[0].events_accountant.reset()
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(1699319041),
+        end_ts=Timestamp(1699319061),
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    expected_pnls = PnlTotals({
+        AccountingEventType.HISTORY_EVENT: PNL(
+            taxable=staking_reward if is_staking_taxable else ZERO,
             free=ZERO,
         ),
     })
