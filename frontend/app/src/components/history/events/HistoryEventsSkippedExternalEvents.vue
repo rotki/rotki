@@ -5,7 +5,7 @@ import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 
 const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
-const { state: skippedEvents, execute }
+const { state: skippedEvents, execute: refreshSkippedEvents }
   = useAsyncState<SkippedHistoryEventsSummary>(
     getSkippedEventsSummary,
     {
@@ -18,10 +18,6 @@ const { state: skippedEvents, execute }
       delay: 0,
     },
   );
-
-onMounted(() => {
-  execute();
-});
 
 const { t } = useI18n();
 
@@ -161,6 +157,7 @@ async function reProcessSkippedEvents() {
   }
 
   setMessage(message);
+  await refreshSkippedEvents();
 }
 </script>
 
