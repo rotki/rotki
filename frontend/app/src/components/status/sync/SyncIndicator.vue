@@ -96,13 +96,10 @@ watch(isSyncing, (current, prev) => {
 <template>
   <Fragment>
     <template v-if="premium">
-      <VMenu
+      <RuiMenu
         id="balances-saved-dropdown"
         v-model="visible"
-        transition="slide-y-transition"
-        offset-y
-        :close-on-content-click="false"
-        z-index="215"
+        menu-class="z-[215]"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
@@ -186,7 +183,7 @@ watch(isSyncing, (current, prev) => {
             @action="showConfirmation($event)"
           />
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
     <template v-else>
       <RuiBadge

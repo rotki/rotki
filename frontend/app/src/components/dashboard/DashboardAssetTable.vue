@@ -208,13 +208,10 @@ watch(search, () => setPage(1));
         clearable
         @click:clear="search = ''"
       />
-      <VMenu
+      <RuiMenu
         id="dashboard-asset-table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        nudge-bottom="20"
-        offset-y
-        left
+        menu-class="max-w-[15rem]"
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
@@ -229,7 +226,7 @@ watch(search, () => setPage(1));
           :group="tableType"
           :group-label="title"
         />
-      </VMenu>
+      </RuiMenu>
     </template>
     <template #shortDetails>
       <AmountDisplay

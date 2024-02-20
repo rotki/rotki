@@ -679,10 +679,10 @@ watchImmediate(route, async (route) => {
         </HistoryEventsDecodingStatus>
       </VDialog>
 
-      <VMenu
-        offset-y
-        left
-        max-width="200"
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
+        menu-class="max-w-[24rem]"
+        close-on-content-click
       >
         <template #activator="{ on }">
           <RuiBadge
@@ -737,7 +737,7 @@ watchImmediate(route, async (route) => {
             {{ t('transactions.dialog.add_tx') }}
           </RuiButton>
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
 
     <RuiCard>

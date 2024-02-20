@@ -32,12 +32,9 @@ function toggleSpam() {
 
 <template>
   <div class="flex items-center">
-    <VMenu
-      max-width="250px"
-      min-width="200px"
-      left
-      offset-y
-      transition="slide-y-transition"
+    <RuiMenu
+      menu-class="w-[15rem]"
+      close-on-content-click
     >
       <template #activator="{ on }">
         <RuiButton
@@ -84,6 +81,6 @@ function toggleSpam() {
           {{ t('ignore.spam.action.add') }}
         </RuiButton>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>

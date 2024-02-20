@@ -184,7 +184,7 @@ async function ignoreTokens(identifiers?: string[]) {
             </RuiTooltip>
           </div>
 
-          <HintMenuIcon left>
+          <HintMenuIcon :popper="{ placement: 'left-start' }">
             {{ t('asset_table.newly_detected.subtitle') }}
           </HintMenuIcon>
         </div>

@@ -88,10 +88,9 @@ function showDoneConfirmation() {
 </script>
 
 <template>
-  <VMenu
+  <RuiMenu
     v-if="dropdown"
-    offset-x
-    left
+    :popper="{ placement: 'left-start' }"
   >
     <template #activator="{ on }">
       <RuiButton
@@ -120,7 +119,7 @@ function showDoneConfirmation() {
         @click="showRestoreConfirmation('hard')"
       />
     </div>
-  </VMenu>
+  </RuiMenu>
   <div
     v-else
     class="flex flex-row gap-2"

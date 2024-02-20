@@ -59,9 +59,8 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         :key="index"
         class="inline-flex"
         :class="{
-          [css.address__content]: true,
-          'pl-2': !note.showIcon,
           [css.address]: true,
+          'pl-2': !note.showIcon,
         }"
         :text="note.address"
         :type="note.type"
@@ -95,18 +94,12 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
 
 <style lang="scss" module>
 .address {
-  @apply align-middle;
-
-  &__content {
-    @apply bg-rui-grey-300 pr-1 rounded-full m-0.5;
-  }
+  @apply align-middle bg-rui-grey-300 pr-1 rounded-full m-0.5;
 }
 
 :global(.dark) {
   .address {
-    &__content {
-      @apply bg-rui-grey-800;
-    }
+    @apply bg-rui-grey-800;
   }
 }
 </style>

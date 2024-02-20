@@ -87,13 +87,10 @@ async function importSnapshot() {
 </script>
 
 <template>
-  <VMenu
+  <RuiMenu
     id="snapshot-action-menu"
     v-model="visible"
-    left
-    transition="slide-y-transition"
-    :close-on-content-click="false"
-    z-index="215"
+    :popper="{ placement: 'bottom-end' }"
   >
     <template #activator="{ on }">
       <MenuTooltipButton
@@ -107,7 +104,7 @@ async function importSnapshot() {
         </slot>
       </MenuTooltipButton>
     </template>
-    <div class="p-4 md:w-[15.625rem] w-full">
+    <div class="p-4 md:w-[16rem] w-full">
       <div class="font-medium">
         {{ t('snapshot_action_button.snapshot_title') }}
       </div>
@@ -185,5 +182,5 @@ async function importSnapshot() {
         />
       </div>
     </div>
-  </VMenu>
+  </RuiMenu>
 </template>

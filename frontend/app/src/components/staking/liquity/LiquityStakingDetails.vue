@@ -290,51 +290,53 @@ const slots = useSlots();
         :usable-addresses="availableAddresses"
       />
 
-      <VMenu
+      <RuiMenu
         v-if="proxyInformation"
-        offset-x
-        nudge-right="8"
-        min-width="410"
+        :popper="{ placement: 'right-start' }"
+        menu-class="max-w-[25rem]"
       >
-        <template #activator="{ on, attrs }">
+        <template #activator="{ on }">
           <RuiButton
             variant="text"
             class="!p-2"
             icon
-            v-bind="attrs"
             v-on="on"
           >
             <RuiIcon name="information-line" />
           </RuiButton>
         </template>
-        <div class="p-4">
+        <div class="p-3 px-4">
           <div
             v-for="(proxies, key, index) in proxyInformation"
             :key="key"
           >
             <div class="flex flex-row items-center gap-2">
-              <RuiChip>
-                <HashLink :text="key" />
-              </RuiChip>
-              {{
-                t('liquity_staking_details.has_proxy_addresses', {
-                  length: proxies.length,
-                })
-              }}
+              <HashLink
+                :text="key"
+                class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
+              />
+              <span class="text-sm">
+                {{
+                  t('liquity_staking_details.has_proxy_addresses', {
+                    length: proxies.length,
+                  })
+                }}
+              </span>
             </div>
             <div
-              class="ml-4 pl-4 pt-2"
+              class="ml-3 pl-4 pt-2"
               :class="css['proxies-wrapper']"
             >
               <div
                 v-for="proxy in proxies"
                 :key="proxy"
-                class="mb-1"
+                class="mb-1 flex"
                 :class="css['proxies-item']"
               >
-                <RuiChip class="pl-1 pr-2">
-                  <HashLink :text="proxy" />
-                </RuiChip>
+                <HashLink
+                  :text="proxy"
+                  class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
+                />
               </div>
             </div>
             <RuiDivider
@@ -343,7 +345,7 @@ const slots = useSlots();
             />
           </div>
         </div>
-      </VMenu>
+      </RuiMenu>
     </div>
 
     <div class="flex flex-row flex-wrap gap-4">
@@ -376,28 +378,23 @@ const slots = useSlots();
 <style lang="scss" module>
 .proxies {
   &-wrapper {
-    position: relative;
+    @apply relative;
 
     &::before {
+      @apply absolute top-0 left-0 border-l;
       content: '';
-      position: absolute;
-      height: calc(100% - 1.1rem);
-      top: 0;
-      left: 0;
-      border-left: 1px solid var(--border-color);
+      height: calc(100% - 0.8rem);
+      border-color: var(--border-color);
     }
   }
 
   &-item {
-    position: relative;
+    @apply relative;
 
     &::before {
-      position: absolute;
+      @apply absolute w-4 right-full top-1/2 border-t;
       content: '';
-      width: 1rem;
-      right: 100%;
-      top: 50%;
-      border-top: 1px solid var(--border-color);
+      border-color: var(--border-color);
     }
   }
 }

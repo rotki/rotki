@@ -24,7 +24,7 @@ export class AssetsManagerPage {
       number.toString(),
     );
     cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
+    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
 
   searchAsset(asset: string) {

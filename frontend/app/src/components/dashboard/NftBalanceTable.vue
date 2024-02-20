@@ -162,13 +162,10 @@ watch(loading, async (isLoading, wasLoading) => {
       </RouterLink>
     </template>
     <template #details>
-      <VMenu
+      <RuiMenu
         id="nft_balance_table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        nudge-bottom="20"
-        offset-y
-        left
+        menu-class="max-w-[15rem]"
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
@@ -180,7 +177,7 @@ watch(loading, async (isLoading, wasLoading) => {
           </MenuTooltipButton>
         </template>
         <VisibleColumnsSelector :group="group" />
-      </VMenu>
+      </RuiMenu>
     </template>
     <template #shortDetails>
       <AmountDisplay
