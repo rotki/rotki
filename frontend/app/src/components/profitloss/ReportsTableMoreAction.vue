@@ -11,12 +11,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VMenu
-    max-width="250px"
-    min-width="200px"
-    left
-    offset-y
-    transition="slide-y-transition"
+  <RuiMenu
+    menu-class="max-w-[15rem]"
+    :popper="{ placement: 'bottom-end' }"
+    close-on-content-click
   >
     <template #activator="{ on }">
       <RuiButton
@@ -51,5 +49,5 @@ const { t } = useI18n();
         {{ t('reports_table.delete') }}
       </RuiButton>
     </div>
-  </VMenu>
+  </RuiMenu>
 </template>

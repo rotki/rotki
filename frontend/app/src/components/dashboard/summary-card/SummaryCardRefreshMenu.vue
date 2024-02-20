@@ -30,9 +30,8 @@ const css = useCssModule();
     v-else
     class="relative pr-1"
   >
-    <VMenu
-      offset-y
-      :close-on-content-click="false"
+    <RuiMenu
+      :popper="{ placement: 'bottom-start' }"
     >
       <template #activator="{ on }">
         <RefreshButton
@@ -54,7 +53,7 @@ const css = useCssModule();
         </RuiButton>
       </template>
       <slot name="refreshMenu" />
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>
 

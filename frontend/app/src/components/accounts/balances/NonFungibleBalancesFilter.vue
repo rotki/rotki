@@ -66,11 +66,7 @@ const { t } = useI18n();
       </div>
     </div>
     <div>
-      <VMenu
-        offset-y
-        left
-        :close-on-content-click="false"
-      >
+      <RuiMenu :popper="{ placement: 'bottom-end' }">
         <template #activator="{ on }">
           <RuiButton
             variant="outlined"
@@ -109,7 +105,7 @@ const { t } = useI18n();
             </RuiRadioGroup>
           </div>
         </div>
-      </VMenu>
+      </RuiMenu>
     </div>
   </div>
 </template>

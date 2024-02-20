@@ -85,10 +85,8 @@ async function updatePrice() {
 
 <template>
   <div class="flex justify-end">
-    <VMenu
-      transition="slide-y-transaction"
-      max-width="250px"
-      offset-y
+    <RuiMenu
+      :popper="{ placement: 'bottom-end' }"
     >
       <template #activator="{ on }">
         <RuiButton
@@ -111,7 +109,7 @@ async function updatePrice() {
           {{ t('profit_loss_events.edit_historic_price') }}
         </RuiButton>
       </div>
-    </VMenu>
+    </RuiMenu>
 
     <VDialog
       v-model="showDialog"

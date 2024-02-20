@@ -32,12 +32,10 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 
 <template>
   <div class="flex items-center">
-    <VMenu
-      transition="slide-y-transition"
-      max-width="250px"
-      min-width="200px"
-      left
-      offset-y
+    <RuiMenu
+      menu-class="max-w-[15rem]"
+      :popper="{ placement: 'bottom-end' }"
+      close-on-content-click
     >
       <template #activator="{ on }">
         <RuiButton
@@ -111,6 +109,6 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
           </RuiButton>
         </template>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>

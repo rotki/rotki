@@ -222,10 +222,8 @@ watch(identifier, async (assetId) => {
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
-      <VMenu
-        offset-y
-        left
-        :close-on-content-click="false"
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <RuiButton
@@ -260,7 +258,7 @@ watch(identifier, async (assetId) => {
             {{ t('asset_management.merge_assets_tooltip') }}
           </RuiTooltip>
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
 
     <RuiCard>

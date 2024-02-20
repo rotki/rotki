@@ -180,8 +180,11 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         />
       </template>
       <template #item.action="{ item }">
-        <div class="flex flex-col items-center gap-1">
-          <VMenu offset-y>
+        <div class="flex items-center gap-1">
+          <RuiMenu
+            :popper="{ placement: 'bottom-end' }"
+            close-on-content-click
+          >
             <template #activator="{ on }">
               <RuiButton
                 variant="text"
@@ -205,7 +208,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
                 </template>
               </RuiButton>
             </div>
-          </VMenu>
+          </RuiMenu>
 
           <RuiTooltip
             v-if="isIgnored(item.asset)"

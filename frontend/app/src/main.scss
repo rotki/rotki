@@ -55,14 +55,12 @@ input {
 
 // Override vuetify styles
 
-.theme {
-  &--light {
-    --border-color: rgba(0, 0, 0, 0.12);
-  }
+.light {
+  --border-color: rgba(0, 0, 0, 0.12);
+}
 
-  &--dark {
-    --border-color: rgba(255, 255, 255, 0.12);
-  }
+.dark {
+  --border-color: rgba(255, 255, 255, 0.12);
 }
 
 .v-application {

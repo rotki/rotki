@@ -177,18 +177,15 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       </RouterLink>
     </template>
     <template #details>
-      <VMenu
-        id="nft_balance_table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        nudge-bottom="20"
-        offset-y
-        left
+      <RuiMenu
+        id="liquidity-provider-balance-table__column-filter"
+        menu-class="max-w-[15rem]"
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
-            class-name="nft_balance_table__column-filter__button"
+            class-name="liquidity-provider-balance-table__column-filter__button"
             v-on="on"
           >
             <RuiIcon name="more-2-fill" />
@@ -198,7 +195,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
           :group="LIQUIDITY_POSITION"
           :group-label="t('dashboard.liquidity_position.title')"
         />
-      </VMenu>
+      </RuiMenu>
     </template>
     <template #shortDetails>
       <AmountDisplay

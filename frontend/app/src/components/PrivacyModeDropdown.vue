@@ -184,14 +184,18 @@ watch([enabled, multiplier], setData);
       .v-input {
         :deep(.v-slider) {
           .v-slider {
-            &__track-container {
-              width: 4px;
-              left: 0;
-            }
+            &__track {
+              &-container {
+                width: 4px;
+                left: 0;
+              }
 
-            &__track-background {
-              &.primary {
-                background: var(--v-rotki-light-grey-darken1) !important;
+              &-background {
+                @apply bg-rui-grey-300;
+              }
+
+              &-fill {
+                @apply bg-rui-primary;
               }
             }
 
@@ -242,12 +246,12 @@ watch([enabled, multiplier], setData);
               }
             }
 
-            &__thumb-container {
-              right: auto !important;
-              left: 0;
-            }
-
             &__thumb {
+              &-container {
+                right: auto !important;
+                left: 0;
+              }
+
               &::before {
                 transform: scale(1) !important;
               }
