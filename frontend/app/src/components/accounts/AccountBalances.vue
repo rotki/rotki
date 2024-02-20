@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { chainSection } from '@/types/blockchain';
 import type {
   AccountWithBalance,
   BlockchainAccountWithBalance,
@@ -66,12 +65,12 @@ const operationRunning = computed<boolean>(
     || get(isTaskRunning(TaskType.REMOVE_ACCOUNT)),
 );
 
-const section = computed<Section>(() =>
-  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)],
-);
-
 const { isLoading } = useStatusStore();
-const isSectionLoading = isLoading(get(section));
+const isSectionLoading = computed<boolean>(() => {
+  if (get(loopring))
+    return get(isLoading(Section.L2_LOOPRING_BALANCES));
+  return get(isLoading(Section.BLOCKCHAIN, get(blockchain)));
+});
 
 function editAccount(account: BlockchainAccountWithBalance) {
   set(editedAccount, account.address);

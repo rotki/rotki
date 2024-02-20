@@ -25,10 +25,7 @@ const { visibleTimeframes } = storeToRefs(frontendStore);
 
 const { isLoading: isSectionLoading } = useStatusStore();
 
-const isLoading = logicOr(
-  isSectionLoading(Section.BLOCKCHAIN_ETH),
-  isSectionLoading(Section.BLOCKCHAIN_BTC),
-);
+const isLoading = isSectionLoading(Section.BLOCKCHAIN);
 
 const startingValue = computed(() => {
   const data = get(timeframeData).data;

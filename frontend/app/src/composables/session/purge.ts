@@ -6,18 +6,16 @@ import type { TaskMeta } from '@/types/task';
 
 export function useSessionPurge() {
   const { resetState } = useDefiStore();
-
   const { refreshGeneralCacheTask } = useSessionApi();
+  const { resetStatus } = useStatusStore();
 
   const purgeExchange = async (): Promise<void> => {
-    const { resetStatus } = useStatusUpdater(Section.TRADES);
-    resetStatus();
+    resetStatus(Section.TRADES);
     resetStatus(Section.ASSET_MOVEMENT);
   };
 
   const purgeTransactions = async (): Promise<void> => {
-    const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
-    resetStatus();
+    resetStatus(Section.HISTORY_EVENT);
   };
 
   const purgeCache = async (

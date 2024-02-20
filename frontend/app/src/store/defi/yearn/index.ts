@@ -161,11 +161,11 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       ? Section.DEFI_YEARN_VAULTS_BALANCES
       : Section.DEFI_YEARN_VAULTS_V2_BALANCES;
 
-    if (fetchDisabled(refresh, section))
+    if (fetchDisabled(refresh, { section }))
       return;
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus, { section });
     try {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_BALANCES
@@ -201,7 +201,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         });
       }
     }
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED, { section });
   }
 
   async function fetchHistory(payload: {
@@ -225,11 +225,11 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       ? Section.DEFI_YEARN_VAULTS_HISTORY
       : Section.DEFI_YEARN_VAULTS_V2_HISTORY;
 
-    if (fetchDisabled(!!refresh, section))
+    if (fetchDisabled(!!refresh, { section }))
       return;
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus, { section });
     try {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_HISTORY
@@ -265,7 +265,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         });
       }
     }
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED, { section });
   }
 
   const reset = (version?: ProtocolVersion): void => {
@@ -275,15 +275,15 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     if (!version || version === ProtocolVersion.V1) {
       set(vaultsBalances, {});
       set(vaultsHistory, {});
-      resetStatus(Section.DEFI_YEARN_VAULTS_BALANCES);
-      resetStatus(Section.DEFI_YEARN_VAULTS_HISTORY);
+      resetStatus({ section: Section.DEFI_YEARN_VAULTS_BALANCES });
+      resetStatus({ section: Section.DEFI_YEARN_VAULTS_HISTORY });
     }
 
     if (!version || version === ProtocolVersion.V2) {
       set(vaultsV2Balances, {});
       set(vaultsV2History, {});
-      resetStatus(Section.DEFI_YEARN_VAULTS_V2_BALANCES);
-      resetStatus(Section.DEFI_YEARN_VAULTS_V2_HISTORY);
+      resetStatus({ section: Section.DEFI_YEARN_VAULTS_V2_BALANCES });
+      resetStatus({ section: Section.DEFI_YEARN_VAULTS_V2_HISTORY });
     }
   };
 

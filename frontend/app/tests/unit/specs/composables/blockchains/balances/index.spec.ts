@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { chainSection } from '@/types/blockchain';
+import { Section } from '@/types/status';
 
 vi.mock('@/store/blockchain/balances/eth', () => ({
   useEthBalancesStore: vi.fn().mockReturnValue({
@@ -46,10 +46,8 @@ vi.mock('@/store/tasks', () => ({
 
 describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());
-  let api: ReturnType<typeof useBlockchainBalancesApi>
-    = useBlockchainBalancesApi();
-  let blockchainBalances: ReturnType<typeof useBlockchainBalances>
-    = useBlockchainBalances();
+  let api: ReturnType<typeof useBlockchainBalancesApi> = useBlockchainBalancesApi();
+  let blockchainBalances: ReturnType<typeof useBlockchainBalances> = useBlockchainBalances();
 
   beforeEach(() => {
     api = useBlockchainBalancesApi();
@@ -86,7 +84,7 @@ describe('composables::blockchain/balances/index', () => {
       };
 
       const { isLoading } = useStatusStore();
-      const loading = isLoading(chainSection[Blockchain.ETH]);
+      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
       it('default', async () => {
         startPromise(call());

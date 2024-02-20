@@ -31,7 +31,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     noDeposits?: boolean,
   ): ComputedRef<DefiProtocolSummary | undefined> =>
     computed(() => {
-      const currentStatus = getStatus(section);
+      const currentStatus = getStatus({ section });
       if (
         currentStatus !== Status.LOADED
         && currentStatus !== Status.REFRESHING

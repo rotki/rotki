@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Section, Status } from '@/types/status';
 
 export function useDataLoader() {
@@ -9,6 +10,7 @@ export function useDataLoader() {
   const { fetchNetValue } = useStatisticsStore();
   const { fetchAllTradeLocations } = useLocationStore();
   const { fetch, refreshPrices } = useBalances();
+  const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
@@ -31,10 +33,8 @@ export function useDataLoader() {
       startPromise(refreshData());
     }
     else {
-      const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
-      const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
-      ethUpdater.setStatus(Status.LOADED);
-      btcUpdater.setStatus(Status.LOADED);
+      setStatus(Status.LOADED, { subsection: Blockchain.ETH });
+      setStatus(Status.LOADED, { subsection: Blockchain.BTC });
     }
   };
 

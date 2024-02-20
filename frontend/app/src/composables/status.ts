@@ -1,35 +1,60 @@
 import { type Section, Status } from '@/types/status';
 
-export function useStatusUpdater(section: Section, ignore = false) {
+interface Opts { section?: Section; subsection?: string }
+
+export function useStatusUpdater(defaultSection: Section) {
   const { setStatus, getStatus, isLoading } = useStatusStore();
-  const updateStatus = (status: Status, otherSection?: Section) => {
-    if (ignore)
-      return;
+  const updateStatus = (status: Status, opts: Opts = {}) => {
+    const {
+      section = defaultSection,
+      subsection,
+    } = opts;
 
     setStatus({
-      section: otherSection ?? section,
+      section,
+      subsection,
       status,
     });
   };
 
-  const resetStatus = (otherSection?: Section) => {
+  const resetStatus = (opts: Opts = {}) => {
+    const {
+      section = defaultSection,
+      subsection,
+    } = opts;
+
     setStatus({
-      section: otherSection ?? section,
+      section,
+      subsection,
       status: Status.NONE,
     });
   };
 
-  const loading = (otherSection?: Section) =>
-    get(isLoading(otherSection ?? section));
+  const loading = (opts: Opts = {}) => {
+    const {
+      section = defaultSection,
+      subsection,
+    } = opts;
+    return get(isLoading(section, subsection));
+  };
 
-  const isFirstLoad = (otherSection?: Section) =>
-    get(getStatus(otherSection ?? section)) === Status.NONE;
+  const isFirstLoad = (opts: Opts = {}) => {
+    const {
+      section = defaultSection,
+      subsection,
+    } = opts;
+    return get(getStatus(section, subsection)) === Status.NONE;
+  };
 
-  const fetchDisabled = (refresh: boolean, otherSection?: Section) =>
-    !(isFirstLoad(otherSection) || refresh) || loading(otherSection);
+  const fetchDisabled = (refresh: boolean, opts: Opts = {}) => !(isFirstLoad(opts) || refresh) || loading(opts);
 
-  const getSectionStatus = (otherSection?: Section) =>
-    get(getStatus(otherSection ?? section));
+  const getSectionStatus = (opts: Opts = {}) => {
+    const {
+      section = defaultSection,
+      subsection,
+    } = opts;
+    return get(getStatus(section, subsection));
+  };
 
   return {
     loading,

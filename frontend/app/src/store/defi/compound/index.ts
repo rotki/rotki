@@ -77,7 +77,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     if (!get(activeModules).includes(Module.COMPOUND) || !get(premium))
       return;
 
-    const section = Section.DEFI_COMPOUND_STATS;
+    const section = { section: Section.DEFI_COMPOUND_STATS };
 
     if (fetchDisabled(refresh, section))
       return;
@@ -117,7 +117,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     set(balances, {});
     set(history, defaultCompoundStats());
     resetStatus();
-    resetStatus(Section.DEFI_COMPOUND_STATS);
+    resetStatus({ section: Section.DEFI_COMPOUND_STATS });
   };
 
   const addresses: ComputedRef<string[]> = computed(() =>

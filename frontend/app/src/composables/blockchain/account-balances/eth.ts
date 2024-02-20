@@ -203,13 +203,13 @@ export function useEthAccountBalances() {
         item.usdValue.gt(0),
       ),
       usdValue: sum(get(ethAccounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.ETH)),
     },
     {
       chain: Blockchain.ETH2,
       children: [],
       usdValue: sum(get(eth2Accounts)),
-      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH2)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.ETH2)),
     },
   ]);
 

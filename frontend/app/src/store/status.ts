@@ -1,52 +1,99 @@
+import { isEmpty } from 'lodash-es';
 import { Section, Status, defiSections } from '@/types/status';
 import type { StatusPayload } from '@/types/action';
 
+type SectionStatus = Record<string, Status>;
+
+type StatusState = Partial<Record<Section, SectionStatus>>;
+
+const defaultSection = 'default' as const;
+
+function isInitialLoadingStatus(status: Status) {
+  return status !== Status.LOADED
+    && status !== Status.PARTIALLY_LOADED
+    && status !== Status.REFRESHING;
+}
+
+function isLoadingStatus(status: Status) {
+  return status === Status.LOADING
+    || status === Status.PARTIALLY_LOADED
+    || status === Status.REFRESHING;
+}
+
+function matchesStatus(statuses: SectionStatus, subsection: string, fn: (status: Status) => boolean) {
+  const subsectionStatus = statuses[subsection];
+  if (subsection === defaultSection)
+    return !subsectionStatus && !isEmpty(statuses) ? Object.values(statuses).some(fn) : fn(subsectionStatus);
+  else
+    return subsectionStatus ? fn(subsectionStatus) : false;
+}
+
 export const useStatusStore = defineStore('status', () => {
-  const status = ref<Partial<Record<Section, Status>>>({});
+  const status = ref<StatusState>({});
 
   const resetDefiStatus = (): void => {
-    const newStatus = Status.NONE;
+    const copy = { ...get(status) };
+
     defiSections.forEach((section) => {
-      status.value[section] = newStatus;
+      if (copy[section])
+        delete copy[section];
     });
+
+    set(status, copy);
   };
 
-  const setStatus = ({ section, status: newStatus }: StatusPayload): void => {
+  const resetStatus = (section: Section, subsection: string = defaultSection) => {
+    const statuses = { ...get(status) };
+    delete statuses[section]?.[subsection];
+    if (isEmpty(statuses[section]))
+      delete statuses[section];
+    set(status, statuses);
+  };
+
+  const setStatus = ({ section, status: newStatus, subsection = defaultSection }: StatusPayload): void => {
     const statuses = get(status);
-    if (statuses[section] === newStatus)
+    const sectionStatus = statuses[section] ?? { [defaultSection]: Status.NONE };
+
+    if (sectionStatus[subsection] === newStatus)
       return;
 
-    set(status, { ...statuses, [section]: newStatus });
+    if (newStatus === Status.NONE) {
+      resetStatus(section, subsection);
+    }
+    else {
+      set(status, {
+        ...statuses,
+        [section]: {
+          ...statuses[section],
+          [subsection]: newStatus,
+        },
+      });
+    }
   };
 
-  const getStatus = (section: Section): ComputedRef<Status> =>
-    computed<Status>(() => get(status)[section] ?? Status.NONE);
+  const getStatus = (
+    section: Section,
+    subsection: string = defaultSection,
+  ): Status => get(status)[section]?.[subsection] ?? Status.NONE;
 
-  const isLoading = (section: Section): ComputedRef<boolean> =>
-    computed(() => {
-      const status = get(getStatus(section));
-      return (
-        status === Status.LOADING
-        || status === Status.PARTIALLY_LOADED
-        || status === Status.REFRESHING
-      );
-    });
+  const isLoading = (section: Section, subsection: string = defaultSection) => computed<boolean>(() => {
+    const statuses = get(status)[section];
+    if (!statuses)
+      return false;
 
-  const shouldShowLoadingScreen = (section: Section): ComputedRef<boolean> =>
-    computed(() => {
-      const status = get(getStatus(section));
-      return (
-        status !== Status.LOADED
-        && status !== Status.PARTIALLY_LOADED
-        && status !== Status.REFRESHING
-      );
-    });
+    return matchesStatus(statuses, subsection, isLoadingStatus);
+  });
+
+  const shouldShowLoadingScreen = (section: Section, subsection: string = defaultSection) => computed<boolean>(() => {
+    const statuses = get(status)[section];
+    if (!statuses)
+      return false;
+
+    return matchesStatus(statuses, subsection, isInitialLoadingStatus);
+  });
 
   const detailsLoading = logicOr(
-    isLoading(Section.BLOCKCHAIN_ETH),
-    isLoading(Section.BLOCKCHAIN_BTC),
-    isLoading(Section.BLOCKCHAIN_KSM),
-    isLoading(Section.BLOCKCHAIN_AVAX),
+    isLoading(Section.BLOCKCHAIN),
     isLoading(Section.EXCHANGES),
     isLoading(Section.MANUAL_BALANCES),
   );
@@ -59,6 +106,7 @@ export const useStatusStore = defineStore('status', () => {
     resetDefiStatus,
     setStatus,
     getStatus,
+    resetStatus,
   };
 });
 

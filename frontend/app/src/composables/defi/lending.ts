@@ -456,7 +456,7 @@ export function useDefiLending() {
     }
 
     const isPremium = get(premium);
-    const premiumSection = Section.DEFI_LENDING_HISTORY;
+    const premiumSection = { section: Section.DEFI_LENDING_HISTORY };
     if (!isPremium || fetchDisabled(refresh, premiumSection))
       return;
 
@@ -480,7 +480,7 @@ export function useDefiLending() {
   };
 
   const fetchBorrowing = async (refresh = false): Promise<void> => {
-    const section = Section.DEFI_BORROWING;
+    const section = { section: Section.DEFI_BORROWING };
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
     if (!fetchDisabled(refresh, section)) {
@@ -504,7 +504,7 @@ export function useDefiLending() {
     }
 
     const isPremium = get(premium);
-    const premiumSection = Section.DEFI_BORROWING_HISTORY;
+    const premiumSection = { section: Section.DEFI_BORROWING_HISTORY };
 
     if (!isPremium || fetchDisabled(refresh, premiumSection))
       return;

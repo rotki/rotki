@@ -181,9 +181,9 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     set(staking, {});
     set(statistics, null);
 
-    resetStatus(Section.DEFI_LIQUITY_BALANCES);
-    resetStatus(Section.DEFI_LIQUITY_STAKING);
-    resetStatus(Section.DEFI_LIQUITY_STATISTICS);
+    resetStatus({ section: Section.DEFI_LIQUITY_BALANCES });
+    resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
+    resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
   return {

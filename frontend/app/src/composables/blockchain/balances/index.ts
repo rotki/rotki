@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { chainSection } from '@/types/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
-import { Status } from '@/types/status';
+import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { AssetPrices } from '@/types/prices';
 import type { BlockchainMetadata } from '@/types/task';
@@ -12,25 +11,19 @@ export function useBlockchainBalances() {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
-  const { update: updateEth, updatePrices: updateEthPrices }
-    = useEthBalancesStore();
-  const { update: updateBtc, updatePrices: updateBtcPrices }
-    = useBtcBalancesStore();
-  const { update: updateChains, updatePrices: updateChainPrices }
-    = useChainBalancesStore();
+  const { update: updateEth, updatePrices: updateEthPrices } = useEthBalancesStore();
+  const { update: updateBtc, updatePrices: updateBtcPrices } = useBtcBalancesStore();
+  const { update: updateChains, updatePrices: updateChainPrices } = useChainBalancesStore();
   const { getChainName } = useSupportedChains();
   const { t } = useI18n();
+  const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.BLOCKCHAIN);
 
   const handleFetch = async (
     blockchain: Blockchain,
     ignoreCache = false,
   ): Promise<void> => {
-    const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
-      chainSection[blockchain],
-    );
-
     try {
-      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
+      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
 
       const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain);
       const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
@@ -52,7 +45,7 @@ export function useBlockchainBalances() {
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
-      setStatus(Status.LOADED);
+      setStatus(Status.LOADED, { subsection: blockchain });
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
@@ -65,7 +58,7 @@ export function useBlockchainBalances() {
           display: true,
         });
       }
-      resetStatus();
+      resetStatus({ subsection: blockchain });
     }
   };
 
@@ -75,7 +68,7 @@ export function useBlockchainBalances() {
     periodic = false,
   ): Promise<void> => {
     const { isLoading } = useStatusStore();
-    const loading = isLoading(chainSection[blockchain]);
+    const loading = isLoading(Section.BLOCKCHAIN, blockchain);
 
     const call = () => handleFetch(blockchain, ignoreCache);
 

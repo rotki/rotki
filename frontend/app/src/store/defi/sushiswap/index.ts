@@ -109,7 +109,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     set(balances, {});
     set(events, {});
     resetStatus();
-    resetStatus(Section.DEFI_SUSHISWAP_EVENTS);
+    resetStatus({ section: Section.DEFI_SUSHISWAP_EVENTS });
   };
 
   return {
