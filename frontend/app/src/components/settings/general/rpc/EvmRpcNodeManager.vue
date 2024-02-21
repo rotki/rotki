@@ -239,11 +239,13 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
-            <VSwitch
-              value=""
-              :input-value="item.active"
+            <RuiSwitch
+              color="primary"
+              hide-details
+              class="mr-4"
+              :value="item.active"
               :disabled="isEtherscan(item)"
-              @change="onActiveChange($event, item)"
+              @input="onActiveChange($event, item)"
             />
             <RowActions
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"

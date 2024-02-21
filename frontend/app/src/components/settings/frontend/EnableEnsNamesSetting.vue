@@ -16,13 +16,14 @@ const { t } = useI18n();
     frontend-setting
     :error-message="t('frontend_settings.validation.enable_alias_names.error')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="enableAliasNames"
       class="general-settings__fields__enable_alias_names mb-4 mt-2"
       :label="t('frontend_settings.label.enable_alias_names')"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      color="primary"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

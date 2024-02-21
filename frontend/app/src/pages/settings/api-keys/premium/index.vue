@@ -189,12 +189,14 @@ const css = useCssModule();
         {{ t('premium_settings.premium_active') }}
       </div>
 
-      <VSwitch
+      <RuiSwitch
         v-model="sync"
+        class="mt-6"
+        color="primary"
         :disabled="!premium || edit"
         hide-details
         :label="t('premium_settings.actions.sync')"
-        @change="onSyncChange()"
+        @input="onSyncChange()"
       />
 
       <template #footer>

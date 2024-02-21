@@ -15,14 +15,14 @@ const { t } = useI18n();
     setting="includeGasCosts"
     :error-message="t('account_settings.messages.gas_costs')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="gasCosts"
       class="accounting-settings__include-gas-costs"
       :label="t('accounting_settings.trade.labels.include_gas_costs')"
       :success-messages="success"
       :error-messages="error"
       color="primary"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

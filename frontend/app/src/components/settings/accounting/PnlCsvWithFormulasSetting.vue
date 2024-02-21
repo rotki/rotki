@@ -15,7 +15,7 @@ const { t } = useI18n();
     setting="pnlCsvWithFormulas"
     :error-message="t('account_settings.messages.export_csv_formulas')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="exportCSVFormulas"
       class="csv_export_settings__exportCSVFormulas"
       :label="
@@ -24,7 +24,7 @@ const { t } = useI18n();
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

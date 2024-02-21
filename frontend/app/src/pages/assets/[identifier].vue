@@ -167,7 +167,7 @@ async function toggleSpam() {
           <RuiIcon name="pencil-line" />
         </RuiButton>
       </div>
-      <div class="flex items-center">
+      <div class="flex items-center gap-2">
         <div class="text-body-2 mr-4">
           {{ t('assets.ignore') }}
         </div>
@@ -179,10 +179,12 @@ async function toggleSpam() {
           :disabled="!isWhitelisted && !isSpam"
         >
           <template #activator>
-            <VSwitch
+            <RuiSwitch
+              color="primary"
+              hide-details
               :disabled="isWhitelisted || isSpam"
-              :input-value="isIgnored"
-              @change="toggleIgnoreAsset()"
+              :value="isIgnored"
+              @input="toggleIgnoreAsset()"
             />
           </template>
           {{ isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}

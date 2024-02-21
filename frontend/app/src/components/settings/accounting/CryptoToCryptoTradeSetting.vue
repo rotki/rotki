@@ -15,14 +15,14 @@ const { t } = useI18n();
     setting="includeCrypto2crypto"
     :error-message="t('account_settings.messages.crypto_to_crypto')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="crypto2CryptoTrades"
       class="accounting-settings__crypto2crypto"
       :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

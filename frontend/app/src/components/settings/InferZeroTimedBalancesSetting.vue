@@ -36,13 +36,14 @@ onMounted(() => {
       setting="inferZeroTimedBalances"
       @finished="finished()"
     >
-      <VSwitch
+      <RuiSwitch
         v-model="inferZeroTimedBalances"
         :label="t('statistics_graph_settings.infer_zero_timed_balances.label')"
-        persistent-hint
+        color="primary"
+        class="mt-4"
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="update($event)"
       />
     </SettingsOption>
   </div>

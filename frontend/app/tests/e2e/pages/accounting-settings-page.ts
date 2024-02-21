@@ -20,25 +20,15 @@ export class AccountingSettingsPage {
   changeSwitch(target: string, enabled: boolean) {
     cy.get(`${target}`).scrollIntoView();
     cy.get(`${target}`).should('be.visible');
-    cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      (!enabled).toString(),
-    );
-    cy.get(target).click();
-    cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      enabled.toString(),
-    );
-    this.confirmInlineSuccess(`${target} .v-messages__message`);
+    this.verifySwitchState(target, !enabled);
+    cy.get(`${target} input`).click();
+    this.verifySwitchState(target, enabled);
+    this.confirmInlineSuccess(`${target} .details .text-rui-success`);
   }
 
   verifySwitchState(target: string, enabled: boolean) {
     cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      enabled.toString(),
+      enabled ? 'be.checked' : 'not.be.checked',
     );
   }
 

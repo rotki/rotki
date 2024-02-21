@@ -92,11 +92,12 @@ onMounted(() => {
         :error-message="t('frontend_settings.validation.refresh_period.error')"
         @finished="resetRefreshPeriod()"
       >
-        <VSwitch
+        <RuiSwitch
           v-model="refreshEnabled"
-          class="mt-3"
+          class="mt-4"
           :label="t('frontend_settings.label.refresh_enabled')"
-          @change="update($event)"
+          color="primary"
+          @input="update($event)"
         />
       </SettingsOption>
     </div>

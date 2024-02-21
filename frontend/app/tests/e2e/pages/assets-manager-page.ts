@@ -57,14 +57,14 @@ export class AssetsManagerPage {
     cy.get(
       '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
     ).then(($switch) => {
-      const initialValue = $switch.attr('aria-checked');
+      const initialValue = $switch.is(':checked');
       expect(initialValue, 'false');
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)',
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
       ).click();
       cy.get(
         '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).should('have.attr', 'aria-checked', 'true');
+      ).should('be.checked');
     });
   }
 
@@ -83,14 +83,14 @@ export class AssetsManagerPage {
     cy.get(
       '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
     ).then(($switch) => {
-      const initialValue = $switch.attr('aria-checked');
+      const initialValue = $switch.is(':checked');
       expect(initialValue, 'true');
       cy.get(
-        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6)',
+        '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
       ).click();
       cy.get(
         '[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input',
-      ).should('have.attr', 'aria-checked', 'false');
+      ).should('not.be.checked', 'false');
     });
   }
 

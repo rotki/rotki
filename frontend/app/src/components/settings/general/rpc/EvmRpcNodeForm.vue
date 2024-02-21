@@ -188,17 +188,19 @@ setSubmitFunc(save);
       </AmountInput>
     </div>
 
-    <VSwitch
+    <RuiSwitch
       v-model="state.owned"
+      color="primary"
+      class="mt-4"
       :label="t('rpc_node_form.owned')"
-      persistent-hint
       :disabled="isEtherscan"
       :hint="t('rpc_node_form.owned_hint')"
     />
-    <VSwitch
+    <RuiSwitch
       v-model="state.active"
+      color="primary"
+      class="mt-4"
       :label="t('rpc_node_form.active')"
-      persistent-hint
       :disabled="isEtherscan"
       :hint="t('rpc_node_form.active_hint')"
     />

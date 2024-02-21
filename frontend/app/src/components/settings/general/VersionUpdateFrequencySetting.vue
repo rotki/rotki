@@ -97,11 +97,12 @@ onMounted(() => {
       :transform="switchTransform"
       @finished="resetVersionUpdateCheckFrequency()"
     >
-      <VSwitch
+      <RuiSwitch
         v-model="versionUpdateCheckEnabled"
-        class="mt-3"
+        class="mt-4"
         :label="t('general_settings.labels.version_update_check_enabled')"
-        @change="callIfValid($event, update)"
+        color="primary"
+        @input="callIfValid($event, update)"
       />
     </SettingsOption>
   </div>
