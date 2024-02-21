@@ -20,7 +20,7 @@ beautifulsoup4==4.12.3
 maxminddb==2.5.2
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
-cryptography==42.0.3
+cryptography==42.0.4
 py-machineid==0.5.1
 more-itertools==10.1.0  # for peekable iterators
 regex==2023.12.25  # used for unicode information in detection of spam tokens
