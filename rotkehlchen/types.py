@@ -948,6 +948,7 @@ class CacheType(Enum):
     SPAM_ASSET_FALSE_POSITIVE = auto()  # assets that shouldn't be marked as spam automatically
     COINLIST = auto()  # coinlist / all coins cache for various oracles
     AIRDROPS_METADATA = auto()  # airdrops index fetched from rotki/data repo
+    AIRDROPS_HASH = auto()  # hash of airdrops csv file
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -969,6 +970,7 @@ UniqueCacheType = Literal[
     CacheType.CONVEX_POOL_NAME,
     CacheType.COINLIST,
     CacheType.AIRDROPS_METADATA,
+    CacheType.AIRDROPS_HASH,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

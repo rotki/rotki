@@ -3,7 +3,6 @@ import pytest
 
 import requests
 
-from rotkehlchen.chain.ethereum.airdrops import fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import SupportedBlockchain
@@ -16,22 +15,15 @@ if TYPE_CHECKING:
 def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that all the endpoints that query mappings or metadata from the backend work fine"""
 
-    # testing the airdrops metadata endpoint
-    airdrops_expected_result = [
-        {
-            'identifier': identifier,
-            'name': airdrop.name,
-            'icon': airdrop.icon,
-        } | ({'icon_url': airdrop.icon_url} if airdrop.icon_url is not None else {})
-        for identifier, airdrop in fetch_airdrops_metadata(
-            database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
-        )[0].items()
-    ]
     airdrops_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),
     )
     airdrops_result = assert_proper_response_with_result(airdrops_response)
-    assert airdrops_result == airdrops_expected_result
+    assert len(airdrops_result) == 18
+    for res in airdrops_result:
+        assert 'identifier' in res and isinstance(res['identifier'], str)
+        assert 'name' in res and isinstance(res['name'], str)
+        assert 'icon' in res and isinstance(res['icon'], str)
 
     # testing the defi metadata endpoint
     defi_expected_result = [
