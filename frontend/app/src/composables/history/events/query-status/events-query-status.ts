@@ -15,6 +15,9 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
     return statuses.filter(({ location }) => locationsVal.includes(location));
   });
 
+  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
+    = useQueryStatus(filtered, isStatusFinished);
+
   const getItemTranslationKey = (item: HistoryEventsQueryData) => {
     const isRange = isQueryStatusRange(item);
 
@@ -28,9 +31,6 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
       ? 'transactions.query_status_events.date_range'
       : 'transactions.query_status_events.end_date';
   };
-
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
-    = useQueryStatus(filtered, isStatusFinished);
 
   const getKey = (item: HistoryEventsQueryData) => item.location + item.name;
 

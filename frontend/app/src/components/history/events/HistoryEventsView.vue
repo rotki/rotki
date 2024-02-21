@@ -835,7 +835,7 @@ watchImmediate(route, async (route) => {
             :expanded="eventsData"
             :headers="tableHeaders"
             :items="eventsData"
-            :loading="loading"
+            :loading="loading || querying || refreshing"
             :options="options"
             :server-items-length="itemLength"
             :single-select="false"
@@ -887,15 +887,13 @@ watchImmediate(route, async (route) => {
               />
             </template>
             <template #body.prepend="{ headers }">
-              <TransactionQueryStatus
-                v-if="includeEvmEvents"
+              <HistoryQueryStatus
+                :include-evm-events="includeEvmEvents"
+                :include-online-events="includeOnlineEvents"
                 :only-chains="onlyChains"
-                :colspan="headers.length"
-              />
-              <HistoryEventsQueryStatus
-                v-if="includeOnlineEvents"
                 :locations="locations"
                 :colspan="headers.length"
+                :loading="querying || refreshing"
               />
               <UpgradeRow
                 v-if="showUpgradeRow"

@@ -10,7 +10,7 @@ const { getItemTranslationKey } = useEventsQueryStatus();
   <i18n
     :path="getItemTranslationKey(item)"
     tag="div"
-    class="flex py-2 text-no-wrap flex-wrap"
+    class="flex py-2 text-no-wrap flex-wrap text-body-2"
   >
     <template #name>
       <div class="font-bold px-2 text-no-wrap">
