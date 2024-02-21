@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now automatically update the local airdrops' CSVs when needed, without manually deleting them.
 * :bug:`-` Fix the issue where an incorrect amount of ETH is displayed in the Loopring account table.
 * :bug:`-` Binance lending positions and rewards will get properly decoded and displayed again.
 * :bug:`7488` Show tags in multi-lines when multiple to avoid horizontal scroll.
