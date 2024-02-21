@@ -17,13 +17,14 @@ const { t } = useI18n();
     setting="showGraphRangeSelector"
     frontend-setting
   >
-    <VSwitch
+    <RuiSwitch
       v-model="showGraphRangeSelector"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('frontend_settings.label.show_graph_range_selector')"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      color="primary"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

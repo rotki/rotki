@@ -15,14 +15,14 @@ const { t } = useI18n();
     setting="pnlCsvHaveSummary"
     :error-message="t('account_settings.messages.have_csv_summary')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="haveCSVSummary"
       class="csv_export_settings__haveCSVSummary"
       :label="t('account_settings.csv_export_settings.labels.have_csv_summary')"
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

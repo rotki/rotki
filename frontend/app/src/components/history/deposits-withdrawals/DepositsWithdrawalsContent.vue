@@ -194,9 +194,10 @@ watch(loading, async (isLoading, wasLoading) => {
         <template #filter>
           <TableStatusFilter>
             <div class="py-1 max-w-[16rem]">
-              <VSwitch
+              <RuiSwitch
                 v-model="showIgnoredAssets"
-                class="mb-4 pt-0 px-4"
+                class="p-4"
+                color="primary"
                 hide-details
                 :label="t('transactions.filter.show_ignored_assets')"
               />

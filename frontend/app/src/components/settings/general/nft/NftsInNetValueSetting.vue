@@ -17,15 +17,15 @@ const { t } = useI18n();
     frontend-setting
     @finished="fetchNetValue()"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="includeNfts"
+      color="primary"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('general_settings.nft_setting.label.include_nfts')"
       :hint="t('general_settings.nft_setting.label.include_nfts_hint')"
-      persistent-hint
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

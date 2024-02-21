@@ -322,7 +322,7 @@ function expand(item: SupportedAsset) {
         {{ formatType(row.assetType) }}
       </template>
       <template #item.ignored="{ row }">
-        <div class="flex justify-start">
+        <div class="flex justify-start items-center gap-2">
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
@@ -332,12 +332,14 @@ function expand(item: SupportedAsset) {
             "
           >
             <template #activator>
-              <VSwitch
+              <RuiSwitch
+                color="primary"
+                hide-details
                 :disabled="
                   isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
                 "
-                :input-value="isAssetIgnored(row.identifier)"
-                @change="toggleIgnoreAsset(row.identifier)"
+                :value="isAssetIgnored(row.identifier).value"
+                @input="toggleIgnoreAsset(row.identifier)"
               />
             </template>
             {{

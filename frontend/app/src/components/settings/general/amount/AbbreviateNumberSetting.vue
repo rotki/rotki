@@ -48,17 +48,15 @@ const items = computed(() => {
       class="w-[26rem]"
       frontend-setting
     >
-      <VSwitch
+      <RuiSwitch
         v-model="abbreviate"
-        class="mt-0"
         data-cy="frontend-settings__fields__abbreviate_number"
         :label="t('frontend_settings.label.abbreviate_number')"
         :hint="t('frontend_settings.subtitle.abbreviate_number')"
         color="primary"
-        persistent-hint
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="update($event)"
       />
     </SettingsOption>
     <SettingsOption

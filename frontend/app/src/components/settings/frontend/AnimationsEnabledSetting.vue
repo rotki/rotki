@@ -18,13 +18,14 @@ onMounted(() => {
     :transform="transform"
     :error-message="t('frontend_settings.validation.animations.error')"
   >
-    <VSwitch
+    <RuiSwitch
+      color="primary"
       :value="!animationsEnabled"
-      class="general-settings__fields__animation-enabled mt-0"
+      class="general-settings__fields__animation-enabled"
       :label="t('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

@@ -24,9 +24,9 @@ export class GeneralSettingsPage {
   }
 
   changeAnonymousUsageStatistics() {
-    cy.get('.general-settings__fields__anonymous-usage-statistics').click();
+    cy.get('.general-settings__fields__anonymous-usage-statistics input').click();
     this.confirmInlineSuccess(
-      '.general-settings__fields__anonymous-usage-statistics .v-messages__message',
+      '.general-settings__fields__anonymous-usage-statistics .details .text-rui-success',
     );
   }
 
@@ -116,8 +116,7 @@ export class GeneralSettingsPage {
       settings.floatingPrecision,
     );
     cy.get('.general-settings__fields__anonymous-usage-statistics input')
-      .should('have.attr', 'aria-checked')
-      .and('include', `${settings.anonymousUsageStatistics}`);
+      .should(settings.anonymousUsageStatistics ? 'be.checked' : 'not.be.checked');
     cy.get(
       '.general-settings__fields__currency-selector .v-select__selection',
     ).should('have.text', settings.currency);

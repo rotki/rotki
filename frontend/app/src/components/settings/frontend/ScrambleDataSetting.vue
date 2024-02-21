@@ -32,13 +32,14 @@ const css = useCssModule();
       session-setting
       :error-message="t('frontend_settings.validation.scramble.error')"
     >
-      <VSwitch
+      <RuiSwitch
         v-model="scrambleData"
-        class="general-settings__fields__scramble-data"
+        color="primary"
+        class="general-settings__fields__scramble-data my-2"
         :label="t('frontend_settings.label.scramble')"
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="update($event)"
       />
     </SettingsOption>
     <SettingsOption

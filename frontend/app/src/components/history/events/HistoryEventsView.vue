@@ -759,16 +759,18 @@ watchImmediate(route, async (route) => {
         <template #filter>
           <TableStatusFilter>
             <div class="py-1 max-w-[16rem]">
-              <VSwitch
+              <RuiSwitch
                 v-model="customizedEventsOnly"
-                class="mb-4 pt-0 px-4"
+                color="primary"
+                class="p-4"
                 hide-details
                 :label="t('transactions.filter.customized_only')"
               />
               <RuiDivider />
-              <VSwitch
+              <RuiSwitch
                 v-model="showIgnoredAssets"
-                class="mb-4 pt-0 px-4"
+                color="primary"
+                class="p-4"
                 hide-details
                 :label="t('transactions.filter.show_ignored_assets')"
               />

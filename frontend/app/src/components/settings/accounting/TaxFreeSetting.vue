@@ -92,14 +92,14 @@ onMounted(() => {
       :success-message="switchSuccess"
       @finished="resetTaxFreePeriod()"
     >
-      <VSwitch
+      <RuiSwitch
         v-model="taxFreePeriod"
         class="accounting-settings__taxfree-period"
         :success-messages="success"
         :error-messages="error"
         :label="t('accounting_settings.trade.labels.tax_free')"
         color="primary"
-        @change="update($event)"
+        @input="update($event)"
       />
     </SettingsOption>
 

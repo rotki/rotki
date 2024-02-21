@@ -283,9 +283,11 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
             </template>
             <template #item.ignored="{ row }">
               <div class="flex justify-center">
-                <VSwitch
-                  :input-value="isIgnored(row.id)"
-                  @change="toggleIgnoreAsset(row.id)"
+                <RuiSwitch
+                  color="primary"
+                  hide-details
+                  :value="isIgnored(row.id).value"
+                  @input="toggleIgnoreAsset(row.id)"
                 />
               </div>
             </template>

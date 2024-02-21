@@ -26,14 +26,14 @@ function getSuccessMessage(enabled: boolean) {
     "
     :success-message="getSuccessMessage"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="includeFeesInCostBasis"
       class="accounting-settings__include-fees-in-cost-basis"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.include_fees_in_cost_basis')"
       color="primary"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

@@ -153,15 +153,15 @@ const slots = useSlots();
         :error-message="errorMessage"
         @update:uploaded="uploaded = $event"
       />
-      <VSwitch
+      <RuiSwitch
         v-if="!isRotkiCustomImport"
+        color="primary"
+        class="mt-4"
         :value="dateInputFormat !== null"
-        @change="changeShouldCustomDateFormat()"
+        @input="changeShouldCustomDateFormat()"
       >
-        <template #label>
-          {{ t('file_upload.date_input_format.switch_label') }}
-        </template>
-      </VSwitch>
+        {{ t('file_upload.date_input_format.switch_label') }}
+      </RuiSwitch>
       <RuiTextField
         v-if="dateInputFormat !== null"
         v-model="dateInputFormat"

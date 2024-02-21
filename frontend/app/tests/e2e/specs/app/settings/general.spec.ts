@@ -33,7 +33,7 @@ describe('settings::general', () => {
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__floating-precision .details',
+      '.general-settings__fields__floating-precision .details .text-rui-success',
       settings.floatingPrecision,
     );
   });
@@ -53,7 +53,7 @@ describe('settings::general', () => {
   it('change balance save frequency and validate UI message', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__balance-save-frequency .details',
+      '.general-settings__fields__balance-save-frequency .details .text-rui-success',
       settings.balanceSaveFrequency,
     );
   });

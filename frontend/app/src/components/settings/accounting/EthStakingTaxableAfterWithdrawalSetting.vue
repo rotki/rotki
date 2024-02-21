@@ -30,7 +30,7 @@ function getSuccessMessage(enabled: boolean) {
     "
     :success-message="getSuccessMessage"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="ethStakingTaxableAfterWithdrawalEnabled"
       class="accounting-settings__eth-staking-taxable-after-withdrawal"
       :success-messages="success"
@@ -41,7 +41,7 @@ function getSuccessMessage(enabled: boolean) {
         )
       "
       color="primary"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

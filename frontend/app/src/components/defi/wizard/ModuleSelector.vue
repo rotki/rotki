@@ -197,13 +197,14 @@ onMounted(async () => {
       </template>
 
       <template #item.enabled="{ row }">
-        <VSwitch
+        <RuiSwitch
+          color="primary"
           :data-cy="`${row.identifier}-module-switch`"
           :disabled="loading"
-          :input-value="row.enabled"
+          :value="row.enabled"
           hide-details
-          class="mt-2 pt-0"
-          @change="switchModule(row.identifier, $event)"
+          class="py-2"
+          @input="switchModule(row.identifier, $event)"
         />
       </template>
     </RuiDataTable>
