@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
 
 const { t } = useI18n();
+const { getStatusData } = useTransactionQueryStatus();
+const { isSmAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
@@ -22,7 +25,7 @@ const steps = computed(() => {
   }));
 });
 
-const { getStatusData } = useTransactionQueryStatus();
+const hasProgress = computed(() => get(steps).some(step => step.loading));
 
 function isStepInProgress(item: EvmTransactionQueryData, stepIndex: number) {
   return getStatusData(item).index === stepIndex + 1;
@@ -31,8 +34,11 @@ function isStepInProgress(item: EvmTransactionQueryData, stepIndex: number) {
 
 <template>
   <RuiStepper
-    class="-mx-4 [&_hr]:!hidden"
+    v-if="hasProgress"
+    class="[&_hr]:!hidden [&>div]:!py-0"
+    :class="[isSmAndDown ? 'ml-8' : 'ml-2']"
     :steps="steps"
     :step="getStatusData(item).index"
+    :orientation="isSmAndDown ? 'vertical' : 'horizontal'"
   />
 </template>

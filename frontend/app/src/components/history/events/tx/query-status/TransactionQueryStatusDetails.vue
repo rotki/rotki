@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+
+defineProps<{ item: EvmTransactionQueryData }>();
+</script>
+
+<template>
+  <div class="flex items-center">
+    <AdaptiveWrapper>
+      <EvmChainIcon
+        :chain="item.evmChain"
+        size="1.25rem"
+      />
+    </AdaptiveWrapper>
+    <TransactionQueryStatusLine
+      :item="item"
+      class="ms-2"
+    />
+
+    <RuiTooltip
+      class="ml-2 cursor-pointer"
+      :open-delay="400"
+      tooltip-class="max-w-[12rem]"
+    >
+      <template #activator>
+        <RuiIcon
+          class="text-rui-text-secondary"
+          name="question-line"
+        />
+      </template>
+
+      <i18n
+        :path="
+          item.period[0] === 0
+            ? 'transactions.query_status.latest_period_end_date'
+            : 'transactions.query_status.latest_period_date_range'
+        "
+      >
+        <template #start>
+          <DateDisplay :timestamp="item.period[0]" />
+        </template>
+        <template #end>
+          <DateDisplay :timestamp="item.period[1]" />
+        </template>
+      </i18n>
+    </RuiTooltip>
+  </div>
+</template>

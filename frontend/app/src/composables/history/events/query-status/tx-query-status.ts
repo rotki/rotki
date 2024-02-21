@@ -23,6 +23,9 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
     );
   });
 
+  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
+    = useQueryStatus(filtered, isStatusFinished);
+
   const statusesData = computed(() => ({
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
       index: -1,
@@ -75,9 +78,6 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
       ? 'transactions.query_status.date_range'
       : 'transactions.query_status.end_date';
   };
-
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange }
-    = useQueryStatus(filtered, isStatusFinished);
 
   const getKey = (item: EvmTransactionQueryData) =>
     item.address + item.evmChain;
