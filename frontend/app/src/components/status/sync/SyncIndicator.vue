@@ -50,15 +50,8 @@ const icon = computed(() => {
   return tick ? 'upload-cloud-2-line' : 'upload-cloud-line';
 });
 
-const showAutoUploadOffWarning = computed<boolean>(() => {
-  if (!isDefined(uploadStatus))
-    return false;
-
-  return !get(uploadStatus).uploaded;
-});
-
 const tooltip = computed<string>(() => {
-  if (get(showAutoUploadOffWarning)) {
+  if (get(uploadStatus)) {
     const title = t('sync_indicator.db_upload_result.title');
     const message = t('sync_indicator.db_upload_result.message', {
       reason: get(uploadStatus)?.message,
@@ -111,7 +104,7 @@ watch(isSyncing, (current, prev) => {
             v-on="on"
           >
             <RuiBadge
-              :value="showAutoUploadOffWarning"
+              :value="!!uploadStatus"
               color="warning"
               dot
               placement="top"
@@ -120,7 +113,7 @@ watch(isSyncing, (current, prev) => {
               class="flex items-center"
             >
               <RuiIcon
-                v-if="showAutoUploadOffWarning"
+                v-if="uploadStatus"
                 name="cloud-off-line"
                 color="warning"
               />
@@ -158,7 +151,7 @@ watch(isSyncing, (current, prev) => {
             class="flex flex-col my-2 p-2 gap-2 border border-rui-warning rounded-[0.25rem]"
           >
             <div class="flex gap-1">
-              <div class="font-medium">
+              <div class="font-medium leading-5">
                 {{ t('sync_indicator.db_upload_result.title') }}
               </div>
               <RuiButton
