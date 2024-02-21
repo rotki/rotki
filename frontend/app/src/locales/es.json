@@ -3829,9 +3829,9 @@
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
       "done_end_date": "Done querying all transactions for {address} until {end}",
-      "done_group": "Done querying all transactions information for {length} address(es)",
+      "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {length} address(es)",
+      "group": "Querying evm transactions information for {count} address | Querying evm transactions information for {count} addresses",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
@@ -3839,7 +3839,23 @@
         "querying_internal_transactions": "ethereum internal transactions",
         "querying_transactions": "evm transactions"
       },
-      "title": "Ethereum Transaction Query Status"
+      "title": "Estado de la consulta de transacciones Evm"
+    },
+    "query_status_events": {
+      "date_range": "Consulta de eventos para {name} entre {start} y {end}",
+      "done_date_range": "Finalizada la consulta de todos los eventos para {name} entre {start} y {end}.",
+      "done_end_date": "Se han consultado todos los eventos de {name} hasta {end}.",
+      "done_group": "Finalizada la consulta de todos los eventos para {count} ubicación | Finalizada la consulta de todos los eventos para {count} ubicaciones",
+      "end_date": "Consulta de eventos para {name} hasta {end}",
+      "group": "Consulta de eventos para {count} ubicación | Consulta de eventos para ubicaciones de {count}",
+      "latest_period_date_range": "El último periodo consultado con éxito está entre {start} y {end}.",
+      "latest_period_end_date": "El último periodo consultado con éxito es hasta {end}",
+      "title": "Historial Eventos Consulta Estado"
+    },
+    "query_all": {
+      "done_group": "Finalizada la consulta de todos los eventos y transacciones",
+      "group": "Consulta de eventos y transacciones",
+      "modal_title": "Estado de la consulta"
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
