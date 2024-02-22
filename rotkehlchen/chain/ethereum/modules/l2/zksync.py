@@ -21,7 +21,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -280,7 +280,7 @@ class ZksyncLite(EthereumModule):
                                 evm_inquirer=self.ethereum.node_inquirer,
                                 encounter=TokenEncounterInfo(description='Querying zksync tokens mapping'),  # noqa: E501
                             )
-                        except UnknownAsset:
+                        except NotERC20Conformant:
                             log.warning(
                                 f'ZKSync lite token id {token_id} with address {address} '
                                 f'is unknown and as such will be ignored.',
@@ -328,7 +328,7 @@ class ZksyncLite(EthereumModule):
             timestamp = iso8601ts_to_timestamp(entry['createdAt'])
             fee_str = entry['op'].get('fee')
             fee_raw = None
-            if fee_str:
+            if fee_str is not None:
                 fee_raw = deserialize_int_from_str(
                     symbol=fee_str,
                     location='zksync transaction',
@@ -444,20 +444,20 @@ class ZksyncLite(EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[ZKSyncLiteTransaction]:
-        cursor = self.database.conn.cursor()
-        result = cursor.execute(
-            'SELECT * from zksynclite_transactions WHERE timestamp >= ? AND timestamp <= ? '
-            'AND (from_address == ? OR to_address == ?) ORDER by timestamp DESC',
-            (start_ts, end_ts, address, address),
-        )
         transactions = []
-        for entry in result:
-            try:
-                transactions.append(ZKSyncLiteTransaction.deserialize_from_db(entry))
-            except (DeserializationError, UnknownAsset) as e:
-                log.error(
-                    f'Could not deserialize zksync lite transaction {entry} from the DB due to {e!s}',  # noqa: E501
-                )
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT * from zksynclite_transactions WHERE timestamp >= ? AND timestamp <= ? '
+                'AND (from_address == ? OR to_address == ?) ORDER by timestamp DESC',
+                (start_ts, end_ts, address, address),
+            )
+            for entry in cursor:
+                try:
+                    transactions.append(ZKSyncLiteTransaction.deserialize_from_db(entry))
+                except (DeserializationError, UnknownAsset) as e:
+                    log.error(
+                        f'Could not deserialize zksync lite transaction {entry} from the DB due to {e!s}',  # noqa: E501
+                    )
                 continue
 
         return transactions
@@ -478,17 +478,15 @@ class ZksyncLite(EthereumModule):
             queried_range = self.database.get_used_query_range(cursor, location)
 
             cursor.execute('SELECT tx_hash, min(timestamp) from zksynclite_transactions;')
-            result = cursor.fetchone()
-
-            if result[0]:
+            if (result := cursor.fetchone()) is not None and result[0] is not None:
                 min_tx_hash = '0x' + result[0].hex()
                 min_timestamp = result[1]
 
             cursor.execute('SELECT tx_hash, max(timestamp) from zksynclite_transactions;')
             result_hash = cursor.fetchone()[0]
 
-            if result[0]:
-                max_tx_hash = '0x' + result_hash.hex()
+            if result is not None and (result_hash := cursor.fetchone()) is not None and result_hash[0] is not None:  # noqa: E501
+                max_tx_hash = '0x' + result_hash[0].hex()
                 max_timestamp = result[1]
 
         try:
@@ -526,10 +524,8 @@ class ZksyncLite(EthereumModule):
         except RemoteError as e:
             log.error(
                 f'Got error "{e!s}" while querying zksync lite transactions '
-                f'from zksync api. Transactions not added to the DB '
-                f'address: {address} '
-                f'from_ts: {start_ts} '
-                f'to_ts: {end_ts} ',
+                f'from zksync api. Transactions not added to the DB. '
+                f'{address=}, {start_ts=}, {end_ts=} ',
             )
 
         return self._get_zksynctxs_db(
@@ -560,7 +556,7 @@ class ZksyncLite(EthereumModule):
                     )
                     amount = asset_normalized_value(raw_amount, asset)
                     try:
-                        usd_price = Inquirer().find_usd_price(asset)
+                        usd_price = Inquirer.find_usd_price(asset)
                     except RemoteError as e:
                         log.error(
                             f'Error processing zksync lite balance entry due to inability to '
@@ -571,7 +567,7 @@ class ZksyncLite(EthereumModule):
                     balances[address][asset] = Balance(amount, usd_price)
 
             except (KeyError, DeserializationError, RemoteError) as e:
-                msg = str(e)
+                msg = str(e)  # Catching RemoteError here too due to self._get_token_by_symbol
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 log.error(f'Failed to query zksync balances for {address} due to {msg}')
