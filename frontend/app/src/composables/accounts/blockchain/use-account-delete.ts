@@ -1,18 +1,8 @@
 import type { Account } from '@rotki/common/lib/account';
 import type {
-  BlockchainAccountGroupWithBalance,
-  BlockchainAccountWithBalance,
+  BlockchainAccountBalance,
   DeleteXpubParams,
-  XpubData,
 } from '@/types/blockchain/accounts';
-
-export function isGroupXpub(
-  account: BlockchainAccountGroupWithBalance,
-): account is BlockchainAccountGroupWithBalance<XpubData> {
-  return 'xpub' in account.data;
-}
-
-type DataRow = BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
 
 export function useAccountDelete() {
   const { deleteEth2Validators } = useEthStaking();
@@ -21,7 +11,7 @@ export function useAccountDelete() {
   const { t } = useI18n();
   const { show } = useConfirmStore();
 
-  async function deleteAccount(payload: DataRow[]): Promise<void> {
+  async function deleteAccount(payload: BlockchainAccountBalance[]): Promise<void> {
     if (payload.length === 0)
       return;
 
@@ -29,11 +19,11 @@ export function useAccountDelete() {
     const chainAccounts: Account[] = [];
     const xpubs: DeleteXpubParams[] = [];
 
-    payload.forEach((account) => {
-      if ('publicKey' in account.data) {
+    payload.forEach((account): void => {
+      if (account.data.type === 'validator') {
         validators.push(account.data.publicKey);
       }
-      else if ('xpub' in account.data) {
+      else if (account.data.type === 'xpub') {
         const chain = getChain(account);
         assert(chain);
         xpubs.push({
@@ -42,8 +32,8 @@ export function useAccountDelete() {
           chain,
         });
       }
-      else if ('address' in account.data) {
-        if ('chain' in account) {
+      else {
+        if (account.type === 'account') {
           if (!account.virtual) {
             chainAccounts.push({
               address: account.data.address,
@@ -51,7 +41,7 @@ export function useAccountDelete() {
             });
           }
         }
-        else if ('chains' in account) {
+        else {
           for (const chain of account.chains) {
             chainAccounts.push({
               address: account.data.address,
@@ -86,10 +76,11 @@ export function useAccountDelete() {
     if (xpubs.length > 0)
       for (const xpub of xpubs) await deleteXpub(xpub);
 
-    startPromise(refreshAccounts());
+    const chains = payload.flatMap(x => x.type === 'group' ? x.chains : x.chain);
+    startPromise(refreshAccounts(chains.length === 1 ? chains[0] : undefined));
   }
 
-  function showConfirmation(payload: DataRow[]) {
+  function showConfirmation(payload: BlockchainAccountBalance[], onComplete: () => void) {
     const message: string = Array.isArray(payload)
       ? t('account_balances.confirm_delete.description_address', {
         count: payload.length,
@@ -104,6 +95,7 @@ export function useAccountDelete() {
       },
       async () => {
         await deleteAccount(payload);
+        onComplete();
       },
     );
   }

@@ -42,11 +42,7 @@
     },
     "edit_tooltip": "编辑账户",
     "headers": {
-      "num_of_detected_tokens": "检测到的token数量",
-      "ownership": "所有权",
-      "usd_value": "{symbol} 值",
-      "usd_value_eth": "账户资产的总{symbol}价值",
-      "validator": "验证器索引|公钥"
+      "usd_value": "{symbol} 值"
     },
     "refresh_tooltip": "刷新 {blockchain} 余额忽略任何缓存条目"
   },
@@ -71,14 +67,6 @@
       "address_non_empty": "地址不能为空",
       "xpub_non_empty": "XPUB 字段不能为空"
     }
-  },
-  "account_group_header": {
-    "copy_tooltip": "将 xpub 复制到剪贴板",
-    "delete_tooltip": "删除条目及其下的所有帐户",
-    "derivation_path": "推导路径",
-    "edit_tooltip": "编辑 xpub 的标签和标记",
-    "standalone": "独立",
-    "xpub": "xpub:"
   },
   "account_management": {
     "about_tooltip": "显示应用程序的关于模式",
@@ -1293,10 +1281,6 @@
   },
   "blockchain_balances": {
     "add_account": "添加账户",
-    "balances": {
-      "common": "{chain} 余额",
-      "eth2": "ETH staking"
-    },
     "form_dialog": {
       "add_title": "添加区块链账户",
       "edit_subtitle": "修改账户信息",

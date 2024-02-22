@@ -77,7 +77,10 @@ export const useDefiStore = defineStore('defi', () => {
           }
           else {
             accounts[address] = {
-              data: { address },
+              data: {
+                type: 'address',
+                address,
+              },
               chain: Blockchain.ETH,
               protocols: [selectedProtocol],
               nativeAsset: Blockchain.ETH.toUpperCase(),

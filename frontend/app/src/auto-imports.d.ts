@@ -30,6 +30,7 @@ declare global {
   const Zero: typeof import('./utils/bignumbers')['Zero']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const aggregateTotal: typeof import('./utils/calculation')['aggregateTotal']
+  const aggregateTotals: typeof import('./utils/blockchain/accounts/index')['aggregateTotals']
   const appendAssetBalance: typeof import('./utils/balances')['appendAssetBalance']
   const assert: typeof import('./utils/assertions')['assert']
   const assetSum: typeof import('./utils/calculation')['assetSum']
@@ -43,7 +44,6 @@ declare global {
   const bigNumberSum: typeof import('./utils/calculation')['bigNumberSum']
   const bigNumberify: typeof import('./utils/bignumbers')['bigNumberify']
   const bigNumberifyFromRef: typeof import('./utils/bignumbers')['bigNumberifyFromRef']
-  const blockchainAccount: (typeof import('./composables/filters/blockchain-account'))['useBlockchainAccountFilter']
   const calculatePercentage: typeof import('./utils/calculation')['calculatePercentage']
   const calculateTotalProfitLoss: typeof import('./utils/report')['calculateTotalProfitLoss']
   const changeDateFormat: typeof import('./utils/date')['changeDateFormat']
@@ -65,6 +65,7 @@ declare global {
   const convertFromTimestamp: typeof import('./utils/date')['convertFromTimestamp']
   const convertToTimestamp: typeof import('./utils/date')['convertToTimestamp']
   const createAccount: typeof import('./utils/blockchain/accounts/index')['createAccount']
+  const createAccountWithBalance: typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']
   const createApp: typeof import('vue')['createApp']
   const createBlockie: typeof import('./utils/blockie')['createBlockie']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
@@ -108,13 +109,13 @@ declare global {
   const generateRandomScrambleMultiplier: typeof import('./utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
   const getAccountAddress: typeof import('./utils/blockchain/accounts/index')['getAccountAddress']
+  const getAccountBalance: typeof import('./utils/blockchain/accounts/index')['getAccountBalance']
   const getAccountId: typeof import('./utils/blockchain/accounts/index')['getAccountId']
   const getAccountLabel: typeof import('./utils/blockchain/accounts/index')['getAccountLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('./utils/assets')['getAddressFromEvmIdentifier']
   const getBackendUrl: typeof import('./utils/account-management')['getBackendUrl']
   const getBalances: typeof import('./utils/defi/xswap')['getBalances']
-  const getBtcBreakdown: (typeof import('./utils/balances'))['getBtcBreakdown']
   const getChain: typeof import('./utils/blockchain/accounts/index')['getChain']
   const getCollectionData: typeof import('./utils/collection')['getCollectionData']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
@@ -149,16 +150,13 @@ declare global {
   const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const hasAccountAddress: typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']
-  const hasAccountWithBalanceAddress: typeof import('./utils/blockchain/accounts/index')['hasAccountWithBalanceAddress']
+  const hasTokens: typeof import('./utils/blockchain/accounts/index')['hasTokens']
   const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
-  const indexedDb: (typeof import('./utils/indexed-db'))['default']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('./utils/color')['invertColor']
-  const isAccountValidator: typeof import('./utils/blockchain/accounts/index')['isAccountValidator']
   const isAccountWithBalanceValidator: typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']
-  const isAccountWithBalanceXpub: typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceXpub']
   const isAccountingRuleProcessed: typeof import('./utils/history/events')['isAccountingRuleProcessed']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isEthBlockEvent: typeof import('./utils/history/events')['isEthBlockEvent']
@@ -173,7 +171,6 @@ declare global {
   const isEvmEventRef: typeof import('./utils/history/events')['isEvmEventRef']
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
   const isEvmIdentifier: typeof import('./utils/assets')['isEvmIdentifier']
-  const isGroupXpub: typeof import('./composables/accounts/blockchain/use-account-delete')['isGroupXpub']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
   const isMissingAccountingRule: typeof import('./utils/history/events')['isMissingAccountingRule']
   const isNft: typeof import('./utils/nft')['isNft']
@@ -196,7 +193,6 @@ declare global {
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
   const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
   const isValidUrl: typeof import('./utils/text')['isValidUrl']
-  const isVideo: (typeof import('./utils/nft'))['isVideo']
   const isWithdrawalEvent: typeof import('./utils/history/events')['isWithdrawalEvent']
   const isWithdrawalEventRef: typeof import('./utils/history/events')['isWithdrawalEventRef']
   const isWithdrawalEventType: typeof import('./utils/history/events')['isWithdrawalEventType']
@@ -287,7 +283,7 @@ declare global {
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
   const size: typeof import('./utils/data')['size']
-  const sortAndFilterAccounts: (typeof import('./utils/blockchain/accounts/index'))['sortAndFilterAccounts']
+  const sortAndFilterAccounts: typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']
   const sortAndFilterManualBalance: typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
@@ -340,9 +336,7 @@ declare global {
   const useAaveApi: typeof import('./composables/api/defi/aave')['useAaveApi']
   const useAaveStore: typeof import('./store/defi/aave/index')['useAaveStore']
   const useAbs: typeof import('@vueuse/math')['useAbs']
-  const useAccountBalances: (typeof import('./composables/blockchain/account-balances/index'))['useAccountBalances']
   const useAccountDelete: typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']
-  const useAccountDialog: (typeof import('./composables/accounts/dialog'))['useAccountDialog']
   const useAccountLoading: typeof import('./composables/accounts/loading')['useAccountLoading']
   const useAccountManage: typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
@@ -379,7 +373,6 @@ declare global {
   const useAssetCacheStore: typeof import('./store/assets/asset-cache')['useAssetCacheStore']
   const useAssetCexMappingApi: typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
-  const useAssetIcon: (typeof import('./composables/assets/icon'))['useAssetIcon']
   const useAssetIconApi: typeof import('./composables/api/assets/icon')['useAssetIconApi']
   const useAssetIconStore: typeof import('./store/assets/icon')['useAssetIconStore']
   const useAssetIgnoreApi: typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']
@@ -427,7 +420,6 @@ declare global {
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
-  const useBtcAccountBalances: (typeof import('./composables/blockchain/account-balances/btc'))['useBtcAccountBalances']
   const useCacheClear: typeof import('./composables/session/cache-clear')['useCacheClear']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useCalendarApi: typeof import('./composables/history/calendar/index')['useCalendarApi']
@@ -435,7 +427,6 @@ declare global {
   const useCalendarReminderApi: typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']
   const useCeil: typeof import('@vueuse/math')['useCeil']
   const useCexMappingForm: typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']
-  const useChainAccountBalances: (typeof import('./composables/blockchain/account-balances/chain'))['useChainAccountBalances']
   const useClamp: typeof import('@vueuse/math')['useClamp']
   const useClearableMessages: typeof import('./composables/settings/index')['useClearableMessages']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
@@ -490,7 +481,6 @@ declare global {
   const useEth2Api: typeof import('./composables/api/staking/eth2')['useEth2Api']
   const useEth2DailyStats: typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']
   const useEth2Staking: typeof import('./composables/staking/eth2/eth2')['useEth2Staking']
-  const useEthAccountBalances: (typeof import('./composables/blockchain/account-balances/eth'))['useEthAccountBalances']
   const useEthStaking: typeof import('./composables/blockchain/accounts/staking')['useEthStaking']
   const useEventBus: typeof import('@vueuse/core')['useEventBus']
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
@@ -600,7 +590,6 @@ declare global {
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
-  const useNft: (typeof import('./composables/nft'))['useNft']
   const useNftBalancesApi: typeof import('./composables/api/balances/nft')['useNftBalancesApi']
   const useNftImage: typeof import('./composables/nft-image')['useNftImage']
   const useNfts: typeof import('./composables/assets/nft')['useNfts']
@@ -755,7 +744,6 @@ declare global {
   const useWindowFocus: typeof import('@vueuse/core')['useWindowFocus']
   const useWindowScroll: typeof import('@vueuse/core')['useWindowScroll']
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
-  const useXpubDelete: (typeof import('./composables/blockchain/accounts/btc'))['useXpubDelete']
   const useYearnApi: typeof import('./composables/api/defi/yearn')['useYearnApi']
   const useYearnStore: typeof import('./store/defi/yearn/index')['useYearnStore']
   const wait: typeof import('./utils/backoff')['wait']
@@ -818,6 +806,7 @@ declare module 'vue' {
     readonly Zero: UnwrapRef<typeof import('./utils/bignumbers')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
+    readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
     readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
@@ -852,6 +841,7 @@ declare module 'vue' {
     readonly convertFromTimestamp: UnwrapRef<typeof import('./utils/date')['convertFromTimestamp']>
     readonly convertToTimestamp: UnwrapRef<typeof import('./utils/date')['convertToTimestamp']>
     readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccount']>
+    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
@@ -894,6 +884,7 @@ declare module 'vue' {
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>
+    readonly getAccountBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountBalance']>
     readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
@@ -934,15 +925,13 @@ declare module 'vue' {
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
-    readonly hasAccountWithBalanceAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountWithBalanceAddress']>
+    readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
-    readonly isAccountValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountValidator']>
     readonly isAccountWithBalanceValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']>
-    readonly isAccountWithBalanceXpub: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceXpub']>
     readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
@@ -957,7 +946,6 @@ declare module 'vue' {
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
-    readonly isGroupXpub: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['isGroupXpub']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
@@ -1070,6 +1058,7 @@ declare module 'vue' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
+    readonly sortAndFilterAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']>
     readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
@@ -1570,6 +1559,7 @@ declare module '@vue/runtime-core' {
     readonly Zero: UnwrapRef<typeof import('./utils/bignumbers')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
+    readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
     readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
@@ -1604,6 +1594,7 @@ declare module '@vue/runtime-core' {
     readonly convertFromTimestamp: UnwrapRef<typeof import('./utils/date')['convertFromTimestamp']>
     readonly convertToTimestamp: UnwrapRef<typeof import('./utils/date')['convertToTimestamp']>
     readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccount']>
+    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
@@ -1646,6 +1637,7 @@ declare module '@vue/runtime-core' {
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>
+    readonly getAccountBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountBalance']>
     readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
@@ -1686,15 +1678,13 @@ declare module '@vue/runtime-core' {
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
-    readonly hasAccountWithBalanceAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountWithBalanceAddress']>
+    readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
-    readonly isAccountValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountValidator']>
     readonly isAccountWithBalanceValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']>
-    readonly isAccountWithBalanceXpub: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceXpub']>
     readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
@@ -1709,7 +1699,6 @@ declare module '@vue/runtime-core' {
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
-    readonly isGroupXpub: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['isGroupXpub']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
@@ -1822,6 +1811,7 @@ declare module '@vue/runtime-core' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
+    readonly sortAndFilterAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']>
     readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>

@@ -155,6 +155,7 @@ export function useBlockchainBalances() {
         address =>
           ({
             data: {
+              type: 'address',
               address,
             },
             chain: 'loopring',

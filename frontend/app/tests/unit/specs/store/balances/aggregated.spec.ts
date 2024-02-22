@@ -7,7 +7,7 @@ import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { BitcoinAccounts } from '@/types/blockchain/accounts';
+import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
 import '../../../i18n';
 
 describe('store::balances/aggregated', () => {
@@ -157,7 +157,7 @@ describe('store::balances/aggregated', () => {
     expect(actualResult).toMatchObject(expectedResult);
   });
 
-  it('btcAccounts', () => {
+  it('btcAccounts', async () => {
     const accounts: BitcoinAccounts = {
       standalone: [
         {
@@ -214,7 +214,7 @@ describe('store::balances/aggregated', () => {
       liabilities: {},
     };
 
-    const { updateAccounts, updateBalances, getBlockchainAccounts, getAccounts } = useBlockchainStore();
+    const { updateAccounts, updateBalances, getBlockchainAccounts, fetchAccounts } = useBlockchainStore();
 
     updateAccounts(
       Blockchain.BTC,
@@ -224,22 +224,9 @@ describe('store::balances/aggregated', () => {
 
     expect(getBlockchainAccounts(Blockchain.BTC)).toEqual([
       {
+        type: 'account',
         data: {
-          derivationPath: 'm',
-          xpub: 'xpub123',
-        },
-        amount: bigNumberify(0),
-        chain: Blockchain.BTC,
-        expandable: false,
-        groupHeader: true,
-        groupId: 'xpub123#m#btc',
-        label: undefined,
-        nativeAsset: 'BTC',
-        tags: undefined,
-        usdValue: bigNumberify(0),
-      },
-      {
-        data: {
+          type: 'address',
           address: '1234',
         },
         amount: bigNumberify(10),
@@ -248,26 +235,13 @@ describe('store::balances/aggregated', () => {
         nativeAsset: 'BTC',
         groupId: 'xpub123#m#btc',
         label: undefined,
-        expandable: false,
+        expansion: undefined,
         tags: undefined,
       },
       {
+        type: 'account',
         data: {
-          derivationPath: undefined,
-          xpub: 'xpub1234',
-        },
-        amount: bigNumberify(0),
-        chain: Blockchain.BTC,
-        expandable: false,
-        groupHeader: true,
-        groupId: 'xpub1234#btc',
-        label: '123',
-        nativeAsset: 'BTC',
-        tags: ['a'],
-        usdValue: bigNumberify(0),
-      },
-      {
-        data: {
+          type: 'address',
           address: '123',
         },
         amount: bigNumberify(10),
@@ -275,57 +249,61 @@ describe('store::balances/aggregated', () => {
         chain: Blockchain.BTC,
         groupId: '123',
         nativeAsset: 'BTC',
-        expandable: false,
+        expansion: undefined,
         label: undefined,
         tags: undefined,
       },
     ]);
 
-    expect(getAccounts(Blockchain.BTC)).toEqual([
+    const knownGroups = await fetchAccounts({ limit: 10, offset: 0 });
+
+    const groups: BlockchainAccountGroupWithBalance[] = [
       {
-        chain: Blockchain.BTC,
+        type: 'group',
         data: {
-          derivationPath: 'm',
-          xpub: 'xpub123',
-        },
-        groupHeader: true,
-        groupId: 'xpub123#m#btc',
-        label: undefined,
-        nativeAsset: 'BTC',
-        tags: undefined,
-      },
-      {
-        chain: Blockchain.BTC,
-        data: {
-          address: '1234',
-        },
-        groupId: 'xpub123#m#btc',
-        label: undefined,
-        nativeAsset: 'BTC',
-        tags: undefined,
-      },
-      {
-        chain: Blockchain.BTC,
-        data: {
-          derivationPath: undefined,
-          xpub: 'xpub1234',
-        },
-        groupHeader: true,
-        groupId: 'xpub1234#btc',
-        label: '123',
-        nativeAsset: 'BTC',
-        tags: ['a'],
-      },
-      {
-        chain: Blockchain.BTC,
-        data: {
+          type: 'address',
           address: '123',
         },
-        label: undefined,
+        amount: bigNumberify(10),
+        usdValue: bigNumberify(10),
+        chains: [Blockchain.BTC.toString()],
+        label: '123',
         nativeAsset: 'BTC',
         tags: undefined,
       },
-    ]);
+      {
+        type: 'group',
+        data: {
+          type: 'xpub',
+          xpub: 'xpub123',
+          derivationPath: 'm',
+        },
+        nativeAsset: 'BTC',
+        chains: [Blockchain.BTC.toString()],
+        expansion: 'accounts',
+        label: undefined,
+        tags: undefined,
+        amount: bigNumberify(10),
+        usdValue: bigNumberify(10),
+      },
+      {
+        type: 'group',
+        data: {
+          type: 'xpub',
+          xpub: 'xpub1234',
+          derivationPath: undefined,
+        },
+        amount: Zero,
+        usdValue: Zero,
+        nativeAsset: 'BTC',
+        chains: [Blockchain.BTC.toString()],
+        label: '123',
+        tags: ['a'],
+      },
+
+    ];
+
+    expect(knownGroups.data).toEqual(groups);
   });
 
   it('aggregatedBalances, make sure `isCurrentCurrency` do not break the calculation', () => {

@@ -1,76 +1,33 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
-import { getAccountAddress } from '@/utils/blockchain/accounts';
+import {
+  aggregateTotals,
+  createAccountWithBalance,
+  getAccountAddress,
+  getAccountBalance,
+  getAccountLabel,
+  hasTokens,
+} from '@/utils/blockchain/accounts';
+import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
 import type {
+  Accounts,
   AssetBreakdown,
+  Balances,
   BlockchainAccount,
+  BlockchainAccountGroupRequestPayload,
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
+  DeleteBlockchainAccountParams,
+  Totals,
   ValidatorData,
 } from '@/types/blockchain/accounts';
+import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
 import type { AssetBalances } from '@/types/balances';
-import type { BlockchainAssetBalances, BlockchainBalances } from '@/types/blockchain/balances';
+import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
-import type { AssetBalance } from '@rotki/common';
-
-type Accounts = Record<string, BlockchainAccount[]>;
-
-type Totals = Record<string, AssetBalances>;
-
-type Balances = Record<string, BlockchainAssetBalances>;
-
-function aggregateTotals(totals: Totals): AssetBalances {
-  const balances: AssetBalances = {};
-  for (const value of Object.values(totals)) {
-    for (const asset of Object.keys(value)) {
-      if (!balances[asset])
-        balances[asset] = value[asset];
-      else balances[asset] = balanceSum(balances[asset], value[asset]);
-    }
-  }
-
-  return balances;
-}
-
-function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {
-  if (!assetBalances || isEmpty(assetBalances))
-    return false;
-
-  return !isEmpty(objectOmit(assetBalances, [nativeAsset]));
-}
-
-function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances) {
-  const address = getAccountAddress(account);
-  const accountBalances = chainBalances?.[address] ?? {};
-  const assets = accountBalances?.assets;
-  const nativeAsset = account.nativeAsset;
-  const balance = assets
-    ? {
-        amount: assets[nativeAsset]?.amount ?? Zero,
-        usdValue: assetSum(accountBalances.assets),
-      }
-    : {
-        amount: Zero,
-        usdValue: Zero,
-      };
-
-  const expandable
-    = hasTokens(nativeAsset, accountBalances.assets) || hasTokens(nativeAsset, accountBalances.liabilities);
-  return { balance, expandable };
-}
-
-function createAccountWithBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances) {
-  const { balance, expandable } = getAccountBalance(account, chainBalances);
-  const address = getAccountAddress(account);
-
-  return {
-    groupId: address,
-    ...account,
-    ...balance,
-    expandable,
-  } satisfies BlockchainAccountWithBalance;
-}
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
@@ -82,22 +39,93 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     total: number;
   }>();
 
+  const { addressNameSelector } = useAddressesNamesStore();
+
   const addresses = computed<Record<string, string[]>>(() => {
     const accountData = get(accounts);
     if (!accountData)
       return {};
 
-    return Object.fromEntries(
-      Object.entries(accountData).map(([chain, accounts]) => [
-        chain,
-        accounts.filter(hasAccountAddress).map(account => getAccountAddress(account)),
-      ]),
-    );
+    return Object.fromEntries(Object.entries(accountData).map(([chain, accounts]) => [
+      chain,
+      accounts.filter(hasAccountAddress).map(account => getAccountAddress(account)),
+    ]));
   });
 
   const aggregatedTotals = computed<AssetBalances>(() => aggregateTotals(get(totals)));
 
   const aggregatedLiabilities = computed<AssetBalances>(() => aggregateTotals(get(liabilities)));
+
+  const groups = computed<BlockchainAccountGroupWithBalance[]>(() => {
+    const accountData = get(accounts);
+    const balanceData = get(balances);
+
+    const nonGroupAccounts = Object.values(accountData).flatMap(accounts => accounts.filter(account => !account.groupId));
+    const nonGroupAccountAddresses = nonGroupAccounts.map(account => getAccountAddress(account));
+    const groupIdentifiers: string[] = nonGroupAccountAddresses.filter(uniqueStrings);
+
+    const groupHeaders = groupIdentifiers.map((address) => {
+      const accountAssets = Object.values(balanceData)
+        .filter(data => !isEmpty(data) && !isEmpty(data[address]))
+        .map(data => data[address]);
+      const usdValue = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
+
+      const accountsForAddress = Object.values(accountData).flatMap(
+        accounts => accounts.filter(account => getAccountAddress(account) === address),
+      );
+
+      const tags = accountsForAddress.flatMap(account => account.tags ?? []).filter(uniqueStrings);
+      const chains = accountsForAddress.map(account => account.chain);
+      const label = accountsForAddress.length === 1 ? getAccountLabel(accountsForAddress[0]) : undefined;
+
+      let amount: BigNumber | undefined;
+      let nativeAsset: string | undefined;
+      let hasAssets = false;
+      if (accountsForAddress.length === 1) {
+        const account = accountsForAddress[0];
+        const assets = accountAssets?.[0]?.assets ?? {};
+        amount = assets[account.nativeAsset]?.amount;
+        nativeAsset = account.nativeAsset;
+        hasAssets = hasTokens(nativeAsset, assets);
+      }
+
+      return {
+        type: 'group',
+        data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { type: 'address', address },
+        usdValue,
+        amount,
+        nativeAsset,
+        label,
+        tags: tags.length > 0 ? tags : undefined,
+        chains,
+        expansion: chains.length > 1 ? 'accounts' : (hasAssets ? 'assets' : undefined),
+      } satisfies BlockchainAccountGroupWithBalance;
+    });
+
+    const preGrouped = Object.values(accountData)
+      .flatMap(accounts => accounts.filter(account => account.groupHeader))
+      .map((account) => {
+        const balance: Balance = { amount: Zero, usdValue: Zero };
+        const chainBalances = balanceData[account.chain];
+        const accounts = accountData[account.chain];
+        const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
+        for (const subAccount of groupAccounts) {
+          const { balance: subBalance } = getAccountBalance(subAccount, chainBalances);
+          if (account.nativeAsset === subAccount.nativeAsset)
+            balance.amount = balance.amount.plus(subBalance.amount);
+
+          balance.usdValue = balance.usdValue.plus(subBalance.usdValue);
+        }
+        return {
+          ...objectOmit(account, ['chain', 'groupId', 'groupHeader']),
+          ...balance,
+          type: 'group',
+          chains: [account.chain],
+          expansion: groupAccounts.length > 0 ? 'accounts' : undefined,
+        } satisfies BlockchainAccountGroupWithBalance;
+      });
+    return [...groupHeaders, ...preGrouped];
+  });
 
   const blockchainAccounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() => {
     const accountData = get(accounts);
@@ -105,7 +133,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
     const entries = Object.entries(accountData).map(([chain, accounts]) => {
       const chainBalances = balanceData[chain] ?? {};
-      return [chain, accounts.map(account => createAccountWithBalance(account, chainBalances))];
+      return [chain, accounts.filter(account => !account.groupHeader).map(account => createAccountWithBalance(account, chainBalances))];
     });
 
     return Object.fromEntries(entries);
@@ -147,6 +175,27 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]) => {
     set(accounts, { ...get(accounts), [chain]: data });
+  };
+
+  const removeAccounts = ({ accounts: addresses, chain }: DeleteBlockchainAccountParams): void => {
+    const knownAccounts = { ...get(accounts) };
+    const chainAccounts = knownAccounts[chain];
+    if (chainAccounts) {
+      knownAccounts[chain] = chainAccounts.filter(account => !addresses.includes(getAccountAddress(account)));
+      set(accounts, knownAccounts);
+    }
+
+    const knownBalances = { ...get(balances) };
+    const chainBalances = knownBalances[chain];
+
+    if (chainBalances) {
+      addresses.forEach((address) => {
+        if (chainBalances[address])
+          delete chainBalances[address];
+      });
+      knownBalances[chain] = chainBalances;
+      set(balances, knownBalances);
+    }
   };
 
   const updateBalances = (chain: string, { perAccount, totals: updatedTotals }: BlockchainBalances) => {
@@ -247,12 +296,43 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     };
   };
 
+  const fetchAccounts = async (
+    payload: MaybeRef<BlockchainAccountRequestPayload>,
+  ): Promise<Collection<BlockchainAccountGroupWithBalance>> => await new Promise((resolve) => {
+    resolve(sortAndFilterAccounts(
+      get(groups),
+      get(payload),
+      {
+        getAccounts(groupId: string) {
+          return get(blockchainAccountList).filter(account => account.groupId === groupId);
+        },
+        getLabel(address, chain) {
+          return get(addressNameSelector(address, chain));
+        },
+      },
+    ),
+    );
+  });
+
+  const fetchGroupAccounts = async (
+    payload: MaybeRef<BlockchainAccountGroupRequestPayload>,
+  ): Promise<Collection<BlockchainAccountWithBalance>> => await new Promise((resolve) => {
+    const params = get(payload);
+    const newVar = get(blockchainAccountList).filter(account => account.groupId === params.groupId);
+    resolve(sortAndFilterAccounts(newVar, params, {
+      getLabel(address, chain) {
+        return get(addressNameSelector(address, chain));
+      },
+    }));
+  });
+
   return {
     accounts,
     addresses,
     balances,
     totals,
     liabilities,
+    groups,
     stakingValidatorsLimits,
     ethStakingValidators,
     aggregatedTotals,
@@ -260,6 +340,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     blockchainAccounts,
     blockchainAccountList,
     blockchainTotals,
+    fetchAccounts,
+    fetchGroupAccounts,
     getAccounts,
     getBlockchainAccounts,
     getAccountByAddress,
@@ -270,6 +352,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     updateAccounts,
     updateBalances,
     updatePrices,
+    removeAccounts,
     removeTag,
   };
 });

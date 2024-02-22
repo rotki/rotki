@@ -38,6 +38,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t']): 
       key: BlockchainAccountFilterKeys.CHAIN,
       keyValue: BlockchainAccountFilterValueKeys.CHAIN,
       description: t('common.chain'),
+      multiple: true,
       string: true,
       suggestions: () => get(chainIds),
       validate: (id: string) => get(chainIds).some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
@@ -52,9 +53,15 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t']): 
     },
   ]);
 
+  const OptionalMultipleString = z
+    .array(z.string())
+    .or(z.string())
+    .transform(val => (Array.isArray(val) ? val : [val]))
+    .optional();
+
   const RouteFilterSchema = z.object({
     [BlockchainAccountFilterValueKeys.ADDRESS]: z.string().optional(),
-    [BlockchainAccountFilterValueKeys.CHAIN]: z.string().optional(),
+    [BlockchainAccountFilterValueKeys.CHAIN]: OptionalMultipleString,
     [BlockchainAccountFilterValueKeys.LABEL]: z.string().optional(),
   });
 

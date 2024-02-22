@@ -1,4 +1,8 @@
-import type { AssetBalance, Balance, BigNumber, HasBalance } from '@rotki/common';
+import type {
+  AssetBalance,
+  BigNumber,
+  HasBalance,
+} from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
@@ -93,15 +97,10 @@ export function sumAssetBalances(
   return summed;
 }
 
-export function sum(accounts: { usdValue: BigNumber }[]): BigNumber {
-  return bigNumberSum(accounts.map(account => account.usdValue));
+export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
+  return bigNumberSum(balances.map(account => account.usdValue));
 }
 
-export function balanceUsdValueSum(balances: HasBalance[] | Balance[]): BigNumber {
-  return balances.reduce((sum, balance) => {
-    if ('balance' in balance)
-      return sum.plus(balance.balance.usdValue);
-
-    return sum.plus(balance.usdValue);
-  }, Zero);
+export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
+  return balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);
 }

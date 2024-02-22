@@ -2,12 +2,11 @@
 import { getChain } from '@/utils/blockchain/accounts';
 import type {
   BlockchainAccount,
-  BlockchainAccountGroupWithBalance,
-  BlockchainAccountWithBalance,
+  BlockchainAccountBalance,
 } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
-  account: BlockchainAccount | BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
+  account: BlockchainAccount | BlockchainAccountBalance;
 }>();
 
 const { account } = toRefs(props);
@@ -152,6 +151,7 @@ const truncatedLabelDisplayed = computed(() => {
         class="h-full"
         :text="accountAddress"
         buttons
+        :copy-only="isXpub"
         size="14"
         :show-icon="false"
         :chain="getChain(account)"

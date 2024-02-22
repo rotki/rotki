@@ -19,10 +19,6 @@ export class BlockchainBalancesPage {
     cy.assertNoRunningTasks();
   }
 
-  isGrouped(balance: FixtureBlockchainBalance) {
-    return balance.blockchain === Blockchain.ETH;
-  }
-
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
@@ -60,8 +56,7 @@ export class BlockchainBalancesPage {
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
     // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
-    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
-    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
+    cy.get(`[data-cy=account-table]`, {
       timeout: 120000,
     }).as('blockchain-section');
 
@@ -71,7 +66,7 @@ export class BlockchainBalancesPage {
     cy.get('@blockchain-section')
       .find('tbody')
       .find('tr')
-      .eq(position + (this.isGrouped(balance) ? 0 : 1))
+      .eq(position)
       .as('row');
 
     cy.get('@row').find('[data-cy="labeled-address-display"]').as('address-label');
@@ -97,7 +92,17 @@ export class BlockchainBalancesPage {
       timeout: 300000,
     }).should('not.exist');
 
-    cy.get('[data-cy=account-balances]').each($element => this.updateTableBalance($element, balances));
+    cy.get('[data-cy=account-table]')
+      .find('tbody')
+      .find('tr')
+      .each((row) => {
+        const usdValue = row.find('td').eq(5).find('[data-cy="display-amount"]').text();
+        const asset = row.find('td').eq(4).find('[data-cy="display-currency"]').text();
+        if (!usdValue)
+          return;
+
+        updateLocationBalance(usdValue, balances, asset.trim().toLowerCase());
+      });
 
     return cy.wrap(balances);
   }
@@ -119,39 +124,13 @@ export class BlockchainBalancesPage {
     });
   }
 
-  private updateTableBalance($element: JQuery<HTMLElement>, balances: Map<string, BigNumber>) {
-    const id = $element.attr('id');
-    if (!id)
-      return;
-
-    cy.scrollElemToTop(`#${id}`);
-    const blockchain = $element.find('[data-cy=account-table]').attr('data-location');
-
-    if (!blockchain) {
-      cy.log('missing blockchain');
-      return true;
-    }
-
-    cy.wrap($element.find('div > table')).as(`${blockchain}-table`);
-    cy.get(`@${blockchain}-table`).scrollIntoView();
-    cy.get(`@${blockchain}-table`)
-      .find('> tbody > tr > td div[role=progressbar]', {
-        timeout: 240000,
-      })
-      .should('not.exist');
-
-    cy.get(`@${blockchain}-table`)
-      .find(`> tbody > tr:contains(${blockchain.toUpperCase()}) > td:nth-child(4) [data-cy="display-amount"]`)
-      .then((el) => {
-        updateLocationBalance(el.text(), balances, blockchain);
-      });
-  }
-
-  editBalance(balance: FixtureBlockchainBalance, position: number, label: string) {
-    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
-    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
+  editBalance(
+    position: number,
+    label: string,
+  ): void {
+    cy.get(`[data-cy=account-table] tbody`)
       .find('tr')
-      .eq(position + (this.isGrouped(balance) ? 0 : 1))
+      .eq(position)
       .find('button[data-cy="row-edit"]')
       .click();
 
@@ -164,23 +143,35 @@ export class BlockchainBalancesPage {
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should('not.exist');
   }
 
-  deleteBalance(balance: FixtureBlockchainBalance, position: number) {
-    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
-    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
+  deleteBalance(position: number): void {
+    cy.get(`[data-cy=account-table] tbody`)
       .find('tr')
-      .eq(position + (this.isGrouped(balance) ? 0 : 1))
-      .find('[data-cy*=table-toggle-check-] input[type=checkbox]')
-      .click();
+      .eq(position)
+      .find('[data-cy="labeled-address-display"]')
+      .invoke('text').then((label) => {
+        cy.get(`[data-cy=account-table] tbody`)
+          .find('tr')
+          .eq(position)
+          .find('button[data-cy="row-delete"]')
+          .click();
 
-    cy.get(`[data-cy=account-balances][data-location=${balance.blockchain}]`)
-      .find('[data-cy="account-balances__delete-button"]')
-      .click();
+        this.confirmDelete();
 
-    this.confirmDelete();
+        cy.get(`[data-cy=account-table]`, {
+          timeout: 120000,
+        }).as('blockchain-section');
 
-    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
-      timeout: 120000,
-    }).should('not.exist');
+        cy.get('@blockchain-section').should('exist');
+        cy.get('@blockchain-section')
+          .get('tbody td div[role=progressbar]', { timeout: 300000 })
+          .should('not.exist');
+
+        cy.get(`[data-cy=account-table] tbody`)
+          .find('tr')
+          .find('[data-cy="labeled-address-display"]')
+          .invoke('text')
+          .should('not.contain', label);
+      });
   }
 
   confirmDelete() {

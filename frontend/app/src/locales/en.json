@@ -45,11 +45,7 @@
     },
     "edit_tooltip": "Edit account",
     "headers": {
-      "num_of_detected_tokens": "Num. of detected tokens",
-      "ownership": "Ownership",
-      "usd_value": "{symbol} value",
-      "usd_value_eth": "Total {symbol} value of account's assets",
-      "validator": "Validator Index | Public Key"
+      "usd_value": "{symbol} value"
     },
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
@@ -74,15 +70,6 @@
       "address_non_empty": "The address cannot be empty",
       "xpub_non_empty": "The XPUB field cannot be empty"
     }
-  },
-  "account_group_header": {
-    "addresses": "{count} addresses",
-    "copy_tooltip": "Copy the xpub to the clipboard",
-    "delete_tooltip": "Delete the entry and all the accounts underneath it",
-    "derivation_path": "Derivation Path",
-    "edit_tooltip": "Edit the label and tags of the xpub",
-    "standalone": "Standalone",
-    "xpub": "xpub:"
   },
   "account_management": {
     "about_tooltip": "Show the application's about modal",
@@ -1487,11 +1474,8 @@
     "no_data": "No more usable addresses"
   },
   "blockchain_balances": {
+    "accounts": "Accounts",
     "add_account": "Add Account",
-    "balances": {
-      "common": "{chain} balances",
-      "eth2": "ETH staking"
-    },
     "evm_detection": {
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
@@ -1749,7 +1733,9 @@
     "select_address": "Select address(es)",
     "select_directory": "Select a directory",
     "status": "Status",
+    "tags": "Tags",
     "total": "Total",
+    "xpub": "XPUB",
     "tx_hash": "Tx Hash",
     "type": "Type",
     "unclaimed": "Unclaimed",
@@ -1757,7 +1743,6 @@
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}.",
     "website": "website",
-    "xpub": "XPUB",
     "unknown": "Unknown",
     "all": "All"
   },
