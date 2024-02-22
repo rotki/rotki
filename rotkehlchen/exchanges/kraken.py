@@ -126,7 +126,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
 
 
 def _check_and_get_response(response: Response, method: str) -> str | dict:
-    """Checks the kraken response and if it's succesfull returns the result.
+    """Checks the kraken response and if it's successful returns the result.
 
     If there is recoverable error a string is returned explaining the error
     May raise:
@@ -1119,6 +1119,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         # at least for lefteris the credit of ETHW is this type
                         event_type = HistoryEventType.ADJUSTMENT
                         event_subtype = HistoryEventSubType.RECEIVE
+                    elif raw_event['subtype'] == 'autoallocate':
+                        if raw_amount < ZERO:
+                            continue  # no need to have an event here. Covered by deposit_asset
+                        event_type = HistoryEventType.STAKING
+                        event_subtype = HistoryEventSubType.DEPOSIT_ASSET
 
                 elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
                     event_subtype = HistoryEventSubType.SPEND if raw_amount < ZERO else HistoryEventSubType.RECEIVE  # noqa: E501
@@ -1145,6 +1150,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 fee_amount = deserialize_asset_amount(raw_event['fee'])
                 # check for failed events (events that cancel each other out -- like failed
                 if (  # withdrawals). Compare if amounts cancel themselves out (also fee if exists)
+                        events[0]['subtype'] != 'autoallocate' and  # autoallocate in staking cancels the events since it is an internal transfer but is not a failed event  # noqa: E501
                         len(events) == 2 and idx == 1 and
                         events[0]['type'] == events[1]['type'] and
                         events[0]['subtype'] == events[1]['subtype'] and

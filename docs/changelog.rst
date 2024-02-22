@@ -8,6 +8,7 @@ Changelog
 * :bug:`7497` In ETH staking view execution rewards should now be counted properly. MEV reward and block reward should not both be counted if recipient is not tracked.
 * :bug:`-` ETH withdrawal events should now be taxable again if the setting for their treatment after withdrawals enabled is on (which is by default).
 * :bug:`-` Invalid data in airdrops' CSVs or JSONs will now get ignored to show the rest of the valid data.
+* :bug:`-` Deposits to the kraken rewards program should be correctly processed now.
 
 * :release:`1.32.0 <2024-02-16>`
 * :feature:`7383` rotki will now update airdrops' data remotely without needing to update the app.

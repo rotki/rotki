@@ -925,8 +925,9 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
     if not isinstance(kraken_name, str):
         raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
 
-    if kraken_name.endswith(('.S', '.M', '.P')):
+    if kraken_name.endswith(('.S', '.M', '.P', '.F', '.B')):
         # this is a special staked/use coin. Map to the normal version
+        # https://support.kraken.com/hc/en-us/articles/360039879471-What-is-Asset-S-and-Asset-M-
         kraken_name = kraken_name[:-2]
 
         if kraken_name != 'ETH2':
