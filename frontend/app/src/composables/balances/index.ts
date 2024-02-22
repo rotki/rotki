@@ -6,18 +6,15 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBalances = createSharedComposable(() => {
-  const { updatePrices: updateManualPrices, fetchManualBalances }
-    = useManualBalancesStore();
-  const { updatePrices: updateChainPrices } = useBlockchainBalances();
-  const { updatePrices: updateExchangePrices, fetchConnectedExchangeBalances }
-    = useExchangeBalancesStore();
+  const { updatePrices: updateManualPrices, fetchManualBalances } = useManualBalancesStore();
+  const { updatePrices: updateChainPrices } = useBlockchainStore();
+  const { updatePrices: updateExchangePrices, fetchConnectedExchangeBalances } = useExchangeBalancesStore();
   const { refreshAccounts } = useBlockchains();
   const { assets } = useAggregatedBalances();
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate }
-    = priceStore;
+  const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } = priceStore;
   const { notify } = useNotificationsStore();
   const { isTaskRunning, awaitTask } = useTaskStore();
   const { t } = useI18n();

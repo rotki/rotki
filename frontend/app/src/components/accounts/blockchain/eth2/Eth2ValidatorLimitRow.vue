@@ -3,9 +3,9 @@ defineProps<{
   colspan: number;
 }>();
 
-const { eth2Validators } = storeToRefs(useEthAccountsStore());
-const limit = computed(() => get(eth2Validators).entriesLimit);
-const total = computed(() => get(eth2Validators).entriesFound);
+const { stakingValidatorsLimits } = storeToRefs(useBlockchainStore());
+const limit = computed(() => get(stakingValidatorsLimits)?.limit ?? 0);
+const total = computed(() => get(stakingValidatorsLimits)?.total ?? 0);
 const visible = computed(() => limit.value > 0 && limit.value <= total.value);
 const { t } = useI18n();
 </script>

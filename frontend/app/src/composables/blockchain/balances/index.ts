@@ -1,21 +1,28 @@
-import { BlockchainBalances } from '@/types/blockchain/balances';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { BlockchainBalances, type BtcBalances } from '@/types/blockchain/balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import type { AssetPrices } from '@/types/prices';
-import type { BlockchainMetadata } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
-import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import { Module } from '@/types/modules';
+import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
+import { ReadOnlyTag } from '@/types/tags';
+import type { BlockchainMetadata, TaskMeta } from '@/types/task';
+import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
+
+function isBtcBalances(data?: BtcBalances | AssetBalances): data is BtcBalances {
+  return !!data && (!!data.standalone || !!data.xpubs);
+}
 
 export function useBlockchainBalances() {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
-  const { update: updateEth, updatePrices: updateEthPrices } = useEthBalancesStore();
-  const { update: updateBtc, updatePrices: updateBtcPrices } = useBtcBalancesStore();
-  const { update: updateChains, updatePrices: updateChainPrices } = useChainBalancesStore();
+  const { updateBalances, updateAccounts } = useBlockchainStore();
   const { getChainName, supportedChains } = useSupportedChains();
   const { t } = useI18n();
   const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.BLOCKCHAIN);
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { queryLoopringBalances } = useBlockchainBalancesApi();
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
   const handleFetch = async (
     blockchain: string,
@@ -40,10 +47,20 @@ export function useBlockchainBalances() {
         },
         true,
       );
-      const balances = BlockchainBalances.parse(result);
-      updateEth(blockchain, balances);
-      updateBtc(blockchain, balances);
-      updateChains(blockchain, balances);
+      const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
+      const perAccount = parsedBalances.perAccount[blockchain];
+
+      if (isBtcBalances(perAccount)) {
+        const totals = parsedBalances.totals;
+        updateBalances(
+          blockchain,
+          convertBtcBalances(blockchain, totals, perAccount),
+        );
+      }
+      else {
+        updateBalances(blockchain, parsedBalances);
+      }
+
       setStatus(Status.LOADED, { subsection: blockchain });
     }
     catch (error: any) {
@@ -109,14 +126,92 @@ export function useBlockchainBalances() {
     }
   };
 
-  const updatePrices = (prices: MaybeRef<AssetPrices>) => {
-    updateEthPrices(prices);
-    updateBtcPrices(prices);
-    updateChainPrices(prices);
+  const fetchLoopringBalances = async (refresh: boolean) => {
+    if (!get(activeModules).includes(Module.LOOPRING))
+      return;
+
+    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.BLOCKCHAIN);
+
+    if (fetchDisabled(refresh, { subsection: 'loopring' }))
+      return;
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, { subsection: 'loopring' });
+    try {
+      const taskType = TaskType.L2_LOOPRING;
+      const { taskId } = await queryLoopringBalances();
+      const { result } = await awaitTask<AccountAssetBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.balances.loopring.task.title'),
+        },
+      );
+
+      const loopringBalances = AccountAssetBalances.parse(result);
+      const accounts = Object.keys(loopringBalances).map(address => ({
+        data: {
+          address,
+        },
+        chain: 'loopring',
+        tags: [ReadOnlyTag.LOOPRING],
+        nativeAsset: Blockchain.ETH.toUpperCase(),
+        virtual: true,
+      } satisfies BlockchainAccount));
+
+      const loopring = Object.fromEntries(
+        Object.entries(loopringBalances).map(([address, assets]) => [
+          address,
+          {
+            assets,
+            liabilities: {},
+          },
+        ]),
+      );
+
+      const assets: AssetBalances = {};
+      for (const assets of Object.values(loopringBalances)) {
+        for (const [asset, value] of Object.entries(assets)) {
+          const identifier = getAssociatedAssetIdentifier(asset);
+          const associatedAsset: string = get(identifier);
+          const ownedAsset = assets[associatedAsset];
+
+          if (!ownedAsset)
+            assets[associatedAsset] = { ...value };
+          else
+            assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+        }
+      }
+
+      const updatedTotals = {
+        perAccount: {
+          loopring,
+        },
+        totals: {
+          assets,
+          liabilities: {},
+        },
+      };
+      updateBalances('loopring', updatedTotals);
+      updateAccounts('loopring', accounts);
+      setStatus(Status.LOADED, { subsection: 'loopring' });
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        notify({
+          title: t('actions.balances.loopring.error.title'),
+          message: t('actions.balances.loopring.error.description', {
+            error: error.message,
+          }),
+          display: true,
+        });
+      }
+      resetStatus({ subsection: 'loopring' });
+    }
   };
 
   return {
     fetchBlockchainBalances,
-    updatePrices,
+    fetchLoopringBalances,
   };
 }

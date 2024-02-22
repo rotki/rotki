@@ -15,15 +15,15 @@ import {
   validWithSessionStatus,
 } from '@/services/utils';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  BitcoinAccounts,
+  type BlockchainAccountPayload,
+  BlockchainAccounts,
+  type DeleteXpubParams,
+  type GeneralAccountData,
+} from '@/types/blockchain/accounts';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { Eth2Validator } from '@/types/balances';
-import type {
-  BlockchainAccountPayload,
-  BtcAccountData,
-  GeneralAccountData,
-  XpubPayload,
-} from '@/types/blockchain/accounts';
 import type { PendingTask } from '@/types/task';
 
 async function performAsyncQuery(url: string, payload: any): Promise<PendingTask> {
@@ -114,7 +114,7 @@ export function useBlockchainAccountsApi() {
 
   const editBtcAccount = async (
     payload: BlockchainAccountPayload,
-  ): Promise<BtcAccountData> => {
+  ): Promise<BitcoinAccounts> => {
     const url = payload.xpub
       ? `/blockchains/${payload.blockchain}/xpub`
       : `/blockchains/${payload.blockchain}/accounts`;
@@ -141,7 +141,7 @@ export function useBlockchainAccountsApi() {
       data = payloadToData(payload);
     }
 
-    const response = await api.instance.patch<ActionResult<BtcAccountData>>(
+    const response = await api.instance.patch<ActionResult<BitcoinAccounts>>(
       url,
       snakeCaseTransformer(nonEmptyProperties(data)),
       {
@@ -149,12 +149,12 @@ export function useBlockchainAccountsApi() {
       },
     );
 
-    return handleResponse(response);
+    return BitcoinAccounts.parse(handleResponse(response));
   };
 
   const editBlockchainAccount = async (
     payload: BlockchainAccountPayload,
-  ): Promise<GeneralAccountData[]> => {
+  ): Promise<BlockchainAccounts> => {
     const { blockchain } = payload;
     assert(!isBtcChain(blockchain), 'call editBtcAccount for btc');
     const response = await api.instance.patch<
@@ -167,41 +167,41 @@ export function useBlockchainAccountsApi() {
       },
     );
 
-    return handleResponse(response);
+    return BlockchainAccounts.parse(handleResponse(response));
   };
 
   const queryAccounts = async (
-    blockchain: Exclude<Blockchain, BtcChains>,
-  ): Promise<GeneralAccountData[]> => {
-    const response = await api.instance.get<ActionResult<GeneralAccountData[]>>(
+    blockchain: string,
+  ): Promise<BlockchainAccounts> => {
+    const response = await api.instance.get<ActionResult<BlockchainAccounts>>(
       `/blockchains/${blockchain.toString()}/accounts`,
       {
         validateStatus: validWithSessionStatus,
       },
     );
-    return handleResponse(response);
+    return BlockchainAccounts.parse(handleResponse(response));
   };
 
   const queryBtcAccounts = async (
     blockchain: BtcChains,
-  ): Promise<BtcAccountData> => {
-    const response = await api.instance.get<ActionResult<BtcAccountData>>(
+  ): Promise<BitcoinAccounts> => {
+    const response = await api.instance.get<ActionResult<BitcoinAccounts>>(
       `/blockchains/${blockchain}/accounts`,
       {
         validateStatus: validWithSessionStatus,
       },
     );
 
-    return handleResponse(response);
+    return BitcoinAccounts.parse(handleResponse(response));
   };
 
   const deleteXpub = async ({
-    blockchain,
+    chain,
     derivationPath,
     xpub,
-  }: XpubPayload): Promise<PendingTask> => {
+  }: DeleteXpubParams): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(
-      `/blockchains/${blockchain}/xpub`,
+      `/blockchains/${chain}/xpub`,
       {
         data: snakeCaseTransformer({
           xpub,

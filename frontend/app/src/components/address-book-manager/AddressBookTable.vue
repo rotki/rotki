@@ -4,7 +4,6 @@ import {
   type NotificationPayload,
   Severity,
 } from '@rotki/common/lib/messages';
-import type { Ref } from 'vue';
 import type {
   DataTableColumn,
   DataTableOptions,

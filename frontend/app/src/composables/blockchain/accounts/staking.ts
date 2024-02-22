@@ -1,0 +1,255 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { TaskType } from '@/types/task-type';
+import { Section } from '@/types/status';
+import { Module } from '@/types/modules';
+import type { AssetBalances, Eth2Validator } from '@/types/balances';
+import type { ActionStatus } from '@/types/action';
+import type { TaskMeta } from '@/types/task';
+import type { BigNumber } from '@rotki/common';
+
+export function useEthStaking() {
+  const {
+    getEth2Validators,
+    addEth2Validator: addEth2ValidatorCaller,
+    editEth2Validator: editEth2ValidatorCaller,
+    deleteEth2Validators: deleteEth2ValidatorsCaller,
+  } = useBlockchainAccountsApi();
+  const blockchainStore = useBlockchainStore();
+  const { updateAccounts, getAccounts, updateBalances } = blockchainStore;
+  const { stakingValidatorsLimits, ethStakingValidators, balances, totals } = storeToRefs(blockchainStore);
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { awaitTask } = useTaskStore();
+  const { notify } = useNotificationsStore();
+  const { setMessage } = useMessageStore();
+  const { t } = useI18n();
+  const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
+  const { getNativeAsset } = useSupportedChains();
+
+  const isEth2Enabled = () => get(activeModules).includes(Module.ETH2);
+
+  const fetchEthStakingValidators = async () => {
+    if (!isEth2Enabled())
+      return;
+
+    try {
+      const validators = await getEth2Validators();
+      updateAccounts(Blockchain.ETH2, validators.entries.map(validator => createValidatorAccount(validator, {
+        chain: Blockchain.ETH2,
+        nativeAsset: getNativeAsset(Blockchain.ETH2),
+      })));
+      set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
+    }
+    catch (error: any) {
+      logger.error(error);
+      notify({
+        title: t('actions.get_accounts.error.title'),
+        message: t('actions.get_accounts.error.description', {
+          blockchain: Blockchain.ETH2,
+          message: error.message,
+        }),
+        display: true,
+      });
+    }
+  };
+
+  const addEth2Validator = async (
+    payload: Eth2Validator,
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
+    if (!isEth2Enabled()) {
+      return {
+        success: false,
+        message: '',
+      };
+    }
+    const id = payload.publicKey || payload.validatorIndex;
+    try {
+      const taskType = TaskType.ADD_ETH2_VALIDATOR;
+      const { taskId } = await addEth2ValidatorCaller(payload);
+      const { result } = await awaitTask<boolean, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.add_eth2_validator.task.title'),
+          description: t('actions.add_eth2_validator.task.description', {
+            id,
+          }),
+        },
+      );
+      if (result) {
+        resetStatus();
+        resetStatus({ section: Section.STAKING_ETH2_DEPOSITS });
+        resetStatus({ section: Section.STAKING_ETH2_STATS });
+      }
+
+      return {
+        success: result,
+        message: '',
+      };
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error))
+        logger.error(error);
+
+      let message = error.message;
+      if (error instanceof ApiValidationError)
+        message = error.getValidationErrors(payload);
+
+      return {
+        success: false,
+        message,
+      };
+    }
+  };
+
+  const editEth2Validator = async (
+    payload: Eth2Validator,
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
+    if (!isEth2Enabled())
+      return { success: false, message: '' };
+
+    try {
+      const success = await editEth2ValidatorCaller(payload);
+      return { success, message: '' };
+    }
+    catch (error: any) {
+      logger.error(error);
+      let message = error.message;
+      if (error instanceof ApiValidationError)
+        message = error.getValidationErrors(payload);
+
+      return {
+        success: false,
+        message,
+      };
+    }
+  };
+
+  const deleteEth2Validators = async (
+    validators: string[],
+  ): Promise<boolean> => {
+    try {
+      const pendingRemoval = get(ethStakingValidators).map(({ data }) => data).filter(account =>
+        validators.includes(account.publicKey),
+      );
+      const success = await deleteEth2ValidatorsCaller(pendingRemoval);
+      if (success) {
+        const remainingValidators = getAccounts(Blockchain.ETH2).filter(
+          ({ data }) => 'publicKey' in data && !validators.includes(data.publicKey),
+        );
+        updateAccounts(Blockchain.ETH2, remainingValidators);
+      }
+      return success;
+    }
+    catch (error: any) {
+      logger.error(error);
+      setMessage({
+        description: t('actions.delete_eth2_validator.error.description', {
+          message: error.message,
+        }),
+        title: t('actions.delete_eth2_validator.error.title'),
+        success: false,
+      });
+      return false;
+    }
+  };
+
+  /**
+   * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
+   *
+   * @param publicKey the validator's public key is used to identify the balance
+   * @param oldOwnershipPercentage the ownership of the validator before the edit
+   * @param newOwnershipPercentage the ownership percentage of the validator after the edit
+   */
+  const updateEthStakingOwnership = (
+    publicKey: string,
+    oldOwnershipPercentage: BigNumber,
+    newOwnershipPercentage: BigNumber,
+  ): void => {
+    const { eth2 } = get(balances);
+    if (!eth2[publicKey])
+      return;
+
+    const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
+
+    const { amount, usdValue } = eth2[publicKey].assets[ETH2_ASSET];
+
+    // we should not need to update anything if amount and value are zero
+    if (amount.isZero() && usdValue.isZero())
+      return;
+
+    const calc = (
+      value: BigNumber,
+      oldPercentage: BigNumber,
+      newPercentage: BigNumber,
+    ): BigNumber => value.dividedBy(oldPercentage).multipliedBy(newPercentage);
+
+    const newAmount = calc(
+      amount,
+      oldOwnershipPercentage,
+      newOwnershipPercentage,
+    );
+
+    const newValue = calc(
+      usdValue,
+      oldOwnershipPercentage,
+      newOwnershipPercentage,
+    );
+
+    const amountDiff = amount.minus(newAmount);
+    const valueDiff = usdValue.minus(newValue);
+
+    const updatedBalance = {
+      [publicKey]: {
+        assets: {
+          [ETH2_ASSET]: {
+            amount: newAmount,
+            usdValue: newValue,
+          },
+        },
+        liabilities: {},
+      },
+    };
+
+    const oldTotals = get(totals);
+    const stakingTotals = oldTotals[Blockchain.ETH2];
+
+    let newTotals: AssetBalances;
+    if (!stakingTotals[ETH2_ASSET]) {
+      newTotals = {};
+    }
+    else {
+      const { amount: oldTotalAmount, usdValue: oldTotalUsdValue } = stakingTotals[ETH2_ASSET];
+      newTotals = {
+        [ETH2_ASSET]: {
+          amount: oldTotalAmount.plus(amountDiff),
+          usdValue: oldTotalUsdValue.plus(valueDiff),
+        },
+      };
+    }
+
+    updateBalances(Blockchain.ETH2, {
+      perAccount: {
+        [Blockchain.ETH2]: {
+          ...eth2,
+          ...updatedBalance,
+        },
+      },
+      totals: {
+        assets: {
+          ...stakingTotals,
+          ...newTotals,
+        },
+        liabilities: {},
+      },
+    });
+  };
+
+  return {
+    fetchEthStakingValidators,
+    addEth2Validator,
+    editEth2Validator,
+    deleteEth2Validators,
+    updateEthStakingOwnership,
+  };
+}

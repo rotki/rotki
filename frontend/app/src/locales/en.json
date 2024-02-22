@@ -24,8 +24,7 @@
     "status": "Filter by the status of the validator"
   },
   "account_balance_table": {
-    "liabilities": "Liabilities",
-    "loopring": "Loopring"
+    "liabilities": "Liabilities"
   },
   "account_balances": {
     "confirm_delete": {
@@ -1627,6 +1626,7 @@
     "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
+    "chain": "Chain",
     "claimed": "Claimed",
     "datetime": "Date/Time",
     "deposits": "Deposits",
@@ -1635,6 +1635,7 @@
     "events": "Events",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
+    "label": "Label",
     "location": "Location",
     "multi_chain": "Multi Chain",
     "name": "Name",

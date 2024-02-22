@@ -21,8 +21,7 @@
     "user_agent": "User Agent:"
   },
   "account_balance_table": {
-    "liabilities": "Liabilities",
-    "loopring": "Loopring"
+    "liabilities": "Liabilities"
   },
   "account_balances": {
     "confirm_delete": {

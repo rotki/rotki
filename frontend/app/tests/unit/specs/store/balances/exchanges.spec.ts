@@ -2,8 +2,7 @@ import { updateGeneralSettings } from '../../../utils/general-settings';
 
 describe('store::balances/manual', () => {
   setActivePinia(createPinia());
-  const store: ReturnType<typeof useExchangeBalancesStore>
-    = useExchangeBalancesStore();
+  const store: ReturnType<typeof useExchangeBalancesStore> = useExchangeBalancesStore();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,18 +80,14 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: 'kraken',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
         {
           address: '',
           location: 'coinbase',
-          balance: {
-            amount: bigNumberify(2000),
-            usdValue: bigNumberify(2000),
-          },
+          amount: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
         },
       ]);
 
@@ -104,34 +99,26 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: 'kraken',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
         {
           address: '',
           location: 'kraken',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
         {
           address: '',
           location: 'coinbase',
-          balance: {
-            amount: bigNumberify(2000),
-            usdValue: bigNumberify(2000),
-          },
+          amount: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
         },
         {
           address: '',
           location: 'coinbase',
-          balance: {
-            amount: bigNumberify(2000),
-            usdValue: bigNumberify(2000),
-          },
+          amount: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
         },
       ]);
     });

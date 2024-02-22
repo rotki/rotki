@@ -2,7 +2,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EvmTokenKind } from '@rotki/common/lib/data';
 
 const BtcChains = [Blockchain.BTC, Blockchain.BCH] as const;
-const EthChains = [Blockchain.ETH, Blockchain.ETH2] as const;
 const RestChains = [
   Blockchain.KSM,
   Blockchain.DOT,
@@ -17,16 +16,10 @@ const RestChains = [
 
 export type BtcChains = (typeof BtcChains)[number];
 
-export type EthChains = (typeof EthChains)[number];
-
 export type RestChains = (typeof RestChains)[number];
 
 export function isBtcChain(chain: string): chain is BtcChains {
   return BtcChains.includes(chain as any);
-}
-
-export function isEthChain(chain: string): chain is EthChains {
-  return EthChains.includes(chain as any);
 }
 
 export function isRestChain(chain: string): chain is RestChains {

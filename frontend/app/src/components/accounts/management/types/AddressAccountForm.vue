@@ -108,10 +108,10 @@ async function save() {
   return true;
 }
 
-function setAccount(acc: BlockchainAccountWithBalance): void {
-  set(addresses, [acc.address]);
-  set(label, acc.label);
-  set(tags, acc.tags);
+function setAccount(account: BlockchainAccountWithBalance): void {
+  set(addresses, 'address' in account.data ? [account.data.address] : []);
+  set(label, account.label ?? '');
+  set(tags, account.tags ?? []);
 }
 
 watch(accountToEdit, (acc) => {

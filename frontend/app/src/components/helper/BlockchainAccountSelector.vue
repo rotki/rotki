@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { ComputedRef } from 'vue';
+import { getAccountAddress } from '@/utils/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
-type AccountWithChain = GeneralAccount;
+type Account = BlockchainAccount<AddressData>;
 
 const props = withDefaults(
   defineProps<{
@@ -13,7 +13,7 @@ const props = withDefaults(
     loading?: boolean;
     usableAddresses?: string[];
     multiple?: boolean;
-    value: AccountWithChain[];
+    value: Account[];
     chains: string[];
     outlined?: boolean;
     dense?: boolean;
@@ -41,7 +41,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: AccountWithChain[]): void;
+  (e: 'input', value: Account[]): void;
 }>();
 
 const {
@@ -57,7 +57,11 @@ const {
 const search = ref('');
 const { t } = useI18n();
 
-const { accounts } = useAccountBalances();
+const { accounts: accounsPerChain } = storeToRefs(useBlockchainStore());
+
+const accounts = computed<Account[]>(
+  () => Object.values(get(accounsPerChain)).flatMap(x => x).filter(hasAccountAddress),
+);
 
 const internalValue = computed(() => {
   const accounts = get(value);
@@ -70,38 +74,42 @@ const internalValue = computed(() => {
   return accounts[0];
 });
 
-const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
+const selectableAccounts = computed<Account[]>(() => {
   const filteredChains = get(chains);
-  const blockchainAccounts: AccountWithChain[] = get(unique)
-    ? uniqBy(get(accounts), 'address')
-    : get(accounts);
+  const accountData = get(accounts);
+  const blockchainAccounts: Account[] = get(unique)
+    ? uniqBy(accountData, account => getAccountAddress(account))
+    : accountData;
 
-  const filteredAccounts
-    = filteredChains.length === 0
-      ? blockchainAccounts
-      : blockchainAccounts.filter(
-        ({ chain }) => chain === 'ALL' || filteredChains.includes(chain),
-      );
+  const filteredAccounts = filteredChains.length === 0
+    ? blockchainAccounts
+    : blockchainAccounts.filter(
+      ({ chain }) => chain === 'ALL' || filteredChains.includes(chain),
+    );
 
   if (get(multichain)) {
     const entries: Record<string, number> = {};
     filteredAccounts.forEach((account) => {
-      if (entries[account.address])
-        entries[account.address] += 1;
+      const address = getAccountAddress(account);
+      if (entries[address])
+        entries[address] += 1;
       else
-        entries[account.address] = 1;
+        entries[address] = 1;
     });
 
     for (const address in entries) {
       const count = entries[address];
-      if (count > 1) {
-        filteredAccounts.push({
-          address,
-          label: '',
-          tags: [],
-          chain: 'ALL',
-        });
-      }
+      if (count <= 1)
+        continue;
+
+      filteredAccounts.push(createAccount({
+        address,
+        label: null,
+        tags: null,
+      }, {
+        chain: 'ALL',
+        nativeAsset: '',
+      }));
     }
   }
 
@@ -117,51 +125,53 @@ const hintText = computed(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
+const displayedAccounts = computed<BlockchainAccount[]>(() => {
   const addresses = get(usableAddresses);
   const accounts = get(selectableAccounts);
   if (addresses.length > 0)
-    return accounts.filter(({ address }) => addresses.includes(address));
+    return accounts.filter(account => addresses.includes(getAccountAddress(account)));
 
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-function filter(item: AccountWithChain, queryText: string) {
+function filter(item: BlockchainAccount, queryText: string) {
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
-  const text = (get(addressNameSelector(item.address, chain)) ?? '').toLowerCase();
-  const address = item.address.toLocaleLowerCase();
+  const text = (get(addressNameSelector(getAccountAddress(item), chain)) ?? '').toLowerCase();
+  const address = getAccountAddress(item).toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
 
   const labelMatches = text.includes(query);
   const addressMatches = address.includes(query);
 
   const tagMatches = item.tags
-    .map(tag => tag.toLocaleLowerCase())
-    .join(' ')
-    .includes(query);
+    ? item.tags
+      .map(tag => tag.toLocaleLowerCase())
+      .join(' ')
+      .includes(query)
+    : false;
 
   return labelMatches || tagMatches || addressMatches;
 }
 
 function filterOutElements(
-  lastElement: GeneralAccount,
-  nextValue: AccountWithChain[],
-): AccountWithChain[] {
+  lastElement: Account,
+  nextValue: Account[],
+): Account[] {
   if (lastElement.chain === 'ALL') {
     return nextValue.filter(
-      x => x.address !== lastElement.address || x.chain === 'ALL',
+      x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL',
     );
   }
   return nextValue.filter(
-    x => x.address !== lastElement.address || x.chain !== 'ALL',
+    x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL',
   );
 }
 
-function input(nextValue: null | AccountWithChain | AccountWithChain[]) {
+function input(nextValue: null | Account | Account[]) {
   const previousValue = get(value);
-  let result: AccountWithChain[];
+  let result: Account[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
     if (lastElement && nextValue.length > previousValue.length)
@@ -176,7 +186,7 @@ function input(nextValue: null | AccountWithChain | AccountWithChain[]) {
   emit('input', result);
 }
 
-const getItemKey = (item: AccountWithChain) => item.address + item.chain;
+const getItemKey = (item: Account) => getAccountId(item);
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 </script>

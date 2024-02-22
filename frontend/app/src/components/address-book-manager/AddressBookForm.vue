@@ -36,10 +36,9 @@ const location = useSimplePropVModel(props, 'location', emit);
 const blockchain = useSimplePropVModel(props, 'blockchain', emit);
 const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
+const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
-
-const { allAddressMapping } = useAccountsAddresses();
 
 const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations: AddressBookLocation[] = ['global', 'private'];
@@ -80,7 +79,7 @@ const v$ = setValidation(
 const { getBlockie } = useBlockie();
 
 function fetchNames() {
-  const addressMap = get(allAddressMapping);
+  const addressMap = get(addresses);
 
   each(Blockchain, (chain) => {
     addressMap[chain]?.forEach(address => get(addressNameSelector(address, chain)));

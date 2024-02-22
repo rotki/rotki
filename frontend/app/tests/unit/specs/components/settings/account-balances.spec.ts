@@ -8,6 +8,16 @@ import { TaskType } from '@/types/task-type';
 import createCustomPinia from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
+vi.mock('vue-router/composables', () => ({
+  useRoute: vi.fn().mockReturnValue({
+    query: {
+      limit: '10',
+      offset: '0',
+    },
+  }),
+  useRouter: vi.fn(),
+}));
+
 describe('accountBalances.vue', () => {
   let wrapper: Wrapper<any>;
 

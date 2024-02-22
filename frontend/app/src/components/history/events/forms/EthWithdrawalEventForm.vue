@@ -219,13 +219,9 @@ onMounted(() => {
   checkPropsData();
 });
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const withdrawalAddressSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>

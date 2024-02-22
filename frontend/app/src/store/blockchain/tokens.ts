@@ -1,7 +1,5 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
-import { isRestChain } from '@/types/blockchain/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
 import type {
@@ -20,42 +18,26 @@ function noTokens(): EthDetectedTokensInfo {
 
 type Tokens = Record<string, EvmTokensRecord>;
 
-function defaultTokens(): Tokens {
-  return {
-    [Blockchain.ETH]: {},
-    [Blockchain.OPTIMISM]: {},
-    [Blockchain.POLYGON_POS]: {},
-    [Blockchain.ARBITRUM_ONE]: {},
-    [Blockchain.BASE]: {},
-    [Blockchain.GNOSIS]: {},
-    [Blockchain.SCROLL]: {},
-  };
-}
-
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
-  const tokensState: Ref<Tokens> = ref(defaultTokens());
+  const tokensState = ref<Tokens>({});
 
-  const massDetecting: Ref<Blockchain | 'all' | undefined> = ref();
+  const massDetecting = ref<string>();
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
-  const { ethAddresses } = storeToRefs(useEthAccountsStore());
-  const {
-    optimismAddresses,
-    polygonAddresses,
-    arbitrumAddresses,
-    baseAddresses,
-    gnosisAddresses,
-    scrollAddresses,
-  } = storeToRefs(useChainsAccountsStore());
+  const { addresses, balances } = storeToRefs(useBlockchainStore());
   const {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller,
   } = useBlockchainBalancesApi();
-  const { getChainName, supportsTransactions } = useSupportedChains();
+  const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
 
-  const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
-  const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
+  const monitoredAddresses = computed<Record<string, string[]>>(() => {
+    const addressesPerChain = get(addresses);
+    return Object.fromEntries(
+      get(txEvmChains).map(chain => [chain.id, addressesPerChain[chain.id] ?? []]),
+    );
+  });
 
   const fetchDetected = async (
     chain: string,
@@ -135,125 +117,71 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const getTokens = (balances: BlockchainAssetBalances, address: string) => {
-    const assets = balances[address]?.assets ?? [];
+    const assets = balances?.[address]?.assets ?? [];
     return Object.keys(assets).filter(id => !get(isAssetIgnored(id)));
   };
 
   const getEthDetectedTokensInfo = (
     chain: MaybeRef<string>,
     address: MaybeRef<string | null>,
-  ): ComputedRef<EthDetectedTokensInfo> =>
-    computed(() => {
-      const blockchain = get(chain);
-      if (!supportsTransactions(blockchain))
-        return noTokens();
+  ) => computed<EthDetectedTokensInfo>(() => {
+    const blockchain = get(chain);
+    if (!supportsTransactions(blockchain))
+      return noTokens();
 
-      const state = get(tokensState);
-      const detected: EvmTokensRecord | undefined = state[blockchain];
-      const addr = get(address);
+    const state = get(tokensState);
+    const detected: EvmTokensRecord | undefined = state[blockchain];
+    const addr = get(address);
 
-      if (!addr)
-        return noTokens();
+    if (!addr)
+      return noTokens();
 
-      const info = detected?.[addr];
-      if (!info)
-        return noTokens();
+    const info = detected?.[addr];
+    if (!info)
+      return noTokens();
 
-      let tokens: string[];
-      if (blockchain === Blockchain.ETH)
-        tokens = getTokens(get(ethBalances)[blockchain], addr);
-      else if (isRestChain(blockchain))
-        tokens = getTokens(get(chainBalances)[blockchain], addr);
-      else
-        tokens = info.tokens?.filter(id => !get(isAssetIgnored(id))) ?? [];
-
-      return {
-        tokens,
-        total: tokens.length,
-        timestamp: info.lastUpdateTimestamp || null,
-      };
-    });
-
-  watch(ethAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.ETH);
+    const tokens: string[] = getTokens(get(balances)[blockchain], addr);
+    return {
+      tokens,
+      total: tokens.length,
+      timestamp: info.lastUpdateTimestamp || null,
+    };
   });
 
-  watch(optimismAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
+  watch(monitoredAddresses, async (curr, prev) => {
+    for (const chain in curr) {
+      const addresses = curr[chain];
+      if (!addresses || addresses.length === 0 || isEqual(addresses, prev[chain]))
+        continue;
 
-    await fetchDetectedTokens(Blockchain.OPTIMISM);
-  });
-
-  watch(polygonAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.POLYGON_POS);
-  });
-
-  watch(arbitrumAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.ARBITRUM_ONE);
-  });
-
-  watch(baseAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.BASE);
-  });
-
-  watch(gnosisAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.GNOSIS);
-  });
-
-  watch(scrollAddresses, async (curr, prev) => {
-    if (curr.length === 0 || isEqual(curr, prev))
-      return;
-
-    await fetchDetectedTokens(Blockchain.SCROLL);
+      await fetchDetectedTokens(chain);
+    }
   });
 
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
-  const isMassDetecting = (chain: Blockchain) => {
-    const massDetectingVal = get(massDetecting);
-    if (!massDetectingVal)
-      return false;
-
-    return [chain, 'all'].includes(massDetectingVal);
-  };
-
-  [
-    Blockchain.ETH,
-    Blockchain.OPTIMISM,
-    Blockchain.POLYGON_POS,
-    Blockchain.ARBITRUM_ONE,
-    Blockchain.BASE,
-    Blockchain.GNOSIS,
-  ].forEach((chain) => {
-    const isChainDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-      chain,
+  const detectionStatus = computed(() => {
+    const isDetecting: Record<string, boolean> = {};
+    get(txEvmChains).forEach(({ id }) => {
+      isDetecting[id] = get(isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+        chain: id,
+      }));
     });
 
-    watch(isChainDetecting, async (isDetecting, wasDetecting) => {
-      if (!isMassDetecting(chain) && wasDetecting && !isDetecting) {
-        await fetchBlockchainBalances({
-          blockchain: chain,
-          ignoreCache: true,
-        });
-      }
-    });
+    return isDetecting;
+  });
+
+  watch(detectionStatus, async (isDetecting, wasDetecting) => {
+    const pendingRefresh: string[] = [];
+    for (const chain in isDetecting) {
+      if (!isDetecting[chain] && wasDetecting[chain])
+        pendingRefresh.push(chain);
+    }
+    await awaitParallelExecution(pendingRefresh, chain => chain, chain => fetchBlockchainBalances({
+      blockchain: chain,
+      ignoreCache: true,
+    }), 2);
   });
 
   return {

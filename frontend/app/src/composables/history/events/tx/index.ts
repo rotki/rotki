@@ -28,13 +28,9 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
   const { getEvmChainName, supportsTransactions } = useSupportedChains();
-  const { accounts } = useAccountBalances();
-  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-    Section.HISTORY_EVENT,
-  );
-
-  const { reDecodeMissingTransactionEventsTask }
-    = useHistoryTransactionDecoding();
+  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { reDecodeMissingTransactionEventsTask } = useHistoryTransactionDecoding();
+  const { addresses } = storeToRefs(useBlockchainStore());
 
   const syncTransactionTask = async (
     account: EvmChainAddress,
@@ -92,12 +88,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
     queue.queue(evmChain, () => reDecodeMissingTransactionEventsTask(evmChain));
   };
 
-  const getTxAccounts = (chains: string[] = []) => get(accounts)
-    .filter(({ chain }) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
-    .map(({ address, chain }) => ({
-      address,
-      evmChain: getEvmChainName(chain)!,
-    }));
+  const getTxAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+    Object.entries(get(addresses))
+      .filter(([chain]) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
+      .flatMap(([chain, addresses]) => {
+        const evmChain = getEvmChainName(chain) ?? '';
+        return addresses.map(address => ({
+          address,
+          evmChain,
+        }));
+      });
 
   const refreshTransactions = async (
     chains: Blockchain[],

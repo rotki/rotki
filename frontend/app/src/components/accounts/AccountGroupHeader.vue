@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { useBreakpoint } from '@rotki/ui-library-compat';
 import Fragment from '@/components/helper/Fragment';
-import type { Balance, BigNumber } from '@rotki/common';
+import type { BlockchainAccountWithBalance, XpubData } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
-import type { XpubAccountWithBalance } from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{
     group: string;
-    items: XpubAccountWithBalance[];
+    items: BlockchainAccountWithBalance[];
     expanded: boolean;
     loading?: boolean;
   }>(),
   { loading: false },
 );
 
-const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
+const emit = defineEmits<{
+  (e: 'delete', account: BlockchainAccountWithBalance<XpubData>): void;
+  (e: 'expand', account: BlockchainAccountWithBalance<XpubData>): void;
+  (e: 'edit', account: BlockchainAccountWithBalance<XpubData>): void;
+}>();
 
 const { t } = useI18n();
 
@@ -23,42 +26,19 @@ const { items } = toRefs(props);
 const { name: breakpoint, isXs } = useBreakpoint();
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
-  const account = get(items).find(item => !item.address);
+const xpub: ComputedRef<BlockchainAccountWithBalance<XpubData>> = computed(() => {
+  const account = get(items).filter(isAccountWithBalanceXpub).find(item => item.groupHeader);
   assert(account);
   return account;
 });
 
-const label = computed<string>(() => get(xpub).label);
+const label = computed<string | undefined>(() => get(xpub).label);
 
-const xpubTags = computed<string[]>(() => get(xpub).tags);
+const xpubTags = computed<string[] | undefined>(() => get(xpub).tags);
 
 const displayXpub = computed<string>(() =>
-  truncateAddress(get(xpub).xpub, truncationPoints[get(breakpoint)] ?? 4),
+  truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4),
 );
-
-const sum = computed<BigNumber>(() =>
-  bigNumberSum(get(items).map(({ balance: { amount } }) => amount)),
-);
-
-const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
-
-const balance = computed<Balance>(() => ({
-  amount: get(sum),
-  usdValue: get(usdSum),
-}));
-
-function deleteClicked(_payload: XpubAccountWithBalance) {
-  return emit('delete-clicked', _payload);
-}
-
-function expandClicked(_payload: XpubAccountWithBalance) {
-  return emit('expand-clicked', _payload);
-}
-
-function editClicked(_payload: XpubAccountWithBalance) {
-  return emit('edit-clicked', _payload);
-}
 </script>
 
 <template>
@@ -85,7 +65,7 @@ function editClicked(_payload: XpubAccountWithBalance) {
           variant="text"
           size="sm"
           icon
-          @click="expandClicked({ ...xpub, balance })"
+          @click="emit('expand', xpub);"
         >
           <RuiIcon
             v-if="expanded"
@@ -107,21 +87,21 @@ function editClicked(_payload: XpubAccountWithBalance) {
             <template #activator>
               {{ displayXpub }}
             </template>
-            {{ xpub.xpub }}
+            {{ xpub.data.xpub }}
           </RuiTooltip>
         </span>
         <CopyButton
-          :value="xpub.xpub"
+          :value="xpub.data.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
         />
         <span
-          v-if="xpub.derivationPath"
+          v-if="xpub.data.derivationPath"
           :class="{ blur: !shouldShowAmount }"
         >
           <span class="font-medium">
             {{ t('account_group_header.derivation_path') }}:
           </span>
-          {{ xpub.derivationPath }}
+          {{ xpub.data.derivationPath }}
         </span>
       </div>
       <TagDisplay
@@ -131,7 +111,7 @@ function editClicked(_payload: XpubAccountWithBalance) {
     </td>
     <td class="text-end px-4">
       <AmountDisplay
-        :value="sum"
+        :value="xpub.amount"
         :loading="loading"
         :asset="isXs ? 'BTC' : undefined"
         :asset-padding="0.1"
@@ -141,7 +121,7 @@ function editClicked(_payload: XpubAccountWithBalance) {
       <AmountDisplay
         fiat-currency="USD"
         show-currency="symbol"
-        :value="usdSum"
+        :value="xpub.usdValue"
         :loading="loading"
         :asset-padding="0.1"
       />
@@ -150,8 +130,8 @@ function editClicked(_payload: XpubAccountWithBalance) {
       <RowActions
         :edit-tooltip="t('account_group_header.edit_tooltip')"
         :delete-tooltip="t('account_group_header.delete_tooltip')"
-        @edit-click="editClicked(xpub)"
-        @delete-click="deleteClicked(xpub)"
+        @edit-click="emit('edit', xpub);"
+        @delete-click="emit('delete', xpub);"
       />
     </td>
   </Fragment>

@@ -3,7 +3,6 @@ import {
   L2_LOOPRING,
   type SupportedSubBlockchainProtocol,
 } from '@/types/protocols';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { BigNumber } from '@rotki/common';
 import type { ActionDataEntry } from '@/types/action';
 
@@ -27,7 +26,7 @@ export interface SubBlockchainTotal {
 }
 
 export interface BlockchainTotal {
-  readonly chain: Blockchain;
+  readonly chain: string;
   readonly children: SubBlockchainTotal[];
   readonly usdValue: BigNumber;
   readonly loading: boolean;
