@@ -91,7 +91,7 @@ const sources = computed<ImportSource[]>(() => [
   },
 ]);
 
-const selectedSource = ref<ImportSource | null>(null);
+const selectedSource = ref<ImportSource>();
 
 const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
   logo?: string;

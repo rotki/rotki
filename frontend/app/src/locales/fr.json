@@ -42,11 +42,7 @@
     },
     "edit_tooltip": "Modifier le compte",
     "headers": {
-      "num_of_detected_tokens": "Nb. de tokens détectés",
-      "ownership": "Propriété",
-      "usd_value": "Valeur en {symbol}",
-      "usd_value_eth": "Valeur totale en {symbol} des actifs du compte",
-      "validator": "Index du validateur | Clé publique"
+      "usd_value": "Valeur en {symbol}"
     },
     "refresh_tooltip": "Actualiser les soldes {blockchain} en ignorant toutes les entrées en cache"
   },
@@ -71,14 +67,6 @@
       "address_non_empty": "L'adresse ne peut pas être vide",
       "xpub_non_empty": "Le champ XPUB ne peut pas être vide"
     }
-  },
-  "account_group_header": {
-    "copy_tooltip": "Copier le xpub dans le presse-papiers",
-    "delete_tooltip": "Supprimer l'entrée et tous les comptes en dessous",
-    "derivation_path": "Chemin de dérivation",
-    "edit_tooltip": "Modifier l'étiquette et les tags du xpub",
-    "standalone": "Indépendant",
-    "xpub": "xpub :"
   },
   "account_management": {
     "about_tooltip": "Afficher le modal à propos de l'application",
@@ -1441,10 +1429,6 @@
   },
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
-    "balances": {
-      "common": "Solde {chain}",
-      "eth2": "de participation Ethereum"
-    },
     "evm_detection": {
       "title": "Détecter les comptes EVM",
       "tooltip": "Détecter les activités de tous les comptes EVM enregistrés dans d'autres chaînes EVM, et les enregistrer."

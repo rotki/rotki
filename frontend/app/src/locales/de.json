@@ -36,11 +36,7 @@
     },
     "edit_tooltip": "Konto ändern",
     "headers": {
-      "num_of_detected_tokens": "Anzahl erfasster Tokens",
-      "ownership": "Eigentum",
-      "usd_value": "{symbol} Wert ",
-      "usd_value_eth": "Totaler {symbol} Wert der Kontovermögenswerte",
-      "validator": "Validator Index | Public Key"
+      "usd_value": "{symbol} Wert"
     },
     "refresh_tooltip": "Aktualisierung der {blockchain} Salden - gecachte Einträge werden ignoriert"
   },
@@ -65,14 +61,6 @@
       "address_non_empty": "Die Adresse darf nicht leer sein",
       "xpub_non_empty": "Das XPUB Feld draf nicht leer sein"
     }
-  },
-  "account_group_header": {
-    "copy_tooltip": "XPUB in die Zwischwenablage kopieren",
-    "delete_tooltip": "Eintrag und alle dazugehörigen Konten löschen",
-    "derivation_path": "Derivation Path",
-    "edit_tooltip": "XPUB Label und Tags bearbeiten",
-    "standalone": "Standalone",
-    "xpub": "xpub:"
   },
   "account_management": {
     "about_tooltip": "Über Programm Modal anzeigen",

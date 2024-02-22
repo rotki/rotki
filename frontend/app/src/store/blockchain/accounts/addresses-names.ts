@@ -43,26 +43,22 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     set(lastRefreshedAvatar, Date.now());
   };
 
-  onBeforeMount(() => {
-    setLastRefreshedAvatar();
+  setLastRefreshedAvatar();
+
+  const ensNameSelector = (address: MaybeRef<string>) => computed<string | null>(() => {
+    if (!get(enableAliasNames))
+      return null;
+
+    return get(ensNames)[get(address)] || null;
   });
 
-  const ensNameSelector = (address: MaybeRef<string>) =>
-    computed<string | null>(() => {
-      if (!get(enableAliasNames))
-        return null;
+  const getEnsAvatarUrl = (address: MaybeRef<string>) => computed<string | null>(() => {
+    const ens = get(ensNameSelector(address));
+    if (!ens)
+      return null;
 
-      return get(ensNames)[get(address)] || null;
-    });
-
-  const getEnsAvatarUrl = (address: MaybeRef<string>) =>
-    computed<string | null>(() => {
-      const ens = get(ensNameSelector(address));
-      if (!ens)
-        return null;
-
-      return ensAvatarUrl(ens, get(lastRefreshedAvatar));
-    });
+    return ensAvatarUrl(ens, get(lastRefreshedAvatar));
+  });
 
   const createKey = (address: string, chain: string) => `${address}#${chain}`;
 
@@ -93,8 +89,11 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       for (const entry of payload) {
         const key = createKey(entry.address, entry.blockchain);
 
-        const item
-          = result.find(res => res.address === entry.address && res.blockchain === entry.blockchain)?.name || '';
+        const item = result.find(
+          res =>
+            res.address === entry.address
+            && res.blockchain === entry.blockchain,
+        )?.name || '';
 
         yield { key, item };
       }
@@ -105,43 +104,52 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     isPending,
     retrieve,
     unknown,
-    deleteCacheKey,
+    refresh,
     reset: resetAddressesNames,
   } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-  const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) =>
-    computed<string[]>(() => {
-      const chain = get(blockchain);
-      const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
-      return entries.map(entry => entry.split('#')[0]).filter(uniqueStrings);
-    });
+  const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) => computed<string[]>(() => {
+    const chain = get(blockchain);
+    const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
+    return entries
+      .map(entry => entry.split('#')[0])
+      .filter(uniqueStrings);
+  });
 
-  const addressNameSelector = (address: MaybeRef<string>, blockchain: MaybeRef<string> = Blockchain.ETH) =>
-    computed<string | null>(() => {
-      const addressVal = get(address);
-      if (!get(enableAliasNames) || !addressVal)
-        return null;
+  const addressNameSelector = (
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<string> = Blockchain.ETH,
+  ) => computed<string | null>(() => {
+    const addressVal = get(address);
+    if (!get(enableAliasNames) || !addressVal)
+      return null;
 
-      const chain = get(blockchain);
+    const chain = get(blockchain);
 
-      if (!isBlockchain(chain) || isBtcChain(chain))
-        return null;
+    if (!isBlockchain(chain) || isBtcChain(chain))
+      return null;
 
-      const key = createKey(addressVal, chain);
+    const key = createKey(addressVal, chain);
 
-      if (get(isPending(key)))
-        return null;
+    const cachedName = get(retrieve(key));
 
-      return get(retrieve(key)) || null;
-    });
+    // We keep track of the pending status to refresh, but if there is already a
+    // value in cache we return that instead of null until a new value is presented
+    if (get(isPending(key) && !cachedName))
+      return null;
+
+    return cachedName || null;
+  });
 
   const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
     items.forEach((item) => {
-      const chains: string[] = item.blockchain ? [item.blockchain] : get(supportedChains).map(chain => chain.id);
+      const chains: string[] = item.blockchain
+        ? [item.blockchain]
+        : get(supportedChains).map(chain => chain.id);
 
       chains.forEach((chain) => {
         const key = createKey(item.address, chain);
-        deleteCacheKey(key);
+        refresh(key);
       });
     });
   };
@@ -160,7 +168,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
         title: t('address_book.actions.fetch.error.title').toString(),
         message: t('address_book.actions.fetch.error.message', {
           message,
-        }).toString(),
+        }),
         display: true,
       });
 
@@ -168,7 +176,10 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     }
   };
 
-  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries) => {
+  const addAddressBook = async (
+    location: AddressBookLocation,
+    entries: AddressBookEntries,
+  ) => {
     const result = await addAddressBookCaller(location, entries);
 
     if (result)
@@ -177,7 +188,10 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return result;
   };
 
-  const updateAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries) => {
+  const updateAddressBook = async (
+    location: AddressBookLocation,
+    entries: AddressBookEntries,
+  ) => {
     const result = await updateAddressBookCaller(location, entries);
 
     if (result)
@@ -186,7 +200,10 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return result;
   };
 
-  const deleteAddressBook = async (location: AddressBookLocation, addresses: AddressBookSimplePayload[]) => {
+  const deleteAddressBook = async (
+    location: AddressBookLocation,
+    addresses: AddressBookSimplePayload[],
+  ) => {
     const result = await deleteAddressBookCaller(location, addresses);
 
     if (result)
@@ -195,7 +212,10 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return result;
   };
 
-  const fetchEnsNames = async (payload: AddressBookSimplePayload[], forceUpdate = false): Promise<void> => {
+  const fetchEnsNames = async (
+    payload: AddressBookSimplePayload[],
+    forceUpdate = false,
+  ): Promise<void> => {
     if (payload.length === 0)
       return;
 
@@ -213,9 +233,14 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       const taskType = TaskType.FETCH_ENS_NAMES;
       const { taskId } = await getEnsNamesTask(filteredAddresses);
       try {
-        const { result } = await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
-          title: t('ens_names.task.title'),
-        });
+        const { result } = await awaitTask<EthNames, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: t('ens_names.task.title'),
+
+          },
+        );
         newResult = result;
       }
       catch (error: any) {

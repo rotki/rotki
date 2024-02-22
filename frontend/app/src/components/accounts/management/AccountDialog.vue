@@ -2,6 +2,10 @@
 import type AccountForm from '@/components/accounts/management/AccountForm.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
+const emit = defineEmits<{
+  (e: 'complete'): void;
+}>();
+
 const { t } = useI18n();
 
 const form = ref<InstanceType<typeof AccountForm>>();
@@ -28,6 +32,7 @@ function dismiss() {
 async function confirm() {
   assert(isDefined(form));
   const accountForm = get(form);
+  set(errorMessages, {});
   const valid = await accountForm.validate();
   if (!valid)
     return;
@@ -41,8 +46,10 @@ async function confirm() {
   assert(state);
 
   const success = await save(state);
-  if (success)
+  if (success) {
+    emit('complete');
     dismiss();
+  }
 }
 </script>
 

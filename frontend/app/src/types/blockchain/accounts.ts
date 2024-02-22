@@ -2,17 +2,23 @@ import { z } from 'zod';
 import type BigNumber from 'bignumber.js';
 import type { Balance } from '@rotki/common';
 import type { Module } from '@/types/modules';
+import type { PaginationRequestPayload } from '@/types/common';
+import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { AssetBalances } from '@/types/balances';
 
 export interface AddressData {
+  readonly type: 'address';
   readonly address: string;
 }
 
 export interface XpubData {
+  readonly type: 'xpub';
   readonly xpub: string;
   readonly derivationPath?: string;
 }
 
 export interface ValidatorData {
+  readonly type: 'validator';
   readonly index: number;
   readonly publicKey: string;
   readonly status: string;
@@ -42,41 +48,44 @@ export interface AccountExtraParams {
   readonly groupHeader?: boolean;
 }
 
-export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = BlockchainAccountData>
-  extends BlockchainAccount<T> {
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-  readonly expandable: boolean;
+export interface AccountExpansion {
+  readonly expansion?: 'accounts' | 'assets';
 }
 
-export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> {
-  data: T;
-  readonly tags?: string[];
-  readonly label?: string;
+export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = BlockchainAccountData>
+  extends BlockchainAccount<T>, AccountExpansion {
+  readonly type: 'account';
+  readonly amount: BigNumber;
+  readonly usdValue: BigNumber;
+}
+
+export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain' | 'virtual'>, AccountExpansion {
+  readonly type: 'group';
   readonly amount?: BigNumber;
   readonly usdValue: BigNumber;
   readonly nativeAsset?: string;
   readonly chains: string[];
-  readonly expandable: boolean;
+}
+
+export type BlockchainAccountBalance<
+  T extends BlockchainAccountData = BlockchainAccountData,
+> = BlockchainAccountWithBalance<T> | BlockchainAccountGroupWithBalance<T>;
+
+export interface BlockchainAccountRequestPayload extends PaginationRequestPayload<BlockchainAccount> {
+  readonly address?: string;
+  readonly chain?: string[];
+  readonly label?: string;
+  readonly tags?: string[];
+}
+
+export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccount> {
+  readonly groupId: string;
 }
 
 export interface GeneralAccountData {
   readonly address: string;
   readonly label: string | null;
   readonly tags: string[] | null;
-}
-
-export interface XpubAccountData {
-  readonly xpub: string;
-  readonly derivationPath: string | null;
-  readonly label: string | null;
-  readonly tags: string[] | null;
-  readonly addresses: GeneralAccountData[] | null;
-}
-
-export interface BtcAccountData {
-  readonly standalone: GeneralAccountData[];
-  readonly xpubs: XpubAccountData[];
 }
 
 const BasicBlockchainAccount = z.object({
@@ -189,3 +198,9 @@ export interface ERC20Token {
   readonly name?: string;
   readonly symbol?: string;
 }
+
+export type Accounts = Record<string, BlockchainAccount[]>;
+
+export type Totals = Record<string, AssetBalances>;
+
+export type Balances = Record<string, BlockchainAssetBalances>;

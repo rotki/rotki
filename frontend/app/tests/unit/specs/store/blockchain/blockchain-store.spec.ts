@@ -1,6 +1,7 @@
 import { beforeEach, describe } from 'vitest';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useBlockchainStore } from '@/store/blockchain';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
 
 describe('useBlockchainStore', () => {
@@ -60,5 +61,47 @@ describe('useBlockchainStore', () => {
         usdValue: bigNumberify(25000),
       });
     });
+  });
+
+  it('removeAccounts', () => {
+    const account: BlockchainAccount<AddressData> = {
+      data: {
+        type: 'address',
+        address: '0x123',
+      },
+      chain: 'eth',
+      nativeAsset: 'ETH',
+    };
+    const balances = {
+      '0x123': {
+        assets: {
+          ETH: {
+            amount: bigNumberify(1),
+            usdValue: bigNumberify(2501),
+          },
+        },
+        liabilities: {},
+      },
+    };
+    store.updateAccounts('eth', [account]);
+    store.updateBalances('eth', {
+      perAccount: {
+        eth: balances,
+      },
+      totals: {
+        assets: {
+          ETH: {
+            amount: bigNumberify(1),
+            usdValue: bigNumberify(2501),
+          },
+        },
+        liabilities: {},
+      },
+    });
+    expect(store.accounts).toMatchObject({ eth: [account] });
+    expect(store.balances).toMatchObject({ eth: balances });
+    store.removeAccounts({ accounts: ['0x123'], chain: 'eth' });
+    expect(store.accounts).toMatchObject({ eth: [] });
+    expect(store.balances).toMatchObject({ eth: {} });
   });
 });

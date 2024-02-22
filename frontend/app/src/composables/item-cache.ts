@@ -134,8 +134,16 @@ export function useItemCache<T>(
     return computed(() => get(cache)[key] ?? null);
   };
 
-  const isPending = (identifier: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => get(pending)[get(identifier)] ?? false);
+  const refresh = (key: string): void => {
+    const now = Date.now();
+    recent.set(key, now + options.expiry);
+    if (unknown.has(key))
+      unknown.delete(key);
+
+    queueIdentifier(key);
+  };
+
+  const isPending = (identifier: MaybeRef<string>) => computed<boolean>(() => get(pending)[get(identifier)] ?? false);
 
   const reset = (): void => {
     set(pending, {});
@@ -151,6 +159,7 @@ export function useItemCache<T>(
     isPending,
     retrieve,
     reset,
+    refresh,
     deleteCacheKey,
     queueIdentifier,
   };

@@ -580,7 +580,7 @@ export function useDefiLending() {
   const totalLendingDeposit = (protocols: DefiProtocol[], addresses: string[]) =>
     computed<BigNumber>(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
-      let lendingDeposit = balanceUsdValueSum(lendBalances);
+      let lendingDeposit = sum(lendBalances);
 
       const getYearnDeposit = (version: ProtocolVersion) =>
         computed<BigNumber>(() =>

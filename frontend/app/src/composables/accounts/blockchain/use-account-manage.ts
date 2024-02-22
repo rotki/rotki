@@ -3,7 +3,11 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubPrefix } from '@/utils/xpub';
 import type { Module } from '@/types/modules';
-import type { AccountPayload, BlockchainAccountWithBalance, XpubAccountPayload } from '@/types/blockchain/accounts';
+import type {
+  AccountPayload,
+  BlockchainAccountBalance,
+  XpubAccountPayload,
+} from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
 
 interface AccountManageMode {
@@ -63,7 +67,7 @@ export function createNewBlockchainAccount(): AccountManageAdd {
   };
 }
 
-export function editBlockchainAccount(account: BlockchainAccountWithBalance): AccountManageState {
+export function editBlockchainAccount(account: BlockchainAccountBalance): AccountManageState {
   if ('publicKey' in account.data) {
     const { ownershipPercentage = '100', publicKey, index } = account.data;
     return {
@@ -71,15 +75,15 @@ export function editBlockchainAccount(account: BlockchainAccountWithBalance): Ac
       type: 'validator',
       chain: Blockchain.ETH2,
       data: {
-        ownershipPercentage,
+        ownershipPercentage: ownershipPercentage || '100',
         publicKey,
         validatorIndex: index.toString(),
       },
     } satisfies StakingValidatorManage;
   }
   else if ('xpub' in account.data) {
-    const chain = account.chain;
-    assert(isBtcChain(chain));
+    const chain = getChain(account);
+    assert(chain && isBtcChain(chain));
     const match = isPrefixed(account.data.xpub);
     const prefix = match?.[1] ?? XpubPrefix.XPUB;
     return {
@@ -98,10 +102,12 @@ export function editBlockchainAccount(account: BlockchainAccountWithBalance): Ac
     } satisfies XpubManage;
   }
   else {
+    const chain = getChain(account);
+    assert(chain);
     return {
       mode: 'edit',
       type: 'account',
-      chain: account.chain,
+      chain,
       data: {
         tags: account.tags ?? null,
         label: account.label,
@@ -120,6 +126,7 @@ export function useAccountManage() {
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount } = useBlockchainAccounts();
+  const { updateAccounts } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
   function handleErrors(error: any, props: Record<string, any> = {}) {
@@ -148,7 +155,7 @@ export function useAccountManage() {
     try {
       set(pending, true);
       if (edit) {
-        await editAccount(state.data, state.chain);
+        updateAccounts(state.chain, await editAccount(state.data, state.chain));
         startPromise(fetchAccounts(state.chain));
       }
       else {

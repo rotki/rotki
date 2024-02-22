@@ -67,6 +67,25 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
+vi.mock('@/composables/info/chains', () => ({
+  useSupportedChains: vi.fn().mockReturnValue({
+    supportedChains: computed<SupportedChains>(() => [
+      {
+        evmChainName: 'ethereum',
+        id: Blockchain.ETH,
+        type: 'evm',
+        name: 'Ethereum',
+        image: '',
+        nativeToken: 'ETH',
+      } satisfies EvmChainInfo,
+    ]),
+    getChain: () => Blockchain.ETH,
+    getChainName: () => 'Ethereum',
+    getNativeAsset: (chain: Blockchain) => chain,
+    getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
+  }),
+}));
+
 describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());
   let api: ReturnType<typeof useBlockchainBalancesApi> = useBlockchainBalancesApi();

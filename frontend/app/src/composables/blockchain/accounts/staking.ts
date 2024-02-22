@@ -157,11 +157,20 @@ export function useEthStaking() {
    * @param newOwnershipPercentage the ownership percentage of the validator after the edit
    */
   const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
-    const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => 'index' in x.data;
+    const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => x.data.type === 'validator';
     const validators = [...getAccounts(Blockchain.ETH2).filter(isValidator)];
     const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
     const [validator] = validators.splice(validatorIndex, 1);
     const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage || 100);
+    validators.push({
+      ...validator,
+      data: {
+        ...validator.data,
+        ownershipPercentage: newOwnershipPercentage.isEqualTo(100) ? undefined : newOwnershipPercentage.toString(),
+      },
+    });
+
+    updateAccounts(Blockchain.ETH2, validators);
 
     const { eth2 } = get(balances);
     if (!eth2[publicKey])

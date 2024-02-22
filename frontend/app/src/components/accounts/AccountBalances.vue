@@ -1,123 +1,120 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { TaskType } from '@/types/task-type';
-import { Section } from '@/types/status';
-import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-
-const props = withDefaults(
-  defineProps<{
-    balances: BlockchainAccountWithBalance[];
-    blockchain: string;
-    title: string;
-    loopring?: boolean;
-  }>(),
-  {
-    loopring: false,
-  },
-);
+import { SavedFilterLocation } from '@/types/filtering';
+import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
+import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts';
+import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
+import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import type { Collection } from '@/types/collection';
+import type {
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountRequestPayload,
+} from '@/types/blockchain/accounts';
+import type { ComponentExposed } from 'vue-component-type-helpers';
 
 const emit = defineEmits<{
-  (e: 'edit-account', account: BlockchainAccountWithBalance): void;
+  (e: 'edit', account: AccountManageState): void;
 }>();
 
 const { t } = useI18n();
 
-const { blockchain, loopring } = toRefs(props);
-
-const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
-const editedAccount = ref<BlockchainAccountWithBalance>();
+const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
+const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
+const selection = ref<boolean>(false);
 
-const { isTaskRunning } = useTaskStore();
+const { fetchAccounts: fetchAccountsPage } = useBlockchainStore();
 const { handleBlockchainRefresh } = useRefresh();
-const { detectingTokens } = useTokenDetection(blockchain);
-const { getChainName, supportsTransactions } = useSupportedChains();
-
-const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
-const hasTokenDetection = computed<boolean>(() => supportsTransactions(get(blockchain)));
-const chainName = computed(() => get(getChainName(blockchain)));
-
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-
-const isAnyBalancesFetching = computed<boolean>(() => {
-  if (!get(isEth2))
-    return get(isQueryingBlockchain);
-
-  const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-
-  return get(isQueryingBlockchain) || get(isLoopringLoading);
-});
-
-const operationRunning = computed<boolean>(
-  () => get(isTaskRunning(TaskType.ADD_ACCOUNT)) || get(isTaskRunning(TaskType.REMOVE_ACCOUNT)),
-);
-
-const { isLoading } = useStatusStore();
-const isSectionLoading = computed<boolean>(() => {
-  const section = get(loopring) ? 'loopring' : get(blockchain);
-  return get(isLoading(Section.BLOCKCHAIN, section));
-});
-
-const selection = computed<BlockchainAccountWithBalance[]>(() =>
-  props.balances.filter(account => get(selectedAddresses).includes(getAccountId(account))),
-);
-
-function editAccount(account: BlockchainAccountWithBalance) {
-  set(editedAccount, account);
-  emit('edit-account', account);
-}
-
 const { fetchAccounts } = useBlockchains();
-const { showConfirmation } = useAccountDelete();
+
+const {
+  filters,
+  matchers,
+  state: accounts,
+  fetchData,
+  pagination,
+  sort,
+} = usePaginationFilters<
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountRequestPayload,
+  BlockchainAccountGroupWithBalance,
+  Collection<BlockchainAccountGroupWithBalance>,
+  Filters,
+  Matcher
+>(
+  null,
+  true,
+  () => useBlockchainAccountFilter(t),
+  fetchAccountsPage,
+  {
+    extraParams: computed(() => ({
+      tags: get(visibleTags),
+    })),
+    onUpdateFilters(query) {
+      const externalFilterSchema = AccountExternalFilterSchema.parse(query);
+      if (externalFilterSchema.tags)
+        set(visibleTags, externalFilterSchema.tags);
+    },
+    defaultSortBy: {
+      key: 'usdValue',
+    },
+  },
+);
+
+const chains = computed<string[] | undefined>(() => {
+  const chainFilter = get(filters).chain;
+  return Array.isArray(chainFilter) ? chainFilter : undefined;
+});
+
+const { refreshDisabled, deleteDisabled, isDetectingTokens } = useBlockchainAccountLoading(fetchData);
 
 async function refreshClick() {
-  await fetchAccounts(get(blockchain), true);
-  await handleBlockchainRefresh(blockchain);
+  await fetchAccounts(undefined, true);
+  await handleBlockchainRefresh();
+  await fetchData();
 }
 
-const { massDetecting } = storeToRefs(useBlockchainTokensStore());
-const isMassDetecting = computed(() => {
-  const massDetectingVal = get(massDetecting);
-  if (!massDetectingVal)
-    return false;
-
-  return [get(blockchain), 'all'].includes(massDetectingVal);
+onMounted(async () => {
+  await fetchData();
 });
 
-const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
+defineExpose({
+  refresh: async () => {
+    await fetchData();
+    if (!isDefined(detailsTable))
+      return;
+
+    await get(detailsTable).refresh();
+  },
+});
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard data-cy="account-balances">
     <template #header>
       <div class="flex flex-row items-center gap-2">
         <SummaryCardRefreshMenu
           data-cy="account-balances-refresh-menu"
           :disabled="refreshDisabled"
-          :loading="isMassDetecting"
-          :tooltip="
-            t('account_balances.refresh_tooltip', {
-              blockchain: chainName,
-            })
-          "
+          :loading="isDetectingTokens"
+          :tooltip="t('account_balances.refresh_tooltip')"
           @refresh="refreshClick()"
         >
-          <template
-            v-if="hasTokenDetection"
-            #refreshMenu
-          >
+          <template #refreshMenu>
             <BlockchainBalanceRefreshBehaviourMenu />
           </template>
         </SummaryCardRefreshMenu>
         <CardTitle class="ml-2">
-          {{ title }}
+          {{ t('blockchain_balances.accounts') }}
         </CardTitle>
       </div>
     </template>
 
     <div class="flex flex-col md:flex-row md:items-center gap-2">
-      <div class="grow flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        <!-- disabled temporarily kept because it's easy to reactivate -->
         <RuiTooltip
+          v-if="selection"
           :popper="{ placement: 'top' }"
           :open-delay="400"
         >
@@ -126,8 +123,8 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
               data-cy="account-balances__delete-button"
               color="error"
               variant="outlined"
-              :disabled="isAnyBalancesFetching || operationRunning || selectedAddresses.length === 0"
-              @click="showConfirmation(selection)"
+              :disabled="deleteDisabled || !selection"
+              @click="accountTable?.confirmDelete()"
             >
               <template #prepend>
                 <RuiIcon name="delete-bin-line" />
@@ -139,7 +136,6 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
         </RuiTooltip>
 
         <RuiTooltip
-          v-if="hasTokenDetection"
           :popper="{ placement: 'top' }"
           :open-delay="400"
         >
@@ -148,9 +144,9 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
               class="ml-2"
               variant="outlined"
               color="primary"
-              :loading="isMassDetecting"
+              :loading="isDetectingTokens"
               :disabled="refreshDisabled"
-              @click="handleBlockchainRefresh(blockchain, true)"
+              @click="handleBlockchainRefresh(undefined, true)"
             >
               <template #prepend>
                 <RuiIcon name="refresh-line" />
@@ -161,24 +157,51 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
           </template>
           {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
         </RuiTooltip>
+
+        <DetectEvmAccounts />
       </div>
-      <TagFilter
-        v-if="!isEth2"
-        v-model="visibleTags"
-        class="max-w-[360px]"
-        hide-details
-      />
+      <div class="grow" />
+      <div class="flex items-center gap-4 ">
+        <TagFilter
+          v-model="visibleTags"
+          class="w-[20rem] max-w-[30rem]"
+          hide-details
+        />
+        <TableFilter
+          v-model:matches="filters"
+          :matchers="matchers"
+          class="w-[25rem] max-w-[30rem]"
+          :location="SavedFilterLocation.BLOCKCHAIN_ACCOUNTS"
+        />
+      </div>
     </div>
 
-    <AccountBalanceTable
-      v-model:selected="selectedAddresses"
+    <AccountBalancesTable
+      ref="accountTable"
+      v-model:pagination="pagination"
+      v-model:sort="sort"
+      v-model:selection="selection"
       class="mt-4"
-      :loopring="loopring"
-      :blockchain="blockchain"
-      :balances="balances"
-      :visible-tags="visibleTags"
-      @edit-click="editAccount($event)"
-      @delete-xpub="showConfirmation([$event])"
-    />
-  </RuiCard>
+      group
+      :accounts="accounts"
+      @edit="emit('edit', $event)"
+      @refresh="fetchData()"
+    >
+      <template #details="{ row }">
+        <AccountGroupDetails
+          v-if="row.expansion === 'accounts'"
+          ref="detailsTable"
+          :chains="chains"
+          :tags="visibleTags"
+          :group-id="getGroupId(row)"
+          @edit="emit('edit', $event)"
+        />
+        <AccountBalanceDetails
+          v-else-if="row.expansion === 'assets'"
+          :address="getAccountAddress(row)"
+          :chain="row.chains[0]"
+        />
+      </template>
+    </AccountBalancesTable>
+  </ruicard>
 </template>

@@ -3,10 +3,9 @@ import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import type {
   AccountPayload,
-  BtcAccountData,
+  BlockchainAccount,
   DeleteBlockchainAccountParams,
   DeleteXpubParams,
-  GeneralAccountData,
   XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
@@ -87,18 +86,24 @@ export function useBlockchainAccounts() {
   const editAccount = async (
     payload: AccountPayload | XpubAccountPayload,
     chain: string,
-  ): Promise<BtcAccountData | GeneralAccountData[]> => {
+  ): Promise<BlockchainAccount[]> => {
     if (isBtcChain(chain) || 'xpub' in payload)
-      return await editBtcAccount(payload, chain);
+      return convertBtcAccounts(getNativeAsset, chain, await editBtcAccount(payload, chain));
 
-    const result = editBlockchainAccount(payload, chain);
+    const result = await editBlockchainAccount(payload, chain);
     resetAddressNamesData([
       {
         ...payload,
         blockchain: chain,
       },
     ]);
-    return result;
+
+    const chainInfo = {
+      nativeAsset: getNativeAsset(chain),
+      chain,
+    };
+
+    return result.map(account => createAccount(account, chainInfo));
   };
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams) => {

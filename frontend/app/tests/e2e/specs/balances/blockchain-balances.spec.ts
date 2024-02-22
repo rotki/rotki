@@ -52,7 +52,7 @@ describe('blockchain balances', () => {
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
     blockchainBalancesPage.addBalance(blockchainBalances[1]);
-    blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);
+    blockchainBalancesPage.isEntryVisible(1, blockchainBalances[1]);
   });
 
   it('data is reflected in dashboard', () => {
@@ -97,7 +97,7 @@ describe('blockchain balances', () => {
   it('edit', () => {
     const newLabel = 'New ETH label';
     blockchainBalancesPage.visit();
-    blockchainBalancesPage.editBalance(blockchainBalances[0], 0, newLabel);
+    blockchainBalancesPage.editBalance(0, newLabel);
 
     blockchainBalancesPage.isEntryVisible(0, {
       ...blockchainBalances[0],
@@ -109,9 +109,9 @@ describe('blockchain balances', () => {
     blockchainBalancesPage.visit();
 
     // Delete ETH entry
-    blockchainBalancesPage.deleteBalance(blockchainBalances[0], 0);
+    blockchainBalancesPage.deleteBalance(0);
 
     // Delete BTC entry
-    blockchainBalancesPage.deleteBalance(blockchainBalances[1], 0);
+    blockchainBalancesPage.deleteBalance(0);
   });
 });

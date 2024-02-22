@@ -10,6 +10,7 @@ const props = withDefaults(
     fullAddress?: boolean;
     linkOnly?: boolean;
     noLink?: boolean;
+    copyOnly?: boolean;
     baseUrl?: string;
     chain?: string;
     evmChain?: string;
@@ -27,6 +28,7 @@ const props = withDefaults(
     fullAddress: false,
     linkOnly: false,
     noLink: false,
+    copyOnly: false,
     baseUrl: undefined,
     chain: Blockchain.ETH,
     evmChain: undefined,
@@ -196,7 +198,7 @@ const { href, onLinkClick } = useLinks(url);
       </RuiTooltip>
 
       <RuiTooltip
-        v-if="linkOnly || !noLink || buttons"
+        v-if="(linkOnly || !noLink || buttons) && !copyOnly"
         :popper="{ placement: 'top' }"
         :open-delay="600"
       >
