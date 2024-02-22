@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -10,6 +11,7 @@ from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_PUBLIC_RESOLVER_2_ADDRESS,
     ENS_REGISTRAR_CONTROLLER_1,
     ENS_REGISTRAR_CONTROLLER_2,
+    _save_hash_mappings_get_fullname,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -20,6 +22,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     EvmTokenKind,
     Location,
@@ -27,6 +30,10 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -752,3 +759,18 @@ def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
+    """
+    Test that possible exceptions when processing invalid ENS names are handled correctly and
+    nothing gets stored in the database cache for invalid names.
+    """
+    name = 'ʀ'
+    full_name = _save_hash_mappings_get_fullname(name=name)
+    assert full_name == f'{name}.eth'
+    with globaldb.conn.read_ctx() as cursor:
+        for cache_key in (CacheType.ENS_NAMEHASH, CacheType.ENS_LABELHASH):
+            assert cursor.execute(
+                f'SELECT COUNT(*) FROM unique_cache WHERE key LIKE "{cache_key.serialize()}%"',
+            ).fetchone()[0] == 0
