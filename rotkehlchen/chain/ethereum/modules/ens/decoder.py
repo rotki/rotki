@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import content_hash
-from ens import ENS
+import ens
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -72,20 +72,27 @@ def _save_hash_mappings_get_fullname(name: str) -> str:
     Saves the namehash -> name and labelhash -> name mappings to the global DB
     cache and gets name with.eth suffix.
 
-    The given name has to be without the .eth suffix and is returned with it
+    The given name has to be without the .eth suffix and is returned with it. In the case that
+    the registered name is invalid we return the name but we don't store it in the database cache.
     """
     full_name = f'{name}.eth'
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.ENS_NAMEHASH, ENS.namehash(full_name).hex()),
-            value=full_name,
-        )
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.ENS_LABELHASH, ENS.labelhash(name).hex()),
-            value=name,
-        )
+        try:
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.ENS_NAMEHASH, ens.ENS.namehash(full_name).hex()),
+                value=full_name,
+            )
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.ENS_LABELHASH, ens.ENS.labelhash(name).hex()),
+                value=name,
+            )
+        except ens.exceptions.InvalidName as e:
+            log.error(
+                f'Got an invalid ENS name {name}. namehash and labelhash not stored '
+                f'in the globaldb cache. {e=}',
+            )
     return full_name
 
 
@@ -332,7 +339,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                         log.debug(f'Failed to reverse resolve ENS name ue to {e!s}')
                         return None
 
-        elif queried_graph:  # if we succesfully asked the graph, save the mapping
+        elif queried_graph:  # if we successfully asked the graph, save the mapping
             _save_hash_mappings_get_fullname(name=name_to_show[:-4])
 
         return name_to_show
