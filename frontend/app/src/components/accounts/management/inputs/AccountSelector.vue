@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
 import { isBtcChain } from '@/types/blockchain/chains';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { InputMode } from '@/types/input-mode';
 
 const props = defineProps<{
-  blockchain: Blockchain;
+  blockchain: string;
   inputMode: InputMode;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:blockchain', selection: Blockchain): void;
+  (e: 'update:blockchain', selection: string): void;
   (e: 'update:input-mode', mode: InputMode): void;
 }>();
 
@@ -27,7 +26,7 @@ const showInputModeSelector = logicOr(
   isEvmChain,
 );
 
-function updateModelValue(value: Blockchain | null) {
+function updateModelValue(value: string | null) {
   if (!value)
     return;
 

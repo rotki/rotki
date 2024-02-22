@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common/lib/blockchain';
-
-defineProps<{ context: Blockchain }>();
-
 const { t } = useI18n();
 
 const {
@@ -35,7 +31,6 @@ setPostSubmitFunc(postSubmitFunc);
     @cancel="clearDialog()"
   >
     <AccountForm
-      :context="context"
       data-cy="blockchain-balance-form"
     />
   </BigDialog>

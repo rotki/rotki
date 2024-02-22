@@ -8,7 +8,7 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: Blockchain | null;
+    modelValue?: string | null;
     disabled?: boolean;
     dense?: boolean;
     evmOnly?: boolean;
@@ -24,7 +24,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:model-value', blockchain: Blockchain | null): void;
+  (e: 'update:model-value', blockchain: string | null): void;
 }>();
 
 const rootAttrs = useAttrs();

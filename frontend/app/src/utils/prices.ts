@@ -12,11 +12,14 @@ import type {
 } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
-export function updateTotalsPrices<T extends Blockchain>(state: MaybeRef<Record<T, AssetBalances>>, prices: MaybeRef<AssetPrices>): Record<T, AssetBalances> {
+export function updateTotalsPrices(
+  state: MaybeRef<Record<string, AssetBalances>>,
+  prices: MaybeRef<AssetPrices>,
+): Record<string, AssetBalances> {
   const totals = cloneDeep(get(state));
 
   for (const chain in totals) {
-    const balances = totals[chain as T] as AssetBalances;
+    const balances = totals[chain];
     for (const asset in balances) {
       const assetPrice = get(prices)[asset];
       if (!assetPrice)
@@ -47,10 +50,13 @@ export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetP
   return balances;
 }
 
-export function updateBlockchainAssetBalances<T extends Blockchain>(balances: MaybeRef<Record<T, BlockchainAssetBalances>>, prices: MaybeRef<AssetPrices>): Record<T, BlockchainAssetBalances> {
+export function updateBlockchainAssetBalances(
+  balances: MaybeRef<Record<string, BlockchainAssetBalances>>,
+  prices: MaybeRef<AssetPrices>,
+): Record<string, BlockchainAssetBalances> {
   const state = cloneDeep(get(balances));
   for (const chain in state) {
-    const balances = state[chain as T] as BlockchainAssetBalances;
+    const balances = state[chain];
     for (const address in balances) {
       const { assets, liabilities } = balances[address];
       balances[address] = {

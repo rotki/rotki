@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   Eth2ValidatorEntry,
   EthStakingFilter,
@@ -14,18 +14,23 @@ const emit = defineEmits<{
   (e: 'input', value: EthStakingFilter): void;
 }>();
 
-const chain = Blockchain.ETH;
-const accounts: Ref<GeneralAccount[]> = ref([]);
-
-const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const { t } = useI18n();
+
+const chain = Blockchain.ETH;
+const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+
+const { ethStakingValidators } = storeToRefs(useBlockchainStore());
 
 function updateValidators(validators: Eth2ValidatorEntry[]) {
   emit('input', { validators });
 }
 
-function updateAccounts(accounts: GeneralAccount[]) {
-  emit('input', { accounts });
+function updateAccounts(accounts: BlockchainAccount<AddressData>[]) {
+  const accountList = accounts.map(account => ({
+    address: getAccountAddress(account),
+    chain: account.chain,
+  }));
+  emit('input', { accounts: accountList });
 }
 
 watch(accounts, accounts => updateAccounts(accounts));
@@ -46,7 +51,7 @@ watch(accounts, accounts => updateAccounts(accounts));
   <ValidatorFilterInput
     v-else
     :value="value.validators"
-    :items="eth2Validators.entries"
+    :items="ethStakingValidators.map(({ data }) => data)"
     @input="updateValidators($event)"
   />
 </template>

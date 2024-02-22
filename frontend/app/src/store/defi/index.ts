@@ -6,7 +6,6 @@ import { TaskType } from '@/types/task-type';
 import { type DefiAccount, ProtocolVersion } from '@/types/defi';
 import { Purgeable } from '@/types/session/purge';
 import type { TaskMeta } from '@/types/task';
-import type { ComputedRef } from 'vue';
 
 type ResetStateParams =
   | Module
@@ -32,8 +31,7 @@ export const useDefiStore = defineStore('defi', () => {
 
   const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();
 
-  const { addressesV1: yearnV1Addresses, addressesV2: yearnV2Addresses }
-    = storeToRefs(yearnStore);
+  const { addressesV1: yearnV1Addresses, addressesV2: yearnV2Addresses } = storeToRefs(yearnStore);
   const { addresses: aaveAddresses } = storeToRefs(aaveStore);
   const { addresses: compoundAddresses } = storeToRefs(compoundStore);
   const { addresses: makerDaoAddresses } = storeToRefs(makerDaoStore);
@@ -43,66 +41,55 @@ export const useDefiStore = defineStore('defi', () => {
     DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP | DefiProtocol.LIQUITY
   >;
 
-  const defiAccounts = (
-    protocols: DefiProtocol[],
-  ): ComputedRef<DefiAccount[]> =>
-    computed(() => {
-      const addresses: {
-        [key in DefiProtocols]: string[];
-      } = {
-        [DefiProtocol.MAKERDAO_DSR]: [],
-        [DefiProtocol.AAVE]: [],
-        [DefiProtocol.COMPOUND]: [],
-        [DefiProtocol.YEARN_VAULTS]: [],
-        [DefiProtocol.YEARN_VAULTS_V2]: [],
-      };
+  const defiAccounts = (protocols: DefiProtocol[]) => computed<DefiAccount[]>(() => {
+    const addresses: {
+      [key in DefiProtocols]: string[];
+    } = {
+      [DefiProtocol.MAKERDAO_DSR]: [],
+      [DefiProtocol.AAVE]: [],
+      [DefiProtocol.COMPOUND]: [],
+      [DefiProtocol.YEARN_VAULTS]: [],
+      [DefiProtocol.YEARN_VAULTS_V2]: [],
+    };
 
-      const noProtocolsSelected = protocols.length === 0;
+    const noProtocolsSelected = protocols.length === 0;
 
-      if (
-        noProtocolsSelected
-        || protocols.includes(DefiProtocol.MAKERDAO_DSR)
-      )
-        addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.MAKERDAO_DSR))
+      addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
-        addresses[DefiProtocol.AAVE] = get(aaveAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
+      addresses[DefiProtocol.AAVE] = get(aaveAddresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
-        addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
+      addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
 
-      if (
-        noProtocolsSelected
-        || protocols.includes(DefiProtocol.YEARN_VAULTS)
-      )
-        addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS))
+      addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
 
-      if (
-        noProtocolsSelected
-        || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
-      )
-        addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
+      addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
 
-      const accounts: Record<string, DefiAccount> = {};
-      for (const protocol in addresses) {
-        const selectedProtocol = protocol as DefiProtocols;
-        const perProtocolAddresses = addresses[selectedProtocol];
-        for (const address of perProtocolAddresses) {
-          if (accounts[address]) {
-            accounts[address].protocols.push(selectedProtocol);
-          }
-          else {
-            accounts[address] = {
-              address,
-              chain: Blockchain.ETH,
-              protocols: [selectedProtocol],
-            };
-          }
+    const accounts: Record<string, DefiAccount> = {};
+    for (const protocol in addresses) {
+      const selectedProtocol = protocol as DefiProtocols;
+      const perProtocolAddresses = addresses[selectedProtocol];
+      for (const address of perProtocolAddresses) {
+        if (accounts[address]) {
+          accounts[address].protocols.push(selectedProtocol);
+        }
+        else {
+          accounts[address] = {
+            data: { address },
+            chain: Blockchain.ETH,
+            protocols: [selectedProtocol],
+            nativeAsset: Blockchain.ETH.toUpperCase(),
+          };
         }
       }
+    }
 
-      return Object.values(accounts);
-    });
+    return Object.values(accounts);
+  });
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_BALANCES);
 

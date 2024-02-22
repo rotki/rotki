@@ -5,6 +5,7 @@ import {
 } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 
 vi.mock('@/store/balances/prices', () => ({
@@ -30,14 +31,13 @@ vi.mock('@/store/tasks', () => ({
 
 describe('store::balances/manual', () => {
   setActivePinia(createPinia());
-  const store: ReturnType<typeof useManualBalancesStore>
-    = useManualBalancesStore();
+  const store: ReturnType<typeof useManualBalancesStore> = useManualBalancesStore();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  const balances = [
+  const balances: ManualBalanceWithValue[] = [
     {
       identifier: 1,
       usdValue: bigNumberify(50),
@@ -128,7 +128,8 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
-          balance: { amount: bigNumberify(30), usdValue: bigNumberify(30) },
+          amount: bigNumberify(30),
+          usdValue: bigNumberify(30),
           tags: [],
         },
       ]);
@@ -137,7 +138,8 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
-          balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50),
           tags: [],
         },
       ]);
@@ -155,7 +157,8 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: 'external',
-          balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50),
           tags: [],
         },
       ]);
@@ -168,13 +171,15 @@ describe('store::balances/manual', () => {
         {
           address: '',
           location: 'external',
-          balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50),
           tags: [],
         },
         {
           address: '',
           location: 'external',
-          balance: { amount: bigNumberify(100), usdValue: bigNumberify(100) },
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100),
           tags: [],
         },
       ]);

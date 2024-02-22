@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Routes } from '@/router/routes';
 import {
   DashboardTableType,
@@ -126,7 +127,8 @@ function percentageOfCurrentGroup(value: BigNumber) {
 
 const premium = usePremium();
 
-const { ethAddresses } = storeToRefs(useEthAccountsStore());
+const chainStore = useBlockchainStore();
+const ethAddresses = computed<string[]>(() => chainStore.getAddresses(Blockchain.ETH));
 
 async function fetch(refresh = false) {
   if (get(ethAddresses).length > 0) {

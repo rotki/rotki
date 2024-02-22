@@ -9,7 +9,7 @@ describe('composables::staking/eth2/eth2', () => {
     vi.clearAllMocks();
   });
 
-  describe('fetchPerformance', async () => {
+  describe('fetchPerformance', () => {
     it('should fetch limited validators based on static limit and ignore global limit', async () => {
       const { fetchPerformance, performance, pagination } = useEth2Staking();
       await fetchPerformance({ limit: 10, offset: 0 });

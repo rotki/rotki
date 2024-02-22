@@ -8,7 +8,7 @@ const { t } = useI18n();
 const { isTaskRunning } = useTaskStore();
 
 const { balances, liabilities } = useAggregatedBalances();
-const { blockchainTotals } = useAccountBalances();
+const { blockchainTotals } = storeToRefs(useBlockchainStore());
 const aggregatedBalances = balances();
 const aggregatedLiabilities = liabilities();
 

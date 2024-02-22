@@ -5,23 +5,21 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import Uniswap3PoolBalances from '@/components/defi/uniswap/Uniswap3PoolBalances.vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import type { GeneralAccount } from '@rotki/common/lib/account';
 
 const uniswap = Module.UNISWAP;
 const chains = [Blockchain.ETH];
 const modules = [uniswap];
 
-const selectedAccounts = ref<GeneralAccount[]>([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const selectedPools = ref<string[]>([]);
 
 const store = useUniswapStore();
 
-const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances }
-  = store;
+const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } = store;
+const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } = storeToRefs(store);
 
-const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets }
-  = storeToRefs(store);
 const { isModuleEnabled } = useModules();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { t } = useI18n();
@@ -31,7 +29,11 @@ const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
 const primaryRefreshing = isLoading(Section.DEFI_UNISWAP_V3_BALANCES);
 const secondaryRefreshing = isLoading(Section.DEFI_UNISWAP_EVENTS);
 
-const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
+const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
+const accountFilter = useArrayMap(selectedAccounts, account => ({
+  address: getAccountAddress(account),
+  chain: account.chain,
+}));
 
 const balances = computed(() => {
   const addresses = get(selectedAddresses);
@@ -156,7 +158,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
       use-external-account-filter
       :section-title="t('common.events')"
       :protocols="['uniswap-v3']"
-      :external-account-filter="selectedAccounts"
+      :external-account-filter="accountFilter"
       :only-chains="chains"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />

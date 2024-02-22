@@ -21,19 +21,15 @@ vi.mock('@/store/balances/manual', () => ({
       computed(() => [
         {
           location: 'external',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
           tags: null,
         },
         {
           location: 'kraken',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
           tags: null,
         },
@@ -64,10 +60,8 @@ vi.mock('@/store/balances/exchanges', () => ({
       computed(() => [
         {
           location: 'kraken',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
           tags: null,
         },
@@ -93,26 +87,22 @@ vi.mock('@/store/balances/exchanges', () => ({
   }),
 }));
 
-vi.mock('@/composables/blockchain/account-balances/index', () => ({
-  useAccountBalances: vi.fn().mockReturnValue({
+vi.mock('@/store/blockchain/index', () => ({
+  useBlockchainStore: vi.fn().mockReturnValue({
     getBreakdown: vi.fn().mockReturnValue(
       computed(() => [
         {
           location: 'ethereum',
           address: '0xaddress1',
-          balance: {
-            amount: bigNumberify(1000),
-            usdValue: bigNumberify(1000),
-          },
+          amount: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           tags: null,
         },
         {
           location: 'ethereum',
           address: '0xaddress2',
-          balance: {
-            amount: bigNumberify(2000),
-            usdValue: bigNumberify(2000),
-          },
+          amount: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
           tags: null,
         },
       ]),
@@ -122,8 +112,7 @@ vi.mock('@/composables/blockchain/account-balances/index', () => ({
 
 describe('composables::balances/breakdown', () => {
   setActivePinia(createPinia());
-  let balancesBreakdown: ReturnType<typeof useBalancesBreakdown>
-    = useBalancesBreakdown();
+  let balancesBreakdown: ReturnType<typeof useBalancesBreakdown> = useBalancesBreakdown();
 
   beforeEach(() => {
     balancesBreakdown = useBalancesBreakdown();
@@ -135,24 +124,28 @@ describe('composables::balances/breakdown', () => {
       {
         location: 'ethereum',
         address: '0xaddress2',
-        balance: { amount: bigNumberify(2000), usdValue: bigNumberify(2000) },
+        amount: bigNumberify(2000),
+        usdValue: bigNumberify(2000),
         tags: null,
       },
       {
         location: 'kraken',
-        balance: { amount: bigNumberify(2000), usdValue: bigNumberify(2000) },
+        amount: bigNumberify(2000),
+        usdValue: bigNumberify(2000),
         address: '',
         tags: null,
       },
       {
         location: 'ethereum',
         address: '0xaddress1',
-        balance: { amount: bigNumberify(1000), usdValue: bigNumberify(1000) },
+        amount: bigNumberify(1000),
+        usdValue: bigNumberify(1000),
         tags: null,
       },
       {
         location: 'external',
-        balance: { amount: bigNumberify(1000), usdValue: bigNumberify(1000) },
+        amount: bigNumberify(1000),
+        usdValue: bigNumberify(1000),
         address: '',
         tags: null,
       },

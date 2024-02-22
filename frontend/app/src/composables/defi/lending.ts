@@ -42,14 +42,10 @@ export function useDefiLending() {
   const compoundStore = useCompoundStore();
   const makerDaoStore = useMakerDaoStore();
 
-  const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History }
-    = storeToRefs(yearnStore);
-  const { history: aaveHistory, balances: aaveBalances }
-    = storeToRefs(aaveStore);
-  const { history: compoundHistory, balances: compoundBalances }
-    = storeToRefs(compoundStore);
-  const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails }
-    = storeToRefs(makerDaoStore);
+  const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } = storeToRefs(yearnStore);
+  const { history: aaveHistory, balances: aaveBalances } = storeToRefs(aaveStore);
+  const { history: compoundHistory, balances: compoundBalances } = storeToRefs(compoundStore);
+  const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } = storeToRefs(makerDaoStore);
   const { balances: liquityBalances } = storeToRefs(liquityStore);
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);

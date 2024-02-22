@@ -22,7 +22,7 @@ export function useEth2DailyStats() {
 
   const api = useEth2Api();
 
-  const { eth2Validators } = storeToRefs(useEthAccountsStore());
+  const { ethStakingValidators } = storeToRefs(useBlockchainStore());
 
   const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
     if (!get(premium))
@@ -110,13 +110,13 @@ export function useEth2DailyStats() {
 
   const dailyStats = computed<EthStakingDailyStatData>(() => {
     const dailyStats = get(state);
-    const validators = get(eth2Validators).entries;
+    const validators = get(ethStakingValidators);
     return {
       ...objectOmit(dailyStats, ['entries']),
       entries: dailyStats.entries.map((stat) => {
         const ownershipPercentage = validators.find(
-          validator => validator.index === stat.validatorIndex,
-        )?.ownershipPercentage;
+          ({ data }) => data.index === stat.validatorIndex,
+        )?.data?.ownershipPercentage;
         return ({
           ...stat,
           ownershipPercentage,

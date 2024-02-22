@@ -88,3 +88,7 @@ export const explorerUrls: AssetExplorerUrls = {
     block: 'https://scrollscan.com/block/',
   },
 };
+
+export function isChains(chain: string): chain is Chains {
+  return Object.keys(explorerUrls).includes(chain);
+}

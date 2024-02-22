@@ -19,7 +19,7 @@ export type AddressNameRequestPayload = z.infer<
 >;
 
 export const AddressBookSimplePayload = AddressNameRequestPayload.extend({
-  blockchain: BlockchainEnum.nullable(),
+  blockchain: z.string().nullable(),
 });
 
 export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;

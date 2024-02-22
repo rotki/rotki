@@ -1,4 +1,5 @@
 import { type MaybeRef, objectOmit } from '@vueuse/core';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type {
@@ -23,8 +24,7 @@ export function useEth2Staking() {
 
   const api = useEth2Api();
 
-  const { eth2Validators } = storeToRefs(useEthAccountsStore());
-  const { stakingBalances } = storeToRefs(useEthBalancesStore());
+  const { getBlockchainAccounts } = useBlockchainStore();
 
   async function syncEthStakingPerformance(userInitiated = false): Promise<boolean> {
     if (!get(premium))
@@ -103,16 +103,15 @@ export function useEth2Staking() {
 
   const performance = computed<EthStakingPerformance>(() => {
     const performance = get(state);
-    const validators = get(eth2Validators);
-    const balances = get(stakingBalances);
+    const accounts = getBlockchainAccounts(Blockchain.ETH2).filter(isAccountWithBalanceValidator);
     return {
       ...objectOmit(performance, ['validators']),
       validators: Object.entries(performance.validators).map(([idx, value]) => {
         const index = parseInt(idx);
 
-        const validator = validators.entries.find(x => x.index === index);
-        const status = validator?.status;
-        const total = validator ? balances.find(x => x.publicKey === validator.publicKey)?.amount : undefined;
+        const validator = accounts.find(x => x.data.index === index);
+        const status = validator?.data?.status;
+        const total = validator?.amount;
         return ({
           index,
           status,
