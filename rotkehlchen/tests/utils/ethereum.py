@@ -350,7 +350,7 @@ def get_decoded_events_of_transaction(
     It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
     on that object.
 
-    If relevant_address is provided then the transactions add added linked to
+    If relevant_address is provided then the added transactions are added linked to
     the provided address.
 
     Returns the list of decoded events and the EVMTransactionDecoder

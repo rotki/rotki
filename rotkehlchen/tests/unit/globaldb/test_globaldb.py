@@ -1297,6 +1297,7 @@ def test_assets_in_same_collection(globaldb: GlobalDBHandler):
     assert realted_assets == (
         wsteth,
         Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
+        Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
         Asset('eip155:42161/erc20:0x5979D7b546E38E414F7E9822514be443A4800529'),
     )
 
