@@ -74,6 +74,7 @@ def test_delete_transactions_by_chain(
         tx_hash=deserialize_evm_tx_hash('0xafce539bd7fb898c5f03fdccf4c34e2c5c9ca321d612142953a7baf2849caafd'),
         relevant_address=gnosis_accounts[0],
     )
+    ethereum_events, gnosis_events = 3, 2
     dbevmtx = DBEvmTx(database)
     with database.user_write() as write_cursor:
         events = DBHistoryEvents(database).get_history_events(
@@ -82,7 +83,7 @@ def test_delete_transactions_by_chain(
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(events) == 5  # we have 3 ethereum events and 2 gnosis events
+        assert len(events) == ethereum_events + gnosis_events
 
     with database.conn.write_ctx() as write_cursor:
         dbevmtx.delete_transactions(
@@ -98,5 +99,5 @@ def test_delete_transactions_by_chain(
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(events) == 3
+        assert len(events) == ethereum_events
         assert all(event.location == Location.ETHEREUM for event in events)
