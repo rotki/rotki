@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import Fragment from '@/components/helper/Fragment';
 import type { Balance, BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
@@ -19,7 +20,7 @@ const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
 const { t } = useI18n();
 
 const { items } = toRefs(props);
-const { name: breakpoint, xs } = useDisplay();
+const { name: breakpoint, isXs } = useBreakpoint();
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
 const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
@@ -72,7 +73,7 @@ function editClicked(_payload: XpubAccountWithBalance) {
     <td
       colspan="2"
       :class="{
-        '!p-2': !xs,
+        '!p-2': !isXs,
       }"
     >
       <div class="pl-9">
@@ -132,7 +133,7 @@ function editClicked(_payload: XpubAccountWithBalance) {
       <AmountDisplay
         :value="sum"
         :loading="loading"
-        :asset="xs ? 'BTC' : undefined"
+        :asset="isXs ? 'BTC' : undefined"
         :asset-padding="0.1"
       />
     </td>

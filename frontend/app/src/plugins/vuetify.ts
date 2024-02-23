@@ -28,6 +28,14 @@ const vuetify = new Vuetify({
   icons: {
     iconfont: 'mdi',
   },
+  breakpoint: {
+    thresholds: {
+      xs: 640,
+      sm: 768,
+      md: 1024,
+      lg: 1280,
+    },
+  },
   theme: {
     options: {
       customProperties: true,

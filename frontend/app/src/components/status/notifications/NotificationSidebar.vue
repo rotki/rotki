@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 defineProps<{ visible: boolean }>();
 
 const emit = defineEmits(['close']);
@@ -42,7 +44,7 @@ function showConfirmation() {
   );
 }
 
-const { mobile } = useDisplay();
+const { isMdAndDown } = useBreakpoint();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
 const itemHeight = 172;
@@ -60,7 +62,7 @@ const notificationStyle = {
 
 <template>
   <VNavigationDrawer
-    :class="{ [css.mobile]: mobile, [css.sidebar]: true }"
+    :class="{ [css.mobile]: isMdAndDown, [css.sidebar]: true }"
     width="400px"
     absolute
     clipped
@@ -170,10 +172,6 @@ const notificationStyle = {
         margin-top: -8px;
       }
     }
-  }
-
-  @media only screen and (max-width: 960px) {
-    top: 56px !important;
   }
 }
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 type GetKey = (item: any) => string;
 
 const props = defineProps<{
@@ -7,12 +9,12 @@ const props = defineProps<{
 }>();
 
 const { items } = toRefs(props);
-const { name: breakpoint } = useDisplay();
+const { isXs, isXlAndDown } = useBreakpoint();
 const page = ref(1);
 const itemsPerPage = computed(() => {
-  if (get(breakpoint) === 'xs')
+  if (get(isXs))
     return 1;
-  else if (['sm', 'lg', 'md'].includes(get(breakpoint)))
+  else if (get(isXlAndDown))
     return 4;
 
   return 6;

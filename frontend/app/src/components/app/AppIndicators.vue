@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import Fragment from '@/components/helper/Fragment';
 
 const isDevelopment = checkIfDevelopment();
 
-const { smAndUp } = useDisplay();
+const { isSmAndUp } = useBreakpoint();
 
 const { darkModeEnabled } = useDarkMode();
 const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
@@ -14,13 +15,13 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
   <Fragment>
     <div class="flex overflow-hidden grow">
       <SyncIndicator />
-      <GlobalSearch v-if="smAndUp" />
+      <GlobalSearch v-if="isSmAndUp" />
       <BackButton />
     </div>
     <div class="flex overflow-hidden h-full items-center">
       <GetPremiumButton />
       <RouterLink
-        v-if="isDevelopment && smAndUp"
+        v-if="isDevelopment && isSmAndUp"
         to="/playground"
       >
         <RuiButton
@@ -38,7 +39,7 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
         :visible.sync="showPinned"
       />
       <ThemeControl
-        v-if="smAndUp"
+        v-if="isSmAndUp"
         :dark-mode-enabled="darkModeEnabled"
       />
       <NotificationIndicator
@@ -48,12 +49,12 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
       />
       <CurrencyDropdown class="app__app-bar__button" />
       <PrivacyModeDropdown
-        v-if="smAndUp"
+        v-if="isSmAndUp"
         class="app__app-bar__button"
       />
       <UserDropdown class="app__app-bar__button" />
       <HelpIndicator
-        v-if="smAndUp"
+        v-if="isSmAndUp"
         :visible.sync="showHelpBar"
       />
     </div>

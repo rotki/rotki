@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -7,7 +9,7 @@ const { logout } = useSessionStore();
 const { username } = storeToRefs(useSessionAuthStore());
 const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-const { xs } = useDisplay();
+const { isXs } = useBreakpoint();
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
@@ -80,7 +82,7 @@ const css = useCssModule();
         </RouterLink>
 
         <RuiButton
-          v-if="xs"
+          v-if="isXs"
           key="privacy-mode"
           variant="list"
           @click="togglePrivacyMode()"
@@ -95,7 +97,7 @@ const css = useCssModule();
         </RuiButton>
 
         <ThemeControl
-          v-if="xs"
+          v-if="isXs"
           :dark-mode-enabled="darkModeEnabled"
           :class="css.theme_control"
           menu
