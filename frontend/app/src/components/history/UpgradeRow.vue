@@ -21,13 +21,12 @@ withDefaults(
 );
 
 const { t } = useI18n();
-const { xs } = useDisplay();
 </script>
 
 <template>
   <tr class="bg-transparent">
     <td
-      :colspan="xs ? 2 : colspan"
+      :colspan="colspan"
       class="font-medium py-2"
     >
       <i18n

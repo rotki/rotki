@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
@@ -67,7 +68,7 @@ watch(locationName, (locationName) => {
     set(tab, 0);
 });
 
-const { smAndDown } = useDisplay();
+const { isMdAndDown } = useBreakpoint();
 </script>
 
 <template>
@@ -75,7 +76,7 @@ const { smAndDown } = useDisplay();
     v-model="display"
     width="400px"
     class="user-notes-sidebar"
-    :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
+    :class="isMdAndDown ? 'user-notes-sidebar--mobile' : null"
     absolute
     clipped
     right

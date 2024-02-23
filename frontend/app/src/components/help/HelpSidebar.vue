@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import IndexedDb from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
@@ -80,7 +81,7 @@ async function downloadBrowserLog() {
   });
 }
 
-const { smAndDown } = useDisplay();
+const { isMdAndDown } = useBreakpoint();
 </script>
 
 <template>
@@ -88,7 +89,7 @@ const { smAndDown } = useDisplay();
     v-model="display"
     width="400px"
     class="help-sidebar"
-    :class="smAndDown ? 'help-sidebar--mobile' : null"
+    :class="isMdAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
     right

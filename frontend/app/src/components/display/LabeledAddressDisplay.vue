@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import type { GeneralAccount } from '@rotki/common/lib/account';
 
 const props = defineProps<{
@@ -32,7 +33,7 @@ const ensName: ComputedRef<string | null> = computed(() => {
   return get(ensNameSelector(address));
 });
 
-const { xs, name } = useDisplay();
+const { isXs, name } = useBreakpoint();
 
 const address = computed<string>(() => {
   const address = get(account).address;
@@ -99,7 +100,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           data-cy="labeled-address-display"
           :class="[
             css['labeled-address-display__address'],
-            { 'labeled-address-display__address--mobile': xs },
+            { 'labeled-address-display__address--mobile': isXs },
           ]"
         >
           <EnsAvatar

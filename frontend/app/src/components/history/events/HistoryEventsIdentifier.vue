@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { useBreakpoint } from '@rotki/ui-library-compat';
 import { toSentenceCase, toSnakeCase } from '@/utils/text';
 import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry } from '@/types/history/events';
@@ -23,7 +24,7 @@ const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
 const css = useCssModule();
-const { xl } = useDisplay();
+const { isXl } = useBreakpoint();
 </script>
 
 <template>
@@ -72,7 +73,7 @@ const { xl } = useDisplay();
         type="transaction"
         :chain="getChain(evmOrDepositEvent.location)"
         :truncate-length="8"
-        :full-address="xl"
+        :full-address="isXl"
       />
     </template>
   </i18n>

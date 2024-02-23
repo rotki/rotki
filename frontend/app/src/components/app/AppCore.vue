@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { useBreakpoint } from '@rotki/ui-library-compat';
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
 const { appBarColor } = useTheme();
-const { mobile } = useDisplay();
+const { isLgAndDown } = useBreakpoint();
 
 const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
-  () => get(showDrawer) && !get(isMini) && !get(mobile),
+  () => get(showDrawer) && !get(isMini) && !get(isLgAndDown),
 );
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
@@ -20,7 +21,7 @@ const { updateTray } = useInterop();
 const toggleDrawer = visibilityStore.toggleDrawer;
 
 onMounted(() => {
-  set(showDrawer, !get(mobile));
+  set(showDrawer, !get(isLgAndDown));
 });
 
 watch(overall, (overall) => {
