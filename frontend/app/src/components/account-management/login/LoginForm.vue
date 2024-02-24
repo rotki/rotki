@@ -86,9 +86,7 @@ const rules = {
       (v: string): boolean =>
         !get(customBackendDisplay)
         || (v.length < 300
-        && /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(
-          v,
-        )),
+        && isValidUrl(v)),
     ),
   },
 };

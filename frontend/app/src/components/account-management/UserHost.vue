@@ -2,19 +2,13 @@
 import Fragment from '@/components/helper/Fragment';
 
 const { autolog } = useAutoLogin();
-const { isPackaged } = useInterop();
 const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
   useMainStore(),
 );
 
 const isDocker = import.meta.env.VITE_DOCKER;
-const hasAcceptedDockerRisk = logicAnd(dockerRiskAccepted, isDocker);
-const loginIfConnected = logicOr(
-  isPackaged,
-  hasAcceptedDockerRisk,
-  logicNot(isDocker),
-);
-const displayRouter = logicAnd(connected, loginIfConnected);
+const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));
+const displayRouter = logicAnd(connected, logicNot(showDockerWarning));
 
 const css = useCssModule();
 </script>
@@ -26,6 +20,7 @@ const css = useCssModule();
       :connected="connected && !autolog"
     />
     <ConnectionFailureMessage v-else />
+
     <div
       v-if="displayRouter"
       data-cy="account-management-forms"
@@ -33,6 +28,10 @@ const css = useCssModule();
     >
       <slot />
     </div>
+
+    <DockerWarning
+      v-else-if="showDockerWarning"
+    />
   </Fragment>
 </template>
 

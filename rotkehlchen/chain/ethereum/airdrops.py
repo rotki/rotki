@@ -1,13 +1,14 @@
 import csv
-import json
 import logging
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 
 import requests
+from requests import Response
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.types import AssetType
@@ -16,7 +17,6 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -24,7 +24,6 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
 )
@@ -42,6 +41,7 @@ log = RotkehlchenLogsAdapter(logger)
 SMALLEST_AIRDROP_SIZE: Final = 20900
 AIRDROPS_REPO_BASE: Final = f'https://raw.githubusercontent.com/rotki/data/{"main" if is_production() else "develop"}'  # noqa: E501
 AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v1.json'
+ETAG_CACHE_KEY: Final = 'ETag'
 
 
 class Airdrop(NamedTuple):
@@ -52,6 +52,7 @@ class Airdrop(NamedTuple):
     website URL, name, and icon filename.
     """
     csv_path: str
+    csv_hash: str
     asset: CryptoAsset
     url: str
     name: str
@@ -95,6 +96,8 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                         decimals=new_asset_data['decimals'],
                         name=new_asset_data['name'],
                         symbol=new_asset_data['symbol'],
+                        coingecko=new_asset_data.get('coingecko'),
+                        cryptocompare=new_asset_data.get('cryptocompare'),
                     )
                 elif (asset := Asset(airdrop_data['asset_identifier'])).exists() is True:
                     crypto_asset = asset.resolve_to_crypto_asset()  # use the local values of user, if it pre-existed  # noqa: E501
@@ -119,6 +122,7 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                 asset=crypto_asset,
                 # combining the base data repo url for main/develop with the path to the CSV in that repo  # noqa: E501
                 csv_path=f"{AIRDROPS_REPO_BASE}/{airdrop_data['csv_path']}",
+                csv_hash=airdrop_data['csv_hash'],
                 url=airdrop_data['url'],
                 name=airdrop_data['name'],
                 icon=airdrop_data['icon'],
@@ -139,11 +143,23 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
     """
     airdrops_data = None
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        airdrops_metadata_cached_at = globaldb_get_unique_cache_last_queried_ts_by_key(
+        headers = {}
+        if (cached_etag := globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.AIRDROPS_METADATA,),
-        )
-        if ts_now() - airdrops_metadata_cached_at < HOUR_IN_SECONDS * 12:
+            key_parts=(CacheType.AIRDROPS_HASH, ETAG_CACHE_KEY),
+        )) is not None:
+            headers['If-None-Match'] = cached_etag.encode('utf-8')
+
+        try:
+            remote_metadata_res = requests.get(
+                url=AIRDROPS_INDEX,
+                timeout=CachedSettings().get_timeout_tuple(),
+                headers=headers,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Airdrops Index request failed due to {e!s}') from e
+
+        if remote_metadata_res.status_code == HTTPStatus.NOT_MODIFIED:  # index is not modified, use cached index  # noqa: E501
             airdrops_metadata_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.AIRDROPS_METADATA,),
@@ -151,18 +167,22 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
             if airdrops_metadata_cache is not None:
                 airdrops_data = jsonloads_dict(airdrops_metadata_cache)  # get cached response
 
-    if airdrops_data is None:  # query fresh data
-        try:
-            airdrops_data = requests.get(url=AIRDROPS_INDEX, timeout=CachedSettings().get_timeout_tuple()).json()  # noqa: E501
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops Index request failed due to {e!s}') from e
-
+    if airdrops_data is None:  # index has been modified, save new index
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.AIRDROPS_METADATA,),
-                value=json.dumps(airdrops_data),
+                key_parts=(CacheType.AIRDROPS_HASH, ETAG_CACHE_KEY),
+                value=remote_metadata_res.headers[ETAG_CACHE_KEY],
             )
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.AIRDROPS_METADATA,),
+                value=remote_metadata_res.text,
+            )
+            try:
+                airdrops_data = remote_metadata_res.json()
+            except JSONDecodeError as e:
+                raise RemoteError(f'Airdrops Index is not valid JSON {e!s}') from e
 
     return (
         _parse_airdrops(database=database, airdrops_data=airdrops_data['airdrops']),
@@ -170,30 +190,75 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
     )
 
 
-def get_airdrop_data(airdrop_csv_path: str, name: str, data_dir: Path) -> Iterator[list[str]]:
-    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
-    airdrops_dir.mkdir(parents=True, exist_ok=True)
-    filename = airdrops_dir / f'{name}.csv'
+def _maybe_get_updated_file(
+        data_dir: Path,
+        name: str,
+        file_hash: str,
+        remote_url: str,
+        process_response: Callable[[Response, Path], None],
+) -> Path:
+    """Downloads the file if cached hash is different and returns its path."""
+    data_dir.mkdir(parents=True, exist_ok=True)
+    filename = data_dir / f'{name}'
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        if (existing_csv_hash := globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.AIRDROPS_HASH, name),
+        )) != file_hash:
+            log.info(
+                f'Found a new {name} airdrop file hash: {file_hash}. '
+                f'Removing the old file with hash: {existing_csv_hash}, and downloading new one.',
+            )
+            filename.unlink(missing_ok=True)
+
     if not filename.is_file():
         # if not cached, get it from the remote data repo
         try:
-            response = requests.get(url=airdrop_csv_path, timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
+            response = requests.get(url=remote_url, timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops CSV request failed due to {e!s}') from e
-        content = response.text
+        process_response(response, filename)
+
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.AIRDROPS_HASH, name),
+                value=file_hash,
+            )
+
+    return filename
+
+
+def get_airdrop_data(airdrop_data: Airdrop, name: str, data_dir: Path) -> Iterator[list[str]]:
+    """Yields the rows from airdrop's CSV file after downloading it locally for the first time.
+    If a new CSV is found in the index, it will be downloaded again to update the local CSV file
+    and yield new data."""
+    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
+
+    def _process_csv(response: Response, filename: Path) -> None:
         try:
             if (
-                not csv.Sniffer().has_header(content) or
+                not csv.Sniffer().has_header(response.text) or
                 len(response.content) < SMALLEST_AIRDROP_SIZE
             ):
                 raise csv.Error
             with open(filename, 'w', encoding='utf8') as f:
-                f.write(content)
+                f.write(response.text)
         except csv.Error as e:
-            log.debug(f'airdrop file {filename} contains invalid data {content}')
+            log.debug(f'airdrop file {filename} contains invalid data {response.text}')
             raise RemoteError(
                 f'File {filename} contains invalid data. Check logs.',
             ) from e
+
+    filename = _maybe_get_updated_file(
+        data_dir=airdrops_dir,
+        file_hash=airdrop_data.csv_hash,
+        name=f'{name}.csv',
+        remote_url=airdrop_data.csv_path,
+        process_response=_process_csv,
+    )
+
     # Verify the CSV file
     with open(filename, encoding='utf8') as csvfile:
         iterator = csv.reader(csvfile)
@@ -201,25 +266,29 @@ def get_airdrop_data(airdrop_csv_path: str, name: str, data_dir: Path) -> Iterat
         yield from iterator
 
 
-def get_poap_airdrop_data(poap_airdrop_path: str, name: str, data_dir: Path) -> dict[str, Any]:
+def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) -> dict[str, Any]:
+    """Returns a dictionary of POAP airdrop data after downloading it locally for the first time.
+    If a new JSON is found in the index, it will be downloaded again to update the local JSON file
+    and return its data."""
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME
-    airdrops_dir.mkdir(parents=True, exist_ok=True)
-    filename = airdrops_dir / f'{name}.json'
-    if not filename.is_file():
-        # if not cached, get it from the remote data repo
-        try:
-            request = requests.get(url=f'{AIRDROPS_REPO_BASE}/{poap_airdrop_path}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'POAP airdrops JSON request failed due to {e!s}') from e
 
+    def _process_json(response: Response, filename: Path) -> None:
         try:
-            json_data = jsonloads_dict(request.content.decode('utf-8'))
+            json_data = jsonloads_dict(response.content.decode('utf-8'))
         except JSONDecodeError as e:
             log.error(f"POAP airdrop {name}'s JSON is invalid {e!s}")
-            return {}
+            json_data = {}
 
         with open(filename, 'w', encoding='utf8') as outfile:
             outfile.write(rlk_jsondumps(json_data))
+
+    filename = _maybe_get_updated_file(
+        data_dir=airdrops_dir,
+        file_hash=airdrop_data[3],
+        name=f'{name}.json',
+        remote_url=f'{AIRDROPS_REPO_BASE}/{airdrop_data[0]}',
+        process_response=_process_json,
+    )
 
     return jsonloads_dict(Path(filename).read_text(encoding='utf8'))
 
@@ -293,7 +362,7 @@ def check_airdrops(
         # temporarily store this protocol's data here
         temp_found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
         temp_airdrop_tuples = []
-        for row in get_airdrop_data(airdrop_data.csv_path, protocol_name, data_dir):
+        for row in get_airdrop_data(airdrop_data, protocol_name, data_dir):
             if len(row) < 2:
                 msg_aggregator.add_warning(f'Skipping airdrop CSV for {protocol_name} because it contains an invalid row: {row}')  # noqa: E501
                 break
@@ -336,7 +405,7 @@ def check_airdrops(
             for temp_addr, data in temp_found_data.items():
                 found_data[temp_addr].update(data)
 
-    asset_to_protocol = {item[1].identifier: protocol for protocol, item in airdrops.items()}
+    asset_to_protocol = {item.asset.identifier: protocol for protocol, item in airdrops.items()}
     claim_events_tuple = calculate_claimed_airdrops(
         airdrop_data=airdrop_tuples,
         database=database,
@@ -345,7 +414,7 @@ def check_airdrops(
         found_data[event_tuple[0]][asset_to_protocol[event_tuple[1]]]['claimed'] = True
 
     for protocol_name, poap_airdrop_data in poap_airdrops.items():
-        data_dict = get_poap_airdrop_data(poap_airdrop_data[0], protocol_name, data_dir)
+        data_dict = get_poap_airdrop_data(poap_airdrop_data, protocol_name, data_dir)
         for addr, assets in data_dict.items():
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance

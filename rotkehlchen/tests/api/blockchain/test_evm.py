@@ -150,12 +150,10 @@ def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server):
     assert_proper_response(response)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_adding_editing_ens_account_works(rotkehlchen_api_server):
-    """Test that adding an ENS eth account can be handled properly
-
-    This test mocks all etherscan queries apart from the ENS ones
-    """
+    """Test that adding an ENS eth account can be handled properly"""
     resolved_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Add an account and see it resolves
@@ -357,6 +355,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])

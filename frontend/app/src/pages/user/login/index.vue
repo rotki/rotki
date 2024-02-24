@@ -14,7 +14,6 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 );
 
 const isDocker = import.meta.env.VITE_DOCKER;
-const { dockerRiskAccepted } = storeToRefs(useMainStore());
 
 const { fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
@@ -111,10 +110,6 @@ onMounted(async () => fetchMessages());
           :message="welcomeMessage"
         />
       </div>
-      <DockerWarning
-        v-if="!dockerRiskAccepted && isDocker"
-        class="mt-8"
-      />
     </AccountManagementAside>
   </Fragment>
 </template>

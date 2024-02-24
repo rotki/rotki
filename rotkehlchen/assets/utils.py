@@ -100,6 +100,8 @@ def edit_token_and_clean_cache(
         started: Timestamp | None,
         underlying_tokens: list[UnderlyingToken] | None,
         evm_inquirer: 'EvmNodeInquirer | None',
+        coingecko: str | None = None,
+        cryptocompare: str | None = None,
 ) -> None:
     """
     Update information regarding name and decimals for an ethereum token.
@@ -139,6 +141,14 @@ def edit_token_and_clean_cache(
 
     if underlying_tokens is not None and evm_token.underlying_tokens != underlying_tokens:
         object.__setattr__(evm_token, 'underlying_tokens', underlying_tokens)
+        updated_fields = True
+
+    if coingecko is not None and evm_token.coingecko != coingecko:
+        object.__setattr__(evm_token, 'coingecko', coingecko)
+        updated_fields = True
+
+    if cryptocompare is not None and evm_token.cryptocompare != cryptocompare:
+        object.__setattr__(evm_token, 'cryptocompare', cryptocompare)
         updated_fields = True
 
     # clean the cache if we need to update the token
@@ -190,6 +200,8 @@ def get_or_create_evm_token(
         underlying_tokens: list[UnderlyingToken] | None = None,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
         encounter: TokenEncounterInfo | None = None,
+        coingecko: str | None = None,
+        cryptocompare: str | None = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -231,6 +243,8 @@ def get_or_create_evm_token(
                 started=started,
                 underlying_tokens=underlying_tokens,
                 evm_inquirer=evm_inquirer,
+                coingecko=coingecko,
+                cryptocompare=cryptocompare,
             )
 
         except (UnknownAsset, DeserializationError):
@@ -272,6 +286,8 @@ def get_or_create_evm_token(
                 protocol=protocol if not is_spam_token else SPAM_PROTOCOL,
                 underlying_tokens=underlying_tokens,
                 started=started,
+                coingecko=coingecko,
+                cryptocompare=cryptocompare,
             )
             if asset_exists is True:
                 # This means that we need to update the information in the database with the

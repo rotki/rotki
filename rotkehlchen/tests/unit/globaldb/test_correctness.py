@@ -21,5 +21,5 @@ def test_checksummed_values(globaldb: GlobalDBHandler):
         identifiers.add(identifier)
 
     cursor.execute('SELECT asset FROM multiasset_mappings')
-    assert {x[0] for x in cursor if not x[0].startswith('eip155')}.issubset(identifiers)
+    assert {x[0] for x in cursor if x[0].startswith('eip155')}.issubset(identifiers)
     cursor.close()

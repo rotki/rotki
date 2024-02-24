@@ -462,10 +462,10 @@ class DBEvmTx:
         # Get all tx_hashes that are touched by this address and no other address for the chain
         result = write_cursor.execute(
             'SELECT A.tx_hash, A.identifier from evmtx_address_mappings AS B INNER JOIN '
-            'evm_transactions AS A ON A.identifier=B.tx_id WHERE B.address=? AND B.tx_id NOT IN ( '
-            'SELECT tx_id from evmtx_address_mappings WHERE address!=? AND chain_id=?'
-            ')',
-            (address, address, chain_id_serialized),
+            'evm_transactions AS A ON A.identifier=B.tx_id WHERE B.address=? AND A.chain_id=? '
+            'AND B.tx_id NOT IN (SELECT tx_id from evmtx_address_mappings WHERE address!=? '
+            'AND chain_id=?)',
+            (address, chain_id_serialized, address, chain_id_serialized),
         )
         tx_hashes = []
         tx_ids = []

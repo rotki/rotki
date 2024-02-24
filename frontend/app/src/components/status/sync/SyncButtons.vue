@@ -20,6 +20,8 @@ const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
 function action(action: SyncAction) {
   emit('action', action);
 }
+
+const { uploadStatus } = useSync();
 </script>
 
 <template>
@@ -30,7 +32,7 @@ function action(action: SyncAction) {
     >
       <template #activator>
         <RuiButton
-          variant="outlined"
+          :variant="uploadStatus ? 'default' : 'outlined'"
           color="primary"
           class="w-full"
           :disabled="!premium || pending"
@@ -54,7 +56,7 @@ function action(action: SyncAction) {
           variant="outlined"
           color="primary"
           class="w-full"
-          :disabled="!premium || pending"
+          :disabled="!premium || pending || !!uploadStatus"
           @click="action(DOWNLOAD)"
         >
           <template #prepend>

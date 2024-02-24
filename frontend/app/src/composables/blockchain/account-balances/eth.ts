@@ -142,8 +142,8 @@ export function useEthAccountBalances() {
 
         const balance = zeroBalance();
 
-        for (const asset in assets) {
-          const assetBalance = assets[asset];
+        if (Blockchain.ETH in assets) {
+          const assetBalance = assets[Blockchain.ETH];
           const sum = balanceSum(balance, assetBalance);
           balance.amount = sum.amount;
           balance.usdValue = sum.usdValue;

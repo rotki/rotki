@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_BUSD, A_DAI, A_ETH, A_EUR, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -44,7 +44,6 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
     assert_poloniex_balances_result,
-    mock_api_query_for_binance_lending,
     patch_binance_balances_query,
     patch_poloniex_balances_query,
     try_get_first_exchange,
@@ -545,9 +544,10 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     binance_patch = patch_binance_balances_query(binance)
-    binance_api_query = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
+    binance_api_query_dict = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
+    binance_api_query_list = patch.object(binance, 'api_query_list', wraps=binance.api_query_list)
 
-    with binance_patch, binance_api_query as bn:
+    with binance_patch, binance_api_query_dict as bnd, binance_api_query_list as bnl:
         # Query balances for the first time
         response = requests.get(api_url_for(
             server,
@@ -556,7 +556,8 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         ))
         result = assert_proper_response_with_result(response)
         assert_binance_balances_result(result)
-        assert bn.call_count == 3
+        assert bnd.call_count == 2
+        assert bnl.call_count == 3
         # Do the query again. Cache should be used.
         binance_patch = patch_binance_balances_query(binance)
         response = requests.get(api_url_for(
@@ -566,7 +567,8 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         ))
         result = assert_proper_response_with_result(response)
         assert_binance_balances_result(result)
-        assert bn.call_count == 3, 'call count should not have changed. Cache must have been used'
+        assert bnd.call_count == 2, 'call count should not have changed. Cache must have been used'
+        assert bnl.call_count == 3, 'call count should not have changed. Cache must have been used'
         # Finally do the query and request ignoring of the cache
         binance_patch = patch_binance_balances_query(binance)
         response = requests.get(api_url_for(
@@ -576,7 +578,8 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         ), json={'ignore_cache': True})
         result = assert_proper_response_with_result(response)
         assert_binance_balances_result(result)
-        assert bn.call_count == 6, 'call count should have changed. Cache should have been ignored'
+        assert bnd.call_count == 4, 'call count should have changed. Cache should have been ignored'  # noqa: E501
+        assert bnl.call_count == 6, 'call count should have changed. Cache should have been ignored'  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -1337,83 +1340,3 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     assert 'FTTBNB' not in result
     if ci_run is False:
         assert binance_pairs_num > binanceus_pairs_num
-
-
-@pytest.mark.parametrize('default_mock_price_value', [FVal('5.5')])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
-def test_get_binance_savings_balance(rotkehlchen_api_server_with_exchanges):
-    """Check that querying the binance savings balance endpoint returns the expected response."""
-    async_query = random.choice([True, False])
-
-    # check for errors
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'binancesavingsresource',
-            location=Location.KRAKEN.name.lower(),
-        ),
-    )
-    assert_error_response(response, 'is not one of binance,binanceus')
-    test_vars = {
-        'interest_daily_call_count': 0,
-        'interest_customized_fixed_call_count': 0,
-        'interest_activity_call_count': 0,
-        'ranges_queried': set(),
-    }
-
-    def mock_api_query(api_type, method, options):
-        return mock_api_query_for_binance_lending(
-            api_type=api_type,
-            method=method,
-            options=options,
-            test_vars=test_vars,
-        )
-
-    with patch('rotkehlchen.exchanges.binance.Binance.api_query', side_effect=mock_api_query):
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'binancesavingsresource',
-                location=Location.BINANCE.name.lower(),
-            ),
-            json={'async_query': async_query},
-        )
-        if async_query is True:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(rotkehlchen_api_server_with_exchanges, task_id)  # noqa: E501
-        else:
-            result = assert_proper_response_with_result(response)
-
-        test_vars.pop('ranges_queried')
-        for key, value in test_vars.items():
-            if key == 'interest_daily_call_count':
-                assert value == 2
-            else:
-                assert value == 1
-
-        events = result.pop('entries')
-        assert len(events) == 4
-        assert result == {
-            'entries_found': 4,
-            'entries_limit': 100,
-            'entries_total': 4,
-            'total_usd_value': '0.09284682',
-            'assets': [A_USDT.identifier, A_BUSD.identifier, A_DAI.identifier],
-            'received': [
-                {
-                    'asset': A_BUSD.identifier,
-                    'amount': '0.00012816',
-                    'usd_value': '0.00070488',
-                },
-                {
-                    'asset': A_DAI.identifier,
-                    'amount': '0.00987654',
-                    'usd_value': '0.05432097',
-                },
-                {
-                    'asset': A_USDT.identifier,
-                    'amount': '0.00687654',
-                    'usd_value': '0.03782097',
-                },
-            ],
-        }

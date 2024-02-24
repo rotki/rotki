@@ -4,6 +4,7 @@ import random
 from typing import TYPE_CHECKING, Any
 
 import gevent
+from eth_typing import ChecksumAddress
 
 from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
 from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
@@ -342,11 +343,15 @@ def get_decoded_events_of_transaction(
         database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
+        relevant_address: ChecksumAddress | None = None,
 ) -> tuple[list['EvmEvent'], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
     on that object.
+
+    If relevant_address is provided then the added transactions are added linked to
+    the provided address.
 
     Returns the list of decoded events and the EVMTransactionDecoder
     """
@@ -365,6 +370,14 @@ def get_decoded_events_of_transaction(
         decoder = mappings_result[1](database, evm_inquirer, transactions)
     else:
         raise AssertionError('Unsupported chainID at tests')
+
+    if relevant_address is not None:
+        with evm_inquirer.database.conn.read_ctx() as cursor:
+            transactions.get_or_create_transaction(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=relevant_address,
+            )
 
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
     with patch_decoder_reload_data():
