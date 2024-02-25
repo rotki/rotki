@@ -50,12 +50,15 @@ log = RotkehlchenLogsAdapter(logger)
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 
-CURVE_API_URLS = [
+CURVE_API_URLS = (
     'https://api.curve.fi/api/getPools/ethereum/main',
     'https://api.curve.fi/api/getPools/ethereum/crypto',
     'https://api.curve.fi/api/getPools/ethereum/factory',
     'https://api.curve.fi/api/getPools/ethereum/factory-crypto',
-]
+    'https://api.curve.fi/api/getPools/ethereum/factory-crvusd',
+    'https://api.curve.fi/api/getPools/ethereum/factory-tricrypto',
+    'https://api.curve.fi/api/getPools/ethereum/factory-stable-ng',
+)
 
 
 CURVE_METAREGISTRY_METHODS = [
