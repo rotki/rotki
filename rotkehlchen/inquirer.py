@@ -757,12 +757,16 @@ class Inquirer:
     ) -> Price | None:
         """
         1. Obtain the pool for this token
-        2. Obtain prices for assets in pool
-        3. Obtain the virtual price for share and the balances of each
-        token in the pool
-        4. Calc the price for a share
+        2. Obtain total supply of lp tokens
+        3. Obtain value (in USD) for all assets in the pool
+        4. Calculate the price for an LP token
+
+        logic source: https://medium.com/coinmonks/the-joys-of-valuing-curve-lp-tokens-4e4a148eaeb9
 
         Returns the price of 1 LP token from the pool
+
+        May raise:
+        - RemoteError
         """
         ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
         ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here
@@ -779,8 +783,7 @@ class Inquirer:
             pool_tokens_addresses = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
 
         tokens: list[EvmToken] = []
-        # Translate addresses to tokens
-        try:
+        try:  # Translate addresses to tokens
             for token_address_str in pool_tokens_addresses:
                 token_address = string_to_evm_address(token_address_str)
                 if token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
@@ -803,14 +806,24 @@ class Inquirer:
                 return None
             prices.append(price)
 
-        # Query virtual price of LP share and balances in the pool for each token
+        # Query total supply of the LP token
+        contract = EvmContract(
+            address=lp_token.evm_address,
+            abi=ethereum.node_inquirer.contracts.abi('ERC20_TOKEN'),
+            deployed_block=0,
+        )
+        total_supply = contract.call(
+            node_inquirer=ethereum.node_inquirer,
+            method_name='totalSupply',
+        )
+
+        # Query balances for each token in the pool
         contract = EvmContract(
             address=pool_address,
             abi=ethereum.node_inquirer.contracts.abi('CURVE_POOL'),
             deployed_block=0,
         )
-        calls = [(pool_address, contract.encode(method_name='get_virtual_price'))]
-        calls += [
+        calls = [
             (pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(tokens))
         ]
@@ -832,14 +845,8 @@ class Inquirer:
             return None
         # Deserialize information obtained in the multicall execution
         data = []
-        # https://github.com/PyCQA/pylint/issues/4739
-        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
-        if not _check_curve_contract_call(virtual_price_decoded):
-            log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
-            return None
-        data.append(FVal(virtual_price_decoded[0]))
         for i, token in enumerate(tokens):
-            amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
+            amount_decoded = contract.decode(output[i][1], 'balances', arguments=[i])
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
@@ -849,24 +856,21 @@ class Inquirer:
             data.append(normalized_amount)
 
         # Prices and data should verify this relation for the following operations
-        if len(prices) != len(data) - 1:
+        if len(prices) != len(data):
             log.debug(
                 f'Length of prices {len(prices)} does not match len of data {len(data)} '
                 f'while querying curve pool price.',
             )
             return None
         # Total number of assets price in the pool
-        total_assets_price = sum(map(operator.mul, data[1:], prices))
-        if total_assets_price == 0:
+        total_assets_value = sum(map(operator.mul, data, prices))
+        if total_assets_value == 0:
             log.error(
                 f'Curve pool price returned unexpected data {data} that lead to a zero price.',
             )
             return None
 
-        # Calculate weight of each asset as the proportion of tokens value
-        weights = (data[x + 1] * prices[x] / total_assets_price for x in range(len(tokens)))
-        assets_price = FVal(sum(map(operator.mul, weights, prices)))
-        return (assets_price * FVal(data[0])) / (10 ** lp_token.get_decimals())
+        return (total_assets_value / total_supply) * (10 ** lp_token.get_decimals())
 
     def find_yearn_price(
             self,
