@@ -251,7 +251,7 @@ def test_receive_erc20_on_arbitrum_one(database, arbitrum_one_inquirer, arbitrum
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xbD91C9DF3C30F0e43B19b1dd05888CF9b647b781']])
-def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inquirer, arbitrum_one_accounts, caplog):  # noqa: E501
     """Test that LPT withdrawals from arbitrum to L1 work fine"""
     evmhash = deserialize_evm_tx_hash('0x90ca8a767118c27aa4f6370bc06d9f952ab88a9219431f68d8e2d33b4a15b395')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
@@ -301,6 +301,9 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inq
             address=ZERO_ADDRESS,
         ),
     ]
+    # also check that we only capture the erc20 log event and nothing else. Regression test for
+    # https://github.com/orgs/rotki/projects/11?pane=issue&itemId=54372368
+    assert '_decode_eth_withdraw_event failed due to Invalid ethereum address' not in caplog.text
 
 
 @pytest.mark.vcr()
