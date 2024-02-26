@@ -43,7 +43,7 @@ export function usePaginationFilters<
   defaultParams?: ComputedRef<Partial<U> | undefined>;
   defaultCollection?: () => S;
   defaultSortBy?: {
-    key?: keyof V;
+    key?: keyof V | (keyof V)[];
     ascending?: boolean[];
   };
 } = {}) {

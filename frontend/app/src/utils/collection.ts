@@ -88,15 +88,16 @@ export function setupEntryLimit(limit: Ref<number>, found: Ref<number>, total: R
 }
 
 export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
-  key?: keyof T;
+  key?: keyof T | (keyof T)[];
   ascending?: boolean[];
 }): TablePagination<T> {
   const { itemsPerPage } = useFrontendSettingsStore();
+  const sortByKey = defaultSortBy?.key;
   return {
     page: 1,
     itemsPerPage,
-    sortBy: defaultSortBy?.key
-      ? [defaultSortBy?.key]
+    sortBy: sortByKey
+      ? Array.isArray(sortByKey) ? sortByKey : [sortByKey]
       : ['timestamp' as keyof T],
     sortDesc: defaultSortBy?.ascending
       ? defaultSortBy?.ascending.map(bool => !bool)
