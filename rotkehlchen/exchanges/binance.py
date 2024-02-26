@@ -108,6 +108,8 @@ BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 BINANCE_BASE_URL: Final = 'binance.com/'
 BINANCEUS_BASE_URL: Final = 'binance.us/'
 
+BINANCE_ASSETS_STARTING_WITH_LD: Final = ('LDO',)
+
 
 class BinancePermissionError(RemoteError):
     """Exception raised when a binance permission problem is detected
@@ -480,8 +482,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             except DeserializationError as e:
                 raise RemoteError('Failed to deserialize an amount from binance spot balance asset entry') from e  # noqa: E501
 
-            if len(asset_symbol) >= 5 and asset_symbol.startswith('LD'):
-                # Some lending coins also appear to start with the LD prefix. Ignore them
+            if asset_symbol.startswith('LD') and asset_symbol not in BINANCE_ASSETS_STARTING_WITH_LD:  # noqa: E501
+                # when you receive the interest from your Flexible Earn products,
+                # the amount you receive in your Spot wallet is preceded by LD that
+                # stands for "Lending Daily". Ignore since we query them from other endpoint
                 continue
 
             amount = free + locked
