@@ -492,19 +492,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
                 if e.identifier != 'ETF':
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its balance query.',
                     )
                 continue
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
+                log.error(
                     f'Found unknown {self.name} asset {e.identifier}. '
                     f'Ignoring its balance query.',
                 )
                 continue
             except DeserializationError:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Found {self.name} asset with non-string type {type(entry["asset"])}. '
                     f'Ignoring its balance query.',
                 )
@@ -513,7 +513,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             try:
                 usd_price = Inquirer().find_usd_price(asset)
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Error processing {self.name} balance entry due to inability to '
                     f'query USD price: {e!s}. Skipping balance entry',
                 )
@@ -583,7 +583,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
                     asset = asset_from_binance(entry['asset'])
                 except (UnknownAsset, UnsupportedAsset) as e:
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found un{"known" if isinstance(e, UnknownAsset) else "supported"} '
                         f'{self.name} asset {e.identifier}. Ignoring its lending balance query.',
                     )
@@ -592,7 +592,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Error at deserializing {self.name} asset. {msg}. '
                         f'Ignoring its lending balance query.',
                     )
@@ -601,7 +601,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 try:
                     usd_price = Inquirer().find_usd_price(asset)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Error processing {self.name} balance entry due to inability to '
                         f'query USD price: {e!s}. Skipping balance entry',
                     )
@@ -695,7 +695,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         asset = asset_from_binance(entry['asset'])
                     except (UnsupportedAsset, UnknownAsset) as e:
                         error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
-                        self.msg_aggregator.add_warning(
+                        log.error(
                             f'Found {error_type} {self.name} asset {e.identifier}. '
                             f'Ignoring its lending interest history query.',
                         )
@@ -709,7 +709,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         )
                         usd_value = usd_price * interest_received
                     except NoPriceForGivenTimestamp as e:
-                        log.warning(
+                        log.error(
                             f'Could not find USD price of {asset} at {timestamp}. {e!s} '
                             f'Using zero usd_value for lending history entry.',
                         )
@@ -780,7 +780,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     asset = asset_from_binance(entry['asset'])
                 except (UnsupportedAsset, UnknownAsset) as e:
                     error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found {error_type} {self.name} asset {e.identifier}. '
                         f'Ignoring its lending interest history query.',
                     )
@@ -794,7 +794,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     )
                     usd_value = usd_price * interest_received
                 except NoPriceForGivenTimestamp as e:
-                    log.warning(
+                    log.error(
                         f'Could not find USD price of {asset} at {timestamp}. {e!s} '
                         f'Using zero usd_value for lending history entry.',
                     )
@@ -851,19 +851,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 try:
                     asset = asset_from_binance(entry['collateralCoin'])
                 except UnsupportedAsset as e:
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its futures balance query.',
                     )
                     continue
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found unknown {self.name} asset {e.identifier}. '
                         f'Ignoring its futures balance query.',
                     )
                     continue
                 except DeserializationError:
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Found {self.name} asset with non-string type '
                         f'{type(entry["asset"])}. Ignoring its futures balance query.',
                     )
@@ -872,7 +872,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 try:
                     usd_price = Inquirer().find_usd_price(asset)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Error processing {self.name} balance entry due to inability to '
                         f'query USD price: {e!s}. Skipping balance entry',
                     )
@@ -927,19 +927,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 try:
                     asset = asset_from_binance(entry['asset'])
                 except UnsupportedAsset as e:
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its margined futures balance query.',
                     )
                     continue
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
+                    log.error(
                         f'Found unknown {self.name} asset {e.identifier}. '
                         f'Ignoring its margined futures balance query.',
                     )
                     continue
                 except DeserializationError:
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Found {self.name} asset with non-string type '
                         f'{type(entry["asset"])}. Ignoring its margined futures balance query.',
                     )
@@ -948,7 +948,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 try:
                     usd_price = Inquirer().find_usd_price(asset)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    log.error(
                         f'Error processing {self.name} balance entry due to inability to '
                         f'query USD price: {e!s}. Skipping margined futures balance entry',
                     )
@@ -961,8 +961,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
         except KeyError as e:
             self.msg_aggregator.add_error(
-                f'At {self.name} margined futures balance query did not find '
-                f'expected key {e!s}. Skipping margined futures query...',
+                f'At {self.name} margin futures balance query did not find '
+                f'expected key {e!s}. Skipping margin futures query...',
             )
 
         return balances
@@ -984,19 +984,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             try:
                 asset = asset_from_binance(asset_name)
             except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
+                log.error(
                     f'Found unsupported {self.name} asset {asset_name}. '
                     f'Ignoring its {self.name} pool balance query. {e!s}',
                 )
                 return None
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
+                log.error(
                     f'Found unknown {self.name} asset {asset_name}. '
                     f'Ignoring its {self.name} pool balance query. {e!s}',
                 )
                 return None
             except DeserializationError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'{self.name} balance deserialization error '
                     f'for asset {asset_name}: {e!s}. Skipping entry.',
                 )
@@ -1005,7 +1005,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             try:
                 usd_price = Inquirer().find_usd_price(asset)
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                log.error(
                     f'Error processing {self.name} balance entry due to inability to '
                     f'query USD price: {e!s}. Skipping {self.name} pool balance entry',
                 )
@@ -1140,13 +1140,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     location=self.location,
                 )
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
+                log.error(
                     f'Found {self.name} trade with unknown asset '
                     f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
+                log.error(
                     f'Found {self.name} trade with unsupported asset '
                     f'{e.identifier}. Ignoring it.',
                 )
@@ -1241,12 +1241,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             )
             rate = deserialize_price(raw_data['price'])
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} fiat payment with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} fiat payment with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
@@ -1305,12 +1305,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} fiat deposit/withdrawal with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} fiat deposit/withdrawal with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
@@ -1370,12 +1370,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} deposit/withdrawal with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
+            log.error(
                 f'Found {self.location!s} deposit/withdrawal with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
