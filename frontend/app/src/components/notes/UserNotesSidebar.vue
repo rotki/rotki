@@ -74,7 +74,7 @@ const { isMdAndDown } = useBreakpoint();
 <template>
   <VNavigationDrawer
     v-model="display"
-    width="400px"
+    width="460px"
     class="user-notes-sidebar"
     :class="isMdAndDown ? 'user-notes-sidebar--mobile' : null"
     absolute
