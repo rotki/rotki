@@ -84,8 +84,10 @@ const items = computed(() => {
   const accounts = get(selectedAccounts);
   const selection = get(selectedCollection);
   const hasAccounts = accounts.length > 0;
+  const allNfts = get(nfts);
+
   if (hasAccounts || selection) {
-    return get(nfts)
+    return allNfts
       .filter(({ address, collection }) => {
         const sameAccount = hasAccounts
           ? accounts.find(a => a.address === address)
@@ -96,12 +98,13 @@ const items = computed(() => {
       .sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
   }
 
-  return get(nfts).sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
+  return allNfts.sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
 });
 
 const visibleNfts = computed(() => {
-  const start = (get(page) - 1) * get(itemsPerPage);
-  return get(items).slice(start, start + get(itemsPerPage));
+  const perPage = get(itemsPerPage);
+  const start = (get(page) - 1) * perPage;
+  return get(items).slice(start, start + perPage);
 });
 
 const availableAddresses = computed(() =>
