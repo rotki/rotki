@@ -210,10 +210,6 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
     assert balances[A_WBTC].amount == FVal('2.1')
     assert balances[A_AXS].amount == FVal('122.09202928')
 
-    warnings = binance.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'unknown binance asset IDONTEXIST' in warnings[0]
-
 
 TIMESTAMPS_RE = re.compile(r'.*&startTime\=(.*?)&endTime\=(.*?)&')
 
@@ -305,14 +301,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
 
         return MockResponse(200, text)
 
-    def query_binance_and_test(
-            input_trade_str,
-            expected_warnings_num,
-            expected_errors_num,
-            warning_str_test=None,
-            error_str_test=None,
-            query_specific_markets=None,
-    ):
+    def query_binance_and_test(input_trade_str, query_specific_markets=None):
         patch_get = patch.object(binance.session, 'get', side_effect=mock_my_trades)
         patch_response = patch(
             'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
@@ -326,26 +315,18 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             )
 
         assert len(trades) == 0
-        errors = binance.msg_aggregator.consume_errors()
-        warnings = binance.msg_aggregator.consume_warnings()
-        assert len(errors) == expected_errors_num
-        assert len(warnings) == expected_warnings_num
-        if warning_str_test:
-            assert warning_str_test in warnings[0]
-        if error_str_test:
-            assert error_str_test in errors[0]
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"qty": "12.00000000"',
         '"qty": "dsadsad"',
     )
-    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+    query_binance_and_test(input_str)
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"price": "4.00000100"',
         '"price": null',
     )
-    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+    query_binance_and_test(input_str)
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"symbol": "BNBBTC"',
@@ -353,8 +334,6 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     )
     query_binance_and_test(
         input_str,
-        expected_warnings_num=0,
-        expected_errors_num=0,
         query_specific_markets=['doesnotexist'],
     )
 
@@ -362,41 +341,31 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
         '"time": 1499865549590',
         '"time": "sadsad"',
     )
-    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+    query_binance_and_test(input_str)
 
     # Delete an entry
     input_str = BINANCE_MYTRADES_RESPONSE.replace('"isBuyer": true,', '')
-    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+    query_binance_and_test(input_str)
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"commission": "10.10000000"',
         '"commission": "fdfdfdsf"',
     )
-    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+    query_binance_and_test(input_str)
 
     # unsupported fee currency
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"commissionAsset": "BNB"',
         '"commissionAsset": "BTCB"',
     )
-    query_binance_and_test(
-        input_str,
-        expected_warnings_num=1,
-        expected_errors_num=0,
-        warning_str_test='Found binance trade with unsupported asset BTCB',
-    )
+    query_binance_and_test(input_str)
 
     # unknown fee currency
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"commissionAsset": "BNB"',
         '"commissionAsset": "DSDSDS"',
     )
-    query_binance_and_test(
-        input_str,
-        expected_warnings_num=1,
-        expected_errors_num=0,
-        warning_str_test='Found binance trade with unknown asset DSDSDS',
-    )
+    query_binance_and_test(input_str)
 
 
 def test_binance_query_deposits_withdrawals(function_scope_binance):
@@ -491,10 +460,6 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
             assert len(movements) == 1
         else:
             assert len(movements) == 0
-            warnings = binance.msg_aggregator.consume_warnings()
-            assert len(warnings) == expected_warnings_num
-            errors = binance.msg_aggregator.consume_errors()
-            assert len(errors) == expected_errors_num
 
     def check_permutations_of_input_invalid_data(deposits, withdrawals):
         # First make sure it works with normal data

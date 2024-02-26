@@ -338,11 +338,7 @@ class Opensea(ExternalServiceWithApiKey):
                     eth_usd_price=eth_usd_price,
                 ))
             except (UnknownAsset, DeserializationError) as e:
-                self.msg_aggregator.add_warning(
-                    f'Skipping detected NFT for {account} due to {e!s}. '
-                    f'Check out logs for more details',
-                )
-                log.warning(
+                log.error(
                     f'Skipping detected NFT for {account} due to {e!s}. '
                     f'Problematic entry: {entry} ',
                 )
