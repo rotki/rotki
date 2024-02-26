@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
+import type { PaginationRequestPayload } from '@/types/common';
 
 export const UserNote = z.object({
   identifier: z.number(),
@@ -16,13 +17,9 @@ export const UserNoteCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(UserNote),
 });
 
-export interface UserNotesFilter {
+export interface UserNotesRequestPayload extends PaginationRequestPayload<UserNote> {
   titleSubstring: string;
-  limit: number;
-  offset: number;
   location: string;
-  orderByAttributes: string[];
-  ascending: boolean[];
 }
 
 export enum NoteLocation {
