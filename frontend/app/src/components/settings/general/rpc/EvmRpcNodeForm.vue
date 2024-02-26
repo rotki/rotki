@@ -160,18 +160,17 @@ setSubmitFunc(save);
     />
 
     <div class="flex items-center gap-4">
-      <VSlider
-        :value="state.weight"
+      <RuiSlider
+        v-model="state.weight"
+        class="flex-1"
         :disabled="state.owned"
         :error-messages="toMessages(v$.weight)"
         :label="t('rpc_node_form.weight')"
-        min="0"
-        max="100"
-        persistent-hint
+        :min="0"
+        :max="100"
         :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
-        step="1"
-        thumb-label
-        @change="state.weight = $event"
+        :step="1"
+        show-thumb-label
         @blur="v$.weight.$touch()"
       />
       <AmountInput

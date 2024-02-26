@@ -23,7 +23,7 @@ describe('defiWizard.vue', () => {
     return mount(DefiWizard, {
       pinia,
       vuetify,
-      stubs: ['module-selector', 'module-address-selector', 'card'],
+      stubs: ['module-selector', 'module-address-selector'],
     });
   };
 

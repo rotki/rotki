@@ -37,7 +37,7 @@ describe('dateTimePicker.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VMenu: {
+        RuiMenu: {
           template: '<span><slot name="activator"/><slot /></span>',
         },
         VAutocomplete: VAutocompleteStub,

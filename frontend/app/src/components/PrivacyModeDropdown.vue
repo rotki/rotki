@@ -1,25 +1,26 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const tickLabels: string[] = [
-  t('user_dropdown.change_privacy_mode.normal_mode.label').toString(),
-  t('user_dropdown.change_privacy_mode.semi_private_mode.label').toString(),
-  t('user_dropdown.change_privacy_mode.private_mode.label').toString(),
+const labels = [
+  {
+    title: t('user_dropdown.change_privacy_mode.normal_mode.label'),
+    description: t(
+      'user_dropdown.change_privacy_mode.normal_mode.description',
+    ),
+  },
+  {
+    title: t('user_dropdown.change_privacy_mode.semi_private_mode.label'),
+    description: t(
+      'user_dropdown.change_privacy_mode.semi_private_mode.description',
+    ),
+  },
+  {
+    title: t('user_dropdown.change_privacy_mode.private_mode.label'),
+    description: t(
+      'user_dropdown.change_privacy_mode.private_mode.description',
+    ),
+  },
 ];
-
-// TODO: Remove css variable for tick description in Vue3 and use State Driven Dynamic CSS
-// https://v3.vuejs.org/api/sfc-style.html#state-driven-dynamic-css
-const sliderWrapperStyle: Record<string, string> = {
-  '--tick-description-3': `'${t(
-    'user_dropdown.change_privacy_mode.normal_mode.description',
-  ).toString()}'`,
-  '--tick-description-2': `'${t(
-    'user_dropdown.change_privacy_mode.semi_private_mode.description',
-  ).toString()}'`,
-  '--tick-description-1': `'${t(
-    'user_dropdown.change_privacy_mode.private_mode.description',
-  ).toString()}'`,
-};
 
 const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode }
   = usePrivacyMode();
@@ -41,21 +42,20 @@ function setData() {
 onMounted(setData);
 
 watch([enabled, multiplier], setData);
+
+const css = useCssModule();
 </script>
 
 <template>
-  <div class="privacy-mode-dropdown">
-    <VMenu
-      offset-y
-      :max-width="360"
-      :min-width="360"
-      :close-on-content-click="false"
-      content-class="privacy-mode-dropdown__menu"
+  <div class="relative">
+    <RuiMenu
+      menu-class="w-[22rem]"
+      :popper="{ placement: 'bottom-end' }"
     >
       <template #activator="{ on }">
         <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
-          class-name="privacy-mode-dropdown secondary--text text--lighten-4"
+          class-name="privacy-mode-dropdown !text-rui-text-secondary"
           @click="togglePrivacyMode()"
         >
           <RuiBadge
@@ -72,7 +72,7 @@ watch([enabled, multiplier], setData);
         </MenuTooltipButton>
         <RuiButton
           data-cy="privacy-menu"
-          class="privacy-mode-dropdown__expander"
+          :class="css.expander"
           icon
           variant="text"
           size="sm"
@@ -84,29 +84,48 @@ watch([enabled, multiplier], setData);
           />
         </RuiButton>
       </template>
-      <RuiCard no-padding>
-        <div
-          class="slider-wrapper"
-          :style="sliderWrapperStyle"
+      <div>
+        <label
+          class="px-4 py-8 flex"
+          for="privacy-mode-slider"
         >
-          <VSlider
+          <RuiSlider
+            id="privacy-mode-slider"
             :value="privacyMode"
+            class="h-40 w-8"
             data-cy="privacy-mode-dropdown__input"
-            :class="`selected-${privacyMode}`"
-            :tick-labels="tickLabels"
             :step="1"
             :max="2"
             :min="0"
-            ticks="always"
-            :tick-size="4"
+            show-ticks
+            hide-details
+            :tick-size="12"
+            slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
+            tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
             vertical
-            @change="changePrivacyMode($event)"
+            @input="changePrivacyMode($event)"
           />
-        </div>
-        <div class="scrambler flex items-center border-t border-default pt-4">
+          <div class="flex-1 flex flex-col-reverse justify-stretch -my-7 select-none">
+            <div
+              v-for="(label, index) in labels"
+              :key="label.title"
+              class="flex flex-col flex-1 justify-center gap-0.5 pl-4 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600"
+              :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': privacyMode >= index }"
+              @click="changePrivacyMode(index)"
+            >
+              <div class="uppercase text-sm font-bold">
+                {{ label.title }}
+              </div>
+              <div class="text-xs">
+                {{ label.description }}
+              </div>
+            </div>
+          </div>
+        </label>
+        <div class="flex items-center border-t border-default p-4">
           <SettingsOption
             #default="{ updateImmediate: updateScramble }"
-            class="scrambler-toggle"
+            :class="css.scrambler__toggle"
             setting="scrambleData"
             session-setting
           >
@@ -127,7 +146,7 @@ watch([enabled, multiplier], setData);
           <SettingsOption
             #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
-            class="scrambler-data"
+            :class="css.scrambler__input"
             :error-message="t('frontend_settings.validation.scramble.error')"
             session-setting
           >
@@ -161,165 +180,35 @@ watch([enabled, multiplier], setData);
             </RuiTextField>
           </SettingsOption>
         </div>
-      </RuiCard>
-    </VMenu>
+      </div>
+    </RuiMenu>
   </div>
 </template>
 
-<style scoped lang="scss">
-.privacy-mode-dropdown {
-  position: relative;
-
-  &__expander {
-    @apply p-0 absolute z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
-    @apply bg-[#f5f5f5] #{!important};
-  }
-
-  &__menu {
-    border-radius: 0.5rem;
-
-    .slider-wrapper {
-      @apply p-8;
-
-      .v-input {
-        :deep(.v-slider) {
-          .v-slider {
-            &__track {
-              &-container {
-                width: 4px;
-                left: 0;
-              }
-
-              &-background {
-                @apply bg-rui-grey-300;
-              }
-
-              &-fill {
-                @apply bg-rui-primary;
-              }
-            }
-
-            &__ticks-container {
-              left: 0;
-            }
-
-            &__tick {
-              --color: var(--v-rotki-light-grey-darken2);
-              width: 10px !important;
-              height: 10px !important;
-              left: calc(50% - 5px) !important;
-              border-radius: 50%;
-              background-color: var(--color) !important;
-              cursor: pointer;
-
-              &-label {
-                left: 30px !important;
-                text-transform: uppercase;
-                font-weight: bold;
-                font-size: 0.75rem;
-                color: var(--color);
-                text-align: left;
-                margin-top: 5px;
-
-                &:after {
-                  text-transform: none;
-                  font-weight: normal;
-                  display: block;
-                }
-              }
-
-              @for $i from 1 through 3 {
-                &:nth-child(#{$i}) {
-                  bottom: calc(150% - (50% * #{$i}) - 5px) !important;
-
-                  /* stylelint-disable selector-class-pattern */
-
-                  .v-slider {
-                    &__tick-label {
-                      &::after {
-                        content: var(--tick-description-#{$i});
-                      }
-                    }
-                  }
-                  /* stylelint-enable selector-class-pattern */
-                }
-              }
-            }
-
-            &__thumb {
-              &-container {
-                right: auto !important;
-                left: 0;
-              }
-
-              &::before {
-                transform: scale(1) !important;
-              }
-            }
-          }
-        }
-
-        /* stylelint-disable plugin/stylelint-bem-namics */
-        @for $i from 0 through 2 {
-          &.selected-#{$i} {
-            :deep(.v-slider) {
-              .v-slider {
-                &__tick {
-                  @for $j from 3 - $i through 3 {
-                    &:nth-child(#{$j}) {
-                      --color: var(--v-primary-base);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        /* stylelint-enable plugin/stylelint-bem-namics */
-      }
-    }
-
-    .scrambler {
-      @apply px-4 mb-4;
-
-      &-toggle {
-        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
-
-        :deep(svg) {
-          @apply text-white;
-        }
-      }
-
-      &-data {
-        :deep(fieldset) {
-          @apply rounded-l-none;
-        }
-      }
-    }
+<style module lang="scss">
+:global(.dark) {
+  .expander {
+    @apply text-white bg-black #{!important};
   }
 }
 
-.theme {
-  &--dark {
-    .privacy-mode-dropdown {
-      &__expander {
-        color: white !important;
-        background: black !important;
-      }
+.expander {
+  @apply p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
+  @apply bg-rui-grey-100 absolute #{!important};
+}
 
-      &__menu {
-        .slider-wrapper {
-          .v-input {
-            :deep(.v-slider) {
-              .v-slider {
-                &__tick {
-                  --color: var(--v-secondary-lighten2);
-                }
-              }
-            }
-          }
-        }
-      }
+.scrambler {
+  &__toggle {
+    @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
+
+    svg {
+      @apply text-white;
+    }
+  }
+
+  &__input {
+    fieldset {
+      @apply rounded-l-none #{!important};
     }
   }
 }

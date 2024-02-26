@@ -20,13 +20,11 @@ describe('userSecuritySettings.vue', () => {
       pinia,
       vuetify,
       stubs: [
-        'v-tooltip',
         'card-title',
         'asset-select',
         'asset-update',
         'confirm-dialog',
         'data-table',
-        'card',
       ],
       provide: libraryDefaults,
     });

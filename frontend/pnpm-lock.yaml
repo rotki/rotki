@@ -65,8 +65,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library-compat':
-        specifier: 0.20.0
-        version: 0.20.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16)
+        specifier: 0.21.0
+        version: 0.21.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16)
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -2734,8 +2734,8 @@ packages:
       - typescript
     dev: true
 
-  /@rotki/ui-library-compat@0.20.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16):
-    resolution: {integrity: sha512-/FH7YDtp43ecn3HPiZWXlU3mXx+PkEe2mXlffRyatDLXV/C2GEcHjl5xQNyFL7CyMMr9dV+3NCKzQ5leIsQNAA==}
+  /@rotki/ui-library-compat@0.21.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16):
+    resolution: {integrity: sha512-TFaOQehKh/M2iE9bHiwKltQNAQ8RgASenImwyC3mNsrWsdeltX9uxqaX4ZRSawaQ66Zw1NLVvdeG7FVb0FmD1A==}
     engines: {pnpm: '>=8 <9'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
