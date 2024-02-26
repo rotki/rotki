@@ -1592,6 +1592,8 @@ There are also some other fields that are completely optional and expand if you 
 Adding/editing a custom asset
 ===============================
 
+There is a lot of assets that rotki can't automatically track and they don't fit into traditional crypto assets. For example an ETF, real estate, ancient coins, valuable art etc. To represent those you can create custom assets, and then add a manual balance of those assets.
+
 .. image:: images/rotki_add_edit_custom_asset.png
    :alt: Add or edit a custom asset
    :align: center
