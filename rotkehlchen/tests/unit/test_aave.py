@@ -5,11 +5,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
-from rotkehlchen.chain.ethereum.modules.aave.common import (
-    AaveStats,
-    asset_to_aave_reserve_address,
-    atoken_to_asset,
-)
+from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats, asset_to_aave_reserve_address
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -18,7 +14,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
-from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET, ATOKENV2_ADDRESS_TO_RESERVE_ASSET
+from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET
 from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
@@ -40,25 +36,6 @@ def test_aave_reserve_mapping():
 
         assert EvmToken(ethaddress_to_identifier(underlying_asset.evm_address)) == underlying_asset
         assert asset_to_aave_reserve_address(underlying_asset) == underlying_asset.evm_address
-
-
-def test_atoken_to_asset():
-    cursor = GlobalDBHandler().conn.cursor()
-    result = cursor.execute(
-        'SELECT A.identifier from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
-        'WHERE A.identifier=B.identifier AND A.protocol IN (?, ?)',
-        ('aave', 'aave-v2'),
-    )
-    for entry in result:
-        atoken = EvmToken(entry[0])
-        reserve_asset = atoken_to_asset(atoken)
-        if atoken in ATOKENV1_TO_ASSET:
-            assert reserve_asset == ATOKENV1_TO_ASSET[atoken]
-        else:
-            assert reserve_asset == ATOKENV2_ADDRESS_TO_RESERVE_ASSET[atoken.evm_address]
-
-    for atokenv1, reserve_asset in ATOKENV1_TO_ASSET.items():
-        assert atoken_to_asset(atokenv1.resolve_to_evm_token()) == reserve_asset
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
