@@ -86,7 +86,7 @@
     "autoprefixer": "10.4.17",
     "cross-env": "7.0.3",
     "csv": "6.3.6",
-    "cypress": "13.3.0",
+    "cypress": "13.6.6",
     "dmg-license": "1.0.11",
     "dotenv": "14.3.2",
     "dotenv-cli": "5.1.0",
