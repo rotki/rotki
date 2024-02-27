@@ -375,14 +375,14 @@ defineExpose({
     </template>
     <template #item.amount="{ row }">
       <AmountDisplay
-        :value="row.balance.amount"
+        :value="row.amount"
         :loading="loading"
       />
     </template>
     <template #item.usdValue="{ row }">
       <AmountDisplay
         fiat-currency="USD"
-        :value="row.balance.usdValue"
+        :value="row.usdValue"
         show-currency="symbol"
         :loading="loading"
       />

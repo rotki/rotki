@@ -154,4 +154,5 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FIS',  # noqa: E501
     evm_address_to_identifier('0x62D0A8458eD7719FDAF978fe5929C6D342B0bFcE', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BEAMX',  # noqa: E501
     evm_address_to_identifier('0x8DE5B80a0C1B02Fe4976851D030B36122dbb8624', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VANRY',  # noqa: E501
+    evm_address_to_identifier('0x3429d03c6F7521AeC737a0BBF2E5ddcef2C3Ae31', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PIXEL',  # noqa: E501
 }
