@@ -65,8 +65,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library-compat':
-        specifier: 0.18.1
-        version: 0.18.1(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16)
+        specifier: 0.20.0
+        version: 0.20.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16)
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -2684,8 +2684,8 @@ packages:
       - typescript
     dev: true
 
-  /@rotki/ui-library-compat@0.18.1(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16):
-    resolution: {integrity: sha512-7U1r/c9tBIu+mAS4wJ9tjHbno8jreo4aHk6kh340stNXHuBlrwesugLvCZOnW3LZrxRd7Vf9p95hP1rFmOJiMg==}
+  /@rotki/ui-library-compat@0.20.0(@vueuse/core@10.7.2)(@vueuse/shared@10.7.2)(vue@2.7.16):
+    resolution: {integrity: sha512-/FH7YDtp43ecn3HPiZWXlU3mXx+PkEe2mXlffRyatDLXV/C2GEcHjl5xQNyFL7CyMMr9dV+3NCKzQ5leIsQNAA==}
     engines: {pnpm: '>=8 <9'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
@@ -11890,6 +11890,7 @@ packages:
 
   /workbox-google-analytics@7.0.0:
     resolution: {integrity: sha512-MEYM1JTn/qiC3DbpvP2BVhyIH+dV/5BjHk756u9VbwuAhu0QHyKscTnisQuz21lfRpOwiS9z4XdqeVAKol0bzg==}
+    deprecated: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
     dependencies:
       workbox-background-sync: 7.0.0
       workbox-core: 7.0.0

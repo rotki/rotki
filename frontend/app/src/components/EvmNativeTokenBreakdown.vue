@@ -111,15 +111,15 @@ function percentage(value: BigNumber) {
       />
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.balance.amount" />
+      <AmountDisplay :value="row.amount" />
     </template>
     <template #item.usdValue="{ row }">
       <AmountDisplay
         show-currency="symbol"
-        :amount="row.balance.amount"
+        :amount="row.amount"
         :price-asset="identifier"
         fiat-currency="USD"
-        :value="row.balance.usdValue"
+        :value="row.usdValue"
       />
     </template>
     <template #item.percentage="{ row }">
