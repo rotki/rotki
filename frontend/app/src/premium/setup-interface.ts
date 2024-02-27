@@ -49,8 +49,8 @@ const date: DateUtilities = {
   getDateInputISOFormat(format: string): string {
     return getDateInputISOFormat(format as DateFormat);
   },
-  convertToTimestamp(date: string, dateFormat: string): number {
-    return convertToTimestamp(date, dateFormat as DateFormat);
+  convertToTimestamp(date: string, dateFormat?: string): number {
+    return convertToTimestamp(date, dateFormat as DateFormat | undefined);
   },
 };
 

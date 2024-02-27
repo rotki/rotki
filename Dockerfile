@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=$BUILDPLATFORM node:18-buster as frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:20-buster as frontend-build-stage
 
 ARG BUILDARCH
 WORKDIR /app

@@ -27,9 +27,9 @@
   },
   "devDependencies": {
     "@vueuse/core": "10.7.2",
-    "core-js": "3.35.1",
+    "core-js": "3.36.0",
     "rimraf": "5.0.5",
-    "typescript": "5.2.2",
+    "typescript": "5.3.3",
     "vue": "2.7.16"
   }
 }

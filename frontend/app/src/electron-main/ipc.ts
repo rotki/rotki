@@ -50,34 +50,34 @@ export interface TrayUpdate {
 }
 
 export interface Listeners {
-  onError(backendOutput: string, code: BackendCode): void;
-  onAbout(): void;
-  onRestart(): void;
-  onProcessDetected(pids: string[]): void;
+  onError: (backendOutput: string, code: BackendCode) => void;
+  onAbout: () => void;
+  onRestart: () => void;
+  onProcessDetected: (pids: string[]) => void;
 }
 
 export interface Interop {
-  openUrl(url: string): void;
-  openPath(path: string): void;
-  closeApp(): void;
-  setListeners(listeners: Listeners): void;
-  openDirectory(title: string): Promise<undefined | string>;
-  premiumUserLoggedIn(premiumUser: boolean): void;
-  monitorDebugSettings(): void;
-  debugSettings?(): DebugSettings | undefined;
-  serverUrl(): string;
-  metamaskImport(): Promise<MetamaskImport>;
-  checkForUpdates(): Promise<boolean>;
-  downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
-  installUpdate(): Promise<boolean | Error>;
-  restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
-  setSelectedTheme(selectedTheme: number): Promise<boolean>;
-  version(): Promise<SystemVersion>;
-  isMac(): Promise<boolean>;
-  config(defaults: boolean): Promise<Partial<BackendOptions>>;
-  updateTray(trayUpdate: TrayUpdate): void;
-  logToFile(message: string): void;
-  storePassword(username: string, password: string): Promise<boolean>;
-  getPassword(username: string): Promise<string>;
-  clearPassword(): Promise<void>;
+  openUrl: (url: string) => void;
+  openPath: (path: string) => void;
+  closeApp: () => void;
+  setListeners: (listeners: Listeners) => void;
+  openDirectory: (title: string) => Promise<undefined | string>;
+  premiumUserLoggedIn: (premiumUser: boolean) => void;
+  monitorDebugSettings: () => void;
+  debugSettings?: () => DebugSettings | undefined;
+  serverUrl: () => string;
+  metamaskImport: () => Promise<MetamaskImport>;
+  checkForUpdates: () => Promise<boolean>;
+  downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
+  installUpdate: () => Promise<boolean | Error>;
+  restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
+  setSelectedTheme: (selectedTheme: number) => Promise<boolean>;
+  version: () => Promise<SystemVersion>;
+  isMac: () => Promise<boolean>;
+  config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
+  updateTray: (trayUpdate: TrayUpdate) => void;
+  logToFile: (message: string) => void;
+  storePassword: (username: string, password: string) => Promise<boolean>;
+  getPassword: (username: string) => Promise<string>;
+  clearPassword: () => Promise<void>;
 }
