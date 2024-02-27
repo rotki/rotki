@@ -52,7 +52,7 @@ export function useKebabVModel<
 }
 
 export function useRefPropVModel<P extends object, K extends keyof P>(obj: Ref<P>, key: K): WritableComputedRef<P[K]> {
-  return computed({
+  return computed<P[K]>({
     get() {
       return get(obj)[key];
     },

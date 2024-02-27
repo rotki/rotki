@@ -603,7 +603,7 @@ OSX
 The tl;dr version is:
 - Use a virtual env with Python 3.11.x
 - Confirm ``pip``(pip3) install correctly and up to date
-- Get your node under control with ``nvm``. It has been tested with v18
+- Get your node under control with ``nvm``. It has been tested with v20
 
 You will also need `VirtualEnv <https://virtualenv.pypa.io>`_.
 

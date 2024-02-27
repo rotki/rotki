@@ -35,22 +35,22 @@
   },
   "devDependencies": {
     "@intlify/eslint-plugin-vue-i18n": "2.0.0",
-    "@rotki/eslint-config": "2.4.4",
+    "@rotki/eslint-config": "2.4.5",
     "@rotki/eslint-plugin": "0.3.2",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
-    "eslint": "8.56.0",
+    "eslint": "8.57.0",
     "eslint-plugin-cypress": "2.15.1",
     "eslint-plugin-vuetify": "1.1.0",
-    "husky": "8.0.3",
-    "jsdom": "23.2.0",
-    "lint-staged": "15.2.0",
+    "husky": "9.0.11",
+    "jsdom": "24.0.0",
+    "lint-staged": "15.2.2",
     "rimraf": "5.0.5",
-    "semver": "7.5.4",
-    "typescript": "5.2.2"
+    "semver": "7.6.0",
+    "typescript": "5.3.3"
   },
   "engines": {
-    "node": ">=18 <19",
+    "node": ">=20 <21",
     "pnpm": ">=8.6 <9"
   },
   "workspaces": [
