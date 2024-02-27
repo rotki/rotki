@@ -3669,6 +3669,7 @@
       },
       "refresh_the_net_value_data": "Refresh the net value data",
       "select_asset": "Search for an asset",
+      "search_asset_to_see_graph": "Search for an asset to see the graph",
       "show_graph_for_selected_range": "Show the graph for the selected range",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",

@@ -67,7 +67,7 @@ function data(): DataUtilities {
 }
 
 function settings(): SettingsApi {
-  const { t } = useI18n();
+  const { t, te } = useI18n();
   const frontendStore = useFrontendSettingsStore();
   return {
     async update(settings: FrontendSettingsPayload): Promise<void> {
@@ -88,16 +88,7 @@ function settings(): SettingsApi {
     user: userSettings(),
     i18n: {
       t,
-      // TODO: deprecate on the next major components version (it's only here for backwards compat)
-      tc: (key, choice, values) => {
-        if (!isDefined(choice))
-          return t(key);
-
-        if (!values)
-          return t(key, choice);
-
-        return t(key, values, choice);
-      },
+      te,
     },
   };
 }

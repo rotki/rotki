@@ -138,14 +138,9 @@ export interface SettingsApi {
       values?: Record<string, unknown>,
       choice?: number
     ) => string;
-    /**
-     * @deprecated
-     */
-    tc: (
+    te: (
       key: string,
-      choice?: number,
-      values?: Record<string, unknown>
-    ) => string;
+    ) => boolean;
   };
 }
 
