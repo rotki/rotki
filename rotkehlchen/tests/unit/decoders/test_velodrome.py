@@ -322,6 +322,18 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
             notes='Burned 0.000037049807135563 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
+            sequence_index=39,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset(evm_address_to_identifier(address=pool, chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20)),  # noqa: E501
+            balance=Balance(amount=ZERO),
+            location_label=user_address,
+            notes=f'Revoke vAMM-OP/USDC spending approval of {user_address} by 0x9c12939390052919aF3155f41Bf4160Fd3666A6f',  # noqa: E501
+            address=string_to_evm_address('0x9c12939390052919aF3155f41Bf4160Fd3666A6f'),
+        ), EvmEvent(
+            tx_hash=evmhash,
             sequence_index=40,
             timestamp=timestamp,
             location=Location.OPTIMISM,
