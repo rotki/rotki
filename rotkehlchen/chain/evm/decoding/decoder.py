@@ -714,8 +714,21 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
-        if tx_log.topics[0] != ERC20_APPROVE or token is None:
+        if tx_log.topics[0] != ERC20_APPROVE:
             return DEFAULT_DECODING_OUTPUT
+
+        if token is None:
+            try:
+                token = get_or_create_evm_token(
+                    userdb=self.database,
+                    evm_address=tx_log.address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_kind=EvmTokenKind.ERC20,
+                    evm_inquirer=self.evm_inquirer,
+                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                )
+            except NotERC20Conformant:
+                return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 approval for now
 
         if len(tx_log.topics) == 3:
             owner_address = hex_or_bytes_to_address(tx_log.topics[1])
@@ -850,8 +863,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     evm_inquirer=self.evm_inquirer,
                     encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
                 )
-            except NotERC20Conformant:
-                return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 transfers for now
+            except (NotERC20Conformant, NotERC721Conformant):
+                return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
         else:
             found_token = token
 
