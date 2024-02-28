@@ -33,7 +33,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.description'),
     key: 'description',
-    cellClass: 'w-full',
+    cellClass: 'w-full !text-sm !text-rui-text-secondary',
   },
   {
     label: t('common.actions_text'),
