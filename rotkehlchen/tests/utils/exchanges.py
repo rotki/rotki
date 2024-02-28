@@ -5,7 +5,7 @@ from typing import Any
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
@@ -31,6 +31,7 @@ from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.exchanges.woo import Woo
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -1150,6 +1151,16 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
     raise AssertionError(f'Unexpected url {url} for test')
 
 
+def get_exchange_asset_symbols(exchange: Location) -> set[str]:
+    """Queries and returns all the asset symbols for a given exchange from the globalDB."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
+            (exchange.serialize_for_db(),),
+        )
+        return {asset[0] for asset in cursor}
+
+
 def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a pair from kraken to our base/quote asset tuple
 
@@ -1159,6 +1170,8 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
         - UnprocessableTradePair if the pair can't be processed and
           split into its base/quote assets
     """
+    kraken_assets = get_exchange_asset_symbols(Location.KRAKEN)
+
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]
@@ -1171,19 +1184,19 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
         return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
     elif pair == 'ETH2.SETH':
         return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
-    elif pair[0:2] in KRAKEN_TO_WORLD:
+    elif pair[0:2] in kraken_assets:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
-    elif pair[0:3] in KRAKEN_TO_WORLD or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
+    elif pair[0:3] in kraken_assets or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
-    elif pair[0:4] in KRAKEN_TO_WORLD:
+    elif pair[0:4] in kraken_assets:
         base_asset_str = pair[0:4]
         quote_asset_str = pair[4:]
-    elif pair[0:5] in KRAKEN_TO_WORLD:
+    elif pair[0:5] in kraken_assets:
         base_asset_str = pair[0:5]
         quote_asset_str = pair[5:]
-    elif pair[0:6] in KRAKEN_TO_WORLD:
+    elif pair[0:6] in kraken_assets:
         base_asset_str = pair[0:6]
         quote_asset_str = pair[6:]
     else:

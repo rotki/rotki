@@ -282,7 +282,11 @@ def test_assets_are_known(bybit_exchange: Bybit):
 
     for ticker in tickers['list']:
         try:
-            bybit_symbol_to_base_quote(ticker['symbol'])
+            bybit_symbol_to_base_quote(
+                symbol=ticker['symbol'],
+                five_letter_assets=bybit_exchange.five_letter_assets,
+                six_letter_assets=bybit_exchange.six_letter_assets,
+            )
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in Bybit. '

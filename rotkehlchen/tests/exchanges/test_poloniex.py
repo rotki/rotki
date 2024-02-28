@@ -5,7 +5,6 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
-from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -17,10 +16,12 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
     POLONIEX_TRADES_RESPONSE,
+    get_exchange_asset_symbols,
 )
 from rotkehlchen.tests.utils.history import assert_poloniex_asset_movements
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location
+
 
 TEST_RATE_STR = '0.00022999'
 TEST_AMOUNT_STR = '613.79427133'
@@ -230,7 +231,8 @@ def test_query_trade_history_unexpected_data(poloniex):
 
 def test_poloniex_assets_are_known(poloniex):
     unsupported_assets = set(UNSUPPORTED_POLONIEX_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_POLONIEX.values()))
+    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.POLONIEX))
+
     assert not common_items, f'Poloniex assets {common_items} should not be unsupported'
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:

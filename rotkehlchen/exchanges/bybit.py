@@ -13,7 +13,6 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
-from rotkehlchen.assets.exchanges_mappings.bybit import FIVE_LETTER_ASSETS_BYBIT, SIX_LETTER_ASSETS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -24,6 +23,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import pair_symbol_to_base_quote
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -60,7 +60,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def bybit_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
+def bybit_symbol_to_base_quote(
+        symbol: str,
+        five_letter_assets: set[str],
+        six_letter_assets: set[str],
+) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a bybit symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
@@ -82,8 +86,8 @@ def bybit_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWith
         base_asset, quote_asset = pair_symbol_to_base_quote(
             symbol=symbol,
             asset_deserialize_fn=asset_from_bybit,
-            five_letter_assets=FIVE_LETTER_ASSETS_BYBIT,
-            six_letter_assets=SIX_LETTER_ASSETS,
+            five_letter_assets=five_letter_assets,
+            six_letter_assets=six_letter_assets,
         )
 
     return base_asset, quote_asset
@@ -132,6 +136,19 @@ class Bybit(ExchangeInterface):
         }
         self.is_unified_account = False
         self.history_events_db = DBHistoryEvents(self.db)
+        self.five_letter_assets = set()
+        self.six_letter_assets = set()
+
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND LENGTH(exchange_symbol) >= 5;',  # noqa: E501
+                (Location.BYBIT.serialize_for_db(),),
+            )
+            for symbol in cursor:
+                if len(symbol[0]) == 5:
+                    self.five_letter_assets.add(symbol[0])
+                elif len(symbol[0]) == 6:
+                    self.six_letter_assets.add(symbol[0])
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
@@ -342,7 +359,11 @@ class Bybit(ExchangeInterface):
                     continue  # api doesn't allow to filter by status in the classic spot
 
                 try:
-                    base_asset, quote_asset = bybit_symbol_to_base_quote(raw_trade['symbol'])
+                    base_asset, quote_asset = bybit_symbol_to_base_quote(
+                        symbol=raw_trade['symbol'],
+                        five_letter_assets=self.five_letter_assets,
+                        six_letter_assets=self.six_letter_assets,
+                    )
                 except (UnknownAsset, UnprocessableTradePair, KeyError):
                     log.error(f'Could not read assets from bybit trade {raw_trade}')
                     continue

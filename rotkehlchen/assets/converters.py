@@ -1,32 +1,12 @@
 from collections.abc import Callable
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
-from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
-from rotkehlchen.assets.exchanges_mappings.bitpanda import WORLD_TO_BITPANDA
-from rotkehlchen.assets.exchanges_mappings.bitstamp import WORLD_TO_BITSTAMP
-from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
-from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
-from rotkehlchen.assets.exchanges_mappings.bybit import WORLD_TO_BYBIT
-from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
-from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
-from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
-from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
-from rotkehlchen.assets.exchanges_mappings.ftx import UNSUPPORTED_FTX_ASSETS, WORLD_TO_FTX
-from rotkehlchen.assets.exchanges_mappings.gemini import WORLD_TO_GEMINI
-from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
-from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
-from rotkehlchen.assets.exchanges_mappings.kucoin import WORLD_TO_KUCOIN
-from rotkehlchen.assets.exchanges_mappings.nexo import WORLD_TO_NEXO
-from rotkehlchen.assets.exchanges_mappings.okx import WORLD_TO_OKX
-from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
-from rotkehlchen.assets.exchanges_mappings.uphold import WORLD_TO_UPHOLD
-from rotkehlchen.assets.exchanges_mappings.woo import WOO_NAME_TO_TOKEN_SYMBOL
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -559,7 +539,6 @@ UNSUPPORTED_BITTREX_ASSETS = {
     'GIF',
 }
 
-
 UNSUPPORTED_BINANCE_ASSETS = {
     'ETF',  # ETF is a dead coin given to all ETH holders. Just ignore
     # BTCB, USDSB, BGBP are not yet supported anywhere else
@@ -869,6 +848,75 @@ UNSUPPORTED_OKX_ASSETS = {
     'OPTIMUS',
 }
 
+UNSUPPORTED_FTX_ASSETS = (
+    'AAPL',
+    'ABNB',
+    'ACB',
+    'AMC',
+    'AMD',
+    'AMZN',
+    'APHA',
+    'ASDBEAR',  # no cryptocompare/coingecko data
+    'ASDBULL',  # no cryptocompare/coingecko data
+    'ASDHALF',  # no cryptocompare/coingecko data
+    'ASDHEDGE',  # no cryptocompare/coingecko data
+    'ARKK',
+    'BABA',
+    'BB',
+    'BILI',
+    'BITO',  # no cryptocompare/coingecko data
+    'BITW',
+    'BNTX',
+    'DOGEBEAR2021',  # no cryptocompare/coingecko data
+    'MATICBEAR2021',  # no cryptocompare/coingecko data
+    'TOMOBEAR2021',  # no cryptocompare/coingecko data
+    'FB',
+    'GME',
+    'GOOGL',
+    'GRTBEAR',  # no cryptocompare/coingecko data
+    'GRTBULL',  # no cryptocompare/coingecko data
+    'KSHIB',  # kiloshiba no cryptocompare/coingecko data
+    'MSTR',
+    'NFLX',
+    'NOK',
+    'NVDA',
+    'PFE',
+    'PYPL',
+    'SLV',  # iShares Silver Trust
+    'SPY',
+    'SQ',
+    'TLRY',
+    'TSM',
+    'TSLA',
+    'TWTR',
+    'UBER',
+    'USO',
+    'ZM',
+    'DKNG',  # no cc/coingecko data https://twitter.com/FTX_Official/status/1404867122598072321
+    'ETHE',  # no cryptocompare/coingecko data
+    'GBTC',  # no cryptocompare/coingecko data
+    'GDX',  # no cryptocompare/coingecko data
+    'GDXJ',  # no cryptocompare/coingecko data
+    'GLD',  # no cryptocompare/coingecko data
+    'GLXY',  # no cryptocompare/coingecko data
+    'HOOD',  # no cryptocompare/coingecko data
+    'HUM'  # no cryptocompare/coingecko data
+    'MRNA',  # no cryptocompare/coingecko data
+    'PENN',  # no cryptocompare/coingecko data
+    'SECO',  # pool in bonfida
+    'ZECBULL',  # no cryptocompare/coingecko data
+    'ZECBEAR',  # no cryptocompare/coingecko data
+    'BYND',  # Beyond Meat Tokenized stock
+    'CGC',  # Trade Canopy Growth Corp Tokenized stock
+    'MRNA',  # Moderna Tokenized stock
+    'XRPMOON',  # no cryptocompare/coingecko data
+    'KBTT',  # no cryptocompare/coingecko data
+    'KSOS',  # no cryptocompare/coingecko data
+    'GALFAN',  # no cc/coingecko data
+    'APEAMC',  # no cc/coingecko data
+    'WAXL',  # no cc/coingecko data
+)
+
 # Exchange symbols that are clearly for testing purposes. They appear in all
 # these places: supported currencies list, supported exchange pairs list and
 # currency map.
@@ -881,28 +929,6 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
     'TESTUSDT',
     'TESTUSDTF0',
 )
-
-POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
-BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
-BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
-BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
-FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
-KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
-KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
-ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
-COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
-COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
-UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
-BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
-GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
-NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
-BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
-CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
-BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
-OKX_TO_WORLD = {v: k for k, v in WORLD_TO_OKX.items()}
-BYBIT_TO_WORLD = {v: k for k, v in WORLD_TO_BYBIT.items()}
-COMMON_IDENTIFIERS_TO_WORLD = {v: k for k, v in COMMON_ASSETS_MAPPINGS.items()}
-WOO_TO_WORLD = COMMON_IDENTIFIERS_TO_WORLD | WOO_NAME_TO_TOKEN_SYMBOL
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -950,7 +976,11 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
     elif kraken_name in {'ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF', 'AUD'}:
         name = kraken_name
     else:
-        name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
+        name = GlobalDBHandler.get_assetid_from_exchange_name(
+            exchange=Location.KRAKEN,
+            symbol=kraken_name,
+            default=kraken_name,
+        )
     return symbol_to_asset_or_token(name)
 
 
@@ -966,14 +996,16 @@ def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
     if poloniex_name in UNSUPPORTED_POLONIEX_ASSETS:
         raise UnsupportedAsset(poloniex_name)
 
-    our_name = POLONIEX_TO_WORLD.get(poloniex_name, poloniex_name)
-    return symbol_to_asset_or_token(our_name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.POLONIEX,
+        symbol=poloniex_name,
+        default=poloniex_name,
+    ))
 
 
 def asset_from_bitfinex(
         bitfinex_name: str,
         currency_map: dict[str, str],
-        is_currency_map_updated: bool = True,
 ) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -989,9 +1021,6 @@ def asset_from_bitfinex(
     if bitfinex_name in UNSUPPORTED_BITFINEX_ASSETS:
         raise UnsupportedAsset(bitfinex_name)
 
-    if is_currency_map_updated is False:
-        currency_map.update(BITFINEX_TO_WORLD)
-
     symbol = currency_map.get(bitfinex_name, bitfinex_name)
     return symbol_to_asset_or_token(symbol)
 
@@ -1006,8 +1035,11 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
     # bitstamp assets are read as lowercase from the exchange
-    name = BITSTAMP_TO_WORLD.get(bitstamp_name.upper(), bitstamp_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITSTAMP,
+        symbol=bitstamp_name.upper(),
+        default=bitstamp_name,
+    ))
 
 
 def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
@@ -1022,8 +1054,11 @@ def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
     if bittrex_name in UNSUPPORTED_BITTREX_ASSETS:
         raise UnsupportedAsset(bittrex_name)
 
-    name = BITTREX_TO_WORLD.get(bittrex_name, bittrex_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITTREX,
+        symbol=bittrex_name,
+        default=bittrex_name,
+    ))
 
 
 def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
@@ -1037,8 +1072,11 @@ def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
             f'Got non-string type {type(coinbase_pro_name)} for '
             f'coinbasepro asset',
         )
-    name = COINBASE_PRO_TO_WORLD.get(coinbase_pro_name, coinbase_pro_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.COINBASEPRO,
+        symbol=coinbase_pro_name,
+        default=coinbase_pro_name,
+    ))
 
 
 def asset_from_binance(binance_name: str) -> AssetWithOracles:
@@ -1056,8 +1094,11 @@ def asset_from_binance(binance_name: str) -> AssetWithOracles:
     if binance_name in RENAMED_BINANCE_ASSETS:
         return Asset(RENAMED_BINANCE_ASSETS[binance_name]).resolve_to_asset_with_oracles()
 
-    name = BINANCE_TO_WORLD.get(binance_name, binance_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BINANCE,
+        symbol=binance_name,
+        default=binance_name,
+    ))
 
 
 def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWithOracles:
@@ -1082,8 +1123,11 @@ def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWit
     if not isinstance(cb_name, str):
         raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
 
-    name = COINBASE_TO_WORLD.get(cb_name, cb_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.COINBASE,
+        symbol=cb_name,
+        default=cb_name,
+    ))
 
 
 def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
@@ -1098,8 +1142,11 @@ def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
     if kucoin_name in UNSUPPORTED_KUCOIN_ASSETS:
         raise UnsupportedAsset(kucoin_name)
 
-    name = KUCOIN_TO_WORLD.get(kucoin_name, kucoin_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.KUCOIN,
+        symbol=kucoin_name,
+        default=kucoin_name,
+    ))
 
 
 def asset_from_gemini(symbol: str) -> AssetWithOracles:
@@ -1114,8 +1161,11 @@ def asset_from_gemini(symbol: str) -> AssetWithOracles:
     if symbol in UNSUPPORTED_GEMINI_ASSETS:
         raise UnsupportedAsset(symbol)
 
-    name = GEMINI_TO_WORLD.get(symbol, symbol)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.GEMINI,
+        symbol=symbol,
+        default=symbol,
+    ))
 
 
 def asset_from_blockfi(symbol: str) -> AssetWithOracles:
@@ -1127,8 +1177,11 @@ def asset_from_blockfi(symbol: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(symbol)} for blockfi asset')
 
     symbol = symbol.upper()
-    name = BLOCKFI_TO_WORLD.get(symbol, symbol)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BLOCKFI,
+        symbol=symbol,
+        default=symbol,
+    ))
 
 
 def asset_from_iconomi(symbol: str) -> AssetWithOracles:
@@ -1142,8 +1195,12 @@ def asset_from_iconomi(symbol: str) -> AssetWithOracles:
     symbol = symbol.upper()
     if symbol in UNSUPPORTED_ICONOMI_ASSETS:
         raise UnsupportedAsset(symbol)
-    name = ICONOMI_TO_WORLD.get(symbol, symbol)
-    return symbol_to_asset_or_token(name)
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.ICONOMI,
+        symbol=symbol,
+        default=symbol,
+    ))
 
 
 def asset_from_uphold(symbol: str) -> AssetWithOracles:
@@ -1155,8 +1212,11 @@ def asset_from_uphold(symbol: str) -> AssetWithOracles:
     if not isinstance(symbol, str):
         raise DeserializationError(f'Got non-string type {type(symbol)} for uphold asset')
 
-    name = UPHOLD_TO_WORLD.get(symbol, symbol)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.UPHOLD,
+        symbol=symbol,
+        default=symbol,
+    ))
 
 
 def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
@@ -1171,8 +1231,11 @@ def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
     if nexo_name == 'USDTERC':  # map USDTERC to USDT
         nexo_name = strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')
 
-    our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
-    return symbol_to_asset_or_token(our_name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.NEXO,
+        symbol=nexo_name,
+        default=nexo_name,
+    ))
 
 
 def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
@@ -1184,8 +1247,11 @@ def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
     if not isinstance(bitpanda_name, str):
         raise DeserializationError(f'Got non-string type {type(bitpanda_name)} for bitpanda asset')
 
-    our_name = BITPANDA_TO_WORLD.get(bitpanda_name, bitpanda_name)
-    return symbol_to_asset_or_token(our_name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITPANDA,
+        symbol=bitpanda_name,
+        default=bitpanda_name,
+    ))
 
 
 def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
@@ -1199,8 +1265,11 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
             f'Got non-string type {type(cryptocom_name)} for cryptocom asset',
         )
 
-    symbol = CRYPTOCOM_TO_WORLD.get(cryptocom_name, cryptocom_name)
-    return symbol_to_asset_or_token(symbol)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.CRYPTOCOM,
+        symbol=cryptocom_name,
+        default=cryptocom_name,
+    ))
 
 
 def asset_from_okx(okx_name: str) -> AssetWithOracles:
@@ -1215,8 +1284,11 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     if okx_name in UNSUPPORTED_OKX_ASSETS:
         raise UnsupportedAsset(okx_name)
 
-    name = OKX_TO_WORLD.get(okx_name, okx_name)
-    return symbol_to_asset_or_token(name)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.OKX,
+        symbol=okx_name,
+        default=okx_name,
+    ))
 
 
 def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
@@ -1234,7 +1306,11 @@ def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
     if ftx_name == 'SRM_LOCKED':
         name = strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF')  # SRM
     else:
-        name = FTX_TO_WORLD.get(ftx_name, ftx_name)
+        name = GlobalDBHandler.get_assetid_from_exchange_name(
+            exchange=Location.FTX,
+            symbol=ftx_name,
+            default=ftx_name,
+        )
     return symbol_to_asset_or_token(name)
 
 
@@ -1247,8 +1323,11 @@ def asset_from_bybit(name: str) -> AssetWithOracles:
     if not isinstance(name, str):
         raise DeserializationError(f'Got non-string type {type(name)} for bybit asset')
 
-    identifier = BYBIT_TO_WORLD.get(name, name)
-    return symbol_to_asset_or_token(identifier)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BYBIT,
+        symbol=name,
+        default=name,
+    ))
 
 
 def asset_from_woo(woo_name: str) -> AssetWithOracles:
@@ -1258,9 +1337,17 @@ def asset_from_woo(woo_name: str) -> AssetWithOracles:
     """
     if not isinstance(woo_name, str):
         raise DeserializationError(f'Got non-string type {type(woo_name)} for woo asset')
-    woo_name = woo_name.split('_')[-1] if woo_name not in WOO_TO_WORLD else woo_name  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
-    name = WOO_TO_WORLD.get(woo_name, woo_name)
-    return symbol_to_asset_or_token(name)
+
+    woo_name = GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.WOO,
+        symbol=woo_name,
+        default=woo_name.split('_')[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
+    )
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.WOO,
+        symbol=woo_name,
+        default=woo_name,
+    ))
 
 
 def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
@@ -1273,8 +1360,11 @@ def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
             f'Got non-string type {type(common_identifier)} for an asset',
         )
 
-    symbol = COMMON_IDENTIFIERS_TO_WORLD.get(common_identifier, common_identifier)
-    return symbol_to_asset_or_token(symbol)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=None,
+        symbol=common_identifier,
+        default=common_identifier,
+    ))
 
 
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {

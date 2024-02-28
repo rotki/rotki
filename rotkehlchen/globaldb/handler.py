@@ -39,6 +39,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
+    Location,
     Price,
     Timestamp,
 )
@@ -1978,3 +1979,32 @@ class GlobalDBHandler:
             return (Asset(identifier),)
 
         return collection_assets
+
+    @staticmethod
+    def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
+        """Returns the asset's identifier from the ticker symbol of the given exchange according to
+        location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
+        If the mapping is not present returns default."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            location_filter, bindings = '', [symbol]
+            if exchange is not None:
+                location_filter = 'location IS ? OR'
+                bindings.append(exchange.serialize_for_db())
+            identifier = cursor.execute(
+                f'SELECT local_id FROM location_asset_mappings WHERE exchange_symbol=? AND ({location_filter} location IS NULL)',  # noqa: E501
+                bindings,
+            ).fetchone()
+
+        return default if identifier is None else identifier[0]
+
+    @staticmethod
+    def get_exchange_name_from_assetid(exchange: Location, asset_identifier: str) -> str | None:
+        """Returns the ticker symbol used in the given exchange from asset's identifier according
+        to location_asset_mappings table. If the mapping is not present returns None."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            identifier = cursor.execute(
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
+                (exchange.serialize_for_db(), asset_identifier),
+            ).fetchone()
+
+        return None if identifier is None else identifier[0]

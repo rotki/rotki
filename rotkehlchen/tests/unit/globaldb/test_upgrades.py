@@ -11,6 +11,7 @@ from freezegun import freeze_time
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_keys_and_values_like,
@@ -18,6 +19,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.schema import DB_CREATE_LOCATION_ASSET_MAPPINGS
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.globaldb.upgrades.v3_v4 import (
@@ -33,7 +35,14 @@ from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, CacheType, ChainID, EvmTokenKind, Timestamp
+from rotkehlchen.types import (
+    YEARN_VAULTS_V1_PROTOCOL,
+    CacheType,
+    ChainID,
+    EvmTokenKind,
+    Location,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
@@ -504,6 +513,68 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler):
             'SELECT COUNT(*) FROM common_asset_details WHERE identifier=?',
             ('VELO',),
         ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v6_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [6])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
+    """Test the global DB upgrade from v6 to v7"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        # check that location_asset_mappings table is not present in the database
+        assert table_exists(
+            cursor=cursor,
+            name='location_asset_mappings',
+        ) is False
+
+    # execute upgrade
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 7)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+        )
+    assert globaldb.get_setting_value('version', 0) == 7
+    with globaldb.conn.read_ctx() as cursor:
+        # check that location_asset_mappings table is present in the database
+        assert table_exists(
+            cursor=cursor,
+            name='location_asset_mappings',
+            schema=DB_CREATE_LOCATION_ASSET_MAPPINGS,
+        ) is True
+        # check that correct number of exchanges mappings are present.
+        # exact values can be tested by pasting this gist here and running it
+        # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
+        for exchange, expected_mappings_count in (
+            (None, 33),
+            (Location.KRAKEN.serialize_for_db(), 228),
+            (Location.POLONIEX.serialize_for_db(), 147),
+            (Location.BITTREX.serialize_for_db(), 121),
+            (Location.BINANCE.serialize_for_db(), 135),
+            (Location.COINBASE.serialize_for_db(), 78),
+            (Location.COINBASEPRO.serialize_for_db(), 82),
+            (Location.GEMINI.serialize_for_db(), 26),
+            (Location.CRYPTOCOM.serialize_for_db(), 0),
+            (Location.BITSTAMP.serialize_for_db(), 16),
+            (Location.BITFINEX.serialize_for_db(), 60),
+            (Location.ICONOMI.serialize_for_db(), 36),
+            (Location.KUCOIN.serialize_for_db(), 233),
+            (Location.FTX.serialize_for_db(), 45),
+            (Location.NEXO.serialize_for_db(), 2),
+            (Location.BLOCKFI.serialize_for_db(), 5),
+            (Location.UPHOLD.serialize_for_db(), 37),
+            (Location.BITPANDA.serialize_for_db(), 41),
+            (Location.OKX.serialize_for_db(), 65),
+            (Location.WOO.serialize_for_db(), 32),
+            (Location.BYBIT.serialize_for_db(), 78),
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ?',
+                (exchange,),
+            ).fetchone()[0] == expected_mappings_count
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
