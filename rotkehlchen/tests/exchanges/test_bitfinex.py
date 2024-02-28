@@ -12,7 +12,6 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -28,6 +27,7 @@ from rotkehlchen.exchanges.bitfinex import (
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_NEO
+from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
@@ -51,7 +51,8 @@ def test_assets_are_known(mock_bitfinex):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
     unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_BITFINEX.values()))
+    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.BITFINEX))
+
     assert not common_items, f'Bitfinex assets {common_items} should not be unsupported'
     currencies_response = mock_bitfinex._query_currencies()
     if currencies_response.success is False:

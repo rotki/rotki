@@ -15,17 +15,14 @@ from gevent.lock import Semaphore
 from requests.adapters import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import (
-    BITFINEX_EXCHANGE_TEST_ASSETS,
-    BITFINEX_TO_WORLD,
-    asset_from_bitfinex,
-)
+from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -661,7 +658,13 @@ class Bitfinex(ExchangeInterface):
                     bfx_symbol: symbol for bfx_symbol, symbol in response_list[0]
                     if bfx_symbol not in set(BITFINEX_EXCHANGE_TEST_ASSETS)
                 }
-                currency_map.update(BITFINEX_TO_WORLD)
+                with GlobalDBHandler().conn.read_ctx() as cursor:
+                    cursor.execute(
+                        'SELECT exchange_symbol, local_id FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
+                        (Location.BITFINEX.serialize_for_db(),),
+                    )
+                    for bfx_symbol, asset_id in cursor:
+                        currency_map[bfx_symbol] = asset_id
 
         return CurrencyMapResponse(
             success=was_successful,

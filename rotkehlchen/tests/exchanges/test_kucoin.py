@@ -9,7 +9,6 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
-from rotkehlchen.assets.exchanges_mappings.kucoin import WORLD_TO_KUCOIN
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -18,6 +17,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeTyp
 from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
+from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -57,7 +57,8 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
 
     # Extract the unique symbols from the exchange pairs
     unsupported_assets = set(UNSUPPORTED_KUCOIN_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_KUCOIN.values()))
+    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.KUCOIN))
+
     assert not common_items, f'Kucoin assets {common_items} should not be unsupported'
     for entry in response_dict['data']:
         symbol = entry['currency']

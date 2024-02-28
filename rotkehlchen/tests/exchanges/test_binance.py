@@ -14,7 +14,6 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
-from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
@@ -41,6 +40,7 @@ from rotkehlchen.tests.utils.exchanges import (
     BINANCE_MYTRADES_RESPONSE,
     BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
     assert_binance_asset_movements_result,
+    get_exchange_asset_symbols,
     mock_binance_balance_response,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -173,7 +173,8 @@ def test_trade_from_binance(function_scope_binance):
 )
 def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     unsupported_assets = set(UNSUPPORTED_BINANCE_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))
+    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.BINANCE))
+
     assert not common_items, f'Binance assets {common_items} should not be unsupported'
 
     exchange_data = requests.get('https://api3.binance.com/api/v3/exchangeInfo').json()
