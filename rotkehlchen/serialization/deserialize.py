@@ -4,11 +4,9 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import maybe_read_integer, read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
@@ -301,42 +299,11 @@ def _split_pair(pair: TradePair) -> tuple[str, str]:
     return assets[0], assets[1]
 
 
-def pair_get_assets(pair: TradePair) -> tuple[AssetWithOracles, AssetWithOracles]:
-    """Returns a tuple with the (base, quote) assets
-
-    May raise:
-    - UnprocessableTradePair
-    - UnknownAsset
-    """
-    base_str, quote_str = _split_pair(pair)
-    base_asset = get_crypto_asset_by_symbol(base_str)
-    if base_asset is None:
-        raise UnknownAsset(base_str)
-    quote_asset = get_crypto_asset_by_symbol(quote_str)
-    if quote_asset is None:
-        raise UnknownAsset(quote_str)
-    return base_asset, quote_asset
-
-
 def get_pair_position_str(pair: TradePair, position: str) -> str:
     """Get the string representation of an asset of a trade pair"""
     assert position in {'first', 'second'}
     base_str, quote_str = _split_pair(pair)
     return base_str if position == 'first' else quote_str
-
-
-def deserialize_trade_pair(pair: str) -> TradePair:
-    """Takes a trade pair string, makes sure it's valid, wraps it in proper type and returns it"""
-    try:
-        pair_get_assets(TradePair(pair))
-    except UnprocessableTradePair as e:
-        raise DeserializationError(str(e)) from e
-    except UnknownAsset as e:
-        raise DeserializationError(
-            f'Unknown asset {e.identifier} found while processing trade pair',
-        ) from e
-
-    return TradePair(pair)
 
 
 def deserialize_asset_movement_category(
