@@ -291,12 +291,14 @@ When rotki begins it tries to connect to a local kusama node running with an rpc
 Connecting to a Polkadot Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just like with kusama you can set the rpc endpoint of a Polkadot node you would like to connect to here.
+Just like with kusama you can set the RPC endpoint of a Polkadot node you would like to connect to here.
 
 Connecting to a ETH consensus layer beacon node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can set the RPC endpoint for the ethereum consensus layer beacon node to use when contacting the consensus layer. If it cannot be reached or if it is invalid, beaconcha.in will be used.
+
+If you are running a DAppNode Ethereum validator, you will find the RPC node setting that Rotki needs in the DAppNode Package for the Execution Client, where it is called the "Querying API".
 
 Price Oracle settings
 ---------------------
