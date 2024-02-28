@@ -79,7 +79,7 @@ watch(tag, () => {
   <div class="flex flex-col gap-4">
     <div class="flex items-center gap-4">
       <TagIcon
-        class="min-w-[7rem]"
+        class="[&>div]:min-w-[7rem]"
         :tag="tag"
       />
       <RuiTooltip :popper="{ placement: 'bottom' }">

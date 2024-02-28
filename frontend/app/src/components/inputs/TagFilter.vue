@@ -73,11 +73,9 @@ function remove(tag: string) {
     <template #item="{ item }">
       <TagIcon
         :tag="item"
+        show-description
         small
       />
-      <span class="tag-input__tag__description ml-4">
-        {{ item.description }}
-      </span>
     </template>
   </VAutocomplete>
 </template>
