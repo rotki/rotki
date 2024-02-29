@@ -83,6 +83,10 @@ export function useClearableMessages() {
   const { t } = useI18n();
 
   const clear = () => {
+    set(success, '');
+  };
+
+  const clearAll = () => {
     set(error, '');
     set(success, '');
   };
@@ -107,8 +111,8 @@ export function useClearableMessages() {
 
   const wait = async () => await promiseTimeout(200);
   const { start, stop } = useTimeoutFn(clear, 3500);
-  watch([error, success], ([error, success]) => {
-    if (error || success)
+  watch(success, (success) => {
+    if (success)
       start();
   });
 
@@ -119,6 +123,6 @@ export function useClearableMessages() {
     setError,
     wait,
     stop,
-    clear,
+    clearAll,
   };
 }
