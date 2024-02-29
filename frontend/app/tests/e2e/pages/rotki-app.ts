@@ -114,25 +114,21 @@ export class RotkiApp {
     cy.get('[data-cy=privacy-menu]').as('menu');
     if (show) {
       cy.get('@menu').click();
-      cy.get('[data-cy="privacy-mode-scramble__toggle"]');
+      cy.get('.privacy-menu-content').should('exist');
     }
     else {
       cy.get('@menu').click({ force: true });
+      cy.get('.privacy-menu-content').should('not.exist');
     }
   }
 
   changePrivacyMode(mode: number) {
     this.togglePrivacyMenu(true);
     cy.get(
-      '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container',
-    ).as('input');
+      `[data-cy="privacy-mode-dropdown__input"] + div > div:nth-child(${mode + 1})`,
+    ).as('label');
 
-    cy.get('@input').focus();
-    cy.get('@input').type('{downArrow}'.repeat(2));
-
-    if (mode > 0)
-      cy.get('@input').type('{upArrow}'.repeat(mode));
-
+    cy.get('@label').click();
     this.togglePrivacyMenu();
   }
 

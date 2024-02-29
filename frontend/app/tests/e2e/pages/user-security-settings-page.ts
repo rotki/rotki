@@ -1,9 +1,9 @@
 export class UserSecuritySettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
-    cy.get('[data-cy=user-dropdown]').should('be.visible');
+    cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('.user-dropdown__settings').click();
-    cy.get('[data-cy=user-dropdown]').should('not.be.visible');
+    cy.get('[data-cy=user-dropdown]').should('not.exist');
     cy.get('a.settings__data-security').click();
   }
 

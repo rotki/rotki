@@ -49,7 +49,7 @@ const css = useCssModule();
 <template>
   <div class="relative">
     <RuiMenu
-      menu-class="w-[22rem]"
+      menu-class="privacy-menu-content w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
     >
       <template #activator="{ on }">
@@ -186,12 +186,6 @@ const css = useCssModule();
 </template>
 
 <style module lang="scss">
-:global(.dark) {
-  .expander {
-    @apply text-white bg-black #{!important};
-  }
-}
-
 .expander {
   @apply p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
   @apply bg-rui-grey-100 absolute #{!important};
@@ -210,6 +204,12 @@ const css = useCssModule();
     fieldset {
       @apply rounded-l-none #{!important};
     }
+  }
+}
+
+:global(.dark) {
+  .expander {
+    @apply text-white bg-black #{!important};
   }
 }
 </style>
