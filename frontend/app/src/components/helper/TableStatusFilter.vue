@@ -7,7 +7,6 @@ defineOptions({
 <template>
   <RuiMenu
     v-bind="$attrs"
-    close-on-content-click
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners

@@ -171,6 +171,7 @@ watch(loading, async (isLoading, wasLoading) => {
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="nft_balance_table__column-filter__button"
+            custom-color
             v-on="on"
           >
             <RuiIcon name="more-2-fill" />

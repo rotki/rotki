@@ -7,11 +7,11 @@ const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
 const { appBarColor } = useTheme();
-const { isLgAndDown } = useBreakpoint();
+const { isXlAndDown } = useBreakpoint();
 
 const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
-  () => get(showDrawer) && !get(isMini) && !get(isLgAndDown),
+  () => get(showDrawer) && !get(isMini) && !get(isXlAndDown),
 );
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
@@ -21,7 +21,7 @@ const { updateTray } = useInterop();
 const toggleDrawer = visibilityStore.toggleDrawer;
 
 onMounted(() => {
-  set(showDrawer, !get(isLgAndDown));
+  set(showDrawer, !get(isXlAndDown));
 });
 
 watch(overall, (overall) => {
@@ -62,7 +62,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
       class="app__app-bar"
     >
       <VAppBarNavIcon
-        class="secondary--text text--lighten-4"
+        class="!text-rui-text-secondary"
         @click="toggleDrawer()"
       />
       <AppIndicators />

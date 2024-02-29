@@ -13,6 +13,7 @@ withDefaults(
     href?: string;
     variant?: ButtonProps['variant'];
     size?: ButtonProps['size'];
+    customColor?: boolean;
   }>(),
   {
     retainFocusOnClick: false,
@@ -20,6 +21,7 @@ withDefaults(
     variant: 'text',
     size: undefined,
     href: undefined,
+    customColor: false,
   },
 );
 </script>
@@ -37,7 +39,7 @@ withDefaults(
         :href="href"
         :tag="href ? 'a' : 'button'"
         target="_blank"
-        :class="[className, !size && '!w-12 !h-12']"
+        :class="[className, !size && '!w-12 !h-12', !customColor && '!text-rui-text-secondary']"
         :size="size"
         :retain-focus-on-click="retainFocusOnClick"
         v-bind="$attrs"

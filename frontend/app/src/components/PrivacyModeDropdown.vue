@@ -55,7 +55,7 @@ const css = useCssModule();
       <template #activator="{ on }">
         <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
-          class-name="privacy-mode-dropdown !text-rui-text-secondary"
+          class-name="privacy-mode-dropdown"
           @click="togglePrivacyMode()"
         >
           <RuiBadge

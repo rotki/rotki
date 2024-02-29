@@ -35,7 +35,6 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
             variant="text"
             color="primary"
             icon
-            size="sm"
             v-bind="attrs"
             v-on="on"
           >

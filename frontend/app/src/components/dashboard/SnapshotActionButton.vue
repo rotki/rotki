@@ -97,6 +97,7 @@ async function importSnapshot() {
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
         :variant="!dark ? 'default' : 'text'"
         size="sm"
+        custom-color
         v-on="on"
       >
         <slot name="button-icon">

@@ -70,7 +70,7 @@ function calculateFontSize(symbol: string) {
             currency: currency.tickerSymbol,
           })
         "
-        class-name="secondary--text text--lighten-4 currency-dropdown text-[1.375rem] font-bold"
+        class-name="currency-dropdown text-[1.375rem] font-bold"
         v-on="on"
       >
         {{ currency.unicodeSymbol }}

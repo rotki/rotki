@@ -97,7 +97,6 @@ watch(isSyncing, (current, prev) => {
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="tooltip"
-            class-name="secondary--text text--lighten-4"
             v-on="on"
           >
             <RuiBadge
@@ -195,7 +194,6 @@ watch(isSyncing, (current, prev) => {
         </template>
         <MenuTooltipButton
           :tooltip="t('sync_indicator.menu_tooltip')"
-          class-name="secondary--text text--lighten-4"
           :href="href"
           @click="onLinkClick()"
         >

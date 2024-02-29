@@ -16,7 +16,6 @@ function toggleVisibility() {
 <template>
   <MenuTooltipButton
     :tooltip="t('notes_menu.tooltip')"
-    class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
     <RuiIcon

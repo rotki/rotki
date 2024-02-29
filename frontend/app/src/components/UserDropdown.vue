@@ -44,7 +44,7 @@ const { darkModeEnabled } = useDarkMode();
       <template #activator="{ on }">
         <MenuTooltipButton
           tooltip="Account"
-          class-name="user-dropdown !text-rui-text-secondary"
+          class-name="user-dropdown"
           v-on="on"
         >
           <RuiIcon name="account-circle-line" />

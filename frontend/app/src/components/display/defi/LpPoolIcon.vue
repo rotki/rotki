@@ -40,7 +40,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex relative">
     <div class="flex items-center">
       <AssetIcon
         circle
@@ -58,53 +58,53 @@ const css = useCssModule();
         padding="0"
         :show-chain="false"
       />
-      <div
-        v-else
-        :class="[css['second-icon'], css['more-assets']]"
-      >
-        +{{ assets.length - 1 }}
-      </div>
+      <RuiMenu v-else>
+        <template #activator="{ on }">
+          <div
+            :class="[css['second-icon'], css['more-assets']]"
+            v-on="on"
+          >
+            +{{ assets.length - 1 }}
+          </div>
+        </template>
+        <div class="p-2 flex">
+          <AssetIcon
+            v-for="asset in assets"
+            :key="asset"
+            circle
+            :identifier="asset"
+            size="32px"
+            padding="0"
+            :show-chain="false"
+          />
+        </div>
+      </RuiMenu>
     </div>
     <div :class="css['lp-type-icon']">
-      <VAvatar
-        :size="20"
-        color="grey lighten-4"
-        :class="css['lp-type-icon-avatar']"
-      >
-        <AppImage
-          :width="16"
-          :height="16"
-          :src="icon"
-        />
-      </VAvatar>
+      <AppImage
+        size="1rem"
+        :src="icon"
+      />
     </div>
   </div>
 </template>
 
 <style module lang="scss">
 .second-icon {
-  z-index: 0;
-  margin-left: -10px;
+  @apply z-0 -ml-2.5;
 }
 
 .more-assets {
-  border-radius: 50%;
-  font-size: 1rem;
-  width: 32px;
-  height: 32px;
-  background: var(--v-graphFade-darken4);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply cursor-pointer rounded-full w-8 h-8 bg-rui-grey-300 text-rui-text flex items-center justify-center font-bold;
 }
 
 .lp-type-icon {
-  margin-left: -12px;
-  margin-top: -12px;
+  @apply relative p-0.5 w-5 h-5 rounded-full bg-rui-grey-200 -ml-3 -mt-3;
 }
 
-.lp-type-icon-avatar {
-  padding: 2px;
+:global(.dark) {
+  .more-assets {
+    @apply bg-rui-grey-700;
+  }
 }
 </style>
