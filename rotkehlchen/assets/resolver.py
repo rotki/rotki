@@ -75,7 +75,7 @@ class AssetResolver:
 
         # If was not found in the cache try querying it in the globaldb
         try:
-            asset = GlobalDBHandler().resolve_asset(identifier=identifier)
+            asset = GlobalDBHandler.resolve_asset(identifier=identifier)
         except UnknownAsset:
             if identifier not in CONSTANT_ASSETS:
                 raise
@@ -98,7 +98,7 @@ class AssetResolver:
         from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
 
         try:
-            asset_type = GlobalDBHandler().get_asset_type(identifier)
+            asset_type = GlobalDBHandler.get_asset_type(identifier)
         except UnknownAsset:
             if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
                 raise
@@ -127,13 +127,13 @@ class AssetResolver:
         from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
 
         try:
-            normalized_id = GlobalDBHandler().asset_id_exists(identifier)
+            normalized_id = GlobalDBHandler.asset_id_exists(identifier)
         except UnknownAsset:
             if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
                 raise
 
             log.debug(f'Attempt to find normalized asset ID for {identifier} using the packaged database')  # noqa: E501
-            normalized_id = GlobalDBHandler().asset_id_exists(identifier=identifier, use_packaged_db=True)  # noqa: E501
+            normalized_id = GlobalDBHandler.asset_id_exists(identifier=identifier, use_packaged_db=True)  # noqa: E501
 
         return normalized_id
 

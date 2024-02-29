@@ -101,8 +101,8 @@ class Liquity(HasDSProxy):
         )
 
         data: dict[ChecksumEvmAddress, Trove] = {}
-        eth_price = Inquirer().find_usd_price(A_ETH)
-        lusd_price = Inquirer().find_usd_price(A_LUSD)
+        eth_price = Inquirer.find_usd_price(A_ETH)
+        lusd_price = Inquirer.find_usd_price(A_LUSD)
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
@@ -222,7 +222,7 @@ class Liquity(HasDSProxy):
                     break
 
             # get price information for the asset and deserialize the amount
-            asset_price = Inquirer().find_usd_price(asset)
+            asset_price = Inquirer.find_usd_price(asset)
             amount = deserialize_asset_amount(
                 token_normalized_value_decimals(gain_info, 18),
             )

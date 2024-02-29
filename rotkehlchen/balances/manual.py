@@ -50,7 +50,7 @@ def get_manually_tracked_balances(
     balances_with_value = []
     for entry in balances:
         try:
-            price = Inquirer().find_usd_price(entry.asset)
+            price = Inquirer.find_usd_price(entry.asset)
         except RemoteError as e:
             db.msg_aggregator.add_warning(
                 f'Could not find price for {entry.asset.identifier} during '

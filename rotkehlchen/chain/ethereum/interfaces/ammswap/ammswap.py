@@ -86,7 +86,7 @@ class AMMSwapPlatform:
         asset_price: AssetToPrice = {}
 
         for known_asset in known_assets:
-            asset_usd_price = Inquirer().find_usd_price(known_asset)
+            asset_usd_price = Inquirer.find_usd_price(known_asset)
 
             if asset_usd_price != ZERO_PRICE:
                 asset_price[known_asset.evm_address] = asset_usd_price
@@ -266,7 +266,7 @@ class AMMSwapPlatform:
                 # Otherwise keep existing price (zero)
                 total_user_balance = ZERO
                 for asset in lp.assets:
-                    asset_usd_price = Inquirer().find_usd_price(asset.token)
+                    asset_usd_price = Inquirer.find_usd_price(asset.token)
                     # Update <LiquidityPoolAsset> if asset USD price exists
                     if asset_usd_price != ZERO_PRICE:
                         asset.usd_price = asset_usd_price

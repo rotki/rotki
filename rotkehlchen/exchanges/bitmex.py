@@ -247,7 +247,7 @@ class Bitmex(ExchangeInterface):
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
-            usd_price = Inquirer().find_usd_price(self.btc)
+            usd_price = Inquirer.find_usd_price(self.btc)
         except RemoteError as e:
             msg = f'Bitmex API request failed due to: {e!s}'
             log.error(msg)

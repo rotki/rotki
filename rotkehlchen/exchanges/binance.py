@@ -515,7 +515,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 continue
 
             try:
-                usd_price = Inquirer().find_usd_price(asset)
+                usd_price = Inquirer.find_usd_price(asset)
             except RemoteError as e:
                 log.error(
                     f'Error processing {self.name} balance entry due to inability to '
@@ -603,7 +603,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     continue
 
                 try:
-                    usd_price = Inquirer().find_usd_price(asset)
+                    usd_price = Inquirer.find_usd_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -874,7 +874,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     continue
 
                 try:
-                    usd_price = Inquirer().find_usd_price(asset)
+                    usd_price = Inquirer.find_usd_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -950,7 +950,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     continue
 
                 try:
-                    usd_price = Inquirer().find_usd_price(asset)
+                    usd_price = Inquirer.find_usd_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -1007,7 +1007,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 return None
 
             try:
-                usd_price = Inquirer().find_usd_price(asset)
+                usd_price = Inquirer.find_usd_price(asset)
             except RemoteError as e:
                 log.error(
                     f'Error processing {self.name} balance entry due to inability to '

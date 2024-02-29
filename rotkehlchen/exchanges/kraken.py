@@ -431,7 +431,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             if our_asset.identifier != 'KFEE':
                 # There is no price value for KFEE
                 try:
-                    usd_price = Inquirer().find_usd_price(our_asset)
+                    usd_price = Inquirer.find_usd_price(our_asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing kraken balance entry due to inability to '

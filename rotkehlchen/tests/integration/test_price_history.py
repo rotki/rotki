@@ -39,7 +39,7 @@ def test_price_queries(price_historian, database):
         timestamp=Timestamp(1438390800),
         price=Price(FVal('20')),
     )]
-    GlobalDBHandler().add_historical_prices(cache_data)
+    GlobalDBHandler.add_historical_prices(cache_data)
     price_historian._PriceHistorian__instance._cryptocompare = Cryptocompare(database=database)
     price_historian.set_oracles_order(price_historian._oracles)
     assert price_historian.query_historical_price(A_DASH, A_USD, 1438387700) == FVal('10')

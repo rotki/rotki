@@ -552,13 +552,13 @@ class RestAPI:
                 fiat_currencies.append(asset.resolve_to_fiat_asset())
                 continue
 
-            usd_price = Inquirer().find_usd_price(asset)
+            usd_price = Inquirer.find_usd_price(asset)
             if usd_price == ZERO_PRICE:
                 asset_rates[asset] = ZERO_PRICE
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
-        asset_rates.update(Inquirer().get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # type narrowing does not work here
+        asset_rates.update(Inquirer.get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # type narrowing does not work here
         return _wrap_in_ok_result(process_result(asset_rates))
 
     @async_api_call()

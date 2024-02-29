@@ -53,14 +53,14 @@ def _save_or_update_spam_assets(
         try:
             evm_token.check_existence()
         except UnknownAsset:  # token does not exist
-            GlobalDBHandler().add_asset(evm_token)
+            GlobalDBHandler.add_asset(evm_token)
             # add the asset to the asset table in the user's db
             with db.user_write() as cursor:
                 db.add_asset_identifiers(cursor, [evm_token.identifier])
         else:  # token exists, make sure it has spam protocol set
             db_evm_token = EvmToken(evm_token.identifier)
             if db_evm_token.protocol != SPAM_PROTOCOL:
-                GlobalDBHandler().edit_evm_token(entry=evm_token)
+                GlobalDBHandler.edit_evm_token(entry=evm_token)
         # save the asset instead of the EvmToken as we don't need all the extra information later
         tokens_to_ignore.add(Asset(evm_token.identifier))
 

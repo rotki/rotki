@@ -245,7 +245,7 @@ class RotkiDataUpdater:
         remote_id_to_local_id = {}
         for single_abi_data in data['abis_data']:
             # store a mapping of the virtual id to the id in the user's globaldb
-            abi_id = GlobalDBHandler().get_or_write_abi(
+            abi_id = GlobalDBHandler.get_or_write_abi(
                 serialized_abi=single_abi_data['value'],
                 abi_name=single_abi_data.get('name'),
             )

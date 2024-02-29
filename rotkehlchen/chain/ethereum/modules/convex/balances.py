@@ -60,7 +60,7 @@ class ConvexBalances(ProtocolWithGauges):
         is variable.
         The balances variable is mutated in this function.
         """
-        cvx_price = Inquirer().find_usd_price(self.cvx)
+        cvx_price = Inquirer.find_usd_price(self.cvx)
         try:
             call_output = self.evm_inquirer.multicall(
                 calls=[(

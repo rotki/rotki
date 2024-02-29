@@ -277,7 +277,7 @@ class Compound(EthereumModule):
                     )
                     continue
 
-                usd_price = Inquirer().find_usd_price(asset)
+                usd_price = Inquirer.find_usd_price(asset)
                 profit_so_far[address][asset] = Balance(
                     amount=profit_amount,
                     usd_value=profit_amount * usd_price,
@@ -293,7 +293,7 @@ class Compound(EthereumModule):
                 if loss_so_far[address][asset].usd_value < ZERO:
                     amount = loss_so_far[address][asset].amount
                     loss_so_far[address][asset] = Balance(
-                        amount=amount, usd_value=amount * Inquirer().find_usd_price(asset),
+                        amount=amount, usd_value=amount * Inquirer.find_usd_price(asset),
                     )
 
             # add pending rewards not collected to the reward assets

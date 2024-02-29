@@ -205,7 +205,7 @@ def _token_mappings_address_to_name(
     """
     if chain_address.blockchain is None or chain_address.blockchain.is_evm() is False:
         return None
-    return GlobalDBHandler().get_token_name(address=chain_address.address, chain_id=chain_address.blockchain.to_chain_id())  # noqa: E501
+    return GlobalDBHandler.get_token_name(address=chain_address.address, chain_id=chain_address.blockchain.to_chain_id())  # noqa: E501
 
 
 def _ens_address_to_name(

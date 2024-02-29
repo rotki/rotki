@@ -684,7 +684,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
             ),
         ],
     )
-    GlobalDBHandler().add_asset(bp_token_2)
+    GlobalDBHandler.add_asset(bp_token_2)
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

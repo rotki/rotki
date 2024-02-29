@@ -531,7 +531,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             return
 
         self.balances.btc = {}
-        btc_usd_price = Inquirer().find_usd_price(A_BTC)
+        btc_usd_price = Inquirer.find_usd_price(A_BTC)
         balances = get_bitcoin_addresses_balances(self.accounts.btc)
         for account, balance in balances.items():
             self.balances.btc[account] = Balance(
@@ -555,7 +555,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             return
 
         self.balances.bch = {}
-        bch_usd_price = Inquirer().find_usd_price(A_BCH)
+        bch_usd_price = Inquirer.find_usd_price(A_BCH)
         balances = get_bitcoin_cash_addresses_balances(self.accounts.bch)
         for account, balance in balances.items():
             self.balances.bch[account] = Balance(
@@ -579,7 +579,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if len(self.accounts.ksm) == 0:
             return
 
-        ksm_usd_price = Inquirer().find_usd_price(A_KSM)
+        ksm_usd_price = Inquirer.find_usd_price(A_KSM)
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.kusama,
@@ -611,7 +611,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             return
 
         # Query avax balance
-        avax_usd_price = Inquirer().find_usd_price(A_AVAX)
+        avax_usd_price = Inquirer.find_usd_price(A_AVAX)
         account_amount = self.avalanche.get_multiavax_balance(self.accounts.avax)
         for account, amount in account_amount.items():
             usd_value = amount * avax_usd_price
@@ -635,7 +635,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if len(self.accounts.dot) == 0:
             return
 
-        dot_usd_price = Inquirer().find_usd_price(A_DOT)
+        dot_usd_price = Inquirer.find_usd_price(A_DOT)
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.polkadot,
@@ -922,7 +922,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Query native token balances
         manager = cast('EvmManager', self.get_chain_manager(chain))
-        native_token_usd_price = Inquirer().find_usd_price(manager.node_inquirer.native_token)
+        native_token_usd_price = Inquirer.find_usd_price(manager.node_inquirer.native_token)
         chain_balances = self.balances.get(chain)
         for account, balance in manager.node_inquirer.get_multi_balance(accounts).items():
             chain_balances[account] = BalanceSheet(

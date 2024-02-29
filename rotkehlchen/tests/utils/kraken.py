@@ -369,11 +369,11 @@ def create_kraken_trade(
     if base_asset is None or quote_asset is None:
         pair = random.choice(tradeable_pairs)
     else:
-        base_symbol = GlobalDBHandler().get_exchange_name_from_assetid(
+        base_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
             exchange=Location.KRAKEN,
             asset_identifier=base_asset,
         )
-        quote_symbol = GlobalDBHandler().get_exchange_name_from_assetid(
+        quote_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
             exchange=Location.KRAKEN,
             asset_identifier=quote_asset,
         )

@@ -215,7 +215,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         - Existence of a cached price
         - Last rate limit
         """
-        data_range = GlobalDBHandler().get_historical_price_range(
+        data_range = GlobalDBHandler.get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
@@ -635,7 +635,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         now = ts_now()
 
         # If we got cached data for up to 1 hour ago there is no point doing anything
-        data_range = GlobalDBHandler().get_historical_price_range(
+        data_range = GlobalDBHandler.get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
@@ -649,7 +649,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
             return
 
         if purge_old:
-            GlobalDBHandler().delete_historical_prices(
+            GlobalDBHandler.delete_historical_prices(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 source=HistoricalPriceOracle.CRYPTOCOMPARE,
@@ -683,7 +683,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         now_ts = ts_now()
         # save time at start of the query, in case the query does not complete due to rate limit
         self.last_histohour_query_ts = now_ts
-        range_result = GlobalDBHandler().get_historical_price_range(
+        range_result = GlobalDBHandler.get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
@@ -747,7 +747,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
                 )
                 continue
 
-        GlobalDBHandler().add_historical_prices(prices)
+        GlobalDBHandler.add_historical_prices(prices)
         self.last_histohour_query_ts = ts_now()  # also save when last query finished
 
     def query_historical_price(
@@ -778,7 +778,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         except (UnknownAsset, WrongAssetType) as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
         # check DB cache
-        price_cache_entry = GlobalDBHandler().get_historical_price(
+        price_cache_entry = GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
@@ -804,7 +804,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
             )
 
         log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
-        GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
             from_asset=from_asset,
             to_asset=to_asset,
             source=HistoricalPriceOracle.CRYPTOCOMPARE,

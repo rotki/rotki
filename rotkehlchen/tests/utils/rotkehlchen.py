@@ -247,7 +247,7 @@ def setup_balances(
 
     if manual_current_prices is not None:
         for current_price in manual_current_prices:
-            GlobalDBHandler().add_manual_latest_price(
+            GlobalDBHandler.add_manual_latest_price(
                 from_asset=current_price[0],
                 to_asset=current_price[1],
                 price=current_price[2],

@@ -317,7 +317,7 @@ class Gemini(ExchangeInterface):
 
                 asset = asset_from_gemini(entry['currency'])
                 try:
-                    usd_price = Inquirer().find_usd_price(asset=asset)
+                    usd_price = Inquirer.find_usd_price(asset=asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing gemini {balance_type} balance result due to '

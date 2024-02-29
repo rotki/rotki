@@ -767,7 +767,7 @@ class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOrac
             ) from e
 
         # check DB cache
-        price_cache_entry = GlobalDBHandler().get_historical_price(
+        price_cache_entry = GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
@@ -806,7 +806,7 @@ class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOrac
 
         # save result in the DB and return
         date_timestamp = create_timestamp(date, formatstr='%d-%m-%Y')
-        GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
             from_asset=from_asset,
             to_asset=to_asset,
             source=HistoricalPriceOracle.COINGECKO,

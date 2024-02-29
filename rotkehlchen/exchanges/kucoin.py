@@ -499,7 +499,7 @@ class Kucoin(ExchangeInterface):
                 )
                 continue
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError:
                 self.msg_aggregator.add_error(
                     f'Failed to deserialize a kucoin balance after failing to '

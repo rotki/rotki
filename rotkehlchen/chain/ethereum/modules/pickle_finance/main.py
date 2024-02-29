@@ -75,7 +75,7 @@ class PickleFinance(EthereumModule):
         )
         reward_outputs, dill_outputs = outputs[:len(addresses)], outputs[len(addresses):]
 
-        pickle_price = Inquirer().find_usd_price(A_PICKLE)
+        pickle_price = Inquirer.find_usd_price(A_PICKLE)
         for idx, output in enumerate(reward_outputs):
             status_rewards, result = output
             status_dill, result_dill = dill_outputs[idx]

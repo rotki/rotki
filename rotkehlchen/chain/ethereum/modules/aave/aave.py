@@ -230,7 +230,7 @@ class Aave(EthereumModule):
             if borrow_balance is not None:
                 this_amount += borrow_balance.balance.amount
 
-            usd_price = Inquirer().find_usd_price(borrowed_asset)
+            usd_price = Inquirer.find_usd_price(borrowed_asset)
             total_lost[borrowed_asset] = Balance(
                 # add total_lost amount in case of liquidations
                 amount=total_lost[borrowed_asset].amount + this_amount,
@@ -285,7 +285,7 @@ class Aave(EthereumModule):
                 arguments=[user_address],
             )
             unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.get_decimals())))  # noqa: E501
-            usd_price = Inquirer().find_usd_price(atoken)
+            usd_price = Inquirer.find_usd_price(atoken)
             total_earned_atokens[atoken] += Balance(
                 amount=unpaid_interest,
                 usd_value=unpaid_interest * usd_price,

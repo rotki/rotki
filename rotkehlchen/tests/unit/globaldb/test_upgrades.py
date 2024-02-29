@@ -194,7 +194,7 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler):
             ('BIFI', 'BIFI'),
         )
         assert cursor.fetchone()[0] == 0
-        assert GlobalDBHandler().get_schema_version() == 3
+        assert GlobalDBHandler.get_schema_version() == 3
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
@@ -289,7 +289,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler):
         assert cursor.fetchone()[0] == _count_sql_file_sentences('populate_asset_collections.sql')
         cursor.execute('SELECT COUNT(*) FROM multiasset_mappings')
         assert cursor.fetchone()[0] == _count_sql_file_sentences('populate_multiasset_mappings.sql')  # noqa: E501
-        assert GlobalDBHandler().get_schema_version() == 4
+        assert GlobalDBHandler.get_schema_version() == 4
 
         # test that the blockchain column is nullable
         cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501

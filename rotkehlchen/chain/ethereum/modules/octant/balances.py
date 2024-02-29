@@ -56,7 +56,7 @@ class OctantBalances(ProtocolWithBalance):
             log.error(f'Failed to query octant locked balances due to {e!s}')
             return balances
 
-        glm_price = Inquirer().find_usd_price(self.glm)
+        glm_price = Inquirer.find_usd_price(self.glm)
         for idx, result in enumerate(call_output):
             address = addresses_with_deposits[idx]
             amount_raw = deposits_contract.decode(result, 'deposits', arguments=[address])[0]

@@ -108,7 +108,7 @@ class ThegraphBalances(ProtocolWithBalance):
             calls_chunk_size=chunk_size,
         )
 
-        grt_price = Inquirer().find_usd_price(A_GRT)
+        grt_price = Inquirer.find_usd_price(A_GRT)
         for idx, stake in enumerate(delegations_active):
             delegator, indexer, shares_amount = stake[0], stake[1], stake[2]
 

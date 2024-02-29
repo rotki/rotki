@@ -958,7 +958,7 @@ class GlobalDBHandler:
             raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
-            GlobalDBHandler()._add_underlying_tokens(
+            GlobalDBHandler._add_underlying_tokens(
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
@@ -1081,7 +1081,7 @@ class GlobalDBHandler:
             ) from e
 
         if asset.is_evm_token():
-            GlobalDBHandler().edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
+            GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1913,7 +1913,7 @@ class GlobalDBHandler:
         if identifier.startswith(NFT_DIRECTIVE):
             return identifier
 
-        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        connection = GlobalDBHandler.packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         with connection.read_ctx() as cursor:
             normalized_id = cursor.execute(
                 'SELECT identifier FROM assets WHERE identifier=?',

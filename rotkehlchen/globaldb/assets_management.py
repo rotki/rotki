@@ -57,7 +57,7 @@ def import_assets_from_file(
             continue
 
         try:
-            GlobalDBHandler().add_asset(asset)
+            GlobalDBHandler.add_asset(asset)
         except InputError as e:
             log.error(
                 f'Failed to import asset {asset=}. {e!s}',
