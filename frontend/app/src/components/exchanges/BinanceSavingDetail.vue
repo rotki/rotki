@@ -25,7 +25,7 @@ const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
 
 const { fetchExchangeSavings } = useExchangeBalancesStore();
 
-const extraParams = computed(() => ({
+const defaultParams = computed(() => ({
   location: get(exchange).toString(),
 }));
 
@@ -57,7 +57,7 @@ const {
   defaultSortBy: {
     ascending: [true],
   },
-  extraParams,
+  defaultParams,
 });
 
 watch(loading, async (isLoading, wasLoading) => {

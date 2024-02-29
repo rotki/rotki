@@ -49,7 +49,7 @@ describe('composables::history/filter-paginate', () => {
   });
 
   describe('components::exchanges/BinanceSavingDetail.vue', () => {
-    const extraParams = computed(() => ({
+    const defaultParams = computed(() => ({
       location: get(exchange).toString(),
     }));
 
@@ -83,7 +83,7 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsCollection
       >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
         defaultCollection: defaultCollectionState,
-        extraParams,
+        defaultParams,
         defaultSortBy: {
           ascending: [true],
         },
@@ -118,7 +118,7 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsCollection
       >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
         defaultCollection: defaultCollectionState,
-        extraParams,
+        defaultParams,
         defaultSortBy: {
           ascending: [true],
         },
@@ -144,7 +144,7 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsCollection
       >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
         defaultCollection: defaultCollectionState,
-        extraParams,
+        defaultParams,
         defaultSortBy: {
           ascending: [false],
         },
