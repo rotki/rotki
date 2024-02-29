@@ -1,9 +1,6 @@
 <template>
-  <VMenu
-    offset-x
-    left
-    min-width="500"
-    :close-on-content-click="false"
+  <RuiMenu
+    menu-class="max-w-[32rem]"
   >
     <template #activator="{ on }">
       <RuiButton
@@ -16,7 +13,9 @@
       </RuiButton>
     </template>
     <div class="p-4">
-      <NftImageRenderingSetting />
+      <VApp>
+        <NftImageRenderingSetting />
+      </VApp>
     </div>
-  </VMenu>
+  </RuiMenu>
 </template>

@@ -2,11 +2,8 @@
 
 import Vue from 'vue';
 import {
-  VBtn,
-  VBtnToggle,
   VColorPicker,
   VDialog,
-  VIcon,
 } from 'vuetify/lib/components';
 import {
   RuiAlert,
@@ -17,6 +14,8 @@ import {
   RuiDataTable,
   RuiDivider,
   RuiIcon,
+  RuiMenu,
+  RuiSlider,
   RuiTextField,
   RuiTooltip,
 } from '@rotki/ui-library-compat';
@@ -59,9 +58,6 @@ import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetB
  */
 function vuetifyRegister(): void {
   // version 17 - 1.24
-  Vue.component('VIcon', VIcon);
-  Vue.component('VBtn', VBtn);
-  Vue.component('VBtnToggle', VBtnToggle);
   Vue.component('VDialog', VDialog);
   Vue.component('VColorPicker', VColorPicker);
 }
@@ -77,6 +73,8 @@ function ruiRegister(): void {
   Vue.component('RuiDataTable', RuiDataTable);
   Vue.component('RuiDivider', RuiDivider);
   Vue.component('RuiChip', RuiChip);
+  Vue.component('RuiMenu', RuiMenu);
+  Vue.component('RuiSlider', RuiSlider);
 }
 
 export function registerComponents(): void {

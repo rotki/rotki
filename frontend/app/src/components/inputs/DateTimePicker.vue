@@ -210,8 +210,6 @@ function setNow() {
   emitIfValid(nowInString);
 }
 
-const css = useCssModule();
-
 function initImask() {
   const inputWrapper = get(inputField)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
@@ -356,13 +354,9 @@ function filteredListeners(listeners: any) {
     "
   >
     <template #append>
-      <VMenu
-        :close-on-content-click="false"
-        transition="scale-transition"
-        :nudge-bottom="56"
-        left
-        max-width="580px"
-        class="date-time-picker"
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
+        menu-class="date-time-picker max-w-[32rem] z-[500]"
       >
         <template #activator="{ on }">
           <RuiButton
@@ -378,7 +372,7 @@ function filteredListeners(listeners: any) {
           </RuiButton>
         </template>
 
-        <div :class="css.menu">
+        <VApp>
           <VAutocomplete
             v-model="selectedTimezone"
             :label="t('date_time_picker.select_timezone')"
@@ -389,8 +383,8 @@ function filteredListeners(listeners: any) {
             :error-messages="toMessages(v$.timezone)"
             :items="timezones"
           />
-        </div>
-      </VMenu>
+        </VApp>
+      </RuiMenu>
       <RuiButton
         data-cy="date-time-picker__set-now-button"
         variant="text"
@@ -406,43 +400,3 @@ function filteredListeners(listeners: any) {
     </template>
   </RuiTextField>
 </template>
-
-<style module lang="scss">
-.menu {
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-
-  > * {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  :global {
-    .v-picker {
-      &__title {
-        height: 102px;
-      }
-    }
-  }
-
-  &:first-child {
-    :global {
-      .v-picker {
-        border-top-right-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-      }
-    }
-  }
-
-  &:last-child {
-    :global {
-      .v-picker {
-        border-top-left-radius: 0 !important;
-        border-bottom-left-radius: 0 !important;
-      }
-    }
-  }
-}
-</style>

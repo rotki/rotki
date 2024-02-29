@@ -24,7 +24,6 @@ describe('moduleSelector.vue', () => {
     return mount(ModuleSelector, {
       pinia,
       vuetify,
-      stubs: ['card'],
       provide: libraryDefaults,
     });
   };
