@@ -1,6 +1,7 @@
 import datetime
 import os
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -10,6 +11,10 @@ from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
+    query_curve_data,
+    save_curve_data_to_cache,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -31,10 +36,6 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import (
-    globaldb_set_general_cache_values,
-    globaldb_set_unique_cache_value,
-)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
@@ -57,6 +58,10 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+
 
 UNDERLYING_ASSET_PRICES = {
     A_AAVE: FVal('100'),
@@ -398,34 +403,33 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
+def test_find_curve_lp_token_price(inquirer: 'Inquirer', ethereum_manager: 'EthereumManager'):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:  # querying curve lp token price normally triggers curve cache query. Set all query ts to now, so it does not happen.  # noqa: E501
         write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key=?', (ts_now(), 'CURVE_LP_TOKENS'))  # noqa: E501
-    inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
 
-    for lp_token_address, pool_address, expected_price in (
-            # Curve.fi ETH/sETH (eCRV)
-            ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', '0xc5424B857f758E906013F3555Dad202e4bdB4567', FVal('3037.58672247')),  # noqa: E501
-            # Curve.fi Factory Crypto Pool: YFI/ETH (YFIETH-f)
-            ('0x29059568bB40344487d62f7450E78b8E6C74e0e5', '0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba', FVal('10129.93803885')),  # noqa: E501
+    inquirer.set_oracles_order([CurrentPriceOracle.DEFILLAMA])
+    ethereum_manager.node_inquirer.ensure_cache_data_is_updated(
+        cache_type=CacheType.CURVE_LP_TOKENS,
+        query_method=query_curve_data,
+        save_method=save_curve_data_to_cache,
+    )
 
+    inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
+    for lp_token_address, expected_price in (
+        # Curve.fi ETH/sETH (eCRV)
+        ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('3295.243125296')),
+        # Curve.fi Factory Crypto Pool: YFI/ETH (YFIETH-f)
+        ('0x29059568bB40344487d62f7450E78b8E6C74e0e5', FVal('10694.82554545636')),
+        # tryLSD
+        ('0x2570f1bd5d2735314fc102eb12fc1afe9e6e7193', FVal('10811.072574998')),
+        # frax/usdc/dai/usdt
+        ('0xd632f22692fac7611d2aa1c0d552930d43caed3b', FVal('1.0105665')),
     ):
-        identifier = ethaddress_to_identifier(lp_token_address)
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.CURVE_LP_TOKENS,),
-                values=[lp_token_address],
-            )
-            globaldb_set_unique_cache_value(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_address),
-                value=pool_address,
-            )
-        price = inquirer_defi.find_curve_pool_price(EvmToken(identifier))
-        assert price.is_close(expected_price)
+        identifier = ethaddress_to_identifier(string_to_evm_address(lp_token_address))
+        price = inquirer.find_curve_pool_price(EvmToken(identifier))
+        assert price is not None and price.is_close(expected_price)
         # Check that the protocol is correctly caught by the inquirer
-        assert price == inquirer_defi.find_usd_price(EvmToken(identifier))
+        assert price == inquirer.find_usd_price(EvmToken(identifier))
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

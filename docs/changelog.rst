@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`7532` Curve LP token price calculation should now be correct.
+* :bug:`-` All the curve pools in ethereum should be queried again.
 
 * :release:`1.32.1 <2024-02-23>`
 * :bug:`-` rotki will now automatically update the local airdrops' CSVs when needed, without manually deleting them.

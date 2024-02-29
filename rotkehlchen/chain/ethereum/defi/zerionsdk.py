@@ -25,7 +25,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -410,7 +410,7 @@ class ZerionSDK:
             if result is not None:
                 return result
 
-        asset = get_crypto_asset_by_symbol(token_symbol)
+        asset = get_crypto_asset_by_symbol(token_symbol, chain_id=ChainID.ETHEREUM)
         if asset is None:
             return None
 

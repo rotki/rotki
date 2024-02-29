@@ -349,7 +349,7 @@ def get_crypto_asset_by_symbol(
     if symbol == 'ETH':
         return A_ETH.resolve_to_asset_with_oracles()  # ETH can be ETH and ETH2 in the DB
 
-    assets_data = GlobalDBHandler().get_assets_with_symbol(
+    assets_data = GlobalDBHandler.get_assets_with_symbol(
         symbol=symbol,
         asset_type=asset_type,
         chain_id=chain_id,

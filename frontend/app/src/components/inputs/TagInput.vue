@@ -165,12 +165,10 @@ watch(tags, () => {
           {{ item }}
         </template>
         <template v-else>
-          <div>
-            <TagIcon :tag="item" />
-            <span class="pl-4">
-              {{ item.description }}
-            </span>
-          </div>
+          <TagIcon
+            :tag="item"
+            show-description
+          />
         </template>
       </template>
       <template #append-outer>

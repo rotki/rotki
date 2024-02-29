@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAY
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -24,6 +25,7 @@ def test_deposit_token(database, ethereum_inquirer, ethereum_accounts):
     timestamp, gas_amount = TimestampMS(1702926167000), '0.049006058268043653'
     deposited_amount = '5.740516176725108094'
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
+    a_sweth = Asset('eip155:1/erc20:0xf951E335afb289353dc249e82926178EaC7DEd78')
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -38,12 +40,24 @@ def test_deposit_token(database, ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
+        sequence_index=112,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_sweth,
+        balance=Balance(amount=ZERO),
+        location_label=ethereum_accounts[0],
+        notes=f'Revoke swETH spending approval of {ethereum_accounts[0]} by 0x858646372CC42E1A627fcE94aa7A7033e7CF075A',  # noqa: E501
+        address=string_to_evm_address('0x858646372CC42E1A627fcE94aa7A7033e7CF075A'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
         sequence_index=113,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-        asset=Asset('eip155:1/erc20:0xf951E335afb289353dc249e82926178EaC7DEd78'),
+        asset=a_sweth,
         balance=Balance(amount=FVal(deposited_amount)),
         location_label=ethereum_accounts[0],
         notes=f'Deposit {deposited_amount} swETH in EigenLayer',
