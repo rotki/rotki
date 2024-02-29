@@ -140,7 +140,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
   >
     <template #activator>
       <div
-        class="icon-bg relative"
+        class="relative"
         :style="placeholderStyle"
         @click="emit('click')"
       >
@@ -159,7 +159,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
 
         <div
           :style="styled"
-          class="flex items-center justify-center cursor-pointer h-full w-full"
+          class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{ [css.circle]: circle }"
         >
           <RuiIcon
@@ -176,14 +176,13 @@ watch([symbol, changeable, identifier], (curr, prev) => {
             :size="size"
           />
 
-          <img
+          <AppImage
             v-else
+            contain
             :alt="displayAsset"
             :src="url"
-            class="object-contain"
             loading="lazy"
-            :width="size"
-            :height="size"
+            :size="size"
             @loadstart="pending = true"
             @load="pending = false"
             @error="
@@ -201,23 +200,16 @@ watch([symbol, changeable, identifier], (curr, prev) => {
 
 <style module lang="scss">
 .circle {
-  border-radius: 50%;
-  overflow: hidden;
+  @apply rounded-full overflow-hidden #{!important};
 }
 
 .chain {
-  border: 1px solid rgb(200, 200, 200);
-  background-color: white;
-  position: absolute;
+  @apply border bg-white absolute z-[1] flex items-center justify-center;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
   top: v-bind(chainIconPosition);
   left: v-bind(chainIconPosition);
   width: v-bind(chainWrapperSize);
   height: v-bind(chainWrapperSize);
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 </style>

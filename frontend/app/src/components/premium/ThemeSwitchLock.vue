@@ -20,7 +20,6 @@ const { t } = useI18n();
     </template>
     <MenuTooltipButton
       :tooltip="t('theme_switch_lock.tooltip')"
-      class-name="secondary--text text--lighten-4"
       :href="href"
       @click="onLinkClick()"
     >

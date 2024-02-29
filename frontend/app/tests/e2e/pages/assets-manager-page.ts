@@ -18,7 +18,7 @@ export class AssetsManagerPage {
 
   ignoredAssetCount(number: number) {
     cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('be.visible');
+    cy.get('[data-cy=asset-filter-menu]').should('exist');
     cy.get('[data-cy=asset-filter-show_only]').should(
       'include.text',
       number.toString(),
@@ -27,28 +27,35 @@ export class AssetsManagerPage {
     cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
 
+  visibleEntries(visible: number) {
+    // the total row is added to the visible entries
+    cy.get('[data-cy=managed-assets-table] tbody')
+      .find('tr')
+      .should('have.length', visible);
+  }
+
   searchAsset(asset: string) {
     cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}symbol: ${asset}{enter}{esc}`,
     );
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
-    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('div[class*=thead__loader]').should('not.exist');
+    this.visibleEntries(1);
   }
 
   searchAssetByAddress(address: string) {
     cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}address: ${address}{enter}{esc}`,
     );
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
-    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('div[class*=thead__loader]').should('not.exist');
+    this.visibleEntries(1);
   }
 
   searchAssetBySymbol(symbol: string) {
     cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}symbol: ${symbol}{enter}{esc}`,
     );
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
-    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('div[class*=thead__loader]').should('not.exist');
+    this.visibleEntries(1);
   }
 
   addIgnoredAsset(asset: string) {
@@ -71,11 +78,11 @@ export class AssetsManagerPage {
   selectShowAll(): void {
     cy.get('[data-cy=status-filter]').scrollIntoView();
     cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('be.visible');
+    cy.get('[data-cy=asset-filter-menu]').should('exist');
     cy.get('[data-cy=asset-filter-none]').scrollIntoView();
     cy.get('[data-cy=asset-filter-none]').click();
     cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('not.be.visible');
+    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
 
   removeIgnoredAsset(asset: string) {

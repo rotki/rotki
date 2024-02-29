@@ -404,7 +404,6 @@ onBeforeMount(async () => {
   >
     <template #activator="{ on }">
       <MenuTooltipButton
-        class-name="secondary--text text--lighten-4"
         :tooltip="
           t('global_search.menu_tooltip', {
             modifier,

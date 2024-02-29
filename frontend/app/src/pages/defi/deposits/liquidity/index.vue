@@ -133,7 +133,7 @@ onBeforeMount(async () => {
     </div>
     <div v-else>
       <div
-        class="flex flex-row items-center justify-center justify-md-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
+        class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
       >
         <RuiIcon
           class="shrink-0"

@@ -16,7 +16,6 @@ const css = useCssModule();
 <template>
   <MenuTooltipButton
     :tooltip="t('help_sidebar.tooltip')"
-    class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
     <RuiIcon

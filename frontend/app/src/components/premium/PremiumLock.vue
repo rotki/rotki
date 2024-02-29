@@ -11,7 +11,6 @@ const attrs = useAttrs();
 <template>
   <MenuTooltipButton
     :tooltip="tooltip ?? t('premium_lock.tooltip')"
-    class-name="text-rui-text-secondary"
     :href="href"
     v-bind="attrs"
     @click="onLinkClick()"
