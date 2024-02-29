@@ -170,7 +170,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             log.debug(f'Editing yearn asset {vault_token}')
             # we have to use setattr since vault_token is frozen
             object.__setattr__(vault_token, 'protocol', vault_type)
-            GlobalDBHandler().edit_evm_token(vault_token)
+            GlobalDBHandler.edit_evm_token(vault_token)
 
     # Store in the globaldb cache the number of vaults processed from this call to the API
     with GlobalDBHandler().conn.write_ctx() as write_cursor:

@@ -375,7 +375,7 @@ class ZerionSDK:
         try:
             identifier = ethaddress_to_identifier(token_address)
             token = EvmToken(identifier)
-            usd_price = Inquirer().find_usd_price(token)
+            usd_price = Inquirer.find_usd_price(token)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(

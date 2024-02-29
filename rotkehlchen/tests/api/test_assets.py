@@ -372,7 +372,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # test that user owned assets filter works
-    GlobalDBHandler().add_user_owned_assets([A_BTC, A_DAI, A_SAI])
+    GlobalDBHandler.add_user_owned_assets([A_BTC, A_DAI, A_SAI])
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,

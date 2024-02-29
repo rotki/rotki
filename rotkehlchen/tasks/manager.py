@@ -210,7 +210,7 @@ class TaskManager:
             if asset.cryptocompare is None and asset.symbol is None:
                 continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens
 
-            data_range = GlobalDBHandler().get_historical_price_range(
+            data_range = GlobalDBHandler.get_historical_price_range(
                 from_asset=asset,
                 to_asset=main_currency,
                 source=HistoricalPriceOracle.CRYPTOCOMPARE,

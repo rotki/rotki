@@ -399,7 +399,7 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
                 try:
-                    usd_price = Inquirer().find_usd_price(asset=asset)
+                    usd_price = Inquirer.find_usd_price(asset=asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing coinbase balance entry due to inability to '

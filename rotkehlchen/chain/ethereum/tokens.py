@@ -52,11 +52,11 @@ class EthereumTokens(EvmTokensWithDSProxy):
         self.tokens_for_proxies_set.add(A_DAI.resolve_to_evm_token())
         self.tokens_for_proxies_set.add(A_WETH.resolve_to_evm_token())  # WETH is also used
         # Add aave tokens
-        self.tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies_set |= set(GlobalDBHandler.get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave',
         ))
-        self.tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies_set |= set(GlobalDBHandler.get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave-v2',
         ))

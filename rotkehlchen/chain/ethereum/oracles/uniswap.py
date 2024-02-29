@@ -476,8 +476,8 @@ class UniswapV2Oracle(UniswapOracle):
 
         # Ignore pools with too low single side-liquidity. Imperfect approach to avoid spam
         # pylint: disable=unexpected-keyword-arg  # no idea why pylint sees this here
-        price_0 = Inquirer().find_usd_price(token_0, skip_onchain=True)
-        price_1 = Inquirer().find_usd_price(token_1, skip_onchain=True)
+        price_0 = Inquirer.find_usd_price(token_0, skip_onchain=True)
+        price_1 = Inquirer.find_usd_price(token_1, skip_onchain=True)
         if price_0 != ZERO and price_0 * token_normalized_value(token_amount=reserve_0, token=token_0) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
             raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has too low reserves')
         if price_1 != ZERO and price_1 * token_normalized_value(token_amount=reserve_1, token=token_1) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501

@@ -253,7 +253,7 @@ class EvmTokens(ABC):
         return addresses_info
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
-        all_tokens = GlobalDBHandler().get_evm_tokens(
+        all_tokens = GlobalDBHandler.get_evm_tokens(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )

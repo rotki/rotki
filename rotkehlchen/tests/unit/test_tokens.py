@@ -125,7 +125,7 @@ def test_last_queried_ts(tokens, freezer):
     # We don't need to query the chain here, so mock tokens list
     evm_tokens_patch = patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
-        new=lambda _, chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
+        new=lambda chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
     )
     beginning = ts_now()
     address = '0x4bBa290826C253BD854121346c370a9886d1bC26'

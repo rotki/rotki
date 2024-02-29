@@ -731,7 +731,7 @@ def test_global_db_reset(globaldb, database):
         symbol='1INCH',
         decimals=18,
     )
-    GlobalDBHandler().edit_evm_token(one_inch_update)
+    GlobalDBHandler.edit_evm_token(one_inch_update)
 
     # Add some data to the tables that reference assets to make sure that it is not
     # touched by the reset
@@ -742,8 +742,8 @@ def test_global_db_reset(globaldb, database):
         timestamp=1337,
         price=ONE,
     )
-    GlobalDBHandler().add_single_historical_price(historical_price)
-    GlobalDBHandler().add_user_owned_assets([A_ETH, A_DAI, A_CRV])
+    GlobalDBHandler.add_single_historical_price(historical_price)
+    GlobalDBHandler.add_user_owned_assets([A_ETH, A_DAI, A_CRV])
     db_custom_assets = DBCustomAssets(database)
     custom_asset = CustomAsset.initialize(
         identifier=str(uuid4()),
@@ -924,7 +924,7 @@ def test_asset_deletion(globaldb):
     )
 
     # Then delete this token
-    GlobalDBHandler().delete_evm_token(
+    GlobalDBHandler.delete_evm_token(
         address=token_data.evm_address,
         chain_id=ChainID.ETHEREUM,
     )
@@ -943,7 +943,7 @@ def test_asset_deletion(globaldb):
         also_eth=False,
     )
     # Delete asset
-    GlobalDBHandler().delete_asset_by_identifier(identifier=asset_id)
+    GlobalDBHandler.delete_asset_by_identifier(identifier=asset_id)
     # Check that it was deleted properly
     check_tables(
         asset_id=asset_id,

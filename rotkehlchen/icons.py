@@ -211,7 +211,7 @@ class IconManager:
             return None, False
 
         # check if the asset is in a collection
-        collection_main_asset_id = GlobalDBHandler().get_collection_main_asset(asset.identifier)
+        collection_main_asset_id = GlobalDBHandler.get_collection_main_asset(asset.identifier)
         asset_to_query_icon = asset
 
         if collection_main_asset_id is not None:

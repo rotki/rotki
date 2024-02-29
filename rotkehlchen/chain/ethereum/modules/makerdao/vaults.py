@@ -226,7 +226,7 @@ class MakerdaoVaults(HasDSProxy):
         else:
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
 
-        dai_usd_price = Inquirer().find_usd_price(A_DAI)
+        dai_usd_price = Inquirer.find_usd_price(A_DAI)
         return MakerdaoVault(
             identifier=identifier,
             owner=owner,

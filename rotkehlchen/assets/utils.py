@@ -50,7 +50,7 @@ def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
     May raise:
     - InputError if token already exists in the DB
     """
-    GlobalDBHandler().add_asset(token_data)
+    GlobalDBHandler.add_asset(token_data)
     # This can, but should not raise UnknownAsset, DeserializationError
     return EvmToken(token_data.identifier)
 
@@ -154,7 +154,7 @@ def edit_token_and_clean_cache(
     # clean the cache if we need to update the token
     if updated_fields is True:
         AssetResolver.clean_memory_cache(evm_token.identifier)
-        GlobalDBHandler().edit_evm_token(evm_token)
+        GlobalDBHandler.edit_evm_token(evm_token)
 
 
 def check_if_spam_token(symbol: str | None, name: str | None) -> bool:
@@ -292,7 +292,7 @@ def get_or_create_evm_token(
             if asset_exists is True:
                 # This means that we need to update the information in the database with the
                 # newly queried data
-                GlobalDBHandler().edit_evm_token(evm_token)
+                GlobalDBHandler.edit_evm_token(evm_token)
             else:
                 # inform frontend new token detected
                 data: dict[str, Any] = {'token_identifier': identifier}
@@ -332,7 +332,7 @@ def set_token_protocol_if_missing(evm_token: EvmToken, protocol: str) -> None:
 
     object.__setattr__(evm_token, 'protocol', protocol)  # since is a frozen dataclass
     AssetResolver.clean_memory_cache(evm_token.identifier)
-    GlobalDBHandler().edit_evm_token(evm_token)
+    GlobalDBHandler.edit_evm_token(evm_token)
 
 
 def get_crypto_asset_by_symbol(

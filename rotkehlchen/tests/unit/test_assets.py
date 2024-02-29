@@ -327,7 +327,7 @@ def test_assets_tokens_addresses_are_checksummed():
 def test_asset_identifiers_are_unique_all_lowercased():
     """Test that adding an identifier that exists but with different case, would fail"""
     with pytest.raises(InputError):
-        GlobalDBHandler().add_asset(CryptoAsset.initialize(
+        GlobalDBHandler.add_asset(CryptoAsset.initialize(
             identifier='Eth',
             asset_type=AssetType.OWN_CHAIN,
             name='a',

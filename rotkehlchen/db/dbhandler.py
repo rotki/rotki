@@ -1445,7 +1445,7 @@ class DBHandler:
         insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
         # make sure assets are included in the global db user owned assets
-        GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
+        GlobalDBHandler.add_user_owned_assets([x.asset for x in data])
 
     def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
@@ -2575,7 +2575,7 @@ class DBHandler:
     def update_owned_assets_in_globaldb(self, cursor: 'DBCursor') -> None:
         """Makes sure all owned assets of the user are in the Global DB"""
         assets = self.query_owned_assets(cursor)
-        GlobalDBHandler().add_user_owned_assets(assets)
+        GlobalDBHandler.add_user_owned_assets(assets)
 
     def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
         """Adds an asset to the user db asset identifier table"""

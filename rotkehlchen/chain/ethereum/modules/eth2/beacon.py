@@ -155,7 +155,7 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
-        usd_price = Inquirer().find_usd_price(A_ETH)
+        usd_price = Inquirer.find_usd_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:
             try:

@@ -164,7 +164,7 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
         timestamp=Timestamp(now - 86400 * 31),
         price=Price(FVal('7.719')),
     )]
-    GlobalDBHandler().add_historical_prices(cache_data)
+    GlobalDBHandler.add_historical_prices(cache_data)
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response

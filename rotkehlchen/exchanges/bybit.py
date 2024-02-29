@@ -451,7 +451,7 @@ class Bybit(ExchangeInterface):
                     if coin_data['usdValue'] != '':
                         usd_value = deserialize_fval(coin_data['usdValue'], name=f'Bybit usd value for {asset}', location='bybit')  # we don't need to calculate it since it is provided by bybit  # noqa: E501
                     else:
-                        usd_price = Inquirer().find_usd_price(asset=asset)
+                        usd_price = Inquirer.find_usd_price(asset=asset)
                         usd_value = usd_price * amount
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(

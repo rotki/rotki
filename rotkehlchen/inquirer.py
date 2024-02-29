@@ -193,7 +193,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     if price is not None:
         return price, oracle
 
-    custom_token = GlobalDBHandler().get_evm_token(
+    custom_token = GlobalDBHandler.get_evm_token(
         address=token.evm_address,
         chain_id=ChainID.ETHEREUM,
     )
@@ -394,7 +394,7 @@ class Inquirer:
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
         """Save cached price for the key provided and all the assets in the same collection"""
-        related_assets = GlobalDBHandler().get_assets_in_same_collection(cache_key[0].identifier)
+        related_assets = GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
             Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
@@ -982,7 +982,7 @@ class Inquirer:
             return Price(ONE)
 
         # Check cache
-        price_cache_entry = GlobalDBHandler().get_historical_price(
+        price_cache_entry = GlobalDBHandler.get_historical_price(
             from_asset=from_fiat_currency,
             to_asset=to_fiat_currency,
             timestamp=timestamp,
@@ -1002,7 +1002,7 @@ class Inquirer:
         # Since xratecoms has daily rates let's save at timestamp of UTC day start
         timestamp = timestamp_to_daystart_timestamp(timestamp)
         for asset, asset_price in prices_map.items():
-            GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+            GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
                 from_asset=from_fiat_currency,
                 to_asset=asset,
                 source=HistoricalPriceOracle.XRATESCOM,
@@ -1038,7 +1038,7 @@ class Inquirer:
 
         now = ts_now()
         # Check cache for a price within the last 24 hrs
-        price_cache_entry = GlobalDBHandler().get_historical_price(
+        price_cache_entry = GlobalDBHandler.get_historical_price(
             from_asset=base,
             to_asset=quote,
             timestamp=now,
@@ -1056,7 +1056,7 @@ class Inquirer:
                     # if the quote asset price is found return it
                     price = quote_price
 
-                GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+                GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
                     from_asset=base,
                     to_asset=quote_asset,
                     source=HistoricalPriceOracle.XRATESCOM,
@@ -1073,7 +1073,7 @@ class Inquirer:
             return price, CurrentPriceOracle.FIAT
 
         # Check cache
-        price_cache_entry = GlobalDBHandler().get_historical_price(
+        price_cache_entry = GlobalDBHandler.get_historical_price(
             from_asset=base,
             to_asset=quote,
             timestamp=now,

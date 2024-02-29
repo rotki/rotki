@@ -362,7 +362,7 @@ class Independentreserve(ExchangeInterface):
         for entry in response:
             try:
                 asset = independentreserve_asset(entry['CurrencyCode'])
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
                 amount = deserialize_asset_amount(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnknownAsset as e:

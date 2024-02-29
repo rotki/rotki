@@ -416,7 +416,7 @@ class Poloniex(ExchangeInterface):
                         continue  # https://github.com/rotki/rotki/issues/2530
 
                     try:
-                        usd_price = Inquirer().find_usd_price(asset=asset)
+                        usd_price = Inquirer.find_usd_price(asset=asset)
                     except RemoteError as e:
                         self.msg_aggregator.add_error(
                             f'Error processing poloniex balance entry due to inability to '

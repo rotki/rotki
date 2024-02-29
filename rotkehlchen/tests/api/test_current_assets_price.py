@@ -91,7 +91,7 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_add_manual_latest_price(rotkehlchen_api_server):
     """Check that addition of manual current prices work fine."""
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(100)),
@@ -137,7 +137,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
         },
     )
     assert_proper_response(response)
-    assert GlobalDBHandler().get_manual_current_price(A_USD) == (A_EUR, Price(FVal(23)))
+    assert GlobalDBHandler.get_manual_current_price(A_USD) == (A_EUR, Price(FVal(23)))
 
     response = requests.post(
         api_url_for(
@@ -156,12 +156,12 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_edit_manual_current_price(rotkehlchen_api_server):
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(10)),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_USD,
         to_asset=A_EUR,
         price=Price(FVal(25)),
@@ -179,7 +179,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     # After putting new manual current price, the previous one should have become historical
-    assert GlobalDBHandler().get_manual_prices(from_asset=A_ETH, to_asset=A_EUR)[0]['price'] == '10'  # noqa: E501
+    assert GlobalDBHandler.get_manual_prices(from_asset=A_ETH, to_asset=A_EUR)[0]['price'] == '10'
 
     response = requests.post(
         api_url_for(
@@ -203,7 +203,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
             (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), A_ETH.identifier),
         ).fetchone()[0]
 
-    GlobalDBHandler().add_single_historical_price(entry=HistoricalPrice(
+    GlobalDBHandler.add_single_historical_price(entry=HistoricalPrice(
         from_asset=A_ETH,
         to_asset=A_EUR,
         timestamp=manual_current_timestamp,
@@ -230,17 +230,17 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_remove_manual_current_price(rotkehlchen_api_server):
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(10)),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_USD,
         to_asset=A_EUR,
         price=Price(FVal(25)),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_BTC,
         to_asset=A_ETH,
         price=Price(FVal(100)),
@@ -276,7 +276,7 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
         status_code=HTTPStatus.CONFLICT,
     )
     # usd manual current price should have not been touched
-    assert GlobalDBHandler().get_manual_current_price(A_USD) == (A_EUR, Price(FVal(25)))
+    assert GlobalDBHandler.get_manual_current_price(A_USD) == (A_EUR, Price(FVal(25)))
     # Check that the cache in the inquirer has been invalidated
     assert (A_ETH, A_EUR) not in Inquirer()._cached_current_price
     assert (A_BTC, A_ETH) not in Inquirer()._cached_current_price
@@ -284,27 +284,27 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_manual_current_prices_loop(inquirer):
+def test_manual_current_prices_loop(inquirer: 'Inquirer'):
     """Check that if we got a loop of manual current prices
     (e.g. 1 ETH costs 2 BTC and 1 BTC costs 5 ETH), it is handled properly.
 
     This test is mocked because we were seeing cases of tests failing due to
     an exception from coingecko API.
     """
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_USD,
-        price=ONE,
+        price=Price(ONE),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_USD,
         to_asset=A_BTC,
-        price=ONE,
+        price=Price(ONE),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_BTC,
         to_asset=A_ETH,
-        price=ONE,
+        price=Price(ONE),
     )
     price = inquirer.find_price(
         from_asset=A_ETH.resolve_to_asset_with_oracles(),
@@ -324,7 +324,7 @@ def test_inquirer_oracles_affect_manual_price(inquirer):
     This test is mocked because we were seeing cases of tests failing due to
     an exception from coingecko API.
     """
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(2)),
@@ -352,17 +352,17 @@ def test_get_all_current_prices(rotkehlchen_api_server):
     assert result == []
 
     # Add prices to the database and one that overwrites another with the same from/to
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(10)),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
         price=Price(FVal(5)),
     )
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_EUR,
         to_asset=A_USD,
         price=Price(FVal(1.01)),
@@ -555,7 +555,7 @@ def test_get_manual_prices_with_nfts(
     """
     # Add prices to the database
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    GlobalDBHandler().add_manual_latest_price(
+    GlobalDBHandler.add_manual_latest_price(
         from_asset=A_BTC,
         to_asset=A_ETH,
         price=Price(FVal(10)),

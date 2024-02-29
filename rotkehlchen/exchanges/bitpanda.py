@@ -511,7 +511,7 @@ class Bitpanda(ExchangeInterface):
                 continue
 
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitpanda balance entry due to inability to '

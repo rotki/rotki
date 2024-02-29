@@ -266,7 +266,7 @@ class Iconomi(ExchangeInterface):
                 # value in Anchor UST (AUST). That's why we report the user balance for this
                 # strategy as usd_value / AUST price.
                 try:
-                    aust_usd_price = Inquirer().find_usd_price(asset=A_AUST)
+                    aust_usd_price = Inquirer.find_usd_price(asset=A_AUST)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing ICONOMI balance entry due to inability to '

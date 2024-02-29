@@ -278,7 +278,7 @@ class Bitcoinde(ExchangeInterface):
                     f'report this error.',
                 )
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de balance entry due to inability to '
