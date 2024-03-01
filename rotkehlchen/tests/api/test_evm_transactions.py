@@ -1,7 +1,5 @@
-import json
 import random
 from http import HTTPStatus
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -11,6 +9,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import (
     EVM_EVENT_FIELDS,
     EVM_EVENT_JOIN,
@@ -92,6 +92,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     This test uses real data.
     """
     async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Ask for all evm transactions (test addy has both optimism and mainnet)
     response = requests.post(
         api_url_for(
@@ -107,44 +108,23 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     else:
         result = assert_proper_response_with_result(response)
 
-    expected_file = Path(__file__).resolve().parent.parent / 'data' / 'expected' / 'test_evm_transactions-test_query_transactions.json'  # noqa: E501
-    with open(expected_file, encoding='utf8') as f:
-        expected_data = json.load(f)
+    assert result is True
 
-    # check all expected data exists. User has done more transactions since then if we don't
-    # mock network, so we need to test like this
-    last_ts = result['entries'][0]['entry']['timestamp']
-    for entry in expected_data['entries']:
-        assert entry in result['entries']
-        assert entry['entry']['timestamp'] <= last_ts
-        last_ts = entry['entry']['timestamp']
+    dbevmtx = DBEvmTx(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
 
-    assert result['entries_found'] >= expected_data['entries_found']
-    assert result['entries_total'] >= expected_data['entries_total']
-    assert result['entries_limit'] == -1
+    optimism_count, mainnet_count = 0, 0
+    for entry in transactions:
+        if entry.chain_id == ChainID.ETHEREUM:
+            mainnet_count += 1
+        elif entry.chain_id == ChainID.OPTIMISM:
+            optimism_count += 1
+        else:
+            raise AssertionError(f'Should not have a {entry.chain_id} transaction')
 
-    # After querying make sure pagination and only_cache work properly for multiple chains
-    for evm_chain in ('ethereum', 'optimism'):
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'evmtransactionsresource',
-            ), json={
-                'async_query': False,
-                'limit': 10,
-                'offset': 0,
-                'ascending': [False],
-                'only_cache': True,
-                'order_by_attributes': ['timestamp'],
-                'evm_chain': evm_chain,
-            },
-        )
-        result = assert_proper_response_with_result(response)
-        assert len(result['entries']) != 0, f'Should have had {evm_chain} transactions'
-        last_ts = result['entries'][0]['entry']['timestamp']
-        for entry in result['entries']:
-            assert entry['entry']['timestamp'] <= last_ts
-            last_ts = entry['entry']['timestamp']
+    assert optimism_count == 31
+    assert mainnet_count == 18
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -439,8 +439,6 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
                     'evmtransactionsresource',
                 ), json={
                     'async_query': True,
-                    'only_cache': False,
-                    'limit': 1000,
                     'accounts': [{'address': address, 'evm_chain': 'ethereum'}],
                     'evm_chain': 'ethereum',
                 },
@@ -459,7 +457,6 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
                     'blockchainsaccountsresource',
                     blockchain='eth',
                 ), json={
-                    'async_query': False,
                     'accounts': [address],
                 },
             )

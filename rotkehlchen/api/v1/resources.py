@@ -593,12 +593,10 @@ class EvmTransactionsResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
     ) -> Response:
         return self.rest_api.get_evm_transactions(
             async_query=async_query,
-            only_cache=only_cache,
             filter_query=filter_query,
         )
 

@@ -213,7 +213,7 @@ class Rotkehlchen:
                 )
                 if (
                         is_evm_tx_greenlet and
-                        greenlet.kwargs['only_cache'] is False and
+                        greenlet.kwargs.get('only_cache', False) is False and
                         account_tuple in greenlet.kwargs['filter_query'].accounts
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501

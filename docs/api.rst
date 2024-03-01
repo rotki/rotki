@@ -2451,7 +2451,7 @@ Querying evm transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, counterparties and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
+   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses and save them to the DB. Caller can also specify a chain and/or an address to further filter the query.
 
    **Example Request**:
 
@@ -2469,21 +2469,13 @@ Querying evm transactions
               "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
           }],
           "from_timestamp": 1514764800,
-          "to_timestamp": 1572080165,
-          "only_cache": false
+          "to_timestamp": 1572080165
       }
 
-   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
-   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson list[string] accounts: List of accounts to filter by. Each account contains an ``"address"`` key which is required and is an evm address. It can also contains an ``"evm_chain"`` field which is the specific chain for which to limit the address.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
-   :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
    :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
-   :reqjson string asset: Optional. Serialized asset to filter by.
-   :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
 
 
    **Example Response**:
@@ -2494,71 +2486,11 @@ Querying evm transactions
       Content-Type: application/json
 
       {
-        "result": {
-          "entries": [{
-            "entry": {
-              "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
-              "evm_chain":"ethereum",
-              "timestamp": 1598006527,
-              "block_number": 10703085,
-              "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-              "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
-              "value": "0",
-              "gas": "61676",
-              "gas_price": "206000000000",
-              "gas_used": "37154",
-              "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
-              "nonce": 2720
-            },
-            "ignored_in_accounting": false,
-            }, {
-              "entry": {
-                "tx_hash": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
-                "evm_chain": "optimism",
-                "timestamp": 1661993636,
-                "block_number": 15449856,
-                "from_address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
-                "to_address": "0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d",
-                "value": "0",
-                "gas": "118197",
-                "gas_price": "17961480822",
-                "gas_used": "111201",
-                "input_data": "0xa694fc3a0000000000000000000000000000000000000000000000162069b9d8ad5c348a",
-                "nonce": 88
-              },
-	      "ignored_in_accounting" true,
-
-            }, {
-            "entry": {
-              "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
-              "evm_chain": "ethereum",
-              "timestamp": 1588006528,
-              "block_number": 10700085,
-              "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
-              "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-              "value": "56000300000000000000000",
-              "gas": "610676",
-              "gas_price": "106000000000",
-              "gas_used": "270154",
-              "input_data": "0x",
-              "nonce": 55
-            },
-            "ignored_in_accounting": false,
-            }],
-          "entries_found": 95,
-          "entries_limit": 500,
-          "entries_total": 1000
-
-      },
+        "result": true,
         "message": ""
       }
 
-   :resjson object result: A list of transaction entries to return for the given filter.
-   :resjson object entry: A single transaction entry
-   :resjson bool ignored_in_accounting: A boolean indicating whether this transaction should be ignored in accounting or not
-   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
-   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
-   :resjson int entries_total: The number of total entries ignoring all filters.
+   :resjson object result: true for success
 
    :statuscode 200: Transactions successfully queried
    :statuscode 400: Provided JSON is in some way malformed
@@ -2568,7 +2500,7 @@ Querying evm transactions
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-Request transactions event decoding
+Request EVM transactions event decoding
 =======================================
 
 .. http:put:: /api/(version)/blockchains/evm/transactions

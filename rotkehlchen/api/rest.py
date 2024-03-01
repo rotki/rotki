@@ -93,7 +93,6 @@ from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_ETH_TX_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
@@ -2706,7 +2705,6 @@ class RestAPI:
     @async_api_call()
     def get_evm_transactions(
             self,
-            only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
     ) -> dict[str, Any]:
         chain_ids: tuple[SUPPORTED_CHAIN_IDS]
@@ -2715,51 +2713,17 @@ class RestAPI:
         else:
             chain_ids = (filter_query.chain_id,)
 
-        message = ''
-        status_code = HTTPStatus.OK
-        if only_cache is False:  # we query the chain
-            for chain_id in chain_ids:
-                evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
-                try:
-                    evm_manager.transactions.query_chain(filter_query)
-                except RemoteError as e:
-                    transactions = None
-                    status_code = HTTPStatus.BAD_GATEWAY
-                    message = str(e)
-                    break
-                except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                    transactions = None
-                    status_code = HTTPStatus.BAD_REQUEST
-                    message = str(e)
-                    break
-
-            if status_code != HTTPStatus.OK:
-                return {'result': None, 'message': message, 'status_code': status_code}
-
-        # if needed, chain will have been queried by now so let's get everything from DB
-        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            transactions, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
-                cursor=cursor,
-                filter_=filter_query,
-                has_premium=self.rotkehlchen.premium is not None,
-            )
-
-            entries_result = [{'entry': entry.serialize()} for entry in transactions]
-            result: dict[str, Any] | None = None
-            kwargs = {}
-            if filter_query.chain_id is not None:
-                kwargs['chain_id'] = filter_query.chain_id.serialize_for_db()
-            result = {
-                'entries': entries_result,
-                'entries_found': total_filter_count,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(
-                    cursor=cursor,
-                    entries_table='evm_transactions',
-                    **kwargs,  # type: ignore[arg-type]
-                ),
-                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
-            }
+        result, message, status_code = True, '', HTTPStatus.OK
+        for chain_id in chain_ids:
+            evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+            try:
+                evm_manager.transactions.query_chain(filter_query)
+            except RemoteError as e:
+                result, message, status_code = False, str(e), HTTPStatus.BAD_GATEWAY
+                break
+            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                result, message, status_code = False, str(e), HTTPStatus.BAD_REQUEST
+                break
 
         return {'result': result, 'message': message, 'status_code': status_code}
 

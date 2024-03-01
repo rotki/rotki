@@ -268,9 +268,6 @@ class EvmTransactionPurgingSchema(Schema):
 class EvmTransactionQuerySchema(
         AsyncQueryArgumentSchema,
         TimestampRangeSchema,
-        OnlyCacheQuerySchema,
-        DBPaginationSchema,
-        DBOrderBySchema,
 ):
     accounts = fields.List(
         fields.Nested(RequiredEvmAddressOptionalChainSchema),
@@ -285,20 +282,6 @@ class EvmTransactionQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        valid_ordering_attr = {None, 'timestamp'}
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for transactions can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
         if (
             data['evm_chain'] is not None and
             data['evm_chain'] not in get_args(SUPPORTED_CHAIN_IDS)
@@ -315,13 +298,6 @@ class EvmTransactionQuerySchema(
             **_kwargs: Any,
     ) -> dict[str, Any]:
         filter_query = EvmTransactionsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,  # by default, descending order of time
-                default_order_by_fields=['timestamp'],
-                default_ascending=[False],
-            ),
-            limit=data['limit'],
-            offset=data['offset'],
             accounts=data['accounts'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
@@ -330,7 +306,6 @@ class EvmTransactionQuerySchema(
 
         return {
             'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
             'filter_query': filter_query,
         }
 
