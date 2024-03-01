@@ -37,7 +37,7 @@ const {
   errorMessage,
   transform,
 } = toRefs(props);
-const { error, success, clear, wait, stop, setSuccess, setError }
+const { error, success, clearAll, wait, stop, setSuccess, setError }
   = useClearableMessages();
 const { updateSetting } = useSettings();
 
@@ -53,7 +53,7 @@ function getMessage(ref: MaybeRef<string | TransformMessageCallback<string>>, va
 
 async function updateImmediate(newValue: any) {
   stop();
-  clear();
+  clearAll();
   set(loading, true);
   const func = get(transform);
   const settingKey = get(setting);
@@ -83,7 +83,12 @@ async function updateImmediate(newValue: any) {
   emit('finished');
 }
 
-const update = useDebounceFn(updateImmediate, 1500);
+const debounceUpdate = useDebounceFn(updateImmediate, 1500);
+
+function update(newValue: any) {
+  clearAll();
+  debounceUpdate(newValue);
+}
 </script>
 
 <template>

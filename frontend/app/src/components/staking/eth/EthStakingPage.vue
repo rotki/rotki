@@ -69,7 +69,7 @@ const { t } = useI18n();
 function shouldRefreshDailyStats() {
   const threshold = dayjs().subtract(1, 'hour').unix();
   return get(lastRefresh) < threshold;
-};
+}
 
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {

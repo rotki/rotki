@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue where long label in manual balances breaks the alignment of chain names.
+* :bug:`-` If saving a setting fails, error messages will no longer disappear automatically.
 * :bug:`7532` Curve LP token price calculation should now be correct.
 * :bug:`-` All the curve pools in ethereum should be queried again.
 

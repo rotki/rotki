@@ -79,9 +79,9 @@ const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
-    align: 'start',
+    align: 'center',
     width: '120px',
-    cellClass: 'py-0',
+    cellClass: 'py-2',
   },
   {
     label: t('manual_balances_table.columns.label'),
