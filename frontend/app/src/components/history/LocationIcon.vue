@@ -62,7 +62,7 @@ const css = useCssModule();
         v-if="!icon"
         class="capitalize text-rui-text-secondary"
         :class="{
-          '-mb-1': !horizontal,
+          '-mb-1 text-center': !horizontal,
         }"
       >
         {{ location.name }}
