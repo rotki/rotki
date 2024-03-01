@@ -96,10 +96,12 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Yearnygov',
         'ArbitrumOneBridge',
         'XdaiBridge',
+        'Zerox',
     }
 
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
     assert counterparty_ids == {
+        '0x',
         'kyber legacy',
         'element-finance',
         'badger',
