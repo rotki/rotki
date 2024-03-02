@@ -9,10 +9,11 @@ import type { ManualBalance } from '@/types/manual-balances';
 const props = withDefaults(
   defineProps<{
     edit?: ManualBalance | null;
-    context: BalanceType;
+    context?: BalanceType;
   }>(),
   {
     edit: null,
+    context: BalanceType.ASSET,
   },
 );
 
@@ -203,7 +204,7 @@ async function openCustomAssetForm() {
   setOpenDialog(true);
 }
 
-onMounted(async () => {
+onMounted(() => {
   const editPayload = get(edit);
   if (editPayload)
     set(asset, editPayload.asset);

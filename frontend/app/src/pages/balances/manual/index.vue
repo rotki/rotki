@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { BalanceType } from '@/types/balances';
 import type { Ref } from 'vue';
 import type { ManualBalance } from '@/types/manual-balances';
 
@@ -48,7 +47,7 @@ async function refresh() {
   set(loading, false);
 }
 
-async function postSubmit() {
+function postSubmit() {
   set(balanceToEdit, null);
 }
 
@@ -62,34 +61,6 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
-
-const intersections = ref({
-  [BalanceType.ASSET]: true,
-  [BalanceType.LIABILITY]: false,
-});
-
-function updateWhenRatio(entries: IntersectionObserverEntry[], value: BalanceType) {
-  if (entries.length > 0) {
-    set(intersections, {
-      ...get(intersections),
-      [value]: entries.at(-1)!.isIntersecting,
-    });
-  }
-}
-
-const observers = {
-  [BalanceType.ASSET]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, BalanceType.ASSET),
-  [BalanceType.LIABILITY]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, BalanceType.LIABILITY),
-};
-
-const context = computed(() => {
-  const intersect = get(intersections);
-  return intersect.asset ? BalanceType.ASSET : BalanceType.LIABILITY;
-});
-
-const threshold = [1];
 </script>
 
 <template>
@@ -115,12 +86,6 @@ const threshold = [1];
     </template>
 
     <ManualBalanceTable
-      v-intersect="{
-        handler: observers.asset,
-        options: {
-          threshold,
-        },
-      }"
       data-cy="manual-balances"
       :title="t('manual_balances.balances')"
       :balances="manualBalances"
@@ -129,12 +94,6 @@ const threshold = [1];
       @refresh="refresh()"
     />
     <ManualBalanceTable
-      v-intersect="{
-        handler: observers.liability,
-        options: {
-          threshold,
-        },
-      }"
       data-cy="manual-liabilities"
       :title="t('manual_balances.liabilities')"
       class="mt-8"
@@ -152,10 +111,7 @@ const threshold = [1];
       @confirm="trySubmit()"
       @cancel="cancelForm()"
     >
-      <ManualBalancesForm
-        :edit="balanceToEdit"
-        :context="context"
-      />
+      <ManualBalancesForm :edit="balanceToEdit" />
     </BigDialog>
   </TablePageLayout>
 </template>
