@@ -2,7 +2,7 @@
 import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required } from '@vuelidate/validators';
-import { isValidEthAddress, toSentenceCase } from '@/utils/text';
+import { toSentenceCase } from '@/utils/text';
 import { toMessages } from '@/utils/validation';
 import type {
   AddressBookLocation,
@@ -160,31 +160,26 @@ onMounted(fetchNames);
       clearable
     >
       <template #prepend-inner>
-        <span>
-          <VAvatar
-            size="24"
-            class="mr-2"
-            color="grey"
-          >
-            <AppImage
-              v-if="value.address && isValidEthAddress(value.address)"
-              :src="getBlockie(value.address)"
-              size="1.5rem"
-            />
-          </VAvatar>
-        </span>
+        <div
+          class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
+        >
+          <AppImage
+            v-if="value.address"
+            :src="getBlockie(value.address)"
+            size="1.5rem"
+          />
+        </div>
       </template>
       <template #item="{ item }">
         <span v-if="item">
-          <VAvatar
-            size="24"
-            class="mr-2"
+          <div
+            class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
           >
             <AppImage
               :src="getBlockie(item)"
               size="1.5rem"
             />
-          </VAvatar>
+          </div>
         </span>
         {{ item }}
       </template>
