@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTxHash, Timestamp
 
@@ -45,11 +45,6 @@ class OptimismTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented 
             nonce=nonce,
             db_id=db_id,
         )
-
-    def serialize(self) -> dict[str, Any]:
-        result = super().serialize()
-        result['l1_fee'] = str(result['l1_fee'])
-        return result
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, OptimismTransaction):

@@ -1,6 +1,6 @@
 import typing
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
     TYPE_CHECKING,
@@ -342,20 +342,6 @@ class EvmTransaction:
     input_data: bytes
     nonce: int
     db_id: int = -1
-
-    def serialize(self) -> dict[str, Any]:
-        result = asdict(self)
-        result.pop('db_id')
-        result['tx_hash'] = result['tx_hash'].hex()
-        result['evm_chain'] = result.pop('chain_id').to_name()
-        result['input_data'] = '0x' + result['input_data'].hex()
-
-        # Most integers are turned to string to be sent via the API
-        result['value'] = str(result['value'])
-        result['gas'] = str(result['gas'])
-        result['gas_price'] = str(result['gas_price'])
-        result['gas_used'] = str(result['gas_used'])
-        return result
 
     def __hash__(self) -> int:
         return hash(self.identifier)

@@ -52,7 +52,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -75,7 +74,6 @@ from rotkehlchen.types import (
     ChainID,
     CostBasisMethod,
     EvmTokenKind,
-    EvmTransaction,
     ExchangeLocationID,
     Location,
     SupportedBlockchain,
@@ -143,8 +141,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
         return entry.serialize()
     if isinstance(entry, (
             Trade |
-            EvmTransaction |
-            OptimismTransaction |
             MakerdaoVault |
             DSRAccountReport |
             Balance |
