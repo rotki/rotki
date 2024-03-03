@@ -441,7 +441,7 @@ def test_events_affected_by_others_callbacks(
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('use_dummy_pot', [True])
-def test_events_affected_by_others_callbacks_with_fitlers(
+def test_events_affected_by_others_callbacks_with_filters(
         database: 'DBHandler',
         accountant: Accountant,
         ethereum_accounts,
