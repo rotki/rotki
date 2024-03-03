@@ -7,7 +7,7 @@ content-hash==2.0.0
 rotki-pysqlcipher3==2024.1.2
 requests==2.31.0
 urllib3==2.2.1
-coincurve==18.0.0
+coincurve==19.0.1
 base58check==1.0.2
 bech32==1.2.0
 gql[requests]==3.5.0
@@ -28,7 +28,7 @@ regex==2023.12.25  # used for unicode information in detection of spam tokens
 # For the rest api
 flask-cors==4.0.0
 flask==3.0.2
-marshmallow==3.20.2
+marshmallow==3.21.0
 webargs==8.4.0
 werkzeug==3.0.1
 
