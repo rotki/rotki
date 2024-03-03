@@ -84,7 +84,6 @@ disallow_untyped_defs = false
 # -- ruff config section --
 
 [tool.ruff]
-preview = true  # https://docs.astral.sh/ruff/preview/
 line-length = 99
 
 
@@ -113,6 +112,7 @@ exclude = [
 target-version = "py311"
 
 [tool.ruff.lint]
+preview = true  # https://docs.astral.sh/ruff/preview/
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
@@ -192,7 +192,7 @@ ignore = [
     "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
     "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
-    "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
+    "PLR2004", # we try to use constant vars where possible but this complains abouttoo many things
     "PLR0904", # too many public methods. This is a bit too much to enforce in the codebase
     "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
     "PLR0914", # too many local variables. This is a bit too much to enforce in the codebase
@@ -213,7 +213,7 @@ ignore = [
     "S103",  # permissive mask on file/directory
     "S105",  # hard coded password checks got false positives
     "S106",  # hard coded password checks got false positives
-    "S311",  # We know pseud-random is not safe for cryptographic operations
+    "S311",  # We know pseudo-random is not safe for cryptographic operations
     "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
     "S608",  # possible sql-injection is overkill since we control the variables in question
     "G004",  # Our logs do use f-strings everywhere at least for now
@@ -223,8 +223,7 @@ ignore = [
     "TRY003",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
     "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
     "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
-    "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
-    "PERF203",  # we do use try/except in loops and when python 3.11 comes this is not gonna be needed due to zero cost exception handling
+    "TRY400",  # logging.exception instead of logging.error. Not sure I understood this one
 ]
 
 [tool.ruff.lint.flake8-quotes]
