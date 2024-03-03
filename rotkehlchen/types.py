@@ -126,6 +126,7 @@ class ExternalService(SerializableEnumNameMixin):
     ARBITRUM_ONE_ETHERSCAN = auto()
     BASE_ETHERSCAN = auto()
     GNOSIS_ETHERSCAN = auto()
+    SCROLL_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
 
@@ -247,6 +248,7 @@ class ChainID(Enum):
     POLYGON_ZKEVM = 1101
     ZKSYNC_ERA = 324
     PULSECHAIN = 369
+    SCROLL = 534352
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':
@@ -327,6 +329,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
     ChainID.GNOSIS,
+    ChainID.SCROLL,
 ]
 
 
@@ -418,6 +421,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     ARBITRUM_ONE = 'ARBITRUM_ONE'
     BASE = 'BASE'
     GNOSIS = 'GNOSIS'
+    SCROLL = 'SCROLL'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -447,7 +451,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
-        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE):  # noqa: E501
+        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL):  # noqa: E501
             return 'ETH'
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
@@ -505,6 +509,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
     SupportedBlockchain.GNOSIS: 'Gnosis',
+    SupportedBlockchain.SCROLL: 'Scroll',
 }
 
 SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
@@ -520,6 +525,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one.svg',
     SupportedBlockchain.BASE: 'base.svg',
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
+    SupportedBlockchain.SCROLL: 'scroll.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -529,6 +535,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -540,6 +547,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
     ChainID.GNOSIS,
+    ChainID.SCROLL,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -558,6 +566,7 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
@@ -571,6 +580,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[
@@ -591,6 +601,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ARBITRUM_ONE: ChainID.ARBITRUM_ONE,
     SupportedBlockchain.BASE: ChainID.BASE,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
+    SupportedBlockchain.SCROLL: ChainID.SCROLL,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -608,6 +619,7 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.KUSAMA,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
 
 
@@ -690,6 +702,7 @@ class Location(DBCharEnumMixIn):
     GNOSIS = 43  # on-chain Gnosis events
     WOO = 44
     BYBIT = 45
+    SCROLL = 46  # on-chain Scroll events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
@@ -727,11 +740,13 @@ class Location(DBCharEnumMixIn):
             return ChainID.BASE.value
         if self == Location.GNOSIS:
             return ChainID.GNOSIS.value
+        if self == Location.SCROLL:
+            return ChainID.SCROLL.value
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
 
-EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS]  # noqa: E501
+EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
 
 
