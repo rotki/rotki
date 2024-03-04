@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
 
 
 OPTIMISM_AIRDROP = string_to_evm_address('0xFeDFAF1A10335448b7FA0268F56D2B44DBD357de')
-OP_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 
 class AirdropsDecoder(DecoderInterface):
@@ -42,7 +42,7 @@ class AirdropsDecoder(DecoderInterface):
         self.op_token = A_OP.resolve_to_evm_token()
 
     def _decode_optimism_airdrop_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != OP_CLAIMED:
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])

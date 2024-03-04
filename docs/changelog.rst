@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
 * :bug:`-` Fix issue where long label in manual balances breaks the alignment of chain names.
 * :bug:`-` If saving a setting fails, error messages will no longer disappear automatically.
 * :bug:`7532` Curve LP token price calculation should now be correct.

@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAI
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
@@ -51,13 +51,11 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_DISTRIBUTOR: Final = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
-UNISWAP_TOKEN_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 BADGERHUNT: Final = string_to_evm_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
 BADGER_HUNT_EVENT: Final = b'\x8e\xaf\x15aI\x08\xa4\xe9\x02!A\xfeJYk\x1a\xb0\xcbr\xab2\xb2P#\xe3\xda*E\x9c\x9a3\\'  # noqa: E501
 
 ONEINCH: Final = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
-ONEINCH_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 FPIS: Final = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
 CONVEX: Final = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
@@ -109,7 +107,7 @@ class AirdropsDecoder(DecoderInterface):
         )
 
     def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
@@ -175,7 +173,7 @@ class AirdropsDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_oneinch_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != ONEINCH_CLAIMED:
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])

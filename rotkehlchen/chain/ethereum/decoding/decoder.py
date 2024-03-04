@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -33,7 +34,6 @@ from .constants import (
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
-    ONEINCH_CLAIM,
 )
 
 if TYPE_CHECKING:
@@ -95,7 +95,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
             return DEFAULT_DECODING_OUTPUT
 
-        if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
+        if tx_log.topics[0] == MERKLE_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
