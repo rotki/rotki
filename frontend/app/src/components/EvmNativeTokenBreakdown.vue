@@ -28,13 +28,19 @@ const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
 const { getBreakdown: getBlockchainBreakdown } = useAccountBalances();
 const { assetBreakdown } = useBalancesBreakdown();
 
+const { getChain } = useSupportedChains();
+
 const breakdowns = computed(() => {
   const asset = get(identifier);
   const breakdown = get(blockchainOnly)
     ? get(getBlockchainBreakdown(asset))
     : get(assetBreakdown(asset));
 
-  return groupAssetBreakdown(breakdown, item => item.location);
+  return groupAssetBreakdown(breakdown, (item) => {
+    // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
+    const location = item.location;
+    return getChain(location, null) || location;
+  });
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

@@ -97,7 +97,7 @@ export const useSupportedChains = createSharedComposable(() => {
     );
   };
 
-  const getChain = (evmChain: string): Blockchain => {
+  const getChain = (evmChain: string, defaultValue: any = Blockchain.ETH): Blockchain => {
     // note: we're using toSnakeCase here to always ensure that chains
     // with combined names gets parsed to match their chain name
     const chainData = get(txEvmChains).find(
@@ -106,7 +106,7 @@ export const useSupportedChains = createSharedComposable(() => {
     if (chainData && isBlockchain(chainData.id))
       return chainData.id;
 
-    return Blockchain.ETH;
+    return defaultValue;
   };
 
   const getChainImageUrl = (chain: MaybeRef<Blockchain>): ComputedRef<string> =>
