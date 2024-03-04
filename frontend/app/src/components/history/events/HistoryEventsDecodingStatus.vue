@@ -1,14 +1,18 @@
 <script lang="ts" setup>
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
+import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 
-defineProps<{
+const props = defineProps<{
   refreshing: boolean;
+  locationsData: EvmUndecodedTransactionsData[];
+  evmUndecodedTransactionsStatus: Record<string, EvmUndecodedTransactionsData>;
 }>();
 
 const emit = defineEmits<{
   (e: 'redecode-all-evm-events'): void;
+  (e: 'reset-evm-undecoded-transactions'): void;
 }>();
 
 const { isTaskRunning } = useTaskStore();
@@ -29,21 +33,16 @@ const { t } = useI18n();
 
 const {
   checkMissingTransactionEventsAndRedecode,
-  unDecodedEventsBreakdown,
   fetchUndecodedEventsBreakdown,
 } = useHistoryTransactionDecoding();
-
-const historyStore = useHistoryStore();
-const { resetEvmUndecodedTransactionsStatus } = historyStore;
-const { evmUndecodedTransactionsStatus } = storeToRefs(historyStore);
 
 onMounted(() => refresh());
 
 async function refresh() {
   await fetchUndecodedEventsBreakdown();
 
-  if (Object.keys(get(unDecodedEventsBreakdown)).length === 0)
-    resetEvmUndecodedTransactionsStatus();
+  if (props.locationsData.length === 0)
+    emit('reset-evm-undecoded-transactions');
 }
 
 async function redecodeMissingEvents() {
@@ -72,31 +71,18 @@ const headers: DataTableColumn[] = [
   },
 ];
 
-const locationsData = computed(() =>
-  Object.entries(get(unDecodedEventsBreakdown)).map(([evmChain, number]) => {
-    const progress = get(evmUndecodedTransactionsStatus)[evmChain];
-    const total = progress?.total || number;
-
-    return {
-      evmChain,
-      total,
-      processed: progress?.processed || 0,
-    };
-  }),
-);
-
 const total: ComputedRef<number> = computed(() =>
-  get(locationsData).reduce((sum, item) => sum + item.total, 0),
+  props.locationsData.reduce((sum, item) => sum + item.total, 0),
 );
 
 watch(eventTaskLoading, (loading) => {
   if (!loading) {
     refresh();
-    resetEvmUndecodedTransactionsStatus();
+    emit('reset-evm-undecoded-transactions');
   }
 });
 
-watch(evmUndecodedTransactionsStatus, (curr, prev) => {
+watch(toRef(props, 'evmUndecodedTransactionsStatus'), (curr, prev) => {
   if (!isEqual(curr, prev))
     refresh();
 });

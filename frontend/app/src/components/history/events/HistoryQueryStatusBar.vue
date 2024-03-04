@@ -17,10 +17,7 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
       :colspan="colspan"
     >
       <div class="flex items-start gap-3">
-        <div
-          v-if="finished || (total > 1)"
-          class="py-2 flex items-center gap-3"
-        >
+        <div class="py-2 flex items-center gap-3">
           <div class="flex">
             <RuiProgress
               v-if="!finished"

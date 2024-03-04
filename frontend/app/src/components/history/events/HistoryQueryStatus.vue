@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   EvmTransactionQueryData,
+  EvmUndecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
@@ -13,6 +14,9 @@ const props = withDefaults(
     includeOnlineEvents: boolean;
     onlyChains?: Blockchain[];
     locations?: string[];
+    unDecoded: EvmUndecodedTransactionsData[];
+    decoding: boolean;
+    currentAction: 'decode' | 'query';
   }>(),
   {
     onlyChains: () => [],
@@ -23,7 +27,9 @@ const props = withDefaults(
   },
 );
 
-const { onlyChains, locations } = toRefs(props);
+const emit = defineEmits<{ (e: 'show-decode-details'): void }>();
+const { onlyChains, locations, currentAction } = toRefs(props);
+const { t } = useI18n();
 
 const {
   sortedQueryStatus: transactions,
@@ -40,6 +46,7 @@ const {
 } = useEventsQueryStatus(locations);
 
 const items = computed(() => [...get(transactions), ...get(events)]);
+const isQuery = computed(() => get(currentAction) === 'query');
 
 function getItemKey(item: EvmTransactionQueryData | HistoryEventsQueryData) {
   if ('eventType' in item)
@@ -65,22 +72,50 @@ function resetQueryStatus() {
   <HistoryQueryStatusBar
     :colspan="colspan"
     :total="items.length"
-    :finished="!loading"
+    :finished="isQuery ? !loading : !decoding"
     @reset="resetQueryStatus()"
   >
     <template #current>
-      <HistoryQueryStatusCurrent :finished="!loading" />
+      <HistoryQueryStatusCurrent
+        v-if="isQuery"
+        :finished="!loading"
+      />
+      <EventsDecodingStatusCurrent
+        v-else
+        :finished="!decoding"
+      />
     </template>
 
     <template #dialog>
       <HistoryQueryStatusDialog
+        v-if="isQuery"
         :only-chains="onlyChains"
         :locations="locations"
         :events="events"
         :transactions="transactions"
+        :un-decoded="unDecoded"
+        :decoding="decoding"
         :get-key="getItemKey"
         :is-item-finished="isItemQueryFinished"
       />
+      <RuiTooltip
+        v-else
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="ml-4"
+      >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            @click="emit('show-decode-details')"
+          >
+            <template #append>
+              <RuiIcon name="information-line" />
+            </template>
+          </RuiButton>
+        </template>
+        {{ t('common.details') }}
+      </RuiTooltip>
     </template>
   </HistoryQueryStatusBar>
 </template>

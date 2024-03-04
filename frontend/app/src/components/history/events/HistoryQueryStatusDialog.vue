@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { EvmTransactionQueryData, HistoryEventsQueryData } from '@/types/websocket-messages';
+import type {
+  EvmTransactionQueryData,
+  EvmUndecodedTransactionsData,
+  HistoryEventsQueryData,
+} from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 withDefaults(
@@ -7,6 +11,8 @@ withDefaults(
     onlyChains?: Blockchain[];
     locations?: string[];
     transactions?: EvmTransactionQueryData[];
+    unDecoded: EvmUndecodedTransactionsData[];
+    decoding: boolean;
     events?: HistoryEventsQueryData[];
     getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
   }>(),
@@ -97,6 +103,30 @@ const { t } = useI18n();
             <TransactionQueryStatusDetails :item="item" />
             <TransactionQueryStatusSteps :item="item" />
           </div>
+        </div>
+
+        <div class="mt-8">
+          <h6 class="text-body-1 font-medium mb-2">
+            {{ t('transactions.events_decoding.title') }}
+          </h6>
+          <template v-if="unDecoded.length > 0">
+            <EventDecodingStatusDetails
+              v-for="item in unDecoded"
+              :key="item.evmChain"
+              :decoding="decoding"
+              class="py-1"
+              :item="item"
+            />
+          </template>
+          <template v-else>
+            <div class="flex gap-2">
+              <SuccessDisplay
+                success
+                size="22"
+              />
+              {{ t('transactions.events_decoding.decoded.true') }}
+            </div>
+          </template>
         </div>
         <template #footer>
           <div class="w-full" />

@@ -9,6 +9,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import { Routes } from '@/router/routes';
+import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
 import type { Writeable } from '@/types';
 import type {
   EvmChainAndTxHash,
@@ -133,6 +134,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { isTaskRunning } = useTaskStore();
+const { show } = useConfirmStore();
+const historyStore = useHistoryStore();
+const { fetchAssociatedLocations, resetEvmUndecodedTransactionsStatus } = historyStore;
+const { evmUndecodedTransactionsStatus } = storeToRefs(historyStore);
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
@@ -140,7 +145,11 @@ const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 
 const { refreshTransactions } = useHistoryTransactions();
 
-const { fetchTransactionEvents } = useHistoryTransactionDecoding();
+const {
+  unDecodedEventsBreakdown,
+  fetchTransactionEvents,
+  fetchUndecodedEventsBreakdown,
+} = useHistoryTransactionDecoding();
 
 const vueRouter = useRouter();
 
@@ -243,6 +252,10 @@ const {
 const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
 
 const isEventsLoading: Ref<boolean> = ref(false);
+const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
+const decodingStatusDialogOpen: Ref<boolean> = ref(false);
+const currentAction: Ref<'decode' | 'query'> = ref('query');
+const route = useRoute();
 
 const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
   async () => {
@@ -282,6 +295,18 @@ const locations = computed<string[]>(() => {
   return [];
 });
 
+const unDecodedLocations = computed<EvmUndecodedTransactionsData[]>(() =>
+  Object.entries(get(unDecodedEventsBreakdown)).map(([evmChain, total]) => {
+    const progress = get(evmUndecodedTransactionsStatus)[evmChain];
+
+    return {
+      evmChain,
+      total: progress?.total || total,
+      processed: progress?.processed || 0,
+    };
+  }),
+);
+
 function onFilterAccountsChanged(acc: Account<BlockchainSelection>[]) {
   set(userAction, true);
   set(accounts, acc.length > 0 ? [acc[0]] : []);
@@ -303,6 +328,7 @@ function redecodeAllEvmEvents() {
 
 async function redecodeAllEvmEventsHandler() {
   set(decodingStatusDialogPersistent, false);
+  set(currentAction, 'decode');
 
   const chains = get(onlyChains);
   const evmChains: { evmChain: string }[] = [];
@@ -319,6 +345,7 @@ async function redecodeAllEvmEventsHandler() {
 }
 
 async function forceRedecodeEvmEvents(data: EvmChainAndTxHash) {
+  set(currentAction, 'decode');
   await fetchTransactionEvents([data], true);
 }
 
@@ -451,7 +478,7 @@ function getItemClass(item: HistoryEventEntry) {
 
 watch(
   [filters, usedAccounts],
-  async ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+  ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
     const filterChanged = !isEqual(filters, oldFilters);
     const accountsChanged = !isEqual(usedAccounts, oldAccounts);
 
@@ -500,10 +527,17 @@ const loading = refThrottled(
   300,
 );
 
-const { fetchAssociatedLocations } = useHistoryStore();
+const processing = logicOr(
+  loading,
+  querying,
+  eventTaskLoading,
+  onlineHistoryEventsLoading,
+);
+
 const { pause, resume, isActive } = useIntervalFn(() => {
   fetchData();
   fetchAssociatedLocations();
+  fetchUndecodedEventsBreakdown();
 }, 20000);
 
 watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
@@ -513,8 +547,6 @@ watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
   else if (!shouldFetchEventsRegularly && active)
     pause();
 });
-
-const { show } = useConfirmStore();
 
 function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>) {
   vueRouter.push({
@@ -566,12 +598,13 @@ onMounted(async () => {
 });
 
 async function refresh(userInitiated = false) {
+  set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
   const disableEvmEvents
     = entryTypesVal.length > 0
     && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
-  startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
+  startPromise(Promise.all([fetchData(), fetchAssociatedLocations(), fetchUndecodedEventsBreakdown()]));
 }
 
 onUnmounted(() => {
@@ -613,10 +646,6 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
   type => isOnlineHistoryEventType(type),
 );
 
-const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
-const decodingStatusDialogOpen: Ref<boolean> = ref(false);
-const route = useRoute();
-
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -635,7 +664,7 @@ watchImmediate(route, async (route) => {
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
-            :disabled="refreshing"
+            :disabled="processing"
             variant="outlined"
             color="primary"
             @click="refresh(true)"
@@ -667,7 +696,10 @@ watchImmediate(route, async (route) => {
         <HistoryEventsDecodingStatus
           v-if="decodingStatusDialogOpen"
           :refreshing="refreshing"
+          :locations-data="unDecodedLocations"
+          :evm-undecoded-transactions-status="evmUndecodedTransactionsStatus"
           @redecode-all-evm-events="redecodeAllEvmEvents()"
+          @reset-evm-undecoded-transactions="resetEvmUndecodedTransactionsStatus()"
         >
           <RuiButton
             variant="text"
@@ -799,6 +831,14 @@ watchImmediate(route, async (route) => {
           </TableFilter>
         </template>
 
+        <RuiButton
+          color="primary"
+          :disabled="processing"
+          @click="redecodeAllEvmEvents()"
+        >
+          {{ t('transactions.events_decoding.redecode_all') }}
+        </RuiButton>
+
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
@@ -835,7 +875,7 @@ watchImmediate(route, async (route) => {
             :expanded="eventsData"
             :headers="tableHeaders"
             :items="eventsData"
-            :loading="loading || querying || refreshing"
+            :loading="processing"
             :options="options"
             :server-items-length="itemLength"
             :single-select="false"
@@ -892,8 +932,12 @@ watchImmediate(route, async (route) => {
                 :include-online-events="includeOnlineEvents"
                 :only-chains="onlyChains"
                 :locations="locations"
+                :un-decoded="unDecodedLocations"
+                :decoding="eventTaskLoading"
                 :colspan="headers.length"
-                :loading="querying || refreshing"
+                :loading="processing"
+                :current-action="currentAction"
+                @show-decode-details="decodingStatusDialogOpen = true"
               />
               <UpgradeRow
                 v-if="showUpgradeRow"
