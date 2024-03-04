@@ -297,7 +297,7 @@ class Coinbase(ExchangeInterface):
         next_uri = f'/{self.apiversion}/{endpoint}'
         timeout = CachedSettings().get_timeout_tuple()
         if options:
-            next_uri += f'?={urlencode(options)}'
+            next_uri += f'?{urlencode(options)}'
         while True:
             timestamp = str(int(time.time()))
             message = timestamp + request_verb + next_uri
@@ -462,20 +462,20 @@ class Coinbase(ExchangeInterface):
                 if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
                     continue  # if no update since last query or last query recent stop
 
-                account_last_id_name = f'{self.location}_{self.name}_{account_id}_last_query_id'
-                cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (account_last_id_name,))  # noqa: E501
-                last_id = self.db.get_dynamic_cache(
+                last_id = None
+                if (result_id := self.db.get_dynamic_cache(
                     cursor=cursor,
                     name=DBCacheDynamic.LAST_QUERY_ID,
                     location=self.location.serialize(),
                     location_name=self.name,
                     account_id=account_id,
-                )
+                )) is not None:
+                    last_id = str(result_id)
 
             trades, asset_movements, history_events = self._query_single_account_transactions(
                 account_id=account_id,
-                account_last_id_name=account_last_id_name,
-                last_tx_id=str(last_id),
+                account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
+                last_tx_id=last_id,
             )
 
             # The approach here does not follow the exchange interface querying with
