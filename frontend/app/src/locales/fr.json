@@ -4338,7 +4338,14 @@
       "progress": "Progression",
       "redecode_all": "Recoder tous les événements EVM",
       "title": "État du recodage des événements EVM",
-      "undecoded_events": "Événements non recodés"
+      "undecoded_events": "Événements non recodés",
+      "decoding": {
+        "processing": "Décodage de {count} événement | Décodage de {count} de {total} événements",
+        "pending": "{count} Événement non décodé | {count} Événements non décodés",
+        "done": "Événement décodé {count} | Événements décodés {count}",
+        "all": "Redécodage des événements EVM",
+        "all_done": "Redécodage des événements EVM terminé"
+      }
     },
     "filter": {
       "account": "Filtrer par compte",
