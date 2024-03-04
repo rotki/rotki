@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-CLAIM_AIRDROP = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 DIVA_AIDROP_CONTRACT = string_to_evm_address('0x777E2B2Cc7980A6bAC92910B95269895EEf0d2E8')
 DIVA_GOVERNOR = string_to_evm_address('0xFb6B7C11a55C57767643F1FF65c34C8693a11A70')
 
@@ -76,7 +76,7 @@ class DivaDecoder(GovernableDecoderInterface):
         return DecodingOutput(event=event, refresh_balances=False)
 
     def _decode_diva_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != CLAIM_AIRDROP:
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         claiming_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
