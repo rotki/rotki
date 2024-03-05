@@ -21,6 +21,7 @@ export function useAccountBalances() {
     arbitrumAccounts,
     baseAccounts,
     gnosisAccounts,
+    scrollAccounts,
     chainTotals,
   } = chainStore;
 
@@ -36,6 +37,7 @@ export function useAccountBalances() {
       .concat(get(arbitrumAccounts))
       .concat(get(baseAccounts))
       .concat(get(gnosisAccounts))
+      .concat(get(scrollAccounts))
       .filter((account: BlockchainAccountWithBalance) => !!account.address)
       .map((account: BlockchainAccountWithBalance) => ({
         chain: account.chain,
@@ -69,6 +71,7 @@ export function useAccountBalances() {
       [Blockchain.ARBITRUM_ONE]: arbitrumAccounts,
       [Blockchain.BASE]: baseAccounts,
       [Blockchain.GNOSIS]: gnosisAccounts,
+      [Blockchain.SCROLL]: gnosisAccounts,
     };
 
     const accounts = get(mapping[blockchain]);

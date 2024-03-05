@@ -13,6 +13,7 @@ export const useChainsAccountsStore = defineStore(
     const arbitrum: Ref<GeneralAccountData[]> = ref([]);
     const base: Ref<GeneralAccountData[]> = ref([]);
     const gnosis: Ref<GeneralAccountData[]> = ref([]);
+    const scroll: Ref<GeneralAccountData[]> = ref([]);
 
     const removeTag = (tag: string) => {
       set(ksm, removeTags(ksm, tag));
@@ -23,6 +24,7 @@ export const useChainsAccountsStore = defineStore(
       set(arbitrum, removeTags(arbitrum, tag));
       set(base, removeTags(base, tag));
       set(gnosis, removeTags(gnosis, tag));
+      set(scroll, removeTags(scroll, tag));
     };
 
     const update = (chain: RestChains, data: GeneralAccountData[]) => {
@@ -42,6 +44,8 @@ export const useChainsAccountsStore = defineStore(
         set(base, data);
       else if (chain === Blockchain.GNOSIS)
         set(gnosis, data);
+      else if (chain === Blockchain.SCROLL)
+        set(scroll, data);
     };
 
     const ksmAddresses: ComputedRef<string[]> = computed(() =>
@@ -76,6 +80,10 @@ export const useChainsAccountsStore = defineStore(
       get(gnosis).map(({ address }) => address),
     );
 
+    const scrollAddresses: ComputedRef<string[]> = computed(() =>
+      get(scroll).map(({ address }) => address),
+    );
+
     return {
       ksm,
       dot,
@@ -85,6 +93,7 @@ export const useChainsAccountsStore = defineStore(
       arbitrum,
       base,
       gnosis,
+      scroll,
       ksmAddresses,
       dotAddresses,
       avaxAddresses,
@@ -93,6 +102,7 @@ export const useChainsAccountsStore = defineStore(
       arbitrumAddresses,
       baseAddresses,
       gnosisAddresses,
+      scrollAddresses,
       update,
       removeTag,
     };

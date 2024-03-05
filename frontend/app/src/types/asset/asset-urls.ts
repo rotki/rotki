@@ -82,4 +82,9 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://gnosisscan.io/tx/',
     block: 'https://gnosisscan.io/block/',
   },
+  [Blockchain.SCROLL]: {
+    address: 'https://scrollscan.com/address/',
+    transaction: 'https://scrollscan.com/tx/',
+    block: 'https://scrollscan.com/block/',
+  },
 };

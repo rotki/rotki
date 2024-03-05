@@ -48,6 +48,7 @@ const PerAccountBalances = z.object({
   [camelCase(Blockchain.ARBITRUM_ONE)]: BlockchainAssetBalances.optional(),
   [Blockchain.BASE]: BlockchainAssetBalances.optional(),
   [Blockchain.GNOSIS]: BlockchainAssetBalances.optional(),
+  [Blockchain.SCROLL]: BlockchainAssetBalances.optional(),
 });
 
 export const BlockchainBalances = z.object({

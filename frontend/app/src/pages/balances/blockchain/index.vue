@@ -42,6 +42,7 @@ const intersections = ref<Intersections>({
   [Blockchain.ARBITRUM_ONE]: false,
   [Blockchain.BASE]: false,
   [Blockchain.GNOSIS]: false,
+  [Blockchain.SCROLL]: false,
 });
 
 function updateWhenRatio(entries: IntersectionObserverEntry[], value: Blockchain) {
@@ -101,6 +102,8 @@ const observers: Observers = {
     updateWhenRatio(entries, Blockchain.BASE),
   [Blockchain.GNOSIS]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.GNOSIS),
+  [Blockchain.SCROLL]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.SCROLL),
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -118,6 +121,7 @@ const busy: Busy = {
   [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE),
   [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE),
   [Blockchain.GNOSIS]: isAccountOperationRunning(Blockchain.GNOSIS),
+  [Blockchain.SCROLL]: isAccountOperationRunning(Blockchain.SCROLL),
 };
 
 const threshold = [0.5];

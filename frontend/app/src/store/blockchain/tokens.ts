@@ -28,6 +28,7 @@ function defaultTokens(): Tokens {
     [Blockchain.ARBITRUM_ONE]: {},
     [Blockchain.BASE]: {},
     [Blockchain.GNOSIS]: {},
+    [Blockchain.SCROLL]: {},
   };
 }
 
@@ -45,6 +46,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     arbitrumAddresses,
     baseAddresses,
     gnosisAddresses,
+    scrollAddresses,
   } = storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
@@ -211,6 +213,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.GNOSIS);
   });
 
+  watch(scrollAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev))
+      return;
+
+    await fetchDetectedTokens(Blockchain.SCROLL);
+  });
+
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
@@ -242,6 +251,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         });
       }
     });
+  });
+
+  const isScrollDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.SCROLL,
+  });
+  watch(isScrollDetecting, async (isDetecting, wasDetecting) => {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.SCROLL,
+        ignoreCache: true,
+      });
+    }
   });
 
   return {
