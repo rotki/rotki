@@ -27,7 +27,10 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'show-decode-details'): void }>();
+const emit = defineEmits<{
+  (e: 'show-decode-details'): void;
+  (e: 'update:current-action', value: 'decode' | 'query'): void;
+}>();
 const { onlyChains, locations, currentAction } = toRefs(props);
 const { t } = useI18n();
 
@@ -65,6 +68,7 @@ function isItemQueryFinished(item: EvmTransactionQueryData | HistoryEventsQueryD
 function resetQueryStatus() {
   resetTransactionsQueryStatus();
   resetEventsQueryStatus();
+  emit('update:current-action', 'query');
 }
 </script>
 
@@ -72,6 +76,7 @@ function resetQueryStatus() {
   <HistoryQueryStatusBar
     :colspan="colspan"
     :total="items.length"
+    :decoding="!isQuery"
     :finished="isQuery ? !loading : !decoding"
     @reset="resetQueryStatus()"
   >

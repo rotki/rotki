@@ -329,6 +329,7 @@ function redecodeAllEvmEvents() {
 async function redecodeAllEvmEventsHandler() {
   set(decodingStatusDialogPersistent, false);
   set(currentAction, 'decode');
+  startPromise(fetchUndecodedEventsBreakdown());
 
   const chains = get(onlyChains);
   const evmChains: { evmChain: string }[] = [];
@@ -530,8 +531,7 @@ const loading = refThrottled(
 const processing = logicOr(
   loading,
   querying,
-  eventTaskLoading,
-  onlineHistoryEventsLoading,
+  refreshing,
 );
 
 const { pause, resume, isActive } = useIntervalFn(() => {
@@ -936,7 +936,7 @@ watchImmediate(route, async (route) => {
                 :decoding="eventTaskLoading"
                 :colspan="headers.length"
                 :loading="processing"
-                :current-action="currentAction"
+                :current-action.sync="currentAction"
                 @show-decode-details="decodingStatusDialogOpen = true"
               />
               <UpgradeRow

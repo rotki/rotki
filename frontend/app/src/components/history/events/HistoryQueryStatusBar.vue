@@ -2,6 +2,7 @@
 defineProps<{
   colspan: number;
   finished: boolean;
+  decoding: boolean;
   total: number;
 }>();
 
@@ -10,7 +11,7 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
 
 <template>
   <tr
-    v-if="total > 0"
+    v-if="total > 0 || decoding"
     class="bg-rui-secondary-lighter dark:bg-rui-secondary-darker"
   >
     <td
