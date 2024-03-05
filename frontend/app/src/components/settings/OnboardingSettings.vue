@@ -402,12 +402,16 @@ function showResetConfirmation() {
       </VSelect>
     </div>
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="onboarding-setting__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('backend_settings.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent>
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="maxLogSize"
             data-cy="max-log-size-input"
@@ -499,9 +503,9 @@ function showResetConfirmation() {
           >
             {{ t('backend_settings.log_from_other_modules.label') }}
           </RuiCheckbox>
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
 
     <template #footer>
       <div class="flex justify-end w-full gap-2">

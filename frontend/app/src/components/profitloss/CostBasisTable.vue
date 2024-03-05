@@ -83,31 +83,28 @@ const matchedAcquisitions = computed(
       </div>
     </template>
     <template #append>
-      <VExpansionPanels
+      <RuiAccordions
         v-model="panel"
-        :class="css['expansions-panels']"
         multiple
       >
-        <VExpansionPanel>
-          <VExpansionPanelHeader>
-            <template #default="{ open }">
-              <div class="text-rui-primary font-bold">
-                {{
-                  open
-                    ? t('profit_loss_events.cost_basis.hide')
-                    : t('profit_loss_events.cost_basis.show')
-                }}
-              </div>
-            </template>
-          </VExpansionPanelHeader>
+        <RuiAccordion>
+          <template #header="{ open }">
+            <div class="text-rui-primary font-bold">
+              {{
+                open
+                  ? t('profit_loss_events.cost_basis.hide')
+                  : t('profit_loss_events.cost_basis.show')
+              }}
+            </div>
+          </template>
 
-          <VExpansionPanelContent class="pt-4">
+          <div class="pt-4">
             <RuiCard>
               <template #custom-header>
                 <div class="flex p-4 items-center gap-4">
-                  <h5 class="text-h5">
+                  <h6 class="text-h6">
                     {{ t('cost_basis_table.cost_basis') }}
-                  </h5>
+                  </h6>
                   <RuiChip
                     v-if="costBasis.isComplete"
                     size="sm"
@@ -167,9 +164,9 @@ const matchedAcquisitions = computed(
                 </template>
               </DataTable>
             </RuiCard>
-          </VExpansionPanelContent>
-        </VExpansionPanel>
-      </VExpansionPanels>
+          </div>
+        </RuiAccordion>
+      </RuiAccordions>
     </template>
   </TableExpandContainer>
 </template>
@@ -181,32 +178,6 @@ const matchedAcquisitions = computed(
       &:first-child {
         span {
           padding-left: 16px;
-        }
-      }
-    }
-  }
-}
-
-.expansions {
-  &-panels {
-    :global {
-      .v-expansion-panel {
-        background: transparent !important;
-
-        &::before {
-          box-shadow: none;
-        }
-
-        &-header {
-          padding: 0;
-          min-height: auto;
-          width: auto;
-        }
-
-        &-content {
-          &__wrap {
-            padding: 0;
-          }
         }
       }
     }

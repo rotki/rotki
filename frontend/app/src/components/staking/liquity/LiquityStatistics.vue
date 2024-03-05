@@ -233,151 +233,148 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
         </div>
       </div>
 
-      <VExpansionPanels
-        multiple
+      <RuiAccordions
         class="pt-4"
       >
-        <VExpansionPanel elevation="0">
-          <VExpansionPanelContent>
-            <div class="grid md:grid-cols-2 md:gap-12">
+        <RuiAccordion
+          header-class="pt-4 pb-4 -mb-4 border-t border-default justify-center w-full"
+          class="flex-col-reverse"
+        >
+          <div class="grid md:grid-cols-2 md:gap-12">
+            <div>
               <div>
-                <div>
-                  <RuiDivider />
-                  <div class="text-right py-4">
-                    <div class="font-medium pb-2">
-                      {{
-                        t('liquity_statistic.total_deposited_stability_pool')
-                      }}
-                    </div>
-                    <BalanceDisplay
-                      :asset="LUSD_ID"
-                      :value="totalDepositedStabilityPoolBalance"
-                      :loading="loading"
-                    />
+                <RuiDivider />
+                <div class="text-right py-4">
+                  <div class="font-medium pb-2">
+                    {{
+                      t('liquity_statistic.total_deposited_stability_pool')
+                    }}
                   </div>
-                </div>
-                <div>
-                  <RuiDivider />
-                  <div class="text-right py-4">
-                    <div class="font-medium pb-2">
-                      {{
-                        t('liquity_statistic.total_withdrawn_stability_pool')
-                      }}
-                    </div>
-                    <BalanceDisplay
-                      :asset="LUSD_ID"
-                      :value="totalWithdrawnStabilityPoolBalance"
-                      :loading="loading"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <RuiDivider />
-                  <div class="text-right py-4">
-                    <div class="font-medium pb-2">
-                      {{ t('liquity_statistic.stability_pool_gains') }}
-                    </div>
-
-                    <div
-                      v-if="
-                        statisticWithAdjustedPrice.stabilityPoolGains.length > 0
-                      "
-                    >
-                      <div
-                        v-for="assetBalance in statisticWithAdjustedPrice.stabilityPoolGains"
-                        :key="assetBalance.asset"
-                      >
-                        <BalanceDisplay
-                          :asset="assetBalance.asset"
-                          :value="assetBalance"
-                          :loading="loading"
-                        />
-                      </div>
-                    </div>
-                    <div
-                      v-else
-                      class="text-rui-text-secondary pb-2"
-                    >
-                      {{ t('liquity_statistic.no_stability_pool_gains') }}
-                    </div>
-                  </div>
-                </div>
-                <div v-if="totalPnl">
-                  <RuiDivider />
-                  <div class="text-right py-4">
-                    <div
-                      class="flex items-center justify-end gap-2 font-medium pb-2"
-                    >
-                      <RuiTooltip
-                        :popper="{ placement: 'top' }"
-                        :open-delay="400"
-                        tooltip-class="max-w-[10rem]"
-                      >
-                        <template #activator>
-                          <RuiIcon name="information-line" />
-                        </template>
-                        <span>
-                          {{ t('liquity_statistic.estimated_pnl_warning') }}
-                        </span>
-                      </RuiTooltip>
-                      {{ t('liquity_statistic.estimated_pnl') }}
-                    </div>
-                    <AmountDisplay
-                      :value="totalPnl"
-                      :fiat-currency="CURRENCY_USD"
-                      :loading="loading"
-                      pnl
-                    />
-                  </div>
+                  <BalanceDisplay
+                    :asset="LUSD_ID"
+                    :value="totalDepositedStabilityPoolBalance"
+                    :loading="loading"
+                  />
                 </div>
               </div>
               <div>
-                <div>
-                  <RuiDivider />
-                  <div class="text-right py-4">
-                    <div class="font-medium pb-2">
-                      {{ t('liquity_statistic.staking_gains') }}
-                    </div>
+                <RuiDivider />
+                <div class="text-right py-4">
+                  <div class="font-medium pb-2">
+                    {{
+                      t('liquity_statistic.total_withdrawn_stability_pool')
+                    }}
+                  </div>
+                  <BalanceDisplay
+                    :asset="LUSD_ID"
+                    :value="totalWithdrawnStabilityPoolBalance"
+                    :loading="loading"
+                  />
+                </div>
+              </div>
+              <div>
+                <RuiDivider />
+                <div class="text-right py-4">
+                  <div class="font-medium pb-2">
+                    {{ t('liquity_statistic.stability_pool_gains') }}
+                  </div>
 
+                  <div
+                    v-if="
+                      statisticWithAdjustedPrice.stabilityPoolGains.length > 0
+                    "
+                  >
                     <div
-                      v-if="statisticWithAdjustedPrice.stakingGains.length > 0"
+                      v-for="assetBalance in statisticWithAdjustedPrice.stabilityPoolGains"
+                      :key="assetBalance.asset"
                     >
-                      <div
-                        v-for="assetBalance in statisticWithAdjustedPrice.stakingGains"
-                        :key="assetBalance.asset"
-                      >
-                        <BalanceDisplay
-                          :asset="assetBalance.asset"
-                          :value="assetBalance"
-                          :loading="loading"
-                        />
-                      </div>
+                      <BalanceDisplay
+                        :asset="assetBalance.asset"
+                        :value="assetBalance"
+                        :loading="loading"
+                      />
                     </div>
+                  </div>
+                  <div
+                    v-else
+                    class="text-rui-text-secondary pb-2"
+                  >
+                    {{ t('liquity_statistic.no_stability_pool_gains') }}
+                  </div>
+                </div>
+              </div>
+              <div v-if="totalPnl">
+                <RuiDivider />
+                <div class="text-right py-4">
+                  <div
+                    class="flex items-center justify-end gap-2 font-medium pb-2"
+                  >
+                    <RuiTooltip
+                      :popper="{ placement: 'top' }"
+                      :open-delay="400"
+                      tooltip-class="max-w-[10rem]"
+                    >
+                      <template #activator>
+                        <RuiIcon name="information-line" />
+                      </template>
+                      <span>
+                        {{ t('liquity_statistic.estimated_pnl_warning') }}
+                      </span>
+                    </RuiTooltip>
+                    {{ t('liquity_statistic.estimated_pnl') }}
+                  </div>
+                  <AmountDisplay
+                    :value="totalPnl"
+                    :fiat-currency="CURRENCY_USD"
+                    :loading="loading"
+                    pnl
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div>
+                <RuiDivider />
+                <div class="text-right py-4">
+                  <div class="font-medium pb-2">
+                    {{ t('liquity_statistic.staking_gains') }}
+                  </div>
+
+                  <div
+                    v-if="statisticWithAdjustedPrice.stakingGains.length > 0"
+                  >
                     <div
-                      v-else
-                      class="text-rui-text-secondary pb-2"
+                      v-for="assetBalance in statisticWithAdjustedPrice.stakingGains"
+                      :key="assetBalance.asset"
                     >
-                      {{ t('liquity_statistic.no_staking_gains') }}
+                      <BalanceDisplay
+                        :asset="assetBalance.asset"
+                        :value="assetBalance"
+                        :loading="loading"
+                      />
                     </div>
+                  </div>
+                  <div
+                    v-else
+                    class="text-rui-text-secondary pb-2"
+                  >
+                    {{ t('liquity_statistic.no_staking_gains') }}
                   </div>
                 </div>
               </div>
             </div>
-          </VExpansionPanelContent>
-          <RuiDivider />
-          <VExpansionPanelHeader class="flex justify-center w-full">
-            <template #default="{ open }">
-              <div class="text-rui-text-secondary mr-4 grow-0">
-                {{
-                  open
-                    ? t('liquity_statistic.view.hide')
-                    : t('liquity_statistic.view.show')
-                }}
-              </div>
-            </template>
-          </VExpansionPanelHeader>
-        </VExpansionPanel>
-      </VExpansionPanels>
+          </div>
+          <template #header="{ open }">
+            <div class="text-rui-text-secondary mr-4 grow-0">
+              {{
+                open
+                  ? t('liquity_statistic.view.hide')
+                  : t('liquity_statistic.view.show')
+              }}
+            </div>
+          </template>
+        </RuiAccordion>
+      </RuiAccordions>
     </template>
     <div
       v-else

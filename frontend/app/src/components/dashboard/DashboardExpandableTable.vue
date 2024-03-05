@@ -33,13 +33,13 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
         </div>
       </div>
     </template>
-    <VExpansionPanels :value="panel">
-      <VExpansionPanel>
-        <VExpansionPanelContent>
+    <RuiAccordions :value="panel">
+      <RuiAccordion eager>
+        <template #default>
           <slot />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </template>
+      </RuiAccordion>
+    </RuiAccordions>
   </RuiCard>
 </template>
 
