@@ -523,60 +523,55 @@ setSubmitFunc(save);
         rounded="sm"
         class="mt-2 mb-4 overflow-hidden"
       >
-        <VExpansionPanels
-          flat
-          tile
-        >
-          <VExpansionPanel>
-            <VExpansionPanelHeader>
+        <RuiAccordions>
+          <RuiAccordion header-grow>
+            <template #header>
               {{ t('asset_form.optional') }}
-            </VExpansionPanelHeader>
-            <VExpansionPanelContent>
-              <DateTimePicker
-                v-model="started"
-                :label="t('asset_form.labels.started')"
-                :error-messages="toMessages(v$.started)"
+            </template>
+            <DateTimePicker
+              v-model="started"
+              :label="t('asset_form.labels.started')"
+              :error-messages="toMessages(v$.started)"
+              :disabled="submitting"
+            />
+            <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+              <RuiTextField
+                v-if="isEvmToken"
+                v-model="protocol"
+                variant="outlined"
+                color="primary"
+                clearable
+                class="asset-form__protocol"
+                :label="t('common.protocol')"
+                :error-messages="toMessages(v$.protocol)"
                 :disabled="submitting"
               />
-              <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-                <RuiTextField
-                  v-if="isEvmToken"
-                  v-model="protocol"
-                  variant="outlined"
-                  color="primary"
-                  clearable
-                  class="asset-form__protocol"
-                  :label="t('common.protocol')"
-                  :error-messages="toMessages(v$.protocol)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-model="swappedFor"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="toMessages(v$.swappedFor)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-if="!isEvmToken && assetType"
-                  v-model="forked"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.forked')"
-                  :error-messages="toMessages(v$.forked)"
-                  :disabled="submitting"
-                />
-              </div>
-              <UnderlyingTokenManager
-                v-if="isEvmToken"
-                v-model="underlyingTokens"
+              <AssetSelect
+                v-model="swappedFor"
+                outlined
+                persistent-hint
+                clearable
+                :label="t('asset_form.labels.swapped_for')"
+                :error-messages="toMessages(v$.swappedFor)"
+                :disabled="submitting"
               />
-            </VExpansionPanelContent>
-          </VExpansionPanel>
-        </VExpansionPanels>
+              <AssetSelect
+                v-if="!isEvmToken && assetType"
+                v-model="forked"
+                outlined
+                persistent-hint
+                clearable
+                :label="t('asset_form.labels.forked')"
+                :error-messages="toMessages(v$.forked)"
+                :disabled="submitting"
+              />
+            </div>
+            <UnderlyingTokenManager
+              v-if="isEvmToken"
+              v-model="underlyingTokens"
+            />
+          </RuiAccordion>
+        </RuiAccordions>
       </RuiCard>
 
       <AssetIconForm

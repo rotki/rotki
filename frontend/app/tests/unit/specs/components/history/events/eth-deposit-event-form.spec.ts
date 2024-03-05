@@ -65,7 +65,7 @@ describe('ethDepositEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
       await wrapper.vm.$nextTick();
 
@@ -113,7 +113,7 @@ describe('ethDepositEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
       await wrapper.vm.$nextTick();
 
@@ -166,7 +166,7 @@ describe('ethDepositEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
       await wrapper.vm.$nextTick();
 

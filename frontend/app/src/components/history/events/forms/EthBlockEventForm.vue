@@ -311,17 +311,16 @@ const feeRecipientSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
-          class="p-0"
-          data-cy="eth-block-event-form__advance-toggle"
-        >
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="eth-block-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
-          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
-        >
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="eventIdentifier"
             variant="outlined"
@@ -331,8 +330,8 @@ const feeRecipientSuggestions = computed(() =>
             :error-messages="toMessages(v$.eventIdentifier)"
             @blur="v$.eventIdentifier.$touch()"
           />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

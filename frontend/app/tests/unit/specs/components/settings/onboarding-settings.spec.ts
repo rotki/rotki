@@ -199,7 +199,7 @@ describe('onboardingSetting.vue', () => {
   describe('advanced settings', async () => {
     beforeEach(async () => {
       await wrapper
-        .find('[data-cy=onboarding-setting__advance-toggle]')
+        .find('[data-cy=onboarding-setting__advance] .accordion__header')
         .trigger('click');
 
       await wrapper.vm.$nextTick();

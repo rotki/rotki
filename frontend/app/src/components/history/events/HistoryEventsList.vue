@@ -75,17 +75,13 @@ watch(
 );
 
 const blockEvent = isEthBlockEventRef(eventGroup);
+const [DefineTable, ReuseTable] = createReusableTemplate();
 </script>
 
 <template>
   <Fragment>
-    <td
-      colspan="1"
-      class="px-0"
-    />
-    <td :colspan="colspan - 1">
+    <DefineTable>
       <HistoryEventsListTable
-        v-if="!showDropdown"
         :events="events"
         :block-number="blockEvent?.blockNumber"
         :loading="loading"
@@ -93,44 +89,37 @@ const blockEvent = isEthBlockEventRef(eventGroup);
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
         @edit-event="emit('edit-event', $event)"
       />
-      <VExpansionPanels
+    </DefineTable>
+    <td
+      colspan="1"
+      class="px-0"
+    />
+    <td :colspan="colspan - 1">
+      <ReuseTable v-if="!showDropdown" />
+      <RuiAccordions
         v-else
         v-model="panel"
-        flat
         multiple
       >
-        <VExpansionPanel class="!bg-transparent !p-0">
-          <VExpansionPanelHeader
-            v-if="showDropdown"
-            class="!w-auto !p-0 !h-12 !min-h-[3rem]"
-          >
-            <template #default="{ open }">
-              <div class="text-rui-primary font-bold">
-                {{
-                  open
-                    ? t('transactions.events.view.hide')
-                    : t('transactions.events.view.show', {
-                      length: events.length,
-                    })
-                }}
-              </div>
-            </template>
-          </VExpansionPanelHeader>
-          <VExpansionPanelContent class="!p-0 [&>*:first-child]:!p-0">
-            <HistoryEventsListTable
-              v-if="showDropdown"
-              :events="events"
-              :block-number="blockEvent?.blockNumber"
-              :loading="loading"
-              @delete-event="emit('delete-event', $event)"
-              @show:missing-rule-action="
-                emit('show:missing-rule-action', $event)
-              "
-              @edit-event="emit('edit-event', $event)"
-            />
-          </VExpansionPanelContent>
-        </VExpansionPanel>
-      </VExpansionPanels>
+        <RuiAccordion
+          header-class="py-3"
+        >
+          <template #header="{ open }">
+            <div class="text-rui-primary font-bold">
+              {{
+                open
+                  ? t('transactions.events.view.hide')
+                  : t('transactions.events.view.show', {
+                    length: events.length,
+                  })
+              }}
+            </div>
+          </template>
+          <div class="-mt-2">
+            <ReuseTable />
+          </div>
+        </RuiAccordion>
+      </RuiAccordions>
     </td>
   </Fragment>
 </template>
