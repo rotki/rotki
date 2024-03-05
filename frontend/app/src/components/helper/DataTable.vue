@@ -303,6 +303,7 @@ const { dark } = useTheme();
         <div>
           <RuiProgress
             v-if="loading"
+            color="primary"
             variant="indeterminate"
           />
         </div>

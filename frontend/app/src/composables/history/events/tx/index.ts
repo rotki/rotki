@@ -41,11 +41,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   ): Promise<void> => {
     const taskType = TaskType.TX;
     const defaults: TransactionRequestPayload = {
-      limit: 0,
-      offset: 0,
-      ascending: [false],
-      orderByAttributes: ['timestamp'],
-      onlyCache: false,
       accounts: [account],
     };
 
