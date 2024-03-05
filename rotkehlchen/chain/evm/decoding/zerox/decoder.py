@@ -1,12 +1,15 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_SIGNATURES
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
@@ -15,7 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
-from .constants import CPT_ZEROX
+from .constants import CPT_ZEROX, METATX_ZEROX
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -36,7 +39,6 @@ class ZeroxCommonDecoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
             router_address: ChecksumEvmAddress,
             flash_wallet_address: ChecksumEvmAddress,
-            native_currency: Asset,
     ) -> None:
         """router_address is the main point of contact with the 0x protocol.
         flash_wallet_address is a contract that can execute arbitrary calls from 0x router_address.
@@ -45,14 +47,14 @@ class ZeroxCommonDecoder(DecoderInterface):
         self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
         self.router_address = router_address
         self.flash_wallet_address = flash_wallet_address
-        self.native_currency = native_currency
 
-    def _update_send_and_receive_events(
+    def _update_send_receive_fee_events(
             self,
             send_event: 'EvmEvent | None' = None,
             receive_event: 'EvmEvent | None' = None,
+            fee_event: 'EvmEvent | None' = None,
     ) -> None:
-        """An auxiliary function to update the send and/or receive events with the 0x values"""
+        """An auxiliary function to update the send, receive and/or fee events with the 0x values"""  # noqa: E501
         if send_event is not None:
             send_event.counterparty = CPT_ZEROX
             send_event.address = self.router_address
@@ -65,13 +67,54 @@ class ZeroxCommonDecoder(DecoderInterface):
             receive_event.event_type = HistoryEventType.TRADE
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
             receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a swap via the 0x protocol'  # noqa: E501
+        if fee_event is not None:
+            fee_event.counterparty = CPT_ZEROX
+            fee_event.address = self.router_address
+            fee_event.event_type = HistoryEventType.SPEND
+            fee_event.event_subtype = HistoryEventSubType.FEE
+            fee_event.notes = f'Spend {fee_event.balance.amount} {fee_event.asset.symbol_or_name()} as a 0x protocol fee'  # noqa: E501
+
+    def _merge_split_swap_events(
+            self,
+            decoded_events: list['EvmEvent'],
+            send_events: list['EvmEvent'],
+            receive_events: list['EvmEvent'],
+            fee_event: 'EvmEvent | None' = None,
+    ) -> None:
+        """Sum the balances of the events, update them with the 0x values, replace them with the
+        Merged Events in decoded_events list, and maybe shuffle them with proper order. This is
+        helpful in multiplex swaps, where a swap is done via multiple routes."""
+        summed_send_event = send_events[0] if len(send_events) > 0 else None
+        summed_receive_event = receive_events[0] if len(receive_events) > 0 else None
+        events_to_remove = set()
+
+        if summed_send_event is not None:
+            for event in send_events[1:]:
+                summed_send_event.balance += event.balance
+                events_to_remove.add(event)
+        if summed_receive_event is not None:
+            for event in receive_events[1:]:
+                summed_receive_event.balance += event.balance
+                events_to_remove.add(event)
+
+        self._update_send_receive_fee_events(
+            send_event=summed_send_event,
+            receive_event=summed_receive_event,
+            fee_event=fee_event,
+        )
+        # in-place edit the decoded_events reference and filter out events_to_remove
+        decoded_events[:] = [event for event in decoded_events if event not in events_to_remove]
+        maybe_reshuffle_events(
+            ordered_events=[summed_send_event, summed_receive_event, fee_event],
+            events_list=decoded_events,
+        )
 
     def _decode_swap(
             self,
             transaction: 'EvmTransaction',
-            decoded_events: 'list[EvmEvent]',
-            all_logs: 'list[EvmTxReceiptLog]',
-    ) -> 'list[EvmEvent]':
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> list['EvmEvent']:
         """This function is used to decode the swaps done via 0x. It checks if already decoded
         events interacted with the 0x router, and overwrites them if they did."""
         send_address_to_events: dict[ChecksumEvmAddress, 'EvmEvent'] = {}
@@ -114,7 +157,7 @@ class ZeroxCommonDecoder(DecoderInterface):
                 send_address_to_events[zero_x_address].event_type == HistoryEventType.SPEND and
                 send_address_to_events[zero_x_address].event_subtype == HistoryEventSubType.NONE
             ):
-                self._update_send_and_receive_events(
+                self._update_send_receive_fee_events(
                     send_event=send_address_to_events[zero_x_address],
                 )
 
@@ -124,7 +167,7 @@ class ZeroxCommonDecoder(DecoderInterface):
                 receive_address_to_events[zero_x_address].event_type == HistoryEventType.RECEIVE and  # noqa: E501
                 receive_address_to_events[zero_x_address].event_subtype == HistoryEventSubType.NONE
             ):
-                self._update_send_and_receive_events(
+                self._update_send_receive_fee_events(
                     receive_event=receive_address_to_events[zero_x_address],
                 )
 
@@ -136,7 +179,7 @@ class ZeroxCommonDecoder(DecoderInterface):
                 hex_or_bytes_to_address(_log.topics[1]),  # 0x is sender
                 hex_or_bytes_to_address(_log.topics[2]),  # 0x is receiver
             }:
-                self._update_send_and_receive_events(send_event=send_event, receive_event=receive_event)  # noqa: E501
+                self._update_send_receive_fee_events(send_event=send_event, receive_event=receive_event)  # noqa: E501
 
             if (  # sent_token is transfered from tracked sender to 0x
                 send_event is not None and
@@ -146,43 +189,60 @@ class ZeroxCommonDecoder(DecoderInterface):
                 hex_or_bytes_to_address(_log.topics[1]) == send_event.location_label and
                 hex_or_bytes_to_address(_log.topics[2]) == self.flash_wallet_address
             ):
-                self._update_send_and_receive_events(send_event=send_event)
+                self._update_send_receive_fee_events(send_event=send_event)
 
-        summed_send_event, summed_receive_event = (
-            self.base.make_event_next_index(
-                tx_hash=transaction.tx_hash,
-                timestamp=transaction.timestamp,
-                asset=asset,
-                balance=Balance(),  # Empty init. Populated below
-                event_type=HistoryEventType.TRADE,
-                event_subtype=subtype,
-                location_label=transaction.from_address,
-            ) for asset, subtype in (
-                (sent_asset, HistoryEventSubType.SPEND),
-                (received_asset, HistoryEventSubType.RECEIVE),
-            )
-        )
-
-        for send_event in send_address_to_events.values():
-            summed_send_event.balance += send_event.balance  # add sent balances
-            decoded_events.remove(send_event)
-        for receive_event in receive_address_to_events.values():
-            summed_receive_event.balance += receive_event.balance  # add received balances
-            decoded_events.remove(receive_event)
-
-        self._update_send_and_receive_events(
-            send_event=summed_send_event,
-            receive_event=summed_receive_event,
-        )
-
-        decoded_events.append(summed_send_event)
-        decoded_events.append(summed_receive_event)
-        maybe_reshuffle_events(
-            ordered_events=[summed_send_event, summed_receive_event],
-            events_list=decoded_events,
+        self._merge_split_swap_events(
+            decoded_events=decoded_events,
+            send_events=list(send_address_to_events.values()),
+            receive_events=list(receive_address_to_events.values()),
         )
 
         return decoded_events
+
+    def _decode_meta_tx_swap(self, context: 'DecoderContext') -> DecodingOutput:
+        """Decodes the swap event from the 0x router contract via executeMetaTransactionV2."""
+        if context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        # using [] for cases with multiple dexes, where multiple send/receive events exist
+        send_events, receive_events, fee_event = [], [], None
+        for event in context.decoded_events:
+            if event.location_label is None or not self.base.is_tracked(event.location_label):  # type: ignore  # it's a checksum address here
+                continue
+
+            if (
+                event.event_type == HistoryEventType.TRADE and
+                event.event_subtype == HistoryEventSubType.SPEND
+            ):
+                send_events.append(event)
+
+            elif ((
+                event.event_type == HistoryEventType.TRADE and
+                event.event_subtype == HistoryEventSubType.RECEIVE
+            ) or (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == self.flash_wallet_address
+            )):
+                receive_events.append(event)
+
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                if event.address == self.flash_wallet_address:
+                    send_events.append(event)
+                else:
+                    fee_event = event
+
+        self._merge_split_swap_events(
+            decoded_events=context.decoded_events,
+            send_events=send_events,
+            receive_events=receive_events,
+            fee_event=fee_event,
+        )
+
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
@@ -192,6 +252,9 @@ class ZeroxCommonDecoder(DecoderInterface):
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {self.router_address: CPT_ZEROX}
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {self.router_address: (self._decode_meta_tx_swap,)}
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

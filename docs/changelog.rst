@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
 * :bug:`-` Fix issue where long label in manual balances breaks the alignment of chain names.
 * :bug:`-` If saving a setting fails, error messages will no longer disappear automatically.
