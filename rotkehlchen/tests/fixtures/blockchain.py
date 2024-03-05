@@ -29,6 +29,8 @@ from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.scroll.manager import ScrollManager
+from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -74,6 +76,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.BASE
     elif klass == GnosisInquirer:
         blockchain = SupportedBlockchain.GNOSIS
+    elif klass == ScrollInquirer:
+        blockchain = SupportedBlockchain.SCROLL
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -142,6 +146,11 @@ def fixture_gnosis_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='scroll_accounts')
+def fixture_scroll_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -185,6 +194,7 @@ def fixture_blockchain_accounts(
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         base_accounts: list[ChecksumEvmAddress],
         gnosis_accounts: list[ChecksumEvmAddress],
+        scroll_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -198,6 +208,7 @@ def fixture_blockchain_accounts(
         arbitrum_one=tuple(arbitrum_one_accounts),
         base=tuple(base_accounts),
         gnosis=tuple(gnosis_accounts),
+        scroll=tuple(scroll_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
@@ -556,6 +567,42 @@ def fixture_gnosis_transactions(
     )
 
 
+@pytest.fixture(name='scroll_manager_connect_at_start')
+def fixture_scroll_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='scroll_inquirer')
+def fixture_scroll_inquirer(
+        scroll_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=ScrollInquirer,
+            class_path='rotkehlchen.chain.scroll.node_inquirer.ScrollInquirer',
+            manager_connect_at_start=scroll_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in scroll. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='scroll_manager')
+def fixture_scroll_manager(scroll_inquirer):
+    return ScrollManager(node_inquirer=scroll_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> str | None:
     return None
@@ -715,6 +762,7 @@ def fixture_blockchain(
         arbitrum_one_manager,
         base_manager,
         gnosis_manager,
+        scroll_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -743,6 +791,7 @@ def fixture_blockchain(
         arbitrum_one_manager=arbitrum_one_manager,
         base_manager=base_manager,
         gnosis_manager=gnosis_manager,
+        scroll_manager=scroll_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,

@@ -105,9 +105,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
-    from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+    from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor

@@ -721,6 +721,9 @@ class Location(DBCharEnumMixIn):
         if chain_id == ChainID.GNOSIS:
             return Location.GNOSIS
 
+        if chain_id == ChainID.SCROLL:
+            return Location.SCROLL
+
         # else
         return Location.POLYGON_POS
 

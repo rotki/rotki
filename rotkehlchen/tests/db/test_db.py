@@ -1828,7 +1828,7 @@ def test_values_are_present_in_db(database, enum_class, table_name):
 
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
-        assert r.fetchone() == (1,)
+        assert r.fetchone() == (1,), f'The value {enum_class_entry.value} for {table_name} enum is not found in the db. Please add it in rotkehlchen/db/schema.py'  # noqa: E501
 
 
 def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):

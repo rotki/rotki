@@ -511,9 +511,9 @@ class EvmNodeInquirer(ABC):
         The first node in the call order that gets a successful response returns.
         If none get a result then RemoteError is raised
         """
-        if (not call_order):
+        if not call_order:
             raise RemoteError(
-                f'There are no nodes to call for {self.blockchain!s}!',  # noqa: E501
+                f'There are no nodes to call for {self.blockchain!s}!',
             )
         for weighted_node in call_order:
             node_info = weighted_node.node_info

@@ -435,16 +435,17 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     """Test that rpc nodes for different blockchains are updated correctly.."""
+    default_rpc_nodes_count = 36
     # check db state of the default rpc nodes before updating
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
-        assert cursor.fetchone()[0] == 31
+        assert cursor.fetchone()[0] == default_rpc_nodes_count
 
     # check the db state of the user's rpc_nodes
     custom_node_tuple = ('custom node', 'https://node.rotki.com/', 1, 1, '0.50', 'ETH')
     with data_updater.user_db.user_write() as write_cursor:
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 31
+        assert write_cursor.fetchone()[0] == default_rpc_nodes_count
         # add a custom node.
         write_cursor.execute(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
@@ -452,7 +453,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
             custom_node_tuple,
         )
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 32
+        assert write_cursor.fetchone()[0] == default_rpc_nodes_count + 1
 
     with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()
@@ -469,8 +470,8 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
 
     assert nodes == [
         (7, 'optimism official', 'https://mainnet.optimism.io', 0, 1, '0.20', 'OPTIMISM'),
-        (32, *custom_node_tuple),
-        (33, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
+        (default_rpc_nodes_count + 1, *custom_node_tuple),
+        (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
 
 

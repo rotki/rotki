@@ -5,14 +5,14 @@ from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
-    from .node_inquirer import ScollInquirer
+    from .node_inquirer import ScrollInquirer
 
 
 class ScrollAccountingAggregator(EVMAccountingAggregator):
 
     def __init__(
             self,
-            node_inquirer: 'ScollInquirer',
+            node_inquirer: 'ScrollInquirer',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
