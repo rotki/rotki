@@ -32,11 +32,14 @@ const { t } = useI18n();
         <template #activator>
           <RuiButton
             variant="text"
+            icon
+            class="mt-0.5"
+            size="sm"
             v-on="on"
           >
-            <template #append>
-              <RuiIcon name="information-line" />
-            </template>
+            <RuiIcon
+              name="information-line"
+            />
           </RuiButton>
         </template>
         {{ t('common.details') }}
@@ -84,7 +87,7 @@ const { t } = useI18n();
           </h6>
           <TransactionQueryStatusCurrent
             :only-chains="onlyChains"
-            class="text-subtitle-2 text-rui-text-secondary mt-2"
+            class="text-subtitle-2 text-rui-text-secondary my-2"
           />
           <div
             v-for="item in transactions"

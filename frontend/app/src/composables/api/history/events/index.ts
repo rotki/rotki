@@ -40,8 +40,6 @@ export function useHistoryEventsApi() {
         nonEmptyProperties({
           asyncQuery,
           ...payload,
-          orderByAttributes:
-            payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
         }),
       ),
       {
