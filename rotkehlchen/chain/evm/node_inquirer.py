@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import requests
 from ens import ENS
-from eth_abi.exceptions import InsufficientDataBytes
+from eth_abi.exceptions import DecodingError
 from eth_typing import BlockNumber
 from requests import RequestException
 from web3 import HTTPProvider, Web3
@@ -1162,7 +1162,7 @@ class EvmNodeInquirer(ABC):
                 contract=contract,
                 token_kind=EvmTokenKind.ERC20,
             )
-        except (OverflowError, InsufficientDataBytes) as e:
+        except (OverflowError, DecodingError) as e:
             # This can happen when contract follows the ERC20 standard methods
             # but name and symbol return bytes instead of string. UNIV1 LP is such a case
             # It can also happen if the method is missing and they are all hitting
@@ -1254,7 +1254,7 @@ class EvmNodeInquirer(ABC):
                 contract=EvmContract(address=address, abi=self.contracts.erc721_abi, deployed_block=0),  # noqa: E501
                 token_kind=EvmTokenKind.ERC721,
             )
-        except (OverflowError, InsufficientDataBytes) as e:
+        except (OverflowError, DecodingError) as e:
             raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
 
         info: dict[str, Any] = {}
@@ -1278,7 +1278,8 @@ class EvmNodeInquirer(ABC):
         - `name` and `symbol` default to None.
         May raise:
         - OverflowError
-        - InsufficientDataBytes
+        - InsufficientDataBytes (subclass of eth_abi.exceptions.DecodingError)
+        - InvalidPointer (subclass of eth_abi.exceptions.DecodingError)
         """
         decoded_contract_info = []
         for method_name, method_value in zip(properties, output, strict=True):

@@ -24,6 +24,7 @@ cryptography==42.0.5
 py-machineid==0.5.1
 more-itertools==10.1.0  # for peekable iterators
 regex==2023.12.25  # used for unicode information in detection of spam tokens
+eth-abi==5.0.1
 
 # For the rest api
 flask-cors==4.0.0
