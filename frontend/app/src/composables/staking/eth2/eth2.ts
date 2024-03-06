@@ -9,9 +9,8 @@ import type {
 import type { TaskMeta } from '@/types/task';
 
 export function useEth2Staking() {
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const defaultPagination = (): EthStakingPayload => ({
-    limit: get(itemsPerPage),
+    limit: 10,
     offset: 0,
   });
 
