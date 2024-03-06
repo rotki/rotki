@@ -120,6 +120,8 @@ function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
 }
 
+const { txEvmChains } = useSupportedChains();
+
 watch([address, evmChain], async ([address, evmChain]) => {
   if (!evmChain)
     return;
@@ -129,17 +131,21 @@ watch([address, evmChain], async ([address, evmChain]) => {
     return;
   }
 
-  set(fetching, true);
-  const {
-    decimals: newDecimals,
-    name: newName,
-    symbol: newSymbol,
-  } = await fetchTokenDetails({ address, evmChain });
-  set(decimals, newDecimals ?? get(decimals));
-  set(name, newName || get(name));
-  set(symbol, newSymbol || get(symbol));
-  set(fetching, false);
-  clearFieldErrors(['decimals', 'name', 'symbol']);
+  if (get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain)) {
+    set(fetching, true);
+
+    const {
+      decimals: newDecimals,
+      name: newName,
+      symbol: newSymbol,
+    } = await fetchTokenDetails({ address, evmChain });
+
+    set(decimals, newDecimals ?? get(decimals));
+    set(name, newName || get(name));
+    set(symbol, newSymbol || get(symbol));
+    set(fetching, false);
+    clearFieldErrors(['decimals', 'name', 'symbol']);
+  }
 });
 
 watch(assetType, () => {
