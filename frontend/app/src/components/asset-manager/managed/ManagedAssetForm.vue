@@ -524,7 +524,11 @@ setSubmitFunc(save);
         class="mt-2 mb-4 overflow-hidden"
       >
         <RuiAccordions>
-          <RuiAccordion header-grow>
+          <RuiAccordion
+            header-grow
+            header-class="p-4"
+            content-class="p-4"
+          >
             <template #header>
               {{ t('asset_form.optional') }}
             </template>
