@@ -134,6 +134,7 @@ from rotkehlchen.db.filtering import (
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
+    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -237,6 +238,8 @@ from rotkehlchen.types import (
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
     Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -2918,6 +2921,64 @@ class RestAPI:
             'oracles': {str(oracle): oracle.value for oracle in CurrentPriceOracle},
         }
         return _wrap_in_ok_result(process_result(result))
+
+    def query_location_asset_mappings(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:  # noqa: E501
+        """Query the location asset mappings using the provided filter_query
+        and return them in a paginated format"""
+        mappings, mappings_found, mappings_total = GlobalDBHandler.query_location_asset_mappings(
+            filter_query=filter_query,
+        )
+        result = {
+            'entries': mappings,
+            'entries_found': mappings_found,
+            'entries_total': mappings_total,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def add_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        """Add the location asset mappings in the global DB for the given location"""
+        try:
+            GlobalDBHandler.add_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
+
+    def update_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        """Update the location asset mappings in the global DB for the given location"""
+        try:
+            GlobalDBHandler.update_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
+
+    def delete_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingDeleteEntry],
+    ) -> Response:
+        """Delete the location asset mappings from the global DB for the given location"""
+        try:
+            GlobalDBHandler.delete_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
 
     @staticmethod
     def _get_historical_assets_price(

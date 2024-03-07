@@ -60,6 +60,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
+    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     PaginatedFilterQuery,
     ReportDataFilterQuery,
@@ -104,6 +105,8 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     HistoryEventQueryType,
     Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -2194,6 +2197,62 @@ class DataImportSchema(AsyncQueryArgumentSchema):
 class AssetIconUploadSchema(Schema):
     asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
+
+
+class LocationAssetMappingsBaseSchema(Schema):
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, allow_none=True)
+
+
+class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):
+    @post_load
+    def make_location_asset_mappings_post_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        """Make and return LocationAssetMappingsFilterQuery instance. `limit` and `offset` are used
+        for pagination, and optional `location` to filter by location. If `location` is explicitly
+        passed with `null` value (parsed as None here) then that is used to filter the common
+        mappings."""
+        filter_query = LocationAssetMappingsFilterQuery.make(
+            location='common' if 'location' in data and data['location'] is None else data.get('location'),  # noqa: E501
+            limit=data['limit'],
+            offset=data['offset'],
+        )
+        return {'filter_query': filter_query}
+
+
+class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
+    asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+    location_symbol = fields.String(required=True)
+
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> LocationAssetMappingUpdateEntry:
+        return LocationAssetMappingUpdateEntry.deserialize(data)
+
+
+class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
+    location_symbol = fields.String(required=True)
+
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> LocationAssetMappingDeleteEntry:
+        return LocationAssetMappingDeleteEntry.deserialize(data)
+
+
+class LocationAssetMappingsUpdateSchema(LocationAssetMappingsBaseSchema):
+    entries = NonEmptyList(fields.Nested(LocationAssetMappingUpdateEntrySchema), required=True)
+
+
+class LocationAssetMappingsDeleteSchema(LocationAssetMappingsBaseSchema):
+    entries = NonEmptyList(fields.Nested(LocationAssetMappingDeleteEntrySchema), required=True)
 
 
 class EthStakingCommonFilterSchema(Schema):

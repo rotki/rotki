@@ -105,6 +105,9 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
+    LocationAssetMappingsDeleteSchema,
+    LocationAssetMappingsPostSchema,
+    LocationAssetMappingsUpdateSchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
@@ -195,6 +198,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
+    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -230,6 +234,8 @@ from rotkehlchen.types import (
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
     Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -2315,6 +2321,37 @@ class AssetIconsResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(self, asset: AssetWithOracles) -> Response:
         return self.rest_api.refresh_asset_icon(asset=asset)
+
+
+class LocationAssetMappingsResource(BaseMethodView):
+    post_schema = LocationAssetMappingsPostSchema()
+    put_and_patch_schema = LocationAssetMappingsUpdateSchema()
+    delete_schema = LocationAssetMappingsDeleteSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
+        return self.rest_api.query_location_asset_mappings(filter_query=filter_query)
+
+    @use_kwargs(put_and_patch_schema, location='json')
+    def put(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.add_location_asset_mappings(entries=entries)
+
+    @use_kwargs(put_and_patch_schema, location='json')
+    def patch(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.update_location_asset_mappings(entries=entries)
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(
+            self,
+            entries: list[LocationAssetMappingDeleteEntry],
+    ) -> Response:
+        return self.rest_api.delete_location_asset_mappings(entries=entries)
 
 
 class AllLatestAssetsPriceResource(BaseMethodView):
