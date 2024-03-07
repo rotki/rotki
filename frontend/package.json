@@ -47,7 +47,7 @@
     "lint-staged": "15.2.2",
     "rimraf": "5.0.5",
     "semver": "7.6.0",
-    "typescript": "5.3.3"
+    "typescript": "5.4.2"
   },
   "engines": {
     "node": ">=20 <21",
