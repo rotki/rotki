@@ -4405,7 +4405,14 @@
       "progress": "Progress",
       "redecode_all": "Redecode all EVM Events",
       "title": "EVM events decoding status",
-      "undecoded_events": "Undecoded events"
+      "undecoded_events": "Undecoded events",
+      "decoding": {
+        "processing": "Decoding {count} event | Decoding {count} of {total} events",
+        "pending": "{count} Undecoded event | {count} Undecoded events",
+        "done": "Decoded {count} event | Decoded {count} events",
+        "all": "Redecoding EVM events",
+        "all_done": "Done redecoding EVM events"
+      }
     },
     "filter": {
       "account": "Filter by account",

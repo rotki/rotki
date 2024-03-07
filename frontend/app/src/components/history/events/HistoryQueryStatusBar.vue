@@ -2,6 +2,7 @@
 defineProps<{
   colspan: number;
   finished: boolean;
+  decoding: boolean;
   total: number;
 }>();
 
@@ -10,17 +11,14 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
 
 <template>
   <tr
-    v-if="total > 0"
+    v-if="total > 0 || decoding"
     class="bg-rui-secondary-lighter dark:bg-rui-secondary-darker"
   >
     <td
       :colspan="colspan"
     >
       <div class="flex items-start gap-3">
-        <div
-          v-if="finished || (total > 1)"
-          class="py-2 flex items-center gap-3"
-        >
+        <div class="py-2 flex items-center gap-3">
           <div class="flex">
             <RuiProgress
               v-if="!finished"
