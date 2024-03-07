@@ -18,7 +18,7 @@
     "watch": "tsc -w -m es6"
   },
   "peerDependencies": {
-    "@vueuse/core": "9.6.0",
+    "@vueuse/core": "10.7.2",
     "vue": "2.7.16"
   },
   "dependencies": {
@@ -26,7 +26,7 @@
     "zod": "3.22.4"
   },
   "devDependencies": {
-    "@vueuse/core": "10.9.0",
+    "@vueuse/core": "10.7.2",
     "core-js": "3.36.0",
     "rimraf": "5.0.5",
     "typescript": "5.4.2",
