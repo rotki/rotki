@@ -3943,6 +3943,191 @@ Refreshing asset icons
    :statuscode 500: Internal rotki error
 
 
+Get asset location mappings for a location
+==========================================
+
+.. http:post:: /api/(version)/assets/locationmappings
+
+    Doing a POST on the asset location mappings endpoint will return all the paginated location assets mappings for the given filter.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/assets/locationmappings/ HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "offset": 20,
+          "limit": 2
+        }
+
+    :reqjson str location[optional]: If given, filter the returned mappings only for the location. Possible values can be any supported exchange, ``null`` to get the mappings that are common for all exchanges, or omitting it to get all the mappings.
+    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": {
+              "entries": [
+                { "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96", "location_symbol": "GNO", "location": "binance"},
+                { "asset": "eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", "location_symbol": "SHIB", "location": "kraken"}
+              ],
+              "entries_found": 1500,
+              "entries_total": 1500
+            },
+            "message": ""
+        }
+
+    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used in the location under the ``"location_symbol"`` key, and its location under the ``"location"`` key. 
+    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+    :resjson int entries_total: The number of total entries ignoring all filters.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were returned successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 500: Internal rotki error.
+
+
+Insert asset location mappings for a location
+=============================================
+
+.. http:put:: /api/(version)/assets/locationmappings
+
+    Doing a PUT on the asset location mappings endpoint with a list of entries, and each entry containing an asset's identifier, its location, and its location symbol will save these mappings in the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PUT /api/1/assets/locationmappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "location_symbol": "UNI", "location": "kucoin"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "location_symbol": "IMX", "location": "kraken"}
+          ]
+        }
+
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"location_symbol"``, and ``"location"`` to be saved in the database
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in the case the mappings were added successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were added successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided mappings already exist in the database or assets have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Update asset location mappings for a location
+=============================================
+
+.. http:patch:: /api/(version)/assets/locationmappings
+
+    Doing a PATCH on the asset location mappings endpoint with a list of entries, and each entry containing an asset's identifier, its location, and its location symbol will updates these mappings in the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PATCH /api/1/assets/locationmappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "location": "kucoin",
+          "entries": [
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "location_symbol": "UNI", "location": "kraken"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "location_symbol": "IMX", "location": "kucoin"}
+          ]
+        }
+
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"location_symbol"``, and ``"location"`` to be updated in the database.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case the mappings were updated successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were updated successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided mappings don't exist in the database or assets have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Delete asset location mappings for a location
+=============================================
+
+.. http:delete:: /api/(version)/assets/locationmappings
+
+    Doing a DELETE on the asset location mappings endpoint with a list of entries, and each entry containing an asset's location, and its location symbol will delete these mappings from the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        DELETE /api/1/assets/locationmappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            {"location_symbol": "UNI", "location": "kraken"},
+            {"location_symbol": "IMX", "location": "kucoin"}
+          ]
+        }
+
+    :reqjson object entries: A list of objects containing ``"location_symbol"`` and ``"location"`` whose mappings should be deleted from the database.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case the mappings were deleted successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were deleted successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided asset identifiers don't exist in the database for the given location or their format is incorrect.
+    :statuscode 500: Internal rotki error.
+
+
 Statistics for netvalue over time
 ====================================
 

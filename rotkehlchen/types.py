@@ -30,6 +30,7 @@ from rotkehlchen.utils.mixins.enums import (
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 ModuleName = Literal[
@@ -835,6 +836,31 @@ class AddressbookEntry(NamedTuple):
 
     def __str__(self) -> str:
         return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {str(self.blockchain) if self.blockchain is not None else None}'  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class LocationAssetMappingDeleteEntry:
+    location: 'Location | None'
+    location_symbol: str
+
+    @classmethod
+    def deserialize(cls: type['LocationAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'LocationAssetMappingDeleteEntry':  # noqa: E501
+        """May raise:
+        -KeyError if required keys are missing
+        """
+        return cls(**data)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
+    asset: 'Asset'
+
+    @classmethod
+    def deserialize(cls: type['LocationAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'LocationAssetMappingUpdateEntry':  # noqa: E501
+        """May raise:
+        -KeyError if required keys are missing
+        """
+        return cls(**data)
 
 
 class OptionalChainAddress(NamedTuple):

@@ -280,6 +280,14 @@ class DBLocationFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBNullableLocationFilter(DBFilter):
+    location: Location | None
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return (['location IS ?'], [None if self.location is None else self.location.serialize_for_db()])  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBSubStringFilter(DBFilter):
     field: str
     search_string: str
@@ -1572,6 +1580,40 @@ class AssetsFilterQuery(DBFilterQuery):
                 select_condition=f'key="{compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,))}"',
             ))
         filter_query.filters = filters
+        return filter_query
+
+
+class LocationAssetMappingsFilterQuery(DBFilterQuery):
+    """DBFilterQuery with a nullable DB Location filter. Here the if location_filter is None then
+    no filter is applied. If location_filter exists, but with the `location` value as None then the
+    filter will be applied with `location IS NULL` clause. Other normal values of location in
+    location filter will work similar to DBLocationFilter."""
+    location_filter: DBNullableLocationFilter | None = None
+
+    @classmethod
+    def make(
+            cls: type['LocationAssetMappingsFilterQuery'],
+            limit: int,
+            offset: int,
+            location: Location | None | Literal['common'] = None,
+            and_op: bool = True,
+    ) -> 'LocationAssetMappingsFilterQuery':
+        """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
+        arguments. `limit` and `offset` are for pagination and works with DBFilterPagination.
+        `location` can be a valid Location value, None, or "common". If `location` is None, filter
+        will not be applied. If valid Location value is given, that location will be filtered. If
+        `location` is "common" then filter will be applied for columns where location is NULL."""
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+        )
+        if location is not None:
+            filter_query.location_filter = DBNullableLocationFilter(
+                and_op=True,
+                location=None if location == 'common' else location,
+            )
+            filter_query.filters = [filter_query.location_filter]
         return filter_query
 
 
