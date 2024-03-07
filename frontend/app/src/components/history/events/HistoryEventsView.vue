@@ -503,6 +503,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
 const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
   useTxQueryStatusStore(),
@@ -529,6 +530,7 @@ const loading = refThrottled(
 );
 
 const processing = logicOr(
+  isTransactionsLoading,
   loading,
   querying,
   refreshing,
