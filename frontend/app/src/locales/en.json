@@ -339,6 +339,9 @@
         "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
       },
       "detect_tokens": {
+        "error": {
+          "message": "Failed to detect tokens for {address} ({chain}): {error}"
+        },
         "task": {
           "description": "Fetch detected tokens for {address} ({chain})",
           "title": "Fetch detected tokens"

@@ -90,7 +90,6 @@ export const useAddressesNamesStore = defineStore(
             });
           }
         }
-        resetAddressNamesData(payload);
       }
       else {
         const result = await getEnsNames(filteredAddresses);
@@ -100,6 +99,7 @@ export const useAddressesNamesStore = defineStore(
           ...result,
         });
       }
+      resetAddressNamesData(payload);
     };
 
     const ensNameSelector = (address: MaybeRef<string>) =>

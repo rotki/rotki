@@ -34,7 +34,7 @@ function defaultTokens(): Tokens {
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const tokensState: Ref<Tokens> = ref(defaultTokens());
 
-  const shouldRefreshBalances: Ref<boolean> = ref(true);
+  const massDetecting: Ref<Blockchain | 'all' | undefined> = ref();
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
@@ -75,6 +75,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     });
   };
 
+  const { notify } = useNotificationsStore();
+
   const fetchDetectedTokens = async (
     chain: Blockchain,
     address: string | null = null,
@@ -110,9 +112,20 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         setState(chain, result);
       }
     }
-    catch (error) {
-      if (!isTaskCancelled(error))
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
         logger.error(error);
+
+        notify({
+          title: t('actions.balances.detect_tokens.task.title'),
+          message: t('actions.balances.detect_tokens.error.message', {
+            address,
+            chain: get(getChainName(chain)),
+            error: error.message,
+          }),
+          display: true,
+        });
+      }
     }
   };
 
@@ -201,81 +214,38 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
-  const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.ETH,
-  });
+  const isMassDetecting = (chain: Blockchain) => {
+    const massDetectingVal = get(massDetecting);
+    if (!massDetectingVal)
+      return false;
 
-  watch(isEthDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.ETH,
-        ignoreCache: true,
-      });
-    }
-  });
+    return [chain, 'all'].includes(massDetectingVal);
+  };
 
-  const isOptimismDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.OPTIMISM,
-  });
-  watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.OPTIMISM,
-        ignoreCache: true,
-      });
-    }
-  });
+  [
+    Blockchain.ETH,
+    Blockchain.OPTIMISM,
+    Blockchain.POLYGON_POS,
+    Blockchain.ARBITRUM_ONE,
+    Blockchain.BASE,
+    Blockchain.GNOSIS,
+  ].forEach((chain) => {
+    const isChainDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+      chain,
+    });
 
-  const isPolygonDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.POLYGON_POS,
-  });
-  watch(isPolygonDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.POLYGON_POS,
-        ignoreCache: true,
-      });
-    }
-  });
-
-  const isArbitrumDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.ARBITRUM_ONE,
-  });
-  watch(isArbitrumDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.ARBITRUM_ONE,
-        ignoreCache: true,
-      });
-    }
-  });
-
-  const isBaseDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.BASE,
-  });
-  watch(isBaseDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.BASE,
-        ignoreCache: true,
-      });
-    }
-  });
-
-  const isGnosisDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.GNOSIS,
-  });
-  watch(isGnosisDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.GNOSIS,
-        ignoreCache: true,
-      });
-    }
+    watch(isChainDetecting, async (isDetecting, wasDetecting) => {
+      if (!isMassDetecting(chain) && wasDetecting && !isDetecting) {
+        await fetchBlockchainBalances({
+          blockchain: chain,
+          ignoreCache: true,
+        });
+      }
+    });
   });
 
   return {
-    shouldRefreshBalances,
+    massDetecting,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo,

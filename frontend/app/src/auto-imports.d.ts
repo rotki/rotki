@@ -321,6 +321,7 @@ declare global {
   const useAccountingRuleMappings: typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']
   const useAccountingSettings: typeof import('./composables/settings/accounting/index')['useAccountingSettings']
   const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
+  const useAccountsAddresses: typeof import('./composables/accounts/addresses')['useAccountsAddresses']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAddressBookFilter: typeof import('./composables/filters/address-book')['useAddressBookFilter']
   const useAddressBookForm: typeof import('./composables/address-book/form')['useAddressBookForm']
@@ -1062,6 +1063,7 @@ declare module 'vue' {
     readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
     readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
+    readonly useAccountsAddresses: UnwrapRef<typeof import('./composables/accounts/addresses')['useAccountsAddresses']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>
     readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
@@ -1796,6 +1798,7 @@ declare module '@vue/runtime-core' {
     readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
     readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
+    readonly useAccountsAddresses: UnwrapRef<typeof import('./composables/accounts/addresses')['useAccountsAddresses']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>
     readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
