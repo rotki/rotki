@@ -35,8 +35,8 @@ const editedAccount = ref<string>('');
 const balanceTable = ref<any>(null);
 
 const { isTaskRunning } = useTaskStore();
-const { handleBlockchainRefresh } = useRefresh(blockchain);
-const { detectTokensOfAllAddresses, detectingTokens }
+const { handleBlockchainRefresh } = useRefresh();
+const { detectingTokens }
   = useTokenDetection(blockchain);
 const { show } = useConfirmStore();
 const { getChainName, supportsTransactions } = useSupportedChains();
@@ -132,8 +132,19 @@ function showConfirmation(payload: XpubPayload | string[]) {
 
 async function refreshClick() {
   await fetchAccounts(get(blockchain), true);
-  await handleBlockchainRefresh();
+  await handleBlockchainRefresh(blockchain);
 }
+
+const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+const isMassDetecting = computed(() => {
+  const massDetectingVal = get(massDetecting);
+  if (!massDetectingVal)
+    return false;
+
+  return [get(blockchain), 'all'].includes(massDetectingVal);
+});
+
+const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
 </script>
 
 <template>
@@ -146,7 +157,8 @@ async function refreshClick() {
       <div class="flex flex-row items-center gap-2">
         <SummaryCardRefreshMenu
           data-cy="account-balances-refresh-menu"
-          :loading="isSectionLoading || detectingTokens"
+          :disabled="refreshDisabled"
+          :loading="isMassDetecting"
           :tooltip="
             t('account_balances.refresh_tooltip', {
               blockchain: chainName,
@@ -204,9 +216,9 @@ async function refreshClick() {
               class="ml-2"
               variant="outlined"
               color="primary"
-              :loading="detectingTokens"
-              :disabled="detectingTokens || isSectionLoading"
-              @click="detectTokensOfAllAddresses()"
+              :loading="isMassDetecting"
+              :disabled="refreshDisabled"
+              @click="handleBlockchainRefresh(blockchain, true)"
             >
               <template #prepend>
                 <RuiIcon name="refresh-line" />

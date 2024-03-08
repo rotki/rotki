@@ -15,7 +15,6 @@ import type {
   GeneralAccountData,
 } from '@/types/blockchain/accounts';
 import type { EvmAccountsResult } from '@/types/api/accounts';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
 
 export function useBlockchainAccounts() {
   const {
@@ -38,7 +37,7 @@ export function useBlockchainAccounts() {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
 
-  const { fetchEnsNames, resetAddressNamesData } = useAddressesNamesStore();
+  const { resetAddressNamesData } = useAddressesNamesStore();
   const { t } = useI18n();
 
   const addAccount = async (
@@ -176,14 +175,11 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const { isEvm } = useSupportedChains();
-
   const fetchBlockchainAccounts = async (
     blockchain: Exclude<
       Blockchain,
       Blockchain.BTC | Blockchain.BCH | Blockchain.ETH2
     >,
-    refreshEns: boolean = false,
   ): Promise<string[] | null> => {
     try {
       const accounts = await queryAccounts(blockchain);
@@ -192,16 +188,6 @@ export function useBlockchainAccounts() {
       else if (isRestChain(blockchain))
         updateChain(blockchain, accounts);
 
-      if (isEvm(blockchain)) {
-        const namesPayload: AddressBookSimplePayload[] = accounts.map(
-          ({ address }) => ({
-            address,
-            blockchain,
-          }),
-        );
-
-        startPromise(fetchEnsNames(namesPayload, refreshEns));
-      }
       return accounts.map(account => account.address);
     }
     catch (error: any) {
@@ -238,13 +224,13 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const fetch = async (blockchain: Blockchain, refreshEns: boolean = false) => {
+  const fetch = async (blockchain: Blockchain) => {
     if (isBtcChain(blockchain))
-      return fetchBtcAccounts(blockchain);
+      return await fetchBtcAccounts(blockchain);
     else if (isRestChain(blockchain) || blockchain === Blockchain.ETH)
-      return fetchBlockchainAccounts(blockchain, refreshEns);
+      return await fetchBlockchainAccounts(blockchain);
     else if (blockchain === Blockchain.ETH2)
-      return fetchEth2Validators();
+      return await fetchEth2Validators();
   };
 
   const removeTag = (tag: string) => {
