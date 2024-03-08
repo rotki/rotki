@@ -12,11 +12,9 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
 <template>
   <tr
     v-if="total > 0 || decoding"
-    class="bg-rui-secondary-lighter dark:bg-rui-secondary-darker"
+    class="!bg-black/[0.04] dark:!bg-white/[0.04]"
   >
-    <td
-      :colspan="colspan"
-    >
+    <td :colspan="colspan">
       <div class="flex items-start gap-3">
         <div class="py-2 flex items-center gap-3">
           <div class="flex">
