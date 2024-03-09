@@ -176,3 +176,31 @@ def test_burning_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0x39c185721fbe8b350363e6B49801305d32485A45']])
+def test_burnfrom_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
+    evmhash = deserialize_evm_tx_hash(val='0xf04a5d84e6749828ff63991fb3323944472346c3b2c421e51d9999283d18f1fd')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    amount_str = '501.04'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=497,
+            timestamp=TimestampMS(1709969940000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_GNOSIS_EURE,
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burn {amount_str} EURe',
+            counterparty=CPT_MONERIUM,
+        ),
+    ]
+    assert events == expected_events
