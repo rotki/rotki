@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Sending money to SEPA or bridging with the BurnFrom monerium signature will now be properly decoded by rotki.
 * :bug:`-` Fix issue where long label in manual balances breaks the alignment of chain names.
 * :bug:`-` If saving a setting fails, error messages will no longer disappear automatically.
 * :bug:`7532` Curve LP token price calculation should now be correct.
