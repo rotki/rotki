@@ -182,8 +182,8 @@ def _check_hourly_data_sanity(
         if diff != 3600:
             raise RemoteError(
                 'Unexpected data format in cryptocompare query_endpoint_histohour. '
-                'Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}'.format(
-                    index, index + 1, from_asset.symbol, to_asset.symbol, diff),
+                f'Problem at indices {index} and {index + 1} of '
+                f'{from_asset.symbol}_to_{to_asset.symbol} prices. Time difference is: {diff}',
             )
 
         index += 2

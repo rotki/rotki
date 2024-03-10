@@ -233,10 +233,8 @@ class Bitcoinde(ExchangeInterface):
                 raise RemoteError(json_ret['errors'])
 
             raise RemoteError(
-                'Bitcoin.de api request for {} failed with HTTP status code {}'.format(
-                    response.url,
-                    response.status_code,
-                ),
+                f'Bitcoin.de api request for {response.url} failed '
+                f'with HTTP status code {response.status_code}',
             )
 
         if not isinstance(json_ret, dict):

@@ -395,15 +395,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 )
                 if retry_after > RETRY_AFTER_LIMIT:
                     raise RemoteError(
-                        '{} API request {} for {} failed with HTTP status '
-                        'code: {} due to a too long retry after value ({} > {})'.format(
-                            self.name,
-                            response.url,
-                            method,
-                            response.status_code,
-                            retry_after,
-                            RETRY_AFTER_LIMIT,
-                        ))
+                        f'{self.name} API request {response.url} for {method} failed with '
+                        f'HTTP status code: {response.status_code} due to a too long '
+                        f'retry after value ({retry_after} > {RETRY_AFTER_LIMIT})',
+                    )
 
                 gevent.sleep(retry_after)
                 continue
