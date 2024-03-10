@@ -29,7 +29,7 @@ eth-abi==5.0.1
 # For the rest api
 flask-cors==4.0.0
 flask==3.0.2
-marshmallow==3.21.0
+marshmallow==3.21.1
 webargs==8.4.0
 werkzeug==3.0.1
 
