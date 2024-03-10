@@ -74,10 +74,9 @@ def decode_event_data_abi(
     log_topic_names = get_abi_input_names(ABIEvent({'inputs': log_topics_abi}))
 
     if len(topics) != len(log_topic_types):
-        raise DeserializationError('Expected {} log topics.  Got {}'.format(
-            len(log_topic_types),
-            len(topics),
-        ))
+        raise DeserializationError(
+            f'Expected {len(log_topic_types)} log topics.  Got {len(topics)}',
+        )
 
     # type ignored b/c event_abi is a Dict which is an ABIEvent
     log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore

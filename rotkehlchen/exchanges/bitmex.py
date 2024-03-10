@@ -204,10 +204,8 @@ class Bitmex(ExchangeInterface):
 
         if response.status_code not in {200, 401}:
             raise RemoteError(
-                'Bitmex api request for {} failed with HTTP status code {}'.format(
-                    response.url,
-                    response.status_code,
-                ),
+                f'Bitmex api request for {response.url} failed with HTTP '
+                f'status code {response.status_code}',
             )
 
         try:

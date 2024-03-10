@@ -184,10 +184,8 @@ class Iconomi(ExchangeInterface):
                 raise RemoteError(json_ret['message'])
 
             raise RemoteError(
-                'ICONOMI api request for {} failed with HTTP status code {}'.format(
-                    response.url,
-                    response.status_code,
-                ),
+                f'ICONOMI api request for {response.url} '
+                f'failed with HTTP status code {response.status_code}',
             )
 
         return json_ret
