@@ -9,7 +9,13 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events';
 import type { BigNumber } from '@rotki/common';
-import type { Eth2Validators, EthStakingCombinedFilter, EthStakingFilter } from '@rotki/common/lib/staking/eth2';
+import type { GeneralAccount } from '@rotki/common/lib/account';
+import type {
+  Eth2ValidatorEntry,
+  Eth2Validators,
+  EthStakingCombinedFilter,
+  EthStakingFilter,
+} from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
@@ -93,6 +99,8 @@ async function refresh(userInitiated = false): Promise<void> {
   };
 
   await refreshValidators(userInitiated);
+  setTotal(get(eth2Validators));
+
   const statsRefresh: Promise<void>[] = (
     (!get(statsRefreshing) && shouldRefreshDailyStats())
       ? [refreshStats(userInitiated)]
@@ -103,11 +111,10 @@ async function refresh(userInitiated = false): Promise<void> {
     ...statsRefresh,
   ]);
   set(lastRefresh, dayjs().unix());
-  setTotal(get(eth2Validators));
 }
 
 function setTotal(validators: Eth2Validators) {
-  const publicKeys = validators.entries.map(x => x.publicKey);
+  const publicKeys = validators.entries.map((validator: Eth2ValidatorEntry) => validator.publicKey);
   const totalStakedAmount = get(stakingBalances)
     .filter(x => publicKeys.includes(x.publicKey))
     .reduce((sum, item) => sum.plus(item.amount), Zero);
@@ -117,8 +124,8 @@ function setTotal(validators: Eth2Validators) {
 watch([selection, filter] as const, async ([selection, filter]) => {
   const statusFilter = filter ? objectOmit(filter, ['fromTimestamp', 'toTimestamp']) : {};
   const accounts = 'accounts' in selection
-    ? { addresses: selection.accounts.map(x => x.address) }
-    : { validatorIndices: selection.validators.map(x => x.index) };
+    ? { addresses: selection.accounts.map((account: GeneralAccount) => account.address) }
+    : { validatorIndices: selection.validators.map((validator: Eth2ValidatorEntry) => validator.index) };
 
   const combinedFilter = nonEmptyProperties({ ...statusFilter, ...accounts });
 
