@@ -246,6 +246,7 @@ class ChainID(Enum):
     EVMOS = 9001
     POLYGON_ZKEVM = 1101
     ZKSYNC_ERA = 324
+    PULSECHAIN = 369
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':
@@ -286,6 +287,8 @@ class ChainID(Enum):
             label = 'Arbitrum One'
         elif self == ChainID.ARBITRUM_NOVA:
             label = 'Arbitrum Nova'
+        elif self == ChainID.PULSECHAIN:
+            label = 'PulseChain'
         else:
             label = name.capitalize()
 
