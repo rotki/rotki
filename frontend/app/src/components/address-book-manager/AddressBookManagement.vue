@@ -28,17 +28,10 @@ const emptyForm: () => AddressBookPayload = () => ({
 });
 
 const { setSubmitFunc, setOpenDialog, closeDialog } = useAddressBookForm();
-const { isEvm } = useSupportedChains();
 
 const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
 const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
-
-const isEvmChain = computed(() => {
-  const chain = get(formPayload).blockchain;
-
-  return !!chain && get(isEvm(chain));
-});
 
 const { getAddressBook, addAddressBook, updateAddressBook }
   = useAddressesNamesStore();
@@ -104,7 +97,7 @@ async function save() {
     const payload = {
       address: address.trim(),
       name: name.trim(),
-      blockchain: get(enableForAllChains) && get(isEvmChain) ? null : blockchain,
+      blockchain: get(enableForAllChains) ? null : blockchain,
     };
     if (get(editMode))
       await updateAddressBook(location, [payload]);
@@ -157,9 +150,6 @@ watch(location, async () => {
 watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
   if (blockchain !== oldBlockchain)
     set(errorMessages, {});
-
-  if (!get(isEvmChain))
-    set(enableForAllChains, false);
 });
 </script>
 
@@ -244,7 +234,6 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
       :enable-for-all-chains.sync="enableForAllChains"
       :edit-mode="editMode"
       :error-messages="errorMessages"
-      :is-evm-chain="isEvmChain"
       @reset="resetForm()"
     />
   </TablePageLayout>
