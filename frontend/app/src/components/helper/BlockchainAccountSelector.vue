@@ -67,11 +67,10 @@ const internalValue = computed(() => {
   if (get(multiple))
     return accounts;
 
-  if (!accounts)
+  if (!accounts || accounts.length === 0)
     return null;
 
-  if (accounts.length === 1)
-    return accounts[0];
+  return accounts[0];
 });
 
 const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {

@@ -52,8 +52,9 @@ const color = computed(() => {
       return 'info';
     case Severity.WARNING:
       return 'warning';
+    default:
+      return '';
   }
-  return '';
 });
 
 const circleBgClass = computed(() => {
@@ -64,6 +65,8 @@ const circleBgClass = computed(() => {
       return 'bg-rui-info';
     case Severity.WARNING:
       return 'bg-rui-warning';
+    default:
+      return 'bg-rui-success';
   }
 });
 

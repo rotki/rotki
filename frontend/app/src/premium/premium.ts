@@ -141,12 +141,12 @@ export const Sushi = () => createFactory(load('Sushi'));
 
 declare global {
   interface Window {
-    Vue: any;
-    Chart: typeof Chart;
-    VueUse: any;
-    VueUseShared: any;
+    'Vue': any;
+    'Chart': typeof Chart;
+    'VueUse': any;
+    'VueUseShared': any;
     'chartjs-plugin-zoom': any;
-    zod: any;
-    bn: any;
+    'zod': any;
+    'bn': any;
   }
 }
