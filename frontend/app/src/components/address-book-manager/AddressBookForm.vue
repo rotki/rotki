@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toSentenceCase } from '@/utils/text';
 import { toMessages } from '@/utils/validation';
 import type {
@@ -14,12 +14,10 @@ const props = withDefaults(
     value: AddressBookPayload;
     edit: boolean;
     enableForAllChains?: boolean;
-    isEvmChain?: boolean;
     errorMessages: { address?: string[]; name?: string[] };
   }>(),
   {
     enableForAllChains: false,
-    isEvmChain: false,
   },
 );
 
@@ -71,6 +69,12 @@ const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations: AddressBookLocation[] = ['global', 'private'];
 
 const rules = {
+  blockchain: {
+    required: helpers.withMessage(
+      t('address_book.form.validation.chain'),
+      requiredIf(logicNot(enabledForAllChains)),
+    ),
+  },
   address: {
     required: helpers.withMessage(
       t('address_book.form.validation.address'),
@@ -90,6 +94,7 @@ const { setValidation } = useAddressBookForm();
 const v$ = setValidation(
   rules,
   {
+    blockchain,
     address,
     name,
   },
@@ -135,21 +140,20 @@ onMounted(fetchNames);
         {{ toSentenceCase(item) }}
       </template>
     </VSelect>
-    <ChainSelect
-      :model-value="blockchain"
-      :disabled="edit"
-      exclude-eth-staking
-      @update:model-value="blockchain = $event"
-    />
-    <RuiCheckbox
+    <RuiSwitch
       v-model="enabledForAllChains"
-      :disabled="edit || !isEvmChain"
+      :disabled="edit"
       color="primary"
-      class="-my-2"
       :label="t('address_book.form.labels.for_all_chain')"
     />
+    <ChainSelect
+      :model-value.sync="blockchain"
+      :disabled="edit || enabledForAllChains"
+      exclude-eth-staking
+      :error-messages="toMessages(v$.blockchain)"
+    />
     <ComboboxWithCustomInput
-      v-model="address"
+      v-model.trim="address"
       outlined
       :label="t('address_book.form.labels.address')"
       :items="addressSuggestions"
@@ -164,7 +168,6 @@ onMounted(fetchNames);
           class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
         >
           <AppImage
-            v-if="value.address"
             :src="getBlockie(value.address)"
             size="1.5rem"
           />

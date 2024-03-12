@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
+* :bug:`-` Sending money to SEPA or bridging with the BurnFrom monerium signature will now be properly decoded by rotki.
 * :bug:`-` Fix issue where long label in manual balances breaks the alignment of chain names.
 * :bug:`-` If saving a setting fails, error messages will no longer disappear automatically.
 * :bug:`7532` Curve LP token price calculation should now be correct.

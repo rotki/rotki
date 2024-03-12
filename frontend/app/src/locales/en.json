@@ -1024,6 +1024,7 @@
       "no_suggestions_available": "No Suggestions Available",
       "validation": {
         "address": "The address field cannot be empty",
+        "chain": "The blockchain field cannot be empty",
         "name": "The name field cannot be empty"
       }
     },

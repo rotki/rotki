@@ -16,7 +16,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import BURN_MONERIUM_SIGNATURE, CPT_MONERIUM
+from .constants import BURN_MONERIUM_SIGNATURE, BURNFROM_MONERIUM_SIGNATURE, CPT_MONERIUM
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -74,7 +74,7 @@ class MoneriumCommonDecoder(DecoderInterface):
 
         elif (
             to_address == ZERO_ADDRESS and
-            context.transaction.input_data.startswith(BURN_MONERIUM_SIGNATURE)
+            context.transaction.input_data.startswith((BURN_MONERIUM_SIGNATURE, BURNFROM_MONERIUM_SIGNATURE))  # noqa: E501
         ):
             # Create a burn event
             event = self.base.make_event_from_transaction(

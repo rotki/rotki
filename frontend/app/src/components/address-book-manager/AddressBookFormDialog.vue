@@ -5,7 +5,6 @@ const props = defineProps<{
   value: AddressBookPayload;
   enableForAllChains: boolean;
   editMode: boolean;
-  isEvmChain?: boolean;
   errorMessages: { address?: string[]; name?: string[] };
 }>();
 
@@ -42,7 +41,6 @@ const { t } = useI18n();
     <AddressBookForm
       v-model="model"
       :edit="editMode"
-      :is-evm-chain="isEvmChain"
       :enable-for-all-chains.sync="enabledForAllChains"
       :error-messages="errorMessages"
     />
