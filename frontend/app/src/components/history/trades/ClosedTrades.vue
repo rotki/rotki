@@ -10,23 +10,21 @@ import type {
   TradeRequestPayload,
 } from '@/types/history/trade';
 import type { Collection } from '@/types/collection';
-import type { DataTableHeader } from '@/types/vuetify';
 import type { Filters, Matcher } from '@/composables/filters/trades';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 
 const props = withDefaults(
   defineProps<{
     locationOverview?: string;
-    mainPage?: boolean;
   }>(),
   {
     locationOverview: '',
-    mainPage: false,
   },
 );
 
 const { t } = useI18n();
 
-const { locationOverview, mainPage } = toRefs(props);
+const { locationOverview } = toRefs(props);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
 const showIgnoredAssets: Ref<boolean> = ref(false);
@@ -34,67 +32,70 @@ const showIgnoredAssets: Ref<boolean> = ref(false);
 const router = useRouter();
 const route = useRoute();
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
-  const overview = get(locationOverview);
-  const headers: DataTableHeader[] = [
+const mainPage = computed(() => get(locationOverview) === '');
+
+const tableHeaders = computed<DataTableColumn[]>(() => {
+  const overview = !get(mainPage);
+  const headers: DataTableColumn[] = [
     {
-      text: '',
-      value: 'ignoredInAccounting',
-      sortable: false,
+      label: '',
+      key: 'ignoredInAccounting',
       class: !overview ? '!p-0' : '',
-      cellClass: !overview ? '!p-0' : '',
+      cellClass: !overview ? '!p-0' : '!w-0 !max-w-[4rem]',
     },
     {
-      text: t('common.location'),
-      value: 'location',
-      width: '120px',
+      label: t('common.location'),
+      key: 'location',
+      class: '!w-[7.5rem]',
+      cellClass: '!py-1',
       align: 'center',
+      sortable: true,
     },
     {
-      text: t('closed_trades.headers.action'),
-      value: 'type',
+      label: t('closed_trades.headers.action'),
+      key: 'type',
       align: overview ? 'start' : 'center',
-      class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
-      cellClass: overview ? 'pl-0' : '',
+      class: `text-no-wrap${overview ? ' !pl-0' : ''}`,
+      cellClass: overview ? '!pl-0' : 'py-1',
+      sortable: true,
     },
     {
-      text: t('common.amount'),
-      value: 'amount',
+      label: t('common.amount'),
+      key: 'amount',
       align: 'end',
+      sortable: true,
     },
     {
-      text: t('closed_trades.headers.base'),
-      value: 'baseAsset',
-      sortable: false,
+      label: t('closed_trades.headers.base'),
+      key: 'baseAsset',
+      cellClass: '!py-1',
     },
     {
-      text: '',
-      value: 'description',
-      sortable: false,
-      width: '40px',
+      label: '',
+      key: 'description',
     },
     {
-      text: t('closed_trades.headers.quote'),
-      value: 'quoteAsset',
-      sortable: false,
+      label: t('closed_trades.headers.quote'),
+      key: 'quoteAsset',
+      cellClass: '!py-1',
     },
     {
-      text: t('closed_trades.headers.rate'),
-      value: 'rate',
+      label: t('closed_trades.headers.rate'),
+      key: 'rate',
       align: 'end',
+      sortable: true,
     },
     {
-      text: t('common.datetime'),
-      value: 'timestamp',
+      label: t('common.datetime'),
+      key: 'timestamp',
+      sortable: true,
     },
     {
-      text: t('common.actions_text'),
-      value: 'actions',
+      label: t('common.actions_text'),
+      key: 'actions',
       align: 'center',
-      sortable: false,
-      width: '1px',
+      class: '!w-px',
     },
-    { text: '', value: 'data-table-expand', sortable: false },
   ];
 
   if (overview) {
@@ -127,7 +128,7 @@ const {
   filters,
   matchers,
   setPage,
-  setOptions,
+  setTableOptions,
   setFilter,
   fetchData,
 } = usePaginationFilters<
@@ -258,6 +259,23 @@ function showDeleteConfirmation() {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TRADES);
+
+const value = computed({
+  get: () => {
+    if (!get(mainPage))
+      return undefined;
+
+    return get(selected).map(({ tradeId }: TradeEntry) => tradeId);
+  },
+  set: (values) => {
+    set(selected, get(trades).data.filter(({ tradeId }: TradeEntry) => values?.includes(tradeId)));
+  },
+});
+
+const sort: Ref<DataTableSortData> = ref([{
+  column: 'timestamp',
+  direction: 'desc' as const,
+}]);
 
 function getItemClass(item: TradeEntry) {
   return item.ignoredInAccounting ? 'darken-row' : '';
@@ -393,113 +411,111 @@ watch(loading, async (isLoading, wasLoading) => {
         @set-page="setPage($event)"
       >
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
-          <DataTable
-            v-model="selected"
+          <RuiDataTable
+            v-model="value"
             :expanded.sync="expanded"
-            :headers="tableHeaders"
-            :items="data"
-            :loading="isLoading"
+            :cols="tableHeaders"
+            :rows="data"
+            :loading="isLoading || loading"
             :loading-text="t('trade_history.loading')"
-            :options="options"
-            :server-items-length="itemLength"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength,
+            }"
+            :sort.sync="sort"
+            :sort-modifiers="{ external: true }"
             data-cy="closed-trades"
-            :single-select="false"
             :show-select="!locationOverview"
             :item-class="getItemClass"
-            item-key="tradeId"
-            show-expand
+            row-attr="tradeId"
+            outlined
             single-expand
-            multi-sort
-            :must-sort="false"
-            @update:options="setOptions($event)"
+            sticky-header
+            @update:options="setTableOptions($event)"
           >
-            <template #item.ignoredInAccounting="{ item, isMobile }">
-              <IgnoredInAcountingIcon
-                v-if="item.ignoredInAccounting"
-                :mobile="isMobile"
-              />
+            <template #item.ignoredInAccounting="{ row }">
+              <IgnoredInAcountingIcon v-if="row.ignoredInAccounting" />
+              <span v-else />
             </template>
-            <template #item.location="{ item }">
+            <template #item.location="{ row }">
               <LocationDisplay
                 data-cy="trade-location"
-                :identifier="item.location"
+                :identifier="row.location"
               />
             </template>
-            <template #item.type="{ item }">
+            <template #item.type="{ row }">
               <BadgeDisplay
                 :color="
-                  item.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'
+                  row.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'
                 "
               >
-                {{ item.tradeType }}
+                {{ row.tradeType }}
               </BadgeDisplay>
             </template>
-            <template #item.baseAsset="{ item }">
+            <template #item.baseAsset="{ row }">
               <AssetDetails
                 data-cy="trade-base"
                 opens-details
                 hide-name
-                :asset="item.baseAsset"
+                :asset="row.baseAsset"
               />
             </template>
-            <template #item.quoteAsset="{ item }">
+            <template #item.quoteAsset="{ row }">
               <AssetDetails
                 hide-name
                 opens-details
-                :asset="item.quoteAsset"
+                :asset="row.quoteAsset"
                 data-cy="trade-quote"
               />
             </template>
-            <template #item.description="{ item }">
+            <template #item.description="{ row }">
               {{
-                item.tradeType === 'buy'
+                row.tradeType === 'buy'
                   ? t('closed_trades.description.with')
                   : t('closed_trades.description.for')
               }}
             </template>
-            <template #item.rate="{ item }">
+            <template #item.rate="{ row }">
               <AmountDisplay
                 class="closed-trades__trade__rate"
-                :value="item.rate"
+                :value="row.rate"
               />
             </template>
-            <template #item.amount="{ item }">
+            <template #item.amount="{ row }">
               <AmountDisplay
                 class="closed-trades__trade__amount"
-                :value="item.amount"
+                :value="row.amount"
               />
             </template>
-            <template #item.timestamp="{ item }">
-              <DateDisplay :timestamp="item.timestamp" />
+            <template #item.timestamp="{ row }">
+              <DateDisplay :timestamp="row.timestamp" />
             </template>
-            <template #item.actions="{ item }">
+            <template #item.actions="{ row }">
               <RowActions
-                v-if="item.location === 'external'"
+                v-if="row.location === 'external'"
                 :disabled="loading"
                 :edit-tooltip="t('closed_trades.edit_tooltip')"
                 :delete-tooltip="t('closed_trades.delete_tooltip')"
-                @edit-click="editTradeHandler(item)"
-                @delete-click="promptForDelete(item)"
+                @edit-click="editTradeHandler(row)"
+                @delete-click="promptForDelete(row)"
               />
             </template>
-            <template #expanded-item="{ headers, item }">
-              <TradeDetails
-                :span="headers.length"
-                :item="item"
-              />
+            <template #expanded-item="{ row }">
+              <TradeDetails :item="row" />
             </template>
             <template
               v-if="showUpgradeRow"
-              #body.prepend="{ headers }"
+              #body.prepend="{ colspan }"
             >
               <UpgradeRow
                 :limit="limit"
                 :total="total"
-                :colspan="headers.length"
+                :colspan="colspan"
                 :label="t('closed_trades.label')"
               />
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
       <ExternalTradeFormDialog
