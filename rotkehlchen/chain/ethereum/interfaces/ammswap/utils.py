@@ -17,7 +17,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
+    from rotkehlchen.chain.evm.decoding.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.db.dbhandler import DBHandler
 
 

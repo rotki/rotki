@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now properly decode the swaps done via Uniswap V3 on other supported chains.
 * :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
 * :bug:`-` Sending money to SEPA or bridging with the BurnFrom monerium signature will now be properly decoded by rotki.

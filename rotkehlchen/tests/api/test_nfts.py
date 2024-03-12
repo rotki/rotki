@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.modules.nft.constants import FREE_NFT_LIMIT
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
+from rotkehlchen.chain.evm.decoding.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
