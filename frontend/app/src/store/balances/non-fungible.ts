@@ -40,8 +40,11 @@ export const useNonFungibleBalancesStore = defineStore(
       return mapCollectionResponse(result);
     };
 
-    const syncNonFungiblesTask = async (): Promise<boolean> => {
+    const { isTaskRunning } = useTaskStore();
+    const syncNonFungiblesTask = async (): Promise<void> => {
       const taskType = TaskType.NF_BALANCES;
+      if (get(isTaskRunning(taskType)))
+        return;
 
       const defaults: NonFungibleBalancesRequestPayload = {
         limit: 0,
@@ -61,20 +64,18 @@ export const useNonFungibleBalancesStore = defineStore(
             title: t('actions.nft_balances.task.title'),
           },
         );
-        return true;
       }
       catch (error: any) {
-        if (isTaskCancelled(error))
-          return false;
-
-        notify({
-          title: t('actions.nft_balances.error.title'),
-          message: t('actions.nft_balances.error.message', {
-            message: error.message,
-          }),
-          display: true,
-        });
-        throw error;
+        if (!isTaskCancelled(error)) {
+          notify({
+            title: t('actions.nft_balances.error.title'),
+            message: t('actions.nft_balances.error.message', {
+              message: error.message,
+            }),
+            display: true,
+          });
+          throw error;
+        }
       }
     };
 
