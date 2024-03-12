@@ -15,7 +15,7 @@ const { t } = useI18n();
     </div>
     <div class="pb-2 px-3">
       <SettingsOption
-        #default="{ update }"
+        #default="{ updateImmediate }"
         setting="blockchainRefreshButtonBehaviour"
         frontend-setting
       >
@@ -24,7 +24,7 @@ const { t } = useI18n();
           color="primary"
           class="mt-0"
           hide-details
-          @input="update($event)"
+          @input="updateImmediate($event)"
         >
           <RuiRadio
             :internal-value="
