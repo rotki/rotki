@@ -265,10 +265,9 @@ watch(identifier, async (assetId) => {
       <MergeDialog v-model="mergeTool" />
 
       <ManagedAssetTable
-        :tokens="assets.data"
+        :collection="assets"
         :loading="loading"
         :change="!loading"
-        :server-item-length="assets.found"
         :filters="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
@@ -281,6 +280,7 @@ watch(identifier, async (assetId) => {
         @delete-asset="showDeleteConfirmation($event)"
         @update:options="setTableOptions($event)"
         @update:filters="setFilter($event)"
+        @update:page="setPage($event)"
       />
 
       <ManagedAssetFormDialog

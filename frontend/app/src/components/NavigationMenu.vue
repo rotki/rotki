@@ -159,8 +159,8 @@ const navItems: MenuItem[] = [
       },
       {
         type: 'item',
-        class: 'asset-manager-newly-detected',
-        ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
+        class: 'asset-manager-more',
+        ...Routes.ASSET_MANAGER_MORE,
       },
     ],
   },

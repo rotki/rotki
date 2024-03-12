@@ -6,6 +6,7 @@ import {
   IgnoredAssetHandlingType,
   type IgnoredAssetsHandlingType,
 } from '@/types/asset';
+import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type {
   DataTableColumn,
@@ -19,8 +20,7 @@ import type { ActionStatus } from '@/types/action';
 
 const props = withDefaults(
   defineProps<{
-    tokens: SupportedAsset[];
-    serverItemLength: number;
+    collection: Collection<SupportedAsset>;
     matchers: Matcher[];
     filters: Filters;
     expanded: SupportedAsset[];
@@ -45,6 +45,7 @@ const emit = defineEmits<{
   (e: 'update:options', options: DataTableOptions): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:selected', selectedAssets: string[]): void;
+  (e: 'update:page', page: number): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
   (
     e: 'update:ignored-filter',
@@ -230,6 +231,10 @@ function isExpanded(identifier: string) {
 function expand(item: SupportedAsset) {
   updateExpanded(isExpanded(item.identifier) ? [] : [item]);
 }
+
+function setPage(page: number) {
+  emit('update:page', page);
+}
 </script>
 
 <template>
@@ -273,117 +278,124 @@ function expand(item: SupportedAsset) {
       </div>
     </div>
 
-    <RuiDataTable
-      :value="selected"
-      :rows="tokens"
-      :loading="loading"
-      :cols="tableHeaders"
-      :expanded="expanded"
-      :pagination="{
-        limit: options.itemsPerPage,
-        page: options.page,
-        total: serverItemLength,
-      }"
-      :pagination-modifiers="{ external: true }"
-      :sort.sync="sort"
-      :sort-modifiers="{ external: true }"
-      row-attr="identifier"
-      data-cy="managed-assets-table"
-      single-expand
-      sticky-header
-      outlined
-      @update:options="updatePagination($event)"
-      @input="updateSelected($event ?? [])"
+    <CollectionHandler
+      :collection="collection"
+      @set-page="setPage($event)"
     >
-      <template #item.symbol="{ row }">
-        <AssetDetailsBase
-          :changeable="!loading"
-          opens-details
-          :asset="getAsset(row)"
-        />
-      </template>
-      <template #item.address="{ row }">
-        <HashLink
-          v-if="row.address"
-          :text="row.address"
-          :chain="getChain(row.evmChain)"
-          hide-alias-name
-        />
-      </template>
-      <template #item.started="{ row }">
-        <DateDisplay
-          v-if="row.started"
-          :timestamp="row.started"
-        />
-        <span v-else>-</span>
-      </template>
-      <template #item.type="{ row }">
-        {{ formatType(row.assetType) }}
-      </template>
-      <template #item.ignored="{ row }">
-        <div class="flex justify-start items-center gap-2">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-[10rem]"
-            :disabled="
-              !isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)
-            "
-          >
-            <template #activator>
-              <RuiSwitch
-                color="primary"
-                hide-details
-                :disabled="
-                  isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
-                "
-                :value="isAssetIgnored(row.identifier).value"
-                @input="toggleIgnoreAsset(row.identifier)"
-              />
-            </template>
-            {{
-              isSpamAsset(row)
-                ? t('ignore.spam.hint')
-                : t('ignore.whitelist.hint')
-            }}
-          </RuiTooltip>
-
-          <ManagedAssetIgnoringMore
-            v-if="row.assetType === EVM_TOKEN"
-            :identifier="row.identifier"
-            :is-spam="isSpamAsset(row)"
-            @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
-            @toggle-spam="toggleSpam(row)"
-          />
-        </div>
-      </template>
-      <template #item.actions="{ row }">
-        <RowActions
-          v-if="row.assetType !== CUSTOM_ASSET"
-          :edit-tooltip="t('asset_table.edit_tooltip')"
-          :delete-tooltip="t('asset_table.delete_tooltip')"
-          @edit-click="edit(row)"
-          @delete-click="deleteAsset(row)"
+      <template #default="{ data, found }">
+        <RuiDataTable
+          :value="selected"
+          :rows="data"
+          :loading="loading"
+          :cols="tableHeaders"
+          :expanded="expanded"
+          :pagination="{
+            limit: options.itemsPerPage,
+            page: options.page,
+            total: found,
+          }"
+          :pagination-modifiers="{ external: true }"
+          :sort.sync="sort"
+          :sort-modifiers="{ external: true }"
+          row-attr="identifier"
+          data-cy="managed-assets-table"
+          single-expand
+          sticky-header
+          outlined
+          @update:options="updatePagination($event)"
+          @input="updateSelected($event ?? [])"
         >
-          <CopyButton
-            :tooltip="t('asset_table.copy_identifier.tooltip')"
-            :value="row.identifier"
-          />
-        </RowActions>
+          <template #item.symbol="{ row }">
+            <AssetDetailsBase
+              :changeable="!loading"
+              opens-details
+              :asset="getAsset(row)"
+            />
+          </template>
+          <template #item.address="{ row }">
+            <HashLink
+              v-if="row.address"
+              :text="row.address"
+              :chain="getChain(row.evmChain)"
+              hide-alias-name
+            />
+          </template>
+          <template #item.started="{ row }">
+            <DateDisplay
+              v-if="row.started"
+              :timestamp="row.started"
+            />
+            <span v-else>-</span>
+          </template>
+          <template #item.type="{ row }">
+            {{ formatType(row.assetType) }}
+          </template>
+          <template #item.ignored="{ row }">
+            <div class="flex justify-start items-center gap-2">
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+                tooltip-class="max-w-[10rem]"
+                :disabled="
+                  !isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)
+                "
+              >
+                <template #activator>
+                  <RuiSwitch
+                    color="primary"
+                    hide-details
+                    :disabled="
+                      isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)
+                    "
+                    :value="isAssetIgnored(row.identifier).value"
+                    @input="toggleIgnoreAsset(row.identifier)"
+                  />
+                </template>
+                {{
+                  isSpamAsset(row)
+                    ? t('ignore.spam.hint')
+                    : t('ignore.whitelist.hint')
+                }}
+              </RuiTooltip>
+
+              <ManagedAssetIgnoringMore
+                v-if="row.assetType === EVM_TOKEN"
+                :identifier="row.identifier"
+                :is-spam="isSpamAsset(row)"
+                @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
+                @toggle-spam="toggleSpam(row)"
+              />
+            </div>
+          </template>
+          <template #item.actions="{ row }">
+            <RowActions
+              v-if="row.assetType !== CUSTOM_ASSET"
+              :edit-tooltip="t('asset_table.edit_tooltip')"
+              :delete-tooltip="t('asset_table.delete_tooltip')"
+              @edit-click="edit(row)"
+              @delete-click="deleteAsset(row)"
+            >
+              <CopyButton
+                :tooltip="t('asset_table.copy_identifier.tooltip')"
+                :value="row.identifier"
+              />
+            </RowActions>
+          </template>
+          <template #expanded-item="{ row }">
+            <AssetUnderlyingTokens
+              v-if="row.underlyingTokens"
+              :tokens="row.underlyingTokens"
+            />
+          </template>
+          <template #item.expand="{ row }">
+            <RuiTableRowExpander
+              v-if="row.underlyingTokens && row.underlyingTokens.length > 0"
+              :expanded="isExpanded(row.identifier)"
+              @click="expand(row)"
+            />
+          </template>
+        </RuiDataTable>
       </template>
-      <template #expanded-item="{ row }">
-        <AssetUnderlyingTokens
-          v-if="row.underlyingTokens"
-          :tokens="row.underlyingTokens"
-        />
-      </template>
-      <template #item.expand="{ row }">
-        <RuiTableRowExpander
-          v-if="row.underlyingTokens && row.underlyingTokens.length > 0"
-          :expanded="isExpanded(row.identifier)"
-          @click="expand(row)"
-        />
-      </template>
-    </RuiDataTable>
+    </CollectionHandler>
   </div>
 </template>

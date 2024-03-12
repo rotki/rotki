@@ -1136,6 +1136,30 @@
   "asset_management": {
     "add_error": "Could not add asset: {message}",
     "add_title": "Add a new asset",
+    "cex_mapping": {
+      "add_error": "Could not add the mapping: {message}",
+      "add_mapping": "Add Mapping",
+      "add_title": "Add a new mapping",
+      "all_exchanges": "All exchanges",
+      "confirm_delete": {
+        "message": "Are you sure you want to delete asset mapping for symbol {asset} in {location}?",
+        "title": "Delete Exchange Asset Mapping"
+      },
+      "delete_error": "Could not delete the mapping: {message}",
+      "edit_error": "Could not edit the mapping: {message}",
+      "edit_title": "Edit the mapping",
+      "exchange": "Exchange",
+      "filter_by_exchange": "Filter by exchange",
+      "form": {
+        "asset_non_empty": "The recognized asset field cannot be empty",
+        "location_non_empty": "The location field cannot be empty",
+        "location_symbol_non_empty": "The asset symbol field cannot be empty"
+      },
+      "location_symbol": "Asset symbol",
+      "recognized_as": "Recognized as",
+      "save_for_all": "Save this mapping for all exchange",
+      "subtitle": "You can link asset symbols on a centralized exchange with assets recognized by rotki. This is necessary for rotki to process assets on the exchanges."
+    },
     "confirm_delete": {
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"
@@ -3315,7 +3339,9 @@
     "manage_assets_sub": {
       "custom_assets": "Custom Assets",
       "assets": "Assets",
-      "newly_detected": "Newly Detected Tokens"
+      "more": "More",
+      "newly_detected": "Newly Detected Tokens",
+      "cex_mapping": "Manage CEX Mapping"
     },
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {

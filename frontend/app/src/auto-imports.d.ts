@@ -346,6 +346,7 @@ declare global {
   const useArraySome: typeof import('@vueuse/core')['useArraySome']
   const useArrayUnique: typeof import('@vueuse/core')['useArrayUnique']
   const useAssetCacheStore: typeof import('./store/assets/asset-cache')['useAssetCacheStore']
+  const useAssetCexMappingApi: typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
   const useAssetIcon: typeof import('./composables/assets/icon')['useAssetIcon']
   const useAssetIconApi: typeof import('./composables/api/assets/icon')['useAssetIconApi']
@@ -397,6 +398,7 @@ declare global {
   const useCacheClear: typeof import('./composables/session/cache-clear')['useCacheClear']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useCeil: typeof import('@vueuse/math')['useCeil']
+  const useCexMappingForm: typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']
   const useChainAccountBalances: typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']
   const useChainBalancesStore: typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']
   const useChainsAccountsStore: typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']
@@ -1088,6 +1090,7 @@ declare module 'vue' {
     readonly useArraySome: UnwrapRef<typeof import('@vueuse/core')['useArraySome']>
     readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
     readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
+    readonly useAssetCexMappingApi: UnwrapRef<typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
     readonly useAssetIcon: UnwrapRef<typeof import('./composables/assets/icon')['useAssetIcon']>
     readonly useAssetIconApi: UnwrapRef<typeof import('./composables/api/assets/icon')['useAssetIconApi']>
@@ -1139,6 +1142,7 @@ declare module 'vue' {
     readonly useCacheClear: UnwrapRef<typeof import('./composables/session/cache-clear')['useCacheClear']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
+    readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useChainAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']>
     readonly useChainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']>
     readonly useChainsAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']>
@@ -1823,6 +1827,7 @@ declare module '@vue/runtime-core' {
     readonly useArraySome: UnwrapRef<typeof import('@vueuse/core')['useArraySome']>
     readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
     readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
+    readonly useAssetCexMappingApi: UnwrapRef<typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
     readonly useAssetIcon: UnwrapRef<typeof import('./composables/assets/icon')['useAssetIcon']>
     readonly useAssetIconApi: UnwrapRef<typeof import('./composables/api/assets/icon')['useAssetIconApi']>
@@ -1874,6 +1879,7 @@ declare module '@vue/runtime-core' {
     readonly useCacheClear: UnwrapRef<typeof import('./composables/session/cache-clear')['useCacheClear']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
+    readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useChainAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']>
     readonly useChainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']>
     readonly useChainsAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']>

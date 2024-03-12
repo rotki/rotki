@@ -147,3 +147,25 @@ export const SupportedAssets = CollectionCommonFields.extend({
 });
 
 export type SupportedAssets = z.infer<typeof SupportedAssets>;
+
+export const CexMappingDeletePayload = z.object({
+  location: z.string().nullable(),
+  locationSymbol: z.string(),
+});
+
+export type CexMappingDeletePayload = z.infer<typeof CexMappingDeletePayload>;
+
+export const CexMapping = CexMappingDeletePayload.extend({
+  asset: z.string(),
+});
+
+export type CexMapping = z.infer<typeof CexMapping>;
+
+export interface CexMappingRequestPayload
+  extends PaginationRequestPayload<CexMapping> {
+  location?: string;
+}
+
+export const CexMappingCollectionResponse = CollectionCommonFields.extend({
+  entries: z.array(CexMapping),
+});
