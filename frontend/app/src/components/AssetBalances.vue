@@ -113,7 +113,6 @@ function expand(item: AssetBalanceWithPrice) {
     :sort.sync="sort"
     :sort-modifiers="{ external: true }"
     :empty="{ description: t('data_table.no_data') }"
-    :sticky-offset="64"
     :sticky-header="stickyHeader"
     row-attr="asset"
     single-expand

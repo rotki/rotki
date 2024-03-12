@@ -251,7 +251,6 @@ watch(search, () => setPage(1));
         limit: pagination.itemsPerPage,
         total: filtered.length,
       }"
-      :sticky-offset="64"
       row-attr="asset"
       sticky-header
       single-expand

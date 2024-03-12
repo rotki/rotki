@@ -208,7 +208,6 @@ watch(loading, async (isLoading, wasLoading) => {
           :pagination-modifiers="{ external: true }"
           :sort-modifiers="{ external: true }"
           :empty="{ description: t('data_table.no_data') }"
-          :sticky-offset="64"
           row-attr="id"
           sticky-header
           outlined
