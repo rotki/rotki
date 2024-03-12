@@ -13,7 +13,6 @@ from rotkehlchen.assets.utils import (
     set_token_protocol_if_missing,
 )
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -22,6 +21,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address

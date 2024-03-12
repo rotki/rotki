@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Optional
 
 import regex
 
@@ -8,7 +8,15 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_WETH,
+    A_WETH_ARB,
+    A_WETH_BASE,
+    A_WETH_OPT,
+    A_WETH_POLYGON,
+    A_WXDAI,
+)
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant
@@ -21,6 +29,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     EVMTxHash,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
@@ -411,3 +420,13 @@ class IgnoredAssetsHandling(SerializableEnumNameMixin):
         if self == IgnoredAssetsHandling.EXCLUDE:
             return 'NOT IN'
         return 'IN'
+
+
+CHAIN_TO_WRAPPED_TOKEN: Final = {
+    SupportedBlockchain.ETHEREUM: A_WETH,
+    SupportedBlockchain.ARBITRUM_ONE: A_WETH_ARB,
+    SupportedBlockchain.OPTIMISM: A_WETH_OPT,
+    SupportedBlockchain.BASE: A_WETH_BASE,
+    SupportedBlockchain.GNOSIS: A_WXDAI,
+    SupportedBlockchain.POLYGON_POS: A_WETH_POLYGON,
+}

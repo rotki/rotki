@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
@@ -19,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_1INCH,

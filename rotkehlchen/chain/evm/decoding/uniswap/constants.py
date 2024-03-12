@@ -3,7 +3,7 @@ from typing import Final
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import (
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
 )
 
