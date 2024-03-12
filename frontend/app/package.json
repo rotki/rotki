@@ -96,7 +96,7 @@
     "electron-store": "8.1.0",
     "eslint": "8.57.0",
     "flush-promises": "1.0.2",
-    "msw": "2.2.2",
+    "msw": "2.2.3",
     "postcss": "8.4.35",
     "postcss-html": "1.6.0",
     "postcss-scss": "4.0.9",
