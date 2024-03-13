@@ -253,18 +253,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     });
   });
 
-  const isScrollDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.SCROLL,
-  });
-  watch(isScrollDetecting, async (isDetecting, wasDetecting) => {
-    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.SCROLL,
-        ignoreCache: true,
-      });
-    }
-  });
-
   return {
     massDetecting,
     fetchDetected,
