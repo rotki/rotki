@@ -423,6 +423,7 @@ watch(loading, async (isLoading, wasLoading) => {
               page: options.page,
               total: itemLength,
             }"
+            :pagination-modifiers="{ external: true }"
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
             data-cy="closed-trades"
