@@ -8640,7 +8640,7 @@ Adding an Eth2 validator
       Host: localhost:5042
 
    :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the public key of the validator has to be given!
-   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the validator index has to be given!
    :resjson ownership_percentage: An optional string representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
@@ -9505,7 +9505,7 @@ Editing blockchain account data
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
-   Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
+   Doing a PATCH on the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
 
    **Example Request**:
@@ -9579,7 +9579,7 @@ Removing blockchain accounts
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a DELETE on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
+   Doing a DELETE on the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
     If one of the given accounts to add is invalid the entire request will fail.
 
 
@@ -9717,7 +9717,7 @@ Adding manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the the manually tracked balances endpoint you can add a balance for an asset that rotki can't automatically detect, along with a label identifying it for you and any number of tags.
+   Doing a PUT on the manually tracked balances endpoint you can add a balance for an asset that rotki can't automatically detect, along with a label identifying it for you and any number of tags.
 
    .. _manually_tracked_balances_section:
 
@@ -9810,7 +9810,7 @@ Editing manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by identifier.
+   Doing a PATCH on the manual balances endpoint allows you to edit a number of manually tracked balances by identifier.
 
    **Example Request**:
 
@@ -9895,7 +9895,7 @@ Deleting manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a DELETE on the the manual balances endpoint with a list of identifiers of manually tracked balances will remove these balances from the database for the current user.
+   Doing a DELETE on the manual balances endpoint with a list of identifiers of manually tracked balances will remove these balances from the database for the current user.
     If one of the given ids to remove is invalid the entire request will fail.
 
 
@@ -9997,7 +9997,7 @@ Getting watchers
     - op: The comparison operator:
         * lt: less than the given ratio
         * le: less than or equal to the given ratio
-        * gt: greater than the the given ratio
+        * gt: greater than the given ratio
         * ge: greater than or equal to the given ratio
 
 Adding new watcher
@@ -10008,7 +10008,7 @@ Adding new watcher
    .. note::
       This endpoint is only available for premium users
 
-   Doing a PUT on the the watchers endpoint you can install new watchers for watching to the server.
+   Doing a PUT on the watchers endpoint you can install new watchers for watching to the server.
 
 
    **Example Request**:
@@ -10068,7 +10068,7 @@ Editing watchers
    .. note::
       This endpoint is only available for premium users
 
-   Doing a PATCH on the the watchers endpoint allows you to edit a number of watchers by identifier. If one of the identifier is not found, the whole method fails.
+   Doing a PATCH on the watchers endpoint allows you to edit a number of watchers by identifier. If one of the identifier is not found, the whole method fails.
 
    **Example Request**:
 
@@ -10128,7 +10128,7 @@ Deleting watchers
    .. note::
       This endpoint is only available for premium users
 
-   Doing a DELETE on the the watchers endpoint with a list of identifiers will delete either all or none of them.
+   Doing a DELETE on the watchers endpoint with a list of identifiers will delete either all or none of them.
 
 
    **Example Request**:

@@ -933,7 +933,7 @@ If a need exists to publish on hub.docker.com then the following steps need to b
     Make sure that you are logged with an account that has access to publish to docker.
 
 This installs the qemu binaries required to build the arm64 binary and uses buildx to build the images.
-Please replace the the ``REVISION`` with the git sha of the tag and the ``ROTKI_VERSION`` with the
+Please replace the ``REVISION`` with the git sha of the tag and the ``ROTKI_VERSION`` with the
 tag name.
 
 .. code-block::
