@@ -849,9 +849,15 @@ class LocationAssetMappingDeleteEntry:
     @classmethod
     def deserialize(cls: type['LocationAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'LocationAssetMappingDeleteEntry':  # noqa: E501
         """May raise:
-        -KeyError if required keys are missing
+        -DeserializationError if required keys are missing
         """
-        return cls(**data)
+        try:
+            return cls(
+                location=data['location'],
+                location_symbol=data['location_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
@@ -861,9 +867,16 @@ class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
     @classmethod
     def deserialize(cls: type['LocationAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'LocationAssetMappingUpdateEntry':  # noqa: E501
         """May raise:
-        -KeyError if required keys are missing
+        -DeserializationError if required keys are missing
         """
-        return cls(**data)
+        try:
+            return cls(
+                asset=data['asset'],
+                location=data['location'],
+                location_symbol=data['location_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
 
 
 class OptionalChainAddress(NamedTuple):

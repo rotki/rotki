@@ -2232,7 +2232,10 @@ class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> LocationAssetMappingUpdateEntry:
-        return LocationAssetMappingUpdateEntry.deserialize(data)
+        try:
+            return LocationAssetMappingUpdateEntry.deserialize(data)
+        except DeserializationError as e:
+            raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
 
 class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
@@ -2244,7 +2247,10 @@ class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> LocationAssetMappingDeleteEntry:
-        return LocationAssetMappingDeleteEntry.deserialize(data)
+        try:
+            return LocationAssetMappingDeleteEntry.deserialize(data)
+        except DeserializationError as e:
+            raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
 
 class LocationAssetMappingsUpdateSchema(LocationAssetMappingsBaseSchema):

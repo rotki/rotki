@@ -7,6 +7,7 @@ import requests
 
 from packaging import version as pversion
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
@@ -25,6 +26,9 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
+    Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     OptionalChainAddress,
     SupportedBlockchain,
 )
@@ -63,6 +67,7 @@ class RotkiDataUpdater:
             UpdateType.CONTRACTS: self.update_contracts,
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
+            UpdateType.LOCATION_ASSET_MAPPINGS: self.update_location_asset_mappings,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
         self.version = get_current_version().our_version
 
@@ -326,6 +331,32 @@ class RotkiDataUpdater:
                 write_cursor=write_cursor,
                 entries=entries_to_add,
             )
+
+    def update_location_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
+        """Applies location asset mappings updates in the global DB"""
+        log.info(f'Applying update for location asset mappings to v{version}')
+        for update_function, entry_type, raw_data_key in (
+            (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
+            (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+            (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+        ):
+            entries, raw_data = [], data.get(raw_data_key)
+            if raw_data is None:
+                continue  # no data to update
+            for raw_entry in raw_data:
+                try:
+                    if (asset_id := raw_entry.get('asset')) is not None:
+                        raw_entry['asset'] = Asset(asset_id)
+                    if (raw_location := raw_entry.get('location')) is not None:
+                        raw_entry['location'] = Location.deserialize(raw_location)
+                    entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # deserialize is defined in both
+                except DeserializationError as e:
+                    log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
+
+            try:
+                update_function(entries=entries)  # type: ignore[operator]  # update_function is known
+            except InputError as e:
+                log.error(f'Could not update {entry_type.__name__} due to {e!s}')
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
         """Retrieve the information about the latest available update"""
