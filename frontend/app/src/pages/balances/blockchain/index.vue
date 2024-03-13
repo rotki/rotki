@@ -62,6 +62,7 @@ const {
   arbitrumAccounts,
   baseAccounts,
   gnosisAccounts,
+  scrollAccounts,
 } = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
@@ -136,7 +137,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     || get(polygonAccounts).length > 0
     || get(arbitrumAccounts).length > 0
     || get(baseAccounts).length > 0
-    || get(gnosisAccounts).length > 0,
+    || get(gnosisAccounts).length > 0
+    || get(scrollAccounts).length > 0,
 );
 </script>
 
@@ -347,6 +349,20 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         :title="t('blockchain_balances.balances.gnosis')"
         :blockchain="Blockchain.GNOSIS"
         :balances="gnosisAccounts"
+        @edit-account="editAccount($event)"
+      />
+
+      <AccountBalances
+        v-if="scrollAccounts.length > 0 || busy.scroll.value"
+        v-intersect="{
+          handler: observers.scroll,
+          options: {
+            threshold,
+          },
+        }"
+        :title="t('blockchain_balances.balances.scroll')"
+        :blockchain="Blockchain.SCROLL"
+        :balances="scrollAccounts"
         @edit-account="editAccount($event)"
       />
 

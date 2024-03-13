@@ -47,6 +47,7 @@ const {
   arbitrumAddresses,
   baseAddresses,
   gnosisAddresses,
+  scrollAddresses,
 } = storeToRefs(useChainsAccountsStore());
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
@@ -63,6 +64,7 @@ const addresses = computed<Record<string, string[]>>(() => ({
   [Blockchain.ARBITRUM_ONE]: get(arbitrumAddresses),
   [Blockchain.BASE]: get(baseAddresses),
   [Blockchain.GNOSIS]: get(gnosisAddresses),
+  [Blockchain.SCROLL]: get(scrollAddresses),
 }));
 
 const addressSuggestions = getAddressesWithoutNames(blockchain);

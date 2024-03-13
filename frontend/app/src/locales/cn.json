@@ -1299,7 +1299,8 @@
       "loopring": "Loopring 余额",
       "optimism": "Optimism 余额",
       "polygon_pos": "Polygon PoS 余额",
-      "gnosis": "Gnosis 余额"
+      "gnosis": "Gnosis 余额",
+      "scroll": "Scroll 余额"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",
