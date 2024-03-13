@@ -200,9 +200,7 @@ class EvmNodeInquirer(ABC):
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
-            # Contract for scanning multiple balances deployed on the chain
             contract_scan: 'EvmContract',
-            # Contract for makking multi-calls deployed on the chain
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
@@ -511,10 +509,6 @@ class EvmNodeInquirer(ABC):
         The first node in the call order that gets a successful response returns.
         If none get a result then RemoteError is raised
         """
-        if not call_order:
-            raise RemoteError(
-                f'There are no nodes to call for {self.blockchain!s}!',
-            )
         for weighted_node in call_order:
             node_info = weighted_node.node_info
             web3node = self.web3_mapping.get(node_info, None)

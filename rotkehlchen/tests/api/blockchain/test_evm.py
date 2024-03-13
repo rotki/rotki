@@ -266,7 +266,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
             arbitrum_one_addresses=[common_account, failing_account],
             base_addresses=[common_account, failing_account],
             gnosis_addresses=[common_account, failing_account, already_added_to_all_chains],
-            scroll_addresses=[common_account, failing_account, already_added_to_all_chains],
+            scroll_addresses=[common_account, failing_account],
         )
         stack.enter_context(patched_modify_blockchain_accounts)
 
@@ -296,7 +296,6 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         'added': {
             '0x9531C059098e3d194fF87FebB587aB07B30B1306': ['all'],
             '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['eth'],
-            '0x7277F7849966426d345D8F6B9AFD1d3d89183083': ['scroll'],
         },
         'failed': {
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
@@ -310,6 +309,15 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         'existed': {'0x7277F7849966426d345D8F6B9AFD1d3d89183083': ['gnosis']},
         'no_activity': {
             '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa': ['all'],
+            '0x7277F7849966426d345D8F6B9AFD1d3d89183083': [
+                'eth',
+                'optimism',
+                'avax',
+                'polygon_pos',
+                'arbitrum_one',
+                'base',
+                'scroll',
+            ],
         },
         'eth_contracts': ['0x9008D19f58AAbD9eD0D60971565AA8510560ab41'],
     }

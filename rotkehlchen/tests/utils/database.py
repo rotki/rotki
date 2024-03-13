@@ -61,7 +61,7 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
     )])
     db.add_external_service_credentials([ExternalServiceApiCredentials(
         service=ExternalService.SCROLL_ETHERSCAN,
-        api_key=ApiKey('THISKEYSHOULDNOTBEUSED'),  # Added by zinkkrysty on 2024-03-05
+        api_key=ApiKey('W7QNAANTDB92HZ8ZSYEH8AU33HDZIE3MD4'),  # Added by zinkkrysty on 2024-03-13
     )])
 
 
