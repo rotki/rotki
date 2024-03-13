@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import gevent
 import requests
+from eth_utils import to_checksum_address
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -19,6 +21,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -42,12 +45,50 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _read_floor_asset_price_from_collection(
+        floor_price_symbol: str,
+        collection_payment_tokens: list[dict[str, str]],
+) -> Asset:
+    """
+    Get the asset currency for the floor price reported by opensea using the list
+    of assets listed in the collection's payment tokens.
+
+    TODO: The api has a bug reported in the ticket #1455100 and the chain is reported
+    always as ethereum even if the asset is not an ethereum token.
+    When fixed adjust this function to use the chain.
+
+    May raise:
+    - UnknownAsset if the token wasn't found in the collection payment tokens.
+    """
+    for payment_token in collection_payment_tokens:
+        if payment_token.get('symbol') == floor_price_symbol:
+            try:
+                address = to_checksum_address(payment_token['address'])
+            except KeyError:
+                log.error(f'Skipping opensea payment token because the address key is not present. {payment_token=}')  # noqa: E501
+                continue
+
+            with GlobalDBHandler().conn.read_ctx() as cursor:
+                asset_identifier = cursor.execute(  # we consider as correct to query only by address knowing that the same address could exist in different chains until opensea provides the correct chain value in the api  # noqa: E501
+                    'SELECT identifier FROM evm_tokens WHERE address=?',
+                    (address,),
+                ).fetchone()
+                if asset_identifier is not None:
+                    return Asset(asset_identifier[0])
+
+    raise UnknownAsset(
+        'Did not find a valid token matching the symbol '
+        f'{floor_price_symbol} in {collection_payment_tokens}',
+    )
+
+
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)  # noqa: E501
 class Collection:
     name: str
     banner_image: str | None
     description: str | None
     large_image: str
+    floor_price_asset: Asset = A_ETH
     floor_price: FVal | None = None
 
     def serialize(self) -> dict[str, Any]:
@@ -57,6 +98,7 @@ class Collection:
             'description': self.description,
             'large_image': self.large_image,
             'floor_price': str(self.floor_price) if self.floor_price else None,
+            'floor_price_asset': self.floor_price_asset.identifier,
         }
 
 
@@ -67,7 +109,8 @@ class NFT(NamedTuple):
     name: str | None
     external_link: str | None
     permalink: str | None
-    price_eth: FVal
+    price_asset: Asset
+    price_in_asset: FVal
     price_usd: FVal
     collection: Collection | None
 
@@ -79,7 +122,8 @@ class NFT(NamedTuple):
             'name': self.name,
             'external_link': self.external_link,
             'permalink': self.permalink,
-            'price_eth': str(self.price_eth),
+            'price_asset': self.price_asset.identifier,
+            'price_in_asset': str(self.price_in_asset),
             'price_usd': str(self.price_usd),
             'collection': self.collection.serialize() if self.collection else None,
         }
@@ -221,7 +265,7 @@ class Opensea(ExternalServiceWithApiKey):
             else:
                 last_price_in_eth = ZERO
 
-            floor_price = ZERO
+            floor_price, floor_price_asset = ZERO, A_ETH
             collection = None
             # NFT might not be part of a collection
             if 'collection' in entry:
@@ -240,14 +284,25 @@ class Opensea(ExternalServiceWithApiKey):
                     collection = saved_entry
                     if saved_entry.floor_price is not None:
                         floor_price = saved_entry.floor_price
+                        floor_price_asset = saved_entry.floor_price_asset
                 else:  # should not happen. That means collections endpoint doesnt return anything
                     raise DeserializationError(
                         f'Could not find collection {entry["collection"]} in opensea collections '
                         f'endpoint',
                     )
 
-            price_in_eth = max(last_price_in_eth, floor_price)
-            price_in_usd = price_in_eth * eth_usd_price
+            last_price_in_usd = last_price_in_eth * eth_usd_price
+            floor_price_in_usd = floor_price * Inquirer.find_usd_price(asset=floor_price_asset) if floor_price != ZERO else ZERO  # noqa: E501
+
+            if floor_price_in_usd > last_price_in_usd:
+                price_in_asset = floor_price
+                price_asset = floor_price_asset
+                price_in_usd = floor_price_in_usd
+            else:
+                price_in_asset = last_price_in_eth
+                price_asset = A_ETH
+                price_in_usd = last_price_in_usd
+
             token_id = entry['contract'] + '_' + entry['identifier']
             if entry['token_standard'] == 'erc1155':
                 token_id += f'_{owner_address!s}'
@@ -258,7 +313,8 @@ class Opensea(ExternalServiceWithApiKey):
                 name=entry['name'],
                 external_link=entry['metadata_url'],
                 permalink=entry['opensea_url'],
-                price_eth=price_in_eth,
+                price_in_asset=price_in_asset,
+                price_asset=price_asset,
                 price_usd=price_in_usd,
                 collection=collection,
             )
@@ -295,33 +351,57 @@ class Opensea(ExternalServiceWithApiKey):
         """
         raw_result = self._consume_assets_endpoint(account=account)
         for entry in raw_result:
-            options = {'collection_slug': entry['collection']}
-            collection = self._query(endpoint='collection', options=options)
-            slug = collection['collection']
-            if slug in self.collections:
-                continue  # do not requery already queried collection
+            try:
+                options = {'collection_slug': entry['collection']}
+                collection = self._query(endpoint='collection', options=options)
+                slug = collection['collection']
+                if slug in self.collections:
+                    continue  # do not requery already queried collection
 
-            # To get the floor price we need to query a different endpoint since opensea are idiots
-            # https://github.com/rotki/rotki/issues/3676
-            stats_result = self._query(
-                endpoint='collectionstats', options={'name': entry['collection']},
-            )
-            log.debug(stats_result)
-            _floor_price = (
-                stats_result['total']['floor_price'] or stats_result['total']['average_price']
-            )
-            floor_price = deserialize_optional_to_optional_fval(
-                value=_floor_price,
-                name='floor price',
-                location='opensea',
-            )
-            self.collections[slug] = Collection(
-                name=collection['name'],
-                banner_image=collection['banner_image_url'],
-                description=collection['description'],
-                large_image=collection['image_url'],
-                floor_price=floor_price,
-            )
+                # To get the floor price we need to query a different endpoint
+                # https://github.com/rotki/rotki/issues/3676
+                stats_result = self._query(
+                    endpoint='collectionstats', options={'name': entry['collection']},
+                )
+                log.debug(stats_result)
+                _floor_price = (
+                    stats_result['total']['floor_price'] or stats_result['total']['average_price']
+                )
+                floor_price = deserialize_optional_to_optional_fval(
+                    value=_floor_price,
+                    name='floor price',
+                    location='opensea',
+                )
+
+                if (
+                    len(payment_tokens := collection.get('payment_tokens', [])) == 0 or
+                    stats_result['total']['floor_price_symbol'] in ('', 'ETH')
+                ):
+                    floor_price_asset = A_ETH
+                else:  # if the price is in something else than eth find the token
+                    try:
+                        floor_price_asset = _read_floor_asset_price_from_collection(
+                            floor_price_symbol=stats_result['total']['floor_price_symbol'],
+                            collection_payment_tokens=payment_tokens,
+                        )
+                    except UnknownAsset as e:  # we failed to find the token. Ignore the price
+                        log.error(f"Could not read asset in opensea floor price with symbol {stats_result['total']['floor_price_symbol']}. Ignoring it. {e}")  # noqa: E501
+                        floor_price_asset = A_ETH
+                        floor_price = ZERO
+
+                self.collections[slug] = Collection(
+                    name=collection['name'],
+                    banner_image=collection['banner_image_url'],
+                    description=collection['description'],
+                    large_image=collection['image_url'],
+                    floor_price=floor_price,
+                    floor_price_asset=floor_price_asset,
+                )
+            except KeyError as e:
+                log.error(
+                    f'Failed to get opensea collection information for {account=} due '
+                    f'to missing key {e} in {entry=}. Skipping it',
+                )
 
     def get_account_nfts(self, account: ChecksumEvmAddress) -> list[NFT]:
         """May raise RemoteError"""
