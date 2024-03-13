@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { objectPick } from '@vueuse/shared';
-import Fragment from '@/components/helper/Fragment';
 import {
   isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
@@ -19,10 +18,12 @@ const props = withDefaults(
     events: HistoryEventEntry[];
     blockNumber?: number;
     loading?: boolean;
+    total?: number;
   }>(),
   {
     loading: false,
     blockNumber: undefined,
+    total: 0,
   },
 );
 
@@ -75,11 +76,12 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 </script>
 
 <template>
-  <Fragment>
-    <template v-if="events.length > 0">
-      <div
+  <div>
+    <template v-if="total > 0">
+      <LazyLoader
         v-for="(item, index) in events"
         :key="index"
+        min-height="90px"
         class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-4 items-center"
         :class="{
           'border-b border-default': index < events.length - 1,
@@ -135,7 +137,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
             :event="item"
           />
         </RowActions>
-      </div>
+      </LazyLoader>
     </template>
 
     <template v-else>
@@ -146,5 +148,5 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
         {{ t('transactions.events.no_data') }}
       </div>
     </template>
-  </Fragment>
+  </div>
 </template>
