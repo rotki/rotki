@@ -54,6 +54,7 @@ BITCOINDE_TRADING_PAIRS = (
     'etheur',
     'bsveur',
     'ltceur',
+    'usdteur',
     'xrpeur',
     'dogeeur',
     'soleur',
@@ -65,6 +66,7 @@ BITCOINDE_TRADING_PAIRS = (
 )
 BITCOINDE_TO_WORLD_SYMBOLS = {
     'SOL': 'SOL-2',
+    'USDT': 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7',
 }
 
 
