@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(
@@ -27,11 +27,14 @@ const emit = defineEmits<{
   (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
 }>();
 
+const PER_BATCH = 6;
+const currentLimit: Ref<number> = ref(0);
+
 const { t } = useI18n();
 
 const { eventGroup, allEvents } = toRefs(props);
 
-const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
+const events: ComputedRef<HistoryEventEntry[]> = computed(() => {
   const all = get(allEvents);
   const eventHeader = get(eventGroup);
   if (all.length === 0)
@@ -49,18 +52,16 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
     return filtered;
 
   return [eventHeader];
-}, []);
+});
 
 const ignoredInAccounting = useRefMap(
   eventGroup,
   ({ ignoredInAccounting }) => !!ignoredInAccounting,
 );
 
-const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
-
 const showDropdown = computed(() => {
   const length = get(events).length;
-  return (get(ignoredInAccounting) || length > 10) && length > 0;
+  return (get(ignoredInAccounting) || length > PER_BATCH) && length > 0;
 });
 
 watch(
@@ -70,19 +71,36 @@ watch(
       current.eventIdentifier !== old.eventIdentifier
       || currentIgnored !== oldIgnored
     )
-      set(panel, currentIgnored ? [] : [0]);
+      set(currentLimit, currentIgnored ? 0 : PER_BATCH);
   },
 );
 
 const blockEvent = isEthBlockEventRef(eventGroup);
 const [DefineTable, ReuseTable] = createReusableTemplate();
+
+const limitedEvents: ComputedRef<HistoryEventEntry[]> = computed(() => {
+  const limit = get(currentLimit);
+  if (limit === 0)
+    return [];
+
+  return [...get(events)].slice(0, limit);
+});
+
+function handleMoreClick() {
+  const limit = get(currentLimit);
+  if (limit < get(events).length)
+    set(currentLimit, limit + PER_BATCH);
+  else
+    set(currentLimit, 0);
+}
 </script>
 
 <template>
   <Fragment>
-    <DefineTable>
+    <DefineTable #default="{ data }">
       <HistoryEventsListTable
-        :events="events"
+        :events="data"
+        :total="events.length"
         :block-number="blockEvent?.blockNumber"
         :loading="loading"
         @delete-event="emit('delete-event', $event)"
@@ -95,31 +113,56 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
       class="px-0"
     />
     <td :colspan="colspan - 1">
-      <ReuseTable v-if="!showDropdown" />
+      <ReuseTable
+        v-if="!showDropdown"
+        :data="events"
+      />
       <RuiAccordions
         v-else
-        v-model="panel"
-        multiple
+        :value="0"
       >
         <RuiAccordion
-          header-class="py-3"
+          eager
         >
-          <template #header="{ open }">
-            <div class="text-rui-primary font-bold">
-              {{
-                open
-                  ? t('transactions.events.view.hide')
-                  : t('transactions.events.view.show', {
-                    length: events.length,
-                  })
-              }}
-            </div>
+          <template #default>
+            <ReuseTable
+              :data="limitedEvents"
+            />
           </template>
-          <div class="-mt-2">
-            <ReuseTable />
-          </div>
         </RuiAccordion>
       </RuiAccordions>
+      <RuiButton
+        v-if="showDropdown"
+        color="primary"
+        variant="text"
+        class="text-rui-primary font-bold my-2"
+        @click="handleMoreClick()"
+      >
+        <template v-if="currentLimit === 0">
+          {{
+            t('transactions.events.view.show', {
+              length: events.length,
+            })
+          }}
+        </template>
+        <template v-else-if="currentLimit >= events.length">
+          {{ t('transactions.events.view.hide') }}
+        </template>
+        <template v-else>
+          {{
+            t('transactions.events.view.load_more', {
+              length: events.length - currentLimit,
+            })
+          }}
+        </template>
+        <template #append>
+          <RuiIcon
+            class="transition-all"
+            name="arrow-down-s-line"
+            :class="{ 'transform -rotate-180': currentLimit >= events.length }"
+          />
+        </template>
+      </RuiButton>
     </td>
   </Fragment>
 </template>

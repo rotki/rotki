@@ -892,30 +892,34 @@ watchImmediate(route, async (route) => {
               />
             </template>
             <template #item.txHash="{ item }">
-              <div class="flex items-center gap-2">
+              <LazyLoader class="flex items-center gap-2">
                 <LocationIcon
                   icon
                   :item="item.location"
                   size="20px"
                 />
                 <HistoryEventsIdentifier :event="item" />
-              </div>
+              </LazyLoader>
             </template>
             <template #item.timestamp="{ item }">
-              <DateDisplay
-                :timestamp="item.timestamp"
-                milliseconds
-              />
+              <LazyLoader>
+                <DateDisplay
+                  :timestamp="item.timestamp"
+                  milliseconds
+                />
+              </LazyLoader>
             </template>
             <template #item.action="{ item }">
-              <HistoryEventsAction
-                :event="item"
-                :loading="eventTaskLoading"
-                @add-event="addEvent($event)"
-                @toggle-ignore="toggleIgnore($event)"
-                @redecode="forceRedecodeEvmEvents($event)"
-                @reset="resetEvents($event)"
-              />
+              <LazyLoader>
+                <HistoryEventsAction
+                  :event="item"
+                  :loading="eventTaskLoading"
+                  @add-event="addEvent($event)"
+                  @toggle-ignore="toggleIgnore($event)"
+                  @redecode="forceRedecodeEvmEvents($event)"
+                  @reset="resetEvents($event)"
+                />
+              </LazyLoader>
             </template>
             <template #expanded-item="{ headers, item }">
               <HistoryEventsList
