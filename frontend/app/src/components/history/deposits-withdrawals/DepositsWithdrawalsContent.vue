@@ -12,7 +12,6 @@ import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@/types';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -32,13 +31,13 @@ const showIgnoredAssets: Ref<boolean> = ref(false);
 const mainPage = computed(() => get(locationOverview) === '');
 
 const tableHeaders = computed<DataTableColumn[]>(() => {
-  const overview = get(locationOverview);
+  const overview = !get(mainPage);
   const headers: DataTableColumn[] = [
     {
       label: '',
       key: 'ignoredInAccounting',
-      class: !overview ? '!p-0 !w-0' : '!w-0',
-      cellClass: !overview ? '!p-0' : '!w-16',
+      class: !overview ? '!p-0' : '',
+      cellClass: !overview ? '!p-0' : '!w-0 !max-w-[4rem]',
     },
     {
       label: t('common.location'),
@@ -146,10 +145,10 @@ const value = computed({
     if (!get(mainPage))
       return undefined;
 
-    return get(selected).map((item: AssetMovementEntry) => item.identifier);
+    return get(selected).map(({ identifier }: AssetMovementEntry) => identifier);
   },
   set: (values) => {
-    set(selected, get(assetMovements).data.filter((item: AssetMovementEntry) => values?.includes(item.identifier)));
+    set(selected, get(assetMovements).data.filter(({ identifier }: AssetMovementEntry) => values?.includes(identifier)));
   },
 });
 
@@ -277,6 +276,7 @@ watch(loading, async (isLoading, wasLoading) => {
             outlined
             row-attr="identifier"
             single-expand
+            sticky-header
             :item-class="getItemClass"
             @update:options="setTableOptions($event)"
           >

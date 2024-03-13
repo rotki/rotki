@@ -123,7 +123,6 @@ function expand(item: CustomAsset) {
       :pagination-modifiers="{ external: true }"
       :sort.sync="sort"
       :sort-modifiers="{ external: true }"
-      :sticky-offset="64"
       row-attr="identifier"
       data-cy="custom-assets-table"
       single-expand

@@ -287,7 +287,6 @@ function expand(item: SupportedAsset) {
       :pagination-modifiers="{ external: true }"
       :sort.sync="sort"
       :sort-modifiers="{ external: true }"
-      :sticky-offset="64"
       row-attr="identifier"
       data-cy="managed-assets-table"
       single-expand

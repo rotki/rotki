@@ -354,7 +354,6 @@ defineExpose({
     :data-location="blockchain"
     :group="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
     :collapsed.sync="collapsedXpubs"
-    :sticky-offset="64"
     single-expand
     outlined
     sticky-header

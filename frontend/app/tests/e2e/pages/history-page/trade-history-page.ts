@@ -75,18 +75,18 @@ export class TradeHistoryPage {
   }
 
   visibleEntries(visible: number) {
-    cy.get('.v-data-table__progress').should('not.exist');
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get('[data-cy=closed-trades] tbody')
       .find('tr')
       .should('have.length', visible);
   }
 
   totalEntries(total: number) {
-    cy.get('.v-data-table__progress').should('not.exist');
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child',
+      '[data-cy=closed-trades] [data-cy=table-pagination] span[class*=_indicator_]',
     ).should('contain.text', total);
   }
 
@@ -161,15 +161,15 @@ export class TradeHistoryPage {
 
   nextPage() {
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__icons-after button:first-child',
+      '[data-cy=closed-trades] [data-cy=table-pagination] [class*=_navigation_] button:nth-child(3)',
     ).click();
   }
 
-  shouldBeOnPage(page: number) {
-    cy.get('.v-data-table__progress').should('not.exist');
-    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+  shouldBeOnPage(range: string) {
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
+    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get(
-      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input',
-    ).should('have.value', page);
+      '[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] label',
+    ).should('contain', range);
   }
 }

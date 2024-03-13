@@ -33,6 +33,7 @@ const loadingData = computed<boolean>(
       :loading="loadingData"
       :balances="locationBreakdown"
       hide-breakdown
+      sticky-header
     />
   </RuiCard>
 </template>
