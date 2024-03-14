@@ -5,7 +5,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
-from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -382,8 +382,8 @@ class Inquirer:
             "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
-        instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
+        instance._oracles = [oracle for oracle in oracles if oracle is not CurrentPriceOracle.MANUALCURRENT]  # noqa: E501  # TODO: remove MANUALCURRENT from the settings
+        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in instance._oracles]  # noqa: E501
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances, strict=True):  # noqa: E501
@@ -399,6 +399,57 @@ class Inquirer:
             Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
     @staticmethod
+    def _try_oracle_price_query(
+            oracle: CurrentPriceOracle,
+            oracle_instance: CurrentPriceOracleInstance,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            coming_from_latest_price: bool,
+            match_main_currency: bool,
+    ) -> tuple[Price, bool, bool]:
+        """Tries to query the current price of the asset pair using the provided oracle instance.
+        Returns a tuple of (price, used_main_currency, is_error). The third element is used to
+        indicate whether the error should be ignored or not."""
+        price, used_main_currency, is_error = ZERO_PRICE, False, True
+        try:
+            price, used_main_currency, is_error = *oracle_instance.query_current_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                match_main_currency=match_main_currency,
+            ), False
+        except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
+            log.warning(
+                f'Current price oracle {oracle_instance} failed to request {to_asset!s} '
+                f'price for {from_asset.identifier} due to: {e!s}.',
+            )
+        except RecursionError:
+            # We have to catch recursion error only at the top level since otherwise we get to
+            # recursion level MAX - 1, and after calling some other function may run into it again.  # noqa: E501
+            if coming_from_latest_price is True:
+                raise
+
+            # else
+            # Infinite loop can happen if user creates a loop of manual current prices
+            # (e.g. said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
+            Inquirer._msg_aggregator.add_warning(
+                f'Was not able to find price from {from_asset!s} to {to_asset!s} since your '
+                f'manual latest prices form a loop. For now, other oracles will be used.',
+            )
+            is_error = False
+
+        if (price, used_main_currency) != (ZERO_PRICE, False):
+            Inquirer.set_cached_price(
+                cache_key=(from_asset, to_asset),
+                cached_price=CachedPriceEntry(
+                    price=price,
+                    time=ts_now(),
+                    oracle=oracle,
+                    used_main_currency=used_main_currency,
+                ),
+            )
+        return price, used_main_currency, is_error
+
+    @staticmethod
     def _query_oracle_instances(
             from_asset: Asset,
             to_asset: Asset,
@@ -411,7 +462,6 @@ class Inquirer:
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         instance = Inquirer()
-        cache_key = (from_asset, to_asset)
         assert (
             instance._oracles is not None and
             instance._oracle_instances is not None and
@@ -430,8 +480,7 @@ class Inquirer:
                 oracles = instance._oracles
                 oracle_instances = instance._oracle_instances
         else:
-            oracles = [CurrentPriceOracle.MANUALCURRENT]
-            oracle_instances = [instance._manualcurrent]
+            return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN, False
 
         price = ZERO_PRICE
         oracle_queried = CurrentPriceOracle.BLOCKCHAIN
@@ -446,31 +495,15 @@ class Inquirer:
             ):
                 continue
 
-            try:
-                price, used_main_currency = oracle_instance.query_current_price(
-                    from_asset=from_asset,  # type: ignore  # type is guaranteed by the if above
-                    to_asset=to_asset,  # type: ignore  # type is guaranteed by the if above
-                    match_main_currency=match_main_currency,
-                )
-            except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
-                log.warning(
-                    f'Current price oracle {oracle} failed to request {to_asset.identifier} '
-                    f'price for {from_asset.identifier} due to: {e!s}.',
-                )
-                continue
-            except RecursionError:
-                # We have to catch recursion error only at the top level since otherwise we get to
-                # recursion level MAX - 1, and after calling some other function may run into it again.  # noqa: E501
-                if coming_from_latest_price is True:
-                    raise
-
-                # else
-                # Infinite loop can happen if user creates a loop of manual current prices
-                # (e.g. said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
-                instance._msg_aggregator.add_warning(
-                    f'Was not able to find price from {from_asset!s} to {to_asset!s} since your '
-                    f'manual latest prices form a loop. For now, other oracles will be used.',
-                )
+            price, used_main_currency, should_continue = Inquirer._try_oracle_price_query(
+                oracle=oracle,
+                oracle_instance=oracle_instance,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                coming_from_latest_price=coming_from_latest_price,
+                match_main_currency=match_main_currency,
+            )
+            if should_continue:
                 continue
 
             if price != ZERO_PRICE:
@@ -483,15 +516,6 @@ class Inquirer:
                 )
                 break
 
-        Inquirer.set_cached_price(
-            cache_key=cache_key,
-            cached_price=CachedPriceEntry(
-                price=price,
-                time=ts_now(),
-                oracle=oracle_queried,
-                used_main_currency=used_main_currency,
-            ),
-        )
         return price, oracle_queried, used_main_currency
 
     @staticmethod
@@ -528,6 +552,18 @@ class Inquirer:
             cache = Inquirer.get_cached_current_price_entry(cache_key=(from_asset, to_asset), match_main_currency=match_main_currency)  # noqa: E501
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
+
+        # check manual prices
+        if (price_result := Inquirer._try_oracle_price_query(
+            oracle=CurrentPriceOracle.MANUALCURRENT,
+            oracle_instance=Inquirer._manualcurrent,
+            from_asset=from_asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
+            to_asset=to_asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
+            coming_from_latest_price=coming_from_latest_price,
+            match_main_currency=match_main_currency,
+        )) != (ZERO_PRICE, False, False):
+            price, used_main_currency, _ = price_result
+            return price, CurrentPriceOracle.MANUALCURRENT, used_main_currency
 
         oracle_price, oracle_queried, used_main_currency = Inquirer._query_oracle_instances(
             from_asset=from_asset,
@@ -648,7 +684,17 @@ class Inquirer:
                 price, oracle = Inquirer._query_fiat_pair(base=asset, quote=Inquirer.usd)
                 return price, oracle, False
 
-        # continue, asset isn't fiat or a price can be found by one of the oracles (CC for example)
+        # continue, asset isn't fiat, check manual prices
+        if (price_result := Inquirer._try_oracle_price_query(
+            oracle=CurrentPriceOracle.MANUALCURRENT,
+            oracle_instance=Inquirer._manualcurrent,
+            from_asset=asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+            coming_from_latest_price=coming_from_latest_price,
+            match_main_currency=match_main_currency,
+        )) != (ZERO_PRICE, False, False):
+            price, used_main_currency, _ = price_result
+            return price, CurrentPriceOracle.MANUALCURRENT, used_main_currency
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False
@@ -728,6 +774,7 @@ class Inquirer:
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
             return Price(FVal(0.01)), CurrentPriceOracle.FIAT, False
 
+        # continue, price can be found by one of the oracles (CC for example)
         price, oracle, used_main_currency = Inquirer._query_oracle_instances(
             from_asset=asset,
             to_asset=A_USD,
