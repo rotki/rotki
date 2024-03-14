@@ -2266,9 +2266,9 @@ You can fix this by simply adding the ``--rpc.gascap 0`` argument to your geth n
 Local system clock is not synchronized
 ========================================
 
-Some remote servers (e.g. exchanges) require your local system clock synchronized with theirs. In case of not having it synchronized the request will fail and rotki will either display a specific error message (i.e. 409 status code and a *local system clock is not sync* message) or the generic 500 error one (please, :ref:`report it to us <bug_reporting>`).
+Your local system clock must be synchronized with certain remote servers, such as exchanges. If your clock is not synchronized, requests to these servers will fail. rotki will either display a specific error message (e.g., a 409 status code indicating a local system clock synchronization issue) or a generic 500 error message (please, report it to us).
 
-Follow your OS official guidelines about how to synchronize the clock with an Internet Time Server and try again.
+To resolve this issue, follow the official guidelines provided by your operating system on how to synchronize your clock with an Internet Time Server. You can find detailed instructions for fixing this problem on Windows, Mac, and Linux in this link: `Fixing Clock Synchronization <https://github.com/tiagosiebler/awesome-crypto-examples/wiki/Timestamp-for-this-request-is-outside-of-the-recvWindow>`_. Once synchronized, try the request again.
 
 Restoring backed up database at new account creation fails
 ============================================================
