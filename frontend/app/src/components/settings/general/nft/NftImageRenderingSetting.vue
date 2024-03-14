@@ -3,8 +3,10 @@ import { isEqual } from 'lodash-es';
 import { externalLinks } from '@/data/external-links';
 import type { ComputedRef, Ref } from 'vue';
 
+const { t } = useI18n();
 const renderAllNftImages: Ref<'all' | 'whitelisted'> = ref('all');
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
+const showUpdateWhitelistConfirmation: Ref<boolean> = ref(false);
 
 const frontendStore = useFrontendSettingsStore();
 const {
@@ -41,10 +43,6 @@ function reset() {
 watch(whitelist, (data) => {
   set(whitelistedDomainsForNftImages, data);
 });
-
-const { t } = useI18n();
-
-const showUpdateWhitelistConfirmation: Ref<boolean> = ref(false);
 
 const changed: ComputedRef<boolean> = computed(
   () => !isEqual(get(whitelistedDomainsForNftImages), get(whitelist)),
@@ -86,33 +84,31 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div>
-    <div>
-      <RuiCardHeader class="p-0">
-        <template #header>
-          {{
-            t(
-              'general_settings.nft_setting.subtitle.nft_images_rendering_setting',
-            )
-          }}
-        </template>
-        <template #subheader>
-          <i18n
-            tag="div"
-            path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
-          >
-            <template #link>
-              <ExternalLink
-                color="primary"
-                :url="externalLinks.nftWarning"
-              >
-                {{ t('common.here') }}
-              </ExternalLink>
-            </template>
-          </i18n>
-        </template>
-      </RuiCardHeader>
-    </div>
+  <div class="p-4">
+    <RuiCardHeader class="p-0">
+      <template #header>
+        {{
+          t(
+            'general_settings.nft_setting.subtitle.nft_images_rendering_setting',
+          )
+        }}
+      </template>
+      <template #subheader>
+        <i18n
+          tag="div"
+          path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
+        >
+          <template #link>
+            <ExternalLink
+              color="primary"
+              :url="externalLinks.nftWarning"
+            >
+              {{ t('common.here') }}
+            </ExternalLink>
+          </template>
+        </i18n>
+      </template>
+    </RuiCardHeader>
     <SettingsOption
       #default="{ error, success, update }"
       setting="renderAllNftImages"

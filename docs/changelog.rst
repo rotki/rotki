@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will display NFT prices correctly across all asset types.
 * :bug:`7572` Fix issue where coinbase data query could result in an error popup.
 * :bug:`7611` USDT balances and trades in bitcoin.de should now work properly.
 * :bug:`-` Sending money to SEPA or bridging with the BurnFrom monerium signature will now be properly decoded by rotki.

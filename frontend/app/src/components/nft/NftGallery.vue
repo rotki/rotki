@@ -5,17 +5,18 @@ import {
   type TablePaginationData,
   useBreakpoint,
 } from '@rotki/ui-library-compat';
+import { keyBy } from 'lodash-es';
 import type { GeneralAccount } from '@rotki/common/lib/account';
 import type { Ref } from 'vue';
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
-import type { NftPriceArray } from '@/types/prices';
+import type { NftPrice } from '@/types/prices';
 
 defineProps<{ modules: Module[] }>();
 
 const { t } = useI18n();
 
-const prices: Ref<NftPriceArray> = ref([]);
+const prices: Ref<Record<string, NftPrice>> = ref({});
 const priceError = ref('');
 const total = ref(0);
 const limit = ref(0);
@@ -29,21 +30,6 @@ const chains = [Blockchain.ETH];
 
 const page = ref(1);
 const itemsPerPage = ref(8);
-
-const paginationData = computed({
-  get() {
-    return {
-      page: get(page),
-      total: get(items).length,
-      limit: get(itemsPerPage),
-      limits: get(limits),
-    };
-  },
-  set(value: TablePaginationData) {
-    set(page, value.page);
-    set(itemsPerPage, value.limit);
-  },
-});
 
 const { isSmAndDown, isSm, isMd, is2xl } = useBreakpoint();
 
@@ -80,6 +66,28 @@ watch([firstLimit, selectedAccounts, selectedCollection], () => {
   set(page, 1);
 });
 
+const nfts = computed<GalleryNft[]>(() => {
+  const addresses: Nfts | null = get(perAccount);
+  const value = get(prices);
+  if (!addresses)
+    return [];
+
+  const allNfts: GalleryNft[] = [];
+  for (const address in addresses) {
+    const addressNfts: Nft[] = addresses[address];
+    for (const nft of addressNfts) {
+      const price = value[nft.tokenIdentifier];
+
+      if (price && price.manuallyInput) {
+        const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
+        allNfts.push({ ...nft, priceAsset, priceInAsset, priceUsd, address });
+      }
+      else { allNfts.push({ ...nft, address }); }
+    }
+  }
+  return allNfts;
+});
+
 const items = computed(() => {
   const accounts = get(selectedAccounts);
   const selection = get(selectedCollection);
@@ -101,6 +109,21 @@ const items = computed(() => {
   return allNfts.sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
 });
 
+const paginationData = computed({
+  get() {
+    return {
+      page: get(page),
+      total: get(items).length,
+      limit: get(itemsPerPage),
+      limits: get(limits),
+    };
+  },
+  set(value: TablePaginationData) {
+    set(page, value.page);
+    set(itemsPerPage, value.limit);
+  },
+});
+
 const visibleNfts = computed(() => {
   const perPage = get(itemsPerPage);
   const start = (get(page) - 1) * perPage;
@@ -110,44 +133,6 @@ const visibleNfts = computed(() => {
 const availableAddresses = computed(() =>
   get(perAccount) ? Object.keys(get(perAccount)!) : [],
 );
-
-const nfts = computed<GalleryNft[]>(() => {
-  const addresses: Nfts | null = get(perAccount);
-  const value = get(prices);
-  if (!addresses)
-    return [];
-
-  const allNfts: GalleryNft[] = [];
-  for (const address in addresses) {
-    const addressNfts: Nft[] = addresses[address];
-    for (const nft of addressNfts) {
-      const price = value.find(({ asset }) => asset === nft.tokenIdentifier);
-      const { priceEth, priceUsd, ...data } = nft;
-      let priceDetails: {
-        priceInAsset: BigNumber;
-        priceAsset: string;
-        priceUsd: BigNumber;
-      };
-      if (price && price.manuallyInput) {
-        priceDetails = {
-          priceAsset: price.priceAsset,
-          priceInAsset: price.priceInAsset,
-          priceUsd: price.usdPrice,
-        };
-      }
-      else {
-        priceDetails = {
-          priceAsset: 'ETH',
-          priceInAsset: priceEth,
-          priceUsd,
-        };
-      }
-
-      allNfts.push({ ...data, ...priceDetails, address });
-    }
-  }
-  return allNfts;
-});
 
 const collections = computed(() => {
   if (!get(nfts))
@@ -185,7 +170,7 @@ const { fetchNftsPrices } = useAssetPricesApi();
 async function fetchPrices() {
   try {
     const data = await fetchNftsPrices();
-    set(prices, data);
+    set(prices, keyBy(data, 'asset'));
   }
   catch (error_: any) {
     set(priceError, error_.message);

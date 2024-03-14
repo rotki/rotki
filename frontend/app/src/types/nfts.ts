@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type BigNumber, NumericString } from '@rotki/common';
+import { NumericString } from '@rotki/common';
 import type { AssetInfoWithId } from '@/types/asset';
 
 /**
@@ -20,7 +20,7 @@ const NftCollectionInfo = z.object({
 });
 
 const Nft = z.object({
-  tokenIdentifier: z.string().nonempty(),
+  tokenIdentifier: z.string().min(1),
   name: z.string().nullable(),
   collection: NftCollectionInfo,
   backgroundColor: z.string().nullable(),
@@ -30,16 +30,15 @@ const Nft = z.object({
     .nullable()
     .transform(item => item || undefined),
   permalink: z.string().nullable(),
-  priceEth: NumericString,
   priceUsd: NumericString,
+  priceInAsset: NumericString,
+  priceAsset: z.string(),
 });
 
 export type Nft = z.infer<typeof Nft>;
 
-export interface GalleryNft extends Omit<Nft, 'priceEth'> {
+export interface GalleryNft extends Nft {
   address: string;
-  priceInAsset: BigNumber;
-  priceAsset: string;
 }
 
 const Nfts = z.record(z.array(Nft));

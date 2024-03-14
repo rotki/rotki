@@ -15,8 +15,6 @@
         <RuiIcon name="file-settings-line" />
       </RuiButton>
     </template>
-    <div class="p-4">
-      <NftImageRenderingSetting />
-    </div>
+    <NftImageRenderingSetting />
   </VMenu>
 </template>

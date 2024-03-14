@@ -141,13 +141,15 @@ export interface ManualPricePayload {
 export const PriceInformation = z.object({
   usdPrice: NumericString,
   manuallyInput: z.boolean(),
-  priceAsset: z.string().nonempty(),
+  priceAsset: z.string().min(1),
   priceInAsset: NumericString,
 });
 
 export type PriceInformation = z.infer<typeof PriceInformation>;
 
 export const NftPrice = PriceInformation.merge(AssetEntry);
+
+export type NftPrice = z.infer<typeof NftPrice>;
 
 export const NftPriceArray = z.array(NftPrice);
 
