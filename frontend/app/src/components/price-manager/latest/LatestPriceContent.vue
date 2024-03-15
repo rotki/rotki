@@ -164,7 +164,7 @@ onMounted(async () => {
         outlined
         dense
         :cols="headers"
-        :loading="loading"
+        :loading="loading || refreshing"
         :rows="items"
         row-attr=""
         :sort.sync="sort"
