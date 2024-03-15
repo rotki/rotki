@@ -232,7 +232,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 if uniswap_v3_lp is not None:
                     db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', False, address, True, nft.image_url, collection_name))  # noqa: E501
                 else:
-                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', False, address, False, nft.image_url, collection_name))  # noqa: E501
+                    db_data.append((nft.token_identifier, nft.name, str(nft.price_in_asset), nft.price_asset.identifier, False, address, False, nft.image_url, collection_name))  # noqa: E501
 
         # Update DB cache
         fresh_nfts_identifiers = [x[0] for x in db_data]

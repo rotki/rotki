@@ -10825,7 +10825,8 @@ Querying  NFTs
                 "background_color": null,
                 "image_url": "https://lh3.googleusercontent.com/kwF-39qZlluEalQnNv-yMxbntzNdc3g00pK2xALkpoir9ooWttVUO2hVFWOgPtOkJOHufYRajfn-nNFdjruRQ4YaMgOYHEB8E4CdjBk",
                 "external_link": "https://www.bastardganpunks.club/v2/8636",
-                "price_eth": "0.025",
+                "price_in_asset": "0.025",
+                "price_asset": "ETH",
                 "price_usd": "250",
                 "collection": {
                   "name": "BASTARD GAN PUNKS V2",
@@ -10852,7 +10853,8 @@ Querying  NFTs
    :resjson string name: [ Optional] The name of the NFT. Can be Null.
    :resjson string external_link: [Optional]. A link to the page of the creator of the NFT. Can be Null.
    :resjson string permalink: [Optional]. A link to the NFT in opensea.
-   :resjson string price_eth: The last known price of the NFT in ETH. Can be zero.
+   :resjson string price_in_asset: The last known price of the NFT in `price_asset`. Can be zero.
+   :resjson string price_asset: The identifier of the asset used for `price_in_asset`.
    :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
    :statuscode 200: NFTs successfully queried
    :statuscode 400: Provided JSON is in some way malformed

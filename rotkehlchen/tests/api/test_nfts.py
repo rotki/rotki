@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.decoding.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.externalapis.opensea import NFT, Collection
 from rotkehlchen.fval import FVal
@@ -46,7 +47,8 @@ TEST_NFT_NEBOLAX_ETH = NFT(
     name='nebolax.eth',
     external_link='https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
     permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
-    price_eth=FVal(0.0012),
+    price_in_asset=FVal(0.0012),
+    price_asset=A_ETH,
     price_usd=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
@@ -54,6 +56,7 @@ TEST_NFT_NEBOLAX_ETH = NFT(
         description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
         large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',
         floor_price=FVal(0.00098),
+        floor_price_asset=A_ETH,
     ),
 )
 
@@ -64,7 +67,8 @@ TEST_NFT_YABIR_ETH = NFT(
     name='yabir.eth',
     external_link='https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',
     permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',
-    price_eth=FVal(0.00098),
+    price_in_asset=FVal(0.00098),
+    price_asset=A_ETH,
     price_usd=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
@@ -72,6 +76,7 @@ TEST_NFT_YABIR_ETH = NFT(
         description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
         large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',
         floor_price=FVal(0.00098),
+        floor_price_asset=A_ETH,
     ),
 )
 
@@ -114,7 +119,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
             assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
             assert entry['external_link'] == 'https://api.mooncat.community/traits/129'
             assert 'image_url' in entry
-            assert FVal(entry['price_eth']) > ZERO
+            assert FVal(entry['price_in_asset']) > ZERO
             assert FVal(entry['price_usd']) > ZERO
             assert entry['collection']['name'] == 'MoonCats'
             assert entry['collection']['banner_image'].startswith('https://')
@@ -431,7 +436,8 @@ def test_edit_delete_nft(rotkehlchen_api_server):
             name='nebolax.eth',
             external_link='https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
             permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
-            price_eth=FVal(0.5),
+            price_in_asset=FVal(0.5),
+            price_asset=A_ETH,
             price_usd=FVal(1.2379458),
             collection=Collection(
                 name='ENS: Ethereum Name Service',
@@ -662,7 +668,8 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                     name='Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000',
                     external_link=None,
                     permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360762',
-                    price_eth=ZERO,
+                    price_in_asset=ZERO,
+                    price_asset=A_ETH,
                     price_usd=ZERO,
                     collection=Collection(
                         name='Uniswap V3 Positions',
@@ -679,7 +686,8 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                     name='Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5',
                     external_link=None,
                     permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360680',
-                    price_eth=ZERO,
+                    price_in_asset=ZERO,
+                    price_asset=A_ETH,
                     price_usd=ZERO,
                     collection=Collection(
                         name='Uniswap V3 Positions',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CanceledError } from 'axios';
 import { transformCase } from '@/utils/text';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import type { Ref } from 'vue';
@@ -55,15 +56,16 @@ const search = ref<string>('');
 const assets: Ref<(AssetInfoWithId | NftAsset)[]> = ref([]);
 const error = ref('');
 const loading = ref(false);
+let pending: AbortController | null = null;
 
 const { assetSearch, assetMapping } = useAssetInfoApi();
 const { t } = useI18n();
 
 const errors = computed(() => {
-  const messages = get(errorMessages);
+  const messages = [...get(errorMessages)];
   const errorMessage = get(error);
   if (errorMessage)
-    messages.push(errorMessage);
+    messages.unshift(errorMessage);
 
   return messages;
 });
@@ -102,11 +104,17 @@ function blur() {
 }
 
 async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
+  set(loading, true);
   try {
     set(assets, await assetSearch(keyword, 50, get(includeNfts), signal));
+    pending = null;
+    set(loading, false);
   }
   catch (error_: any) {
-    set(error, error_.message);
+    if (!(error_ instanceof CanceledError)) {
+      set(loading, false);
+      set(error, error_.message);
+    }
   }
 }
 
@@ -119,34 +127,29 @@ function input(value: string) {
   emit('update:asset', getVisibleAsset(value));
 }
 
-let pending: AbortController | null = null;
-
 watch(search, (search) => {
   if (search)
     set(loading, true);
-  else
+  else if (!pending)
     set(loading, false);
 });
 
-watchThrottled(
+watchDebounced(
   search,
   async (search) => {
     if (!search)
-      return;
+      return set(loading, false);
 
     if (pending) {
       pending.abort();
       pending = null;
     }
     set(error, '');
-    set(loading, true);
-    const controller = new AbortController();
-    pending = controller;
-    await searchAssets(search, controller.signal);
-    set(loading, false);
+    pending = new AbortController();
+    await searchAssets(search, pending.signal);
   },
   {
-    throttle: 800,
+    debounce: 800,
   },
 );
 
@@ -198,7 +201,7 @@ watch(visibleAssets, () => {
     :search-input.sync="search"
     :item-text="assetText"
     :hide-details="hideDetails"
-    :hide-no-data="loading || !search"
+    :hide-no-data="loading || !search || !!error"
     auto-select-first
     :loading="loading"
     :menu-props="{ closeOnContentClick: true }"

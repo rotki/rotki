@@ -318,8 +318,8 @@ def test_manual_current_prices_loop(inquirer: 'Inquirer'):
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
-def test_inquirer_oracles_affect_manual_price(inquirer):
-    """Checks that change of oracles order affects manual current price usage.
+def test_inquirer_oracles_does_not_affect_manual_price(inquirer):
+    """Checks that change of oracles order does not affect manual current price usage.
 
     This test is mocked because we were seeing cases of tests failing due to
     an exception from coingecko API.
@@ -335,7 +335,7 @@ def test_inquirer_oracles_affect_manual_price(inquirer):
     )
     assert inquirer.find_usd_price(A_ETH) == 3  # Should remain the same since cache should be hit
     inquirer.remove_cached_current_price_entry(cache_key=(A_ETH, A_USD))
-    assert inquirer.find_usd_price(A_ETH) == FVal('1667.18')  # it must be equal to the mocked price at the time  # noqa: E501
+    assert inquirer.find_usd_price(A_ETH) == 3  # manual price is still prioritized
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

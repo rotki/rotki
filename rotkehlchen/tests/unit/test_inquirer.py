@@ -340,6 +340,21 @@ def test_find_usd_price_via_second_oracle(inquirer):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_usd_price_manual_prices_preference(inquirer, globaldb):
+    """Test that manual prices is checked first before all other oracles
+    and special price calculations."""
+    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
+    manual_price = Price(FVal('30000'))
+    globaldb.add_manual_latest_price(from_asset=A_BTC, to_asset=A_USD, price=manual_price)
+
+    assert inquirer.find_usd_price(A_BTC) == manual_price
+
+    for oracle_instance in inquirer._oracle_instances:
+        assert oracle_instance.query_current_price.call_count == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('mocked_current_prices', [UNDERLYING_ASSET_PRICES])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['eip155:1/erc20:0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'USD']])  # noqa: E501
