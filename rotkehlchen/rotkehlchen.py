@@ -39,6 +39,8 @@ from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.scroll.manager import ScrollManager
+from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -389,6 +391,11 @@ class Rotkehlchen:
             database=self.data.db,
         )
         gnosis_manager = GnosisManager(gnosis_inquirer)
+        scroll_inquirer = ScrollInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+        )
+        scroll_manager = ScrollManager(scroll_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -430,6 +437,7 @@ class Rotkehlchen:
             arbitrum_one_manager=arbitrum_one_manager,
             base_manager=base_manager,
             gnosis_manager=gnosis_manager,
+            scroll_manager=scroll_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,

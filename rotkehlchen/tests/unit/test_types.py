@@ -28,6 +28,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.ARBITRUM_ONE: A_ETH,
         SupportedBlockchain.BASE: A_ETH,
         SupportedBlockchain.GNOSIS: A_XDAI,
+        SupportedBlockchain.SCROLL: A_ETH,
     }
     for chain in SupportedBlockchain:
         assert expected_assets[chain] == Asset(chain.get_native_token_id())

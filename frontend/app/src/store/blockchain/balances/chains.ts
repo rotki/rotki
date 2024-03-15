@@ -23,6 +23,7 @@ function defaultTotals(): Totals {
     [Blockchain.ARBITRUM_ONE]: {},
     [Blockchain.BASE]: {},
     [Blockchain.GNOSIS]: {},
+    [Blockchain.SCROLL]: {},
   };
 }
 
@@ -36,6 +37,7 @@ function defaultBalances(): Balances {
     [Blockchain.ARBITRUM_ONE]: {},
     [Blockchain.BASE]: {},
     [Blockchain.GNOSIS]: {},
+    [Blockchain.SCROLL]: {},
   };
 }
 

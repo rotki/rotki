@@ -26,6 +26,8 @@ export function useAccountDetails(blockchain: MaybeRef<Blockchain>, address: May
       return get(chainBalances)[chain];
     else if (chain === Blockchain.GNOSIS)
       return get(chainBalances)[chain];
+    else if (chain === Blockchain.SCROLL)
+      return get(chainBalances)[chain];
 
     return {};
   });

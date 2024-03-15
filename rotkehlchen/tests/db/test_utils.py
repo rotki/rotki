@@ -221,7 +221,7 @@ def test_db_tuple_to_str(data, tuple_type, expected_str):
 
 @pytest.mark.parametrize(('db_settings', 'expected_chains'), [
     ({'evmchains_to_skip_detection': []}, set(get_args(SUPPORTED_EVM_CHAINS))),
-    ({'evmchains_to_skip_detection': [ChainID.POLYGON_POS, ChainID.BASE, ChainID.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS}),  # noqa: E501
+    ({'evmchains_to_skip_detection': [ChainID.POLYGON_POS, ChainID.BASE, ChainID.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL}),  # noqa: E501
 ])
 def test_get_chains_to_detect_evm_accounts(database, expected_chains):
     assert set(database.get_chains_to_detect_evm_accounts()) == expected_chains

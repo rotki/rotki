@@ -266,6 +266,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
             arbitrum_one_addresses=[common_account, failing_account],
             base_addresses=[common_account, failing_account],
             gnosis_addresses=[common_account, failing_account, already_added_to_all_chains],
+            scroll_addresses=[common_account, failing_account],
         )
         stack.enter_context(patched_modify_blockchain_accounts)
 
@@ -290,6 +291,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         ), json=request_data)
 
     result = assert_proper_response_with_result(response)
+
     assert result == {
         'added': {
             '0x9531C059098e3d194fF87FebB587aB07B30B1306': ['all'],
@@ -301,6 +303,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
                 'arbitrum_one',
                 'base',
                 'gnosis',
+                'scroll',
             ],
         },
         'existed': {'0x7277F7849966426d345D8F6B9AFD1d3d89183083': ['gnosis']},
@@ -313,6 +316,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
                 'polygon_pos',
                 'arbitrum_one',
                 'base',
+                'scroll',
             ],
         },
         'eth_contracts': ['0x9008D19f58AAbD9eD0D60971565AA8510560ab41'],
@@ -494,6 +498,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
             arbitrum_one_addresses=[common_account],
             base_addresses=[common_account],
             gnosis_addresses=[common_account],
+            scroll_addresses=[common_account],
         )
 
         # add an address with an invalid ens name

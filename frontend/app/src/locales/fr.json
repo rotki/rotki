@@ -1448,7 +1448,8 @@
       "loopring": "Solde Loopring",
       "optimism": "Solde Optimism",
       "polygon_pos": "Solde Polygon PoS",
-      "gnosis": "Solde Gnosis"
+      "gnosis": "Solde Gnosis",
+      "scroll": "Solde Scroll"
     },
     "evm_detection": {
       "title": "Détecter les comptes EVM",

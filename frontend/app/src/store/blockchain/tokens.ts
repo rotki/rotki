@@ -28,6 +28,7 @@ function defaultTokens(): Tokens {
     [Blockchain.ARBITRUM_ONE]: {},
     [Blockchain.BASE]: {},
     [Blockchain.GNOSIS]: {},
+    [Blockchain.SCROLL]: {},
   };
 }
 
@@ -45,6 +46,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     arbitrumAddresses,
     baseAddresses,
     gnosisAddresses,
+    scrollAddresses,
   } = storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
@@ -209,6 +211,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       return;
 
     await fetchDetectedTokens(Blockchain.GNOSIS);
+  });
+
+  watch(scrollAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev))
+      return;
+
+    await fetchDetectedTokens(Blockchain.SCROLL);
   });
 
   const { isTaskRunning } = useTaskStore();

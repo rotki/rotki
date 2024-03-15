@@ -7,7 +7,7 @@ import type {
 } from '@/types/blockchain/accounts';
 
 export function useChainAccountBalances() {
-  const { ksm, dot, avax, optimism, polygon, arbitrum, base, gnosis }
+  const { ksm, dot, avax, optimism, polygon, arbitrum, base, gnosis, scroll }
     = storeToRefs(useChainsAccountsStore());
   const { balances } = storeToRefs(useChainBalancesStore());
 
@@ -53,6 +53,10 @@ export function useChainAccountBalances() {
 
   const gnosisAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
     accountsWithBalances(get(gnosis), get(balances).gnosis, Blockchain.GNOSIS),
+  );
+
+  const scrollAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
+    accountsWithBalances(get(scroll), get(balances).scroll, Blockchain.SCROLL),
   );
 
   const { shouldShowLoadingScreen } = useStatusStore();
@@ -104,6 +108,12 @@ export function useChainAccountBalances() {
       children: [],
       usdValue: sum(get(gnosisAccounts)),
       loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.GNOSIS)),
+    },
+    {
+      chain: Blockchain.SCROLL,
+      children: [],
+      usdValue: sum(get(scrollAccounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN, Blockchain.SCROLL)),
     },
   ]);
 
@@ -157,6 +167,12 @@ export function useChainAccountBalances() {
         get(gnosisAccounts),
         asset,
       ),
+      ...getBlockchainBreakdown(
+        Blockchain.SCROLL,
+        get(balances).scroll,
+        get(scrollAccounts),
+        asset,
+      ),
     ]);
 
   return {
@@ -168,6 +184,7 @@ export function useChainAccountBalances() {
     arbitrumAccounts,
     baseAccounts,
     gnosisAccounts,
+    scrollAccounts,
     chainTotals,
     getBreakdown,
   };

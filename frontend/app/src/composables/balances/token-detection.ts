@@ -16,6 +16,7 @@ export function useTokenDetection(chain: MaybeRef<Blockchain>, accountAddress: M
     arbitrumAddresses,
     baseAddresses,
     gnosisAddresses,
+    scrollAddresses,
   } = storeToRefs(useChainsAccountsStore());
   const { supportsTransactions } = useSupportedChains();
 
@@ -61,6 +62,8 @@ export function useTokenDetection(chain: MaybeRef<Blockchain>, accountAddress: M
       addresses = get(baseAddresses);
     else if (blockchain === Blockchain.GNOSIS)
       addresses = get(gnosisAddresses);
+    else if (blockchain === Blockchain.SCROLL)
+      addresses = get(scrollAddresses);
 
     if (addresses.length > 0)
       await detectTokens(addresses);

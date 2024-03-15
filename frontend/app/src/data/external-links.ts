@@ -18,6 +18,7 @@ export const etherscanLinks = {
   arbitrumOne: 'https://arbiscan.io/myapikey',
   base: 'https://basescan.org/myapikey',
   gnosis: 'https://gnosisscan.io/myapikey',
+  scroll: 'https://scrollscan.com/myapikey',
 };
 
 export const externalLinks = {

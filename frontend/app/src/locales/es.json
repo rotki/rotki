@@ -1270,7 +1270,8 @@
       "loopring": "Loopring balances",
       "optimism": "Optimism balances",
       "polygon_pos": "Polygon PoS balances",
-      "gnosis": "Gnosis balances"
+      "gnosis": "Gnosis balances",
+      "scroll": "Scroll balances"
     },
     "form_dialog": {
       "add_title": "Añade una cuenta en la blockchain",

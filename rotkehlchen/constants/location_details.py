@@ -61,6 +61,7 @@ LOCATION_DETAILS: dict = {
     Location.ARBITRUM_ONE: {'image': 'arbitrum_one.svg'},
     Location.BASE: {'image': 'base.svg'},
     Location.GNOSIS: {'image': 'gnosis.svg'},
+    Location.SCROLL: {'image': 'scroll.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},
 }

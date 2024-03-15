@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -53,15 +54,26 @@ def _add_zksynclite(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_zksynclite')
 
 
+def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_new_supported_locations')
+    write_cursor.execute(
+        'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+        ('n', Location.SCROLL.value),
+    )
+    log.debug('Exit _add_new_supported_locations')
+
+
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v41 to v42. This was in v1.33 release.
 
         - Create new tables for zksync lite
     """
     log.debug('Enter userdb v41->v42 upgrade')
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(2)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
+        progress_handler.new_step()
+        _add_new_supported_locations(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finish userdb v41->v42 upgrade')

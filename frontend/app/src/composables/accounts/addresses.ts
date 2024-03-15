@@ -12,6 +12,7 @@ export function useAccountsAddresses() {
     arbitrumAddresses,
     baseAddresses,
     gnosisAddresses,
+    scrollAddresses,
   } = storeToRefs(useChainsAccountsStore());
 
   const allAddressMapping = computed<Record<string, string[]>>(() => ({
@@ -26,6 +27,7 @@ export function useAccountsAddresses() {
     [Blockchain.ARBITRUM_ONE]: get(arbitrumAddresses),
     [Blockchain.BASE]: get(baseAddresses),
     [Blockchain.GNOSIS]: get(gnosisAddresses),
+    [Blockchain.SCROLL]: get(scrollAddresses),
   }));
 
   return { allAddressMapping };
