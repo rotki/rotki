@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.32.2 <2024-03-15>`
 * :bug:`7531` rotki will now prioritize manual prices above other price oracles and calculations.
 * :bug:`-` rotki will display NFT prices correctly across all asset types.
 * :bug:`7572` Fix issue where coinbase data query could result in an error popup.
