@@ -36,8 +36,7 @@ function checkEditableItem() {
   }
 }
 
-watch(editableItem, checkEditableItem);
-onMounted(checkEditableItem);
+watchImmediate(editableItem, checkEditableItem);
 
 function input(asset: Partial<CustomAsset>) {
   set(formData, { ...get(formData), ...asset });

@@ -18,7 +18,7 @@ export class ApiKeysPage {
       'be.visible',
     );
     cy.get('@keys')
-      .find('[data-cy="exchange"]')
+      .find('input[data-cy="exchange"]')
       .type(`{selectall}{backspace}${exchange}{enter}`);
 
     cy.get('@keys').find('[data-cy="name"]').type(name);

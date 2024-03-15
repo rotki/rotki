@@ -131,7 +131,7 @@ const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   };
 });
 
-const { exchangesWithKey, exchangesWithPassphrase, exchangesWithoutApiSecret }
+const { exchangesWithPassphrase, exchangesWithoutApiSecret }
   = storeToRefs(useLocationStore());
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
@@ -180,33 +180,13 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
     class="flex flex-col gap-2"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-      <VAutocomplete
-        outlined
+      <ExchangeInput
         :value="exchange.location"
-        :items="exchangesWithKey"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
         :disabled="editMode"
-        auto-select-first
-        @change="onExchangeChange($event)"
-      >
-        <template #selection="{ item, attrs, on }">
-          <ExchangeDisplay
-            :exchange="item"
-            :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
-          />
-        </template>
-        <template #item="{ item, attrs, on }">
-          <ExchangeDisplay
-            :exchange="item"
-            :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
-          />
-        </template>
-      </VAutocomplete>
+        @input="onExchangeChange($event)"
+      />
 
       <RuiTextField
         v-if="editMode"

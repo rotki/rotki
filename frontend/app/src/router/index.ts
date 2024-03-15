@@ -254,10 +254,28 @@ const routes = setupLayouts([
         props: (route: Route) => ({ identifier: route.query.id ?? null }),
       },
       {
-        path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
-        name: 'asset-manager-newly-detected',
+        path: Routes.ASSET_MANAGER_MORE,
         component: async () =>
-          import('../pages/asset-manager/newly-detected/index.vue'),
+          import('../pages/asset-manager/more/index.vue'),
+        children: [
+          {
+            path: '',
+            name: 'asset-manager-more',
+            redirect: Routes.ASSET_MANAGER_CEX_MAPPING,
+          },
+          {
+            path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
+            name: 'asset-manager-newly-detected',
+            component: async () =>
+              import('../pages/asset-manager/newly-detected/index.vue'),
+          },
+          {
+            path: Routes.ASSET_MANAGER_CEX_MAPPING,
+            name: 'asset-manager-cex-mapping',
+            component: async () =>
+              import('../pages/asset-manager/cex-mapping/index.vue'),
+          },
+        ],
       },
     ],
   },
