@@ -1,15 +1,20 @@
 <script lang="ts" setup>
-const props = defineProps<{
-  value: string | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    value?: string | null;
+  }>(),
+  {
+    value: null,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'input', value: string): void;
 }>();
 
 const vModel = useSimpleVModel(props, emit);
-const { exchangesWithKey }
-  = storeToRefs(useLocationStore());
+
+const { exchangesWithKey } = storeToRefs(useLocationStore());
 
 const rootAttrs = useAttrs();
 </script>

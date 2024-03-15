@@ -1142,7 +1142,7 @@
       "add_title": "Add a new mapping",
       "all_exchanges": "All exchanges",
       "confirm_delete": {
-        "message": "Are you sure you want to delete asset mapping for symbol {asset} in {location}?",
+        "message": "Are you sure you want to delete the asset mapping for the symbol {asset} in {location}?",
         "title": "Delete Exchange Asset Mapping"
       },
       "delete_error": "Could not delete the mapping: {message}",
