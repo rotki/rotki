@@ -641,7 +641,7 @@ class Coinbase(ExchangeInterface):
                 if (trade := self._process_coinbase_trade(event=transaction)):
                     trades.append(trade)
             elif (
-                    tx_type in ('interest', 'inflation_reward') or
+                    tx_type in ('interest', 'inflation_reward', 'staking_reward') or
                     (
                         tx_type == 'send' and 'from' in transaction and
                         'resource' in transaction['from'] and
