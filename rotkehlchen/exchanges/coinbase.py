@@ -538,7 +538,7 @@ class Coinbase(ExchangeInterface):
             elif tx_type in ('buy', 'sell'):
                 self._process_normal_trade(event=transaction, trades=trades)
             elif (
-                    tx_type in ('interest', 'inflation_reward') or
+                    tx_type in ('interest', 'inflation_reward', 'staking_reward') or
                     (
                         tx_type == 'send' and 'from' in transaction and
                         'resource' in transaction['from'] and
