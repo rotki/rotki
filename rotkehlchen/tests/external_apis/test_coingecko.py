@@ -54,6 +54,7 @@ def test_asset_data(session_coingecko):
         session_coingecko.asset_data(EvmToken('eip155:1/erc20:0x1844b21593262668B7248d0f57a220CaaBA46ab9').to_coingecko())  # PRL, a token without coingecko page  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_coingecko_historical_price(session_coingecko):
     price = session_coingecko.query_historical_price(
         from_asset=A_ETH,
