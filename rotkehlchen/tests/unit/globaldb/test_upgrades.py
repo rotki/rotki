@@ -19,7 +19,10 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.schema import DB_CREATE_LOCATION_ASSET_MAPPINGS
+from rotkehlchen.globaldb.schema import (
+    DB_CREATE_LOCATION_ASSET_MAPPINGS,
+    DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
+)
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.globaldb.upgrades.v3_v4 import (
@@ -528,6 +531,11 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
             cursor=cursor,
             name='location_asset_mappings',
         ) is False
+        # check that location_unsupported_assets table is not present in the database
+        assert table_exists(
+            cursor=cursor,
+            name='location_unsupported_assets',
+        ) is False
 
     # execute upgrade
     with ExitStack() as stack:
@@ -545,6 +553,14 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
             name='location_asset_mappings',
             schema=DB_CREATE_LOCATION_ASSET_MAPPINGS,
         ) is True
+
+        # check that location_unsupported_assets table is present in the database
+        assert table_exists(
+            cursor=cursor,
+            name='location_unsupported_assets',
+            schema=DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
+        ) is True
+
         # check that correct number of exchanges mappings are present.
         # exact values can be tested by pasting this gist here and running it
         # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
@@ -572,8 +588,25 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
             (Location.BYBIT.serialize_for_db(), 78),
         ):
             assert cursor.execute(
-                'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ?',
-                (exchange,),
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ?', (exchange,),
+            ).fetchone()[0] == expected_mappings_count
+
+        # check that correct number of unsupported assets are present.
+        # exact values can be tested by pasting this gist here and running it
+        # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
+        for location, expected_mappings_count in (
+            (Location.BINANCE.serialize_for_db(), 23),
+            (Location.BITFINEX.serialize_for_db(), 10),
+            (Location.BITTREX.serialize_for_db(), 125),
+            (Location.FTX.serialize_for_db(), 65),
+            (Location.GEMINI.serialize_for_db(), 10),
+            (Location.ICONOMI.serialize_for_db(), 4),
+            (Location.KUCOIN.serialize_for_db(), 234),
+            (Location.OKX.serialize_for_db(), 7),
+            (Location.POLONIEX.serialize_for_db(), 133),
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location = ?', (location,),
             ).fetchone()[0] == expected_mappings_count
 
 

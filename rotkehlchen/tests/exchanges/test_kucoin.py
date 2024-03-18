@@ -8,7 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
+from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -36,7 +36,7 @@ def test_name():
     assert exchange.name == 'kucoin1'
 
 
-def test_kucoin_exchange_assets_are_known(mock_kucoin):
+def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
     request_url = f'{mock_kucoin.base_uri}/api/v1/currencies'
     try:
         response = requests.get(request_url)
@@ -55,17 +55,15 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
     except JSONDecodeError as e:
         raise RemoteError(f'Kucoin returned invalid JSON response: {response.text}') from e
 
-    # Extract the unique symbols from the exchange pairs
-    unsupported_assets = set(UNSUPPORTED_KUCOIN_ASSETS)
-    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.KUCOIN))
+    for asset in get_exchange_asset_symbols(Location.KUCOIN):
+        assert globaldb.is_asset_symbol_unsupported(Location.KUCOIN, asset) is False, f'Kucoin assets {asset} should not be unsupported'  # noqa: E501
 
-    assert not common_items, f'Kucoin assets {common_items} should not be unsupported'
     for entry in response_dict['data']:
         symbol = entry['currency']
         try:
             asset_from_kucoin(symbol)
         except UnsupportedAsset:
-            assert symbol in unsupported_assets
+            assert globaldb.is_asset_symbol_unsupported(Location.KUCOIN, symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in kucoin. '

@@ -7,11 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import (
-    BITFINEX_EXCHANGE_TEST_ASSETS,
-    UNSUPPORTED_BITFINEX_ASSETS,
-    asset_from_bitfinex,
-)
+from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -47,13 +43,12 @@ def test_name():
     assert exchange.name == 'bitfinex1'
 
 
-def test_assets_are_known(mock_bitfinex):
+def test_assets_are_known(mock_bitfinex, globaldb):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
-    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
-    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.BITFINEX))
+    for asset in get_exchange_asset_symbols(Location.BITFINEX):
+        assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, asset) is False, f'Bitfinex assets {asset} should not be unsupported'  # noqa: E501
 
-    assert not common_items, f'Bitfinex assets {common_items} should not be unsupported'
     currencies_response = mock_bitfinex._query_currencies()
     if currencies_response.success is False:
         response = currencies_response.response
@@ -85,7 +80,6 @@ def test_assets_are_known(mock_bitfinex):
         pytest.xfail('Failed to request {mock_bitfinex.name} currency map')
 
     test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
-    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
     currency_map = currency_map_response.currency_map
     symbols = set()
     for symbol in currencies_response.currencies:
@@ -103,7 +97,7 @@ def test_assets_are_known(mock_bitfinex):
                 currency_map=currency_map,
             )
         except UnsupportedAsset:
-            assert symbol in unsupported_assets
+            assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in '
@@ -182,7 +176,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
     Also test the following logic:
       - An asset balance is the result of aggregating its balances per wallet
       type (i.e. exchange, margin and funding).
-      - The balance of an asset in UNSUPPORTED_BITFINEX_ASSETS is skipped.
+      - The balance of an asset in location_unsupported_assets is skipped.
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
     """
     mock_bitfinex.first_connection = MagicMock()

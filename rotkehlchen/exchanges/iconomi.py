@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
+from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -26,6 +26,7 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -363,7 +364,7 @@ class Iconomi(ExchangeInterface):
         for asset_info in resp:
             if not asset_info['supported']:
                 continue
-            if asset_info['ticker'] in UNSUPPORTED_ICONOMI_ASSETS:
+            if GlobalDBHandler.is_asset_symbol_unsupported(Location.ICONOMI, asset_info['ticker']):
                 continue
             tickers.append(asset_info['ticker'])
 
