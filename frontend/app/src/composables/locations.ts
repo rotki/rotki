@@ -11,8 +11,7 @@ export const useLocations = createSharedComposable(() => {
       tl => tl.identifier === get(location),
     );
 
-    assert(!!exchange, 'location should not be falsy');
-    return exchange.name;
+    return exchange?.name ?? '';
   };
 
   const { getChainName, getChainImageUrl } = useSupportedChains();
