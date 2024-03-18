@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
@@ -26,7 +26,7 @@ def test_name():
     assert exchange.name == 'binanceus1'
 
 
-def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
+def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()
     for pair_symbol in exchange_data['symbols']:
@@ -38,7 +38,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
-            assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
+            assert globaldb.is_asset_symbol_unsupported(Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in binanceus. '

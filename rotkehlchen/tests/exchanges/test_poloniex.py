@@ -1,10 +1,11 @@
 import warnings as test_warnings
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
+from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -22,6 +23,8 @@ from rotkehlchen.tests.utils.history import assert_poloniex_asset_movements
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location
 
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 TEST_RATE_STR = '0.00022999'
 TEST_AMOUNT_STR = '613.79427133'
@@ -229,18 +232,17 @@ def test_query_trade_history_unexpected_data(poloniex):
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
 
 
-def test_poloniex_assets_are_known(poloniex):
-    unsupported_assets = set(UNSUPPORTED_POLONIEX_ASSETS)
-    common_items = unsupported_assets.intersection(get_exchange_asset_symbols(Location.POLONIEX))
+def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
+    for asset in get_exchange_asset_symbols(Location.POLONIEX):
+        assert globaldb.is_asset_symbol_unsupported(Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501
 
-    assert not common_items, f'Poloniex assets {common_items} should not be unsupported'
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
         for poloniex_asset in asset_data:
             try:
                 _ = asset_from_poloniex(poloniex_asset)
             except UnsupportedAsset:
-                assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
+                assert globaldb.is_asset_symbol_unsupported(Location.POLONIEX, poloniex_asset)
             except UnknownAsset as e:
                 test_warnings.warn(UserWarning(
                     f'Found unknown asset {e.identifier} with symbol {poloniex_asset} in Poloniex. Support for it has to be added',  # noqa: E501

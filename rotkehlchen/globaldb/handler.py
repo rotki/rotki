@@ -28,7 +28,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import DBUpgradeError, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -1988,6 +1988,12 @@ class GlobalDBHandler:
         location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
         If the mapping is not present returns default."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
+            if exchange is not None and cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
+                (exchange.serialize_for_db(), symbol),
+            ).fetchone()[0] > 0:
+                raise UnsupportedAsset(symbol)
+
             location_filter, bindings = '', [symbol]
             if exchange is not None:
                 location_filter = 'location IS ? OR'
@@ -2103,3 +2109,13 @@ class GlobalDBHandler:
                         f'Failed to delete the location asset mapping of {entry.location_symbol} in '  # noqa: E501
                         f'{entry.location} because it does not exist in the DB.',
                     )
+
+    @staticmethod
+    def is_asset_symbol_unsupported(location: 'Location', asset_symbol: str) -> bool:
+        """Returns True if the asset with the given symbol is not supported in the given location.
+        Otherwise returns False."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
+                (location.serialize_for_db(), asset_symbol),
+            ).fetchone()[0] > 0
