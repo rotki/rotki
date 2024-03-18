@@ -36,36 +36,10 @@ const location = useSimplePropVModel(props, 'location', emit);
 const blockchain = useSimplePropVModel(props, 'blockchain', emit);
 const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
-const { btcAddresses, bchAddresses } = storeToRefs(useBtcAccountsStore());
-const { ethAddresses } = storeToRefs(useEthAccountsStore());
-const {
-  ksmAddresses,
-  dotAddresses,
-  avaxAddresses,
-  optimismAddresses,
-  polygonAddresses,
-  arbitrumAddresses,
-  baseAddresses,
-  gnosisAddresses,
-  scrollAddresses,
-} = storeToRefs(useChainsAccountsStore());
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
 
-const addresses = computed<Record<string, string[]>>(() => ({
-  [Blockchain.BTC]: get(btcAddresses),
-  [Blockchain.BCH]: get(bchAddresses),
-  [Blockchain.ETH]: get(ethAddresses),
-  [Blockchain.KSM]: get(ksmAddresses),
-  [Blockchain.DOT]: get(dotAddresses),
-  [Blockchain.AVAX]: get(avaxAddresses),
-  [Blockchain.OPTIMISM]: get(optimismAddresses),
-  [Blockchain.POLYGON_POS]: get(polygonAddresses),
-  [Blockchain.ARBITRUM_ONE]: get(arbitrumAddresses),
-  [Blockchain.BASE]: get(baseAddresses),
-  [Blockchain.GNOSIS]: get(gnosisAddresses),
-  [Blockchain.SCROLL]: get(scrollAddresses),
-}));
+const { allAddressMapping } = useAccountsAddresses();
 
 const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations: AddressBookLocation[] = ['global', 'private'];
@@ -106,7 +80,7 @@ const v$ = setValidation(
 const { getBlockie } = useBlockie();
 
 function fetchNames() {
-  const addressMap = get(addresses);
+  const addressMap = get(allAddressMapping);
 
   each(Blockchain, (chain) => {
     addressMap[chain]?.forEach(address => get(addressNameSelector(address, chain)));
@@ -170,6 +144,7 @@ onMounted(fetchNames);
           class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
         >
           <AppImage
+            v-if="value.address"
             :src="getBlockie(value.address)"
             size="1.5rem"
           />
@@ -181,6 +156,7 @@ onMounted(fetchNames);
             class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
           >
             <AppImage
+              v-if="item"
               :src="getBlockie(item)"
               size="1.5rem"
             />
