@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.misc import DBUpgradeError
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
 
 if TYPE_CHECKING:
@@ -105,9 +105,8 @@ def _get_or_create_common_abi(
     )
 
 
+@enter_exit_debug_log()
 def _create_new_tables(cursor: 'DBCursor') -> None:
-    log.debug('Enter _create_new_tables')
-
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS contract_abi (
@@ -127,12 +126,9 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
             PRIMARY KEY(address, chain_id)
         );""")
 
-    log.debug('Exit _create_new_tables')
 
-
+@enter_exit_debug_log()
 def _add_eth_abis_json(cursor: 'DBCursor') -> None:
-    log.debug('Enter _add_eth_abis_json')
-
     root_dir = Path(__file__).resolve().parent.parent.parent
     abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
     abi_entries_tuples = []
@@ -140,12 +136,9 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
         abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
     cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)
 
-    log.debug('Exit _add_eth_abis_json')
 
-
+@enter_exit_debug_log()
 def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
-    log.debug('Enter _add_eth_contracts_json')
-
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
     contract_entries = json.loads((root_dir / 'data' / 'eth_contracts.json').read_text(encoding='utf8'))  # noqa: E501
@@ -230,19 +223,16 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
             'Failed to find either eth_scan or multicall or ds registry abi id during '
             'v3->v4 global DB upgrade',
         )
-
-    log.debug('Exit _add_eth_contracts_json')
     return eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id
 
 
+@enter_exit_debug_log()
 def _add_optimism_contracts(
         cursor: 'DBCursor',
         eth_scan_abi_id: int,
         multicall_abi_id: int,
         ds_registry_abi_id: int,
 ) -> None:
-    log.debug('Enter _add_optimism_contracts')
-
     cursor.executemany(
         'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
         'VALUES(?, ?, ?, ?, ?)',
@@ -266,8 +256,6 @@ def _add_optimism_contracts(
             2944824,
         )],
     )
-
-    log.debug('Exit _add_optimism_contracts')
 
 
 def _copy_assets_from_packaged_db(
@@ -297,20 +285,19 @@ def _copy_assets_from_packaged_db(
     cursor.execute('DETACH DATABASE packaged_db;')
 
 
+@enter_exit_debug_log()
 def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
     """Insert into the collections table the information about known collections"""
-    log.debug('Enter _populate_asset_collection')
     cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
-    log.debug('Exit _populate_asset_collection')
 
 
+@enter_exit_debug_log()
 def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
     """
     Insert into the assets_mappings table the information about each asset's collection
     If any of the assets that needs to go in the collections is missing we copy it from the
     packaged globaldb.
     """
-    log.debug('Enter _populate_multiasset_mappings')
     asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
     sql_sentences = (root_dir / 'data' / 'populate_multiasset_mappings.sql').read_text(encoding='utf8')  # noqa: E501
     # check if we are adding the assets
@@ -336,9 +323,9 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
             return
 
     cursor.execute(sql_sentences)
-    log.debug('Exit _populate_multiasset_mappings')
 
 
+@enter_exit_debug_log()
 def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
     """Upgrades the address book table if it exists by making the blockchain column optional"""
     update_table_schema(
@@ -352,11 +339,13 @@ def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
     """Update the protocol name for yearn assets"""
     cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
 
 
+@enter_exit_debug_log(name='GlobalDB v3->v4 upgrade')
 def migrate_to_v4(connection: 'DBConnection') -> None:
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
@@ -366,7 +355,6 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
 
     eth_abi.json has no repeating ABIs
     """
-    log.debug('Entered globaldb v3->v4 upgrade')
     root_dir = Path(__file__).resolve().parent.parent.parent
 
     with connection.write_ctx() as cursor:
@@ -378,5 +366,3 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
         _populate_multiasset_mappings(cursor, root_dir)
         _upgrade_address_book_table(cursor)
         _update_yearn_v1_protocol(cursor)
-
-    log.debug('Finished globaldb v3->v4 upgrade')
