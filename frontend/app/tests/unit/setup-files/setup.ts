@@ -66,7 +66,7 @@ beforeAll(() => {
     };
   });
 
-  vi.mock('@/composables/usei18n', async () => ({
+  vi.mock('@/composables/usei18n', () => ({
     useI18n: () => ({
       t: mockT,
       te: mockT,

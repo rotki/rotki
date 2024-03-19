@@ -107,7 +107,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(30);
     });
 
-    it('check the return types', async () => {
+    it('check the return types', () => {
       const { isLoading, state, filters, matchers }
         = usePaginationFilters<NonFungibleBalance>(
           locationOverview,

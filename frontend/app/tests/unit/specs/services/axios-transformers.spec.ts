@@ -5,9 +5,8 @@ import {
 } from '@/services/axios-tranformers';
 
 describe('axios transformers', () => {
-  it('transform json to camelCase', async () => {
-    const json
-      = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
+  it('transform json to camelCase', () => {
+    const json = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
     expect(camelCaseTransformer(parsed)).toMatchObject({
       amount: '10',
@@ -16,7 +15,7 @@ describe('axios transformers', () => {
     });
   });
 
-  it('transform object to snake_case', async () => {
+  it('transform object to snake_case', () => {
     const object = {
       data: [{ usdValue: bigNumberify(10) }, { usdValue: bigNumberify(11) }],
       label: 'test',
@@ -27,7 +26,7 @@ describe('axios transformers', () => {
     );
   });
 
-  it('transform capital to snake_case', async () => {
+  it('transform capital to snake_case', () => {
     const object = {
       ETH: 1,
       BTC: 2,

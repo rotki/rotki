@@ -64,7 +64,7 @@ describe('limitedParallelizationQueue', () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it('new task with the same id becomes pending', async () => {
+  it('new task with the same id becomes pending', () => {
     queue.queue('1', () => wait(1500));
     queue.queue('1', () => wait(3000));
 

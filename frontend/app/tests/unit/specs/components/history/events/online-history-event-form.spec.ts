@@ -207,7 +207,7 @@ describe('onlineHistoryEventForm.vue', () => {
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {},
     );
 
-    const spans = await wrapper.findAll(
+    const spans = wrapper.findAll(
       '[data-cy=eventSubtype] .selections span',
     );
     expect(spans).toHaveLength(keysFromGlobalMappings.length);

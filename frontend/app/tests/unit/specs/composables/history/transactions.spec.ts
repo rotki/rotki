@@ -22,7 +22,7 @@ vi.mock('@/composables/api/history/events', () => ({
   }),
 }));
 
-describe('composables::history/events/tx', async () => {
+describe('composables::history/events/tx', () => {
   let events: HistoryEventEntry[];
 
   beforeAll(async () => {

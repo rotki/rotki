@@ -47,7 +47,7 @@ describe('amountDisplay.vue', () => {
     });
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     document.body.dataset.app = 'true';

@@ -114,7 +114,7 @@ export const useTaskStore = defineStore('tasks', () => {
             sameType
             && keys.every(
               key =>
-                // @ts-expect-error
+                // @ts-expect-error meta key has any type
                 key in item.meta && item.meta[key] === meta[key],
             )
           );
@@ -151,6 +151,30 @@ export const useTaskStore = defineStore('tasks', () => {
     });
   };
 
+  const handleResult = (
+    result: TaskActionResult<any>,
+    task: Task<TaskMeta>,
+  ): void => {
+    if (task.meta.ignoreResult) {
+      remove(task.id);
+      return;
+    }
+
+    const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
+
+    if (handler) {
+      handler(result, task.meta);
+      /* c8 ignore next 5 */
+    }
+    else {
+      logger.warn(
+          `missing handler for ${TaskType[task.type]} with id ${task.id}`,
+      );
+    }
+
+    remove(task.id);
+  };
+
   const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
     const { id, type, meta } = task;
 
@@ -179,7 +203,7 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   };
 
-  const awaitTask = async <R, M extends TaskMeta>(
+  const awaitTask = <R, M extends TaskMeta>(
     id: number,
     type: TaskType,
     meta: M,
@@ -256,30 +280,6 @@ export const useTaskStore = defineStore('tasks', () => {
     };
   };
 
-  const handleResult = (
-    result: TaskActionResult<any>,
-    task: Task<TaskMeta>,
-  ): void => {
-    if (task.meta.ignoreResult) {
-      remove(task.id);
-      return;
-    }
-
-    const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
-
-    if (handler) {
-      handler(result, task.meta);
-      /* c8 ignore next 5 */
-    }
-    else {
-      logger.warn(
-        `missing handler for ${TaskType[task.type]} with id ${task.id}`,
-      );
-    }
-
-    remove(task.id);
-  };
-
   const processTask = async (task: Task<TaskMeta>): Promise<void> => {
     lock(task.id);
 
@@ -301,7 +301,7 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(task.id);
   };
 
-  const handleTasks = async (
+  const handleTasks = (
     ids: number[],
   ): Promise<PromiseSettledResult<void>[]> => {
     const taskMap = get(tasks);

@@ -4,7 +4,7 @@ import { ProtocolVersion } from '@/types/defi';
 import type { PendingTask } from '@/types/task';
 
 export function useYearnApi() {
-  const fetchYearnVaultsHistory = async (
+  const fetchYearnVaultsHistory = (
     protocolVersion: ProtocolVersion = ProtocolVersion.V1,
   ): Promise<PendingTask> => {
     const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
@@ -12,7 +12,7 @@ export function useYearnApi() {
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchYearnVaultsBalances = async (
+  const fetchYearnVaultsBalances = (
     protocolVersion: ProtocolVersion = ProtocolVersion.V1,
   ): Promise<PendingTask> => {
     const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';

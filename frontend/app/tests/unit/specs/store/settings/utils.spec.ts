@@ -23,12 +23,12 @@ describe('settings:utils', () => {
     vi.resetAllMocks();
   });
 
-  it('restore nothing is the loaded value has an unexpected type', async () => {
+  it('restore nothing is the loaded value has an unexpected type', () => {
     expect.assertions(1);
     expect(() => FrontendSettings.parse({ defiSetupDone: 1 })).toThrow();
   });
 
-  it('restore valid properties', async () => {
+  it('restore valid properties', () => {
     expect.assertions(1);
     const frontendSettings = FrontendSettings.parse({
       defiSetupDone: true,

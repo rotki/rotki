@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
 describe('utils/data', () => {
-  it('returns a partial object without the null properties', async () => {
+  it('returns a partial object without the null properties', () => {
     const object = {
       a: 1,
       b: null,

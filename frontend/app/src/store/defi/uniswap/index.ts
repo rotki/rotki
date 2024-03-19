@@ -162,7 +162,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           section: Section.DEFI_UNISWAP_EVENTS,
           meta,
           query: async () => await fetchUniswapEvents(),
-          parser: XswapEvents.parse,
+          parser: data => XswapEvents.parse(data),
           onError,
         },
         state: {

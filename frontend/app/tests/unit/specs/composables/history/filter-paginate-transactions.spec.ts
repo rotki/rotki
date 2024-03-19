@@ -138,7 +138,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(6);
     });
 
-    it('check the return types', async () => {
+    it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,

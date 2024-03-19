@@ -25,7 +25,7 @@ export function useDataLoader() {
     await refreshPrices();
   };
 
-  const load = async (): Promise<void> => {
+  const load = (): void => {
     startPromise(fetchTags());
     startPromise(fetchAllTradeLocations());
 

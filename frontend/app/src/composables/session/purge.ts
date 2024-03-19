@@ -9,22 +9,22 @@ export function useSessionPurge() {
   const { refreshGeneralCacheTask } = useSessionApi();
   const { resetStatus } = useStatusStore();
 
-  const purgeExchange = async (): Promise<void> => {
+  const purgeExchange = (): void => {
     resetStatus(Section.TRADES);
     resetStatus(Section.ASSET_MOVEMENT);
   };
 
-  const purgeTransactions = async (): Promise<void> => {
+  const purgeTransactions = (): void => {
     resetStatus(Section.HISTORY_EVENT);
   };
 
-  const purgeCache = async (
+  const purgeCache = (
     purgeable: Purgeable,
     value: string,
-  ): Promise<void> => {
+  ): void => {
     if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
       if (!value)
-        await purgeExchange();
+        purgeExchange();
     }
     else if (purgeable === Purgeable.DECENTRALIZED_EXCHANGES) {
       resetState((value as Module) || Purgeable.DECENTRALIZED_EXCHANGES);
@@ -33,7 +33,7 @@ export function useSessionPurge() {
       resetState((value as Module) || Purgeable.DEFI_MODULES);
     }
     else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
-      await purgeTransactions();
+      purgeTransactions();
     }
   };
 

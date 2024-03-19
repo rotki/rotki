@@ -2,7 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SocketMessageType } from '@/types/websocket-messages';
 import type { EvmChainInfo } from '@/types/api/chains';
 
-vi.mock('@/store/notifications', async () => ({
+vi.mock('@/store/notifications', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     notify: vi.fn(),
   }),
@@ -22,6 +22,7 @@ vi.mock('@/composables/info/chains', () => ({
         id: Blockchain.OPTIMISM,
         type: 'evm',
         name: 'Optimism',
+        image: '',
         nativeToken: 'ETH',
       } satisfies EvmChainInfo,
     ]),

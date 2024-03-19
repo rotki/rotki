@@ -3,6 +3,7 @@ import Fragment from '@/components/helper/Fragment';
 import { externalAssets } from '@/data/external-links';
 import type { LoginCredentials } from '@/types/login';
 
+const { t } = useI18n();
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
@@ -38,10 +39,9 @@ async function navigate() {
   set(showReleaseNotes, false);
 }
 
-const { t } = useI18n();
 const css = useCssModule();
 
-onMounted(async () => fetchMessages());
+onMounted(() => fetchMessages());
 </script>
 
 <template>
