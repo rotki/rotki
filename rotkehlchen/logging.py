@@ -217,7 +217,8 @@ def enter_exit_debug_log(name: str | None = None) -> 'Callable':
         def log_wrapped(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> None:
             function_name = function.__name__ if name is None else name
             log.debug(f'Enter {function_name}')
-            function(*args, **kwargs)
+            result = function(*args, **kwargs)
             log.debug(f'Exit {function_name}')
+            return result
         return log_wrapped
     return log_decorator

@@ -1,19 +1,16 @@
-import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.updates import UpdateType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
-
+@enter_exit_debug_log()
 def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
     """
     Introduced at polygon addition. v1.29.0
@@ -22,7 +19,6 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
 
     It also supersedes migration 8 which is removed since this one is added.
     """
-    log.debug('Enter data_migration_10')
     # steps are: ethereum accounts + 4 (potentially write to db + updating spam assets + polygon rpc + new round msg)  # noqa: E501
     progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 4)
 
@@ -51,5 +47,3 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
 
     # remove temporary etherscan polygon key
     rotki.data.db.delete_external_service_credentials([ExternalService.POLYGON_POS_ETHERSCAN])
-
-    log.debug('Exit data_migration_10')

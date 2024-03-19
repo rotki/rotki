@@ -8,7 +8,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
 
 if TYPE_CHECKING:
@@ -20,19 +20,18 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+@enter_exit_debug_log()
 def _add_cache_table(write_cursor: 'DBCursor') -> None:
     """Add a new key-value cache table for this upgrade"""
-    log.debug('Enter _add_cache_table')
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS key_value_cache (
         name TEXT NOT NULL PRIMARY KEY,
         value TEXT
     );""")
-    log.debug('Exit _add_cache_table')
 
 
+@enter_exit_debug_log()
 def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
     """Move the non-settings value from `settings` to a seperate `key_value_cache` table"""
-    log.debug('Enter _move_non_settings_mappings_to_cache')
     settings_moved = (
         'last_balance_save',
         'last_data_upload_ts',
@@ -54,7 +53,6 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
         f'DELETE FROM settings WHERE name IN ({",".join(["?"] * len(movable_settings))});',
         [setting[0] for setting in movable_settings],
     )
-    log.debug('Exit _move_non_settings_mappings_to_cache')
 
 
 def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
@@ -73,9 +71,9 @@ def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
         )
 
 
+@enter_exit_debug_log()
 def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
     """Upgrade the external service credentials schema table to add a secret"""
-    log.debug('Enter _upgrade_external_service_credentials')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='external_service_credentials',
@@ -84,12 +82,11 @@ def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
         api_secret TEXT""",
         insert_columns='name,api_key,null',
     )
-    log.debug('Exit _upgrade_external_service_credentials')
 
 
+@enter_exit_debug_log()
 def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
     """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
-    log.debug('Enter _move_non_intervals_from_used_query_ranges_to_cache')
     value_patterns = {
         '{pattern}%': (  # to match patterns with prefixes
             'ethwithdrawalsts_',
@@ -109,43 +106,39 @@ def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor'
     for key, patterns in value_patterns.items():
         for pattern in patterns:
             maybe_move_value(write_cursor, key.format(pattern=pattern))
-    log.debug('Exit _move_non_intervals_from_used_query_ranges_to_cache')
 
 
+@enter_exit_debug_log()
 def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _add_new_supported_locations')
     write_cursor.execute(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
         ('m', 45),
     )
-    log.debug('Exit _add_new_supported_locations')
 
 
+@enter_exit_debug_log()
 def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _remove_covalent_api_key')
     write_cursor.execute(
         'DELETE FROM external_service_credentials WHERE name=?',
         ('covalent', ),
     )
-    log.debug('Exit _remove_covalent_api_key')
 
 
+@enter_exit_debug_log()
 def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
     """Remove events that were created by error in the kraken logic"""
-    log.debug('Enter _remove_bad_kraken_events')
     write_cursor.execute(
         'DELETE FROM history_events WHERE location=? AND type=? AND subtype=?',
         ('B', 'informational', 'fee'),
     )
-    log.debug('Exit _remove_bad_kraken_events')
 
 
+@enter_exit_debug_log()
 def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     """Move all the `label` column values from `blockchain_accounts` table to the `name` column
     of the 'address_book` table. If a `name` already exists in the `address_book` table, then
     `address_name_priority` setting is used to determine which one to keep. Defaults to
     `DEFAULT_ADDRESS_NAME_PRIORITY`."""
-    log.debug('Enter _move_labels_to_addressbook')
     address_name_priority = write_cursor.execute(  # get priority settings
         'SELECT value FROM settings WHERE name = "address_name_priority"',
     ).fetchone()
@@ -184,12 +177,11 @@ def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     )
     # remove the `label` column from the `blockchain_accounts` table
     write_cursor.execute('ALTER TABLE blockchain_accounts DROP COLUMN label')
-    log.debug('Exit _move_labels_to_addressbook')
 
 
+@enter_exit_debug_log()
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """Reset all decoded evm events except the customized ones."""
-    log.debug('Enter _reset_decoded_events')
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
         customized_events = write_cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
@@ -211,15 +203,14 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
             'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
             (HISTORY_MAPPING_STATE_DECODED,),
         )
-    log.debug('Exit _reset_decoded_events')
 
 
+@enter_exit_debug_log()
 def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
     """
     Removes bittrex settings and credentials from the DB.
     Code taken from v36->v37 upgrade from ftx.
     """
-    log.debug('Enter _remove_bittrex_data')
     write_cursor.execute(
         'DELETE FROM user_credentials WHERE location=?',
         (Location.BITTREX.serialize_for_db(),),
@@ -245,14 +236,13 @@ def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
                 'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
                 (json.dumps(new_values),),
             )
-    log.debug('Exit _remove_bittrex_data')
 
 
+@enter_exit_debug_log()
 def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
     """
     Upgrade the eth2 validators DB table while preserving eth2 daily stats table.
     Foreign keys off so that recreation of table does not delete all daily stats"""
-    log.debug('Enter _upgrade_eth2_validators')
     write_cursor.executescript('PRAGMA foreign_keys = OFF;')
     update_table_schema(
         write_cursor=write_cursor,
@@ -268,9 +258,9 @@ def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
         insert_columns='validator_index, public_key, ownership_proportion',
     )
     write_cursor.executescript('PRAGMA foreign_keys = ON;')
-    log.debug('Exit _upgrade_eth2_validators')
 
 
+@enter_exit_debug_log(name='UserDB v40->v41 upgrade')
 def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
@@ -280,7 +270,6 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - remove any covalent api key added by the user
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
-    log.debug('Enter userdb v40->v41 upgrade')
     progress_handler.set_total_steps(11)
     with db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
@@ -305,5 +294,3 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _remove_bad_kraken_events(write_cursor)
         progress_handler.new_step()
-
-    log.debug('Finish userdb v40->v41 upgrade')

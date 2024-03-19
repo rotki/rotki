@@ -14,7 +14,7 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -51,6 +51,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _move_event_locations(write_cursor: 'DBCursor') -> None:
     """
     Create location ethereum and optimism and move the blockchain events to those locations
@@ -60,7 +61,6 @@ def _move_event_locations(write_cursor: 'DBCursor') -> None:
 
     This should always be at the start of this DB upgrade as it relies on the old schema.
     """
-    log.debug('Enter _move_event_locations')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("g", 39);')
 
@@ -84,9 +84,9 @@ def _move_event_locations(write_cursor: 'DBCursor') -> None:
         'UPDATE history_events SET location=? WHERE event_identifier=?', update_tuples,
     )
     write_cursor.execute('DELETE FROM history_events_mappings WHERE name="chain_id"')
-    log.debug('Exit _move_event_locations')
 
 
+@enter_exit_debug_log()
 def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """
     1. Reset all decoded events
@@ -97,8 +97,6 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
     Also turn all null subtype entries to have subtype none
     """
-    log.debug('Enter _update_history_events_schema')
-
     _reset_decoded_events(write_cursor)
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS history_events_copy (
     identifier INTEGER NOT NULL PRIMARY KEY,
@@ -161,9 +159,8 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
     write_cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events')
     write_cursor.switch_foreign_keys('ON')
 
-    log.debug('Exit _update_history_events_schema')
 
-
+@enter_exit_debug_log()
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
     """Create new tables
 
@@ -171,7 +168,6 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     Still left to do: delete all data except customized events and figure out what to do
     with the custom events.
     """
-    log.debug('Enter _create_new_tables')
     write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_events_info(
             identifier INTEGER PRIMARY KEY,
@@ -192,24 +188,20 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     );
     """)  # noqa: E501
 
-    log.debug('Exit _create_new_tables')
 
-
+@enter_exit_debug_log()
 def _delete_old_tables(write_cursor: 'DBCursor') -> None:
     """Deletes old tables that are now unused along with related data
     """
-    log.debug('Enter _delete_old_tables')
     write_cursor.execute('DROP TABLE IF EXISTS eth2_deposits')
     write_cursor.execute(
         'DELETE FROM used_query_ranges WHERE name LIKE ?',
         ('eth2_deposits%',),
     )
 
-    log.debug('Exit _delete_old_tables')
 
-
+@enter_exit_debug_log()
 def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _update_ens_mappings_schema')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='ens_mappings',
@@ -220,9 +212,9 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
         insert_columns='address, ens_name, last_update',
         insert_order='(address, ens_name, last_update)',
     )
-    log.debug('Exit _update_ens_mappings_schema')
 
 
+@enter_exit_debug_log()
 def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     """
     Fix kraken events with negative amounts related to:
@@ -232,7 +224,6 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     - instant swaps
     Needs to be executed after _update_history_events_schema
     """
-    log.debug('Enter _fix_kraken_events. Fixing kraken eth2 related tuples')
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
@@ -344,12 +335,10 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
             update_tuples,
         )
 
-    log.debug('Exit _fix_kraken_events')
 
-
+@enter_exit_debug_log()
 def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     """Decreases the amount of data in the daily stats table"""
-    log.debug('Enter _trim_daily_stats')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='eth2_daily_staking_details',
@@ -361,12 +350,11 @@ def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
         insert_columns='validator_index, timestamp, pnl',
         insert_where='start_amount != 0 OR end_amount !=0 OR amount_deposited != 0',
     )
-    log.debug('Exit _trim_daily_stats')
 
 
+@enter_exit_debug_log()
 def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
     """Removes FTX-related settings from the DB"""
-    log.debug('Enter _remove_ftx_data')
     write_cursor.execute(
         'DELETE FROM user_credentials WHERE location IN (?, ?)',
         (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
@@ -393,23 +381,21 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
             'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
             (json.dumps(new_values),),
         )
-    log.debug('Exit _remove_ftx_data')
 
 
+@enter_exit_debug_log()
 def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
     """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
-    log.debug('Enter _adjust_user_settings')
     write_cursor.execute(
         'UPDATE settings SET name="ssf_graph_multiplier" WHERE name="ssf_0graph_multiplier"')
-    log.debug('Exit _adjust_user_settings')
 
 
+@enter_exit_debug_log(name='UserDB v36->v37 upgrade')
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
-    log.debug('Entered userdb v36->v37 upgrade')
     progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _move_event_locations(write_cursor)
@@ -430,5 +416,3 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _adjust_user_settings(write_cursor)
         progress_handler.new_step()
-
-    log.debug('Finished userdb v36->v36 upgrade')
