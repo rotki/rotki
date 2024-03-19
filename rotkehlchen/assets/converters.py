@@ -94,23 +94,23 @@ def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_bitfinex(
-        bitfinex_name: str,
-        currency_map: dict[str, str],
-) -> AssetWithOracles:
+def asset_from_bitfinex(bitfinex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
     - UnknownAsset
 
-    Currency map coming from `<Bitfinex>._query_currency_map()` is already
-    updated with BITFINEX_TO_WORLD (prevent updating it on each call)
+    Currency map fetched in `<Bitfinex>._query_currency_map()` is already
+    inserted into location_asset_mappings (prevent updating it on each call)
     """
     if not isinstance(bitfinex_name, str):
         raise DeserializationError(f'Got non-string type {type(bitfinex_name)} for bitfinex asset')
 
-    symbol = currency_map.get(bitfinex_name, bitfinex_name)
-    return symbol_to_asset_or_token(symbol)
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITFINEX,
+        symbol=bitfinex_name,
+        default=bitfinex_name,
+    ))
 
 
 def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:

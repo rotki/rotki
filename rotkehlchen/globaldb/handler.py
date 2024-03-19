@@ -2112,8 +2112,7 @@ class GlobalDBHandler:
 
     @staticmethod
     def is_asset_symbol_unsupported(location: 'Location', asset_symbol: str) -> bool:
-        """Returns True if the asset with the given symbol is not supported in the given location.
-        Otherwise returns False."""
+        """Returns if the asset with the given symbol is not supported in the given location."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
             return cursor.execute(
                 'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
