@@ -79,6 +79,7 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
+    EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
@@ -226,6 +227,7 @@ from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -601,7 +603,7 @@ class EvmTransactionsResource(BaseMethodView):
             async_query: bool,
             filter_query: EvmTransactionsFilterQuery,
     ) -> Response:
-        return self.rest_api.get_evm_transactions(
+        return self.rest_api.refresh_evm_transactions(
             async_query=async_query,
             filter_query=filter_query,
         )
@@ -624,6 +626,28 @@ class EvmTransactionsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, evm_chain: SUPPORTED_CHAIN_IDS | None) -> Response:
         return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
+
+
+class EvmlikeTransactionsResource(BaseMethodView):
+    post_schema = EvmlikeTransactionQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[ChecksumEvmAddress] | None,
+            chain: EvmlikeChain | None,
+    ) -> Response:
+        return self.rest_api.refresh_evmlike_transactions(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            accounts=accounts,
+            chain=chain,
+        )
 
 
 class EvmPendingTransactionsDecodingResource(BaseMethodView):

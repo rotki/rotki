@@ -100,6 +100,7 @@ if TYPE_CHECKING:
         ValidatorDailyStats,
         ValidatorDetailsWithStatus,
     )
+    from rotkehlchen.chain.ethereum.modules.l2.zksync import ZksyncLite
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
@@ -429,6 +430,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['nfts']) -> Optional['Nfts']:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['zksync_lite']) -> Optional['ZksyncLite']:
         ...
 
     def get_module(self, module_name: ModuleName) -> Any | None:

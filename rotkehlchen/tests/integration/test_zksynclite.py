@@ -27,11 +27,12 @@ from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.fixture(name='zksync_lite')
-def fixture_zksync_lite(ethereum_manager, database):
+def fixture_zksync_lite(ethereum_inquirer, database):
     return ZksyncLite(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
         premium=None,  # not used atm
+        msg_aggregator=None,  # not used atm
     )
 
 

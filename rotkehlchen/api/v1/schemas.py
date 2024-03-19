@@ -101,6 +101,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
+    EvmlikeChain,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -312,6 +313,18 @@ class EvmTransactionQuerySchema(
             'async_query': data['async_query'],
             'filter_query': filter_query,
         }
+
+
+class EvmlikeTransactionQuerySchema(
+        AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
+):
+    accounts = fields.List(
+        fields.Nested(RequiredEvmAddressOptionalChainSchema),
+        load_default=None,
+        validate=lambda data: len(data) != 0,
+    )
+    chain = StrEnumField(enum_class=EvmlikeChain, load_default=None)
 
 
 class SingleEVMTransactionDecodingSchema(Schema):

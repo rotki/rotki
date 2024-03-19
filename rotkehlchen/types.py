@@ -1,7 +1,7 @@
 import typing
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,6 +48,7 @@ ModuleName = Literal[
     'liquity',
     'pickle_finance',
     'nfts',
+    'zksync_lite',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -331,6 +332,12 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.GNOSIS,
     ChainID.SCROLL,
 ]
+
+
+class EvmlikeChain(StrEnum):
+    """This is an enum for EvmLike chains that are not fully compatible with evm chains.
+    For example have no chain id"""
+    ZKSYNCLITE = auto()
 
 
 @dataclass(frozen=True)

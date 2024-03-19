@@ -230,6 +230,7 @@ from rotkehlchen.types import (
     CacheType,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2698,6 +2699,35 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    @async_api_call()
+    def refresh_evmlike_transactions(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[ChecksumEvmAddress] | None,
+            chain: EvmlikeChain | None,  # pylint: disable=unused-argument
+    ) -> dict[str, Any]:
+        """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
+        message, status_code = '', HTTPStatus.OK
+        # lazy mode. At the moment this can only be ZKSYnc lite
+        zksynclite = self.rotkehlchen.chains_aggregator.get_module('zksync_lite')
+        if zksynclite is None:
+            return wrap_in_fail_result(
+                message='zksync lite module is not active',
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        addresses = accounts if accounts else self.rotkehlchen.chains_aggregator.queried_addresses_for_module('zksync_lite')  # noqa: E501
+
+        for address in addresses:
+            zksynclite.get_transactions(
+                address=address,
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
+            )
+
+        return {'result': True, 'message': message, 'status_code': status_code}
+
     def purge_evm_transaction_data(self, chain_id: SUPPORTED_CHAIN_IDS | None) -> Response:
         chain = None if chain_id is None else chain_id.to_blockchain()
         DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
@@ -2706,7 +2736,7 @@ class RestAPI:
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
-    def get_evm_transactions(
+    def refresh_evm_transactions(
             self,
             filter_query: EvmTransactionsFilterQuery,
     ) -> dict[str, Any]:

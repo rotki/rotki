@@ -233,7 +233,6 @@ inline-quotes = "single"
 multiline-quotes = "double"
 
 [tool.ruff.lint.per-file-ignores]
-
 "tools/*" = [
     "T201",  # got prints in tools
     "INP001",  # no need for __init__ in tools
@@ -249,7 +248,10 @@ multiline-quotes = "double"
     "E501",  # huge lines there
     "Q000",  # double quoted strings needed here
 ]
-"rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
+"rotkehlchen/tests/*" = [
+    "S113",    # tests have no timeout in requests
+    "RUF018",  # We have assignments in assert in tests and that's fine there
+]
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True
     "S605",  # test setup, can't inject in process
