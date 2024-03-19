@@ -35,6 +35,7 @@ vi.mock('vue-router/composables', () => ({
       hash: '',
     }),
   ),
+  useRouter: vi.fn(),
 }));
 
 vi.mock('@/composables/api/settings/external-services-api', () => ({
@@ -76,7 +77,7 @@ describe('/settings/api-keys/external-services', () => {
     });
   }
 
-  beforeEach(async () => {
+  beforeEach(() => {
     document.body.dataset.app = 'true';
     pinia = createCustomPinia();
     setActivePinia(pinia);
@@ -132,7 +133,7 @@ describe('/settings/api-keys/external-services', () => {
         )
         .trigger('click');
       await flushPromises();
-      const message = await wrapper
+      const message = wrapper
         .find(
           '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details',
         )
@@ -159,7 +160,7 @@ describe('/settings/api-keys/external-services', () => {
         )
         .trigger('click');
       await flushPromises();
-      const message = await wrapper
+      const message = wrapper
         .find(
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__content] .details',
         )
@@ -168,7 +169,7 @@ describe('/settings/api-keys/external-services', () => {
       await vi.advanceTimersToNextTimerAsync();
     });
 
-    it('delete is disabled', async () => {
+    it('delete is disabled', () => {
       expect(
         wrapper
           .find(
@@ -185,7 +186,7 @@ describe('/settings/api-keys/external-services', () => {
       ).toBe('disabled');
     });
 
-    it('save is disabled', async () => {
+    it('save is disabled', () => {
       expect(
         wrapper
           .find(
@@ -204,7 +205,7 @@ describe('/settings/api-keys/external-services', () => {
       await flushPromises();
     });
 
-    it('the fields get updated', async () => {
+    it('the fields get updated', () => {
       const etherscanKey = wrapper.find(
         '[data-cy=external-keys] [data-cy=etherscan]',
       );
@@ -253,7 +254,7 @@ describe('/settings/api-keys/external-services', () => {
       expect(mock).toHaveBeenCalledWith('cryptocompare');
       expect(confirmStore.visible).toBeFalsy();
 
-      const message = await wrapper
+      const message = wrapper
         .find(
           '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__content] .details',
         )
