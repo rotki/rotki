@@ -427,7 +427,6 @@ watch(loading, async (isLoading, wasLoading) => {
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
             data-cy="closed-trades"
-            :show-select="!locationOverview"
             :item-class="getItemClass"
             row-attr="tradeId"
             outlined

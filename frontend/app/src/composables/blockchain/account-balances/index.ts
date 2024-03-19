@@ -71,7 +71,7 @@ export function useAccountBalances() {
       [Blockchain.ARBITRUM_ONE]: arbitrumAccounts,
       [Blockchain.BASE]: baseAccounts,
       [Blockchain.GNOSIS]: gnosisAccounts,
-      [Blockchain.SCROLL]: gnosisAccounts,
+      [Blockchain.SCROLL]: scrollAccounts,
     };
 
     const accounts = get(mapping[blockchain]);
