@@ -31,12 +31,12 @@ body {
 
 aside {
   @apply fixed #{!important};
-  max-height: calc(100vh - 64px);
+  max-height: calc(100vh - 4rem);
 }
 
 .table-inside-dialog {
   scroll-behavior: smooth;
-  max-height: calc(100vh - 340px);
+  max-height: calc(100vh - 21.25rem);
   overflow: auto;
 }
 
