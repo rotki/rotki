@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { isBlockchain } from '@/types/blockchain/chains';
+import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,
@@ -13,7 +13,6 @@ import type {
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
 import type { Collection } from '@/types/collection';
-import type { Chains } from '@/types/asset/asset-urls';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',
@@ -26,7 +25,6 @@ export const useAddressesNamesStore = defineStore(
 
     const { awaitTask } = useTaskStore();
     const { t } = useI18n();
-
     const { notify } = useNotificationsStore();
 
     const {
@@ -39,6 +37,8 @@ export const useAddressesNamesStore = defineStore(
       deleteAddressBook: deleteAddressBookCaller,
       updateAddressBook: updateAddressBookCaller,
     } = useAddressesNamesApi();
+
+    const { supportedChains } = useSupportedChains();
 
     const lastRefreshedAvatar: Ref<number> = ref(0);
 
@@ -119,8 +119,7 @@ export const useAddressesNamesStore = defineStore(
         return ensAvatarUrl(ens, get(lastRefreshedAvatar));
       });
 
-    const createKey = (address: string, blockchain: Blockchain) =>
-      `${address}#${blockchain}`;
+    const createKey = (address: string, chain: string) => `${address}#${chain}`;
 
     const fetchAddressesNames = async (keys: string[]) => {
       const payload: AddressNameRequestPayload[] = [];
@@ -169,7 +168,7 @@ export const useAddressesNamesStore = defineStore(
       reset: resetAddressesNames,
     } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-    const getAddressesWithoutNames = (blockchain?: MaybeRef<Blockchain | null>): ComputedRef<string[]> => computed(() => {
+    const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) => computed<string[]>(() => {
       const chain = get(blockchain);
       const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
       return entries
@@ -179,7 +178,7 @@ export const useAddressesNamesStore = defineStore(
 
     const addressNameSelector = (
       address: MaybeRef<string>,
-      blockchain: MaybeRef<Chains> = Blockchain.ETH,
+      blockchain: MaybeRef<string> = Blockchain.ETH,
     ) =>
       computed<string | null>(() => {
         const addressVal = get(address);
@@ -188,7 +187,7 @@ export const useAddressesNamesStore = defineStore(
 
         const chain = get(blockchain);
 
-        if (!isBlockchain(chain))
+        if (!isBlockchain(chain) || isBtcChain(chain))
           return null;
 
         const key = createKey(addressVal, chain);
@@ -201,9 +200,9 @@ export const useAddressesNamesStore = defineStore(
 
     const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
       items.forEach((item) => {
-        const chains: Blockchain[] = item.blockchain
+        const chains: string[] = item.blockchain
           ? [item.blockchain]
-          : Object.values(Blockchain);
+          : get(supportedChains).map(chain => chain.id);
 
         chains.forEach((chain) => {
           const key = createKey(item.address, chain);

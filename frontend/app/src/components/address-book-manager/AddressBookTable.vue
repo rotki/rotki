@@ -4,8 +4,6 @@ import {
   type NotificationPayload,
   Severity,
 } from '@rotki/common/lib/messages';
-import type { Ref } from 'vue';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type {
   DataTableColumn,
   DataTableOptions,
@@ -53,7 +51,7 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
 
   const deleteAddressBook = async (
     address: string,
-    blockchain: Blockchain | null,
+    blockchain: string | null,
   ) => {
     try {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);

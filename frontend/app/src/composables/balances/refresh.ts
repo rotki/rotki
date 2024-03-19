@@ -3,17 +3,13 @@ import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-sett
 import type { MaybeRef } from '@vueuse/core';
 
 export const useRefresh = createSharedComposable(() => {
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchLoopringBalances } = useEthBalancesStore();
+  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
-
-  const { blockchainRefreshButtonBehaviour } = storeToRefs(
-    useFrontendSettingsStore(),
-  );
-
+  const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+  const { txEvmChains } = useSupportedChains();
 
-  const refreshBlockchainBalances = async (blockchain?: Blockchain): Promise<void> => {
+  const refreshBlockchainBalances = async (blockchain?: string): Promise<void> => {
     const chain = get(blockchain);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
@@ -28,16 +24,20 @@ export const useRefresh = createSharedComposable(() => {
     await Promise.allSettled(pending);
   };
 
-  const { supportsTransactions } = useSupportedChains();
-  const handleBlockchainRefresh = async (blockchain?: MaybeRef<Blockchain>, forceRedetect = false) => {
+  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false) => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
 
     if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS || forceRedetect) {
-      const chains = chain ? [chain] : Object.values(Blockchain).filter(supportsTransactions);
+      const chains = chain ? [chain] : get(txEvmChains).map(chain => chain.id);
 
       set(massDetecting, chain || 'all');
-      await awaitParallelExecution(chains, chain => chain, chain => useTokenDetection(chain).detectTokensOfAllAddresses(), 1);
+      await awaitParallelExecution(
+        chains,
+        chain => chain,
+        chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
+        1,
+      );
       set(massDetecting, undefined);
     }
 

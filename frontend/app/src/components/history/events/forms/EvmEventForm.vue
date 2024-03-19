@@ -350,13 +350,9 @@ watch(historyEventLimitedProducts, (products) => {
 
 const { txEvmChainsToLocation } = useSupportedChains();
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const addressSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>

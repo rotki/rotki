@@ -15,8 +15,7 @@
     "user_agent": "User Agent:"
   },
   "account_balance_table": {
-    "liabilities": "Υποχρεώσεις",
-    "loopring": "Loopring"
+    "liabilities": "Υποχρεώσεις"
   },
   "account_balances": {
     "confirm_delete": {
@@ -37,11 +36,7 @@
     },
     "edit_tooltip": "Επεξεργασία λογαριασμού",
     "headers": {
-      "num_of_detected_tokens": "Num. of detected tokens",
-      "ownership": "Ownership",
-      "usd_value": "{symbol} value",
-      "usd_value_eth": "Total {symbol} value of account's assets",
-      "validator": "Validator Index | Public Key"
+      "usd_value": "{symbol} value"
     },
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
@@ -67,14 +62,6 @@
       "address_non_empty": "The address cannot be empty",
       "xpub_non_empty": "The XPUB field cannot be empty"
     }
-  },
-  "account_group_header": {
-    "copy_tooltip": "Copy the xpub to the clipboard",
-    "delete_tooltip": "Delete the entry and all the accounts underneath it",
-    "derivation_path": "Derivation Path",
-    "edit_tooltip": "Edit the label and tags of the xpub",
-    "standalone": "Standalone",
-    "xpub": "xpub:"
   },
   "account_management": {
     "about_tooltip": "Show the application's about modal",
@@ -1262,22 +1249,6 @@
   },
   "blockchain_balances": {
     "add_account": "Add Account",
-    "balances": {
-      "arbitrum_one": "Arbitrum One balances",
-      "avax": "Avalanche balances",
-      "base": "Base balances",
-      "bch": "Bitcoin Cash balances",
-      "btc": "Bitcoin balances",
-      "dot": "Polkadot balances",
-      "eth": "Ethereum balances",
-      "eth2": "ETH balances",
-      "ksm": "Kusama balances",
-      "loopring": "Loopring balances",
-      "optimism": "Optimism balances",
-      "polygon_pos": "Polygon PoS balances",
-      "gnosis": "Gnosis balances",
-      "scroll": "Scroll balances"
-    },
     "form_dialog": {
       "add_title": "Add blockchain account",
       "edit_subtitle": "Modify account details",

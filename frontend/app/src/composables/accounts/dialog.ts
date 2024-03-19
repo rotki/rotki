@@ -14,9 +14,9 @@ export const useAccountDialog = createSharedComposable(() => {
 
   const { t } = useI18n();
 
-  const clearDialog = async (): Promise<void> => {
+  const clearDialog = (): void => {
     set(openDialog, false);
-    setTimeout(async () => {
+    setTimeout(() => {
       set(accountToEdit, null);
     }, 300);
   };

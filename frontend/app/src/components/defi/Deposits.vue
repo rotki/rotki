@@ -9,9 +9,9 @@ import {
   CompoundLendingDetails,
   YearnVaultsProfitDetails,
 } from '@/premium/premium';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { YearnVaultProfitLoss } from '@/types/defi/yearn';
 import type { ComputedRef } from 'vue';
-import type { GeneralAccount } from '@rotki/common/lib/account';
 import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
@@ -27,7 +27,7 @@ const modules: Module[] = [
 
 const chains = [Blockchain.ETH];
 
-const selectedAccounts = ref<GeneralAccount[]>([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const protocol = ref<DefiProtocol | null>(null);
 const premium = usePremium();
 const route = useRoute();
@@ -47,7 +47,11 @@ function isProtocol(protocol: DefiProtocol) {
   });
 }
 
-const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
+const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
+const accountFilter = useArrayMap(selectedAccounts, account => ({
+  address: getAccountAddress(account),
+  chain: account.chain,
+}));
 
 const selectedProtocols = computed(() => {
   const selected = get(protocol);
@@ -56,7 +60,7 @@ const selectedProtocols = computed(() => {
 
 const defiAddresses = computed(() => {
   const protocols = get(selectedProtocols);
-  return get(defiStore.defiAccounts(protocols)).map(({ address }) => address);
+  return get(defiStore.defiAccounts(protocols)).map(({ data: { address } }) => address);
 });
 
 const lendingBalances = computed(() => {
@@ -270,7 +274,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         use-external-account-filter
         :section-title="t('common.events')"
         :protocols="transactionEventProtocols"
-        :external-account-filter="selectedAccounts"
+        :external-account-filter="accountFilter"
         :only-chains="chains"
         :entry-types="[HistoryEventEntryType.EVM_EVENT]"
       />

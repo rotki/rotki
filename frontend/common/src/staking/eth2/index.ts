@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Balance, type BigNumber, NumericString, Percentage } from '../../index';
-import type { GeneralAccount } from '../../account';
+import type { Account } from '../../account';
 
 const Eth2DailyStat = z.object({
   validatorIndex: z.number().nonnegative(),
@@ -86,7 +86,7 @@ export const Eth2Validators = z.object({
 export type Eth2Validators = z.infer<typeof Eth2Validators>;
 
 interface EthStakingDepositorFilter {
-  accounts: GeneralAccount[];
+  accounts: Account[];
 }
 
 interface EthStakingValidatorFilter {

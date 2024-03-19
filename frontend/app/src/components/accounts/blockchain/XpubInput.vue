@@ -12,12 +12,12 @@ import type { XpubPayload } from '@/types/blockchain/accounts';
 const props = defineProps<{
   disabled: boolean;
   errorMessages: ValidationErrors;
-  xpub: XpubPayload | null;
+  xpub: XpubPayload | undefined;
   blockchain: BtcChains;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:xpub', event: XpubPayload | null): void;
+  (e: 'update:xpub', event?: XpubPayload): void;
 }>();
 
 const { t } = useI18n();
@@ -29,7 +29,7 @@ const derivationPath = ref('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
 
-function updateXpub(event: XpubPayload | null) {
+function updateXpub(event?: XpubPayload) {
   emit('update:xpub', event);
 }
 
@@ -73,7 +73,7 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
   if (xpub)
     setXpubKeyType(xpub);
 
-  let payload: XpubPayload | null = null;
+  let payload: XpubPayload | undefined;
   if (xpub) {
     payload = {
       xpub: xpub.trim(),

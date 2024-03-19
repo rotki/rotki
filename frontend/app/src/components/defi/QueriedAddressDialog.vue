@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { Ref } from 'vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CamelCase } from '@/types/common';
 
 const props = defineProps<{ module: Module }>();
@@ -11,15 +10,17 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 
 const { module } = toRefs(props);
 
-const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const ETH = Blockchain.ETH;
 
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { accounts } = useAccountBalances();
+const { getAddresses, getAccounts } = useBlockchainStore();
 
 const { t } = useI18n();
+
+const accounts = computed<BlockchainAccount[]>(() => getAccounts(ETH));
 
 const currentModule = computed(() => {
   const currentModule = get(module);
@@ -46,20 +47,15 @@ const addresses = computed(() => {
 
 const usableAddresses = computed(() => {
   const currentModule = get(module);
-  const accountList = get(accounts);
+  const accountList = getAddresses(Blockchain.ETH);
   const moduleAddresses = get(addresses);
-  if (!currentModule || moduleAddresses.length === 0) {
-    return accountList
-      .filter(({ chain }) => chain === ETH)
-      .map(({ address }) => address);
-  }
+  if (!currentModule || moduleAddresses.length === 0)
+    return accountList;
 
   return accountList
     .filter(
-      ({ chain, address }) =>
-        chain === ETH && !moduleAddresses.includes(address),
-    )
-    .map(({ address }) => address);
+      address => !moduleAddresses.includes(address),
+    );
 });
 
 const addAddress = async function () {
@@ -68,13 +64,13 @@ const addAddress = async function () {
   assert(currentModule && currentAccount.length > 0);
   await addQueriedAddress({
     module: currentModule,
-    address: currentAccount[0].address,
+    address: getAccountAddress(currentAccount[0]),
   });
   set(selectedAccounts, []);
 };
 
-function getAccount(address: string): GeneralAccount {
-  const account = get(accounts).find(value => value.address === address);
+function getAccount(address: string): BlockchainAccount {
+  const account = get(accounts).find(account => getAccountAddress(account) === address);
   assert(account);
   return account;
 }

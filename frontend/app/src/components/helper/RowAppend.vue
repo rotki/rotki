@@ -18,8 +18,7 @@ const props = withDefaults(
   },
 );
 
-const { className, isMobile, leftPatchColspan, rightPatchColspan }
-  = toRefs(props);
+const { className, isMobile, leftPatchColspan, rightPatchColspan } = toRefs(props);
 
 const slots = useSlots();
 

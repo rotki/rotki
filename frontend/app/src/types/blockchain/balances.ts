@@ -1,6 +1,4 @@
 import { Balance } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { camelCase } from 'lodash-es';
 import { z } from 'zod';
 
 export const Balances = z.record(Balance);
@@ -11,6 +9,8 @@ const BlockchainTotals = z.object({
   assets: Balances,
   liabilities: Balances,
 });
+
+export type BlockchainTotals = z.infer<typeof BlockchainTotals>;
 
 const XpubBalance = z.object({
   xpub: z.string(),
@@ -34,22 +34,7 @@ const BlockchainAssetBalances = z.record(EthBalance);
 
 export type BlockchainAssetBalances = z.infer<typeof BlockchainAssetBalances>;
 
-const PerAccountBalances = z.object({
-  [Blockchain.ETH]: BlockchainAssetBalances.optional(),
-  [Blockchain.ETH2]: BlockchainAssetBalances.optional(),
-  [Blockchain.BTC]: BtcBalances.optional(),
-  [Blockchain.BCH]: BtcBalances.optional(),
-  [Blockchain.KSM]: BlockchainAssetBalances.optional(),
-  [Blockchain.DOT]: BlockchainAssetBalances.optional(),
-  [Blockchain.AVAX]: BlockchainAssetBalances.optional(),
-  [Blockchain.OPTIMISM]: BlockchainAssetBalances.optional(),
-  // this is an exception, because the parse method receives polygonPos not polygon_pos
-  [camelCase(Blockchain.POLYGON_POS)]: BlockchainAssetBalances.optional(),
-  [camelCase(Blockchain.ARBITRUM_ONE)]: BlockchainAssetBalances.optional(),
-  [Blockchain.BASE]: BlockchainAssetBalances.optional(),
-  [Blockchain.GNOSIS]: BlockchainAssetBalances.optional(),
-  [Blockchain.SCROLL]: BlockchainAssetBalances.optional(),
-});
+const PerAccountBalances = z.record(BlockchainAssetBalances.or(BtcBalances));
 
 export const BlockchainBalances = z.object({
   perAccount: PerAccountBalances,

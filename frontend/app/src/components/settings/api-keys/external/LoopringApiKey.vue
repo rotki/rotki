@@ -8,7 +8,7 @@ const { t } = useI18n();
 const router = useRouter();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { fetchLoopringBalances } = useEthBalancesStore();
+const { fetchLoopringBalances } = useBlockchainBalances();
 const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
 
 const key = apiKey(name);
@@ -16,7 +16,6 @@ const status = actionStatus(name);
 const isLoopringActive = useArrayIncludes(activeModules, Module.LOOPRING);
 
 const refresh = () => fetchLoopringBalances(true);
-
 const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
 </script>
 

@@ -24,8 +24,7 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
-
-const { getBreakdown: getBlockchainBreakdown } = useAccountBalances();
+const { getBreakdown } = useBlockchainStore();
 const { assetBreakdown } = useBalancesBreakdown();
 
 const { getChain } = useSupportedChains();
@@ -33,7 +32,7 @@ const { getChain } = useSupportedChains();
 const breakdowns = computed(() => {
   const asset = get(identifier);
   const breakdown = get(blockchainOnly)
-    ? get(getBlockchainBreakdown(asset))
+    ? get(getBreakdown(asset))
     : get(assetBreakdown(asset));
 
   return groupAssetBreakdown(breakdown, (item) => {
@@ -130,7 +129,7 @@ function percentage(value: BigNumber) {
     </template>
     <template #item.percentage="{ row }">
       <PercentageDisplay
-        :value="percentage(row.balance.usdValue)"
+        :value="percentage(row.usdValue)"
         :asset-padding="0.1"
       />
     </template>

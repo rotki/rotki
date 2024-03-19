@@ -10,6 +10,7 @@ import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import { Routes } from '@/router/routes';
 import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@/types';
 import type {
   EvmChainAndTxHash,
@@ -21,12 +22,8 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { DataTableHeader } from '@/types/vuetify';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import type { ComputedRef, Ref } from 'vue';
-import type {
-  Blockchain,
-  BlockchainSelection,
-} from '@rotki/common/lib/blockchain';
-import type { Account, GeneralAccount } from '@rotki/common/lib/account';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Account } from '@rotki/common/lib/account';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -86,22 +83,23 @@ const eventToDelete = ref<HistoryEventEntry>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
 const missingRulesDialog: Ref<boolean> = ref(false);
 const transactionToIgnore = ref<HistoryEventEntry>();
-const accounts: Ref<GeneralAccount[]> = ref([]);
+const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || t('transactions.title'),
 );
 
-const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
-  () => {
-    if (get(useExternalAccountFilter))
-      return get(externalAccountFilter);
+const usedAccounts = computed<Account[]>(() => {
+  if (isDefined(useExternalAccountFilter))
+    return get(externalAccountFilter);
 
-    const accountsVal = get(accounts);
-    return accountsVal.length > 0 ? [accountsVal[0]] : accountsVal;
-  },
-);
+  const accountData = get(accounts).map(account => ({
+    address: getAccountAddress(account),
+    chain: account.chain,
+  }));
+  return accountData.length > 0 ? [accountData[0]] : accountData;
+});
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -150,6 +148,7 @@ const {
   fetchTransactionEvents,
   fetchUndecodedEventsBreakdown,
 } = useHistoryTransactionDecoding();
+const { getAccountByAddress } = useBlockchainStore();
 
 const vueRouter = useRouter();
 
@@ -195,10 +194,10 @@ const {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
       const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed)
+      if (!accountsParsed || accountsParsed.length === 0)
         set(accounts, []);
       else
-        set(accounts, accountsParsed.length > 0 ? [accountsParsed[0]] : []);
+        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
     },
     extraParams: computed(() => ({
       accounts: get(usedAccounts).map(
@@ -233,7 +232,7 @@ const {
         params.location = toSnakeCase(get(locationOverview));
 
       if (accounts.length > 0)
-        params.locationLabels = accounts.map(({ address }) => address);
+        params.locationLabels = accounts.map(account => account.address);
 
       if (isDefined(period)) {
         const { fromTimestamp, toTimestamp } = get(period);
@@ -307,7 +306,7 @@ const unDecodedLocations = computed<EvmUndecodedTransactionsData[]>(() =>
   }),
 );
 
-function onFilterAccountsChanged(acc: Account<BlockchainSelection>[]) {
+function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]) {
   set(userAction, true);
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 }
