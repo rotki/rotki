@@ -33,6 +33,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
 )
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Fee, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent
@@ -40,7 +41,7 @@ from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.premium.premium import Premium
@@ -123,8 +124,9 @@ class ZksyncLite(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
             database: 'DBHandler',
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
             premium: Optional['Premium'],
     ) -> None:
         self.database = database
@@ -134,7 +136,7 @@ class ZksyncLite(EthereumModule):
         self.id_to_token: dict[int, CryptoAsset] = {}
         self.symbol_to_token: dict[str, CryptoAsset] = {}
         self.eth = A_ETH.resolve_to_crypto_asset()
-        self.ethereum = ethereum_manager
+        self.ethereum_inquirer = ethereum_inquirer
 
     def _query_api(
             self,
@@ -277,7 +279,7 @@ class ZksyncLite(EthereumModule):
                                 userdb=self.database,
                                 evm_address=address,
                                 chain_id=ChainID.ETHEREUM,
-                                evm_inquirer=self.ethereum.node_inquirer,
+                                evm_inquirer=self.ethereum_inquirer,
                                 encounter=TokenEncounterInfo(description='Querying zksync tokens mapping'),  # noqa: E501
                             )
                         except NotERC20Conformant:
