@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { type TabContent, getClass } from '@/types/tabs';
 
-defineProps<{
+withDefaults(defineProps<{
   tabs: TabContent[];
-}>();
+  hideRouterView?: boolean;
+  child?: boolean;
+}>(), {
+  hideRouterView: false,
+  child: false,
+});
 
 const model = ref('');
 </script>
 
 <template>
-  <div class="container">
+  <div :class="{ container: !child }">
     <RuiTabs
       v-model="model"
       color="primary"
@@ -35,6 +40,6 @@ const model = ref('');
         </RuiTab>
       </template>
     </RuiTabs>
-    <RouterView />
+    <RouterView v-if="!hideRouterView" />
   </div>
 </template>

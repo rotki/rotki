@@ -12,11 +12,25 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
     Routes.ASSET_MANAGER_NEWLY_DETECTED,
   ];
 });
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <TabNavigation
-    :tabs="tabs"
-    class="asset-manager-more"
-  />
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.manage_assets'),
+      t('navigation_menu.manage_assets_sub.more'),
+    ]"
+  >
+    <div class="flex justify-between">
+      <TabNavigation
+        :tabs="tabs"
+        class="asset-manager-more"
+        hide-router-view
+        child
+      />
+    </div>
+    <RouterView />
+  </TablePageLayout>
 </template>

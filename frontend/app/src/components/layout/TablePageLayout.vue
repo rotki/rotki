@@ -14,7 +14,10 @@ withDefaults(
         v-if="!hideHeader"
         class="flex flex-row flex-wrap items-center gap-4 min-h-[2.25rem]"
       >
-        <div class="text-body-1 text-rui-text">
+        <div
+          v-if="title"
+          class="text-body-1 text-rui-text"
+        >
           <slot name="title">
             <template v-for="(item, index) in title">
               <span
