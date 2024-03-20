@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import {
   type BlockchainTotal,
@@ -32,7 +31,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
 
 <template>
-  <Fragment>
+  <div>
     <RouterLink
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
@@ -70,5 +69,5 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
         />
       </template>
     </div>
-  </Fragment>
+  </div>
 </template>

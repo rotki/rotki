@@ -129,7 +129,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   };
 
   const update = (
-    chain: Blockchain,
+    chain: string,
     { perAccount, totals: updatedTotals }: BlockchainBalances,
   ) => {
     if (!isEthChain(chain))
