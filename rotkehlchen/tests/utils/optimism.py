@@ -13,7 +13,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
         ),
         active=True,
         weight=FVal('0.3'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='node real',
             # does not offer archive nodes for optimism
@@ -24,7 +24,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
         ),
         active=True,
         weight=FVal('0.2'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='blast api',
             endpoint='https://optimism-mainnet.public.blastapi.io',
@@ -33,7 +33,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
         ),
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='ankr',
             endpoint='https://rpc.ankr.com/optimism',
@@ -42,5 +42,5 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
         ),
         active=True,
         weight=FVal('0.25'),
-    ))],
+    ),)],
 )
