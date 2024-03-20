@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import type { BigNumber } from '@rotki/common';
-import type { DataTableHeader } from '@/types/vuetify';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type {
   LocationDataSnapshot,
   LocationDataSnapshotPayload,
@@ -21,34 +21,46 @@ const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
+const {
+  openDialog,
+  setOpenDialog,
+  closeDialog,
+  submitting,
+  setSubmitFunc,
+  trySubmit,
+} = useEditLocationsSnapshotForm();
+
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editedIndex = ref<number | null>(null);
 const form = ref<LocationDataSnapshotPayload | null>(null);
 const excludedLocations = ref<string[]>([]);
+const tableRef = ref<any>();
+const sort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const,
+});
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.location'),
-    value: 'location',
+    label: t('common.location'),
+    key: 'location',
+    class: 'w-[12.5rem]',
     cellClass: 'py-2',
-    width: 200,
     align: 'center',
+    sortable: true,
   },
   {
-    text: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    value: 'usdValue',
+    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    key: 'usdValue',
     align: 'end',
-    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b),
+    sortable: true,
   },
   {
-    text: '',
-    value: 'action',
+    label: '',
+    key: 'action',
+    class: 'w-[6.25rem]',
     cellClass: 'py-2',
-    width: 100,
-    sortable: false,
   },
 ]);
 
@@ -107,15 +119,6 @@ function add() {
   );
   setOpenDialog(true);
 }
-
-const {
-  openDialog,
-  setOpenDialog,
-  closeDialog,
-  submitting,
-  setSubmitFunc,
-  trySubmit,
-} = useEditLocationsSnapshotForm();
 
 async function save() {
   const formVal = get(form);
@@ -199,39 +202,38 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
 
 <template>
   <div>
-    <DataTable
+    <RuiDataTable
+      ref="tableRef"
       class="table-inside-dialog"
-      :headers="tableHeaders"
-      :items="data"
-      :mobile-breakpoint="0"
-      flat
-      disable-floating-header
+      :cols="tableHeaders"
+      :rows="data"
+      :sort.sync="sort"
+      :scroller="tableRef?.$el"
+      row-attr="location"
     >
-      <template #item.location="{ item }">
+      <template #item.location="{ row }">
         <LocationDisplay
           :opens-details="false"
-          :identifier="item.location"
+          :identifier="row.location"
         />
       </template>
 
-      <template #item.usdValue="{ item }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
-          :value="item.usdValue"
+          :value="row.usdValue"
           fiat-currency="USD"
         />
       </template>
 
-      <template #item.action="{ item }">
+      <template #item.action="{ row }">
         <RowActions
           :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="
-            t('dashboard.snapshot.edit.dialog.actions.delete_item')
-          "
-          @edit-click="editClick(item)"
-          @delete-click="showDeleteConfirmation(item)"
+          :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
+          @edit-click="editClick(row)"
+          @delete-click="showDeleteConfirmation(row)"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >

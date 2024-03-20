@@ -5,7 +5,7 @@ import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
-import type { DataTableHeader } from '@/types/vuetify';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type {
   BalanceSnapshot,
   BalanceSnapshotPayload,
@@ -24,9 +24,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
+type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 
-const css = useCssModule();
+const {
+  openDialog,
+  setOpenDialog,
+  closeDialog,
+  submitting,
+  setSubmitFunc,
+  trySubmit,
+} = useEditBalancesSnapshotForm();
 
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -35,6 +42,12 @@ const indexToEdit = ref<number | null>(null);
 const indexToDelete = ref<number | null>(null);
 const locationToDelete = ref<string>('');
 const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
+const tableRef = ref<any>();
+const sort: Ref<DataTableSortData> = ref({
+  column: 'usdValue',
+  direction: 'desc' as const,
+});
+const assetSearch: Ref<string> = ref('');
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(
@@ -44,11 +57,11 @@ const fiatExchangeRate = computed<BigNumber>(
 const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() =>
   get(value).balancesSnapshot.map((item, index) => ({
     ...item,
+    categoryLabel: isNft(item.assetIdentifier) ? `${item.category} (${t('dashboard.snapshot.edit.dialog.balances.nft')})` : item.category,
     index,
   })),
 );
 
-const assetSearch: Ref<string> = ref('');
 const filteredData: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
   const allData = get(data);
   const search = get(assetSearch);
@@ -69,37 +82,37 @@ const total = computed<BigNumber>(() => {
   return totalEntry.usdValue;
 });
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.category'),
-    value: 'category',
+    label: t('common.category'),
+    key: 'categoryLabel',
     cellClass: 'py-2',
-    width: 150,
+    class: 'w-[10rem]',
+    sortable: true,
   },
   {
-    text: t('common.asset'),
-    value: 'assetIdentifier',
+    label: t('common.asset'),
+    key: 'assetIdentifier',
+    cellClass: 'py-0',
+    sortable: true,
   },
   {
-    text: t('common.amount'),
-    value: 'amount',
+    label: t('common.amount'),
+    key: 'amount',
     align: 'end',
-    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b),
+    sortable: true,
   },
   {
-    text: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }).toString(),
-    value: 'usdValue',
+    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    key: 'usdValue',
     align: 'end',
-    sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b),
+    sortable: true,
   },
   {
-    text: '',
-    value: 'action',
+    label: '',
+    key: 'action',
+    class: 'w-[6.25rem]',
     cellClass: 'py-2',
-    width: 100,
-    sortable: false,
   },
 ]);
 
@@ -193,7 +206,7 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(
   () => {
     const formVal = get(form);
 
-    if (!formVal || !formVal.amount || !formVal.usdValue || !formVal.location)
+    if (!formVal?.amount || !formVal.usdValue || !formVal.location)
       return null;
 
     const index = get(indexToEdit);
@@ -307,15 +320,6 @@ function updateData(balancesSnapshot: BalanceSnapshot[], location = '', calculat
   });
 }
 
-const {
-  openDialog,
-  setOpenDialog,
-  closeDialog,
-  submitting,
-  setSubmitFunc,
-  trySubmit,
-} = useEditBalancesSnapshotForm();
-
 async function save() {
   const formVal = get(form);
 
@@ -382,10 +386,6 @@ function confirmDelete() {
   updateData(balancesSnapshot, location, get(previewDeleteLocationBalance));
   clearDeleteDialog();
 }
-
-const tableRef = ref<any>(null);
-
-const tableContainer = computed(() => get(tableRef)?.$el);
 </script>
 
 <template>
@@ -399,63 +399,55 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         :label="t('dashboard.snapshot.search_asset')"
       />
     </div>
-    <DataTable
+    <RuiDataTable
       ref="tableRef"
-      class="table-inside-dialog"
-      :class="css['table-inside-dialog']"
-      :headers="tableHeaders"
-      :items="filteredData"
-      :container="tableContainer"
-      :mobile-breakpoint="0"
-      flat
-      disable-floating-header
+      class="table-inside-dialog !max-h-[26.25rem]"
+      :cols="tableHeaders"
+      :rows="filteredData"
+      :scroller="tableRef?.$el"
+      :sort.sync="sort"
+      row-attr="assetIdentifier"
     >
-      <template #item.category="{ item }">
-        <div>
-          <span>{{ toSentenceCase(item.category) }}</span>
-          <span v-if="isNft(item.assetIdentifier)">
-            ({{ t('dashboard.snapshot.edit.dialog.balances.nft') }})
-          </span>
-        </div>
+      <template #item.categoryLabel="{ row }">
+        <span>{{ toSentenceCase(row.categoryLabel) }}</span>
       </template>
 
-      <template #item.assetIdentifier="{ item }">
+      <template #item.assetIdentifier="{ row }">
         <AssetDetails
-          v-if="!isNft(item.assetIdentifier)"
+          v-if="!isNft(row.assetIdentifier)"
           class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
-          :asset="item.assetIdentifier"
+          :asset="row.assetIdentifier"
           :opens-details="false"
           :enable-association="false"
         />
         <NftDetails
           v-else
-          :identifier="item.assetIdentifier"
-          :class="css.asset"
+          :identifier="row.assetIdentifier"
         />
       </template>
 
-      <template #item.amount="{ item }">
-        <AmountDisplay :value="item.amount" />
+      <template #item.amount="{ row }">
+        <AmountDisplay :value="row.amount" />
       </template>
 
-      <template #item.usdValue="{ item }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
-          :value="item.usdValue"
+          :value="row.usdValue"
           fiat-currency="USD"
         />
       </template>
 
-      <template #item.action="{ item }">
+      <template #item.action="{ row }">
         <RowActions
           :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="
             t('dashboard.snapshot.edit.dialog.actions.delete_item')
           "
-          @edit-click="editClick(item)"
-          @delete-click="deleteClick(item)"
+          @edit-click="editClick(row)"
+          @delete-click="deleteClick(row)"
         />
       </template>
-    </DataTable>
+    </RuiDataTable>
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >
@@ -543,9 +535,3 @@ const tableContainer = computed(() => get(tableRef)?.$el);
     </ConfirmDialog>
   </div>
 </template>
-
-<style module lang="scss">
-.table-inside-dialog {
-  max-height: calc(100vh - 420px);
-}
-</style>

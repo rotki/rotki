@@ -78,7 +78,7 @@ const nfts = computed<GalleryNft[]>(() => {
     for (const nft of addressNfts) {
       const price = value[nft.tokenIdentifier];
 
-      if (price && price.manuallyInput) {
+      if (price?.manuallyInput) {
         const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
         allNfts.push({ ...nft, priceAsset, priceInAsset, priceUsd, address });
       }

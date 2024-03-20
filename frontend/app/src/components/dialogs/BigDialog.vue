@@ -33,6 +33,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const { subtitle, primaryAction, secondaryAction } = toRefs(props);
+const wrapper = ref<HTMLElement>();
 
 const primary = computed(
   () => get(primaryAction) || t('common.actions.confirm'),
@@ -75,10 +76,11 @@ const css = useCssModule();
       </template>
       <div
         v-if="display"
+        ref="wrapper"
         class="overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4"
         :class="css.card"
       >
-        <slot />
+        <slot :wrapper="wrapper" />
       </div>
 
       <RuiDivider class="mb-4 -mx-4" />
