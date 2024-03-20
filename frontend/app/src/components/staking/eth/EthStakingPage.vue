@@ -51,6 +51,8 @@ const {
 const { isLoading } = useStatusStore();
 const { isTaskRunning } = useTaskStore();
 
+const { isFirstLoad } = useStatusUpdater(performanceSection);
+
 const performanceRefreshing = isLoading(performanceSection);
 const statsRefreshing = isLoading(statsSection);
 const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
@@ -80,7 +82,7 @@ function shouldRefreshDailyStats() {
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {
     await fetchBlockchainBalances({
-      ignoreCache: userInitiated,
+      ignoreCache: userInitiated || isFirstLoad(),
       blockchain: Blockchain.ETH2,
     });
     await accountsStore.fetchEth2Validators();
@@ -180,7 +182,7 @@ onMounted(async () => {
       </template>
 
       <EthStaking
-        :refreshing="performanceRefreshing"
+        :refreshing="refreshing"
         :total="total"
         :accounts="selection"
         :filter.sync="filter"

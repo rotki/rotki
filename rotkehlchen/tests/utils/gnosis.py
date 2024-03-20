@@ -13,7 +13,7 @@ GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         ),
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='blockpi',
             endpoint='https://gnosis.blockpi.network/v1/rpc/public',
@@ -22,7 +22,7 @@ GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         ),
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='public node',
             endpoint='https://gnosis.publicnode.com',
@@ -31,7 +31,7 @@ GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         ),
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=NodeName(
             name='ankr',
             endpoint='https://rpc.ankr.com/gnosis',
@@ -40,5 +40,5 @@ GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         ),
         active=True,
         weight=FVal('0.25'),
-    ))],
+    ),)],
 )
