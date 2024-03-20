@@ -27,6 +27,7 @@ class BlockchainAccounts:
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     dot: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     avax: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    zksync_lite: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
 
     @overload
     def get(self, blockchain: SUPPORTED_EVM_CHAINS) -> tuple[ChecksumEvmAddress, ...]:

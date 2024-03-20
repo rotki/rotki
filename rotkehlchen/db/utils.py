@@ -354,7 +354,7 @@ def is_valid_db_blockchain_account(
         return True
     if blockchain == SupportedBlockchain.BITCOIN_CASH:
         return True
-    if blockchain.is_evm():
+    if blockchain.is_evm_or_evmlike():
         return is_checksum_address(account)
     if blockchain.is_substrate():  # mypy does not understand the type narrowing here
         return is_valid_substrate_address(blockchain, account)  # type: ignore[arg-type]

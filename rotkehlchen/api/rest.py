@@ -2710,8 +2710,7 @@ class RestAPI:
         """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
         message, status_code = '', HTTPStatus.OK
         # lazy mode. At the moment this can only be ZKSYnc lite
-        zksynclite = self.rotkehlchen.chains_aggregator.get_module('zksync_lite')
-        if zksynclite is None:
+        if (zksynclite := self.rotkehlchen.chains_aggregator.get_module('zksync_lite')) is None:
             return wrap_in_fail_result(
                 message='zksync lite module is not active',
                 status_code=HTTPStatus.CONFLICT,

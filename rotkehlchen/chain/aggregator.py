@@ -662,6 +662,28 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 assets=defaultdict(Balance, {A_DOT: balance}),
             )
 
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_zksync_lite_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """Queries the balance of the zksync lite chain.
+
+        May raise:
+        - RemoteError: if no nodes are available or the balances request fails.
+        """
+        if len(self.accounts.zksync_lite) == 0:
+            return
+
+        if (zksynclite := self.get_module('zksync_lite')) is None:
+            return
+
+        balances = zksynclite.get_balances(self.accounts.zksync_lite)
+        for address, asset_balances in balances.items():
+            self.balances.zksync_lite[address].assets = defaultdict(Balance, asset_balances)
+
     def sync_bitcoin_accounts_with_db(
             self,
             cursor: 'DBCursor',

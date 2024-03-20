@@ -1,4 +1,10 @@
-from rotkehlchen.types import SUPPORTED_BLOCKCHAIN_TO_CHAINID, SupportedBlockchain
+import typing
+
+from rotkehlchen.types import (
+    SUPPORTED_BLOCKCHAIN_TO_CHAINID,
+    SUPPORTED_EVMLIKE_CHAINS,
+    SupportedBlockchain,
+)
 
 DEFAULT_EVM_RPC_TIMEOUT = 10
 NON_BITCOIN_CHAINS = [
@@ -6,4 +12,4 @@ NON_BITCOIN_CHAINS = [
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.ETHEREUM_BEACONCHAIN,
     SupportedBlockchain.KUSAMA,
-] + list(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
+] + list(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys()) + list(typing.get_args(SUPPORTED_EVMLIKE_CHAINS))

@@ -429,6 +429,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     BASE = 'BASE'
     GNOSIS = 'GNOSIS'
     SCROLL = 'SCROLL'
+    ZKSYNC_LITE = 'ZKSYNC_LITE'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -447,6 +448,12 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def is_evm(self) -> bool:
         return self in get_args(SUPPORTED_EVM_CHAINS)
 
+    def is_evmlike(self) -> bool:
+        return self == SupportedBlockchain.ZKSYNC_LITE
+
+    def is_evm_or_evmlike(self) -> bool:
+        return self.is_evm() or self.is_evmlike()
+
     def is_bitcoin(self) -> bool:
         return self in get_args(SUPPORTED_BITCOIN_CHAINS)
 
@@ -458,7 +465,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
-        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL):  # noqa: E501
+        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE):  # noqa: E501
             return 'ETH'
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
@@ -467,10 +474,12 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
         return self.value
 
-    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2']:
+    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2', 'evmlike']:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
             return 'evm'
+        if self.is_evmlike():
+            return 'evmlike'
         if self.is_substrate():
             return 'substrate'
         if self.is_bitcoin():
@@ -516,7 +525,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
     SupportedBlockchain.GNOSIS: 'Gnosis',
-    SupportedBlockchain.SCROLL: 'Scroll',
+    SupportedBlockchain.ZKSYNC_LITE: 'ZKSync Lite',
 }
 
 SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
@@ -533,6 +542,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.BASE: 'base.svg',
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
     SupportedBlockchain.SCROLL: 'scroll.svg',
+    SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -576,6 +586,8 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.SCROLL,
 ]
 
+SUPPORTED_EVMLIKE_CHAINS = Literal[SupportedBlockchain.ZKSYNC_LITE]
+
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.ETHEREUM_BEACONCHAIN,
@@ -588,6 +600,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
+    SupportedBlockchain.ZKSYNC_LITE,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[

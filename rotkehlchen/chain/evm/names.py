@@ -203,7 +203,7 @@ def _token_mappings_address_to_name(
     """Returns the token name for a token address/chain id combination
     in the global database or None if the address is no token address
     """
-    if chain_address.blockchain is None or chain_address.blockchain.is_evm() is False:
+    if chain_address.blockchain is None or not chain_address.blockchain.is_evm_or_evmlike():
         return None
     return GlobalDBHandler.get_token_name(address=chain_address.address, chain_id=chain_address.blockchain.to_chain_id())  # noqa: E501
 
