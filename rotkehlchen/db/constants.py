@@ -35,6 +35,7 @@ class UpdateType(Enum):
     GLOBAL_ADDRESSBOOK = 'global_addressbook'
     ACCOUNTING_RULES = 'accounting_rules'
     LOCATION_ASSET_MAPPINGS = 'location_asset_mappings'
+    LOCATION_UNSUPPORTED_ASSETS = 'location_unsupported_assets'
 
     def serialize(self) -> str:
         """Serializes the update type for the DB and API"""
