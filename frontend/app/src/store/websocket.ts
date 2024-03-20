@@ -18,7 +18,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
     }
   };
 
-  async function connect(): Promise<boolean> {
+  function connect(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       if (get(connected)) {
         resolve(true);

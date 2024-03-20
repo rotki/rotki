@@ -67,7 +67,7 @@ export const useMainStore = defineStore('main', () => {
     set(defaultBackendArguments, backendDefaultArguments);
   };
 
-  const connect = async (payload?: string | null): Promise<void> => {
+  const connect = (payload?: string | null): void => {
     let count = 0;
     if (intervalId)
       clearInterval(intervalId);

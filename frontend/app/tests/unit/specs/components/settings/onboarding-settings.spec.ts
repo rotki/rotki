@@ -90,7 +90,7 @@ describe('onboardingSetting.vue', () => {
   });
 
   describe('standard settings', () => {
-    it('use default value from info api or electron config, save button should be disabled', async () => {
+    it('use default value from info api or electron config, save button should be disabled', () => {
       const dataDirectoryInput = wrapper.find(
         '[data-cy=user-data-directory-input] input',
       ).element as HTMLInputElement;
@@ -196,7 +196,7 @@ describe('onboardingSetting.vue', () => {
     });
   });
 
-  describe('advanced settings', async () => {
+  describe('advanced settings', () => {
     beforeEach(async () => {
       await wrapper
         .find('[data-cy=onboarding-setting__advance] .accordion__header')
@@ -205,7 +205,7 @@ describe('onboardingSetting.vue', () => {
       await wrapper.vm.$nextTick();
     });
 
-    it('use default value from info api or electron config, save button should be disabled', async () => {
+    it('use default value from info api or electron config, save button should be disabled', () => {
       const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
       expect(maxLogSizeInput.value).toBe('300');

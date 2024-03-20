@@ -55,7 +55,7 @@ describe('composables::blockchain/balances/index', () => {
     vi.clearAllMocks();
   });
 
-  describe('fetchBlockchainBalances', async () => {
+  describe('fetchBlockchainBalances', () => {
     it('all blockchain', async () => {
       await blockchainBalances.fetchBlockchainBalances();
 
@@ -86,7 +86,7 @@ describe('composables::blockchain/balances/index', () => {
       const { isLoading } = useStatusStore();
       const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
-      it('default', async () => {
+      it('default', () => {
         startPromise(call());
         assert();
       });

@@ -47,7 +47,7 @@ async function onSyncChange() {
   await update({ premiumShouldSync: get(sync) });
 }
 
-async function cancelEdit() {
+function cancelEdit() {
   set(edit, false);
   set(apiKey, '');
   set(apiSecret, '');

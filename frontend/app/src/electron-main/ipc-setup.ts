@@ -157,16 +157,15 @@ function setupVersionInfo() {
 }
 
 function setupSelectedTheme() {
-  ipcMain.on(IPC_THEME, async (event, selectedTheme: number) => {
-    // @ts-expect-error
-    nativeTheme.themeSource = ['dark', 'system', 'light'][selectedTheme];
-
+  ipcMain.on(IPC_THEME, (event, selectedTheme: number) => {
+    const themeSource = ['dark', 'system', 'light'] as const;
+    nativeTheme.themeSource = themeSource[selectedTheme];
     event.sender.send(IPC_THEME, nativeTheme.shouldUseDarkColors);
   });
 }
 
 function setupTrayInterop(trayManager: TrayManager) {
-  ipcMain.on(IPC_TRAY_UPDATE, async (event, trayUpdate: TrayUpdate) => {
+  ipcMain.on(IPC_TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
     trayManager.update(trayUpdate);
   });
 }

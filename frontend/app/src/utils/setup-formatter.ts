@@ -4,7 +4,7 @@ export function setupFormatter(): void {
   if (!checkIfDevelopment())
     return;
 
-  // @ts-expect-error
+  // @ts-expect-error object does not exist in window
   window.devtoolsFormatters = [
     {
       header: (obj: any): unknown[] | null => {

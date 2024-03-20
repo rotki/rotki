@@ -288,7 +288,7 @@ export function useMessageHandling() {
     notifications.forEach(notify);
   };
 
-  const handlePollingMessage = async (message: string, isWarning: boolean) => {
+  const handlePollingMessage = (message: string, isWarning: boolean) => {
     const notifications: Notification[] = [];
 
     try {
@@ -298,13 +298,13 @@ export function useMessageHandling() {
       else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
-        await handleEvmTransactionsStatus(object);
+        handleEvmTransactionsStatus(object);
       else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        await handleEvmUndecodedTransaction(object);
+        handleEvmUndecodedTransaction(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
-        await updateDbUpgradeStatus(object);
+        updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
-        await updateDataMigrationStatus(object);
+        updateDataMigrationStatus(object);
       else
         logger.error('unsupported message:', message);
     }

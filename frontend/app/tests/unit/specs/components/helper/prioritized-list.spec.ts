@@ -19,6 +19,24 @@ Vue.use(PiniaVuePlugin);
 describe('prioritizedList.vue', () => {
   let wrapper: Wrapper<any>;
 
+  const emittedInputEventItems = (): string[] => {
+    expect(wrapper.emitted()?.input?.length).toBe(1);
+    const emitted = wrapper.emitted()?.input?.[0];
+    return emitted?.[0] ?? [];
+  };
+
+  const entryOrderOf = (
+    entries: WrapperArray<PrioritizedListEntry>,
+  ): string[] => {
+    const entryIds: string[] = [];
+    entries.wrappers.forEach(
+      (wrapper: Wrapper<PrioritizedListEntry, Element>) => {
+        entryIds.push(wrapper.props().data.identifier);
+      },
+    );
+    return entryIds;
+  };
+
   const createWrapper = (options: ThisTypedMountOptions<any>) => {
     const vuetify = new Vuetify();
     const pinia = createPinia();
@@ -99,24 +117,4 @@ describe('prioritizedList.vue', () => {
 
     expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3']);
   });
-
-  const entryOrderOf = (
-    entries: WrapperArray<PrioritizedListEntry>,
-  ): string[] => {
-    const entryIds: string[] = [];
-    entries.wrappers.forEach(
-      (wrapper: Wrapper<PrioritizedListEntry, Element>) => {
-        entryIds.push(wrapper.props().data.identifier);
-      },
-    );
-    return entryIds;
-  };
-
-  const emittedInputEventItems = (): string[] => {
-    // @ts-expect-error
-    expect(wrapper.emitted().input.length).toBe(1);
-    // @ts-expect-error
-    const emitted = wrapper.emitted().input[0];
-    return emitted[0];
-  };
 });

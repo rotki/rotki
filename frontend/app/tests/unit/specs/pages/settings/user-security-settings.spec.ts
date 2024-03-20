@@ -34,7 +34,7 @@ describe('userSecuritySettings.vue', () => {
     wrapper = createWrapper();
   });
 
-  it('displays no warning by default', async () => {
+  it('displays no warning by default', () => {
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(false);
   });
 

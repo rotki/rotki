@@ -26,7 +26,7 @@ describe('historyEventForm.vue', () => {
     });
   };
 
-  it('should show correct form based on the entryType', () => {
+  it('should show correct form based on the entryType', async () => {
     wrapper = createWrapper();
 
     const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
@@ -35,14 +35,15 @@ describe('historyEventForm.vue', () => {
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
 
-    Object.values(HistoryEventEntryType).forEach(async (item) => {
+    const values = Object.values(HistoryEventEntryType);
+    for (const value of values) {
       await entryTypeInput.trigger('input', {
-        value: item,
+        value,
       });
       nextTick(() => {
-        const id = item.split(/ /g).join('-');
+        const id = value.split(/ /g).join('-');
         expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
       });
-    });
+    }
   });
 });

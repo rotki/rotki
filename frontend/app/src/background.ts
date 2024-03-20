@@ -15,6 +15,26 @@ const isDevelopment = checkIfDevelopment();
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
+let win: BrowserWindow | null;
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+const pyHandler = new SubprocessHandler(app);
+
+const menuActions = {
+  displayTray: (display: boolean): void => {
+    const applicationMenu = Menu.getApplicationMenu();
+    if (applicationMenu) {
+      const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
+      if (menuItem)
+        menuItem.enabled = display;
+    }
+
+    if (display)
+      trayManager?.build();
+    else
+      trayManager?.destroy();
+  },
+};
 
 async function onActivate(): Promise<void> {
   // On macOS it's common to re-create a window in the app when the
@@ -129,27 +149,6 @@ function ensureSafeUpdateRestart(): void {
   app.removeAllListeners('before-quit');
 }
 
-const menuActions = {
-  displayTray: (display: boolean): void => {
-    const applicationMenu = Menu.getApplicationMenu();
-    if (applicationMenu) {
-      const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
-      if (menuItem)
-        menuItem.enabled = display;
-    }
-
-    if (display)
-      trayManager?.build();
-    else
-      trayManager?.destroy();
-  },
-};
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win: BrowserWindow | null;
-const pyHandler = new SubprocessHandler(app);
-
 // Standard scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   {
@@ -234,7 +233,7 @@ async function createWindow(): Promise<BrowserWindow> {
     }
   });
 
-  win.on('closed', async () => {
+  win.on('closed', () => {
     try {
       if (process.platform === 'darwin' && !forceQuit)
         win?.hide();

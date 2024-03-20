@@ -51,7 +51,7 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const fetchEvmTransactionsTask = async (
+  const fetchEvmTransactionsTask = (
     payload: TransactionRequestPayload,
   ): Promise<PendingTask> =>
     internalEvmTransactions<PendingTask>(payload, true);

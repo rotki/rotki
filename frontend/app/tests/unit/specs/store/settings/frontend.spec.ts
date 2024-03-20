@@ -102,7 +102,7 @@ describe('settings:frontend', () => {
     await expect(store.updateSetting({})).rejects.toBeInstanceOf(Error);
   });
 
-  it('restore', async () => {
+  it('restore', () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
       defiSetupDone: true,

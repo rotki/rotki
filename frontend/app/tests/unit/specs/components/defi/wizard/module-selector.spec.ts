@@ -40,7 +40,7 @@ describe('moduleSelector.vue', () => {
     api.setSettings = vi.fn();
   });
 
-  it('displays active modules', async () => {
+  it('displays active modules', () => {
     expect(
       (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
     ).toBeTruthy();
