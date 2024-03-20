@@ -31,13 +31,13 @@ SCROLL_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         node_info=ONE_RPC_SCROLL_NODE,
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=BLOCKPI_SCROLL_NODE,
         active=True,
         weight=FVal('0.25'),
-    ), WeightedNode(
+    ),), (WeightedNode(
         node_info=ANKR_SCROLL_NODE,
         active=True,
         weight=FVal('0.25'),
-    ))],
+    ),)],
 )
