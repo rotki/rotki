@@ -11,6 +11,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS,
     SUPPORTED_NON_BITCOIN_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     BTCAddress,
@@ -47,9 +48,10 @@ class BlockchainBalances:
     ksm: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     dot: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     avax: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    zksync_lite: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     @overload
-    def get(self, chain: SUPPORTED_EVM_CHAINS) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
+    def get(self, chain: SUPPORTED_EVM_CHAINS | SUPPORTED_EVMLIKE_CHAINS) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:  # noqa: E501
         ...
 
     @overload

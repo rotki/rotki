@@ -29,6 +29,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.BASE: A_ETH,
         SupportedBlockchain.GNOSIS: A_XDAI,
         SupportedBlockchain.SCROLL: A_ETH,
+        SupportedBlockchain.ZKSYNC_LITE: A_ETH,
     }
     for chain in SupportedBlockchain:
         assert expected_assets[chain] == Asset(chain.get_native_token_id())

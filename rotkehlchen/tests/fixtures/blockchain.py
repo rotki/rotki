@@ -151,6 +151,11 @@ def fixture_scroll_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='zksync_lite_accounts')
+def fixture_zksync_lite_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -195,6 +200,7 @@ def fixture_blockchain_accounts(
         base_accounts: list[ChecksumEvmAddress],
         gnosis_accounts: list[ChecksumEvmAddress],
         scroll_accounts: list[ChecksumEvmAddress],
+        zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -209,6 +215,7 @@ def fixture_blockchain_accounts(
         base=tuple(base_accounts),
         gnosis=tuple(gnosis_accounts),
         scroll=tuple(scroll_accounts),
+        zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),

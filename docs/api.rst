@@ -2203,6 +2203,13 @@ Getting all supported chains
                     "native_token": "XDAI",
                     "image": "gnosis.svg",
                     "evm_chain_name": "gnosis"
+                },
+                {
+                    "id": "zksync_lite",
+                    "name": "zksync",
+                    "type": "evmlike",
+                    "native_token": "ETH",
+                    "image": "zksync_lite.svg",
                 }
             ],
             "message": ""

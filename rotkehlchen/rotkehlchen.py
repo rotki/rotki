@@ -211,7 +211,7 @@ class Rotkehlchen:
                     greenlet.dead is False and
                     len(greenlet.args) >= 1 and
                     isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.get_evm_transactions'
+                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_evm_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and
