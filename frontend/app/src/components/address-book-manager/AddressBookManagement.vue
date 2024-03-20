@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Ref } from 'vue';
 import type {
   AddressBookEntry,
@@ -11,7 +10,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/address-book';
 
-const selectedChain: Ref<Blockchain | null> = ref(null);
+const selectedChain: Ref<string | null> = ref(null);
 const enableForAllChains: Ref<boolean> = ref(false);
 
 const tab = ref<number>(0);

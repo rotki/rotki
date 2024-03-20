@@ -1,4 +1,3 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type Eth2ValidatorEntry,
   Eth2Validators,
@@ -15,8 +14,9 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus,
 } from '@/services/utils';
+import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { ActionResult } from '@rotki/common/lib/data';
-import type { BtcChains } from '@/types/blockchain/chains';
 import type { Eth2Validator } from '@/types/balances';
 import type {
   BlockchainAccountPayload,
@@ -156,10 +156,7 @@ export function useBlockchainAccountsApi() {
     payload: BlockchainAccountPayload,
   ): Promise<GeneralAccountData[]> => {
     const { blockchain } = payload;
-    assert(
-      ![Blockchain.BTC, Blockchain.BCH].includes(blockchain),
-      'call editBtcAccount for btc',
-    );
+    assert(!isBtcChain(blockchain), 'call editBtcAccount for btc');
     const response = await api.instance.patch<
       ActionResult<GeneralAccountData[]>
     >(

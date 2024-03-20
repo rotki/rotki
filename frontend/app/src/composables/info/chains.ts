@@ -62,10 +62,10 @@ export const useSupportedChains = createSharedComposable(() => {
     x => x.evmChainName,
   );
 
-  const isEvm = (chain: MaybeRef<Blockchain>) =>
+  const isEvm = (chain: MaybeRef<string>) =>
     useArrayInclude(evmChains, chain);
 
-  const supportsTransactions = (chain: MaybeRef<Blockchain>): boolean => {
+  const supportsTransactions = (chain: MaybeRef<string>): boolean => {
     const chains = get(txEvmChains);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);

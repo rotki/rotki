@@ -8,7 +8,7 @@ import type {
 } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
-  blockchain: Blockchain;
+  blockchain: string;
   allEvmChains: boolean;
 }>();
 

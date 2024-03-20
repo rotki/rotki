@@ -2,7 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 
-export function useTokenDetection(chain: MaybeRef<Blockchain>, accountAddress: MaybeRef<string | null> = null) {
+export function useTokenDetection(chain: MaybeRef<string>, accountAddress: MaybeRef<string | null> = null) {
   const { isTaskRunning } = useTaskStore();
   const {
     getEthDetectedTokensInfo,

@@ -41,7 +41,7 @@ export function useBlockchainAccounts() {
   const { t } = useI18n();
 
   const addAccount = async (
-    blockchain: Blockchain,
+    blockchain: string,
     { address, label, tags, xpub }: AccountPayload,
   ): Promise<string> => {
     const taskType = TaskType.ADD_ACCOUNT;
@@ -224,13 +224,13 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const fetch = async (blockchain: Blockchain) => {
+  const fetch = async (blockchain: string): Promise<void> => {
     if (isBtcChain(blockchain))
-      return await fetchBtcAccounts(blockchain);
+      await fetchBtcAccounts(blockchain);
     else if (isRestChain(blockchain) || blockchain === Blockchain.ETH)
-      return await fetchBlockchainAccounts(blockchain);
+      await fetchBlockchainAccounts(blockchain);
     else if (blockchain === Blockchain.ETH2)
-      return await fetchEth2Validators();
+      await fetchEth2Validators();
   };
 
   const removeTag = (tag: string) => {
