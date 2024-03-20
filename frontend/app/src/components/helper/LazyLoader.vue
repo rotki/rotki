@@ -11,8 +11,12 @@ const height: Ref<string> = ref('auto');
 
 useIntersectionObserver(
   wrapper,
-  ([{ isIntersecting }]) => {
-    set(appear, isIntersecting);
+  ([{ rootBounds, boundingClientRect }]) => {
+    const isInVerticalViewport
+      = rootBounds && ((boundingClientRect.top < rootBounds.bottom && boundingClientRect.bottom > rootBounds.top)
+      || (boundingClientRect.bottom > rootBounds.top && boundingClientRect.top < rootBounds.bottom));
+
+    set(appear, isInVerticalViewport);
   },
 );
 

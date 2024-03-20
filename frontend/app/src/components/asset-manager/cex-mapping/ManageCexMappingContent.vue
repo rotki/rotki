@@ -93,10 +93,8 @@ const dialogTitle = computed<string>(() =>
 
 <template>
   <TablePageLayout
-    :title="[
-      t('navigation_menu.manage_assets'),
-      t('navigation_menu.manage_assets_sub.cex_mapping'),
-    ]"
+    child
+    class="md:-mt-[4.5rem]"
   >
     <template #buttons>
       <RuiButton
