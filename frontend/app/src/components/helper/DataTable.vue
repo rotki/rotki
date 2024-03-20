@@ -91,7 +91,7 @@ const itemsPerPageUsed = computed(
   () => get(options)?.itemsPerPage ?? get(itemsPerPageFromFrontendSetting),
 );
 
-async function onItemsPerPageChange(newValue: number) {
+function onItemsPerPageChange(newValue: number) {
   if (get(itemsPerPageFromFrontendSetting) === newValue)
     return;
 

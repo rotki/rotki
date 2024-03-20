@@ -382,7 +382,7 @@ const interop = useInterop();
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 
-  window.addEventListener('keydown', async (event) => {
+  window.addEventListener('keydown', (event) => {
     // Mac use Command, Others use Control
     if (
       ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey))

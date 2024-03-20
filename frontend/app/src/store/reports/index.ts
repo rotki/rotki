@@ -110,26 +110,53 @@ export const useReportsStore = defineStore('reports', () => {
 
   const { getProgress } = useHistoryApi();
 
+  const isLatestReport = (reportId: number) => computed<boolean>(() => get(lastGeneratedReport) === reportId);
+
+  const checkProgress = () => {
+    const interval = setInterval(() => {
+      getProgress()
+        .then(progress => set(reportProgress, progress))
+        .catch(() => {
+          // if the request fails (e.g. user logged out) it stops the interval
+          clearInterval(interval);
+        });
+    }, 2000);
+    return interval;
+  };
+
   const createCsv = async (path: string): Promise<void> => {
     let message: Message;
     try {
       const success = await exportReportCSV(path);
       message = {
-        title: t('actions.reports.csv_export.title').toString(),
+        title: t('actions.reports.csv_export.title'),
         description: success
-          ? t('actions.reports.csv_export.message.success').toString()
-          : t('actions.reports.csv_export.message.failure').toString(),
+          ? t('actions.reports.csv_export.message.success')
+          : t('actions.reports.csv_export.message.failure'),
         success,
       };
     }
     catch (error: any) {
       message = {
-        title: t('actions.reports.csv_export.title').toString(),
+        title: t('actions.reports.csv_export.title'),
         description: error.message,
         success: false,
       };
     }
     setMessage(message);
+  };
+
+  const fetchReports = async (): Promise<void> => {
+    try {
+      set(reports, await fetchReportsCaller());
+    }
+    catch (error: any) {
+      notify({
+        title: t('actions.reports.fetch.error.title'),
+        message: value => t('actions.reports.fetch.error.description', value),
+        error,
+      });
+    }
   };
 
   const deleteReport = async (reportId: number): Promise<void> => {
@@ -139,9 +166,8 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.reports.delete.error.title').toString(),
-        message: values =>
-          t('actions.reports.delete.error.description', values).toString(),
+        title: t('actions.reports.delete.error.title'),
+        message: values => t('actions.reports.delete.error.description', values),
         error,
       });
     }
@@ -203,28 +229,13 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.reports.fetch.error.title').toString(),
-        message: value =>
-          t('actions.reports.fetch.error.description', value).toString(),
+        title: t('actions.reports.fetch.error.title'),
+        message: value => t('actions.reports.fetch.error.description', value),
         error,
       });
       return false;
     }
     return true;
-  };
-
-  const fetchReports = async (): Promise<void> => {
-    try {
-      set(reports, await fetchReportsCaller());
-    }
-    catch (error: any) {
-      notify({
-        title: t('actions.reports.fetch.error.title').toString(),
-        message: value =>
-          t('actions.reports.fetch.error.description', value).toString(),
-        error,
-      });
-    }
   };
 
   const generateReport = async (
@@ -245,7 +256,7 @@ export const useReportsStore = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: t('actions.reports.generate.task.title').toString(),
+          title: t('actions.reports.generate.task.title'),
         },
       );
 
@@ -258,7 +269,7 @@ export const useReportsStore = defineStore('reports', () => {
           error: '',
           message: t('actions.reports.generate.error.description', {
             error: '',
-          }).toString(),
+          }),
         });
       }
       return result;
@@ -267,7 +278,7 @@ export const useReportsStore = defineStore('reports', () => {
       if (!isTaskCancelled(error)) {
         set(reportError, {
           error: error.message,
-          message: t('actions.reports.generate.error.description').toString(),
+          message: t('actions.reports.generate.error.description'),
         });
       }
       return -1;
@@ -280,19 +291,6 @@ export const useReportsStore = defineStore('reports', () => {
         totalProgress: '0',
       });
     }
-  };
-
-  const checkProgress = () => {
-    const interval = setInterval(async (): Promise<void> => {
-      try {
-        set(reportProgress, await getProgress());
-      }
-      catch {
-        // if the request fails (e.g. user logged out) it stops the interval
-        clearInterval(interval);
-      }
-    }, 2000);
-    return interval;
   };
 
   const exportReportData = async (
@@ -313,7 +311,7 @@ export const useReportsStore = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: t('actions.reports.generate.task.title').toString(),
+          title: t('actions.reports.generate.task.title'),
           // TODO skip transform?
         },
       );
@@ -324,7 +322,7 @@ export const useReportsStore = defineStore('reports', () => {
       if (!isTaskCancelled(error)) {
         set(reportError, {
           error: error.message,
-          message: t('actions.reports.generate.error.description').toString(),
+          message: t('actions.reports.generate.error.description'),
         });
       }
 
@@ -342,9 +340,6 @@ export const useReportsStore = defineStore('reports', () => {
 
   const progress = computed(() => get(reportProgress).totalProgress);
   const processingState = computed(() => get(reportProgress).processingState);
-
-  const isLatestReport = (reportId: number): ComputedRef<boolean> =>
-    computed(() => get(lastGeneratedReport) === reportId);
 
   const clearError = (): void => {
     set(reportError, emptyError());

@@ -97,8 +97,10 @@ const rules = {
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -138,7 +140,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EthBlockEvent) {
+function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
@@ -156,7 +158,7 @@ async function applyEditableData(entry: EthBlockEvent) {
   set(isMevReward, entry.eventSubtype === 'mev reward');
 }
 
-async function applyGroupHeaderData(entry: EthBlockEvent) {
+function applyGroupHeaderData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
@@ -209,9 +211,6 @@ async function save(): Promise<boolean> {
 }
 
 setSubmitFunc(save);
-
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 function checkPropsData() {
   const editable = get(editableItem);
