@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
 import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type { Ref } from 'vue';
-import type { DataTableHeader } from '@/types/vuetify';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
 import type {
   HistoricalPrice,
@@ -39,6 +39,7 @@ onMounted(async () => {
 });
 
 const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
+const sort: Ref<DataTableSortData> = ref([]);
 
 const formattedItems = computed<EditableMissingPrice[]>(() =>
   get(items).map((item) => {
@@ -117,27 +118,26 @@ const tableRef = ref<any>(null);
 
 const tableContainer = computed(() => get(tableRef)?.$el);
 
-const headers = computed<DataTableHeader[]>(() => [
+const headers = computed<DataTableColumn[]>(() => [
   {
-    text: t(
-      'profit_loss_report.actionable.missing_prices.headers.from_asset',
-    ).toString(),
-    value: 'fromAsset',
+    label: t('profit_loss_report.actionable.missing_prices.headers.from_asset'),
+    key: 'fromAsset',
+    sortable: true,
   },
   {
-    text: t(
-      'profit_loss_report.actionable.missing_prices.headers.to_asset',
-    ).toString(),
-    value: 'toAsset',
+    label: t('profit_loss_report.actionable.missing_prices.headers.to_asset'),
+    key: 'toAsset',
+    sortable: true,
   },
   {
-    text: t('common.datetime').toString(),
-    value: 'time',
+    label: t('common.datetime'),
+    key: 'time',
+    sortable: true,
   },
   {
-    text: t('common.price').toString(),
-    value: 'price',
-    sortable: false,
+    label: t('common.price'),
+    key: 'price',
+    align: 'end',
   },
 ]);
 
@@ -173,51 +173,51 @@ const css = useCssModule();
 
 <template>
   <div>
-    <DataTable
+    <RuiDataTable
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
         [css['table--pinned']]: isPinned,
       }"
-      :headers="headers"
-      :items="formattedItems"
-      :container="tableContainer"
+      :cols="headers"
+      :rows="formattedItems"
+      :scroller="tableContainer"
+      :sort.sync="sort"
       :dense="isPinned"
-      disable-floating-header
-      flat
+      row-attr=""
     >
-      <template #item="{ item }">
-        <tr :key="createKey(item)">
+      <template #item="{ row }">
+        <tr :key="createKey(row)">
           <td>
             <AssetDetails
               link
-              :asset="item.fromAsset"
+              :asset="row.fromAsset"
             />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
             <AssetDetails
               link
-              :asset="item.toAsset"
+              :asset="row.toAsset"
             />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
-            <DateDisplay :timestamp="item.time" />
+            <DateDisplay :timestamp="row.time" />
           </td>
           <td
             class="pb-1"
             :class="isPinned ? '!p-2' : 'py-3'"
           >
             <AmountInput
-              v-model="item.price"
+              v-model="row.price"
               :class="css.input"
               dense
-              :disabled="item.useRefreshedHistoricalPrice"
+              :disabled="row.useRefreshedHistoricalPrice"
               :label="
                 t('profit_loss_report.actionable.missing_prices.input_price')
               "
               variant="outlined"
               :success-messages="
-                item.saved
+                row.saved
                   ? [
                     t(
                       'profit_loss_report.actionable.missing_prices.price_is_saved',
@@ -225,14 +225,14 @@ const css = useCssModule();
                   ]
                   : []
               "
-              :error-messages="errorMessages[createKey(item)]"
-              @focus="delete errorMessages[createKey(item)]"
-              @input="delete errorMessages[createKey(item)]"
-              @blur="updatePrice(item)"
+              :error-messages="errorMessages[createKey(row)]"
+              @focus="delete errorMessages[createKey(row)]"
+              @input="delete errorMessages[createKey(row)]"
+              @blur="updatePrice(row)"
             >
               <template #append>
                 <RuiTooltip
-                  v-if="item.rateLimited"
+                  v-if="row.rateLimited"
                   :popper="{ placement: 'top' }"
                   :open-delay="400"
                   tooltip-class="max-w-[16rem]"
@@ -240,12 +240,12 @@ const css = useCssModule();
                 >
                   <template #activator>
                     <RuiButton
-                      :disabled="!!item.price || refreshing"
+                      :disabled="!!row.price || refreshing"
                       :loading="refreshing"
                       class="-mr-3 !py-[0.625rem] rounded-l-none"
                       size="sm"
                       color="primary"
-                      @click="refreshHistoricalPrice(item)"
+                      @click="refreshHistoricalPrice(row)"
                     >
                       <RuiIcon
                         size="20"
@@ -266,7 +266,7 @@ const css = useCssModule();
           </td>
         </tr>
       </template>
-    </DataTable>
+    </RuiDataTable>
     <slot
       name="actions"
       :items="formattedItems"
