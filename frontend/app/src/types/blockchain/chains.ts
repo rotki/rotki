@@ -21,15 +21,15 @@ export type EthChains = (typeof EthChains)[number];
 
 export type RestChains = (typeof RestChains)[number];
 
-export function isBtcChain(chain: Blockchain): chain is BtcChains {
+export function isBtcChain(chain: string): chain is BtcChains {
   return BtcChains.includes(chain as any);
 }
 
-export function isEthChain(chain: Blockchain): chain is EthChains {
+export function isEthChain(chain: string): chain is EthChains {
   return EthChains.includes(chain as any);
 }
 
-export function isRestChain(chain: Blockchain): chain is RestChains {
+export function isRestChain(chain: string): chain is RestChains {
   return RestChains.includes(chain as any);
 }
 

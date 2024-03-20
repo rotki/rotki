@@ -39,7 +39,7 @@ export const useBtcBalancesStore = defineStore('balances/btc', () => {
   const liabilities: Ref<Totals> = ref(defaultTotals());
 
   const update = (
-    chain: Blockchain,
+    chain: string,
     { perAccount, totals: updatedTotals }: BlockchainBalances,
   ) => {
     if (!isBtcChain(chain))

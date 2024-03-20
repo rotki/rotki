@@ -27,7 +27,7 @@ export function useBlockchainBalancesApi() {
 
   const queryBlockchainBalances = async (
     ignoreCache = false,
-    blockchain?: Blockchain,
+    blockchain?: string,
   ): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)

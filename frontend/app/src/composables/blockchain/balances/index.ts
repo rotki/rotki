@@ -1,4 +1,3 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -14,12 +13,12 @@ export function useBlockchainBalances() {
   const { update: updateEth, updatePrices: updateEthPrices } = useEthBalancesStore();
   const { update: updateBtc, updatePrices: updateBtcPrices } = useBtcBalancesStore();
   const { update: updateChains, updatePrices: updateChainPrices } = useChainBalancesStore();
-  const { getChainName } = useSupportedChains();
+  const { getChainName, supportedChains } = useSupportedChains();
   const { t } = useI18n();
   const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.BLOCKCHAIN);
 
   const handleFetch = async (
-    blockchain: Blockchain,
+    blockchain: string,
     ignoreCache = false,
   ): Promise<void> => {
     try {
@@ -63,7 +62,7 @@ export function useBlockchainBalances() {
   };
 
   const fetch = async (
-    blockchain: Blockchain,
+    blockchain: string,
     ignoreCache = false,
     periodic = false,
   ): Promise<void> => {
@@ -90,14 +89,12 @@ export function useBlockchainBalances() {
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
-    const chains: Blockchain[] = blockchain
+    const chains: string[] = blockchain
       ? [blockchain]
-      : Object.values(Blockchain);
+      : get(supportedChains).map(chain => chain.id);
 
     try {
-      await Promise.allSettled(
-        chains.map(chain => fetch(chain, ignoreCache, periodic)),
-      );
+      await awaitParallelExecution(chains, chain => chain, chain => fetch(chain, ignoreCache, periodic), 2);
     }
     catch (error: any) {
       logger.error(error);
