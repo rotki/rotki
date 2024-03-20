@@ -158,8 +158,10 @@ const rules = {
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -215,7 +217,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EvmHistoryEvent) {
+function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
@@ -241,7 +243,7 @@ async function applyEditableData(entry: EvmHistoryEvent) {
   set(extraData, entry.extraData || {});
 }
 
-async function applyGroupHeaderData(entry: EvmHistoryEvent) {
+function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(location, entry.location || get(lastLocation));
@@ -304,9 +306,6 @@ async function save(): Promise<boolean> {
 }
 
 setSubmitFunc(save);
-
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 watch(location, (location: string) => {
   if (location)

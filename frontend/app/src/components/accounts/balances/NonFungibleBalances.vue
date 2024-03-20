@@ -14,8 +14,7 @@ import type { ManualPriceFormPayload } from '@/types/prices';
 
 defineProps<{ modules: Module[] }>();
 
-const { fetchNonFungibleBalances, refreshNonFungibleBalances }
-  = useNonFungibleBalancesStore();
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
@@ -82,24 +81,33 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
-async function deletePrice(toDeletePrice: NonFungibleBalance) {
-  try {
-    await deleteLatestPrice(toDeletePrice.id);
-    await fetchData();
-  }
-  catch {
-    notify({
-      title: t('assets.custom_price.delete.error.title'),
-      message: t('assets.custom_price.delete.error.message', {
-        asset: toDeletePrice.name ?? toDeletePrice.id,
-      }),
-      display: true,
-    });
-  }
-}
-
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+
+const {
+  state: balances,
+  isLoading,
+  fetchData,
+  options,
+  setPage,
+  setTableOptions,
+} = usePaginationFilters<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload,
+  NonFungibleBalanceWithLastPrice
+>(null, true, useEmptyFilter, fetchNonFungibleBalances, {
+  onUpdateFilters(query) {
+    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+  },
+  extraParams,
+  defaultSortBy: {
+    key: 'lastPrice',
+    ascending: [false],
+  },
+});
+
+const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
+const { show } = useConfirmStore();
 
 const isIgnored = (identifier: string) => isAssetIgnored(identifier);
 
@@ -150,47 +158,21 @@ async function massIgnore(ignored: boolean) {
   }
 }
 
-watch(ignoredAssetsHandling, async () => {
-  setPage(1);
-});
-
-const {
-  state: balances,
-  isLoading,
-  fetchData,
-  options,
-  setPage,
-  setTableOptions,
-} = usePaginationFilters<
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload,
-  NonFungibleBalanceWithLastPrice
->(null, true, useEmptyFilter, fetchNonFungibleBalances, {
-  onUpdateFilters(query) {
-    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-  },
-  extraParams,
-  defaultSortBy: {
-    key: 'lastPrice',
-    ascending: [false],
-  },
-});
-
-const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
-
-onMounted(async () => {
-  await fetchData();
-  await refreshNonFungibleBalances();
-
-  setPostSubmitFunc(fetchData);
-});
-
-watch(loading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading)
+async function deletePrice(toDeletePrice: NonFungibleBalance) {
+  try {
+    await deleteLatestPrice(toDeletePrice.id);
     await fetchData();
-});
-
-const { show } = useConfirmStore();
+  }
+  catch {
+    notify({
+      title: t('assets.custom_price.delete.error.title'),
+      message: t('assets.custom_price.delete.error.message', {
+        asset: toDeletePrice.name ?? toDeletePrice.id,
+      }),
+      display: true,
+    });
+  }
+}
 
 function setPriceForm(item: NonFungibleBalance) {
   setOpenDialog(true);
@@ -212,6 +194,22 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
     () => deletePrice(item),
   );
 }
+
+onMounted(async () => {
+  await fetchData();
+  await refreshNonFungibleBalances();
+
+  setPostSubmitFunc(fetchData);
+});
+
+watch(ignoredAssetsHandling, () => {
+  setPage(1);
+});
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
+    await fetchData();
+});
 </script>
 
 <template>

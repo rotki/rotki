@@ -45,17 +45,17 @@ export function statisticsApi(): StatisticsApi {
   const { queryOwnedAssets } = useAssetManagementApi();
 
   return {
-    async assetValueDistribution(): Promise<TimedAssetBalances> {
+    assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
-    async locationValueDistribution(): Promise<LocationData> {
+    locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
-    async timedBalances(
+    timedBalances(
       asset: string,
       start: number,
       end: number,

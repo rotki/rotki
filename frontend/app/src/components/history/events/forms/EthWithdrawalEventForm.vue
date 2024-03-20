@@ -90,8 +90,10 @@ const rules = {
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -129,7 +131,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EthWithdrawalEvent) {
+function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
@@ -146,7 +148,7 @@ async function applyEditableData(entry: EthWithdrawalEvent) {
   set(isExit, entry.isExit);
 }
 
-async function applyGroupHeaderData(entry: EthWithdrawalEvent) {
+function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
@@ -197,9 +199,6 @@ async function save(): Promise<boolean> {
 }
 
 setSubmitFunc(save);
-
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 function checkPropsData() {
   const editable = get(editableItem);

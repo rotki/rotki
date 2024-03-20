@@ -251,7 +251,7 @@ onBeforeMount(async () => {
   }
 });
 
-onMounted(async () => {
+onMounted(() => {
   updateFocus();
 });
 

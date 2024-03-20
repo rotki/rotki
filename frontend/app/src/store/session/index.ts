@@ -36,19 +36,38 @@ export const useSessionStore = defineStore('session', () => {
 
   const { setMessage } = useMessageStore();
 
-  const { checkForUpdates, resetTray, isPackaged, clearPassword }
-    = useInterop();
+  const { checkForUpdates, resetTray, isPackaged, clearPassword } = useInterop();
   const { awaitTask } = useTaskStore();
 
   const { t } = useI18n();
   const { start } = useMonitorStore();
 
-  const unlock = async ({
+  const createActionStatus = (error: any): ActionStatus => {
+    let message = '';
+    if (error instanceof IncompleteUpgradeError) {
+      set(incompleteUpgradeConflict, {
+        message: error.message,
+      });
+    }
+    else if (error instanceof SyncConflictError) {
+      set(syncConflict, {
+        message: error.message,
+        payload: error.payload,
+      });
+    }
+    else {
+      message = error.message;
+    }
+
+    return { success: false, message };
+  };
+
+  const unlock = ({
     settings,
     exchanges,
     fetchData,
     username: user,
-  }: UnlockPayload): Promise<ActionStatus> => {
+  }: UnlockPayload): ActionStatus => {
     try {
       initialize(settings, exchanges);
       set(username, user);
@@ -85,32 +104,12 @@ export const useSessionStore = defineStore('session', () => {
         username: payload.credentials.username,
         fetchData: payload.premiumSetup?.syncDatabase,
       };
-      return await unlock(data);
+      return unlock(data);
     }
     catch (error: any) {
       logger.error(error);
       return { success: false, message: error.message };
     }
-  };
-
-  const createActionStatus = (error: any): ActionStatus => {
-    let message = '';
-    if (error instanceof IncompleteUpgradeError) {
-      set(incompleteUpgradeConflict, {
-        message: error.message,
-      });
-    }
-    else if (error instanceof SyncConflictError) {
-      set(syncConflict, {
-        message: error.message,
-        payload: error.payload,
-      });
-    }
-    else {
-      message = error.message;
-    }
-
-    return { success: false, message };
   };
 
   const login = async (
@@ -153,7 +152,7 @@ export const useSessionStore = defineStore('session', () => {
         ({ settings, exchanges } = account);
       }
 
-      return await unlock({
+      return unlock({
         settings,
         exchanges,
         username,

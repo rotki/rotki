@@ -125,7 +125,7 @@ function showConfirmation(payload: XpubPayload | string[]) {
       title: t('account_balances.confirm_delete.title'),
       message,
     },
-    async () => deleteAccount(payload),
+    async () => await deleteAccount(payload),
   );
 }
 

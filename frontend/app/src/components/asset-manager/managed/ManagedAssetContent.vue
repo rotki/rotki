@@ -104,11 +104,6 @@ async function confirmDelete(toDeleteAsset: SupportedAsset) {
   await deleteAssetHandler(toDeleteAsset.identifier);
 }
 
-watch(ignoredFilter, async (oldValue, newValue) => {
-  if (!isEqual(oldValue, newValue))
-    setPage(1);
-});
-
 const {
   filters,
   matchers,
@@ -189,6 +184,11 @@ onMounted(async () => {
 
 watch(identifier, async (assetId) => {
   await editAsset(assetId);
+});
+
+watch(ignoredFilter, (oldValue, newValue) => {
+  if (!isEqual(oldValue, newValue))
+    setPage(1);
 });
 </script>
 
