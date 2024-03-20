@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Sequence
+from sqlite3 import OperationalError
 from typing import TYPE_CHECKING, Any
 
 import requests
@@ -68,6 +69,7 @@ class RotkiDataUpdater:
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
             UpdateType.LOCATION_ASSET_MAPPINGS: self.update_location_asset_mappings,
+            UpdateType.LOCATION_UNSUPPORTED_ASSETS: self.update_location_unsupported_assets,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
         self.version = get_current_version().our_version
 
@@ -357,6 +359,32 @@ class RotkiDataUpdater:
                 update_function(entries=entries)  # type: ignore[operator]  # update_function is known
             except InputError as e:
                 log.error(f'Could not update {entry_type.__name__} due to {e!s}')
+
+    def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
+        """Applies location unsupported assets updates in the global DB"""
+        log.info(f'Applying update for location unsupported assets to v{version}')
+        for raw_data_key, update_query in (
+            ('insert', 'INSERT OR IGNORE INTO location_unsupported_assets(location, exchange_symbol) VALUES(?, ?);'),  # noqa: E501
+            ('remove', 'DELETE FROM location_unsupported_assets WHERE location = ? AND exchange_symbol = ?;'),  # noqa: E501
+        ):
+            raw_data: dict[str, list[str]] | None = data.get(raw_data_key)
+            if raw_data is None:
+                continue  # no data to update
+
+            for raw_location, exchange_symbols in raw_data.items():
+                try:
+                    location = Location.deserialize(raw_location).serialize_for_db()
+                except DeserializationError as e:
+                    log.error(f'Could not deserialize a valid location from {raw_location}: {e!s}')
+                    continue
+
+                try:
+                    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                        write_cursor.executemany(
+                            update_query, [(location, symbol) for symbol in exchange_symbols],
+                        )
+                except OperationalError as e:
+                    log.error(f'Could not {raw_data_key} location unsupported asset for {raw_location} due to: {e!s}')  # noqa: E501
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
         """Retrieve the information about the latest available update"""
