@@ -3,10 +3,9 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
 import { externalLinks } from '@/data/external-links';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
-  blockchain: Blockchain;
+  blockchain: string;
   inputMode: InputMode;
 }>();
 

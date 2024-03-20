@@ -58,15 +58,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
 
   const fetchDetected = async (
-    chain: Blockchain,
+    chain: string,
     addresses: string[],
   ): Promise<void> => {
-    await Promise.allSettled(
-      addresses.map(address => fetchDetectedTokens(chain, address)),
+    await awaitParallelExecution(
+      addresses,
+      address => address,
+      address => fetchDetectedTokens(chain, address),
+      2,
     );
   };
 
-  const setState = (chain: Blockchain, data: EvmTokensRecord) => {
+  const setState = (chain: string, data: EvmTokensRecord) => {
     const tokensVal = { ...get(tokensState) };
     set(tokensState, {
       ...tokensVal,
@@ -80,7 +83,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { notify } = useNotificationsStore();
 
   const fetchDetectedTokens = async (
-    chain: Blockchain,
+    chain: string,
     address: string | null = null,
   ) => {
     try {
@@ -137,7 +140,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const getEthDetectedTokensInfo = (
-    chain: MaybeRef<Blockchain>,
+    chain: MaybeRef<string>,
     address: MaybeRef<string | null>,
   ): ComputedRef<EthDetectedTokensInfo> =>
     computed(() => {

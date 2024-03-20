@@ -7,7 +7,6 @@ import {
   validWithSessionAndExternalService,
 } from '@/services/utils';
 import { EvmTokensRecord } from '@/types/balances';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { Nullable } from '@rotki/common';
 import type { Module } from '@/types/modules';
@@ -44,7 +43,7 @@ export function useBlockchainBalancesApi() {
   };
 
   const internalDetectedTokens = async <T>(
-    chain: Blockchain,
+    chain: string,
     addresses: string[] | null,
     asyncQuery: boolean,
   ): Promise<T> => {
@@ -63,14 +62,13 @@ export function useBlockchainBalancesApi() {
     return handleResponse(response);
   };
 
-  const fetchDetectedTokensTask = async (
-    chain: Blockchain,
+  const fetchDetectedTokensTask = (
+    chain: string,
     addresses: string[],
-  ): Promise<PendingTask> =>
-    internalDetectedTokens<PendingTask>(chain, addresses, true);
+  ): Promise<PendingTask> => internalDetectedTokens<PendingTask>(chain, addresses, true);
 
   const fetchDetectedTokens = async (
-    chain: Blockchain,
+    chain: string,
     addresses: string[] | null,
   ): Promise<EvmTokensRecord> => {
     const response = await internalDetectedTokens<EvmTokensRecord>(

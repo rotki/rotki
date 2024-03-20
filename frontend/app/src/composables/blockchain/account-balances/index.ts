@@ -57,8 +57,8 @@ export function useAccountBalances() {
       ),
     );
 
-  const getAccountsByChain = (blockchain: Blockchain): string[] => {
-    const mapping: Record<Blockchain, Ref<BlockchainAccountWithBalance[]>> = {
+  const getAccountsByChain = (blockchain: string): string[] => {
+    const mapping: Record<string, Ref<BlockchainAccountWithBalance[]>> = {
       [Blockchain.ETH]: ethAccounts,
       [Blockchain.ETH2]: eth2Accounts,
       [Blockchain.BTC]: btcAccounts,

@@ -24,9 +24,8 @@ export function useBlockchains() {
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
-  const { detectEvmAccounts: detectEvmAccountsCaller }
-    = useBlockchainAccountsApi();
-  const { getChainName, supportsTransactions, evmChains, isEvm } = useSupportedChains();
+  const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
+  const { getChainName, supportsTransactions, evmChains, isEvm, supportedChains } = useSupportedChains();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -37,7 +36,7 @@ export function useBlockchains() {
   );
 
   const getNewAccountPayload = (
-    chain: Blockchain,
+    chain: string,
     payload: AccountPayload[],
   ): AccountPayload[] => {
     const knownAddresses = getAccountsByChain(chain);
@@ -52,10 +51,11 @@ export function useBlockchains() {
   const { allAddressMapping } = useAccountsAddresses();
 
   const fetchAccounts = async (
-    blockchain?: Blockchain,
+    blockchain?: string,
     refreshEns: boolean = false,
   ): Promise<void> => {
-    const chains = blockchain ? [blockchain] : Object.values(Blockchain);
+    const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
+    await awaitParallelExecution(chains, chain => chain, fetch, 2);
     await Promise.allSettled(chains.map(fetch));
 
     const namesPayload: AddressBookSimplePayload[] = [];
@@ -74,7 +74,7 @@ export function useBlockchains() {
   };
 
   const refreshAccounts = async (
-    blockchain?: MaybeRef<Blockchain>,
+    blockchain?: MaybeRef<string>,
     periodic = false,
   ) => {
     const chain = get(blockchain);
@@ -274,11 +274,11 @@ export function useBlockchains() {
 
       await refreshAccounts();
 
-      const chains = Object.values(Blockchain);
+      const chains = get(supportedChains).map(chain => chain.id);
 
       // Sort accounts by chain, so they are called in order
       const accounts = accountsToFinish.sort((a, b) => chains.indexOf(a.chain) - chains.indexOf(b.chain));
-      await awaitParallelExecution(accounts, item => item.address + item.chain, finishAddition);
+      await awaitParallelExecution(accounts, item => item.address + item.chain, finishAddition, 2);
     };
 
     startPromise(finish());

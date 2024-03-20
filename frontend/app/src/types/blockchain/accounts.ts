@@ -37,7 +37,7 @@ export interface XpubPayload {
 }
 
 export interface BasicBlockchainAccountPayload {
-  readonly blockchain: Blockchain;
+  readonly blockchain: string;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];
   readonly modules?: Module[];
@@ -60,7 +60,7 @@ export interface ExchangeBalancePayload {
 }
 
 export interface BlockchainBalancePayload {
-  readonly blockchain?: Blockchain;
+  readonly blockchain?: string;
   readonly ignoreCache: boolean;
 }
 
@@ -106,7 +106,7 @@ export interface BaseAddAccountsPayload {
 }
 
 export interface AddAccountsPayload extends BaseAddAccountsPayload {
-  readonly blockchain: Blockchain;
+  readonly blockchain: string;
 }
 
 // todo: flatten balance

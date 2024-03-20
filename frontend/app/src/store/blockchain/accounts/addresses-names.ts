@@ -28,6 +28,7 @@ export const useAddressesNamesStore = defineStore(
     const { t } = useI18n();
 
     const { notify } = useNotificationsStore();
+    const { supportedChains } = useSupportedChains();
 
     const {
       getEnsNames,
@@ -119,7 +120,7 @@ export const useAddressesNamesStore = defineStore(
         return ensAvatarUrl(ens, get(lastRefreshedAvatar));
       });
 
-    const createKey = (address: string, blockchain: Blockchain) =>
+    const createKey = (address: string, blockchain: string) =>
       `${address}#${blockchain}`;
 
     const fetchAddressesNames = async (keys: string[]) => {
@@ -169,7 +170,7 @@ export const useAddressesNamesStore = defineStore(
       reset: resetAddressesNames,
     } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-    const getAddressesWithoutNames = (blockchain?: MaybeRef<Blockchain | null>): ComputedRef<string[]> => computed(() => {
+    const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed(() => {
       const chain = get(blockchain);
       const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
       return entries
@@ -201,9 +202,9 @@ export const useAddressesNamesStore = defineStore(
 
     const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
       items.forEach((item) => {
-        const chains: Blockchain[] = item.blockchain
+        const chains: string[] = item.blockchain
           ? [item.blockchain]
-          : Object.values(Blockchain);
+          : get(supportedChains).map(chain => chain.id);
 
         chains.forEach((chain) => {
           const key = createKey(item.address, chain);
