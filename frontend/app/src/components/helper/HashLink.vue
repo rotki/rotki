@@ -2,9 +2,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
 import {
-  type Chains,
   type ExplorerUrls,
   explorerUrls,
+  isChains,
 } from '@/types/asset/asset-urls';
 
 const props = withDefaults(
@@ -15,7 +15,7 @@ const props = withDefaults(
     linkOnly?: boolean;
     noLink?: boolean;
     baseUrl?: string;
-    chain?: Chains;
+    chain?: string;
     evmChain?: string;
     buttons?: boolean;
     size?: number | string;
@@ -46,10 +46,8 @@ const props = withDefaults(
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName, location }
-  = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier }
-  = useScramble();
+const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName, location } = toRefs(props);
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { getChain, getChainInfoByName } = useSupportedChains();
@@ -99,18 +97,20 @@ const base = computed<string>(() => {
     return get(baseUrl);
 
   const selectedChain = get(blockchain);
-  const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
-  const linkType = get(type);
   let base: string | undefined;
+  if (isChains(selectedChain)) {
+    const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
+    const linkType = get(type);
 
-  if (selectedChain === 'zksync') {
-    base = defaultExplorer[linkType];
-  }
-  else {
-    const explorerSetting = get(explorers)[selectedChain];
+    if (selectedChain === 'zksync') {
+      base = defaultExplorer[linkType];
+    }
+    else {
+      const explorerSetting = get(explorers)[selectedChain];
 
-    if (explorerSetting || defaultExplorer)
-      base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
+      if (explorerSetting || defaultExplorer)
+        base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
+    }
   }
 
   if (!base)

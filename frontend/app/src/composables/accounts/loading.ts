@@ -1,5 +1,4 @@
 import { TaskType } from '@/types/task-type';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 export const useAccountLoading = createSharedComposable(() => {
   const pending = ref<boolean>(false);
@@ -16,7 +15,7 @@ export const useAccountLoading = createSharedComposable(() => {
   );
 
   const isAccountOperationRunning = (
-    blockchain?: Blockchain,
+    blockchain?: string,
   ): ComputedRef<boolean> =>
     logicOr(
       isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {}),

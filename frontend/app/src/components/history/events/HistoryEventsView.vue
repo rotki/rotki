@@ -22,10 +22,7 @@ import type { Collection } from '@/types/collection';
 import type { DataTableHeader } from '@/types/vuetify';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { ComputedRef, Ref } from 'vue';
-import type {
-  Blockchain,
-  BlockchainSelection,
-} from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Account, GeneralAccount } from '@rotki/common/lib/account';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
@@ -93,7 +90,7 @@ const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || t('transactions.title'),
 );
 
-const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
+const usedAccounts: ComputedRef<Account[]> = computed(
   () => {
     if (get(useExternalAccountFilter))
       return get(externalAccountFilter);
@@ -307,7 +304,7 @@ const unDecodedLocations = computed<EvmUndecodedTransactionsData[]>(() =>
   }),
 );
 
-function onFilterAccountsChanged(acc: Account<BlockchainSelection>[]) {
+function onFilterAccountsChanged(acc: Account[]) {
   set(userAction, true);
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 }

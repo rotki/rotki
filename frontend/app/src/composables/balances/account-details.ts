@@ -4,7 +4,7 @@ import type { AssetBalance } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
-export function useAccountDetails(blockchain: MaybeRef<Blockchain>, address: MaybeRef<string> = '') {
+export function useAccountDetails(blockchain: MaybeRef<string>, address: MaybeRef<string> = '') {
   const ethBalancesStore = useEthBalancesStore();
   const { getLoopringAssetBalances } = ethBalancesStore;
   const { balances: ethBalances, loopring } = storeToRefs(ethBalancesStore);

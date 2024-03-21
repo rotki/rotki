@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import {
-  Blockchain,
-  type BlockchainSelection,
-} from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
 import type { Account } from '@rotki/common/lib/account';
 
 const props = withDefaults(
   defineProps<{
-    account: Account<BlockchainSelection>;
+    account: Account;
     useAliasName?: boolean;
     truncate?: boolean;
     hideChainIcon?: boolean;

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
-import {
-  Blockchain,
-  type BlockchainSelection,
-} from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import type { GeneralAccount } from '@rotki/common/lib/account';
 import type { ComputedRef } from 'vue';
 
-type AccountWithChain = GeneralAccount<BlockchainSelection>;
+type AccountWithChain = GeneralAccount;
 
 const props = withDefaults(
   defineProps<{
@@ -133,9 +130,7 @@ const { addressNameSelector } = useAddressesNamesStore();
 
 function filter(item: AccountWithChain, queryText: string) {
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
-  const text = (
-    get(addressNameSelector(item.address, chain)) ?? ''
-  ).toLowerCase();
+  const text = (get(addressNameSelector(item.address, chain)) ?? '').toLowerCase();
   const address = item.address.toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
 
@@ -151,7 +146,7 @@ function filter(item: AccountWithChain, queryText: string) {
 }
 
 function filterOutElements(
-  lastElement: GeneralAccount<BlockchainSelection>,
+  lastElement: GeneralAccount,
   nextValue: AccountWithChain[],
 ): AccountWithChain[] {
   if (lastElement.chain === 'ALL') {

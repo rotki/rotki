@@ -19,7 +19,7 @@ import type { Balance } from '@rotki/common';
 const props = withDefaults(
   defineProps<{
     balances: BlockchainAccountWithBalance[];
-    blockchain: Blockchain;
+    blockchain: string;
     visibleTags: string[];
     selected: string[];
     loopring?: boolean;

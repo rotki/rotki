@@ -1,5 +1,4 @@
 import type { Balance } from '@rotki/common';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Account } from '@rotki/common/lib/account';
 import type { DefiProtocol } from '@/types/modules';
 
@@ -21,13 +20,6 @@ export interface DefiLoan {
   readonly owner?: string;
 }
 
-export interface AssetMovement {
-  readonly asset: string;
-  readonly value: Balance;
-  readonly toAsset: string;
-  readonly toValue: Balance;
-}
-
 export enum ProtocolVersion {
   V1 = 'v1',
   V2 = 'v2',
@@ -40,6 +32,6 @@ export interface ProtocolMetadata {
   iconUrl?: string;
 }
 
-export interface DefiAccount<T = Blockchain> extends Account<T> {
+export interface DefiAccount extends Account {
   readonly protocols: DefiProtocol[];
 }
