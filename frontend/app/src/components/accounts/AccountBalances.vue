@@ -11,7 +11,7 @@ import type {
 const props = withDefaults(
   defineProps<{
     balances: AccountWithBalance[];
-    blockchain: Blockchain;
+    blockchain: string;
     title: string;
     loopring?: boolean;
   }>(),

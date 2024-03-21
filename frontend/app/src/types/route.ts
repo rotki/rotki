@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   Blockchain,
-  type BlockchainSelection,
 } from '@rotki/common/lib/blockchain';
 import type { Dictionary } from 'vue-router/types/router';
 import type { Account } from '@rotki/common/lib/account';
@@ -44,7 +43,7 @@ export const RouterAccountsSchema = z.object({
     .or(z.string())
     .transform((val) => {
       const arr = Array.isArray(val) ? val : [val];
-      const mapped: Account<BlockchainSelection>[] = [];
+      const mapped: Account[] = [];
       arr.forEach((entry) => {
         const parsed = entry.split('#');
         if (parsed.length === 2) {
@@ -54,7 +53,7 @@ export const RouterAccountsSchema = z.object({
           if (chain.toUpperCase() in Blockchain || chain === 'ALL') {
             mapped.push({
               address,
-              chain: chain as BlockchainSelection,
+              chain,
             });
           }
         }

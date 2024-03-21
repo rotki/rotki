@@ -1,58 +1,22 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { pickBy } from 'lodash-es';
+import type {
+  AccountWithBalance,
+  AccountWithBalanceAndSharedOwnership,
+  BlockchainAccountWithBalance,
+} from '@/types/blockchain/accounts';
 import type { ComputedRef, Ref } from 'vue';
 
+type Busy = Record<string, ComputedRef<boolean>>;
+
+type Account = AccountWithBalance | BlockchainAccountWithBalance | AccountWithBalanceAndSharedOwnership;
+
 const { t } = useI18n();
-
-type Intersections = {
-  [key in Blockchain]: boolean;
-};
-
-type Observers = {
-  [key in Blockchain]: (entries: IntersectionObserverEntry[]) => void;
-};
-
-type Busy = {
-  [key in Blockchain]: ComputedRef<boolean>;
-};
-
 const router = useRouter();
 const route = useRoute();
 
-onMounted(async () => {
-  const query = get(route).query;
-
-  if (query.add) {
-    createAccount();
-    await router.replace({ query: {} });
-  }
-});
-
-const intersections = ref<Intersections>({
-  [Blockchain.ETH]: false,
-  [Blockchain.ETH2]: false,
-  [Blockchain.BTC]: false,
-  [Blockchain.BCH]: false,
-  [Blockchain.KSM]: false,
-  [Blockchain.DOT]: false,
-  [Blockchain.AVAX]: false,
-  [Blockchain.OPTIMISM]: false,
-  [Blockchain.POLYGON_POS]: false,
-  [Blockchain.ARBITRUM_ONE]: false,
-  [Blockchain.BASE]: false,
-  [Blockchain.GNOSIS]: false,
-  [Blockchain.SCROLL]: false,
-});
-
-function updateWhenRatio(entries: IntersectionObserverEntry[], value: Blockchain) {
-  set(intersections, {
-    ...get(intersections),
-    [value]: entries[0].isIntersecting,
-  });
-}
-
 const { ethAccounts, eth2Accounts, loopringAccounts } = useEthAccountBalances();
+const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 const {
   ksmAccounts,
   dotAccounts,
@@ -64,70 +28,47 @@ const {
   gnosisAccounts,
   scrollAccounts,
 } = useChainAccountBalances();
-const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
-
-const context: ComputedRef<Blockchain> = computed(() => {
-  // pick only intersections that are visible (at least 50%)
-  const activeObservers = Object.keys(pickBy(get(intersections), e => e));
-
-  if (activeObservers.length > 0)
-    return activeObservers.at(-1) as Blockchain;
-
-  return Blockchain.ETH;
-});
-
-const observers: Observers = {
-  [Blockchain.ETH]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.ETH),
-  [Blockchain.ETH2]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.ETH2),
-  [Blockchain.BTC]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.BTC),
-  [Blockchain.BCH]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.BCH),
-  [Blockchain.KSM]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.KSM),
-  [Blockchain.DOT]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.DOT),
-  [Blockchain.AVAX]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.AVAX),
-  [Blockchain.OPTIMISM]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.OPTIMISM),
-  [Blockchain.POLYGON_POS]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.POLYGON_POS),
-  [Blockchain.ARBITRUM_ONE]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.ARBITRUM_ONE),
-  [Blockchain.BASE]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.BASE),
-  [Blockchain.GNOSIS]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.GNOSIS),
-  [Blockchain.SCROLL]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.SCROLL),
-};
-
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
-
-const busy: Busy = {
-  [Blockchain.ETH]: isAccountOperationRunning(Blockchain.ETH),
-  [Blockchain.ETH2]: isAccountOperationRunning(Blockchain.ETH2),
-  [Blockchain.BTC]: isAccountOperationRunning(Blockchain.BTC),
-  [Blockchain.BCH]: isAccountOperationRunning(Blockchain.BCH),
-  [Blockchain.KSM]: isAccountOperationRunning(Blockchain.KSM),
-  [Blockchain.DOT]: isAccountOperationRunning(Blockchain.DOT),
-  [Blockchain.AVAX]: isAccountOperationRunning(Blockchain.AVAX),
-  [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM),
-  [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS),
-  [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE),
-  [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE),
-  [Blockchain.GNOSIS]: isAccountOperationRunning(Blockchain.GNOSIS),
-  [Blockchain.SCROLL]: isAccountOperationRunning(Blockchain.SCROLL),
-};
-
-const threshold = [0.5];
-
 const { createAccount, editAccount } = useAccountDialog();
+const { supportedChains } = useSupportedChains();
+
+const busy = computed<Busy>(() => Object.fromEntries(
+  get(supportedChains).map(chain => ([chain.id, isAccountOperationRunning(chain.id)])),
+));
+
+const titles = computed<Record<string, string>>(() => ({
+  [Blockchain.ETH]: t('blockchain_balances.balances.eth'),
+  [Blockchain.ETH2]: t('blockchain_balances.balances.eth2'),
+  [Blockchain.BTC]: t('blockchain_balances.balances.btc'),
+  [Blockchain.BCH]: t('blockchain_balances.balances.bch'),
+  [Blockchain.KSM]: t('blockchain_balances.balances.ksm'),
+  [Blockchain.DOT]: t('blockchain_balances.balances.dot'),
+  [Blockchain.AVAX]: t('blockchain_balances.balances.avax'),
+  [Blockchain.OPTIMISM]: t('blockchain_balances.balances.optimism'),
+  [Blockchain.POLYGON_POS]: t('blockchain_balances.balances.polygon_pos'),
+  [Blockchain.ARBITRUM_ONE]: t('blockchain_balances.balances.arbitrum_one'),
+  [Blockchain.BASE]: t('blockchain_balances.balances.base'),
+  [Blockchain.GNOSIS]: t('blockchain_balances.balances.gnosis'),
+  [Blockchain.SCROLL]: t('blockchain_balances.balances.scroll'),
+}));
+
+const accounts = computed<Record<string, Account[]>>(() => ({
+  [Blockchain.ETH]: get(ethAccounts),
+  [Blockchain.ETH2]: get(eth2Accounts),
+  [Blockchain.BTC]: get(btcAccounts),
+  [Blockchain.BCH]: get(bchAccounts),
+  [Blockchain.KSM]: get(ksmAccounts),
+  [Blockchain.DOT]: get(dotAccounts),
+  [Blockchain.AVAX]: get(avaxAccounts),
+  [Blockchain.OPTIMISM]: get(optimismAccounts),
+  [Blockchain.POLYGON_POS]: get(polygonAccounts),
+  [Blockchain.ARBITRUM_ONE]: get(arbitrumAccounts),
+  [Blockchain.BASE]: get(baseAccounts),
+  [Blockchain.GNOSIS]: get(gnosisAccounts),
+  [Blockchain.SCROLL]: get(scrollAccounts),
+}));
 
 const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   () =>
@@ -140,6 +81,19 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     || get(gnosisAccounts).length > 0
     || get(scrollAccounts).length > 0,
 );
+
+function getTitle(chain: string) {
+  return get(titles)[chain] ?? '';
+}
+
+onMounted(async () => {
+  const query = get(route).query;
+
+  if (query.add) {
+    createAccount();
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>
@@ -170,7 +124,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
           <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
         </template>
 
-        <AccountDialog :context="context" />
+        <AccountDialog />
         <AssetBalances
           data-cy="blockchain-asset-balances"
           :loading="isBlockchainLoading"
@@ -184,187 +138,16 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         <DetectEvmAccounts v-if="showDetectEvmAccountsButton" />
       </div>
 
-      <AccountBalances
-        v-if="ethAccounts.length > 0 || busy.eth.value"
-        v-intersect="{
-          handler: observers.eth,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.eth')"
-        :blockchain="Blockchain.ETH"
-        :balances="ethAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="eth2Accounts.length > 0 || busy.eth2.value"
-        v-intersect="{
-          handler: observers.eth2,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.eth2')"
-        :blockchain="Blockchain.ETH2"
-        :balances="eth2Accounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="btcAccounts.length > 0 || busy.btc.value"
-        v-intersect="{
-          handler: observers.btc,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.btc')"
-        :blockchain="Blockchain.BTC"
-        :balances="btcAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="bchAccounts.length > 0 || busy.bch.value"
-        v-intersect="{
-          handler: observers.bch,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.bch')"
-        :blockchain="Blockchain.BCH"
-        :balances="bchAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="ksmAccounts.length > 0 || busy.ksm.value"
-        v-intersect="{
-          handler: observers.ksm,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.ksm')"
-        :blockchain="Blockchain.KSM"
-        :balances="ksmAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="dotAccounts.length > 0 || busy.dot.value"
-        v-intersect="{
-          handler: observers.dot,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.dot')"
-        :blockchain="Blockchain.DOT"
-        :balances="dotAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="avaxAccounts.length > 0 || busy.avax.value"
-        v-intersect="{
-          handler: observers.avax,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.avax')"
-        :blockchain="Blockchain.AVAX"
-        :balances="avaxAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="optimismAccounts.length > 0 || busy.optimism.value"
-        v-intersect="{
-          handler: observers.optimism,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.optimism')"
-        :blockchain="Blockchain.OPTIMISM"
-        :balances="optimismAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="polygonAccounts.length > 0 || busy.polygon_pos.value"
-        v-intersect="{
-          handler: observers.polygon_pos,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.polygon_pos')"
-        :blockchain="Blockchain.POLYGON_POS"
-        :balances="polygonAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="arbitrumAccounts.length > 0 || busy.arbitrum_one.value"
-        v-intersect="{
-          handler: observers.arbitrum_one,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.arbitrum_one')"
-        :blockchain="Blockchain.ARBITRUM_ONE"
-        :balances="arbitrumAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="baseAccounts.length > 0 || busy.base.value"
-        v-intersect="{
-          handler: observers.base,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.base')"
-        :blockchain="Blockchain.BASE"
-        :balances="baseAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="gnosisAccounts.length > 0 || busy.gnosis.value"
-        v-intersect="{
-          handler: observers.gnosis,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.gnosis')"
-        :blockchain="Blockchain.GNOSIS"
-        :balances="gnosisAccounts"
-        @edit-account="editAccount($event)"
-      />
-
-      <AccountBalances
-        v-if="scrollAccounts.length > 0 || busy.scroll.value"
-        v-intersect="{
-          handler: observers.scroll,
-          options: {
-            threshold,
-          },
-        }"
-        :title="t('blockchain_balances.balances.scroll')"
-        :blockchain="Blockchain.SCROLL"
-        :balances="scrollAccounts"
-        @edit-account="editAccount($event)"
-      />
+      <template v-for="chain in supportedChains">
+        <AccountBalances
+          v-if="accounts[chain.id] && accounts[chain.id].length > 0 || busy[chain.id].value"
+          :key="chain.id"
+          :title="getTitle(chain.id)"
+          :blockchain="chain.id"
+          :balances="accounts[chain.id]"
+          @edit-account="editAccount($event)"
+        />
+      </template>
 
       <AccountBalances
         v-if="loopringAccounts.length > 0"

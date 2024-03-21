@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common/lib/blockchain';
-
 const props = defineProps<{
   address: string;
   loading: boolean;
-  blockchain: Blockchain;
+  blockchain: string;
 }>();
 
 const { address, blockchain } = toRefs(props);

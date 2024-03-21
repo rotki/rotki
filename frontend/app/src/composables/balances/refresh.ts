@@ -10,7 +10,7 @@ export const useRefresh = createSharedComposable(() => {
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
 
-  const refreshBlockchainBalances = async (blockchain?: Blockchain): Promise<void> => {
+  const refreshBlockchainBalances = async (blockchain?: string): Promise<void> => {
     const chain = get(blockchain);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
@@ -25,7 +25,7 @@ export const useRefresh = createSharedComposable(() => {
     await Promise.allSettled(pending);
   };
 
-  const handleBlockchainRefresh = async (blockchain?: MaybeRef<Blockchain>, forceRedetect = false) => {
+  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false) => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
 

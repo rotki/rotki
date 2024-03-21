@@ -92,17 +92,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
     queue.queue(evmChain, () => reDecodeMissingTransactionEventsTask(evmChain));
   };
 
-  const getTxAccounts = (chains: Blockchain[] = []) =>
-    get(accounts)
-      .filter(
-        ({ chain }) =>
-          supportsTransactions(chain)
-          && (chains.length === 0 || chains.includes(chain)),
-      )
-      .map(({ address, chain }) => ({
-        address,
-        evmChain: getEvmChainName(chain)!,
-      }));
+  const getTxAccounts = (chains: string[] = []) => get(accounts)
+    .filter(({ chain }) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
+    .map(({ address, chain }) => ({
+      address,
+      evmChain: getEvmChainName(chain)!,
+    }));
 
   const refreshTransactions = async (
     chains: Blockchain[],

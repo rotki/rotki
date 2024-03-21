@@ -71,7 +71,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return chains.some(x => x.id === selectedChain);
   };
 
-  const getEvmChainName = (chain: Blockchain): string | null =>
+  const getEvmChainName = (chain: string): string | null =>
     get(evmChainsData).find(x => x.id === chain)?.evmChainName || null;
 
   const getChainInfoByName = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
@@ -88,7 +88,7 @@ export const useSupportedChains = createSharedComposable(() => {
       return get(getChainInfoById(chainVal))?.name || chainVal;
     });
 
-  const getNativeAsset = (chain: MaybeRef<Blockchain>) => {
+  const getNativeAsset = (chain: MaybeRef<string>) => {
     const blockchain = get(chain);
     return (
       [...get(evmChainsData), ...get(substrateChainsData)].find(
@@ -109,7 +109,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return defaultValue;
   };
 
-  const getChainImageUrl = (chain: MaybeRef<Blockchain>): ComputedRef<string> =>
+  const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> =>
     computed(() => {
       const chainVal = get(chain);
       const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;

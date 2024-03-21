@@ -13,7 +13,6 @@ import type {
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
 import type { Collection } from '@/types/collection';
-import type { Chains } from '@/types/asset/asset-urls';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',
@@ -180,7 +179,7 @@ export const useAddressesNamesStore = defineStore(
 
     const addressNameSelector = (
       address: MaybeRef<string>,
-      blockchain: MaybeRef<Chains> = Blockchain.ETH,
+      blockchain: MaybeRef<string> = Blockchain.ETH,
     ) =>
       computed<string | null>(() => {
         const addressVal = get(address);

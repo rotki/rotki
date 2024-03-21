@@ -108,8 +108,8 @@ export function useBlockchains() {
   ): Promise<void> => {
     const blockchain = 'EVM';
 
-    const accountsToFinish: Account<Blockchain>[] = [];
-    const finishAddition = async ({ chain, address }: Account<Blockchain>) => {
+    const accountsToFinish: Account[] = [];
+    const finishAddition = async ({ chain, address }: Account) => {
       const modules = payload.modules;
       if (chain === Blockchain.ETH && modules) {
         await enableModule({

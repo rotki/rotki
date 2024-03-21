@@ -3,10 +3,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { InputMode } from '@/types/input-mode';
 import { isBtcChain } from '@/types/blockchain/chains';
 
-const props = defineProps<{ context: Blockchain }>();
-
-const { context } = toRefs(props);
-
 const blockchain = ref<string>(Blockchain.ETH);
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
 const allEvmChains = ref(true);
@@ -20,14 +16,6 @@ onMounted(() => {
     if ('xpub' in account && !account.address)
       set(inputMode, InputMode.XPUB_ADD);
   }
-  else {
-    set(blockchain, get(context));
-  }
-});
-
-watch(context, (ctx) => {
-  if (!get(accountToEdit))
-    set(blockchain, ctx);
 });
 </script>
 
