@@ -1067,3 +1067,59 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
             notes='margin',
         ),
     ]
+
+
+def test_kraken_staking_allocations(kraken: 'MockKraken'):
+    """Test that kraken staking using allocations is correctly decoded"""
+    input_ledger = """
+    {
+    "ledger":{
+        "AAA": {
+            "aclass":"currency",
+            "amount":"-4.0603682900",
+            "asset":"KSM",
+            "balance":"0.0000000000",
+            "fee":"0.0000000000",
+            "refid":"ELDWUCR-FX2XJ-TYP5QL",
+            "time":1708343439.6503618,
+            "type":"transfer",
+            "subtype":"autoallocate"
+        },
+        "BBB": {
+            "aclass":"currency",
+            "amount":"4.0603682900",
+            "asset":"KSM.F",
+            "balance":"4.0603682900",
+            "fee":"0.0000000000",
+            "refid":"ELDWUCR-FX2XJ-TYP5QL",
+            "time":1708343439.6503618,
+            "type":"transfer",
+            "subtype":"autoallocate"
+        }
+    }
+    }
+    """
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    with patch(target, new=input_ledger):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+
+    assert events == [HistoryEvent(
+        location=Location.KRAKEN,
+        asset=A_KSM,
+        timestamp=TimestampMS(1708343439650),
+        balance=Balance(amount=FVal('4.0603682900')),
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        location_label=kraken.name,
+        event_identifier='ELDWUCR-FX2XJ-TYP5QL',
+        identifier=1,
+        sequence_index=1,
+    )]

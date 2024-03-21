@@ -23,6 +23,7 @@ Changelog
 * :bug:`-` Removing an address from one of the EVM chains won't affect the decoded events in other chains anymore.
 * :bug:`-` ETH withdrawal events should now be taxable again if the setting for their treatment after withdrawals enabled is on (which is by default).
 * :bug:`-` Invalid data in airdrops' CSVs or JSONs will now get ignored to show the rest of the valid data.
+* :bug:`-` Deposits to the kraken rewards program should be correctly processed now.
 
 * :release:`1.32.0 <2024-02-16>`
 * :feature:`7383` rotki will now update airdrops' data remotely without needing to update the app.
