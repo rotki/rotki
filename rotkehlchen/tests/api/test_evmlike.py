@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
@@ -110,3 +111,65 @@ def test_evmlike_blockchain_balances(
                 'liabilities': {},
             },
         }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
+def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
+    """We will just add some zksync lite addresses
+
+    This is a really fast test. But not sure how useful it is as it tests existing functionality
+    and no new endpoints. But I did find 2 bugs in the logic while writing and running
+    it so it probably does not hurt to have.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    addy_0, addy_1 = make_evm_address(), make_evm_address()
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == []
+
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [{'address': addy_0}]})
+    assert_proper_response(response)
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == [{'address': addy_0, 'label': None, 'tags': None}]
+    assert rotki.chains_aggregator.accounts.zksync_lite == (addy_0,)
+
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [{'address': addy_1, 'label': 'addy 1 label'}]})
+    assert_proper_response(response)
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert {'address': addy_1, 'label': 'addy 1 label', 'tags': None} in result
+    assert {'address': addy_0, 'label': None, 'tags': None} in result
+
+    assert rotki.chains_aggregator.accounts.zksync_lite == (addy_0, addy_1)
+
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [addy_0]})
+    assert_proper_response(response)
+    assert rotki.chains_aggregator.accounts.zksync_lite == (addy_1,)

@@ -249,6 +249,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.base_lock = Semaphore()
         self.gnosis_lock = Semaphore()
         self.scroll_lock = Semaphore()
+        self.zksync_lite_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
