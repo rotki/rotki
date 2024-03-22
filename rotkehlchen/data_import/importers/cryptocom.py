@@ -277,7 +277,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'dust_conversion_credited',
             'interest_swap_credited',
             'interest_swap_debited',
-            # The user has received an aidrop but can't claim it yet
+            # The user has received an airdrop but can't claim it yet
             'airdrop_locked',
         }:
             # those types are ignored because it doesn't affect the wallet balance

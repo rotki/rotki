@@ -252,7 +252,7 @@ class Aave(EthereumModule):
             total_earned_atokens: dict[Asset, Balance],
     ) -> None:
         """
-        Calcualte total earned from aave events. `total_earned_atokens` is modified inside
+        Calculate total earned from aave events. `total_earned_atokens` is modified inside
         this function
         """
         atoken_abi = atoken_v2_abi = None
