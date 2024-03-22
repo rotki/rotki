@@ -199,7 +199,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
                 withdrawal_events.append(event)
             elif (  # Withdraw send wrapped
                 event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
+                event.event_subtype in {HistoryEventSubType.NONE, HistoryEventSubType.RETURN_WRAPPED} and  # noqa: E501
                 event.location_label == transaction.from_address and
                 (
                     user_or_contract_address == event.location_label or

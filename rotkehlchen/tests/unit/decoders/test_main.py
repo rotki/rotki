@@ -43,6 +43,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
         'Aavev2',
+        'Aavev3',
         'Airdrops',
         'Balancerv1',
         'Balancerv2',
@@ -136,6 +137,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'votium',
         'aave-v1',
         'aave-v2',
+        'aave-v3',
         'compound',
         'compound-v3',
         'dxdaomesa',
