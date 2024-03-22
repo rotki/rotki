@@ -542,7 +542,7 @@ class EvmNodeInquirer(ABC):
 
             return result
 
-        # no node in the call order list was succesfully queried
+        # no node in the call order list was successfully queried
         log.error(
             f'Failed to query {method!s} after trying the following '
             f'nodes: {[x.node_info.name for x in call_order]}',

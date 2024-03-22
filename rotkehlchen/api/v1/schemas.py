@@ -177,7 +177,7 @@ class TimestampRangeSchema(Schema):
 
 class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
     """A schema for getters that have 2 arguments.
-    One to enable async querying and another to force reset DB data by querying everytying again"""
+    One to enable async querying and another to force reset DB data by querying everything again"""
     reset_db_data = fields.Boolean(load_default=False)
 
 
@@ -2113,7 +2113,7 @@ class AssetsSearchLevenshteinSchema(Schema):
             and_op=True,
             substring_search=data['value'].strip().casefold(),
             chain_id=data['evm_chain'],
-            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored asssets at search  # noqa: E501
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored assets at search  # noqa: E501
         )
         return {
             'filter_query': filter_query,
