@@ -368,8 +368,8 @@ export function useDefiLending() {
             address,
             protocol: DefiProtocol.MAKERDAO_DSR,
             asset: assetSymbolToIdentifierMap.DAI,
-            balance: { ...balance },
             effectiveInterestRate: `${format}%`,
+            ...balance,
           });
         }
       }
@@ -389,7 +389,7 @@ export function useDefiLending() {
               protocol: DefiProtocol.AAVE,
               asset,
               effectiveInterestRate: aaveAsset.apy,
-              balance: { ...aaveAsset.balance },
+              ...aaveAsset.balance,
             });
           }
         }
@@ -409,7 +409,7 @@ export function useDefiLending() {
               protocol: DefiProtocol.COMPOUND,
               asset,
               effectiveInterestRate: assetDetails.apy ?? '0%',
-              balance: { ...assetDetails.balance },
+              ...assetDetails.balance,
             });
           }
         }
@@ -527,8 +527,8 @@ export function useDefiLending() {
     computed(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
       let { usdValue, weight } = lendBalances
-        .filter(({ balance }) => balance.usdValue.gt(0))
-        .map(({ effectiveInterestRate, balance: { usdValue } }) => {
+        .filter(({ usdValue }) => usdValue.gt(0))
+        .map(({ effectiveInterestRate, usdValue }) => {
           const n = Number.parseFloat(effectiveInterestRate);
           return {
             weight: usdValue.multipliedBy(n),
@@ -741,7 +741,7 @@ export function useDefiLending() {
 
       for (const asset in balances) {
         const { weight, amount, usdValue } = balances[asset]
-          .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => ({
+          .map(({ effectiveInterestRate, usdValue, amount }) => ({
             weight: usdValue.multipliedBy(
               Number.parseFloat(effectiveInterestRate),
             ),
@@ -765,10 +765,8 @@ export function useDefiLending() {
 
         aggregated.push({
           asset,
-          balance: {
-            amount,
-            usdValue,
-          },
+          amount,
+          usdValue,
           effectiveInterestRate: effectiveInterestRate.isNaN()
             ? '0.00%'
             : `${effectiveInterestRate.toFormat(2)}%`,
