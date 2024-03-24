@@ -79,6 +79,7 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
+    EvmlikePendingTransactionDecodingSchema,
     EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
@@ -670,6 +671,28 @@ class EvmPendingTransactionsDecodingResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_count_transactions_not_decoded(async_query=async_query)
+
+
+class EvmlikePendingTransactionsDecodingResource(BaseMethodView):
+    post_schema = EvmlikePendingTransactionDecodingSchema()
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            evmlike_chains: list[EvmlikeChain],
+    ) -> Response:
+        return self.rest_api.decode_pending_evmlike_transactions(
+            async_query=async_query,
+            evmlike_chains=evmlike_chains,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_count_evmlike_transactions_not_decoded(async_query=async_query)
 
 
 class EthereumAirdropsResource(BaseMethodView):

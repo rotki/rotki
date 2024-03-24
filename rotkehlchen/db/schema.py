@@ -112,6 +112,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('l', 44);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
 /* Scroll */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('n', 46);
+/* ZKSync Lite */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('o', 47);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -491,10 +493,14 @@ INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('D', 4);
 INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);
 """
 
+# Instead of using an attribute mapping like evm chains adding the is_decoded directly to the table
+# Reasoning is it's the only mapping we care for so no reason to keep a different
+# mappings table for zksync lite transactions
 DB_CREATE_ZKSYNCLITE_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS zksynclite_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),
+    is_decoded INTEGER NOT NULL DEFAULT 0 CHECK (is_decoded IN (0, 1)),
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
     from_address TEXT NULL,

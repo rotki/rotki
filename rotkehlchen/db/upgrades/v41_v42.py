@@ -37,6 +37,7 @@ def _add_zksynclite(write_cursor: 'DBCursor') -> None:
     CREATE TABLE IF NOT EXISTS zksynclite_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),
+    is_decoded INTEGER NOT NULL DEFAULT 0 CHECK (is_decoded IN (0, 1)),
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
     from_address TEXT NULL,
@@ -51,9 +52,9 @@ def _add_zksynclite(write_cursor: 'DBCursor') -> None:
 
 @enter_exit_debug_log()
 def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
-    write_cursor.execute(
+    write_cursor.executemany(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
-        ('n', Location.SCROLL.value),
+        [('n', Location.SCROLL.value), ('o', Location.ZKSYNC_LITE.value)],
     )
 
 

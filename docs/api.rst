@@ -1980,9 +1980,9 @@ Purging locally saved evm transactions
 Decode transactions that haven't been decoded yet
 =================================================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/decode
+.. http:post:: /api/(version)/blockchains/(chaintype)/transactions/decode
 
-   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded.
+   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded. ``chaintype`` can be either ``evm`` or ``evmlike``
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -1997,10 +1997,10 @@ Decode transactions that haven't been decoded yet
 
       {
           "async_query": false,
-          "evm_chains": ["ethereum", "optimism"]
+          "chains": ["ethereum", "optimism"]
       }
 
-   :reqjson list evm_chains: A list specifying the evm chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions. If the list is not provided all transactions from all the chains will be decoded.
+   :reqjson list chains: A list specifying the evm/evmlike chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions for evm and to zksynclite for evmlike. If the list is not provided all transactions from all the chains will be decoded.
 
    **Example Response**:
 
@@ -2017,9 +2017,9 @@ Decode transactions that haven't been decoded yet
    :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-.. http:get:: /api/(version)/blockchains/evm/transactions/decode
+.. http:get:: /api/(version)/blockchains/(chaintype)/transactions/decode
 
-   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded.
+   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded. ``chaintype`` can be either ``evm`` or ``evmlike``
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2043,7 +2043,7 @@ Decode transactions that haven't been decoded yet
 
       { "result": {"ethereum": 2, "optimism": 1, "base": 1}, "message": "" }
 
-   :resjson object result: A mapping of the EVM chain name to the number of transactions missing the decoding.
+   :resjson object result: A mapping of the chain name to the number of transactions missing the decoding.
 
    :statuscode 200: Transactions successfully counted.
    :statuscode 401: User is not logged in.
