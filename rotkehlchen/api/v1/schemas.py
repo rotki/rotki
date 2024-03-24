@@ -373,6 +373,26 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
             )
 
 
+class EvmlikePendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    evmlike_chains = fields.List(
+        StrEnumField(enum_class=EvmlikeChain),
+        load_default=[EvmlikeChain.ZKSYNCLITE],
+    )
+
+    @validates_schema
+    def validate_schema(
+            self,
+            evmlike_chains: list[ChainID],
+            **_kwargs: Any,
+    ) -> None:
+
+        if len(evmlike_chains) == 0:
+            raise ValidationError(
+                message='The list of evmlike_chains should not be empty',
+                field_name='evmlike_chains',
+            )
+
+
 class TradesQuerySchema(
         AsyncQueryArgumentSchema,
         TimestampRangeSchema,

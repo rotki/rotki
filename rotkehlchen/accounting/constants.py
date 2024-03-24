@@ -69,6 +69,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     }, HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
         HistoryEventSubType.NONE: EventCategory.TRANSFER,
+        HistoryEventSubType.FEE: EventCategory.FEE,
     }, HistoryEventType.ADJUSTMENT: {
         HistoryEventSubType.SPEND: EventCategory.SEND,
         HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,

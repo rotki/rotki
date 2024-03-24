@@ -5,8 +5,12 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
@@ -14,6 +18,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -32,8 +37,8 @@ def test_evmlike_transactions_refresh(
     assert (zksync_lite := rotki.chains_aggregator.get_module('zksync_lite')) is not None
     with patch.object(
             zksync_lite,
-            'get_transactions',
-            wraps=zksync_lite.get_transactions,
+            'fetch_transactions',
+            wraps=zksync_lite.fetch_transactions,
     ) as tx_query:
         response = requests.post(
             api_url_for(
@@ -173,3 +178,161 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     ), json={'accounts': [addy_0]})
     assert_proper_response(response)
     assert rotki.chains_aggregator.accounts.zksync_lite == (addy_1,)
+
+
+def compare_events_without_id(e1: dict, e2: dict) -> None:
+    e1.pop('identifier')
+    e2.pop('identifier')
+    assert e1 == e2
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
+def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite_accounts) -> None:
+    user_address = zksync_lite_accounts[0]
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmliketransactionsresource',
+        ), json={'async_query': False},
+    )
+    assert_simple_ok_response(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmlikependingtransactionsdecodingresource',
+        ), json={'async_query': False},
+    )
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 17
+    compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
+        event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
+        tx_hash=deserialize_evm_tx_hash('0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970'),
+        sequence_index=0,
+        timestamp=TimestampMS(1708431030000),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('6.626770825')),
+        location_label=user_address,
+        address=user_address,
+        notes='Bridge 6.626770825 ETH from ZKSync Lite to Ethereum',
+    ).serialize())
+    compare_events_without_id(result['entries'][1]['entry'], EvmEvent(
+        event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
+        tx_hash=deserialize_evm_tx_hash('0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970'),
+        sequence_index=1,
+        timestamp=TimestampMS(1708431030000),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('0.00367')),
+        location_label=user_address,
+        address=user_address,
+        notes='Bridging fee of 0.00367 ETH',
+    ).serialize())
+    compare_events_without_id(result['entries'][2]['entry'], EvmEvent(
+        event_identifier='zkl331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
+        tx_hash=deserialize_evm_tx_hash('0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb'),
+        sequence_index=0,
+        timestamp=TimestampMS(1659010582000),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('0.9630671085')),
+        location_label=user_address,
+        address=string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+        notes='Receive 0.9630671085 ETH from 0x9531C059098e3d194fF87FebB587aB07B30B1306',
+    ).serialize())
+
+    # Now some events in same timestamp which can come at any order between 4-9 indices
+    # It's multiple "batched" transfers, a ChangePubkey event and the fee at the end
+    # with a 0 transfer to self
+    for x in result['entries'][4:10]:  # normal transfer part of the batch
+        if x['entry']['tx_hash'] == '0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7':  # noqa: E501
+            compare_events_without_id(x['entry'], EvmEvent(
+                event_identifier='zkl43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7',
+                tx_hash=deserialize_evm_tx_hash('0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7'),
+                sequence_index=0,
+                timestamp=TimestampMS(1656022105000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(amount=FVal('0.005')),
+                location_label=user_address,
+                address=string_to_evm_address('0xd31b671F1a398B519222FdAba5aB5464B9F2a3Fa'),
+                notes='Send 0.005 ETH to 0xd31b671F1a398B519222FdAba5aB5464B9F2a3Fa',
+            ).serialize())
+            break
+    else:
+        raise AssertionError('Did not find the event')
+
+    for x in result['entries'][4:10]:  # changepubkey
+        if x['entry']['tx_hash'] == '0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7':  # noqa: E501
+            compare_events_without_id(x['entry'], EvmEvent(
+                event_identifier='zkl83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7',
+                tx_hash=deserialize_evm_tx_hash('0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7'),
+                sequence_index=0,
+                timestamp=TimestampMS(1656022105000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                balance=Balance(amount=FVal('0.001513')),
+                location_label=user_address,
+                notes='Spend 0.001513 ETH to ChangePubKey',
+            ).serialize())
+            break
+    else:
+        raise AssertionError('Did not find the event')
+
+    for x in result['entries'][4:10]:  # fee by 0 transaction to self - transaction
+        entry = x['entry']
+        if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'none':  # noqa: E501
+            compare_events_without_id(entry, EvmEvent(
+                event_identifier='zkl89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
+                tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
+                sequence_index=0,
+                timestamp=TimestampMS(1656022105000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(amount=ZERO),
+                location_label=user_address,
+                address=user_address,
+                notes='Transfer 0 ETH to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            ).serialize())
+            break
+    else:
+        raise AssertionError('Did not find the event')
+
+    for x in result['entries'][4:10]:  # fee by 0 transaction to self - fee
+        entry = x['entry']
+        if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'fee':  # noqa: E501
+            compare_events_without_id(entry, EvmEvent(
+                event_identifier='zkl89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
+                tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
+                sequence_index=1,
+                timestamp=TimestampMS(1656022105000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                balance=Balance(amount=FVal('0.0001843')),
+                location_label=user_address,
+                address=user_address,
+                notes='Transfer fee of 0.0001843 ETH',
+            ).serialize())
+            break
+    else:
+        raise AssertionError('Did not find the event')

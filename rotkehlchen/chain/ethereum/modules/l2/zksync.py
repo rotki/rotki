@@ -18,12 +18,15 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -32,11 +35,18 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
 )
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Fee, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Fee,
+    Location,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -61,7 +71,7 @@ class ZKSyncLiteTXType(DBCharEnumMixIn):
 
 
 ZKSyncLiteTransactionDBTuple = tuple[
-    bytes,  # tx_hash
+    EVMTxHash,  # tx_hash
     str,    # type
     int,    # timestamp
     int,    # block number
@@ -75,7 +85,7 @@ ZKSyncLiteTransactionDBTuple = tuple[
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=True, frozen=False)
 class ZKSyncLiteTransaction:
-    tx_hash: bytes
+    tx_hash: EVMTxHash
     tx_type: ZKSyncLiteTXType
     timestamp: Timestamp
     block_number: int
@@ -317,14 +327,14 @@ class ZksyncLite(EthereumModule):
 
         return self.symbol_to_token.get(token_symbol, None)
 
-    def _decode_zksync_transaction(self, entry: dict[str, Any]) -> ZKSyncLiteTransaction | None:
+    def _deserialize_zksync_transaction(self, entry: dict[str, Any]) -> ZKSyncLiteTransaction | None:  # noqa: E501
         from_address = None
         try:
             if (status := entry.get('status', 'finalized')) != 'finalized':
                 log.debug(f'Skipping zksynce lite transaction {entry} due to {status=}')
                 return None
 
-            tx_hash = hexstring_to_bytes(entry['txHash'])
+            tx_hash = deserialize_evm_tx_hash(entry['txHash'])
             tx_type = ZKSyncLiteTXType.deserialize(entry['op']['type'])
             block_number = entry['blockNumber']
             timestamp = iso8601ts_to_timestamp(entry['createdAt'])
@@ -344,7 +354,7 @@ class ZksyncLite(EthereumModule):
             elif tx_type == ZKSyncLiteTXType.FORCEDEXIT:
                 asset_key = 'token'
                 from_address = deserialize_evm_address(entry['op']['target'])
-            else:  # transfer
+            else:  # transfer/withdraw
                 asset_key = 'token'
 
             asset = self._get_token_by_id(entry['op'][asset_key])
@@ -412,7 +422,7 @@ class ZksyncLite(EthereumModule):
                 if idx == 0 and entry['txHash'] == last_tx_hash:
                     continue  # at pagination first tx is last query's last
 
-                tx = self._decode_zksync_transaction(entry)
+                tx = self._deserialize_zksync_transaction(entry)
                 if tx:
                     transactions.append(tx)
                     last_tx_hash = entry['txHash']
@@ -440,18 +450,14 @@ class ZksyncLite(EthereumModule):
             tuples=tuples,
         )
 
-    def _get_zksynctxs_db(
-            self,
-            address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[ZKSyncLiteTransaction]:
+    def _get_undecoded_transactions(self) -> list[ZKSyncLiteTransaction]:
+        """Gets any zksynclite undecoded transactions from the DB"""
         transactions = []
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT * from zksynclite_transactions WHERE timestamp >= ? AND timestamp <= ? '
-                'AND (from_address == ? OR to_address == ?) ORDER by timestamp DESC',
-                (start_ts, end_ts, address, address),
+                'SELECT tx_hash, type, timestamp, block_number, from_address, to_address, '
+                'token_identifier, amount, fee FROM zksynclite_transactions '
+                'WHERE is_decoded=?', (0,),
             )
             for entry in cursor:
                 try:
@@ -464,18 +470,17 @@ class ZksyncLite(EthereumModule):
 
         return transactions
 
-    def get_transactions(
+    def fetch_transactions(
             self,
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[ZKSyncLiteTransaction]:
-        """Get all zksync transactions for an address in the given time range"""
+    ) -> None:
+        """Fetch all zksync transactions for an address in the given time range and save in DB"""
         location = f'zksynctxs_{address}'
         min_tx_hash = max_tx_hash = 'latest'
         min_timestamp = start_ts
         max_timestamp = end_ts
-
         with self.database.conn.read_ctx() as cursor:
             queried_range = self.database.get_used_query_range(cursor, location)
 
@@ -530,12 +535,6 @@ class ZksyncLite(EthereumModule):
                 f'{address=}, {start_ts=}, {end_ts=} ',
             )
 
-        return self._get_zksynctxs_db(
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-
     def get_balances(
             self,
             addresses: Sequence[ChecksumEvmAddress],
@@ -575,6 +574,141 @@ class ZksyncLite(EthereumModule):
                 log.error(f'Failed to query zksync balances for {address} due to {msg}')
 
         return dict(balances)
+
+    def decode_undecoded_transactions(self) -> int:
+        transactions = self._get_undecoded_transactions()
+        decoded_num = 0
+        dbevents = DBHistoryEvents(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            tracked_addresses = self.database.get_blockchain_accounts(cursor).zksync_lite
+
+        for transaction in transactions:
+            target = None
+            tracked_from = transaction.from_address in tracked_addresses
+            tracked_to = transaction.to_address in tracked_addresses
+            match transaction.tx_type:
+                case ZKSyncLiteTXType.DEPOSIT:
+
+                    # This is a deposit from L1 to ZKSync Lite. from is in L1. to is in L2
+                    if not tracked_to:
+                        continue  # no need to track. Receiver in zksync lite is not ours
+                    event_type = HistoryEventType.WITHDRAWAL
+                    event_subtype = HistoryEventSubType.BRIDGE
+                    suffix = ''
+                    if transaction.from_address != transaction.to_address:
+                        suffix = f' address {transaction.to_address}'
+                    notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from Ethereum to ZKSync Lite{suffix}'  # noqa: E501
+                    location_label = transaction.to_address
+                case ZKSyncLiteTXType.WITHDRAW:
+                    # This is a withdrawal from ZKSync lite to L1. from is in L2 to is in L1
+                    if not tracked_from:
+                        continue  # no need to track. Sender in zksync lite is not ours
+                    event_type = HistoryEventType.DEPOSIT
+                    event_subtype = HistoryEventSubType.BRIDGE
+                    suffix = ''
+                    target = transaction.to_address
+                    if transaction.from_address != transaction.to_address:
+                        suffix = f' address {transaction.to_address}'
+                    notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from ZKSync Lite to Ethereum{suffix}'  # noqa: E501
+                    location_label = transaction.from_address
+
+                case ZKSyncLiteTXType.TRANSFER:
+                    if not tracked_from and not tracked_to:
+                        continue
+                    # Similar to chain/evm/decoding/base.py. Can abstract somehow?
+                    if tracked_from and tracked_to:
+                        event_type = HistoryEventType.TRANSFER
+                        event_subtype = HistoryEventSubType.NONE
+                        location_label = transaction.from_address
+                        target = transaction.to_address
+                        verb = 'Transfer'
+                        preposition = 'to'
+                    elif tracked_from:
+                        event_type = HistoryEventType.SPEND
+                        event_subtype = HistoryEventSubType.NONE
+                        location_label = transaction.from_address
+                        target = transaction.to_address
+                        verb = 'Send'
+                        preposition = 'to'
+                    else:  # can only be tracked_to
+                        event_type = HistoryEventType.RECEIVE
+                        event_subtype = HistoryEventSubType.NONE
+                        location_label = transaction.to_address
+                        target = transaction.from_address
+                        verb = 'Receive'
+                        preposition = 'from'
+
+                    # TODO: I wanted to use HistoryEvent here since this is not a full
+                    # EVM event and does not have a chain ID or product or counterparties.
+                    # But HistoryEvents do not have "to" field for send/transfers. Without this
+                    # we could not analyze where did a transfer go. So we use EvmEvent here.
+                    # Perhaps we should create a new extension to HistoryEvent that
+                    # simply adds a "to" field. As this will definitely be needed somewhere.
+                    notes = f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}'  # noqa: E501
+
+                case ZKSyncLiteTXType.FORCEDEXIT:
+                    continue  # TODO
+                case ZKSyncLiteTXType.CHANGEPUBKEY:
+                    event_type = HistoryEventType.SPEND
+                    event_subtype = HistoryEventSubType.FEE
+                    if transaction.fee is None:
+                        log.error(f'Found zksync lite ChangePubKey transaction {transaction} with no fee field. Skipping')  # noqa: E501
+                        continue
+
+                    transaction.amount = transaction.fee
+                    transaction.fee = None  # to not double count fee with 2 events
+                    notes = f'Spend {transaction.amount} ETH to ChangePubKey'
+                    location_label = transaction.from_address
+                    transaction.fee = None  # to not double count fee with 2 events
+
+            events = []
+            events.append(EvmEvent(
+                event_identifier=f'zkl{transaction.tx_hash.hex()}',
+                tx_hash=transaction.tx_hash,
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(transaction.timestamp),
+                location=Location.ZKSYNC_LITE,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=transaction.asset,
+                balance=Balance(amount=transaction.amount),
+                location_label=location_label,
+                address=target,
+                notes=notes,
+            ))
+            if transaction.fee is not None and event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
+                notes = f'Bridging fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
+                if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+                    notes = f'Transfer fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
+                events.append(EvmEvent(
+                    event_identifier=f'zkl{transaction.tx_hash.hex()}',
+                    tx_hash=transaction.tx_hash,
+                    sequence_index=1,
+                    timestamp=ts_sec_to_ms(transaction.timestamp),
+                    location=Location.ZKSYNC_LITE,
+                    event_type=event_type,
+                    # Combinations that can come up are:
+                    # DEPOSIT/FEE, WITHDRAWAl/FEE, SPEND/FEE, TRANSFER/FEE
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=transaction.asset,
+                    balance=Balance(amount=transaction.fee),
+                    location_label=location_label,
+                    address=target,
+                    notes=notes,
+                ))
+
+            # save it in the DB and mark the zksync lite transaction as decoded
+            with self.database.user_write() as write_cursor:
+                for event in events:
+                    decoded_num += 1
+                    dbevents.add_history_event(write_cursor, event)
+
+                write_cursor.execute(
+                    'UPDATE zksynclite_transactions SET is_decoded=? WHERE tx_hash=?',
+                    (1, transaction.tx_hash),
+                )
+
+        return decoded_num
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:

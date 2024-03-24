@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.modules.l2.zksync import (
     ZKSyncLiteTransaction,
     ZKSyncLiteTXType,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
@@ -37,14 +38,23 @@ def fixture_zksync_lite(ethereum_inquirer, database):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_get_transactions(zksync_lite):
-    transactions = zksync_lite.get_transactions(
-        address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        start_ts=0,
+@pytest.mark.freeze_time('2024-03-24 00:00:00 GMT')
+def test_fetch_transactions(zksync_lite):
+    zksync_lite.fetch_transactions(
+        address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+        start_ts=Timestamp(0),
         end_ts=ts_now(),
     )
+    transactions = []
+    with zksync_lite.database.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT tx_hash, type, timestamp, block_number, from_address, to_address, '
+            'token_identifier, amount, fee FROM zksynclite_transactions ORDER BY timestamp ASC',
+        )
+        transactions = [ZKSyncLiteTransaction.deserialize_from_db(x) for x in cursor]
+
     assert len(transactions) == 16
-    assert transactions[15] == ZKSyncLiteTransaction(
+    assert transactions[0] == ZKSyncLiteTransaction(
         tx_hash=b'\xb8\rF;\xbc\xf8J\x87m\xb6\xcf\x80_\x1d\x88k`\xe7\xab\r9!4\xb3t\xe2\xea\xb3\xa1\x93/\xe1',
         tx_type=ZKSyncLiteTXType.DEPOSIT,
         timestamp=Timestamp(1601574932),
@@ -55,7 +65,7 @@ def test_get_transactions(zksync_lite):
         amount=FVal(23.016),
         fee=None,
     )
-    assert transactions[14] == ZKSyncLiteTransaction(
+    assert transactions[1] == ZKSyncLiteTransaction(
         tx_hash=b'1*\xb01\xb3PL\xde\xc45G\x95\x17l\xcc\xadL\xaf8\xa1P\xd5\xd3\x10\xc9^\x93I\x9bY\xee\xd1',
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1638186357),
@@ -66,7 +76,7 @@ def test_get_transactions(zksync_lite):
         amount=FVal(0.4023119998),
         fee=Fee(FVal(0.000233)),
     )
-    assert transactions[10] == ZKSyncLiteTransaction(
+    assert transactions[5] == ZKSyncLiteTransaction(
         tx_hash=b'\xe8wB<\xc4\xf2F\x13H\x96\xbfZf\xcc\x922\xa8\xbeM\xc7\x1au\xd7\xeap>\x10]\xfd\x8e{\x82',
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1648716422),
@@ -79,7 +89,7 @@ def test_get_transactions(zksync_lite):
     )
     # For 1656022105 order can be random.
     tx_hash = b'\xe8"\x81\xa8\\"\xc7r\xeb5\x17p5\xd9<\xdb\x7fU\x9b\xafp\xe0,\t\x00\xf5\x08\xe7#=\x1d\x0f'  # noqa: E501
-    for idx in (3, 4, 5, 6, 7):
+    for idx in (8, 9, 10, 11, 12):
         if transactions[idx].tx_hash == tx_hash:
             break
 
@@ -97,7 +107,7 @@ def test_get_transactions(zksync_lite):
 
     # For 1656022105 order can be random.
     tx_hash = b'\x83\x00\x1f\x1cU\x80\xd9\r4Wy\xcd\x10v/\xc7\x1cL\x90  %Q\xbcH\x031\xd7\rT|\xc7'
-    for idx in (3, 4, 5, 6, 7):
+    for idx in (8, 9, 10, 11, 12):
         if transactions[idx].tx_hash == tx_hash:
             break
     assert transactions[idx] == ZKSyncLiteTransaction(
@@ -111,7 +121,7 @@ def test_get_transactions(zksync_lite):
         amount=ZERO,
         fee=Fee(FVal(0.001513)),
     )
-    assert transactions[1] == ZKSyncLiteTransaction(
+    assert transactions[14] == ZKSyncLiteTransaction(
         tx_hash=b'3\x1f\xccI\xdc<\nw.\x0b^E\x185\x0f=\x9a\\Uv\xb4\xe8\xdb\xc7\xc5k,Y\xca\xa29\xbb',
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1659010582),
@@ -122,7 +132,7 @@ def test_get_transactions(zksync_lite):
         amount=FVal('0.9630671085'),
         fee=None,
     )
-    assert transactions[0] == ZKSyncLiteTransaction(
+    assert transactions[15] == ZKSyncLiteTransaction(
         tx_hash=b'\xbdr;Z_\x87\xe4\x85\xa4x\xbc}\x1f6]\xb7\x94@\xb6\xe90[\xff;\x16\xa0\xe0\xab\x83\xe5\x19p',
         tx_type=ZKSyncLiteTXType.WITHDRAW,
         timestamp=Timestamp(1708431030),

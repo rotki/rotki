@@ -220,6 +220,7 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -2716,10 +2717,9 @@ class RestAPI:
                 status_code=HTTPStatus.CONFLICT,
             )
 
-        addresses = accounts if accounts else self.rotkehlchen.chains_aggregator.queried_addresses_for_module('zksync_lite')  # noqa: E501
-
+        addresses = accounts if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
         for address in addresses:
-            zksynclite.get_transactions(
+            zksynclite.fetch_transactions(
                 address=address,
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
@@ -2815,9 +2815,9 @@ class RestAPI:
             evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> dict[str, Any]:
         """
-        This method should be called after querying ethereum transactions and does the following:
+        This method should be called after querying evm transactions and does the following:
         - Query missing receipts
-        - Decode ethereum transactions
+        - Decode EVM transactions
 
         It can be a slow process and this is why it is important to set the list of addresses
         queried per module that need to be decoded.
@@ -2845,6 +2845,23 @@ class RestAPI:
         }
 
     @async_api_call()
+    def decode_pending_evmlike_transactions(
+            self,
+            evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS],  # pylint: disable=unused-argument
+    ) -> dict[str, Any]:
+        """This method should be called after querying evmlike transactions"""
+        decoded_num = 0
+        # For now it's only zksync lite
+        if (zksynclite := self.rotkehlchen.chains_aggregator.get_module('zksync_lite')) is not None:  # noqa: E501
+            decoded_num = zksynclite.decode_undecoded_transactions()
+
+        return {
+            'result': {'decoded_tx_number': decoded_num},
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
         pending_transactions_to_decode = {}
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
@@ -2853,6 +2870,15 @@ class RestAPI:
                 pending_transactions_to_decode[chain.to_name()] = tx_count
 
         return _wrap_in_ok_result(pending_transactions_to_decode)
+
+    @async_api_call()
+    def get_count_evmlike_transactions_not_decoded(self) -> dict[str, Any]:
+        result = {}
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0')
+            result['zksync_lite'] = cursor.fetchone()[0]
+
+        return _wrap_in_ok_result(result)
 
     def get_asset_icon(
             self,

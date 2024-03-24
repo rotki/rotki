@@ -2250,6 +2250,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
     with db_v41.conn.write_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
+        assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2267,6 +2268,11 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
             ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5),
         ]
+        for new_loc in (Location.SCROLL, Location.ZKSYNC_LITE):
+            assert cursor.execute(  # Check that new locations were added
+                'SELECT location FROM location WHERE seq=?',
+                (new_loc.value,),
+            ).fetchone()[0] == new_loc.serialize_for_db()
 
 
 def test_latest_upgrade_correctness(user_data_dir):

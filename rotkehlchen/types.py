@@ -723,6 +723,7 @@ class Location(DBCharEnumMixIn):
     WOO = 44
     BYBIT = 45
     SCROLL = 46  # on-chain Scroll events
+    ZKSYNC_LITE = 47
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
