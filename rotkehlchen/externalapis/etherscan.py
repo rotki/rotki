@@ -507,8 +507,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     timestamp = deserialize_timestamp(entry['timeStamp'])
                 except DeserializationError as e:
                     log.error(
-                        f"Failed to read transaction timestamp {entry['hash']} from etherscan for "
-                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f"Failed to read transaction timestamp {entry['hash']} from {self.chain} "
+                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
                     )
                     continue
 
@@ -520,8 +520,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     hashes.add((deserialize_evm_tx_hash(entry['hash']), timestamp))
                 except DeserializationError as e:
                     log.error(
-                        f"Failed to read transaction hash {entry['hash']} from etherscan for "
-                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f"Failed to read transaction hash {entry['hash']} from {self.chain} "
+                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
                     )
                     continue
 
@@ -688,8 +688,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             number = deserialize_int_from_str(result, 'etherscan getblocknobytime')
         except DeserializationError as e:
             raise RemoteError(
-                f'Could not read blocknumber from etherscan getblocknobytime '
-                f'result {result}',
+                f'Could not read blocknumber from {self.chain} etherscan '
+                f'getblocknobytime result {result}',
             ) from e
 
         self.timestamp_to_block_cache.add(key=ts, value=number)
