@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -25,6 +26,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -176,12 +178,14 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 log.error(f'Could not find receipt for event {events[0].identifier=}')
                 continue
 
-            transfer_counter = 0
-            for log_event in receipt.logs:  # Check if there is enough transfers to consider it spam  # noqa: E501
+            transfer_counter: defaultdict['ChecksumEvmAddress', int] = defaultdict(int)
+            # check if there is a contract that made what we consider a spam amount of transfers
+            for log_event in receipt.logs:
                 if log_event.topics[0] == ERC20_OR_ERC721_TRANSFER:
-                    transfer_counter += 1
+                    transfer_counter[log_event.address] += 1
 
-                if transfer_counter >= MULTISEND_SPAM_THRESHOLD:
+                # check if a specific contract performed transfers above the threshold
+                if any(tx_count >= MULTISEND_SPAM_THRESHOLD for tx_count in transfer_counter.values()):  # noqa: E501
                     break
             else:
                 continue  # not spam

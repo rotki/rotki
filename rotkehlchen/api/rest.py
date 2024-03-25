@@ -3057,7 +3057,7 @@ class RestAPI:
                     timestamp=timestamp,
                 )
             except (RemoteError, NoPriceForGivenTimestamp) as e:
-                log.error(
+                log.warning(
                     f'Could not query the historical {target_asset.identifier} price for '
                     f'{asset.identifier} at time {timestamp} due to: {e!s}. Using zero price',
                 )

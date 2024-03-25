@@ -136,6 +136,10 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
             v-else-if="!isEventAccountingRuleProcessed(item)"
             :event="item"
           />
+          <div
+            v-else
+            class="w-10 h-10"
+          />
         </RowActions>
       </LazyLoader>
     </template>

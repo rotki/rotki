@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.constants.assets import A_YFI
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -40,6 +41,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
@@ -556,3 +558,41 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
             if len(task_manager.running_greenlets) != 0:
                 gevent.joinall(task_manager.running_greenlets[func])
             assert mocked_func.call_count == 0
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD4324B81d097141230961af171bC0287F59A2538']])
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_augmented_detection_pendle_transactions(
+        task_manager: TaskManager,
+        database: 'DBHandler',
+        globaldb: GlobalDBHandler,
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    """
+    Test that a tx involving transfers about the threshold but from different
+    contracts doesn't mark the tokens as spam if the price query fails.
+    """
+    tx_hex = deserialize_evm_tx_hash('0x9d4ff6ae12790aa747f2f886529092476df6b63e745684b80b8f32c61b90be67')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    token = EvmToken(evm_address_to_identifier(
+        address='0x391B570e81e354a85a496952b66ADc831715f54f',
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    ))
+    assert token.protocol is None
+
+    task_manager.potential_tasks = [task_manager._maybe_augmented_detect_new_spam_tokens]
+    task_manager.schedule()
+    with patch(
+        'rotkehlchen.externalapis.defillama.Defillama.query_current_price',
+        side_effect=lambda *args, **kwargs: (ZERO_PRICE, True),
+    ):
+        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_augmented_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
+
+    updated_token = cast(EvmToken, globaldb.resolve_asset(identifier=token.identifier))
+    assert updated_token.protocol is None

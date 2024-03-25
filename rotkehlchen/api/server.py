@@ -156,6 +156,7 @@ from rotkehlchen.api.v1.resources import (
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.version_check import get_current_version
 
 URLS = list[
     tuple[str, type[MethodView]] | tuple[str, type[MethodView], str]
@@ -486,6 +487,7 @@ class APIServer:
                 msg = 'rotki is running in __debug__ mode'
                 print(msg)
                 log.info(msg)
+            log.info(f'Starting rotki {get_current_version().our_version}')
             msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
             print(msg)
             log.info(msg)
