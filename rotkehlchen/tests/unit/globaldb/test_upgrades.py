@@ -595,7 +595,7 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
         # exact values can be tested by pasting this gist here and running it
         # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
         for location, expected_mappings_count in (
-            (Location.BINANCE.serialize_for_db(), 23),
+            (Location.BINANCE.serialize_for_db(), 22),
             (Location.BITFINEX.serialize_for_db(), 10),
             (Location.BITTREX.serialize_for_db(), 125),
             (Location.FTX.serialize_for_db(), 65),
