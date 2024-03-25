@@ -176,11 +176,15 @@ def get_cassette_dir(request: pytest.FixtureRequest) -> Path:
 def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
     """Checks if etherscan is rate limited.
     Suppression is for errors parsing when response does not match etherscan"""
-    result = False
+    rate_limited = False
     with suppress(JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
         body = jsonloads_dict(response['body']['string'])
-        result = int(body.get('status', 0)) == 0 and (body_result := body.get('result', None)) is not None and 'rate limit reached' in body_result
-    return result
+        rate_limited = (
+            int(body.get('status', 0)) == 0 and
+            (body_result := body.get('result', None)) is not None and
+            'rate limit reached' in body_result
+        )
+    return rate_limited
 
 
 @pytest.fixture(scope='module', name='vcr')
