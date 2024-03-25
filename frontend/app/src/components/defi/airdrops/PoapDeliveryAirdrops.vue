@@ -3,11 +3,7 @@ import images from './poap.json';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
 
-defineProps<{
-  visible: boolean;
-  colspan: number;
-  items: PoapDeliveryDetails[];
-}>();
+defineProps<{ items: PoapDeliveryDetails[] }>();
 
 const events = [
   'aave_v2_pioneers',
@@ -52,12 +48,8 @@ function getImage(event: EventType): string {
 </script>
 
 <template>
-  <TableExpandContainer
-    :visible="visible"
-    :colspan="colspan"
-    no-padding
-  >
-    <template #title>
+  <RuiCard no-padding>
+    <template #header>
       {{ t('poap_delivery_airdrops.title') }}
     </template>
 
@@ -100,5 +92,5 @@ function getImage(event: EventType): string {
         </ExternalLink>
       </template>
     </RuiDataTable>
-  </TableExpandContainer>
+  </RuiCard>
 </template>

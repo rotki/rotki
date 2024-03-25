@@ -39,7 +39,6 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -104,7 +103,6 @@ export function registerComponents(): void {
   Vue.component('TableFilter', TableFilter);
   // version 10
   Vue.component('DataTable', DataTable);
-  Vue.component('TableExpandContainer', TableExpandContainer);
   // version 11
   Vue.component('AssetIcon', AssetIcon);
   // version 12 - 1.19

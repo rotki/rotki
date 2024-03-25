@@ -1,4 +1,4 @@
-import type { BigNumber, HasBalance } from '@rotki/common';
+import type { Balance, BigNumber } from '@rotki/common';
 import type {
   AaveBorrowingRates,
   AaveHistoryTotal,
@@ -23,7 +23,7 @@ export interface DefiBalance extends BaseDefiBalance {
   readonly protocol: DefiProtocol;
 }
 
-export interface BaseDefiBalance extends HasBalance {
+export interface BaseDefiBalance extends Balance {
   readonly effectiveInterestRate: string;
   readonly asset: string;
 }

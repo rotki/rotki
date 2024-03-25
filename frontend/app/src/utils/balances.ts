@@ -242,6 +242,11 @@ export function getBtcBreakdown(blockchain: Blockchain, balances: BtcBalances, a
   return breakdown;
 }
 
-export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
-  return balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);
+export function balanceUsdValueSum(balances: HasBalance[] | Balance[]): BigNumber {
+  return balances.reduce((sum, balance) => {
+    if ('balance' in balance)
+      return sum.plus(balance.balance.usdValue);
+
+    return sum.plus(balance.usdValue);
+  }, Zero);
 }

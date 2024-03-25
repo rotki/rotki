@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { Ref } from 'vue';
-import type { DataTableHeader } from '@/types/vuetify';
 import type { Writeable } from '@/types';
 import type {
   AssetUpdateConflictResult,
@@ -22,23 +22,22 @@ const { t } = useI18n();
 
 const { conflicts } = toRefs(props);
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: t('conflict_dialog.table.headers.local'),
-    sortable: false,
-    value: 'local',
+    label: t('conflict_dialog.table.headers.local'),
+    key: 'local',
+    class: 'py-4',
   },
   {
-    text: t('conflict_dialog.table.headers.remote'),
-    sortable: false,
-    value: 'remote',
+    label: t('conflict_dialog.table.headers.remote'),
+    key: 'remote',
+    class: 'py-4',
   },
   {
-    text: t('conflict_dialog.table.headers.keep'),
-    value: 'keep',
+    label: t('conflict_dialog.table.headers.keep'),
+    key: 'keep',
     align: 'center',
-    sortable: false,
-    class: 'conflict-dialog__action-container',
+    class: 'py-4',
   },
 ]);
 
@@ -132,90 +131,92 @@ function cancel() {
     @confirm="resolve(resolution)"
     @cancel="cancel()"
   >
-    <div
-      class="flex justify-end items-center gap-8 border border-default rounded p-4"
-    >
-      {{ t('conflict_dialog.all_buttons_description') }}
-      <RuiButtonGroup
-        color="primary"
-        variant="outlined"
-        :value="isAllLocalOrRemote"
+    <template #default="{ wrapper }">
+      <div
+        class="flex justify-end items-center gap-8 border border-default rounded p-4"
       >
-        <template #default>
-          <RuiButton
-            value="local"
-            @click="setResolution('local')"
-          >
-            {{ t('conflict_dialog.keep_local') }}
-          </RuiButton>
-          <RuiButton
-            value="remote"
-            @click="setResolution('remote')"
-          >
-            {{ t('conflict_dialog.keep_remote') }}
-          </RuiButton>
-        </template>
-      </RuiButtonGroup>
-    </div>
-
-    <div class="text-caption pt-4 pb-1">
-      <i18n
-        path="conflict_dialog.hint"
-        tag="span"
-      >
-        <template #conflicts>
-          <span class="font-medium"> {{ conflicts.length }} </span>
-        </template>
-        <template #remaining>
-          <span class="font-medium"> {{ remaining }} </span>
-        </template>
-      </i18n>
-    </div>
-
-    <DataTable
-      :class="{
-        [$style.mobile]: true,
-      }"
-      :items="conflicts"
-      :headers="tableHeaders"
-      disable-floating-header
-    >
-      <template #item.local="{ item: conflict }">
-        <AssetConflictRow
-          v-for="field in getConflictFields(conflict)"
-          :key="`local-${field}`"
-          :field="field"
-          :value="conflict.local[field]"
-          :diff="isDiff(conflict, field)"
-        />
-      </template>
-      <template #item.remote="{ item: conflict }">
-        <AssetConflictRow
-          v-for="field in getConflictFields(conflict)"
-          :key="`remote-${field}`"
-          :field="field"
-          :value="conflict.remote[field]"
-          :diff="isDiff(conflict, field)"
-        />
-      </template>
-      <template #item.keep="{ item: conflict }">
+        {{ t('conflict_dialog.all_buttons_description') }}
         <RuiButtonGroup
-          v-model="resolution[conflict.identifier]"
           color="primary"
           variant="outlined"
-          @input="onStrategyChange(resolution[conflict.identifier])"
+          :value="isAllLocalOrRemote"
         >
           <template #default>
-            <RuiButton value="local">
-              {{ t('conflict_dialog.action.local') }}
+            <RuiButton
+              value="local"
+              @click="setResolution('local')"
+            >
+              {{ t('conflict_dialog.keep_local') }}
             </RuiButton>
-            <RuiButton value="remote">
-              {{ t('conflict_dialog.action.remote') }}
+            <RuiButton
+              value="remote"
+              @click="setResolution('remote')"
+            >
+              {{ t('conflict_dialog.keep_remote') }}
             </RuiButton>
           </template>
         </RuiButtonGroup>
-      </template>
-    </DataTable>
+      </div>
+
+      <div class="text-caption pt-4 pb-1">
+        <i18n
+          path="conflict_dialog.hint"
+          tag="span"
+        >
+          <template #conflicts>
+            <span class="font-medium"> {{ conflicts.length }} </span>
+          </template>
+          <template #remaining>
+            <span class="font-medium"> {{ remaining }} </span>
+          </template>
+        </i18n>
+      </div>
+
+      <RuiDataTable
+        :rows="conflicts"
+        :cols="tableHeaders"
+        :scroller="wrapper"
+        row-attr="identifier"
+        outlined
+        dense
+      >
+        <template #item.local="{ row: conflict }">
+          <AssetConflictRow
+            v-for="field in getConflictFields(conflict)"
+            :key="`local-${field}`"
+            :field="field"
+            :value="conflict.local[field]"
+            :diff="isDiff(conflict, field)"
+          />
+        </template>
+        <template #item.remote="{ row: conflict }">
+          <AssetConflictRow
+            v-for="field in getConflictFields(conflict)"
+            :key="`remote-${field}`"
+            :field="field"
+            :value="conflict.remote[field]"
+            :diff="isDiff(conflict, field)"
+          />
+        </template>
+        <template #item.keep="{ row: conflict }">
+          <RuiButtonGroup
+            v-model="resolution[conflict.identifier]"
+            color="primary"
+            variant="outlined"
+            @input="onStrategyChange(resolution[conflict.identifier])"
+          >
+            <template #default>
+              <RuiButton value="local">
+                {{ t('conflict_dialog.action.local') }}
+              </RuiButton>
+              <RuiButton value="remote">
+                {{ t('conflict_dialog.action.remote') }}
+              </RuiButton>
+            </template>
+          </RuiButtonGroup>
+        </template>
+      </RuiDataTable>
+    </template>
   </BigDialog>
 </template>
 

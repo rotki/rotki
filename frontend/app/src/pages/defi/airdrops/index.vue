@@ -251,7 +251,7 @@ onMounted(async () => {
               />
             </RuiButton>
           </ExternalLink>
-          <RowExpander
+          <RuiTableRowExpander
             v-else
             :expanded="expanded.includes(row)"
             @click="expand(row)"
@@ -261,8 +261,6 @@ onMounted(async () => {
           <PoapDeliveryAirdrops
             v-if="hasDetails(row.source)"
             :items="row.details"
-            :colspan="tableHeaders.length"
-            visible
           />
         </template>
       </RuiDataTable>
