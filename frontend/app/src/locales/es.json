@@ -2477,7 +2477,7 @@
     "binance": {
       "line_one": "Las columnas que procesamos incluyen: User_ID, UTC_Time, Account, Operation, Coin, Change y Remark.",
       "line_two": "Puede obtener el archivo CSV en {link}.",
-      "line_three": "Debido al formato csv de binance existe la posibilidad de que no se importen todos los datos. Si esto sucede, usted recibirá una advertencia.",
+      "line_three": "Debido al formato CSV de Binance, existe la posibilidad de que no se importen todos los datos. Si esto ocurre, recibirás una advertencia.",
       "name": "Binance"
     },
     "bisq": {
