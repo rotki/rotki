@@ -2528,8 +2528,9 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "导入:存款、取款、交易、ETH Staking、小资产交易所 BNB、ETH Staking 奖励、Launchpool 利息、POS 储蓄利息、POS 储蓄购买、POS 储蓄赎回。",
-      "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
+      "line_one": "我们处理的列包括 User_ID, UTC_Time, Account, Operation, Coin, Change 和 Remark。",
+      "line_two": "您可以从 {link} 获取 CSV 文件。",
+      "line_three": "由于 Binance 的 CSV 格式，有可能无法导入所有数据。如果出现这种情况，您将收到警告。",
       "name": "币安"
     },
     "bisq": {

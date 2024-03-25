@@ -47,6 +47,8 @@ export const externalLinks = {
     'https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key',
   nftWarning:
     'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94',
+  binanceCsvExport:
+    'https://www.binance.com/en/my/wallet/history',
 };
 
 export const externalAssets = {

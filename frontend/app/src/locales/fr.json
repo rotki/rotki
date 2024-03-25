@@ -2766,8 +2766,9 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "Importe : Dépôts, retraits, transactions, staking ETH, petits actifs d'échange BNB, récompenses de staking ETH, intérêts Launchpool, intérêts POS épargne, achat POS épargne, rachat POS épargne.",
-      "line_two": "En raison du format csv de Binance, il est possible que toutes les données ne soient pas importées. Dans ce cas, vous recevrez un avertissement.",
+      "line_one": "Les colonnes que nous traitons sont les suivantes : User_ID, UTC_Time, Account, Operation, Coin, Change et Remark.",
+      "line_two": "Vous pouvez obtenir le fichier CSV à partir de {link}.",
+      "line_three": "En raison du format CSV de Binance, il est possible que toutes les données ne soient pas importées. Dans ce cas, vous recevrez un avertissement.",
       "name": "Binance"
     },
     "bisq": {
