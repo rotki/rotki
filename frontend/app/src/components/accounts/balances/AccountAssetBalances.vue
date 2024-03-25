@@ -102,10 +102,11 @@ const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
       <template #item.price="{ row }">
         <AmountDisplay
           v-if="assetPrice(row.asset).value"
-          tooltip
+          no-scramble
           show-currency="symbol"
           fiat-currency="USD"
           :price-asset="row.asset"
+          :price-of-asset="row.price"
           :value="getPrice(row.asset)"
         />
         <div v-else>
