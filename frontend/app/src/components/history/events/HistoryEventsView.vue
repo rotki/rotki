@@ -897,6 +897,12 @@ watchImmediate(route, async (route) => {
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
             :item-class="getItemClass"
+            :empty="{ label: t('data_table.no_data') }"
+            :texts="{
+              rowsPerPage: t('data_table.rows_per_page'),
+              itemsNumber: t('data_table.items_no'),
+              of: t('common.of'),
+            }"
             row-attr="txHash"
             outlined
             @update:options="setTableOptions($event)"

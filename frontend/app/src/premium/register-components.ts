@@ -33,7 +33,6 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import DataTable from '@/components/helper/DataTable.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
@@ -101,8 +100,6 @@ export function registerComponents(): void {
   // version 9
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('TableFilter', TableFilter);
-  // version 10
-  Vue.component('DataTable', DataTable);
   // version 11
   Vue.component('AssetIcon', AssetIcon);
   // version 12 - 1.19
