@@ -47,8 +47,8 @@ const v$ = setValidation(
       v-model="content"
       variant="outlined"
       color="primary"
-      max-rows="5"
       min-rows="3"
+      rows="10"
       auto-grow
       :label="t('notes_menu.labels.content')"
       :error-messages="toMessages(v$.content)"
