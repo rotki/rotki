@@ -18,7 +18,6 @@ INSERT INTO location_unsupported_assets (location, exchange_symbol) VALUES
 ('E', 'TUSDB'),
 ('E', 'ETF'),
 ('E', 'BTTC'),
-('E', 'NGN'),
 ('E', 'SUSHIUP'),
 ('E', 'SXPDOWN'),
 ('E', 'SUSHIDOWN'),
