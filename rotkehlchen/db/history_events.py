@@ -628,12 +628,15 @@ class DBHistoryEvents:
             )
 
             free_query_group_by = maybe_filter_ignore_asset(query_filter)
+            group_by_query = ''
+            if group_by_event_ids:
+                group_by_query = 'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'  # noqa: E501
+                bindings.insert(0, entries_limit)  # add limit's binding before prepared_query's bindings  # noqa: E501
             count_with_limit = cursor.execute(
                 f'SELECT COUNT(*) FROM ('
                 f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()}{free_query_group_by}'  # we take the groups before the limit has been applied  # noqa: E501
-                'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'
-                f'){prepared_query}',
-                [entries_limit] + bindings,  # add limit's binding before prepared_query's bindings
+                f'{group_by_query}){prepared_query}',
+                bindings,
             ).fetchone()[0]
             return count_without_limit, count_with_limit
 

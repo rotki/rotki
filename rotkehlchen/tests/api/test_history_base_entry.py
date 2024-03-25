@@ -391,7 +391,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 6
+    assert result['entries_found'] == 9
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
     for event in result['entries']:
@@ -474,7 +474,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 8
-    assert result['entries_found'] == 5
+    assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
 
@@ -495,7 +495,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         assert result['entries_total'] == 6
 
     # test pagination and exclude_ignored_assets without group by event ids works
-    for exclude_ignored_assets, events_found, sub_events_found in ((True, 2, 3), (False, 6, 9)):
+    for exclude_ignored_assets, events_found, sub_events_found in ((True, 3, 3), (False, 9, 9)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
