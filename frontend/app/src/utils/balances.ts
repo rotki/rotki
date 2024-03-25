@@ -1,5 +1,6 @@
 import type {
   AssetBalance,
+  Balance,
   BigNumber,
   HasBalance,
 } from '@rotki/common';
