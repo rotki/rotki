@@ -107,7 +107,7 @@ async function uploadFile() {
       try {
         const { taskId } = await importFile(formData);
         const taskMeta = {
-          title: t('file_upload.task.title', { source: get(source) }).toString(),
+          title: t('file_upload.task.title', { source: get(source) }),
           source: get(source),
         };
         const { result } = await awaitTask<boolean, TaskMeta>(
