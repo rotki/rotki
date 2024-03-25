@@ -9,6 +9,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import { Routes } from '@/router/routes';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
 import type { Writeable } from '@/types';
 import type {
@@ -19,7 +20,6 @@ import type {
   HistoryEventRequestPayload,
 } from '@/types/history/events';
 import type { Collection } from '@/types/collection';
-import type { DataTableHeader } from '@/types/vuetify';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { ComputedRef, Ref } from 'vue';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
@@ -100,33 +100,44 @@ const usedAccounts: ComputedRef<Account[]> = computed(
   },
 );
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref({
+  column: 'timestamp',
+  direction: 'desc' as const,
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: '',
-    value: 'ignoredInAccounting',
-    sortable: false,
-    class: '!p-0',
-    cellClass: '!p-0',
-    width: '0px',
+    label: '',
+    key: 'ignoredInAccounting',
+    class: '!p-0 w-px',
+    cellClass: '!p-0 w-px',
   },
   {
-    text: t('transactions.events.headers.event_identifier'),
-    value: 'txHash',
-    sortable: false,
-    width: '60%',
+    label: t('transactions.events.headers.event_identifier'),
+    key: 'txHash',
+    class: 'w-[60%]',
+    cellClass: '!py-2',
   },
   {
-    text: t('common.datetime'),
-    value: 'timestamp',
-    cellClass: 'text-no-wrap',
+    label: t('common.datetime'),
+    key: 'timestamp',
+    cellClass: 'text-no-wrap !py-2',
+    align: 'end',
+    sortable: true,
+  },
+  {
+    label: '',
+    key: 'action',
+    class: 'w-[1.25rem]',
+    cellClass: 'w-[1.25rem] !py-2',
     align: 'end',
   },
   {
-    text: '',
-    value: 'action',
-    width: '20px',
+    label: '',
+    key: 'expand',
     align: 'end',
-    sortable: false,
+    class: '!w-0 !p-0',
+    cellClass: '!w-0 !p-0',
   },
 ]);
 
@@ -159,7 +170,7 @@ const {
   filters,
   matchers,
   setPage,
-  setOptions,
+  setTableOptions,
   setFilter,
   updateFilter,
   fetchData,
@@ -277,6 +288,8 @@ const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
     evaluating: isEventsLoading,
   },
 );
+
+const hasIgnoredEvent = computed(() => get(allEvents).some(event => event.ignoredInAccounting));
 
 const locations = computed<string[]>(() => {
   const filteredData = get(filters);
@@ -870,46 +883,53 @@ watchImmediate(route, async (route) => {
             entriesFoundTotal,
           }"
         >
-          <DataTable
+          <RuiDataTable
             :expanded="eventsData"
-            :headers="tableHeaders"
-            :items="eventsData"
+            :cols="tableHeaders"
+            :rows="eventsData"
             :loading="processing"
-            :options="options"
-            :server-items-length="itemLength"
-            :single-select="false"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength,
+            }"
+            :pagination-modifiers="{ external: true }"
+            :sort.sync="sort"
+            :sort-modifiers="{ external: true }"
             :item-class="getItemClass"
-            @update:options="setOptions($event)"
+            row-attr="txHash"
+            outlined
+            @update:options="setTableOptions($event)"
           >
-            <template #item.ignoredInAccounting="{ item, isMobile }">
+            <template #item.ignoredInAccounting="{ row }">
               <IgnoredInAcountingIcon
-                v-if="item.ignoredInAccounting"
+                v-if="row.ignoredInAccounting"
                 class="ml-4"
-                :mobile="isMobile"
               />
+              <span v-else />
             </template>
-            <template #item.txHash="{ item }">
+            <template #item.txHash="{ row }">
               <LazyLoader class="flex items-center gap-2">
                 <LocationIcon
                   icon
-                  :item="item.location"
+                  :item="row.location"
                   size="20px"
                 />
-                <HistoryEventsIdentifier :event="item" />
+                <HistoryEventsIdentifier :event="row" />
               </LazyLoader>
             </template>
-            <template #item.timestamp="{ item }">
+            <template #item.timestamp="{ row }">
               <LazyLoader>
                 <DateDisplay
-                  :timestamp="item.timestamp"
+                  :timestamp="row.timestamp"
                   milliseconds
                 />
               </LazyLoader>
             </template>
-            <template #item.action="{ item }">
+            <template #item.action="{ row }">
               <LazyLoader>
                 <HistoryEventsAction
-                  :event="item"
+                  :event="row"
                   :loading="eventTaskLoading"
                   @add-event="addEvent($event)"
                   @toggle-ignore="toggleIgnore($event)"
@@ -918,18 +938,19 @@ watchImmediate(route, async (route) => {
                 />
               </LazyLoader>
             </template>
-            <template #expanded-item="{ headers, item }">
+            <template #item.expand />
+            <template #expanded-item="{ row }">
               <HistoryEventsList
                 :all-events="allEvents"
-                :event-group="item"
-                :colspan="headers.length"
+                :event-group="row"
                 :loading="sectionLoading || eventTaskLoading"
-                @edit-event="editEventHandler($event, item)"
+                :has-ignored-event="hasIgnoredEvent"
+                @edit-event="editEventHandler($event, row)"
                 @delete-event="promptForDelete($event)"
-                @show:missing-rule-action="setMissingRulesDialog($event, item)"
+                @show:missing-rule-action="setMissingRulesDialog($event, row)"
               />
             </template>
-            <template #body.prepend="{ headers }">
+            <template #body.prepend="{ colspan }">
               <HistoryQueryStatus
                 :include-evm-events="includeEvmEvents"
                 :include-online-events="includeOnlineEvents"
@@ -937,7 +958,7 @@ watchImmediate(route, async (route) => {
                 :locations="locations"
                 :un-decoded="unDecodedLocations"
                 :decoding="eventTaskLoading"
-                :colspan="headers.length"
+                :colspan="colspan"
                 :loading="processing"
                 :current-action.sync="currentAction"
                 @show-decode-details="decodingStatusDialogOpen = true"
@@ -948,11 +969,11 @@ watchImmediate(route, async (route) => {
                 :total="total"
                 :found="found"
                 :entries-found-total="entriesFoundTotal"
-                :colspan="headers.length"
+                :colspan="colspan"
                 :label="t('common.events')"
               />
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
 

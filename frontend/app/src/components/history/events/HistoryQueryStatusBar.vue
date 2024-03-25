@@ -14,7 +14,10 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
     v-if="total > 0 || decoding"
     class="!bg-black/[0.04] dark:!bg-white/[0.04]"
   >
-    <td :colspan="colspan">
+    <td
+      :colspan="colspan"
+      class="px-4"
+    >
       <div class="flex items-start gap-3">
         <div class="py-2 flex items-center gap-3">
           <div class="flex">
