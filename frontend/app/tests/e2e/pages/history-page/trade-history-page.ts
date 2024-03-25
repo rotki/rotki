@@ -76,7 +76,7 @@ export class TradeHistoryPage {
 
   visibleEntries(visible: number) {
     cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
-    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
+    cy.get('[class*=_tbody__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get('[data-cy=closed-trades] tbody')
       .find('tr')
       .should('have.length', visible);
@@ -84,7 +84,7 @@ export class TradeHistoryPage {
 
   totalEntries(total: number) {
     cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
-    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
+    cy.get('[class*=_tbody__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get(
       '[data-cy=closed-trades] [data-cy=table-pagination] span[class*=_indicator_]',
     ).should('contain.text', total);
@@ -167,7 +167,7 @@ export class TradeHistoryPage {
 
   shouldBeOnPage(range: string) {
     cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
-    cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
+    cy.get('[class*=_tbody__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get(
       '[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] label',
     ).should('contain', range);

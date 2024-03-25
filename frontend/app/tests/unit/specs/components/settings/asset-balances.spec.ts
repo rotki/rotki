@@ -29,12 +29,12 @@ describe('assetBalances.vue', () => {
     await wrapper.setProps({ loading: true });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeTruthy();
 
     await wrapper.setProps({ loading: false });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });

@@ -57,7 +57,7 @@ describe('accountBalances.vue', () => {
         .attributes('disabled'),
     ).toBe('disabled');
 
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeTruthy();
 
     remove(1);
     useStatusStore().setStatus({
@@ -73,7 +73,7 @@ describe('accountBalances.vue', () => {
         .find('button')
         .attributes('disabled'),
     ).toBeUndefined();
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });
