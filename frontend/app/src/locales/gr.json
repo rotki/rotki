@@ -2482,8 +2482,9 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH Staking, Small assets exchange BNB, ETH Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
-      "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
+      "line_one": "Οι στήλες που επεξεργαζόμαστε περιλαμβάνουν: User_ID, UTC_Time, Account, Operation, Coin, Change και Remark.",
+      "line_two": "Μπορείτε να λάβετε το αρχείο CSV από τη διεύθυνση {link}.",
+      "line_three": "Λόγω της μορφής csv του binance υπάρχει πιθανότητα να μην εισαχθούν όλα τα δεδομένα. Εάν συμβεί αυτό, θα λάβετε προειδοποίηση.",
       "name": "Binance"
     },
     "bisq": {
