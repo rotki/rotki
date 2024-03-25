@@ -6,7 +6,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_USDC
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USDC
 from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
@@ -257,16 +257,11 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     assert trades[0].timestamp == 1566687695
 
 
-def query_coinbase_and_test(
-        coinbase,
-        transactions_response=TRANSACTIONS_RESPONSE,
-        expected_warnings_num=0,
-        expected_errors_num=0,
-        # Since this test only mocks as breaking only one of the two actions by default
-        expected_actions_num=1,
-):
-    now = ts_now()
+def _create_coinbase_mock(transactions_response):
+    """Creates a mock function used for mocking Coinbase API responses.
 
+    Mocks both the transactions and accounts endpoints with mock data.
+    """
     def mock_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
         if 'transaction' in url:
             if 'next-page' in url:
@@ -278,6 +273,21 @@ def query_coinbase_and_test(
             return MockResponse(200, '{"data": [{"id": "5fs23", "updated_at": "2020-06-08T02:32:16Z"}]}')  # noqa: E501
         # else
         raise AssertionError(f'Unexpected url {url} for test')
+
+    return mock_coinbase_query
+
+
+def query_coinbase_and_test(
+        coinbase,
+        transactions_response=TRANSACTIONS_RESPONSE,
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        # Since this test only mocks as breaking only one of the two actions by default
+        expected_actions_num=1,
+):
+    now = ts_now()
+
+    mock_coinbase_query = _create_coinbase_mock(transactions_response)
 
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
         coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=Location.COINBASE)
@@ -858,6 +868,241 @@ def test_asset_conversion_choosing_fee_asset():
         link='id_of_trade',
     )
     assert trade == expected_trade
+
+
+def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
+    """Test that coinbase trade history query works fine for advanced_trade_fill"""
+    coinbase = function_scope_coinbase
+
+    mock_transactions_response = """
+{ "data": [{
+            "id": "REDACTED",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "-192.790000",
+                "currency": "USDC"
+            },
+            "native_amount": {
+                "amount": "-176.94",
+                "currency": "EUR"
+            },
+            "description": null,
+            "created_at": "2024-03-07T08:12:51Z",
+            "updated_at": "2024-03-07T08:12:51Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "instant_exchange": false,
+            "advanced_trade_fill": {
+                "fill_price": "0.9174",
+                "product_id": "USDC-EUR",
+                "order_id": "REDACTED",
+                "commission": "0",
+                "order_side": "sell"
+            },
+            "details": {
+                "title": "Filled USDC on sell",
+                "subtitle": null,
+                "header": null,
+                "health": "positive"
+            },
+            "hide_native_amount": false
+        },
+        {
+            "id": "REDACTED",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "-485.330000",
+                "currency": "USDC"
+            },
+            "native_amount": {
+                "amount": "-445.44",
+                "currency": "EUR"
+            },
+            "description": null,
+            "created_at": "2024-03-07T09:12:51Z",
+            "updated_at": "2024-03-07T09:12:51Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "instant_exchange": false,
+            "advanced_trade_fill": {
+                "fill_price": "0.9174",
+                "product_id": "USDC-EUR",
+                "order_id": "REDACTED",
+                "commission": "0",
+                "order_side": "sell"
+            },
+            "details": {
+                "title": "Filled USDC on sell",
+                "subtitle": null,
+                "header": null,
+                "health": "positive"
+            },
+            "hide_native_amount": false
+        },
+        {
+            "id": "REDACTED",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "-1.120000",
+                "currency": "ETH"
+            },
+            "native_amount": {
+                "amount": "-3400.98",
+                "currency": "EUR"
+            },
+            "description": null,
+            "created_at": "2024-03-07T09:12:51Z",
+            "updated_at": "2024-03-07T09:12:51Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "instant_exchange": false,
+            "advanced_trade_fill": {
+                "fill_price": "3334.341",
+                "product_id": "ETH-USDC",
+                "order_id": "REDACTED",
+                "commission": "0.0000005",
+                "order_side": "sell"
+            },
+            "details": {
+                "title": "Filled ETH on sell",
+                "subtitle": null,
+                "header": null,
+                "health": "positive"
+            },
+            "hide_native_amount": false
+        },
+        {
+            "id": "REDACTED",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "0.589290",
+                "currency": "SOL"
+            },
+            "native_amount": {
+                "amount": "80.08",
+                "currency": "EUR"
+            },
+            "description": null,
+            "created_at": "2024-03-07T09:12:51Z",
+            "updated_at": "2024-03-07T09:12:51Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "instant_exchange": false,
+            "advanced_trade_fill": {
+                "fill_price": "170.12",
+                "product_id": "SOL-USDC",
+                "order_id": "REDACTED",
+                "commission": "0.5710371002622",
+                "order_side": "buy"
+            },
+            "details": {
+                "title": "Filled Solana on buy",
+                "subtitle": null,
+                "header": null,
+                "health": "positive"
+            },
+            "hide_native_amount": false
+        },
+        {
+            "id": "REDACTED",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "1.120000",
+                "currency": "ETH"
+            },
+            "native_amount": {
+                "amount": "3400.98",
+                "currency": "EUR"
+            },
+            "description": null,
+            "created_at": "2024-03-07T09:12:51Z",
+            "updated_at": "2024-03-07T09:12:51Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "instant_exchange": false,
+            "advanced_trade_fill": {
+                "fill_price": "3334.341",
+                "product_id": "ETH-USDC",
+                "order_id": "REDACTED",
+                "commission": "0.0000005",
+                "order_side": "sell"
+            },
+            "details": {
+                "title": "Filled ETH on sell",
+                "subtitle": null,
+                "header": null,
+                "health": "positive"
+            },
+            "hide_native_amount": false
+        }]
+}
+"""
+    mock_coinbase_query = _create_coinbase_mock(mock_transactions_response)
+
+    with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
+        trades = coinbase.query_trade_history(
+            start_ts=0,
+            end_ts=ts_now(),
+            only_cache=False,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    # Notice that there are more trades included in the mock data
+    # but we expect some of them to not be included in the output
+    expected_trades = [Trade(
+        timestamp=1709799171,
+        location=Location.COINBASE,
+        base_asset=A_USDC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.SELL,
+        amount=FVal('192.790000'),
+        rate=FVal('0.9174'),
+        fee=ZERO,
+        fee_currency=A_EUR,
+        link='REDACTED',
+    ), Trade(
+        timestamp=1709802771,
+        location=Location.COINBASE,
+        base_asset=A_USDC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.SELL,
+        amount=FVal('485.330000'),
+        rate=FVal('0.9174'),
+        fee=ZERO,
+        fee_currency=A_EUR,
+        link='REDACTED',
+    ), Trade(
+        timestamp=1709802771,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_USDC,
+        trade_type=TradeType.SELL,
+        amount=FVal('1.120000'),
+        rate=FVal('3334.341'),
+        fee=FVal('0.0000005'),
+        fee_currency=A_USDC,
+        link='REDACTED',
+    ), Trade(
+        timestamp=1709802771,
+        location=Location.COINBASE,
+        base_asset=A_SOL,
+        quote_asset=A_USDC,
+        trade_type=TradeType.BUY,
+        amount=FVal('0.589290'),
+        rate=FVal('170.12'),
+        fee=FVal('0.5710371002622'),
+        fee_currency=A_USDC,
+        link='REDACTED',
+    )]
+    assert trades == expected_trades
 
 
 def test_coverage_of_products():
