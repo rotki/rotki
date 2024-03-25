@@ -179,7 +179,7 @@ def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
     result = False
     with suppress(JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
         body = jsonloads_dict(response['body']['string'])
-        result = int(body['status']) == 0 and 'rate limit reached' in body['result']
+        result = int(body.get('status', 0)) == 0 and (body_result := body.get('result', None)) is not None and 'rate limit reached' in body_result
     return result
 
 

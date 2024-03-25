@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
     ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
     ETHEREUM_TEST_PARAMETERS,
+    INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -423,10 +424,9 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         assert etherscan_tx_or_tx_receipt_calls == 2
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_contract_deployed_block(ethereum_inquirer):
-    """Test that getting deployed block of a contract address works
-
-    TODO: Mock it with vcr.py
-    """
+    """Test that getting deployed block of a contract address works"""
     assert ethereum_inquirer.get_contract_deployed_block('0x5a464C28D19848f44199D003BeF5ecc87d090F87') == 12251871  # noqa: E501
     assert ethereum_inquirer.get_contract_deployed_block('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None  # noqa: E501
