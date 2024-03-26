@@ -663,7 +663,11 @@ class RpcNodesResource(BaseMethodView):
         return RpcNodeEditSchema(
             dbhandler=self.rest_api.rotkehlchen.data.db,
         )
-    delete_schema = RpcNodeListDeleteSchema()
+
+    def make_delete_schema(self) -> RpcNodeListDeleteSchema:
+        return RpcNodeListDeleteSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
@@ -719,7 +723,7 @@ class RpcNodesResource(BaseMethodView):
         return self.rest_api.update_rpc_node(node=node)
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json_and_query_and_view_args')
+    @resource_parser.use_kwargs(make_delete_schema, location='json_and_query_and_view_args')
     def delete(
             self,
             blockchain: SupportedBlockchain,

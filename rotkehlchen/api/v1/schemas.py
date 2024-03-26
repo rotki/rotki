@@ -2948,15 +2948,19 @@ class RpcNodeListDeleteSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     identifier = fields.Integer(required=True)
 
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.dbhandler = dbhandler
+
     @validates_schema
     def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['identifier'] == 1:
+        if self.dbhandler.is_etherscan_node(data['identifier']):
             raise ValidationError(
-                message="Can't delete the etherscan node",
+                message="Can't delete an etherscan node",
                 field_name='identifier',
             )
 
