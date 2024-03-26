@@ -4,11 +4,10 @@ import { isEmpty } from 'lodash-es';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { getAccountAddress, getAccountId, isAccountWithBalanceXpub } from '@/utils/blockchain/accounts';
+import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts';
 import type {
   BlockchainAccountWithBalance,
   XpubData,
-  XpubPayload,
 } from '@/types/blockchain/accounts';
 import type { ComputedRef, Ref } from 'vue';
 import type {
@@ -61,7 +60,6 @@ const loading = computed<boolean>(() => {
 });
 
 const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
-const collapsedXpubs: Ref<BlockchainAccountWithBalance<XpubData>[]> = ref([]);
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
@@ -74,16 +72,6 @@ const isBtcNetwork = computed<boolean>(() => isBtcChain(get(blockchain)));
 
 const hasTokenDetection: ComputedRef<boolean> = computed(() =>
   supportsTransactions(get(blockchain)),
-);
-
-function xpubKey(account: BlockchainAccountWithBalance<XpubData>): string {
-  return `${account.data.xpub}::${account.data.derivationPath}`;
-}
-
-const collapsedKeys = computed<string[]>(() =>
-  get(collapsedXpubs)
-    .filter(isAccountWithBalanceXpub)
-    .map(xpubKey),
 );
 
 const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags }) => {
@@ -133,55 +121,10 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
   };
 }));
 
-const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => get(rows)
-  .filter(account =>
-    !isAccountWithBalanceXpub(account) || !get(collapsedKeys).includes(xpubKey(account)),
-  )
-  .concat(
-    get(collapsedXpubs).map((collapsedAccount) => {
-      const xpubEntry = get(balances).find(
-        account => account.groupHeader
-        && isAccountWithBalanceXpub(account)
-        && account.data.xpub === collapsedAccount.data.xpub
-        && account.data.derivationPath === collapsedAccount.data.derivationPath,
-      );
-      if (xpubEntry) {
-        return {
-          identifier: getAccountId(xpubEntry),
-          ...xpubEntry,
-        };
-      }
-      return {
-        identifier: getAccountId(collapsedAccount),
-        data: collapsedAccount.data,
-        amount: Zero,
-        usdValue: Zero,
-        chain: get(blockchain),
-        nativeAsset: get(blockchain).toUpperCase(),
-        expandable: false,
-      };
-    }),
-  ),
-);
-
-const collapsedXpubBalances = computed<Balance>(() => {
-  const balance = zeroBalance();
-
-  return get(collapsedXpubs)
-    .filter(({ tags }) => get(visibleTags).every(tag => tags?.includes(tag)))
-    .reduce(
-      (previousValue, currentValue) =>
-        balanceSum(previousValue, currentValue),
-      balance,
-    );
-});
-
 const total = computed<Balance>(() => {
-  const balances = get(nonExpandedBalances);
-  const collapsedAmount = get(collapsedXpubBalances).amount;
-  const collapsedUsd = get(collapsedXpubBalances).usdValue;
-  const amount = bigNumberSum(balances.map(({ amount }) => amount)).plus(collapsedAmount);
-  const usdValue = bigNumberSum(balances.map(({ usdValue }) => usdValue)).plus(collapsedUsd);
+  const rowsVal = get(rows);
+  const amount = bigNumberSum(rowsVal.map(({ amount }) => amount));
+  const usdValue = balanceUsdValueSum(rowsVal);
 
   return {
     amount,
@@ -287,15 +230,6 @@ function getItems(groupId: string) {
   return get(balances).filter(account => account.groupId === groupId);
 }
 
-function removeCollapsed({ derivationPath, xpub }: XpubPayload) {
-  const index = get(collapsedXpubs).findIndex(
-    row => row.data.derivationPath === derivationPath && row.data.xpub === xpub,
-  );
-
-  if (index >= 0)
-    get(collapsedXpubs).splice(index, 1);
-}
-
 function isExpanded(row: Account) {
   return get(expanded).some(expanded => getAccountId(expanded) === getAccountId(row));
 }
@@ -303,10 +237,6 @@ function isExpanded(row: Account) {
 function expand(row: Account) {
   set(expanded, isExpanded(row) ? [] : [row]);
 }
-
-defineExpose({
-  removeCollapsed,
-});
 </script>
 
 <template>
@@ -325,7 +255,6 @@ defineExpose({
     data-cy="account-table"
     :data-location="blockchain"
     :group="isBtcNetwork ? ['groupId'] : undefined"
-    :collapsed.sync="collapsedXpubs"
     single-expand
     outlined
     sticky-header

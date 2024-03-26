@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useBreakpoint } from '@rotki/ui-library-compat';
 import Fragment from '@/components/helper/Fragment';
+import type BigNumber from 'bignumber.js';
 import type { BlockchainAccountWithBalance, XpubData } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
 
@@ -39,6 +40,12 @@ const xpubTags = computed<string[] | undefined>(() => get(xpub).tags);
 const displayXpub = computed<string>(() =>
   truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4),
 );
+
+const amountSum = computed<BigNumber>(() =>
+  bigNumberSum(get(items).map(({ amount }) => amount)),
+);
+
+const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
 </script>
 
 <template>
@@ -59,7 +66,7 @@ const displayXpub = computed<string>(() =>
       <div class="pl-9">
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
-      <div class="flex items-center gap-1 -my-2">
+      <div class="flex items-center gap-2 -my-2 text-sm">
         <RuiButton
           :disabled="items.length === 0"
           variant="text"
@@ -76,6 +83,7 @@ const displayXpub = computed<string>(() =>
             name="arrow-down-s-line"
           />
         </RuiButton>
+
         <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
@@ -94,6 +102,14 @@ const displayXpub = computed<string>(() =>
           :value="xpub.data.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
         />
+        <RuiTooltip>
+          <template #activator>
+            <RuiChip size="sm">
+              {{ items.length }}
+            </RuiChip>
+          </template>
+          {{ t('account_group_header.addresses', { count: items.length }) }}
+        </RuiTooltip>
         <span
           v-if="xpub.data.derivationPath"
           :class="{ blur: !shouldShowAmount }"
@@ -111,7 +127,7 @@ const displayXpub = computed<string>(() =>
     </td>
     <td class="text-end px-4">
       <AmountDisplay
-        :value="xpub.amount"
+        :value="amountSum"
         :loading="loading"
         :asset="isXs ? 'BTC' : undefined"
         :asset-padding="0.1"
@@ -121,7 +137,7 @@ const displayXpub = computed<string>(() =>
       <AmountDisplay
         fiat-currency="USD"
         show-currency="symbol"
-        :value="xpub.usdValue"
+        :value="usdSum"
         :loading="loading"
         :asset-padding="0.1"
       />

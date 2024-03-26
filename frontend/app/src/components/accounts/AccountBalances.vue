@@ -27,7 +27,6 @@ const { blockchain, loopring } = toRefs(props);
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
 const editedAccount = ref<BlockchainAccountWithBalance>();
-const balanceTable = ref();
 
 const { isTaskRunning } = useTaskStore();
 const { handleBlockchainRefresh } = useRefresh();
@@ -176,7 +175,6 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
     </div>
 
     <AccountBalanceTable
-      ref="balanceTable"
       class="mt-4"
       :loopring="loopring"
       :blockchain="blockchain"
