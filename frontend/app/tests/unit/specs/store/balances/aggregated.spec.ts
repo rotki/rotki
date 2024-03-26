@@ -7,7 +7,7 @@ import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
+import type { BitcoinAccounts } from '@/types/blockchain/accounts';
 import '../../../i18n';
 
 describe('store::balances/aggregated', () => {
@@ -211,12 +211,27 @@ describe('store::balances/aggregated', () => {
       },
     }, liabilities: {} };
 
-    const { updateAccounts, updateBalances, getBlockchainAccounts, fetchAccounts } = useBlockchainStore();
+    const { updateAccounts, updateBalances, getBlockchainAccounts, getAccounts } = useBlockchainStore();
 
     updateAccounts(Blockchain.BTC, convertBtcAccounts(chain => get(chain).toUpperCase(), Blockchain.BTC, accounts));
     updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
     expect(getBlockchainAccounts(Blockchain.BTC)).toEqual([
+      {
+        data: {
+          derivationPath: 'm',
+          xpub: 'xpub123',
+        },
+        amount: bigNumberify(0),
+        chain: Blockchain.BTC,
+        expandable: false,
+        groupHeader: true,
+        groupId: 'xpub123#m#btc',
+        label: undefined,
+        nativeAsset: 'BTC',
+        tags: undefined,
+        usdValue: bigNumberify(0),
+      },
       {
         data: {
           address: '1234',
@@ -229,6 +244,23 @@ describe('store::balances/aggregated', () => {
         label: undefined,
         expandable: false,
         tags: undefined,
+      },
+      {
+        data: {
+          derivationPath: undefined,
+          xpub: 'xpub1234',
+        },
+        amount: bigNumberify(0),
+        chain: Blockchain.BTC,
+        expandable: false,
+        groupHeader: true,
+        groupId: 'xpub1234#btc',
+        label: '123',
+        nativeAsset: 'BTC',
+        tags: [
+          'a',
+        ],
+        usdValue: bigNumberify(0),
       },
       {
         data: {
@@ -245,51 +277,53 @@ describe('store::balances/aggregated', () => {
       },
     ]);
 
-    const knownGroups = await fetchAccounts({ limit: 10, offset: 0 });
-
-    const groups: BlockchainAccountGroupWithBalance[] = [
+    expect(getAccounts(Blockchain.BTC)).toEqual([
       {
+        chain: Blockchain.BTC,
+        data: {
+          derivationPath: 'm',
+          xpub: 'xpub123',
+        },
+        groupHeader: true,
+        groupId: 'xpub123#m#btc',
+        label: undefined,
+        nativeAsset: 'BTC',
+        tags: undefined,
+      },
+      {
+        chain: Blockchain.BTC,
+        data: {
+          address: '1234',
+        },
+        groupId: 'xpub123#m#btc',
+        label: undefined,
+        nativeAsset: 'BTC',
+        tags: undefined,
+      },
+      {
+        chain: Blockchain.BTC,
+        data: {
+          derivationPath: undefined,
+          xpub: 'xpub1234',
+        },
+        groupHeader: true,
+        groupId: 'xpub1234#btc',
+        label: '123',
+        nativeAsset: 'BTC',
+        tags: [
+          'a',
+        ],
+      },
+      {
+        chain: Blockchain.BTC,
         data: {
           address: '123',
         },
-        amount: bigNumberify(10),
-        usdValue: bigNumberify(10),
-        chains: [Blockchain.BTC.toString()],
-        label: '123',
-        nativeAsset: 'BTC',
-        tags: undefined,
-        expandable: false,
-      },
-      {
-        data: {
-          xpub: 'xpub123',
-          derivationPath: 'm',
-        },
-        nativeAsset: 'BTC',
-        chains: [Blockchain.BTC.toString()],
-        expandable: true,
         label: undefined,
-        tags: undefined,
-        amount: bigNumberify(10),
-        usdValue: bigNumberify(10),
-      },
-      {
-        data: {
-          xpub: 'xpub1234',
-          derivationPath: undefined,
-        },
-        amount: Zero,
-        usdValue: Zero,
         nativeAsset: 'BTC',
-        expandable: false,
-        chains: [Blockchain.BTC.toString()],
-        label: '123',
-        tags: ['a'],
+        tags: undefined,
       },
-
-    ];
-
-    expect(knownGroups.data).toEqual(groups);
+    ]);
   });
 
   it('aggregatedBalances, make sure `isCurrentCurrency` do not break the calculation', () => {

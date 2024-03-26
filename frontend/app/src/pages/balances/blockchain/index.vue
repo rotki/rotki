@@ -9,7 +9,7 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const { getAccountsWithBalances } = useBlockchainStore();
+const { getBlockchainAccounts } = useBlockchainStore();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -39,7 +39,7 @@ const titles = computed<Record<string, string>>(() => ({
 const accounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() => Object.fromEntries(
   get(supportedChains).map(chain => [
     chain.id,
-    getAccountsWithBalances(chain.id),
+    getBlockchainAccounts(chain.id),
   ]),
 ));
 
@@ -47,7 +47,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   () => get(txEvmChains).some(chain => get(accounts)[chain.id]?.length > 0),
 );
 
-const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => getAccountsWithBalances('loopring'));
+const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => getBlockchainAccounts('loopring'));
 
 function getTitle(chain: string) {
   return get(titles)[chain] ?? '';

@@ -114,6 +114,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
         accounts.map(account => createAccountWithBalance(account, chainBalances)),
       ];
     });
+
     return Object.fromEntries(entries);
   });
 
@@ -180,8 +181,6 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   };
 
   const getAccounts = (chain: string): BlockchainAccount[] => get(accounts)[chain] ?? [];
-
-  const getAccountsWithBalances = (chain: string): BlockchainAccountWithBalance[] => get(blockchainAccounts)[chain] ?? [];
 
   const getAddressBalances = (chain: string, address: string) => get(balances)[chain]?.[address] ?? { assets: {}, liabilities: {} };
 
@@ -265,13 +264,12 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     blockchainAccountList,
     blockchainTotals,
     getAccounts,
-    getAccountsWithBalances,
+    getBlockchainAccounts,
     getAccountByAddress,
     getAccountDetails,
     getAddresses,
     getAddressBalances,
     getBreakdown,
-    getBlockchainAccounts,
     updateAccounts,
     updateBalances,
     updatePrices,

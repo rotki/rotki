@@ -59,7 +59,7 @@ const isSectionLoading = computed<boolean>(() => {
   return get(isLoading(Section.BLOCKCHAIN, section));
 });
 
-const selection = computed<BlockchainAccountWithBalance[]>(() => props.balances.filter(account => get(selectedAddresses).includes(getAccountAddress(account))));
+const selection = computed<BlockchainAccountWithBalance[]>(() => props.balances.filter(account => get(selectedAddresses).includes(getAccountId(account))));
 
 function editAccount(account: BlockchainAccountWithBalance) {
   set(editedAccount, account);
