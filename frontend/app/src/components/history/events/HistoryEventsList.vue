@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
 import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry } from '@/types/history/events';
 
@@ -7,7 +6,7 @@ const props = withDefaults(
   defineProps<{
     eventGroup: HistoryEventEntry;
     allEvents: HistoryEventEntry[];
-    colspan: number;
+    hasIgnoredEvent?: boolean;
     loading?: boolean;
   }>(),
   {
@@ -96,7 +95,7 @@ function handleMoreClick() {
 </script>
 
 <template>
-  <Fragment>
+  <div :class="{ 'pl-[3.125rem]': hasIgnoredEvent }">
     <DefineTable #default="{ data }">
       <HistoryEventsListTable
         :events="data"
@@ -108,61 +107,55 @@ function handleMoreClick() {
         @edit-event="emit('edit-event', $event)"
       />
     </DefineTable>
-    <td
-      colspan="1"
-      class="px-0"
+    <ReuseTable
+      v-if="!showDropdown"
+      :data="events"
     />
-    <td :colspan="colspan - 1">
-      <ReuseTable
-        v-if="!showDropdown"
-        :data="events"
-      />
-      <RuiAccordions
-        v-else
-        :value="0"
+    <RuiAccordions
+      v-else
+      :value="0"
+    >
+      <RuiAccordion
+        eager
       >
-        <RuiAccordion
-          eager
-        >
-          <template #default>
-            <ReuseTable
-              :data="limitedEvents"
-            />
-          </template>
-        </RuiAccordion>
-      </RuiAccordions>
-      <RuiButton
-        v-if="showDropdown"
-        color="primary"
-        variant="text"
-        class="text-rui-primary font-bold my-2"
-        @click="handleMoreClick()"
-      >
-        <template v-if="currentLimit === 0">
-          {{
-            t('transactions.events.view.show', {
-              length: events.length,
-            })
-          }}
-        </template>
-        <template v-else-if="currentLimit >= events.length">
-          {{ t('transactions.events.view.hide') }}
-        </template>
-        <template v-else>
-          {{
-            t('transactions.events.view.load_more', {
-              length: events.length - currentLimit,
-            })
-          }}
-        </template>
-        <template #append>
-          <RuiIcon
-            class="transition-all"
-            name="arrow-down-s-line"
-            :class="{ 'transform -rotate-180': currentLimit >= events.length }"
+        <template #default>
+          <ReuseTable
+            :data="limitedEvents"
           />
         </template>
-      </RuiButton>
-    </td>
-  </Fragment>
+      </RuiAccordion>
+    </RuiAccordions>
+    <RuiButton
+      v-if="showDropdown"
+      color="primary"
+      variant="text"
+      class="text-rui-primary font-bold my-2"
+      @click="handleMoreClick()"
+    >
+      <template v-if="currentLimit === 0">
+        {{
+          t('transactions.events.view.show', {
+            length: events.length,
+          })
+        }}
+      </template>
+      <template v-else-if="currentLimit >= events.length">
+        {{ t('transactions.events.view.hide') }}
+      </template>
+      <template v-else>
+        {{
+          t('transactions.events.view.load_more', {
+            length: events.length - currentLimit,
+          })
+        }}
+      </template>
+      <template #append>
+        <RuiIcon
+          class="transition-all"
+          name="arrow-down-s-line"
+          :class="{ 'transform -rotate-180': currentLimit >= events.length }"
+        />
+      </template>
+    </RuiButton>
+  </div>
 </template>

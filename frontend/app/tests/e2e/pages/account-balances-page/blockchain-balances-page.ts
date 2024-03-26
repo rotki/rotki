@@ -68,7 +68,7 @@ export class BlockchainBalancesPage {
 
     cy.get('@blockchain-section').should('exist');
     cy.get('@blockchain-section')
-      .get('th div[role=progressbar]', { timeout: 300000 })
+      .get('tbody td div[role=progressbar]', { timeout: 300000 })
       .should('not.exist');
 
     cy.get('@blockchain-section')
@@ -150,7 +150,7 @@ export class BlockchainBalancesPage {
     cy.wrap($element.find('> div > table')).as(`${blockchain}-table`);
     cy.get(`@${blockchain}-table`).scrollIntoView();
     cy.get(`@${blockchain}-table`)
-      .find('> thead > th div[role=progressbar]', {
+      .find('> tbody > tr > td div[role=progressbar]', {
         timeout: 240000,
       })
       .should('not.be.exist');
