@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.evm.decoding.aave.v3.constants import POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3CommonDecoder
 
-from .constants import AAVE_TREASURY, ETH_GATEWAYS, POOL_ADDRESS
+from .constants import AAVE_TREASURY, ETH_GATEWAYS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -14,7 +15,7 @@ class Aavev3Decoder(Aavev3CommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
+            evm_inquirer: 'PolygonPOSInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:

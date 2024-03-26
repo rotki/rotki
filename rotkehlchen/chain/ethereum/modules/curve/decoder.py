@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,

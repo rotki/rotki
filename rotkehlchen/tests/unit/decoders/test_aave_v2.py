@@ -5,13 +5,13 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_REN, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_REN, A_WETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -1094,6 +1094,61 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
             address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x572f60c0b887203324149D9C308574BcF2dfaD82']])
+def test_aave_v2_borrow_polygon(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x2c2777e24bc8a59171e33d54c2a87d846fc23e7f21a32b99d22397e64429b39c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1711437462000)
+    borrowed_amount, gas_fees = '5060', '0.033400048613703322'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POLYGON_POS_MATIC,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Burned {gas_fees} MATIC for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=430,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:137/erc20:0x75c4d1Fb84429023170086f06E682DcbBF537b7d'),
+            balance=Balance(amount=FVal(borrowed_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Receive {borrowed_amount} variableDebtmDAI from AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=433,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=EvmToken('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),
+            balance=Balance(amount=FVal(borrowed_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Borrow {borrowed_amount} DAI from AAVE v2 with variable APY 5.27%',
+            counterparty=CPT_AAVE_V2,
+            address=string_to_evm_address('0x27F8D03b3a2196956ED754baDc28D73be8830A6e'),
         ),
     ]
     assert events == expected_events

@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery

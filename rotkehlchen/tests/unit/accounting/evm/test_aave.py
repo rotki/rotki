@@ -13,7 +13,7 @@ from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V2
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V2
 from rotkehlchen.constants.assets import A_DAI, A_REN
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
