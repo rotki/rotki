@@ -369,6 +369,7 @@ def test_manage_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
     response = requests.patch(  # test that editing optimism etherscan weight works
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
         json={
@@ -381,6 +382,18 @@ def test_manage_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
+    # try to delete normal etherscan and optimism etherscan and see it fails
+    for identifier in (1, 6):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
+            json={'identifier': identifier},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg="Can't delete an etherscan node",
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
     # editing all nodes to have 0% weight.

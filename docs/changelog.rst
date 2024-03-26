@@ -3,7 +3,8 @@ Changelog
 =========
 
 * :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
-* :bug:`-` Naira should be correctly detected in binance.
+* :bug:`-` Deleting an EVM RPC node will no longer fail sometimes with a "Can't delete etherscan node" error. Additionally non-mainnet etherscan nodes are no longer deletable.
+* :bug:`-` Nigerian Naira should be correctly detected in binance.
 * :bug:`-` Kraken balances in new yield-bearing products and automatic staking for new kraken users should now appear properly.
 
 * :release:`1.32.2 <2024-03-15>`
