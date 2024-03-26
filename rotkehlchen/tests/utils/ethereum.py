@@ -23,6 +23,8 @@ from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecod
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransactionDecoder
 from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
+from rotkehlchen.chain.scroll.decoding.decoder import ScrollTransactionDecoder
+from rotkehlchen.chain.scroll.transactions import ScrollTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -362,6 +364,7 @@ def get_decoded_events_of_transaction(
         ChainID.ARBITRUM_ONE: (ArbitrumOneTransactions, ArbitrumOneTransactionDecoder),
         ChainID.BASE: (BaseTransactions, BaseTransactionDecoder),
         ChainID.GNOSIS: (GnosisTransactions, GnosisTransactionDecoder),
+        ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:
