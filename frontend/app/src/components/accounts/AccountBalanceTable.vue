@@ -90,11 +90,15 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
   const selectedTags = get(visibleTags);
   return !groupHeader && selectedTags.every(tag => tags?.includes(tag));
 }).map((item) => {
-  const display = get(addressNameSelector(getAccountAddress(item), item.chain)) || item.label || '';
+  const address = getAccountAddress(item);
+  const display = get(addressNameSelector(address, item.chain)) || item.label || '';
+
+  const group = item.groupId === address ? '' : item.groupId;
 
   const row = {
     ...item,
     display,
+    groupId: group,
     identifier: getAccountId(item),
   };
 
@@ -102,7 +106,6 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
     return row;
 
   const { amount, usdValue } = row;
-  const address = getAccountAddress(row);
 
   const { total } = get(getEthDetectedTokensInfo(blockchain, address));
 
@@ -131,10 +134,8 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
 }));
 
 const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => get(rows)
-  .filter(
-    account => !isAccountWithBalanceXpub(account)
-    || (isAccountWithBalanceXpub(account)
-    && !get(collapsedKeys).includes(xpubKey(account))),
+  .filter(account =>
+    !isAccountWithBalanceXpub(account) || !get(collapsedKeys).includes(xpubKey(account)),
   )
   .concat(
     get(collapsedXpubs).map((collapsedAccount) => {
