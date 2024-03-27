@@ -285,14 +285,14 @@ def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] 
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     invalid_payload = '[{'
 
-    def mock_binance_api_queries(url, timeout):  # pylint: disable=unused-argument
+    def mock_binance_api_queries(url, params, *args, **kwargs):  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
         elif 'myTrades' in url:
             # Can't mock unknown assets in binance trade query since
             # only all known pairs are queried
             payload = '[]'
-            if 'symbol=ETHBTC' in url:
+            if params.get('symbol') == 'ETHBTC':
                 payload = """[{
                 "symbol": "ETHBTC",
                 "id": 1,
@@ -306,7 +306,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 "isMaker": false,
                 "isBestMatch": true
                 }]"""
-            elif 'symbol=RDNETH' in url:
+            elif params.get('symbol') == 'RDNETH':
                 payload = """[{
                 "symbol": "RDNETH",
                 "id": 2,
@@ -324,7 +324,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 'capital/deposit' in url or
                 'capital/withdraw' in url or
                 'fiat/orders' in url or
-                'fiat/payments' in url
+                'fiat/payments' in url or
+                'asset/get-funding-asset' in url
         ):
             payload = '[]'
         else:
@@ -504,8 +505,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     binance_patch = None
     if binance:
         binance_patch = patch.object(
-            binance.session,
-            'get',
+            target=binance.session,
+            attribute='request',
             side_effect=mock_binance_api_queries,
         )
 
