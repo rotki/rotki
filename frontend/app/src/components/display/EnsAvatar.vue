@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { ComputedRef } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Ref } from 'vue';
-
 withDefaults(
   defineProps<{
     width?: string | number;

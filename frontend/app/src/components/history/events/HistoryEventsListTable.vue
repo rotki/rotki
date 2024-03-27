@@ -4,7 +4,6 @@ import { objectPick } from '@vueuse/shared';
 import {
   isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
-  isEvmEvent,
 } from '@/utils/history/events';
 import type { HistoryEventEntry } from '@/types/history/events';
 

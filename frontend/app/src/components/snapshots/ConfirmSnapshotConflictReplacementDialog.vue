@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { isNft } from '@/utils/nft';
 import NftDetails from '@/components/helper/NftDetails.vue';
-import type { ComputedRef } from 'vue';
 import type { BalanceSnapshot } from '@/types/snapshots';
 
 const props = defineProps<{

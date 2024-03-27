@@ -4,7 +4,6 @@ import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type {
   BalanceSnapshot,

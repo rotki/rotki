@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { isVideo } from '@/utils/nft';
-import type { ComputedRef } from 'vue';
 import type { StyleValue } from 'vue/types/jsx';
 
 const props = withDefaults(

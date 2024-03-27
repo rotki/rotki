@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import type { ComputedRef } from 'vue';
 
 const emit = defineEmits<{
   (e: 'click'): void;

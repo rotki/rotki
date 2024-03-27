@@ -4,12 +4,11 @@ import { isEmpty } from 'lodash-es';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts';
+import { getAccountAddress } from '@/utils/blockchain/accounts';
 import type {
   BlockchainAccountWithBalance,
   XpubData,
 } from '@/types/blockchain/accounts';
-import type { ComputedRef, Ref } from 'vue';
 import type {
   DataTableColumn,
   DataTableSortData,

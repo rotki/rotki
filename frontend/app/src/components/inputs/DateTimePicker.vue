@@ -6,7 +6,6 @@ import { helpers, required } from '@vuelidate/validators';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
-import type { ComputedRef, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{

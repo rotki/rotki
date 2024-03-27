@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { getAccountAddress } from '@/utils/blockchain/accounts';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type Account = BlockchainAccount<AddressData>;

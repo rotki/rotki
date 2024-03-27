@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Ref } from 'vue';
 import type { ManualBalance } from '@/types/manual-balances';
 
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);

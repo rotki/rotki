@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AssetInfo } from '@rotki/common/lib/data';
-import type { ComputedRef } from 'vue';
 import type {
   MatchedKeyword,
   MatchedKeywordWithBehaviour,

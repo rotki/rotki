@@ -12,7 +12,6 @@ import type {
   DataTableSortData,
   TablePaginationData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { Nullable } from '@/types';
 import type { DashboardTableType } from '@/types/settings/frontend-settings';
 

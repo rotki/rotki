@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toEvmChainAndTxHash } from '@/utils/history';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type {
   EvmChainAndTxHash,

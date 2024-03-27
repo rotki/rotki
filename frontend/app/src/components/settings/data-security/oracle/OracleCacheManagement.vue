@@ -7,7 +7,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { OracleCacheMeta } from '@/types/prices';
 

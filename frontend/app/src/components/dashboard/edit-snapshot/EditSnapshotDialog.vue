@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef, Ref } from 'vue';
 import type {
   BalanceSnapshot,
   LocationDataSnapshot,

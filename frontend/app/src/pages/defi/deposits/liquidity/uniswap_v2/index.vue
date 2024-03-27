@@ -5,7 +5,6 @@ import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { ComputedRef } from 'vue';
 import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
 
 const modules = [Module.UNISWAP];

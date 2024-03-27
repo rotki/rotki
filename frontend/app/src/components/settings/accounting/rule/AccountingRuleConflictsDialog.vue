@@ -9,7 +9,6 @@ import type {
   AccountingRuleConflictResolution,
 } from '@/types/settings/accounting';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 
 const emit = defineEmits<{
   (e: 'close'): void;

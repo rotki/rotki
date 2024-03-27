@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import type { AssetBalance, BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps<{

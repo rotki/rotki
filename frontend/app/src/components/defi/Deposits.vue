@@ -11,7 +11,6 @@ import {
 } from '@/premium/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { YearnVaultProfitLoss } from '@/types/defi/yearn';
-import type { ComputedRef } from 'vue';
 import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;

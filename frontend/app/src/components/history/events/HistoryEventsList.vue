@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(

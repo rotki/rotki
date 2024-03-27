@@ -3,7 +3,6 @@ import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
 import type { RawLocation } from 'vue-router';
-import type { ComputedRef } from 'vue';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
 defineOptions({

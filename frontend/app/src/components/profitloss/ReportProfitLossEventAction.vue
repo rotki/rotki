@@ -2,7 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
-import type { ComputedRef, Ref } from 'vue';
 import type { ProfitLossEvent } from '@/types/reports';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 

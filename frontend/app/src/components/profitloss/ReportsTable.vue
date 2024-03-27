@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { calculateTotalProfitLoss } from '@/utils/report';
-import type { ComputedRef, Ref } from 'vue';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library-compat';
 import type { Report } from '@/types/reports';
 

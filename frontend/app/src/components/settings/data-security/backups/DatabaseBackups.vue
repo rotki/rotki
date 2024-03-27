@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/utils/data';
-import type { WritableComputedRef } from 'vue';
 import type {
   DataTableColumn,
   DataTableSortData,

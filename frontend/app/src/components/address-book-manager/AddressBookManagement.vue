@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
-import type { Ref } from 'vue';
 import type {
   AddressBookEntry,
   AddressBookLocation,

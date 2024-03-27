@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{

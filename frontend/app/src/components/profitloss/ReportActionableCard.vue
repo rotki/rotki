@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
 import type { Nullable } from '@rotki/common';
 import type {
   EditableMissingPrice,

@@ -10,7 +10,6 @@ import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { externalLinks } from '@/data/external-links';
-import type { ComputedRef, Ref } from 'vue';
 import type {
   EvmTokenKind,
   SupportedAsset,

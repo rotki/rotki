@@ -3,7 +3,6 @@ import { useBreakpoint } from '@rotki/ui-library-compat';
 import Fragment from '@/components/helper/Fragment';
 import type BigNumber from 'bignumber.js';
 import type { BlockchainAccountWithBalance, XpubData } from '@/types/blockchain/accounts';
-import type { ComputedRef } from 'vue';
 
 const props = withDefaults(
   defineProps<{

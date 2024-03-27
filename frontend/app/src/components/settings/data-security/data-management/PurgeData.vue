@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { DECENTRALIZED_EXCHANGES, Module } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
-import type { Ref } from 'vue';
 
 const modules = Object.values(Module);
 const { allExchanges } = storeToRefs(useLocationStore());

@@ -5,7 +5,6 @@ import type {
   LiquityPoolDetailEntry,
   LiquityStatisticDetails,
 } from '@rotki/common/lib/liquity';
-import type { ComputedRef } from 'vue';
 import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
 
 const props = withDefaults(

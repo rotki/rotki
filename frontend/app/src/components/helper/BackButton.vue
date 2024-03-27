@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
-
 const router = useRouter();
 
 const route = useRoute();

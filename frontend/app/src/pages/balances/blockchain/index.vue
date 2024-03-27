@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-import type { ComputedRef, Ref } from 'vue';
 
 type Busy = Record<string, ComputedRef<boolean>>;
 

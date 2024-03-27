@@ -7,7 +7,6 @@ import {
 } from '@rotki/ui-library-compat';
 import { keyBy } from 'lodash-es';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Ref } from 'vue';
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
 import type { NftPrice } from '@/types/prices';

@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { ExplorerUrls } from '@/types/asset/asset-urls';
 
 defineOptions({

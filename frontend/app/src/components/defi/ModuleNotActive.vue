@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, ref } from 'vue';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { Routes } from '@/router/routes';
 
