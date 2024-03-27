@@ -118,12 +118,10 @@ INFURA_ETH_NODE = WeightedNode(
 ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     'ethereum_manager_connect_at_start',
     [
-        (
-            PRUNED_AND_NOT_ARCHIVED_NODE,
-            INFURA_ETH_NODE,
-            ETHEREUM_ETHERSCAN_NODE,
-            ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
-        ),
+        (PRUNED_AND_NOT_ARCHIVED_NODE,),
+        (INFURA_ETH_NODE,),
+        (ETHEREUM_ETHERSCAN_NODE,),
+        (ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],),
     ],
 )
 
@@ -161,6 +159,7 @@ def wait_until_all_nodes_connected(
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
+    connect_at_start = [x for x in connect_at_start if x.node_info.name != evm_inquirer.etherscan_node_name]  # noqa: E501
     connected = [False] * len(connect_at_start)
     try:
         with gevent.Timeout(timeout):
