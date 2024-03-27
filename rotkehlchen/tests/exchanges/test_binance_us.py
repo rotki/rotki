@@ -54,8 +54,8 @@ def test_binanceus_trades_location(function_scope_binance):
     """
     binance = function_scope_binance
 
-    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
-        if 'symbol=BNBBTC' in url:
+    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+        if params.get('symbol') == 'BNBBTC':
             text = BINANCE_MYTRADES_RESPONSE
         else:
             text = '[]'

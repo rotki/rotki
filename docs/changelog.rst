@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Binance balances will now include funding wallet's balances.
 * :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
 * :bug:`-` Naira should be correctly detected in binance.
 * :bug:`-` Kraken balances in new yield-bearing products and automatic staking for new kraken users should now appear properly.
