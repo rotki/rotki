@@ -1,0 +1,162 @@
+import logging
+from collections import defaultdict
+from itertools import chain
+from typing import TYPE_CHECKING
+
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.utils.misc import get_chunks
+
+from .constants import CPT_GMX, GMX_READER, GMX_USD_DECIMALS, GMX_VAULT_ADDRESS
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
+    from rotkehlchen.db.dbhandler import DBHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+class GmxBalances(ProtocolWithBalance):
+    def __init__(self, database: 'DBHandler', evm_inquirer: 'ArbitrumOneInquirer'):
+        super().__init__(
+            database=database,
+            evm_inquirer=evm_inquirer,
+            counterparty=CPT_GMX,
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+        )
+
+    def _extract_unique_deposits(self) -> dict['ChecksumEvmAddress', set[tuple[str, str, bool]]]:
+        """
+        fetch deposit events and remove duplicate positions. Since a user can modify the same
+        position increasing or decreasing the collateral we want to remove duplicates to make
+        the least amount of queries possible.
+        """
+        addresses_events = self.addresses_with_activity(
+            products=None,
+            event_types=self.deposit_event_types,
+        )
+        unique_deposits = {}
+        for address, events in addresses_events.items():
+            positions: set[tuple[str, str, bool]] = set()
+            for event in events:
+                if event.extra_data is None:
+                    continue
+
+                try:
+                    positions.add((
+                        event.extra_data['collateral_token'],
+                        event.extra_data['index_token'],
+                        event.extra_data['is_long'],
+                    ))
+                except KeyError as e:
+                    log.error(f'GMX event {event} is missing key {e!s}')
+                    continue
+
+            unique_deposits[address] = positions
+        return unique_deposits
+
+    def query_balances(self) -> 'BalancesType':
+        """
+        Query balances for GMX open positions.
+
+        The position query uses as argument the address of the user and 3 arrays of collaterals
+        used, index tokens used and if the positions are shorts or longs. The arrays must have
+        the same length and each index represents a different position inside
+        GMX (collaterals[i], index[i], is_long[i]).
+
+        The positions given by the contract are returned using their value in USD and not using
+        the amount of tokens in the position. In our logic we go from USD value to the amount of
+        tokens using the current value of the asset. Also the contract returns the collateral
+        deposit (only its USD value) and a delta value that is how much the position has earned
+        (also in USD). We sum collateral value + delta to get the current value of the position.
+        """
+        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
+        unique_deposits = self._extract_unique_deposits()
+        if len(unique_deposits) == 0:
+            return balances
+
+        reader_contract = self.evm_inquirer.contracts.contract(GMX_READER)
+        # prepare the arguments for the contract calls and the encoded call
+        calls, calls_arguments = [], []
+        for address, positions in unique_deposits.items():
+            collaterals, itokens, is_long = zip(*chain.from_iterable([position] for position in positions), strict=False)  # noqa: E501
+            arguments = [
+                GMX_VAULT_ADDRESS,  # vault
+                address,  # account
+                collaterals,
+                itokens,
+                is_long,
+            ]
+            calls_arguments.append(arguments)
+            calls.append((
+                reader_contract.address,
+                reader_contract.encode(
+                    method_name='getPositions',
+                    arguments=arguments,
+                ),
+            ))
+
+        if len(calls_arguments) == 0:
+            return balances
+
+        try:
+            call_output = self.evm_inquirer.multicall(calls=calls)
+        except RemoteError as e:
+            log.error(f'Failed to query GMX balances due to {e!s}')
+            return balances
+
+        for idx, result in enumerate(call_output):  # each iteration is a different address with its positions  # noqa: E501
+            pos_information = reader_contract.decode(
+                result=result,
+                method_name='getPositions',
+                arguments=calls_arguments[idx],
+            )
+            user_address = string_to_evm_address(calls_arguments[idx][1])  # type: ignore[arg-type]  # mypy doesn't detect this as a string
+            collaterals_used = calls_arguments[idx][2]
+            for position_idx, pos_result in enumerate(get_chunks(pos_information[0], 9)):
+                try:  # each position has 9 values returned by gmx
+                    collateral_asset = EvmToken(
+                        evm_address_to_identifier(
+                            address=collaterals_used[position_idx],
+                            chain_id=ChainID.ARBITRUM_ONE,
+                            token_type=EvmTokenKind.ERC20,
+                        ),
+                    )
+                except (UnknownAsset, WrongAssetType):
+                    log.error(
+                        f'Arbitrum asset with address {collaterals_used[position_idx]} could '
+                        f'not be found during GMX balance query. Skipping.',
+                    )
+                    continue
+
+                # query the current price of the collateral asset to obtain the amount inside GMX
+                if (asset_price := Inquirer.find_usd_price(asset=collateral_asset)) == ZERO:
+                    continue
+
+                position_collateral_value = token_normalized_value_decimals(
+                    token_amount=pos_result[1] + pos_result[8],  # sum the collateral + delta (gain or loss)  # noqa: E501
+                    token_decimals=GMX_USD_DECIMALS,
+                )
+                asset_amount = round(
+                    number=position_collateral_value / asset_price,
+                    ndigits=collateral_asset.decimals if collateral_asset.decimals else 18,
+                )
+                balances[user_address][collateral_asset] += Balance(
+                    amount=asset_amount,
+                    usd_value=position_collateral_value,  # it is already given in USD
+                )
+
+        return balances

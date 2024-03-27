@@ -36,6 +36,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'thegraph',
     'octant',
     'eigenlayer',
+    'gmx',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 

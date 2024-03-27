@@ -7,8 +7,10 @@ import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.aggregator import ChainsAggregator
+from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.manager import BaseManager
@@ -319,10 +321,7 @@ def fixture_have_decoders() -> bool:
 
 
 @pytest.fixture(name='eth_transactions')
-def fixture_eth_transactions(
-        database,
-        ethereum_inquirer,
-):
+def fixture_eth_transactions(database, ethereum_inquirer):
     return EthereumTransactions(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
@@ -368,21 +367,23 @@ def fixture_optimism_manager(optimism_inquirer):
 
 
 @pytest.fixture(name='optimism_transactions')
-def fixture_optimism_transactions(
-        database,
-        optimism_inquirer,
-):
+def fixture_optimism_transactions(database, optimism_inquirer):
     return OptimismTransactions(
         optimism_inquirer=optimism_inquirer,
         database=database,
     )
 
 
+@pytest.fixture(name='arbitrum_one_transactions')
+def fixture_arbitrum_one_transactions(database, arbitrum_one_inquirer):
+    return ArbitrumOneTransactions(
+        arbitrum_one_inquirer=arbitrum_one_inquirer,
+        database=database,
+    )
+
+
 @pytest.fixture(name='base_transactions')
-def fixture_base_transactions(
-        database,
-        base_inquirer,
-):
+def fixture_base_transactions(database, base_inquirer):
     return BaseTransactions(
         base_inquirer=base_inquirer,
         database=database,
@@ -390,11 +391,7 @@ def fixture_base_transactions(
 
 
 @pytest.fixture(name='optimism_transaction_decoder')
-def fixture_optimism_transaction_decoder(
-        database,
-        optimism_inquirer,
-        optimism_transactions,
-):
+def fixture_optimism_transaction_decoder(database, optimism_inquirer, optimism_transactions):
     with patch_decoder_reload_data():
         yield OptimismTransactionDecoder(
             database=database,
@@ -404,16 +401,26 @@ def fixture_optimism_transaction_decoder(
 
 
 @pytest.fixture(name='base_transaction_decoder')
-def fixture_base_transaction_decoder(
-        database,
-        base_inquirer,
-        base_transactions,
-):
+def fixture_base_transaction_decoder(database, base_inquirer, base_transactions):
     with patch_decoder_reload_data():
         yield BaseTransactionDecoder(
             database=database,
             base_inquirer=base_inquirer,
             transactions=base_transactions,
+        )
+
+
+@pytest.fixture(name='arbitrum_one_transaction_decoder')
+def fixture_arbitrum_one_transaction_decoder(
+        database,
+        arbitrum_one_inquirer,
+        arbitrum_one_transactions,
+):
+    with patch_decoder_reload_data():
+        yield ArbitrumOneTransactionDecoder(
+            database=database,
+            arbitrum_inquirer=arbitrum_one_inquirer,
+            transactions=arbitrum_one_transactions,
         )
 
 
