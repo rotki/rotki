@@ -125,6 +125,16 @@ ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     ],
 )
 
+ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED = (
+    'ethereum_manager_connect_at_start',
+    [(
+        PRUNED_AND_NOT_ARCHIVED_NODE,
+        INFURA_ETH_NODE,
+        ETHEREUM_ETHERSCAN_NODE,
+        ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
+    )],
+)
+
 # Test with etherscan and infura
 ETHEREUM_TEST_PARAMETERS: tuple[str, list[tuple]]
 if 'GITHUB_WORKFLOW' in os.environ:  # TODO: Undo this if once all tests where it's used are mockable  # noqa: E501
