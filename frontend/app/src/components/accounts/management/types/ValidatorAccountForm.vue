@@ -11,9 +11,8 @@ const { t } = useI18n();
 const validator = ref<Eth2Validator | null>(null);
 const errorMessages = ref<ValidationErrors>({});
 
-const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
+const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
 const { refreshAccounts, fetchAccounts } = useBlockchains();
-const { updateEthStakingOwnership } = useEthBalancesStore();
 const { setMessage } = useMessageStore();
 const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
@@ -64,10 +63,11 @@ async function save() {
       const newVar = get(accountToEdit);
       assert(payload.publicKey);
       assert(payload.ownershipPercentage);
+      const validator = getValidator(newVar);
 
       updateEthStakingOwnership(
         payload.publicKey,
-        bigNumberify('ownershipPercentage' in newVar && newVar.ownershipPercentage ? newVar.ownershipPercentage : 100),
+        bigNumberify(validator?.ownershipPercentage ?? 100),
         bigNumberify(payload.ownershipPercentage),
       );
       startPromise(fetchAccounts(Blockchain.ETH2));
@@ -92,11 +92,11 @@ async function save() {
 }
 
 function setValidator(acc: BlockchainAccountWithBalance): void {
-  assert('ownershipPercentage' in acc);
+  const data = getValidatorData(acc);
   set(validator, {
-    publicKey: acc.address,
-    validatorIndex: acc.label,
-    ownershipPercentage: acc.ownershipPercentage,
+    validatorIndex: data?.index.toString() ?? '',
+    publicKey: data?.publicKey,
+    ownershipPercentage: data?.ownershipPercentage,
   });
 }
 

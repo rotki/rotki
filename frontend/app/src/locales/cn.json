@@ -21,8 +21,7 @@
     "user_agent": "用户代理:"
   },
   "account_balance_table": {
-    "liabilities": "负债",
-    "loopring": "Loopring"
+    "liabilities": "负债"
   },
   "account_balances": {
     "confirm_delete": {

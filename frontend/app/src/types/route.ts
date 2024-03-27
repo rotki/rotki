@@ -46,17 +46,17 @@ export const RouterAccountsSchema = z.object({
       const mapped: Account[] = [];
       arr.forEach((entry) => {
         const parsed = entry.split('#');
-        if (parsed.length === 2) {
-          const address = parsed[0];
-          const chain = parsed[1];
+        if (parsed.length !== 2)
+          return;
 
-          if (chain.toUpperCase() in Blockchain || chain === 'ALL') {
-            mapped.push({
-              address,
-              chain,
-            });
-          }
-        }
+        const [address, chain] = parsed;
+        if (!(chain.toUpperCase() in Blockchain || chain === 'ALL'))
+          return;
+
+        mapped.push({
+          address,
+          chain,
+        });
       });
 
       return mapped;

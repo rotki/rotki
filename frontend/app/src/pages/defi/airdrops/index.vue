@@ -9,7 +9,7 @@ import {
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Ref } from 'vue';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
@@ -21,7 +21,7 @@ const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 
 const expanded: Ref<Airdrop[]> = ref([]);
-const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
+const selectedAccounts: Ref<BlockchainAccount<AddressData>[]> = ref([]);
 const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.unclaimed'), value: false },
   { text: t('common.claimed'), value: true },
@@ -39,7 +39,7 @@ const airdrops: Ref<Airdrops> = ref({});
 const airdropAddresses = computed(() => Object.keys(get(airdrops)));
 
 const entries = computed(() => {
-  const addresses = get(selectedAccounts).map(({ address }) => address);
+  const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
   const airdrops = get(airdropList(addresses));
   return airdrops
     .filter(airdrop => airdrop.claimed === get(status))

@@ -1,5 +1,5 @@
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Balance } from '@rotki/common';
-import type { Account } from '@rotki/common/lib/account';
 import type { DefiProtocol } from '@/types/modules';
 
 export interface Collateral<T = string> extends Balance {
@@ -32,6 +32,6 @@ export interface ProtocolMetadata {
   iconUrl?: string;
 }
 
-export interface DefiAccount extends Account {
+export interface DefiAccount extends BlockchainAccount<AddressData> {
   readonly protocols: DefiProtocol[];
 }

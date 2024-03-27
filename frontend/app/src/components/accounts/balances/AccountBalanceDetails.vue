@@ -1,38 +1,25 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    blockchain: string;
-    address: string;
-    loopring?: boolean;
-  }>(),
-  { loopring: false },
-);
+const props = defineProps<{
+  chain: string;
+  address: string;
+}>();
 
 const { t } = useI18n();
-const { blockchain, address } = toRefs(props);
-const { liabilities, assets, loopringBalances } = useAccountDetails(
-  blockchain,
-  address,
-);
+const { getAccountDetails } = useBlockchainStore();
+
+const details = computed(() => getAccountDetails(props.chain, props.address));
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <template v-if="!loopring">
-      <AccountAssetBalances
-        :title="t('common.assets')"
-        :assets="assets"
-      />
-      <AccountAssetBalances
-        v-if="liabilities.length > 0"
-        :title="t('account_balance_table.liabilities')"
-        :assets="liabilities"
-      />
-    </template>
     <AccountAssetBalances
-      v-if="loopringBalances.length > 0"
-      :title="loopring ? '' : t('account_balance_table.loopring')"
-      :assets="loopringBalances"
+      :title="t('common.assets')"
+      :assets="details.assets"
+    />
+    <AccountAssetBalances
+      v-if="details.liabilities.length > 0"
+      :title="t('account_balance_table.liabilities')"
+      :assets="details.liabilities"
     />
   </div>
 </template>

@@ -1,9 +1,10 @@
 export const truncationPoints: Record<string, number> = {
-  xs: 3,
-  sm: 6,
-  md: 10,
-  lg: 20,
-  xl: 40,
+  'xs': 3,
+  'sm': 6,
+  'md': 10,
+  'lg': 20,
+  'xl': 30,
+  '2xl': 40,
 };
 
 /**

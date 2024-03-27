@@ -153,6 +153,7 @@ watch(tags, () => {
           :bg-color="`#${item.backgroundColor}`"
           :text-color="`#${item.foregroundColor}`"
           closeable
+          :disabled="disabled"
           size="sm"
           @click:close="remove(item.name)"
           @click="select($event)"

@@ -22,21 +22,19 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const { connected } = toRefs(useMainStore());
 
-  const supportedChains: Ref<SupportedChains>
-    = asyncComputed<SupportedChains>(() => {
-      if (get(connected))
-        return fetchSupportedChains();
+  const supportedChains = asyncComputed<SupportedChains>(() => {
+    if (get(connected))
+      return fetchSupportedChains();
 
-      return [];
-    }, []);
+    return [];
+  }, []);
 
-  const allEvmChains: Ref<EvmChainEntries>
-    = asyncComputed<EvmChainEntries>(() => {
-      if (get(connected))
-        return fetchAllEvmChains();
+  const allEvmChains = asyncComputed<EvmChainEntries>(() => {
+    if (get(connected))
+      return fetchAllEvmChains();
 
-      return [];
-    }, []);
+    return [];
+  }, []);
 
   const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() =>
     // isEvmChain guard does not work the same with useArrayFilter
@@ -109,13 +107,12 @@ export const useSupportedChains = createSharedComposable(() => {
     return defaultValue;
   };
 
-  const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> =>
-    computed(() => {
-      const chainVal = get(chain);
-      const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
+  const getChainImageUrl = (chain: MaybeRef<string>) => computed<string>(() => {
+    const chainVal = get(chain);
+    const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
 
-      return `./assets/images/protocols/${image}`;
-    });
+    return `./assets/images/protocols/${image}`;
+  });
 
   const txEvmChainsToLocation = computed(() =>
     get(txEvmChains).map(item => toHumanReadable(item.evmChainName)),

@@ -134,28 +134,4 @@ describe('composables::blockchain/balances/index', () => {
       });
     });
   });
-
-  describe('updatePrices', () => {
-    it('default', () => {
-      const assetPrices = {
-        ETH: {
-          value: bigNumberify(1000),
-          usdPrice: null,
-          isManualPrice: false,
-          isCurrentCurrency: true,
-        },
-      };
-      blockchainBalances.updatePrices(assetPrices);
-
-      expect(useEthBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices,
-      );
-      expect(useBtcBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices,
-      );
-      expect(useChainBalancesStore().updatePrices).toHaveBeenCalledWith(
-        assetPrices,
-      );
-    });
-  });
 });

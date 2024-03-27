@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import type { BlockchainAccountWithBalance, XpubPayload } from '@/types/blockchain/accounts';
 import type { BtcChains } from '@/types/blockchain/chains';
-import type {
-  XpubAccountWithBalance,
-  XpubPayload,
-} from '@/types/blockchain/accounts';
 
 const props = defineProps<{ blockchain: BtcChains }>();
 
 const { blockchain } = toRefs(props);
 
-const xpub = ref<XpubPayload | null>(null);
+const xpub = ref<XpubPayload>();
 const label = ref('');
 const tags = ref<string[]>([]);
 
@@ -68,7 +65,7 @@ async function save() {
     }
 
     if (typeof errors === 'string') {
-      await setMessage({
+      setMessage({
         description: t('account_form.error.description', {
           error: errors,
         }),
@@ -89,15 +86,15 @@ async function save() {
   return true;
 }
 
-function setXpub(acc: XpubAccountWithBalance): void {
+function setXpub(account: BlockchainAccountWithBalance): void {
   set(xpub, {
-    xpub: acc.xpub,
-    derivationPath: acc.derivationPath,
+    xpub: 'xpub' in account.data ? account.data.xpub : '',
+    derivationPath: 'xpub' in account.data ? account.data.derivationPath : '',
     blockchain: get(blockchain),
     xpubType: '',
   });
-  set(label, acc.label);
-  set(tags, acc.tags);
+  set(label, account.label ?? '');
+  set(tags, account.tags ?? []);
 }
 
 watch(accountToEdit, (acc) => {
@@ -115,7 +112,7 @@ onMounted(() => {
 
   const acc = get(accountToEdit);
   if (acc) {
-    assert('derivationPath' in acc);
+    assert('derivationPath' in acc.data);
     setXpub(acc);
   }
 });
@@ -124,7 +121,7 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-4">
     <XpubInput
-      :disabled="loading"
+      :disabled="loading || !!accountToEdit"
       :error-messages="errorMessages"
       :xpub="xpub"
       :blockchain="blockchain"

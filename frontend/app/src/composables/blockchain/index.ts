@@ -4,7 +4,6 @@ import { Severity } from '@rotki/common/lib/messages';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';
-import { useAccountsAddresses } from '@/composables/accounts/addresses';
 import type { Account } from '@rotki/common/lib/account';
 import type { MaybeRef } from '@vueuse/core';
 import type {
@@ -17,15 +16,14 @@ import type { AddressBookSimplePayload } from '@/types/eth-names';
 
 export function useBlockchains() {
   const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
-  const { getAccountsByChain } = useAccountBalances();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchLoopringBalances } = useEthBalancesStore();
+  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchDetected } = useBlockchainTokensStore();
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { getChainName, supportsTransactions, evmChains, isEvm, supportedChains } = useSupportedChains();
+  const { getAddresses } = useBlockchainStore();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -39,16 +37,14 @@ export function useBlockchains() {
     chain: string,
     payload: AccountPayload[],
   ): AccountPayload[] => {
-    const knownAddresses = getAccountsByChain(chain);
+    const knownAddresses: string[] = getAddresses(chain);
     return payload.filter(({ xpub, address }) => {
       const key = (xpub?.xpub || address).toLocaleLowerCase();
-
       return !knownAddresses.includes(key);
     });
   };
 
   const { fetchEnsNames } = useAddressesNamesStore();
-  const { allAddressMapping } = useAccountsAddresses();
 
   const fetchAccounts = async (
     blockchain?: string,
@@ -59,13 +55,12 @@ export function useBlockchains() {
     await Promise.allSettled(chains.map(fetch));
 
     const namesPayload: AddressBookSimplePayload[] = [];
-    const addressesMapping = get(allAddressMapping);
 
     chains.forEach((chain) => {
       if (!get(isEvm(chain)))
         return;
 
-      const addresses = addressesMapping[chain];
+      const addresses = getAddresses(chain);
       namesPayload.push(...addresses.map(address => ({ address, blockchain: chain })));
     });
 
@@ -107,7 +102,6 @@ export function useBlockchains() {
     payload: BaseAddAccountsPayload,
   ): Promise<void> => {
     const blockchain = 'EVM';
-
     const accountsToFinish: Account[] = [];
     const finishAddition = async ({ chain, address }: Account) => {
       const modules = payload.modules;

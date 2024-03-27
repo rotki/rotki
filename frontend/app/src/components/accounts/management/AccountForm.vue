@@ -13,7 +13,8 @@ onMounted(() => {
   const account = get(accountToEdit);
   if (account) {
     set(blockchain, account.chain);
-    if ('xpub' in account && !account.address)
+
+    if ('xpub' in account.data)
       set(inputMode, InputMode.XPUB_ADD);
   }
 });

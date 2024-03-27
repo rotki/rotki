@@ -3,12 +3,11 @@ import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-sett
 import type { MaybeRef } from '@vueuse/core';
 
 export const useRefresh = createSharedComposable(() => {
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchLoopringBalances } = useEthBalancesStore();
+  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
-  const { txEvmChains } = useSupportedChains();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+  const { txEvmChains } = useSupportedChains();
 
   const refreshBlockchainBalances = async (blockchain?: string): Promise<void> => {
     const chain = get(blockchain);

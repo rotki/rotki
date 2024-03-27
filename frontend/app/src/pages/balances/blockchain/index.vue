@@ -1,38 +1,20 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type {
-  AccountWithBalance,
-  AccountWithBalanceAndSharedOwnership,
-  BlockchainAccountWithBalance,
-} from '@/types/blockchain/accounts';
+import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { ComputedRef, Ref } from 'vue';
 
 type Busy = Record<string, ComputedRef<boolean>>;
-
-type Account = AccountWithBalance | BlockchainAccountWithBalance | AccountWithBalanceAndSharedOwnership;
 
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const { ethAccounts, eth2Accounts, loopringAccounts } = useEthAccountBalances();
-const { btcAccounts, bchAccounts } = useBtcAccountBalances();
-const {
-  ksmAccounts,
-  dotAccounts,
-  avaxAccounts,
-  optimismAccounts,
-  polygonAccounts,
-  arbitrumAccounts,
-  baseAccounts,
-  gnosisAccounts,
-  scrollAccounts,
-} = useChainAccountBalances();
+const { getBlockchainAccounts } = useBlockchainStore();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
 const { createAccount, editAccount } = useAccountDialog();
-const { supportedChains } = useSupportedChains();
+const { supportedChains, txEvmChains } = useSupportedChains();
 
 const busy = computed<Busy>(() => Object.fromEntries(
   get(supportedChains).map(chain => ([chain.id, isAccountOperationRunning(chain.id)])),
@@ -54,33 +36,18 @@ const titles = computed<Record<string, string>>(() => ({
   [Blockchain.SCROLL]: t('blockchain_balances.balances.scroll'),
 }));
 
-const accounts = computed<Record<string, Account[]>>(() => ({
-  [Blockchain.ETH]: get(ethAccounts),
-  [Blockchain.ETH2]: get(eth2Accounts),
-  [Blockchain.BTC]: get(btcAccounts),
-  [Blockchain.BCH]: get(bchAccounts),
-  [Blockchain.KSM]: get(ksmAccounts),
-  [Blockchain.DOT]: get(dotAccounts),
-  [Blockchain.AVAX]: get(avaxAccounts),
-  [Blockchain.OPTIMISM]: get(optimismAccounts),
-  [Blockchain.POLYGON_POS]: get(polygonAccounts),
-  [Blockchain.ARBITRUM_ONE]: get(arbitrumAccounts),
-  [Blockchain.BASE]: get(baseAccounts),
-  [Blockchain.GNOSIS]: get(gnosisAccounts),
-  [Blockchain.SCROLL]: get(scrollAccounts),
-}));
+const accounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() => Object.fromEntries(
+  get(supportedChains).map(chain => [
+    chain.id,
+    getBlockchainAccounts(chain.id),
+  ]),
+));
 
 const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
-  () =>
-    get(ethAccounts).length > 0
-    || get(optimismAccounts).length > 0
-    || get(avaxAccounts).length > 0
-    || get(polygonAccounts).length > 0
-    || get(arbitrumAccounts).length > 0
-    || get(baseAccounts).length > 0
-    || get(gnosisAccounts).length > 0
-    || get(scrollAccounts).length > 0,
+  () => get(txEvmChains).some(chain => get(accounts)[chain.id]?.length > 0),
 );
+
+const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => getBlockchainAccounts('loopring'));
 
 function getTitle(chain: string) {
   return get(titles)[chain] ?? '';

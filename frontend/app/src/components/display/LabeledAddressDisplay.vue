@@ -1,23 +1,53 @@
 <script setup lang="ts">
 import { useBreakpoint } from '@rotki/ui-library-compat';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import { getChain } from '@/utils/blockchain/accounts';
+import type {
+  BlockchainAccount,
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountWithBalance,
+} from '@/types/blockchain/accounts';
 
 const props = defineProps<{
-  account: GeneralAccount;
+  account: BlockchainAccount | BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
 }>();
 
 const { account } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier }
-  = useScramble();
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 const css = useCssModule();
+const { t } = useI18n();
 
-const aliasName: ComputedRef<string> = computed(() => {
+const accountAddress = computed<string>(() => getAccountAddress(get(account)));
+
+const derivationPath = computed<string | undefined>(() => {
+  const accountInfo = get(account);
+  if ('xpub' in accountInfo.data)
+    return accountInfo.data.derivationPath;
+
+  return undefined;
+});
+
+const isXpub = computed<boolean>(() => {
+  const accountInfo = get(account);
+  return 'xpub' in accountInfo.data;
+});
+
+const label = computed<string>(() => {
+  const label = getAccountLabel(get(account));
+
+  if (consistOfNumbers(label))
+    return scrambleIdentifier(label);
+
+  return label;
+});
+
+const aliasName = computed<string>(() => {
   if (get(scrambleData))
     return '';
 
-  const { address, chain } = get(account);
-  const name = get(addressNameSelector(address, chain));
+  const accountData = get(account);
+  const chain = getChain(accountData);
+  const name = get(addressNameSelector(get(accountAddress), chain));
 
   if (!name)
     return get(label);
@@ -25,20 +55,16 @@ const aliasName: ComputedRef<string> = computed(() => {
   return name;
 });
 
-const ensName: ComputedRef<string | null> = computed(() => {
+const ensName = computed<string | null>(() => {
   if (get(scrambleData))
     return null;
 
-  const { address } = get(account);
-  return get(ensNameSelector(address));
+  return get(ensNameSelector(get(accountAddress)));
 });
 
 const { isXs, name } = useBreakpoint();
 
-const address = computed<string>(() => {
-  const address = get(account).address;
-  return scrambleHex(address);
-});
+const address = computed<string>(() => scrambleHex(get(accountAddress)));
 
 const truncationLength = computed<number>(() => {
   let truncationPoint = truncationPoints[get(name)];
@@ -47,7 +73,7 @@ const truncationLength = computed<number>(() => {
   return Math.max(4, truncationPoint);
 });
 
-const truncatedAddress: ComputedRef<string> = computed(() =>
+const truncatedAddress = computed<string>(() =>
   truncateAddress(get(address), get(truncationLength)),
 );
 
@@ -59,16 +85,7 @@ const truncated = computed<boolean>(() => {
   return truncated.includes('...');
 });
 
-const label = computed<string>(() => {
-  const label = get(account).label;
-
-  if (consistOfNumbers(label))
-    return scrambleIdentifier(label);
-
-  return label;
-});
-
-const truncatedAliasName: ComputedRef<string> = computed(() => {
+const truncatedAliasName = computed<string>(() => {
   const name = get(aliasName);
   if (!name)
     return '';
@@ -107,6 +124,14 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
             :address="address"
             avatar
           />
+
+          <span
+            v-if="isXpub"
+            class="font-medium"
+          >
+            {{ t('common.xpub') }}
+          </span>
+
           <span
             v-if="aliasName"
             class="text-truncate"
@@ -129,6 +154,9 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           ({{ ensName }})
         </div>
         <div>{{ address }}</div>
+        <div v-if="derivationPath">
+          {{ derivationPath }}
+        </div>
       </div>
     </RuiTooltip>
     <RuiDivider
@@ -138,11 +166,11 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
     <div :class="css['labeled-address-display__actions']">
       <HashLink
         class="h-full"
-        :text="account.address"
+        :text="accountAddress"
         buttons
         size="14"
         :show-icon="false"
-        :chain="account.chain"
+        :chain="getChain(account)"
       />
     </div>
   </RuiChip>

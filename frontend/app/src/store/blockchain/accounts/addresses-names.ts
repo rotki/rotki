@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { isBlockchain } from '@/types/blockchain/chains';
+import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,
@@ -25,7 +25,6 @@ export const useAddressesNamesStore = defineStore(
 
     const { awaitTask } = useTaskStore();
     const { t } = useI18n();
-
     const { notify } = useNotificationsStore();
     const { supportedChains } = useSupportedChains();
 
@@ -119,8 +118,7 @@ export const useAddressesNamesStore = defineStore(
         return ensAvatarUrl(ens, get(lastRefreshedAvatar));
       });
 
-    const createKey = (address: string, blockchain: string) =>
-      `${address}#${blockchain}`;
+    const createKey = (address: string, chain: string) => `${address}#${chain}`;
 
     const fetchAddressesNames = async (keys: string[]) => {
       const payload: AddressNameRequestPayload[] = [];
@@ -169,7 +167,7 @@ export const useAddressesNamesStore = defineStore(
       reset: resetAddressesNames,
     } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-    const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed(() => {
+    const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) => computed<string[]>(() => {
       const chain = get(blockchain);
       const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
       return entries
@@ -188,7 +186,7 @@ export const useAddressesNamesStore = defineStore(
 
         const chain = get(blockchain);
 
-        if (!isBlockchain(chain))
+        if (!isBlockchain(chain) || isBtcChain(chain))
           return null;
 
         const key = createKey(addressVal, chain);

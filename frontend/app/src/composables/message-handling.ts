@@ -27,8 +27,7 @@ export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { setEvmUndecodedTransactions } = useHistoryStore();
-  const { updateDataMigrationStatus, updateDbUpgradeStatus }
-    = useSessionAuthStore();
+  const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
