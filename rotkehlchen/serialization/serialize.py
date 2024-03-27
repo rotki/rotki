@@ -52,6 +52,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -136,7 +137,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             EvmProduct |
             DBSettings |
             TxAccountingTreatment |
-            EventCategoryDetails
+            EventCategoryDetails |
+            CalendarEntry
     )):
         return entry.serialize()
     if isinstance(entry, (

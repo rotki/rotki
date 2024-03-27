@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Generic, Literal, NamedTuple, TypeVar
@@ -34,6 +34,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     Location,
+    OptionalBlockchainAddress,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -59,6 +60,7 @@ ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
+V = TypeVar('V')
 T_FilterQ = TypeVar('T_FilterQ', bound='DBFilterQuery')
 T_HistoryBaseEntryFilterQ = TypeVar('T_HistoryBaseEntryFilterQ', bound='HistoryBaseEntryFilterQuery')  # noqa: E501
 T_EthSTakingFilterQ = TypeVar('T_EthSTakingFilterQ', bound='EthStakingEventFilterQuery')
@@ -575,10 +577,10 @@ class DBEqualsFilter(DBFilter):
 class DBMultiValueFilter(Generic[T], DBFilter):
     """Filter a column having a value out of a selection of values"""
     column: str
-    values: list[T]
+    values: Sequence[T]
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
-    def prepare(self) -> tuple[list[str], list[T]]:
+    def prepare(self) -> tuple[list[str], Sequence[T]]:
         suffix = ''  # for NOT IN comparison remember NULL is a special case
         if self.operator == 'NOT IN':
             suffix = f' OR {self.column} IS NULL'
@@ -603,7 +605,11 @@ class DBMultiIntegerFilter(DBMultiValueFilter[int]):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBOptionalChainAddressesFilter(DBFilter):
     """Filter the address column by a selection of optional chain addresses"""
-    optional_chain_addresses: list[OptionalChainAddress] | None
+    optional_chain_addresses: (
+        list[OptionalChainAddress] |
+        list[OptionalBlockchainAddress] |
+        None
+    )
 
     def prepare(self) -> tuple[list[str], list[str]]:
         query_filters = []
@@ -1119,7 +1125,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiBytesFilter(
                 and_op=True,
                 column='tx_hash',
-                values=tx_hashes,  # type: ignore[arg-type]  # EVMTxHash is equal to bytes
+                values=tx_hashes,
                 operator='IN',
             ))
 
@@ -1127,7 +1133,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='address',
-                values=addresses,  # type: ignore[arg-type]  # ChecksumEvmAddress is equal to str
+                values=addresses,
                 operator='IN',
             ))
 

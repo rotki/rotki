@@ -1029,3 +1029,30 @@ class NonEmptyList(fields.List):
             raise ValidationError('List cant be empty')
 
         return result
+
+
+class EvmCounterpartyField(fields.Field):
+    """
+    Checks if the value provided is among a set of valid counterparties provided.
+    The set of valid options can be dynamically populated by calling set_counterparties
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.counterparties: set[str] | None = None
+        super().__init__(*args, **kwargs)
+
+    def set_counterparties(self, counterparties: set[str]) -> None:
+        self.counterparties = counterparties
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> str:
+        assert self.counterparties is not None, 'Set of counterparties not provided in EvmCounterpartyField'  # noqa: E501
+        if value is not None and value not in self.counterparties:
+            raise ValidationError(f'Unknown counterparty {value} provided')
+
+        return value

@@ -2250,6 +2250,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
     with db_v41.conn.write_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
+        assert table_exists(cursor, 'calendar') is False
         assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
         raw_list = cursor.execute(
             'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
@@ -2271,6 +2272,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
     with db.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is True
         assert table_exists(cursor, 'zksynclite_transactions') is True
+        assert table_exists(cursor, 'calendar') is True
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
             ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6),
         ]
@@ -2347,7 +2349,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'zksynclite_tx_type', 'zksynclite_transactions'}
+    assert new_tables == {'zksynclite_tx_type', 'zksynclite_transactions', 'calendar'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

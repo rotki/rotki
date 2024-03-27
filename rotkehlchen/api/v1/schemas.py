@@ -44,6 +44,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -98,6 +99,7 @@ from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
+    BlockchainAddress,
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
@@ -110,6 +112,7 @@ from rotkehlchen.types import (
     Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
+    OptionalBlockchainAddress,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -134,6 +137,7 @@ from .fields import (
     EvmAddressField,
     EvmChainLikeNameField,
     EvmChainNameField,
+    EvmCounterpartyField,
     EVMTransactionHashField,
     FeeField,
     FileField,
@@ -3531,3 +3535,159 @@ class FalsePositveSpamTokenSchema(Schema):
 
 class SpamTokenSchema(Schema):
     token = AssetField(expected_type=EvmToken, required=True)
+
+
+def _validate_address_with_blockchain(
+        address: BlockchainAddress,
+        blockchain: SupportedBlockchain,
+) -> None:
+    """Validate the provided address using the format in the given blockchain"""
+    if ((
+        blockchain == SupportedBlockchain.BITCOIN and
+        not is_valid_btc_address(address)
+    ) or (
+        blockchain == SupportedBlockchain.BITCOIN_CASH and
+        not is_valid_bitcoin_cash_address(address)
+    ) or (
+        blockchain.get_chain_type() == 'substrate' and
+        not is_valid_substrate_address(chain=blockchain, value=address)  # type: ignore  # expects polkadot or kusama
+    ) or (
+        blockchain.is_evmlike() and
+        to_checksum_address(address) == address
+    )):
+        raise ValidationError(
+            f'Given value {address} is not a {blockchain} address',
+            field_name='address',
+        )
+
+
+class AnyBlockchainAddress(Schema):
+    """
+    Schema for two fields, one being the address field and the other the
+    blockchain where it belongs. The address can belong to any of the chains that we currently
+    support and it will check if the format is correct for the blockchain.
+    """
+    address = fields.String(load_default=None)
+    blockchain = BlockchainField(load_default=None)
+
+    def __init__(
+            self,
+            *args: Any,
+            allow_nullable_blockchain: bool = False,
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        # When allow_nullable_blockchain is True then the blockchain field is not required
+        # if the address field has a non None value
+        self.allow_nullable_blockchain = allow_nullable_blockchain
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Check that the combination of address and blockchain are correct"""
+        if (data['address'] is None) ^ (data['blockchain'] is None):
+            if self.allow_nullable_blockchain is True:
+                return
+
+            raise ValidationError(
+                'If any of address or blockchain is provided both need to be provided',
+            )
+
+        if data['blockchain'] is None:
+            return
+
+        _validate_address_with_blockchain(
+            address=data['address'],
+            blockchain=data['blockchain'],
+        )
+
+
+class CalendarCommonEntrySchema(AnyBlockchainAddress):
+    name = fields.String(required=True)
+    description = fields.String(load_default=None)
+    counterparty = EvmCounterpartyField()
+
+    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+        super().__init__()
+        self.declared_fields['counterparty'].set_counterparties(  # type: ignore
+            counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
+        )
+
+
+class NewCalendarEntrySchema(CalendarCommonEntrySchema):
+    timestamp = TimestampField(required=True)
+
+    @post_load
+    def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
+        return {
+            'calendar': CalendarEntry(
+                identifier=data.get('identifier', 0),  # not present here but used in UpdateCalendarSchema  # noqa: E501
+                name=data['name'],
+                timestamp=data['timestamp'],
+                description=data['description'],
+                counterparty=data['counterparty'],
+                address=data['address'],
+                blockchain=data['blockchain'],
+            ),
+        }
+
+
+class UpdateCalendarSchema(NewCalendarEntrySchema, IntegerIdentifierSchema):
+    ...
+
+
+class QueryCalendarSchema(
+        DBPaginationSchema,
+        TimestampRangeSchema,
+        DBOrderBySchema,
+):
+    name = fields.String(load_default=None)
+    description = fields.String(load_default=None)
+    counterparty = EvmCounterpartyField(load_default=None)
+    accounts = fields.List(
+        fields.Nested(AnyBlockchainAddress(allow_nullable_blockchain=True)),
+        load_default=None,
+    )
+    identifiers = fields.List(fields.Integer, load_default=None)
+
+    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+        super().__init__()
+        self.declared_fields['counterparty'].set_counterparties(  # type: ignore
+            counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
+        )
+
+    @post_load
+    def make_calendar_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        accounts = None
+        if data['accounts'] is not None:
+            accounts = [
+                OptionalBlockchainAddress(
+                    address=account['address'],
+                    blockchain=account['blockchain'],
+                ) for account in data['accounts']
+            ]
+
+        filter_query = CalendarFilterQuery.make(
+            order_by_rules=create_order_by_rules_list(
+                data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            name=data['name'],
+            description=data['description'],
+            counterparty=data['counterparty'],
+            addresses=accounts,
+            identifiers=data['identifiers'],
+        )
+        return {'filter_query': filter_query}

@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Final,
+    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -946,9 +947,20 @@ class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
             raise DeserializationError(f'Missing key {e!s}') from e
 
 
-class OptionalChainAddress(NamedTuple):
-    address: ChecksumAddress
+T = TypeVar('T')
+
+
+class GenericOptionalChainAddress(Generic[T], NamedTuple):
+    address: T
     blockchain: SupportedBlockchain | None
+
+
+class OptionalChainAddress(GenericOptionalChainAddress[ChecksumAddress]):
+    ...
+
+
+class OptionalBlockchainAddress(GenericOptionalChainAddress[BlockchainAddress]):
+    ...
 
 
 class ChainAddress(OptionalChainAddress):

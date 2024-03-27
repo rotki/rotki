@@ -13497,3 +13497,204 @@ Solving conflicts in accounting rules
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Couldn't find the rule locally.
   :statuscode 500: Internal rotki error.
+
+
+Managing calendar entries
+==========================
+
+.. http:post:: /api/(version)/calendar
+
+   Doing a POST on this endpoint will allow querying the calendar entries by some of their attributes.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/calendar HTTP/1.1
+      Host: localhost:5042
+
+      {
+         "from_timestamp": 1977652400,
+         "to_timestamp": 1977652511,
+         "accounts": [{"address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"}, {"address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65", "blockchain": "gnosis"}]
+         "counterparty": 'ens'
+      }
+
+  :reqjsonarr optional[list[object]] accounts: List of addresses + their chain linked to the calendar events. The blockchain part can be omitted and it will return information for the address in all the chains.
+  :reqjsonarr optional[integer] identifiers: List of identifiers linked to the calendar events.
+  :reqjsonarr string counterparty: Counterparty used to filter the events.
+  :reqjsonarr string name: Substring used to filter for in the ``name`` attribute when querying calendar events.
+  :reqjsonarr string description: Substring used to filter for in the ``description`` attribute when querying calendar events.
+  :resjson int from_timestamp: The earliest timestamp of the events queried.
+  :resjson int to_timestamp: The latest timestamp of the events queried.
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+          "entries":[
+            {
+              "identifier":1,
+              "name":"ENS renewal",
+              "description":"Renew yabir.eth extended",
+              "counterparty":"ENS",
+              "timestamp":1977652411,
+              "address":"0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+            },
+            {
+              "identifier":2,
+              "name":"CRV unlock",
+              "description":"Unlock date for CRV",
+              "counterparty":"CURVE",
+              "timestamp":1851422011,
+              "address":"0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
+            }
+          ],
+          "entries_found":2,
+          "entries_total":2,
+          "entries_limit":-1
+        }
+      }
+
+  :resjson array entries: List of all the calendar events with their identifier.
+  :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+  :resjson int entries_limit: The limit of entries if free version. Always -1 for this endpoint.
+  :resjson int entries_total: The number of total entries ignoring all filters.
+
+  :statuscode 200: All okay
+  :statuscode 401: No user is currently logged in.
+  :statuscode 500: Internal rotki error
+
+
+.. http:put:: /api/(version)/calendar
+
+  Doing a PUT request on this endpoint will allow to create a new calendar entry.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/calendar HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp":1869737344,
+        "name":"ENS renewal",
+        "description":"Renew yabir.eth",
+        "counterparty":"ENS",
+        "address":"0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+      }
+
+  .. _calendar_fields:
+
+  :reqjsonarr integer timestamp: Timestamp of the event in the calendar.
+  :reqjsonarr string name: Name of the event.
+  :reqjsonarr optional[string] description: Longer description given to the event.
+  :reqjsonarr optional[string] counterparty: A protocol counterparty given to the calendar event.
+  :reqjsonarr optional[string] address: Address linked to the calendar event.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": {"entry_id": 1},
+         "message": ""
+      }
+
+  :resjson object result: object with the identifier of the calendar entry created. 
+  :statuscode 200: Entry correctly stored.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data.
+  :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/calendar
+
+  Doing a PATCH on this endpoint allows to edit a calendar entry. Takes the same parameters as the PUT verb plus the identifier of the entry being updated.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/(version)/calendar HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+      {
+        "identifier": 1,
+        "timestamp":1869737344,
+        "name":"ENS renewal",
+        "description":"Renew yabir.eth",
+        "counterparty":"ENS",
+        "address":"0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+      }
+
+  :ref:`calendar_fields`
+
+  :reqjsonarr integer identifier: The id of the event being updated.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": {"entry_id": 1},
+         "message": ""
+      }
+
+  :resjson object result: object with the identifier of the calendar entry updated. 
+  :statuscode 200: Entry correctly updated.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Event not found.
+  :statuscode 500: Internal rotki error.
+
+
+.. http:delete:: /api/(version)/calendar
+
+  Doing a DELETE on this endpoint allows deleting a calendar event by their identifier.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/(version)/calendar HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {
+      "identifier": 2
+    }
+
+  :reqjsonarr integer identifier: The identifier of the event that will be deleted
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Entry correctly deleted.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Entry doesn't exist.
+  :statuscode 500: Internal rotki error.

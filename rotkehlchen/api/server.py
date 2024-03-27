@@ -50,6 +50,7 @@ from rotkehlchen.api.v1.resources import (
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
     BTCXpubResource,
+    CalendarResource,
     ClearCacheResource,
     CompoundBalancesResource,
     ConfigurationsResource,
@@ -323,6 +324,7 @@ URLS_V1: URLS = [
     ('/cache/general/refresh', RefreshGeneralCacheResource),
     ('/airdrops/metadata', AirdropsMetadataResource),
     ('/defi/metadata', DefiMetadataResource),
+    ('/calendar', CalendarResource),
 ]
 
 logger = logging.getLogger(__name__)
