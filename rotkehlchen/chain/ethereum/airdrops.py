@@ -135,9 +135,10 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
     return airdrops
 
 
-def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], dict[str, list[str]]]:  # noqa: E501
+def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], dict[str, list[str]], set[str]]:  # noqa: E501
     """Fetches airdrop metadata from the rotki/data repository. If it's not cached, parses them,
     and returns them in two parts: a dict of Airdrop instances and a dict of POAP airdrops data.
+    Also returns the list of airdrops that don't have decoders yet.
 
     May raise - RemoteError if the request fails or metadata is invalid.
     """
@@ -187,6 +188,7 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
     return (
         _parse_airdrops(database=database, airdrops_data=airdrops_data['airdrops']),
         airdrops_data['poap_airdrops'],
+        set(airdrops_data.get('airdrops_missing_decoders', [])),
     )
 
 
@@ -344,7 +346,7 @@ def check_airdrops(
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     airdrop_tuples = []
     current_time = ts_now()
-    airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
+    airdrops, poap_airdrops, airdrops_without_decoder = fetch_airdrops_metadata(database=database)
 
     for protocol_name, airdrop_data in airdrops.items():
         if airdrop_data.cutoff_time is not None and current_time > airdrop_data.cutoff_time:
@@ -386,6 +388,8 @@ def check_airdrops(
                     'link': airdrop_data.url,
                     'claimed': False,
                 }
+                if protocol_name in airdrops_without_decoder:
+                    temp_found_data[addr][protocol_name]['missing_decoder'] = True  # type: ignore
                 if airdrop_data.icon_url is not None:
                     temp_found_data[addr][protocol_name]['icon_url'] = airdrop_data.icon_url  # type: ignore
                 temp_airdrop_tuples.append(
