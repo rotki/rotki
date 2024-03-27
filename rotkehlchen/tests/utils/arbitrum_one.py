@@ -3,12 +3,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain
 
 
-def get_arbitrum_allthatnode(weight: FVal) -> WeightedNode:
+def get_arbitrum_allthatnode(weight: FVal, owned: bool = False) -> WeightedNode:
     return WeightedNode(
         node_info=NodeName(
             name='allthatnode',
             endpoint='https://arbitrum-one-archive.allthatnode.com',
-            owned=False,
+            owned=owned,
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
         ),
         active=True,

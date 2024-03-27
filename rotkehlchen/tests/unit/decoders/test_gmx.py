@@ -127,6 +127,7 @@ def test_long_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Increase long position with {amount_deposited} ETH in GMX',
             address=GMX_POSITION_ROUTER,
             counterparty=CPT_GMX,
+            extra_data={'collateral_token': '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 'index_token': '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 'is_long': True},  # noqa: E501
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=3,
@@ -171,6 +172,7 @@ def test_decrease_short_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_acc
             notes=f'Decrease short position withdrawing {amount_withdrawn} USDC in GMX',
             address=GMX_POSITION_ROUTER,
             counterparty=CPT_GMX,
+            extra_data={'collateral_token': '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 'index_token': '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 'is_long': '0x3D4d8A52D5717b09CA1e1980393d244Ac258C6AA'},  # noqa: E501
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=20,
