@@ -113,6 +113,8 @@ def assert_serialized_dicts_equal(
                 ignore_keys=ignore_keys,
                 length_list_keymap=length_list_keymap,
             )
+        elif isinstance(a_val, bytes):
+            assert a_val.hex() == b[a_key]
         else:
             assert a_val == b[a_key], f"{a_key} doesn't match. {a_val} != {b[a_key]}"
 

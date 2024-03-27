@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
     ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
+    ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED,
     ETHEREUM_TEST_PARAMETERS,
     INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
@@ -353,7 +354,7 @@ def test_ethereum_nodes_prune_and_archive_status(
     allow_playback_repeats=True,
     filter_query_parameters=['apikey'],
 )
-@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+@pytest.mark.parametrize(*ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_get_pruned_nodes_behaviour_in_txn_queries(
         ethereum_inquirer,
         ethereum_manager_connect_at_start,
