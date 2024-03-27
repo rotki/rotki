@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Binance balances will now include funding wallet's balances.
 * :feature:`-` rotki now supports Coinbase transactions using Advanced Trading.
 * :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
 * :bug:`-` Deleting an EVM RPC node will no longer fail sometimes with a "Can't delete etherscan node" error. Additionally non-mainnet etherscan nodes are no longer deletable.

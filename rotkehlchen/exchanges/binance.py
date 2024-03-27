@@ -296,7 +296,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: dict | None = None,
+            options: dict[str, str | int] | None = None,
+            request_options_key: Literal['params', 'data'] = 'params',
+            request_method: Literal['GET', 'POST'] = 'GET',
     ) -> list | dict:
         """Performs a binance api query
 
@@ -338,12 +340,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             api_subdomain = api_type if is_new_futures_api else 'api'
             request_url = (
-                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}?'
+                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}'
             )
-            request_url += urlencode(call_options)
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.get(request_url, timeout=timeout)
+                response = self.session.request(  # type: ignore[misc]  # keyword is a string as typed above
+                    method=request_method,
+                    url=request_url,
+                    timeout=timeout,
+                    **{request_options_key: call_options},  # type: ignore[arg-type]  # types are correctly set
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} API request failed due to {e!s}',
@@ -423,7 +429,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: dict | None = None,
+            options: dict[str, str | int] | None = None,
     ) -> dict:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
@@ -438,10 +444,18 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: dict | None = None,
+            options: dict[str, str | int] | None = None,
+            request_method: Literal['GET', 'POST'] = 'GET',
+            request_options_key: Literal['params', 'data'] = 'params',
     ) -> list:
         """May raise RemoteError and BinancePermissionError due to api_query"""
-        result = self.api_query(api_type, method, options)
+        result = self.api_query(
+            api_type=api_type,
+            method=method,
+            options=options,
+            request_method=request_method,
+            request_options_key=request_options_key,
+        )
         if isinstance(result, dict):
             if 'data' in result:
                 result = result['data']
@@ -462,25 +476,27 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
         return result
 
-    def _query_spot_balances(
+    def _add_balances(
             self,
             balances: defaultdict[AssetWithOracles, Balance],
+            new_balances: list[dict],
     ) -> defaultdict[AssetWithOracles, Balance]:
-        account_data = self.api_query_dict('api', 'account')
-        binance_balances = account_data.get('balances', None)
-        if not binance_balances:
-            raise RemoteError('Binance spot balances response did not contain the balances key')
-
-        for entry in binance_balances:
+        """Add new balances to balances dict"""
+        for entry in new_balances:
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
                 asset_symbol = str(entry['asset'])
                 free = deserialize_asset_amount(entry['free'])
                 locked = deserialize_asset_amount(entry['locked'])
-            except KeyError as e:
-                raise RemoteError(f'Binance spot balance asset entry did not contain key {e!s}') from e  # noqa: E501
-            except DeserializationError as e:
-                raise RemoteError('Failed to deserialize an amount from binance spot balance asset entry') from e  # noqa: E501
+            except (KeyError, DeserializationError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}'
+                log.error(
+                    f'Error while deserializing {self.name} balance entry: {entry}. {msg}. '
+                    f'Ignoring its spot/funding balance query.',
+                )
+                continue
 
             if asset_symbol.startswith('LD') and asset_symbol not in BINANCE_ASSETS_STARTING_WITH_LD:  # noqa: E501
                 # when you receive the interest from your Flexible Earn products,
@@ -488,8 +504,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 # stands for "Lending Daily". Ignore since we query them from other endpoint
                 continue
 
-            amount = free + locked
-            if amount == ZERO:
+            if (amount := free + locked) == ZERO:
                 continue
 
             try:
@@ -523,12 +538,52 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 )
                 continue
 
-            balances[asset] += Balance(
-                amount=amount,
-                usd_value=amount * usd_price,
-            )
+            balances[asset] += Balance(amount=amount, usd_value=amount * usd_price)
 
         return balances
+
+    def _query_spot_balances(
+            self,
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
+        try:
+            account_data = self.api_query_dict(api_type='api', method='account')
+        except (RemoteError, BinancePermissionError) as e:
+            log.warning(
+                f'Failed to query {self.name} spot wallet balances.'
+                f'Skipping query. Response details: {e!s}',
+            )
+            return balances
+
+        if (binance_balances := account_data.get('balances', None)) is None:
+            raise RemoteError('Binance spot balances response did not contain the balances key')
+
+        return self._add_balances(balances=balances, new_balances=binance_balances)
+
+    def _query_funding_balances(
+            self,
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
+        """Query the balances of funding wallet in binance.
+        Docs: https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
+
+        May Raise RemoteError due to api_query or invalid response"""
+        try:
+            if len(funding_balances := self.api_query_list(
+                api_type='sapi',
+                method='asset/get-funding-asset',
+                request_method='POST',
+                request_options_key='data',
+            )) == 0:
+                return balances
+        except (RemoteError, BinancePermissionError) as e:
+            log.warning(
+                f'Failed to query {self.name} funding wallet balances.'
+                f'Skipping query. Response details: {e!s}',
+            )
+            return balances
+
+        return self._add_balances(balances=balances, new_balances=funding_balances)
 
     def _query_lending_balances(
             self,
@@ -1057,6 +1112,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self.first_connection()
             returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
+            returned_balances = self._query_funding_balances(returned_balances)
             if self.location != Location.BINANCEUS:
                 for method in (
                         self._query_lending_balances,
@@ -1453,7 +1509,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             else end_ts  # Case request without offset (1 request)
         )
         while True:
-            options = {
+            options: dict[str, int | str] = {
                 'timestamp': ts_now_in_ms(),
                 'startTime': from_ts,
                 'endTime': to_ts,

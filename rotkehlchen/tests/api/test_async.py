@@ -106,10 +106,10 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
 
-    def mock_binance_asset_return(url, timeout):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args, **kwargs):  # pylint: disable=unused-argument
         raise ValueError('BOOM!')
 
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+    binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
     # Create an async task
     with binance_patch:
@@ -153,11 +153,11 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
 
-    def mock_binance_asset_return(url, timeout):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args, **kwargs):  # pylint: disable=unused-argument
         while True:  # infinite loop so we can cancel it
             gevent.sleep(1)
 
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+    binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
     # Create an async task
     with binance_patch:
