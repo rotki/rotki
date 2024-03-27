@@ -297,6 +297,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             api_type: BINANCE_API_TYPE,
             method: str,
             options: dict | None = None,
+            request_type: Literal['get', 'post'] = 'get',
     ) -> list | dict:
         """Performs a binance api query
 
@@ -338,12 +339,14 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             api_subdomain = api_type if is_new_futures_api else 'api'
             request_url = (
-                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}?'
+                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}'
             )
-            request_url += urlencode(call_options)
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.get(request_url, timeout=timeout)
+                if request_type == 'get':
+                    response = self.session.get(url=request_url, params=call_options, timeout=timeout)  # noqa: E501
+                else:  # post
+                    response = self.session.post(url=request_url, data=call_options, timeout=timeout)  # noqa: E501
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} API request failed due to {e!s}',
@@ -439,9 +442,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             api_type: BINANCE_API_TYPE,
             method: str,
             options: dict | None = None,
+            request_type: Literal['get', 'post'] = 'get',
     ) -> list:
         """May raise RemoteError and BinancePermissionError due to api_query"""
-        result = self.api_query(api_type, method, options)
+        result = self.api_query(api_type, method, options, request_type)
         if isinstance(result, dict):
             if 'data' in result:
                 result = result['data']
@@ -527,6 +531,74 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 amount=amount,
                 usd_value=amount * usd_price,
             )
+
+        return balances
+
+    def _query_funding_balances(
+            self,
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
+        """Query the balances of funding wallet in binance.
+        Docs: https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
+
+        May Raise RemoteError due to api_query or invalid response"""
+        try:
+            funding_balances = self.api_query_list('sapi', 'asset/get-funding-asset', request_type='post')  # noqa: E501
+        except (RemoteError, BinancePermissionError) as e:
+            log.warning(
+                f'Failed to query {self.name} funding wallet balances.'
+                f'Skipping query. Response details: {e!s}',
+            )
+            return balances
+
+        if len(funding_balances) == 0:
+            return balances
+
+        for entry in funding_balances:
+            try:
+                asset_symbol = entry['asset']
+                free = deserialize_asset_amount(entry['free'])
+                locked = deserialize_asset_amount(entry['locked'])
+            except KeyError as e:
+                raise RemoteError(f'Binance funding balance asset entry did not contain key {e!s}') from e  # noqa: E501
+            except DeserializationError as e:
+                raise RemoteError('Failed to deserialize an amount from binance funding balance asset entry') from e  # noqa: E501
+
+            if (amount := free + locked) == ZERO:
+                continue
+
+            try:
+                asset = asset_from_binance(asset_symbol)
+            except UnsupportedAsset as e:
+                if e.identifier != 'ETF':
+                    log.error(
+                        f'Found unsupported {self.name} asset {e.identifier}. '
+                        f'Ignoring its balance query.',
+                    )
+                continue
+            except UnknownAsset as e:
+                log.error(
+                    f'Found unknown {self.name} asset {e.identifier}. '
+                    f'Ignoring its balance query.',
+                )
+                continue
+            except DeserializationError:
+                log.error(
+                    f'Found {self.name} asset with non-string type {type(entry["asset"])}. '
+                    f'Ignoring its balance query.',
+                )
+                continue
+
+            try:
+                usd_price = Inquirer.find_usd_price(asset)
+            except RemoteError as e:
+                log.error(
+                    f'Error processing {self.name} balance entry due to inability to '
+                    f'query USD price: {e!s}. Skipping balance entry',
+                )
+                continue
+
+            balances[asset] += Balance(amount=amount, usd_value=amount * usd_price)
 
         return balances
 
@@ -1057,6 +1129,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self.first_connection()
             returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
+            returned_balances = self._query_funding_balances(returned_balances)
             if self.location != Location.BINANCEUS:
                 for method in (
                         self._query_lending_balances,

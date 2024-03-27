@@ -2,7 +2,6 @@ import datetime
 import hashlib
 import hmac
 import os
-import re
 import warnings as test_warnings
 from contextlib import ExitStack
 from typing import TYPE_CHECKING
@@ -18,7 +17,6 @@ from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import (
@@ -204,7 +202,11 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
 def test_binance_query_balances_include_features(function_scope_binance: Binance):
     """Test that querying binance balances includes the futures wallet"""
     binance = function_scope_binance
-    with patch.object(binance.session, 'get', side_effect=mock_binance_balance_response):
+    with patch.multiple(
+        target=binance.session,
+        get=mock_binance_balance_response,
+        post=mock_binance_balance_response,
+    ):
         balances, msg = binance.query_balances()
 
     assert msg == ''
@@ -212,37 +214,30 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
     assert balances[A_BTC].amount == FVal('4723849.39208129')
     assert balances[A_ETH].amount == FVal('4763368.68006011')
     assert balances[A_BUSD].amount == FVal('5.82211108')
-    assert balances[A_USDT].amount == FVal('201.01000000')
+    assert balances[A_USDT].amount == FVal('202.01000000')
     assert balances[A_DOT].amount == FVal('500.55')
     assert balances[A_WBTC].amount == FVal('2.1')
     assert balances[A_AXS].amount == FVal('122.09202928')
-
-
-TIMESTAMPS_RE = re.compile(r'.*&startTime\=(.*?)&endTime\=(.*?)&')
 
 
 def test_binance_query_trade_history(function_scope_binance):
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
 
-    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
         if 'myTrades' in url:
-            if 'symbol=BNBBTC' in url:
+            if params.get('symbol') == 'BNBBTC':
                 text = BINANCE_MYTRADES_RESPONSE
             else:
                 text = '[]'
         elif 'fiat/payments' in url:
-            match = TIMESTAMPS_RE.search(url)
-            assert match
-            groups = match.groups()
-            assert len(groups) == 2
-            from_ts, to_ts = (int(x) for x in groups)
-            if 'transactionType=0' in url:
+            from_ts, to_ts = params.get('startTime'), params.get('endTime')
+            if params.get('transactionType') == 0:
                 if from_ts < 1624529919000 < to_ts:
                     text = BINANCE_FIATBUY_RESPONSE
                 else:
                     text = '[]'
-            elif 'transactionType=1' in url:
+            elif params.get('transactionType') == 1:
                 if from_ts < 1628529919000 < to_ts:
                     text = BINANCE_FIATSELL_RESPONSE
                 else:
@@ -300,8 +295,8 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     binance = function_scope_binance
     binance.cache_ttl_secs = 0
 
-    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
-        if 'symbol=BNBBTC' in url or 'symbol=doesnotexist' in url:
+    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+        if params.get('symbol') == 'BNBBTC' or params.get('symbol') == 'doesnotexist':
             text = BINANCE_MYTRADES_RESPONSE
         else:
             text = '[]'
@@ -385,12 +380,8 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     end_ts = 1636400907
     binance = function_scope_binance
 
-    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
-        match = TIMESTAMPS_RE.search(url)
-        assert match
-        groups = match.groups()
-        assert len(groups) == 2
-        from_ts, to_ts = (int(x) for x in groups)
+    def mock_get_deposit_withdrawal(url, params, **kwargs):  # pylint: disable=unused-argument
+        from_ts, to_ts = params.get('startTime'), params.get('endTime')
         if 'capital/deposit' in url:
             if from_ts >= 1508022000000 and to_ts <= 1515797999999:
                 response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
@@ -402,13 +393,13 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
             else:
                 response_str = '[]'
         elif 'fiat/orders' in url:
-            from_ts, to_ts = (int(x) for x in groups)
-            if 'transactionType=0' in url:
+            from_ts, to_ts = params.get('startTime'), params.get('endTime')
+            if params.get('transactionType') == 0:
                 if from_ts < 1626144956000 < to_ts:
                     response_str = BINANCE_FIATDEPOSITS_RESPONSE
                 else:
                     response_str = '[]'
-            elif 'transactionType=1' in url:
+            elif params.get('transactionType') == 1:
                 if from_ts < 1636144956000 < to_ts:
                     response_str = BINANCE_FIATWITHDRAWS_RESPONSE
                 else:
@@ -639,15 +630,15 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
         ]
         yield from results
 
-    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(url, params, **kwargs):  # pylint: disable=unused-argument
         if 'capital/deposit' in url:
             response_str = next(get_deposit_result)
         elif 'capital/withdraw' in url:
             response_str = next(get_withdraw_result)
         elif 'fiat/orders' in url:
-            if 'transactionType=0' in url:
+            if params.get('transactionType') == 0:
                 response_str = next(get_fiat_deposit_result)
-            elif 'transactionType=1' in url:
+            elif params.get('transactionType') == 1:
                 response_str = next(get_fiat_withdraw_result)
             else:
                 raise AssertionError('Unexpected binance request in test')
@@ -800,15 +791,13 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         hashlib.sha256,
     ).hexdigest()
     call_options['signature'] = signature
-    base_url = 'https://api.binance.com/api/v3/myTrades?'
-    exp_request_url = base_url + urlencode(call_options)
-    timeout_tuple = CachedSettings().get_timeout_tuple()
+    base_url = 'https://api.binance.com/api/v3/myTrades'
 
     # NB: all calls must have the same signature (time frozen)
     expected_calls = [
-        call(exp_request_url, timeout=timeout_tuple),
-        call(exp_request_url, timeout=timeout_tuple),
-        call(exp_request_url, timeout=timeout_tuple),
+        call(url=base_url, params=call_options, timeout=(30, 30)),
+        call(url=base_url, params=call_options, timeout=(30, 30)),
+        call(url=base_url, params=call_options, timeout=(30, 30)),
     ]
 
     def get_mocked_response():
@@ -819,7 +808,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         ]
         yield from responses
 
-    def mock_response(url, timeout):  # pylint: disable=unused-argument
+    def mock_response(url, timeout, *args, **kwargs):  # pylint: disable=unused-argument
         return next(get_response)
 
     get_response = get_mocked_response()
@@ -858,14 +847,13 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
     markets = ['ETHBTC', 'BNBBTC', 'BTCUSDC']
     binance.edit_exchange_extras({BINANCE_MARKETS_KEY: markets})
     count = 0
-    p = re.compile(r'symbol=[A-Z]*')
     seen = set()
 
-    def mock_my_trades(url, timeout):  # pylint: disable=unused-argument
+    def mock_my_trades(url, params, timeout):  # pylint: disable=unused-argument
         nonlocal count
         if '/fiat/payments' not in url:
             count += 1
-            market = p.search(url).group()[7:]
+            market = params.get('symbol')
             assert market in markets and market not in seen
             seen.add(market)
         text = '[]'
