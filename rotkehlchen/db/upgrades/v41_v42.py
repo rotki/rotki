@@ -87,14 +87,36 @@ def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _add_calendar_table(write_cursor: 'DBCursor') -> None:
+    write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    description TEXT,
+    counterparty TEXT,
+    address TEXT,
+    blockchain TEXT,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    UNIQUE(name, address, blockchain)
+    );""")  # noqa: E501
+
+
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v41 to v42. This was in v1.33 release"""
-    progress_handler.set_total_steps(3)
+    """Upgrades the DB from v41 to v42. This was in v1.33 release.
+
+        - Create new tables for zksync lite
+        - Add new supported locations
+        - Add a new table to handle the calendar
+    """
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
         progress_handler.new_step()
         _upgrade_evmchains_to_skip_detection(write_cursor)
+        progress_handler.new_step()
+        _add_calendar_table(write_cursor)
         progress_handler.new_step()

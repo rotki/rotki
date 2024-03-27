@@ -752,6 +752,21 @@ DB_CREATE_KEY_VALUE_CACHE = """CREATE TABLE IF NOT EXISTS key_value_cache (
 );"""
 
 
+DB_CREATE_CALENDAR = """
+CREATE TABLE IF NOT EXISTS calendar (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    description TEXT,
+    counterparty TEXT,
+    address TEXT,
+    blockchain TEXT,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    UNIQUE(name, address, blockchain)
+);
+"""  # noqa: E501
+
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -808,6 +823,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MAPPED_ACCOUNTING_RULES}
 {DB_CREATE_UNRESOLVED_REMOTE_CONFLICTS}
 {DB_CREATE_KEY_VALUE_CACHE}
+{DB_CREATE_CALENDAR}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

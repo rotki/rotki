@@ -1,6 +1,8 @@
 import logging
+import operator
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
+from functools import reduce
 from importlib import import_module
 from itertools import starmap
 from pathlib import Path
@@ -66,6 +68,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     CHAIN_IDS_WITH_BALANCE_PROTOCOLS,
     CHAINS_WITH_CHAIN_MANAGER,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -105,6 +108,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
+    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
@@ -1688,3 +1692,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('refresh_eth2_get_daily_stats')
         self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
+
+    def get_all_counterparties(self) -> set['CounterpartyDetails']:
+        """
+        obtain the set of unique counterparties from the decoders across
+        all the chains that have them.
+        """
+        return reduce(
+            operator.or_,
+            [
+                self.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
+                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+            ],
+        )

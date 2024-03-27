@@ -126,12 +126,14 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
+    NewCalendarEntrySchema,
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
     OptionalAddressesWithBlockchainsListSchema,
     QueriedAddressesSchema,
     QueryAddressbookSchema,
+    QueryCalendarSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -157,6 +159,7 @@ from rotkehlchen.api.v1.schemas import (
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
+    UpdateCalendarSchema,
     UserActionLoginSchema,
     UserActionSchema,
     UserNotesGetSchema,
@@ -186,6 +189,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -3243,3 +3247,43 @@ class SpamEvmTokenResource(BaseMethodView):
     @use_kwargs(post_delete_schema, location='json_and_query')
     def delete(self, token: EvmToken) -> Response:
         return self.rest_api.remove_token_from_spam(token=token)
+
+
+class CalendarResource(BaseMethodView):
+
+    def make_create_schema(self) -> NewCalendarEntrySchema:
+        return NewCalendarEntrySchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_update_schema(self) -> UpdateCalendarSchema:
+        return UpdateCalendarSchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_query_schema(self) -> QueryCalendarSchema:
+        return QueryCalendarSchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    delete_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_create_schema, location='json_and_query')
+    def put(self, calendar: CalendarEntry) -> Response:
+        return self.rest_api.create_calendar_entry(calendar=calendar)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_calendar_entry(identifier=identifier)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_update_schema, location='json_and_query')
+    def patch(self, calendar: CalendarEntry) -> Response:
+        return self.rest_api.update_calendar_entry(calendar)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_query_schema, location='json_and_query')
+    def post(self, filter_query: CalendarFilterQuery) -> Response:
+        return self.rest_api.query_calendar(filter_query=filter_query)

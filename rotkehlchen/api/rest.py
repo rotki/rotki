@@ -112,6 +112,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -260,7 +261,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
     from rotkehlchen.db.dbhandler import DBHandler
@@ -4446,15 +4446,12 @@ class RestAPI:
         Collect the counterparties from decoders in the different evm chains and combine them
         removing duplicates.
         """
-        counterparties: set[CounterpartyDetails] = reduce(
-            operator.or_,
-            [
-                self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
-                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ],
-        )
         return api_response(
-            result=process_result(_wrap_in_ok_result(list(counterparties))),
+            result=process_result(
+                _wrap_in_ok_result(
+                    result=list(self.rotkehlchen.chains_aggregator.get_all_counterparties()),
+                ),
+            ),
             status_code=HTTPStatus.OK,
         )
 
@@ -4873,3 +4870,48 @@ class RestAPI:
         self.rotkehlchen.data.remove_ignored_assets(assets=[token])
         AssetResolver().clean_memory_cache(token.identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def create_calendar_entry(self, calendar: CalendarEntry) -> Response:
+        """Create a new calendar entry with the information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).create_calendar_entry(
+                calendar=calendar,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def delete_calendar_entry(self, identifier: int) -> Response:
+        """Delete a calendar entry by its id"""
+        try:
+            DBCalendar(self.rotkehlchen.data.db).delete_calendar_entry(identifier=identifier)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def query_calendar(self, filter_query: CalendarFilterQuery) -> Response:
+        """Query the calendar table using the provided filter"""
+        result = DBCalendar(self.rotkehlchen.data.db).query_calendar_entry(
+            filter_query=filter_query,
+        )
+        return api_response(_wrap_in_ok_result(
+            result=process_result(result),
+            status_code=HTTPStatus.OK,
+        ))
+
+    def update_calendar_entry(self, calendar: CalendarEntry) -> Response:
+        """Update the calendar entry with the given identifier using the information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_calendar_entry(
+                calendar=calendar,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )

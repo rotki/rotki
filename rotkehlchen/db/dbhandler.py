@@ -2108,6 +2108,7 @@ class DBHandler:
                 'history_events',
                 'accounting_rules',
                 'unresolved_remote_conflicts',
+                'calendar',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             group_by: str | None = None,
