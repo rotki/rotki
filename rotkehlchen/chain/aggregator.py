@@ -15,6 +15,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
+from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
@@ -184,6 +185,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.OPTIMISM: (VelodromeBalances,),
     ChainID.BASE: (AerodromeBalances,),
+    ChainID.ARBITRUM_ONE: (GmxBalances,),
 }
 
 
@@ -1004,6 +1006,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.ARBITRUM_ONE)
+        self._query_protocols_with_balance(chain_id=ChainID.ARBITRUM_ONE)
 
     @protect_with_lock()
     @cache_response_timewise()
