@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
@@ -12,12 +14,15 @@ from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT, A_STETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
@@ -258,3 +263,82 @@ def test_eigenlayer_balances(
         amount=FVal('0.114063122816914142'),
         usd_value=FVal('0.1710946842253712130'),
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[
+    '0x328fE286b2bE1895959E2601364AfE9DAA22aba3',
+    '0x4ebE485C1DF060f6Fc6E3C3b200EBc21Fe11a94D',
+]])
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
+@pytest.mark.parametrize('mocked_current_prices', [{
+    'eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f': FVal(69928),  # wBTC
+    'eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1': FVal(1.001),  # dai
+    'eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1': FVal(3583.17),  # weth
+}])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_gmx_balances(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'OptimismTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """
+    Test querying balances for GMX. We use an address with 2 different positions and the other
+    one has a single position. There are both shorts and longs in the data.
+    """
+    for tx_hash in (
+        '0x195cdb1bde8da223c7e6216166f7e8b5b79fee6409dde145a8f3e95223ebcc51',  # short btc
+        '0x59d136f8d1b366a895ddf4136fb45d62b862e79f4a937f5a9b33ceec47eaf32f',  # long btc
+        '0xf14d5a3f3fa4a4c324f95b70db81502f3d7c1910782381ed82f3580da64b093f',  # long eth
+    ):
+        tx_hex = deserialize_evm_tx_hash(tx_hash)
+        get_decoded_events_of_transaction(
+            evm_inquirer=arbitrum_one_inquirer,
+            database=arbitrum_one_transaction_decoder.database,
+            tx_hash=tx_hex,
+        )
+
+    balances_inquirer = GmxBalances(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+
+    # we mock the function call for the user positions since the function returns a set and
+    # the inconsistency in the order can affect the output of the mocked responses. We do
+    # check that the expected output and the actual output match.
+    expected_positions = {
+        arbitrum_one_accounts[0]: [
+            ('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', True),  # noqa: E501
+            ('0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', True),  # noqa: E501
+        ],
+        arbitrum_one_accounts[1]: [
+            ('0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', False),  # noqa: E501
+        ],
+    }
+    actual_positions = balances_inquirer._extract_unique_deposits()
+    for addr, positions in expected_positions.items():
+        assert set(actual_positions[addr]) == set(positions)
+
+    with patch(
+        'rotkehlchen.chain.arbitrum_one.modules.gmx.balances.GmxBalances._extract_unique_deposits',
+        return_value=expected_positions,
+    ):
+        balances = balances_inquirer.query_balances()
+
+    assert balances[arbitrum_one_accounts[0]] == {
+        Asset('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'): Balance(
+            amount=FVal('0.020625523771241888'),
+            usd_value=FVal('73.904758011400794198629853957124'),
+        ),
+        Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'): Balance(
+            amount=FVal('0.00092231'),
+            usd_value=FVal('64.495126014300507906764604009528'),
+        ),
+    }
+    assert balances[arbitrum_one_accounts[1]] == {
+        Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'): Balance(
+            amount=FVal('42.896760410410693074'),
+            usd_value=FVal('42.939657170821103766867050208907'),
+        ),
+    }

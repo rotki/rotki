@@ -137,6 +137,9 @@ class FVal:
         evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rmod__(evaluated_other))
 
+    def __round__(self, ndigits: int) -> 'FVal':
+        return FVal(round(self.num, ndigits))
+
     def __float__(self) -> float:
         return float(self.num)
 
