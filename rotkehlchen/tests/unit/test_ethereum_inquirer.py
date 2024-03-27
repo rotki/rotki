@@ -323,7 +323,7 @@ def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     _test_get_blocknumber_by_time(ethereum_inquirer, True)
 
 
-@pytest.mark.vcr(match_on=['uri', 'method', 'raw_body'], allow_playback_repeats=True)
+@pytest.mark.vcr()
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
         ethereum_inquirer,
@@ -342,8 +342,10 @@ def test_ethereum_nodes_prune_and_archive_status(
             assert not web3_node.is_pruned
             assert web3_node.is_archive
 
-    # excluding etherscan
-    assert len(ethereum_inquirer.web3_mapping) == len(ethereum_manager_connect_at_start) - 1
+    if ethereum_manager_connect_at_start[0].node_info.name == 'etherscan':
+        assert len(ethereum_inquirer.web3_mapping) == 0  # excluding etherscan
+    else:
+        assert len(ethereum_inquirer.web3_mapping) == 1
 
 
 @pytest.mark.vcr(
