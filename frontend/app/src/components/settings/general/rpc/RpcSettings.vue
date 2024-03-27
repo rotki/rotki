@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { AsyncComponent, Ref } from 'vue';
+import type { AsyncComponent } from 'vue';
 
 const { t } = useI18n();
 

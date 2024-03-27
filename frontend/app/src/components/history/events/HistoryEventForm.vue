@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { toCapitalCase } from '@/utils/text';
-import { isOfEventType } from '@/utils/history/events';
-import type { Ref } from 'vue';
 import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(

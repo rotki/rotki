@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
 import type { CurrentDbUpgradeProgress } from '@/types/login';
 
 const { dbUpgradeStatus, dataMigrationStatus } = storeToRefs(

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
 import { externalLinks } from '@/data/external-links';
-import type { ComputedRef, Ref } from 'vue';
 
 const { t } = useI18n();
 const renderAllNftImages: Ref<'all' | 'whitelisted'> = ref('all');

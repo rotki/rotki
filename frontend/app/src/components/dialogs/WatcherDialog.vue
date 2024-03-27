@@ -5,7 +5,6 @@ import {
   type WatcherOpTypes,
   WatcherType,
 } from '@/types/session';
-import type { ComputedRef, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{

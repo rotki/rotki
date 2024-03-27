@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { Ref } from 'vue';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
 

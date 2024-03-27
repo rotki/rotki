@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { Writeable } from '@/types';
 import type {
   AssetUpdateConflictResult,

@@ -13,7 +13,6 @@ import type {
   DataTableOptions,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { TablePagination } from '@/types/pagination';
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { ActionStatus } from '@/types/action';

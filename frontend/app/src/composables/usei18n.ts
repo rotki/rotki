@@ -1,4 +1,4 @@
-import Vue, { type WritableComputedRef } from 'vue';
+import Vue from 'vue';
 import type { VueI18n } from 'vue-i18n-bridge';
 
 type NamedValues = Record<string, unknown>;

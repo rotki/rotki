@@ -2,7 +2,6 @@
 import { ApiValidationError } from '@/types/api/errors';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
 import type {
   HistoricalPrice,

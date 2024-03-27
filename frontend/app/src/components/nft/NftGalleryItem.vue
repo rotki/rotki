@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
 import type { StyleValue } from 'vue/types/jsx';
 import type { GalleryNft } from '@/types/nfts';
 

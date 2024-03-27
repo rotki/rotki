@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { ComputedRef, Ref } from 'vue';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type {
   DataTableColumn,

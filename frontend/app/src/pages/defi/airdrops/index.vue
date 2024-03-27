@@ -10,7 +10,6 @@ import {
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Ref } from 'vue';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 

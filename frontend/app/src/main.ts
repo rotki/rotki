@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import { PiniaVuePlugin, createPinia } from 'pinia';
-import Vue, { provide } from 'vue';
+import Vue from 'vue';
 import App from '@/App.vue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';

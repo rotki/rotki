@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RefreshableCache } from '@/types/session/purge';
-import type { Ref } from 'vue';
 
 const { t } = useI18n();
 

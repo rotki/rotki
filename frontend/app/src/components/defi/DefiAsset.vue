@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createEvmIdentifierFromAddress } from '@/utils/assets';
 import type { DefiAsset } from '@/types/defi/overview';
 
 const props = defineProps<{

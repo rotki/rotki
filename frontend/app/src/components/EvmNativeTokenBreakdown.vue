@@ -5,7 +5,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{

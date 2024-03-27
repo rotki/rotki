@@ -8,7 +8,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type {
   NonFungibleBalance,

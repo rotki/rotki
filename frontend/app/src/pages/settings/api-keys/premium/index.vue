@@ -2,7 +2,6 @@
 import { required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import type { Ref } from 'vue';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

@@ -1,5 +1,4 @@
 import { camelCase } from 'lodash-es';
-import type { ComputedRef } from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { ProtocolMetadata } from '@/types/defi';
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
-import type { Ref } from 'vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';

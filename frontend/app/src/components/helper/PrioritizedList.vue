@@ -3,7 +3,6 @@ import {
   EmptyListId,
   type PrioritizedListId,
 } from '@/types/settings/prioritized-list-id';
-import type { ComputedRef } from 'vue';
 import type { Nullable } from '@/types';
 import type { BaseMessage } from '@/types/messages';
 import type {

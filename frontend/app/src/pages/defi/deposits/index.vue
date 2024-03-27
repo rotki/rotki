@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
-import type { ComputedRef } from 'vue';
 import type { TabContent } from '@/types/tabs';
 
 const { appRoutes } = useAppRoutes();

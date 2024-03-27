@@ -2,7 +2,6 @@
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
-import type { ComputedRef } from 'vue';
 import type { StyleValue } from 'vue/types/jsx';
 
 const props = withDefaults(

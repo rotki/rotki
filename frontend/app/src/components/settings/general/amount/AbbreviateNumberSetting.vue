@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { abbreviationList } from '@/data/amount-formatter';
-import type { Ref } from 'vue';
 
 const { t } = useI18n();
 

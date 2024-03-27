@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import type { Ref } from 'vue';
 import type { CamelCase } from '@/types/common';
 
 const emit = defineEmits(['update:selection']);

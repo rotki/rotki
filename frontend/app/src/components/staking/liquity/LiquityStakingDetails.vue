@@ -10,7 +10,6 @@ import type {
   LiquityStakingDetails,
   LiquityStatisticDetails,
 } from '@rotki/common/lib/liquity';
-import type { ComputedRef } from 'vue';
 import type { AssetBalance, Balance } from '@rotki/common';
 
 const emit = defineEmits<{
