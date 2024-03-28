@@ -54,15 +54,15 @@ def test_binanceus_trades_location(function_scope_binance):
     """
     binance = function_scope_binance
 
-    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
-        if 'symbol=BNBBTC' in url:
+    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+        if params.get('symbol') == 'BNBBTC':
             text = BINANCE_MYTRADES_RESPONSE
         else:
             text = '[]'
 
         return MockResponse(200, text)
 
-    with patch.object(binance.session, 'get', side_effect=mock_my_trades):
+    with patch.object(binance.session, 'request', side_effect=mock_my_trades):
         trades = binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
 
     expected_trade = Trade(
@@ -100,7 +100,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
 
         return MockResponse(200, response_str)
 
-    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+    with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
         movements = binance.query_online_deposits_withdrawals(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),

@@ -7,8 +7,11 @@ Changelog
 * :feature:`-` rotki will now properly decode the swaps done via Uniswap V3 on other supported chains.
 * :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
+* :bug:`-` Binance balances will now include funding wallet's balances.
+* :feature:`-` rotki now supports Coinbase transactions using Advanced Trading.
 * :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
-* :bug:`-` Naira should be correctly detected in binance.
+* :bug:`-` Deleting an EVM RPC node will no longer fail sometimes with a "Can't delete etherscan node" error. Additionally non-mainnet etherscan nodes are no longer deletable.
+* :bug:`-` Nigerian Naira should be correctly detected in binance.
 * :bug:`-` Kraken balances in new yield-bearing products and automatic staking for new kraken users should now appear properly.
 
 * :release:`1.32.2 <2024-03-15>`
