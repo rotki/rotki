@@ -4,7 +4,7 @@ import { Purgeable } from '@/types/session/purge';
 
 const modules = Object.values(Module);
 const { allExchanges } = storeToRefs(useLocationStore());
-const { txEvmChainsToLocation } = useSupportedChains();
+const { txChainsToLocation } = useSupportedChains();
 
 const { purgeCache } = useSessionPurge();
 const { deleteModuleData } = useBlockchainBalancesApi();
@@ -137,7 +137,7 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
           outlined
           clearable
           persistent-hint
-          :items="txEvmChainsToLocation"
+          :items="txChainsToLocation"
           :label="t('purge_selector.evm_chain_to_clear.label')"
           :hint="t('purge_selector.evm_chain_to_clear.hint')"
         />

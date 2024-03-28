@@ -12,6 +12,7 @@ const RestChains = [
   Blockchain.BASE,
   Blockchain.GNOSIS,
   Blockchain.SCROLL,
+  Blockchain.ZKSYNC_LITE,
 ] as const;
 
 export type BtcChains = (typeof BtcChains)[number];

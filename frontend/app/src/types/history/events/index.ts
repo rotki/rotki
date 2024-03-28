@@ -11,6 +11,11 @@ const LiquityStakingEventExtraData = z.object({
   stakedAmount: NumericString,
 });
 
+export enum TransactionChainType {
+  EVM = 'evm',
+  EVMLIKE = 'evmlike',
+}
+
 export interface TransactionRequestPayload {
   readonly accounts: EvmChainAddress[];
 }

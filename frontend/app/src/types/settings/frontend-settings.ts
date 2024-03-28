@@ -54,6 +54,7 @@ const ExplorersSettings = z.object({
   [Blockchain.BASE]: ExplorerEndpoints.optional(),
   [Blockchain.GNOSIS]: ExplorerEndpoints.optional(),
   [Blockchain.SCROLL]: ExplorerEndpoints.optional(),
+  [Blockchain.ZKSYNC_LITE]: ExplorerEndpoints.optional(),
 });
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;

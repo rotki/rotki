@@ -5,6 +5,7 @@ import type {
   ChainInfo,
   EvmChainEntries,
   EvmChainInfo,
+  EvmLikeChainInfo,
   SubstrateChainInfo,
   SupportedChains,
 } from '@/types/api/chains';
@@ -15,6 +16,10 @@ function isEvmChain(info: ChainInfo): info is EvmChainInfo {
 
 function isSubstrateChain(info: ChainInfo): info is SubstrateChainInfo {
   return info.type === 'substrate';
+}
+
+function isEvmLikeChain(info: ChainInfo): info is EvmLikeChainInfo {
+  return info.type === 'evmlike';
 }
 
 export const useSupportedChains = createSharedComposable(() => {
@@ -45,10 +50,16 @@ export const useSupportedChains = createSharedComposable(() => {
     get(supportedChains).filter(isSubstrateChain),
   );
 
+  const evmLikeChainsData: ComputedRef<EvmLikeChainInfo[]> = computed(() =>
+    get(supportedChains).filter(isEvmLikeChain),
+  );
+
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(
     evmChainsData,
     x => x.id !== Blockchain.AVAX,
   );
+
+  const txChains: ComputedRef<ChainInfo[]> = computed(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
 
   const evmChains: ComputedRef<string[]> = useArrayMap(
     evmChainsData,
@@ -65,6 +76,12 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const supportsTransactions = (chain: MaybeRef<string>): boolean => {
     const chains = get(txEvmChains);
+    const selectedChain = get(chain);
+    return chains.some(x => x.id === selectedChain);
+  };
+
+  const isEvmLikeChains = (chain: MaybeRef<string>): boolean => {
+    const chains = get(evmLikeChainsData);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);
   };
@@ -89,18 +106,23 @@ export const useSupportedChains = createSharedComposable(() => {
   const getNativeAsset = (chain: MaybeRef<string>) => {
     const blockchain = get(chain);
     return (
-      [...get(evmChainsData), ...get(substrateChainsData)].find(
+      [...get(evmChainsData), ...get(substrateChainsData), ...get(evmLikeChainsData)].find(
         ({ id }) => id === blockchain,
       )?.nativeToken || blockchain
     );
   };
 
-  const getChain = (evmChain: string, defaultValue: any = Blockchain.ETH): Blockchain => {
+  const getChain = (location: string, defaultValue: any = Blockchain.ETH): Blockchain => {
     // note: we're using toSnakeCase here to always ensure that chains
     // with combined names gets parsed to match their chain name
-    const chainData = get(txEvmChains).find(
-      ({ evmChainName }) => evmChainName === toSnakeCase(evmChain),
-    );
+    const chainData = get(supportedChains).find((item) => {
+      const transformed = toSnakeCase(location);
+      if ('evmChainName' in item)
+        return item.evmChainName === transformed;
+
+      return item.id === transformed;
+    });
+
     if (chainData && isBlockchain(chainData.id))
       return chainData.id;
 
@@ -114,8 +136,13 @@ export const useSupportedChains = createSharedComposable(() => {
     return `./assets/images/protocols/${image}`;
   });
 
-  const txEvmChainsToLocation = computed(() =>
-    get(txEvmChains).map(item => toHumanReadable(item.evmChainName)),
+  const txChainsToLocation = computed(() =>
+    get(txChains).map((item) => {
+      if ('evmChainName' in item)
+        return toHumanReadable(item.evmChainName);
+
+      return toHumanReadable(item.id);
+    }),
   );
 
   return {
@@ -124,7 +151,9 @@ export const useSupportedChains = createSharedComposable(() => {
     evmChains,
     evmChainsData,
     evmChainNames,
+    evmLikeChainsData,
     txEvmChains,
+    txChains,
     getNativeAsset,
     getEvmChainName,
     getChain,
@@ -134,6 +163,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainImageUrl,
     isEvm,
     supportsTransactions,
-    txEvmChainsToLocation,
+    isEvmLikeChains,
+    txChainsToLocation,
   };
 });

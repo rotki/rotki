@@ -101,7 +101,7 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
     numOfDetectedTokens: total,
   };
 
-  if (!get(isEth))
+  if (!get(isEth) || get(loopring))
     return rowWithTokens;
 
   const loopringBalances = getAddressBalances('loopring', address);
@@ -360,7 +360,7 @@ function expand(row: Account) {
       #item.expand="{ row }"
     >
       <RuiTableRowExpander
-        v-if="hasTokenDetection && (row.expandable || loopring)"
+        v-if="(row.expandable || loopring)"
         :expanded="isExpanded(row)"
         @click="expand(row)"
       />

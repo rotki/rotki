@@ -1,18 +1,19 @@
 <script lang="ts" setup>
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
-import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import { TransactionChainType } from '@/types/history/events';
+import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 
 const props = defineProps<{
   refreshing: boolean;
-  locationsData: EvmUndecodedTransactionsData[];
-  evmUndecodedTransactionsStatus: Record<string, EvmUndecodedTransactionsData>;
+  locationsData: EvmUnDecodedTransactionsData[];
+  unDecodedTransactionsStatus: Record<string, EvmUnDecodedTransactionsData>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'redecode-all-evm-events'): void;
-  (e: 'reset-evm-undecoded-transactions'): void;
+  (e: 'redecode-all-events'): void;
+  (e: 'reset-undecoded-transactions'): void;
 }>();
 
 const { isTaskRunning } = useTaskStore();
@@ -25,29 +26,25 @@ const allEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
   all: true,
 });
 
-function redecodeAllEvmEvents() {
-  emit('redecode-all-evm-events');
+function redecodeAllEvents() {
+  emit('redecode-all-events');
 }
 
 const { t } = useI18n();
 
 const {
-  checkMissingTransactionEventsAndRedecode,
-  fetchUndecodedEventsBreakdown,
+  checkMissingEventsAndReDecode,
+  fetchUnDecodedEventsBreakdown,
 } = useHistoryTransactionDecoding();
 
 onMounted(() => refresh());
 
 async function refresh() {
-  await fetchUndecodedEventsBreakdown();
+  await fetchUnDecodedEventsBreakdown(TransactionChainType.EVM);
+  await fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE);
 
   if (props.locationsData.length === 0)
-    emit('reset-evm-undecoded-transactions');
-}
-
-async function redecodeMissingEvents() {
-  await checkMissingTransactionEventsAndRedecode();
-  await refresh();
+    emit('reset-undecoded-transactions');
 }
 
 const headers: DataTableColumn[] = [
@@ -78,11 +75,11 @@ const total: ComputedRef<number> = computed(() =>
 watch(eventTaskLoading, (loading) => {
   if (!loading) {
     refresh();
-    emit('reset-evm-undecoded-transactions');
+    emit('reset-undecoded-transactions');
   }
 });
 
-watch(toRef(props, 'evmUndecodedTransactionsStatus'), (curr, prev) => {
+watch(toRef(props, 'unDecodedTransactionsStatus'), (curr, prev) => {
   if (!isEqual(curr, prev))
     refresh();
 });
@@ -100,7 +97,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   <RuiCard>
     <template #custom-header>
       <div class="flex justify-between gap-4 p-4 pb-0">
-        <h5 class="text-h5">
+        <h5 class="text-h6">
           {{ t('transactions.events_decoding.title') }}
         </h5>
         <slot />
@@ -194,7 +191,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         v-if="total"
         color="primary"
         :disabled="refreshing || eventTaskLoading"
-        @click="redecodeMissingEvents()"
+        @click="checkMissingEventsAndReDecode()"
       >
         <template #prepend>
           <RuiIcon
@@ -214,7 +211,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
       <RuiButton
         color="error"
         :disabled="refreshing || eventTaskLoading"
-        @click="redecodeAllEvmEvents()"
+        @click="redecodeAllEvents()"
       >
         <template #prepend>
           <RuiIcon

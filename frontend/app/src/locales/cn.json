@@ -820,11 +820,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "无法从地址 {address} ({evmChain}) 的交易中检索丢失的事件：{error}",
+        "description": "从 {chain} 链中的事务中检索缺失事件失败： {error}",
         "title": "从交易中检索丢失的事件"
       },
       "task": {
-        "description": "检索地址的交易事件：{address} ({evmChain})",
+        "description": "读取 {chain} 链的交易事件",
         "title": "Evm 事务丢失事件检索"
       }
     },
@@ -1288,20 +1288,8 @@
   "blockchain_balances": {
     "add_account": "添加账户",
     "balances": {
-      "arbitrum_one": "Arbitrum One 余额",
-      "avax": "Avalanche 余额",
-      "base": "Base 余额",
-      "bch": "Bitcoin Cash 余额",
-      "btc": "Bitcoin 余额",
-      "dot": "Polkadot 余额",
-      "eth": "Ethereum 余额",
-      "eth2": "ETH staking 余额",
-      "ksm": "Kusama 余额",
-      "loopring": "Loopring 余额",
-      "optimism": "Optimism 余额",
-      "polygon_pos": "Polygon PoS 余额",
-      "gnosis": "Gnosis 余额",
-      "scroll": "Scroll 余额"
+      "common": "{chain} 余额",
+      "eth2": "ETH staking"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",

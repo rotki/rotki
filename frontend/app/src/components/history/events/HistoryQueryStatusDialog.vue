@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
   EvmTransactionQueryData,
-  EvmUndecodedTransactionsData,
+  EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
@@ -11,7 +11,7 @@ withDefaults(
     onlyChains?: Blockchain[];
     locations?: string[];
     transactions?: EvmTransactionQueryData[];
-    unDecoded: EvmUndecodedTransactionsData[];
+    unDecoded: EvmUnDecodedTransactionsData[];
     decoding: boolean;
     events?: HistoryEventsQueryData[];
     getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;

@@ -40,9 +40,9 @@ function onEditRule() {
     >
       <template #activator="{ on }">
         <RuiButton
-          class="!p-2"
           icon
           variant="text"
+          class="!p-2.5"
           v-on="on"
         >
           <RuiIcon

@@ -4,6 +4,7 @@ import {
   type AddTransactionHashPayload,
   type EvmChainAddress,
   OnlineHistoryEventsQueryType,
+  TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
@@ -19,28 +20,29 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const queue = new LimitedParallelizationQueue(4);
 
   const {
-    fetchEvmTransactionsTask,
+    fetchTransactionsTask,
     addTransactionHash: addTransactionHashCaller,
     queryOnlineHistoryEvents,
   } = useHistoryEventsApi();
 
-  const { resetEvmUndecodedTransactionsStatus } = useHistoryStore();
+  const { resetUnDecodedTransactionsStatus } = useHistoryStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-  const { getEvmChainName, supportsTransactions } = useSupportedChains();
+  const { getEvmChainName, supportsTransactions, isEvmLikeChains } = useSupportedChains();
   const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.HISTORY_EVENT);
-  const { reDecodeMissingTransactionEventsTask } = useHistoryTransactionDecoding();
+  const { reDecodeMissingEventsTask } = useHistoryTransactionDecoding();
   const { addresses } = storeToRefs(useBlockchainStore());
 
   const syncTransactionTask = async (
     account: EvmChainAddress,
+    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
-    const taskType = TaskType.TX;
+    const taskType = type === TransactionChainType.EVM ? TaskType.EVM_TX : TaskType.EVMLIKE_TX;
     const defaults: TransactionRequestPayload = {
       accounts: [account],
     };
 
-    const { taskId } = await fetchEvmTransactionsTask(defaults);
+    const { taskId } = await fetchTransactionsTask(defaults, type);
     const taskMeta = {
       title: t('actions.transactions.task.title'),
       description: t('actions.transactions.task.description', {
@@ -76,19 +78,20 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const syncAndRedecode = async (
+  const syncAndReDecodeEvents = async (
     evmChain: string,
     accounts: EvmChainAddress[],
+    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
     await awaitParallelExecution(
       accounts,
       item => item.evmChain + item.address,
-      syncTransactionTask,
+      item => syncTransactionTask(item, type),
     );
-    queue.queue(evmChain, () => reDecodeMissingTransactionEventsTask(evmChain));
+    queue.queue(evmChain, () => reDecodeMissingEventsTask(evmChain, type));
   };
 
-  const getTxAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+  const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
     Object.entries(get(addresses))
       .filter(([chain]) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
       .flatMap(([chain, addresses]) => {
@@ -98,6 +101,14 @@ export const useHistoryTransactions = createSharedComposable(() => {
           evmChain,
         }));
       });
+
+  const getEvmLikeAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+    Object.entries(get(addresses))
+      .filter(([chain]) => isEvmLikeChains(chain) && (chains.length === 0 || chains.includes(chain)))
+      .flatMap(([evmChain, addresses]) => addresses.map(address => ({
+        address,
+        evmChain,
+      })));
 
   const refreshTransactions = async (
     chains: Blockchain[],
@@ -109,18 +120,29 @@ export const useHistoryTransactions = createSharedComposable(() => {
       return;
     }
 
-    const txAccounts: EvmChainAddress[] = disableEvmEvents
+    const evmAccounts: EvmChainAddress[] = disableEvmEvents
       ? []
-      : getTxAccounts(chains);
+      : getEvmAccounts(chains);
 
-    if (txAccounts.length > 0) {
+    const evmLikeAccounts: EvmChainAddress[] = disableEvmEvents
+      ? []
+      : getEvmLikeAccounts(chains);
+
+    if (evmAccounts.length + evmLikeAccounts.length > 0) {
       setStatus(Status.REFRESHING);
       resetQueryStatus();
-      resetEvmUndecodedTransactionsStatus();
+      resetUnDecodedTransactionsStatus();
     }
 
     const grouppedByEvmChain = Object.entries(
-      groupBy(txAccounts, account => account.evmChain),
+      groupBy(evmAccounts, account => account.evmChain),
+    ).map(([evmChain, data]) => ({
+      evmChain,
+      data,
+    }));
+
+    const grouppedByEvmLikeChain = Object.entries(
+      groupBy(evmLikeAccounts, account => account.evmChain),
     ).map(([evmChain, data]) => ({
       evmChain,
       data,
@@ -131,16 +153,21 @@ export const useHistoryTransactions = createSharedComposable(() => {
         awaitParallelExecution(
           grouppedByEvmChain,
           item => item.evmChain,
-          item => syncAndRedecode(item.evmChain, item.data),
+          item => syncAndReDecodeEvents(item.evmChain, item.data, TransactionChainType.EVM),
+        ),
+        awaitParallelExecution(
+          grouppedByEvmLikeChain,
+          item => item.evmChain,
+          item => syncAndReDecodeEvents(item.evmChain, item.data, TransactionChainType.EVMLIKE),
         ),
         queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES),
       ]);
 
-      if (txAccounts.length > 0) {
+      if (evmAccounts.length > 0) {
         setStatus(
-          get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED,
+          get(isTaskRunning(TaskType.EVM_TX)) ? Status.REFRESHING : Status.LOADED,
         );
       }
     }

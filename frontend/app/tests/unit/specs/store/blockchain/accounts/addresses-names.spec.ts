@@ -9,8 +9,8 @@ import type { Collection } from '@/types/collection';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
-    getEnsNamesTask: vi.fn().mockResolvedValue(1),
-    getEnsNames: vi.fn().mockResolvedValue([]),
+    getEnsNamesTask: vi.fn().mockResolvedValue({ taskId: 1 }),
+    getEnsNames: vi.fn().mockResolvedValue({}),
     fetchAddressBook: vi.fn().mockResolvedValue(defaultCollectionState()),
     addAddressBook: vi.fn().mockResolvedValue(true),
     updateAddressBook: vi.fn().mockResolvedValue(true),
@@ -21,7 +21,7 @@ vi.mock('@/composables/api/blockchain/addresses-names', () => ({
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
+    awaitTask: vi.fn().mockResolvedValue({ result: {} }),
   }),
 }));
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 
-const props = defineProps<{ item: EvmUndecodedTransactionsData; decoding: boolean }>();
+const props = defineProps<{ item: EvmUnDecodedTransactionsData; decoding: boolean }>();
 
 const { t } = useI18n();
 

@@ -147,7 +147,7 @@ const truncatedAliasName = computed<string>(() => {
         </span>
       </template>
       <div>
-        <div v-if="aliasName">
+        <div v-if="aliasName && aliasName !== address">
           {{ aliasName }}
         </div>
         <div v-if="ensName && aliasName !== ensName">

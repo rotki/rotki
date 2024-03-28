@@ -12,7 +12,7 @@ const { isSmAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
-const transactionsLoading = isTaskRunning(TaskType.TX);
+const transactionsLoading = isTaskRunning(TaskType.EVM_TX);
 
 const stepList = computed(() => [
   t('transactions.query_status.statuses.querying_transactions'),

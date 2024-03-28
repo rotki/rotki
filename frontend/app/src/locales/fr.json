@@ -945,11 +945,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "Échec de la récupération des événements manquants des transactions pour la chaîne {evmChain} : {error}",
+        "description": "Échec de la récupération des événements manquants des transactions pour la chaîne {chain} : {error}",
         "title": "Récupération des événements manquants des transactions"
       },
       "task": {
-        "description": "Récupération des événements des transactions pour la chaîne {evmChain}",
+        "description": "Récupération des événements de transactions pour la chaîne {chain}",
         "title": "Récupération des événements manquants des transactions Evm"
       }
     },
@@ -1437,20 +1437,8 @@
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
     "balances": {
-      "arbitrum_one": "Solde Arbitrum One",
-      "avax": "Solde Avalanche",
-      "base": "Solde de base",
-      "bch": "Solde Bitcoin Cash",
-      "btc": "Solde Bitcoin",
-      "dot": "Solde Polkadot",
-      "eth": "Solde Ethereum",
-      "eth2": "Solde de participation Ethereum",
-      "ksm": "Solde Kusama",
-      "loopring": "Solde Loopring",
-      "optimism": "Solde Optimism",
-      "polygon_pos": "Solde Polygon PoS",
-      "gnosis": "Solde Gnosis",
-      "scroll": "Solde Scroll"
+      "common": "Solde {chain}",
+      "eth2": "de participation Ethereum"
     },
     "evm_detection": {
       "title": "Détecter les comptes EVM",

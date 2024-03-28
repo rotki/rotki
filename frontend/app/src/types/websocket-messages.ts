@@ -36,14 +36,14 @@ export const EvmTransactionQueryData = z
   })
   .merge(EvmChainAddress);
 
-export const EvmUndecodedTransactionsData = z.object({
+export const EvmUnDecodedTransactionsData = z.object({
   evmChain: z.string(),
   processed: z.number(),
   total: z.number(),
 });
 
-export type EvmUndecodedTransactionsData = z.infer<
-  typeof EvmUndecodedTransactionsData
+export type EvmUnDecodedTransactionsData = z.infer<
+  typeof EvmUnDecodedTransactionsData
 >;
 
 export const HistoryEventsQueryStatus = {

@@ -347,7 +347,7 @@ watch(historyEventLimitedProducts, (products) => {
     set(product, '');
 });
 
-const { txEvmChainsToLocation } = useSupportedChains();
+const { txChainsToLocation } = useSupportedChains();
 
 const { getAddresses } = useBlockchainStore();
 
@@ -372,7 +372,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
         v-model="location"
         required
         outlined
-        :items="txEvmChainsToLocation"
+        :items="txChainsToLocation"
         :disabled="!!(editableItem || groupHeader)"
         data-cy="location"
         :label="t('common.location')"

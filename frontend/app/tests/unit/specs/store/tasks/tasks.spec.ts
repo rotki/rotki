@@ -74,12 +74,12 @@ describe('store:tasks', () => {
   });
 
   it('task is not running', () => {
-    store.addTask(1, TaskType.TX, getMeta());
+    store.addTask(1, TaskType.EVM_TX, getMeta());
     expect(get(store.isTaskRunning(TaskType.IMPORT_CSV))).toBe(false);
   });
 
   it('task is running', () => {
-    store.addTask(1, TaskType.TX, getMeta());
+    store.addTask(1, TaskType.EVM_TX, getMeta());
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
     expect(get(store.isTaskRunning(TaskType.MANUAL_BALANCES_ADD))).toBe(true);
   });
@@ -89,10 +89,10 @@ describe('store:tasks', () => {
       title: 'test',
       description: 'test',
     });
-    store.addTask(1, TaskType.TX, meta);
+    store.addTask(1, TaskType.EVM_TX, meta);
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
-    expect(get(store.isTaskRunning(TaskType.TX, getMeta()))).toBe(false);
-    expect(get(store.isTaskRunning(TaskType.TX, meta))).toBe(true);
+    expect(get(store.isTaskRunning(TaskType.EVM_TX, getMeta()))).toBe(false);
+    expect(get(store.isTaskRunning(TaskType.EVM_TX, meta))).toBe(true);
   });
 
   it('unknown tasks do not have metadata', () => {
