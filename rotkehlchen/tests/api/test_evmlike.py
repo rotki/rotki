@@ -123,12 +123,11 @@ def test_evmlike_blockchain_balances(
 def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     """We will just add some zksync lite addresses
 
-    This is a really fast test. But not sure how useful it is as it tests existing functionality
-    and no new endpoints. But I did find 2 bugs in the logic while writing and running
-    it so it probably does not hurt to have.
+    This is a really fast test and tests the existing api for evmlike addresses
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addy_0, addy_1 = make_evm_address(), make_evm_address()
+    non_checksummed, checksummed = '0xcb14d5c77270af1234f027f967518b8eb69a9dee', '0xcb14D5c77270Af1234F027f967518b8Eb69a9deE'  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
@@ -177,6 +176,30 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         blockchain='ZKSYNC_LITE',
     ), json={'accounts': [addy_0]})
     assert_proper_response(response)
+    assert rotki.chains_aggregator.accounts.zksync_lite == (addy_1,)
+
+    response = requests.put(api_url_for(  # add non-checksummed evm address
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [{'address': non_checksummed}]})
+    result = assert_proper_response_with_result(response)
+    assert result == [checksummed]  # see it's returned/saved checksummed
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert {'address': checksummed, 'label': None, 'tags': None} in result
+
+    response = requests.delete(api_url_for(  # delete non-checksummed address
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [non_checksummed]})
+    assert_proper_response(response)  # see it's deleted
     assert rotki.chains_aggregator.accounts.zksync_lite == (addy_1,)
 
 

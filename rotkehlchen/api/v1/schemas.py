@@ -1983,7 +1983,7 @@ class BlockchainAccountsPatchSchema(AsyncQueryArgumentSchema):
                     given_address=account['address'],
                     blockchain=data['blockchain'],
                 )
-        elif data['blockchain'].is_evm():
+        elif data['blockchain'].is_evm_or_evmlike():
             _transform_evm_addresses(data=data, ethereum_inquirer=self.ethereum_inquirer)
         elif data['blockchain'].is_substrate():
             for idx, account in enumerate(data['accounts']):
@@ -2027,7 +2027,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
                 _transform_btc_or_bch_address(self.ethereum_inquirer, x, data['blockchain'])
                 for x in data['accounts']
             ]
-        if data['blockchain'].is_evm():
+        if data['blockchain'].is_evm_or_evmlike():
             data['accounts'] = [
                 _transform_evm_address(self.ethereum_inquirer, x) for x in data['accounts']
             ]
