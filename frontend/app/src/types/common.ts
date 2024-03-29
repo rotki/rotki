@@ -31,3 +31,7 @@ export const RESOLVE_LOCAL = 'local';
 export const CONFLICT_RESOLUTION = [RESOLVE_REMOTE, RESOLVE_LOCAL] as const;
 
 export type ConflictResolutionStrategy = (typeof CONFLICT_RESOLUTION)[number];
+
+export interface SelectOption { key: string; label?: string }
+
+export type SelectOptions = SelectOption[];

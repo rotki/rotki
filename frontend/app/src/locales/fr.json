@@ -1021,7 +1021,7 @@
       }
     },
     "hint": {
-      "global": "Global",
+      "global": "Mondial",
       "global_description": "L'annuaire d'adresses est enregistré dans la base de données globale (partagé sur tous les comptes de cet appareil)",
       "priority": {
         "list": {

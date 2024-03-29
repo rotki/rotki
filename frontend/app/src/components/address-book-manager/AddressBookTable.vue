@@ -100,17 +100,14 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.address').toString(),
     key: 'address',
-    sortable: false,
   },
   {
     label: t('common.name').toString(),
     key: 'name',
-    sortable: false,
   },
   {
     label: '',
     key: 'actions',
-    sortable: false,
   },
 ]);
 
@@ -125,7 +122,6 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
     >
       <template #default="{ data, itemLength }">
         <RuiDataTable
-          dense
           :rows="data"
           :cols="tableHeaders"
           :loading="loading"
