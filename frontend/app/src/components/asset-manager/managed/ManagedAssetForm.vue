@@ -4,12 +4,14 @@ import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import Fragment from '@/components/helper/Fragment';
 import { toSentenceCase } from '@/utils/text';
-import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { type EvmTokenData, evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { externalLinks } from '@/data/external-links';
+import type { EvmChainEntry } from '@/types/api/chains';
+import type { SelectOption, SelectOptions } from '@/types/common';
 import type {
   EvmTokenKind,
   SupportedAsset,
@@ -43,7 +45,7 @@ const cryptocompare = ref<string>('');
 const assetType = ref<string>(EVM_TOKEN);
 const evmChain = ref<string>();
 const tokenKind = ref<string>();
-const types = ref<string[]>([EVM_TOKEN]);
+const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);
 const identifier = ref<string>('');
 const protocol = ref<string>('');
 const swappedFor = ref<string>('');
@@ -62,6 +64,21 @@ const errors = ref<Record<string, string[]>>({});
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 
 const { allEvmChains } = useSupportedChains();
+
+const selectedAsetType = computed<SelectOption | undefined>({
+  get: () => !get(assetType) ? undefined : ({ key: get(assetType), label: toSentenceCase(get(assetType)) }),
+  set: value => set(assetType, value?.key),
+});
+
+const selectedEvmChain = computed<EvmChainEntry | undefined>({
+  get: () => get(allEvmChains).find(({ name }: EvmChainEntry) => name === get(evmChain)),
+  set: value => set(evmChain, value?.name),
+});
+
+const selectedTokenKind = computed<EvmTokenData | undefined>({
+  get: () => get(evmTokenKindsData).find(({ identifier }) => identifier === get(tokenKind)),
+  set: value => set(tokenKind, value?.identifier),
+});
 
 const { setMessage } = useMessageStore();
 
@@ -187,7 +204,9 @@ onBeforeMount(async () => {
     const queriedTypes = await getAssetTypes();
     set(
       types,
-      queriedTypes.filter(item => item !== CUSTOM_ASSET),
+      queriedTypes
+        .filter(item => item !== CUSTOM_ASSET)
+        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
     );
   }
   catch (error: any) {
@@ -355,20 +374,20 @@ setSubmitFunc(save);
     </div>
     <div class="flex flex-col gap-2">
       <div data-cy="type-select">
-        <VSelect
-          v-model="assetType"
-          outlined
+        <RuiMenuSelect
+          v-model="selectedAsetType"
           :label="t('asset_form.labels.asset_type')"
+          :options="types"
           :disabled="types.length === 1 || !!editableItem"
-          :items="types"
-        >
-          <template #item="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-          <template #selection="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-        </VSelect>
+          :error-messages="toMessages(v$.assetType)"
+          class="mb-3"
+          key-attr="key"
+          text-attr="label"
+          variant="outlined"
+          full-width
+          float-label
+          show-details
+        />
       </div>
 
       <div
@@ -376,28 +395,34 @@ setSubmitFunc(save);
         class="grid md:grid-cols-2 gap-x-4 gap-y-2"
       >
         <div data-cy="chain-select">
-          <VSelect
-            v-model="evmChain"
-            outlined
+          <RuiMenuSelect
+            v-model="selectedEvmChain"
             :label="t('asset_form.labels.chain')"
+            :options="allEvmChains"
             :disabled="!!editableItem"
-            :items="allEvmChains"
-            item-value="name"
-            item-text="label"
             :error-messages="toMessages(v$.evmChain)"
+            key-attr="name"
+            text-attr="label"
+            variant="outlined"
+            full-width
+            float-label
+            show-details
           />
         </div>
 
         <div data-cy="token-select">
-          <VSelect
-            v-model="tokenKind"
-            outlined
+          <RuiMenuSelect
+            v-model="selectedTokenKind"
             :label="t('asset_form.labels.token_kind')"
+            :options="evmTokenKindsData"
             :disabled="!!editableItem"
-            :items="evmTokenKindsData"
-            item-text="label"
-            item-value="identifier"
             :error-messages="toMessages(v$.tokenKind)"
+            key-attr="identifier"
+            text-attr="label"
+            variant="outlined"
+            full-width
+            float-label
+            show-details
           />
         </div>
       </div>
