@@ -32,7 +32,7 @@ export class TrayManager {
       {
         label: 'rotki',
         enabled: false,
-        icon: path.join(TrayManager.iconPath, 'rotki_tray.png'),
+        icon: path.join(TrayManager.iconPath, 'rotki_tray@5.png'),
       },
       ...(info
         ? [
@@ -60,7 +60,7 @@ export class TrayManager {
       return;
 
     if (up === undefined) {
-      this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
+      this.setIcon(isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5.png');
       this.tray.setTitle('');
       this.tray.setToolTip('rotki is running');
       return;
@@ -117,7 +117,7 @@ export class TrayManager {
   };
 
   build() {
-    const icon = isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png';
+    const icon = isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5.png';
     const iconPath = path.join(TrayManager.iconPath, icon);
     this.tray = new Tray(iconPath);
     this.tray.setToolTip('rotki is running');
