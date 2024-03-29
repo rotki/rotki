@@ -820,7 +820,9 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     assert FVal(total_avax['usd_value']) >= ZERO
 
 
-@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2024-03-29 13:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_ethereum_tokens_detection(
         rotkehlchen_api_server,
         ethereum_accounts,
