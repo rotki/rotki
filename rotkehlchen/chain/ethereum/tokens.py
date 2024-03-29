@@ -9,7 +9,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EthereumInquirer
@@ -44,22 +43,28 @@ class EthereumTokens(EvmTokensWithDSProxy):
             database: 'DBHandler',
             ethereum_inquirer: 'EthereumInquirer',
     ) -> None:
+        """
+        TODO:
+        Think if limiting to specific tokens makes sense for proxies. Can miss balances.
+        Also this keeps all tokens in this list in memory in perpetuity. This is not a good idea.
+        """
         super().__init__(
             database=database,
             evm_inquirer=ethereum_inquirer,
         )
-        self.tokens_for_proxies_set = set()
-        self.tokens_for_proxies_set.add(A_DAI.resolve_to_evm_token())
-        self.tokens_for_proxies_set.add(A_WETH.resolve_to_evm_token())  # WETH is also used
+        self.tokens_for_proxies = [A_DAI.resolve_to_evm_token(), A_WETH.resolve_to_evm_token()]
         # Add aave tokens
-        self.tokens_for_proxies_set |= set(GlobalDBHandler.get_evm_tokens(
+        self.tokens_for_proxies.extend(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave',
         ))
-        self.tokens_for_proxies_set |= set(GlobalDBHandler.get_evm_tokens(
+        self.tokens_for_proxies.extend(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave-v2',
         ))
+        # Add Makerdao vault collateral tokens
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            self.tokens_for_proxies.extend([x for _, _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH])  # type: ignore  # noqa: E501
 
     # -- methods that need to be implemented per chain
     def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
@@ -67,15 +72,10 @@ class EthereumTokens(EvmTokensWithDSProxy):
 
     def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Detect tokens for proxies that are owned by the given addresses"""
-        # Add Makerdao vault collateral tokens
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            ilk_collaterals = {x for _, _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH}
-
         # We ignore A_ETH so all other ones should be tokens
-        tokens_for_proxies: list[EvmToken] = list(self.tokens_for_proxies_set | ilk_collaterals)  # type: ignore[operator]
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
         self._detect_tokens(
             addresses=list(proxies_to_use.values()),
-            tokens_to_check=tokens_for_proxies,
+            tokens_to_check=self.tokens_for_proxies,
         )

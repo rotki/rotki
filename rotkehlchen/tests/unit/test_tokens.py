@@ -30,9 +30,7 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     return EthereumTokens(database, ethereum_inquirer)
 
 
-# TODO: This needs VCR, but I removed it due to inability to make it work.
-# Recording a cassette works. But rerunning it with the cassete seems to fail when
-# trying to replay the 2nd request, saying it differs.
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ignored_assets', [[A_LPT]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('ethereum_accounts', [[

@@ -10,6 +10,7 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     query_curve_data,
@@ -393,6 +394,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
             'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
             ('UNI-V2', identifier),
         )
+    AssetResolver.clean_memory_cache(identifier)
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     price = inquirer.find_lp_price_from_uniswaplike_pool(token=EvmToken(identifier))
     assert price is not None
