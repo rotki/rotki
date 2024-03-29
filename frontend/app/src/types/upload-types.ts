@@ -1,3 +1,5 @@
+import type { AsyncComponent } from 'vue';
+
 export const SOURCES = [
   'cointracking',
   'cryptocom',
@@ -22,3 +24,11 @@ export const SOURCES = [
 ] as const;
 
 export type ImportSourceType = (typeof SOURCES)[number];
+
+export interface ImportSource {
+  identifier: string;
+  name: string;
+  logo?: string;
+  icon?: string;
+  form: AsyncComponent;
+}

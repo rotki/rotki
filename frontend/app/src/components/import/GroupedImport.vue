@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import type { ImportSource } from '@/types/upload-types';
+
 const { t } = useI18n();
-const sources = [
+
+const sources = computed<ImportSource[]>(() => [
   {
     identifier: 'cointracking.info',
     name: t('import_data.cointracking.name'),
@@ -113,60 +116,58 @@ const sources = [
       () => import('@/components/import/CustomImport.vue'),
     ),
   },
-];
+]);
 
-const selectedSource = ref<string>('');
+const selectedSource = ref<ImportSource | null>(null);
 
-const form = computed(
-  () => sources.find(source => source.identifier === get(selectedSource))?.form,
-);
+const [DefineIcon, ReuseIcon] = createReusableTemplate();
 </script>
 
 <template>
   <RuiCard>
     <div class="p-1 pt-2">
-      <VSelect
+      <DefineIcon #default="{ logo, icon }">
+        <AdaptiveWrapper>
+          <AppImage
+            v-if="logo"
+            :src="logo"
+            size="1.5rem"
+            contain
+          />
+          <RuiIcon
+            v-else-if="icon"
+            size="24"
+            class="text-rui-light-text-secondary"
+            :name="icon"
+          />
+        </AdaptiveWrapper>
+      </DefineIcon>
+      <RuiMenuSelect
         v-model="selectedSource"
         :label="t('import_data.select_source.title')"
-        outlined
-        :items="sources"
-        item-value="identifier"
-        item-text="name"
-        :hide-details="true"
+        :append-width="1.75"
+        :options="sources"
+        key-attr="identifier"
+        text-attr="name"
+        full-width
+        float-label
+        variant="outlined"
       >
-        <template
-          v-for="slotName in ['item', 'selection']"
-          #[slotName]="data"
-        >
-          <div
-            v-if="data.item"
-            :key="slotName"
-            class="flex items-center gap-3"
-          >
-            <AdaptiveWrapper>
-              <AppImage
-                v-if="data.item.logo"
-                :src="data.item.logo"
-                size="1.875rem"
-                contain
-              />
-              <RuiIcon
-                v-else-if="data.item.icon"
-                size="30"
-                class="text-rui-light-text-secondary"
-                :name="data.item.icon"
-              />
-            </AdaptiveWrapper>
-            {{ data.item.name }}
+        <template #activator.text="{ value: { logo, icon, name } }">
+          <div class="flex items-center gap-3">
+            <ReuseIcon v-bind="{ logo, icon }" />
+            {{ name }}
           </div>
         </template>
-      </VSelect>
-
+        <template #item.prepend="{ option: { logo, icon } }">
+          <ReuseIcon v-bind="{ logo, icon }" />
+        </template>
+      </RuiMenuSelect>
       <div
-        v-if="form"
+        v-if="selectedSource"
         class="mt-8"
       >
-        <Component :is="form" />
+        <Component :is="selectedSource.form" />
       </div>
     </div>
   </RuiCard>
