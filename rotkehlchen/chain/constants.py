@@ -1,5 +1,3 @@
-import typing
-
 from rotkehlchen.types import (
     SUPPORTED_BLOCKCHAIN_TO_CHAINID,
     SUPPORTED_EVMLIKE_CHAINS,
@@ -12,4 +10,4 @@ NON_BITCOIN_CHAINS = [
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.ETHEREUM_BEACONCHAIN,
     SupportedBlockchain.KUSAMA,
-] + list(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys()) + list(typing.get_args(SUPPORTED_EVMLIKE_CHAINS))
+] + list(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys()) + list(SUPPORTED_EVMLIKE_CHAINS)
