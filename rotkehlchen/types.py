@@ -68,6 +68,7 @@ AVAILABLE_MODULES_MAP = {
     'liquity': 'Liquity',
     'pickle_finance': 'Pickle Finance',
     'nfts': 'NFTs',
+    'zksync_lite': 'ZKSync Lite',
 }
 
 DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
@@ -586,7 +587,8 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.SCROLL,
 ]
 
-SUPPORTED_EVMLIKE_CHAINS = Literal[SupportedBlockchain.ZKSYNC_LITE]
+SUPPORTED_EVMLIKE_CHAINS_TYPE = Literal[SupportedBlockchain.ZKSYNC_LITE]
+SUPPORTED_EVMLIKE_CHAINS: tuple[SUPPORTED_EVMLIKE_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVMLIKE_CHAINS_TYPE)  # noqa: E501
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,

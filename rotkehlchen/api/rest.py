@@ -220,7 +220,7 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
-    SUPPORTED_EVMLIKE_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -2847,7 +2847,7 @@ class RestAPI:
     @async_api_call()
     def decode_pending_evmlike_transactions(
             self,
-            evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS],  # pylint: disable=unused-argument
+            evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS_TYPE],  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
         """This method should be called after querying evmlike transactions"""
         decoded_num = 0

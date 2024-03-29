@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.modules.l2.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.constants.misc import ZERO
@@ -214,6 +215,10 @@ def compare_events_without_id(e1: dict, e2: dict) -> None:
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 @pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
 def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite_accounts) -> None:
+    """Tests pulling and decoding evmlike (zksync lite) transactions
+
+    Also checks that removing an account clears the DB properly
+    """
     user_address = zksync_lite_accounts[0]
     response = requests.post(
         api_url_for(
@@ -359,3 +364,31 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             break
     else:
         raise AssertionError('Did not find the event')
+
+    # now let's check the DB contains the entries we will check against when deleting
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
+        ).fetchone()[0] == 1
+        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 16
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 17
+
+    # now remove the address
+    response = requests.delete(api_url_for(  # delete non-checksummed address
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ZKSYNC_LITE',
+    ), json={'accounts': [user_address]})
+    assert_proper_response(response)  # see it's deleted
+    assert len(rotki.chains_aggregator.accounts.zksync_lite) == 0
+
+    # finally check all related DB data got deleted
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
+        ).fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0

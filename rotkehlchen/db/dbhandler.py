@@ -36,6 +36,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
@@ -125,7 +126,12 @@ from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, de
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
+    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS_TYPE,
+    SUPPORTED_SUBSTRATE_CHAINS,
+    AnyBlockchainAddress,
     ApiKey,
     ApiSecret,
     BTCAddress,
@@ -144,7 +150,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -1233,6 +1239,10 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evm_address(write_cursor, address, blockchain)  # type: ignore
 
+        if blockchain in SUPPORTED_EVMLIKE_CHAINS:
+            for address in accounts:
+                self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
+
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
             'object_reference = ?;', chain_and_account_concat_tuples,
@@ -1384,6 +1394,55 @@ class DBHandler:
             ))
 
         return data
+
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_EVM_CHAINS | SUPPORTED_EVMLIKE_CHAINS_TYPE,
+    ) -> list[ChecksumEvmAddress]:
+        ...
+
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_BITCOIN_CHAINS,
+    ) -> list[BTCAddress]:
+        ...
+
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_SUBSTRATE_CHAINS,
+    ) -> list[SubstrateAddress]:
+        ...
+
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SupportedBlockchain,
+    ) -> list[AnyBlockchainAddress]:
+        """Returns addresses for a particular blockchain"""
+        addresses = []
+        cursor.execute(
+            'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+            (blockchain.value,),
+        )
+        for entry in cursor:
+            if not is_valid_db_blockchain_account(blockchain, entry[0]):
+                self.msg_aggregator.add_warning(
+                    f'Invalid {blockchain} account in DB: {entry[0]}. '
+                    f'This should not happen unless the DB was manually modified. '
+                    f'Skipping entry. This needs to be fixed manually. If you '
+                    f'can not do that alone ask for help in the issue tracker',
+                )
+                continue
+
+            addresses.append(entry[0])
+
+        return addresses
 
     def get_manually_tracked_balances(
             self,
@@ -2101,6 +2160,47 @@ class DBHandler:
 
         dbtx = DBEvmTx(self)
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)
+
+    def delete_data_for_evmlike_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: ChecksumEvmAddress,
+            blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE,  # pylint: disable=unused-argument
+    ) -> None:
+        """Deletes all evmlike chain related data from the DB for a single evm address
+
+        For now it's always gonna be only zksync lite.
+        """
+        other_addresses = self.get_single_blockchain_addresses(
+            cursor=write_cursor,
+            blockchain=SupportedBlockchain.ZKSYNC_LITE,
+        )
+        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
+        other_addresses.remove(address)  # exclude the address in question so it's only the others
+
+        # delete events by tx_hash
+        write_cursor.execute(
+            'SELECT tx_hash, from_address, to_address FROM zksynclite_transactions WHERE '
+            'from_address=? OR to_address=?',
+            (address, address),
+        )
+        hashes_to_remove = [
+            x[0] for x in write_cursor
+            if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
+        ]
+        for hashes_chunk in get_chunks(hashes_to_remove, n=1000):  # limit num of hashes in a query
+            write_cursor.execute(  # delete transactions themselves
+                f'DELETE FROM zksynclite_transactions WHERE tx_hash IN '
+                f'({",".join("?" * len(hashes_chunk))})',
+                hashes_chunk,
+            )
+            write_cursor.execute(
+                f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier '
+                f'FROM history_events H INNER JOIN evm_events_info E '
+                f'ON H.identifier=E.identifier AND E.tx_hash IN '
+                f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
+                hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
+            )
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
         trade_tuples = [(
