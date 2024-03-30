@@ -35,6 +35,7 @@ from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
+from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -744,6 +745,14 @@ def fixture_avalanche_manager(messages_aggregator):
     )
 
 
+@pytest.fixture(name='zksync_lite_manager')
+def fixture_zksync_lite_manager(ethereum_inquirer, database):
+    return ZksyncLiteManager(
+        ethereum_inquirer=ethereum_inquirer,
+        database=database,
+    )
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> list[str]:
     return []
@@ -780,6 +789,7 @@ def fixture_blockchain(
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
+        zksync_lite_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -809,6 +819,7 @@ def fixture_blockchain(
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
+        zksync_lite_manager=zksync_lite_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

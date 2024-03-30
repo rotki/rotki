@@ -46,6 +46,7 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
+from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
@@ -416,6 +417,10 @@ class Rotkehlchen:
             avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
             msg_aggregator=self.msg_aggregator,
         )
+        zksync_lite_manager = ZksyncLiteManager(
+            ethereum_inquirer=ethereum_inquirer,
+            database=self.data.db,
+        )
 
         Inquirer().inject_evm_managers([
             (ChainID.ETHEREUM, ethereum_manager),
@@ -441,6 +446,7 @@ class Rotkehlchen:
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,
+            zksync_lite_manager=zksync_lite_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

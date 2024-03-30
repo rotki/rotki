@@ -30,13 +30,13 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.l2.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_PREFIX,
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.substrate.types import SubstrateAddress
+from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (

@@ -101,7 +101,6 @@ if TYPE_CHECKING:
         ValidatorDailyStats,
         ValidatorDetailsWithStatus,
     )
-    from rotkehlchen.chain.ethereum.modules.l2.zksync import ZksyncLite
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
@@ -111,6 +110,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
+    from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -207,6 +207,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
+            zksync_lite_manager: 'ZksyncLiteManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -228,6 +229,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
+        self.zksync_lite = zksync_lite_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -433,10 +435,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['nfts']) -> Optional['Nfts']:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['zksync_lite']) -> Optional['ZksyncLite']:
         ...
 
     def get_module(self, module_name: ModuleName) -> Any | None:
@@ -680,10 +678,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if len(self.accounts.zksync_lite) == 0:
             return
 
-        if (zksynclite := self.get_module('zksync_lite')) is None:
-            return
-
-        balances = zksynclite.get_balances(self.accounts.zksync_lite)
+        balances = self.zksync_lite.get_balances(self.accounts.zksync_lite)
         for address, asset_balances in balances.items():
             self.balances.zksync_lite[address].assets = defaultdict(Balance, asset_balances)
 

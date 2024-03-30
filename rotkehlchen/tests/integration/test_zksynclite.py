@@ -2,12 +2,8 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.l2.zksync import (
-    ZksyncLite,
-    ZKSyncLiteTransaction,
-    ZKSyncLiteTXType,
-)
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
@@ -27,26 +23,16 @@ from rotkehlchen.types import Fee, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
-@pytest.fixture(name='zksync_lite')
-def fixture_zksync_lite(ethereum_inquirer, database):
-    return ZksyncLite(
-        ethereum_inquirer=ethereum_inquirer,
-        database=database,
-        premium=None,  # not used atm
-        msg_aggregator=None,  # not used atm
-    )
-
-
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-03-24 00:00:00 GMT')
-def test_fetch_transactions(zksync_lite):
-    zksync_lite.fetch_transactions(
+def test_fetch_transactions(zksync_lite_manager):
+    zksync_lite_manager.fetch_transactions(
         address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         start_ts=Timestamp(0),
         end_ts=ts_now(),
     )
     transactions = []
-    with zksync_lite.database.conn.read_ctx() as cursor:
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
         cursor.execute(
             'SELECT tx_hash, type, timestamp, block_number, from_address, to_address, '
             'token_identifier, amount, fee FROM zksynclite_transactions ORDER BY timestamp ASC',
@@ -147,9 +133,9 @@ def test_fetch_transactions(zksync_lite):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_balances(zksync_lite, inquirer):  # pylint: disable=unused-argument
+def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
     lefty, rotki = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306'  # noqa: E501
-    balances = zksync_lite.get_balances(addresses=[lefty, rotki])
+    balances = zksync_lite_manager.get_balances(addresses=[lefty, rotki])
     assert balances == {
         lefty: {
             A_ETH: Balance(FVal('6.6308508258'), CURRENT_PRICE_MOCK),
