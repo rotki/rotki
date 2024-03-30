@@ -5,8 +5,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.l2.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
 def test_evmlike_transactions_refresh(
         rotkehlchen_api_server: 'APIServer',
         number_of_eth_accounts: int,
@@ -35,11 +34,10 @@ def test_evmlike_transactions_refresh(
     this only concerns zksynclite, actual data check is in
     integration/test_zksynclite.py::test_get_transactions"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    assert (zksync_lite := rotki.chains_aggregator.get_module('zksync_lite')) is not None
     with patch.object(
-            zksync_lite,
+            rotki.chains_aggregator.zksync_lite,
             'fetch_transactions',
-            wraps=zksync_lite.fetch_transactions,
+            wraps=rotki.chains_aggregator.zksync_lite.fetch_transactions,
     ) as tx_query:
         response = requests.post(
             api_url_for(
@@ -53,7 +51,6 @@ def test_evmlike_transactions_refresh(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [[make_evm_address(), make_evm_address()]])
-@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
 def test_evmlike_blockchain_balances(
         rotkehlchen_api_server: 'APIServer',
         zksync_lite_accounts,
@@ -81,9 +78,8 @@ def test_evmlike_blockchain_balances(
             addresses[1]: addy_1_balances,
         }
 
-    assert (zksync_lite := rotki.chains_aggregator.get_module('zksync_lite')) is not None
     with patch.object(
-            zksync_lite,
+            rotki.chains_aggregator.zksync_lite,
             'get_balances',
             wraps=mocked_get_balances,
     ) as balance_query:
@@ -120,7 +116,6 @@ def test_evmlike_blockchain_balances(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
 def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     """We will just add some zksync lite addresses
 
@@ -213,7 +208,6 @@ def compare_events_without_id(e1: dict, e2: dict) -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-@pytest.mark.parametrize('ethereum_modules', [['zksync_lite']])
 def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite_accounts) -> None:
     """Tests pulling and decoding evmlike (zksync lite) transactions
 

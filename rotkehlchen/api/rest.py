@@ -2711,15 +2711,9 @@ class RestAPI:
         """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
         message, status_code = '', HTTPStatus.OK
         # lazy mode. At the moment this can only be ZKSYnc lite
-        if (zksynclite := self.rotkehlchen.chains_aggregator.get_module('zksync_lite')) is None:
-            return wrap_in_fail_result(
-                message='zksync lite module is not active',
-                status_code=HTTPStatus.CONFLICT,
-            )
-
         addresses = accounts if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
         for address in addresses:
-            zksynclite.fetch_transactions(
+            self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(
                 address=address,
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
@@ -2852,9 +2846,7 @@ class RestAPI:
         """This method should be called after querying evmlike transactions"""
         decoded_num = 0
         # For now it's only zksync lite
-        if (zksynclite := self.rotkehlchen.chains_aggregator.get_module('zksync_lite')) is not None:  # noqa: E501
-            decoded_num = zksynclite.decode_undecoded_transactions()
-
+        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions()   # noqa: E501
         return {
             'result': {'decoded_tx_number': decoded_num},
             'message': '',

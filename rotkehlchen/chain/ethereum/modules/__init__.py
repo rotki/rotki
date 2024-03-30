@@ -8,7 +8,6 @@ __all__ = [
     'PickleFinance',
     'YearnVaults',
     'YearnVaultsV2',
-    'ZksyncLite',
 ]
 
 # to avoid some circular imports some of the paths are moved in a mapping here
@@ -23,7 +22,6 @@ MODULE_NAME_TO_PATH = {
 
 from .balancer.balancer import Balancer
 from .l2.loopring import Loopring
-from .l2.zksync import ZksyncLite
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults

@@ -1,10 +1,9 @@
 import logging
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -15,7 +14,6 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -24,123 +22,42 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_evm_address,
-    deserialize_fee,
-    deserialize_int_from_str,
-)
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int_from_str
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
-    EVMTxHash,
     Fee,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
-from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.premium.premium import Premium
 
 from .constants import ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
+from .structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ZKSyncLiteTXType(DBCharEnumMixIn):
-    TRANSFER = 1
-    DEPOSIT = 2
-    WITHDRAW = 3
-    CHANGEPUBKEY = 4  # we only use it for fee of changing public key
-    FORCEDEXIT = 5  # we only use it for fee of exit.
-
-
-ZKSyncLiteTransactionDBTuple = tuple[
-    EVMTxHash,  # tx_hash
-    str,    # type
-    int,    # timestamp
-    int,    # block number
-    str | None,  # from_address
-    str | None,  # to_address
-    str,    # asset
-    str,    # amount
-    str | None,    # fee
-]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=True, frozen=False)
-class ZKSyncLiteTransaction:
-    tx_hash: EVMTxHash
-    tx_type: ZKSyncLiteTXType
-    timestamp: Timestamp
-    block_number: int
-    from_address: ChecksumEvmAddress | None
-    to_address: ChecksumEvmAddress | None
-    asset: Asset
-    amount: FVal
-    fee: Fee | None
-
-    def serialize_for_db(self) -> ZKSyncLiteTransactionDBTuple:
-        return (
-            self.tx_hash,
-            self.tx_type.serialize_for_db(),
-            self.timestamp,
-            self.block_number,
-            self.from_address,
-            self.to_address,
-            self.asset.identifier,
-            str(self.amount),
-            str(self.fee) if self.fee is not None else None,
-        )
-
-    @classmethod
-    def deserialize_from_db(
-            cls,
-            data: ZKSyncLiteTransactionDBTuple,
-    ) -> 'ZKSyncLiteTransaction':
-        """May raise:
-        - DeserializationError
-        - UnknownAsset
-        """
-        return cls(
-            tx_hash=data[0],
-            tx_type=ZKSyncLiteTXType.deserialize_from_db(data[1]),
-            timestamp=Timestamp(data[2]),
-            block_number=data[3],
-            from_address=None if data[4] is None else string_to_evm_address(data[4]),
-            to_address=None if data[5] is None else string_to_evm_address(data[5]),
-            asset=Asset(data[6]),
-            amount=deserialize_asset_amount(data[7]),
-            fee=deserialize_fee(data[8]) if data[8] is not None else None,
-        )
-
-
-class ZksyncLite(EthereumModule):
+class ZksyncLiteManager:
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
-            premium: Optional['Premium'],
     ) -> None:
         self.database = database
-        self.premium = premium
         self.session = requests.session()
         set_user_agent(self.session)
         self.id_to_token: dict[int, CryptoAsset] = {}
@@ -709,13 +626,3 @@ class ZksyncLite(EthereumModule):
                 )
 
         return decoded_num
-
-    # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
-        pass
-
-    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        pass
-
-    def deactivate(self) -> None:
-        pass
