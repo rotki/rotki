@@ -645,6 +645,7 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.KUSAMA,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
+    SupportedBlockchain.ZKSYNC_LITE,
 ]
 
 

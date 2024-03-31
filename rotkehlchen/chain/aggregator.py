@@ -1430,13 +1430,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def check_single_address_activity(
             self,
             address: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
-    ) -> tuple[list[SUPPORTED_EVM_CHAINS_TYPE], list[SUPPORTED_EVM_CHAINS_TYPE]]:
+            chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
+    ) -> tuple[list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE], list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]]:
         """Checks whether address is active in the given chains.
         Returns a list of active chains and a list of chains where we couldn't query info
         """
         active_chains = []
-        failed_to_query_chains: list[SUPPORTED_EVM_CHAINS_TYPE] = []
+        failed_to_query_chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = []
         for chain in chains:
             chain_manager: EvmManager = self.get_chain_manager(chain)
             try:
@@ -1455,6 +1455,22 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                     if has_activity is False:
                         continue
+
+                elif chain == SupportedBlockchain.ZKSYNC_LITE:
+                    options = {'from': 'latest', 'limit': 1, 'direction': 'older'}
+                    try:
+                        response = self.zksync_lite._query_api(
+                            url=f'accounts/{address}/transactions',
+                            options=options,
+                        )
+                    except RemoteError:
+                        failed_to_query_chains.append(chain)
+                        continue
+                    else:
+                        result = response.get('list', None)
+                        if not result:  # falsy -> None or no transctions:
+                            continue  # do not add the address for the chain
+
                 else:
                     etherscan_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
                     only_token_spam = (
@@ -1475,8 +1491,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def track_evm_address(
             self,
             address: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
-    ) -> tuple[list[SUPPORTED_EVM_CHAINS_TYPE], list[SUPPORTED_EVM_CHAINS_TYPE]]:
+            chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
+    ) -> tuple[list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE], list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]]:
         """
         Track address for the chains provided. If the address is already tracked on a
         chain, skips this chain.
@@ -1507,10 +1523,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def check_chains_and_add_accounts(
             self,
             account: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
+            chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         bool,
     ]:
         """
@@ -1540,10 +1556,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             accounts: list[ChecksumEvmAddress],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
@@ -1559,15 +1575,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - RemoteError if an external service such as etherscan is queried and there
         is a problem with its query.
         """
-        all_evm_chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)
-        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
-        failed_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
-        existed_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
-        no_activity_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        added_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        failed_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        existed_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        no_activity_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []  # noqa: E501
         eth_contract_addresses: list[ChecksumEvmAddress] = []
 
         for account in accounts:
-            existed_accounts += [(chain, account) for chain in all_evm_chains if account in self.accounts.get(chain)]  # noqa: E501
+            existed_accounts += [(chain, account) for chain in SUPPORTED_EVM_EVMLIKE_CHAINS if account in self.accounts.get(chain)]  # noqa: E501
             # Distinguish between contracts and EOAs
             if self.is_contract(account, SupportedBlockchain.ETHEREUM):
                 added_chains, _ = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
@@ -1575,7 +1590,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     added_accounts.append((SupportedBlockchain.ETHEREUM, account))
                     eth_contract_addresses.append(account)
             else:
-                chains_to_check = [x for x in all_evm_chains if account not in self.accounts.get(x)]  # noqa: E501
+                chains_to_check = [x for x in SUPPORTED_EVM_EVMLIKE_CHAINS if account not in self.accounts.get(x)]  # noqa: E501
                 new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(  # noqa: E501
                     account=account,
                     chains=chains_to_check,
@@ -1612,15 +1627,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         Returns a list of tuples of (chain, address) for the freshly detected accounts.
         """
-        current_accounts: dict[ChecksumEvmAddress, list[SUPPORTED_EVM_CHAINS]] = defaultdict(list)
-        chain: SUPPORTED_EVM_CHAINS
-        for chain in typing.get_args(SUPPORTED_EVM_CHAINS):
+        current_accounts: dict[ChecksumEvmAddress, list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]] = defaultdict(list)  # noqa: E501
+        chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE
+        for chain in SUPPORTED_EVM_EVMLIKE_CHAINS:
             chain_accounts = self.accounts.get(chain)
             for account in chain_accounts:
                 current_accounts[account].append(chain)
 
-        all_evm_chains = set(typing.get_args(SUPPORTED_EVM_CHAINS)) if chains is None else set(chains)  # noqa: E501
-        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        all_evm_chains = set(SUPPORTED_EVM_EVMLIKE_CHAINS) if chains is None else set(chains)
+        added_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
         for account, account_chains in current_accounts.items():
             if progress_handler is not None:
                 progress_handler.new_step(f'Checking {account} EVM chain activity')
@@ -1650,7 +1665,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.msg_aggregator.add_message(
             message_type=WSMessageType.EVM_ACCOUNTS_DETECTION,
             data=[
-                {'evm_chain': chain.to_chain_id().to_name(), 'address': address}
+                {'evm_chain': chain.name.lower(), 'address': address}
                 for chain, address in added_accounts
             ],
         )
