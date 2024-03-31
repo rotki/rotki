@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     BTCAddress,
     ChecksumEvmAddress,
     SupportedBlockchain,
@@ -641,7 +641,7 @@ def setup_evm_addresses_activity_mock(
             return FVal(1)
         return ZERO
 
-    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS):
+    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE):
         addresses = saved_locals[f'{chain.to_chain_id().to_name()}_addresses']
         return EtherscanHasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else EtherscanHasChainActivity.NONE  # noqa: E501
 

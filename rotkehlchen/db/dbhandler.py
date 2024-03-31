@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, Unpack, cast, get_args, overload
+from typing import Any, Literal, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -127,7 +127,9 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_EVMLIKE_CHAINS,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -1399,7 +1401,7 @@ class DBHandler:
     def get_single_blockchain_addresses(
             self,
             cursor: 'DBCursor',
-            blockchain: SUPPORTED_EVM_CHAINS | SUPPORTED_EVMLIKE_CHAINS_TYPE,
+            blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ) -> list[ChecksumEvmAddress]:
         ...
 
@@ -2131,7 +2133,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
         """Deletes all evm related data from the DB for a single evm address"""
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
@@ -3650,10 +3652,9 @@ class DBHandler:
             (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
         )
 
-    def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_CHAINS]:
+    def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]:
         """Reads the DB for the excluding chains and calculate which chains to
-        perform EVM accound detection on"""
-        all_chains = get_args(SUPPORTED_EVM_CHAINS)
+        perform EVM account detection on"""
         with self.conn.read_ctx() as cursor:
-            excluded_chain_ids = self.get_settings(cursor).evmchains_to_skip_detection
-        return list(set(all_chains) - {x.to_blockchain() for x in excluded_chain_ids})
+            excluded_chains = self.get_settings(cursor).evmchains_to_skip_detection
+        return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains))

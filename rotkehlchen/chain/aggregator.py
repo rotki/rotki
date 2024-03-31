@@ -1,5 +1,4 @@
 import logging
-import typing
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from importlib import import_module
@@ -69,7 +68,9 @@ from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     BlockchainAddress,
     ChainID,
@@ -937,7 +938,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
-    def query_evm_chain_balances(self, chain: SUPPORTED_EVM_CHAINS) -> None:
+    def query_evm_chain_balances(self, chain: SUPPORTED_EVM_CHAINS_TYPE) -> None:
         """Queries all the balances for an evm chain and populates the state
 
         May raise:
@@ -1423,19 +1424,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> 'EvmManager':  # type ignore below due to inability to understand limitation
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[arg-type]
 
-    def is_contract(self, address: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS) -> bool:
+    def is_contract(self, address: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE) -> bool:
         return self.get_chain_manager(chain).node_inquirer.get_code(address) != '0x'
 
     def check_single_address_activity(
             self,
             address: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS],
-    ) -> tuple[list[SUPPORTED_EVM_CHAINS], list[SUPPORTED_EVM_CHAINS]]:
+            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
+    ) -> tuple[list[SUPPORTED_EVM_CHAINS_TYPE], list[SUPPORTED_EVM_CHAINS_TYPE]]:
         """Checks whether address is active in the given chains.
         Returns a list of active chains and a list of chains where we couldn't query info
         """
         active_chains = []
-        failed_to_query_chains: list[SUPPORTED_EVM_CHAINS] = []
+        failed_to_query_chains: list[SUPPORTED_EVM_CHAINS_TYPE] = []
         for chain in chains:
             chain_manager: EvmManager = self.get_chain_manager(chain)
             try:
@@ -1474,8 +1475,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def track_evm_address(
             self,
             address: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS],
-    ) -> tuple[list[SUPPORTED_EVM_CHAINS], list[SUPPORTED_EVM_CHAINS]]:
+            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
+    ) -> tuple[list[SUPPORTED_EVM_CHAINS_TYPE], list[SUPPORTED_EVM_CHAINS_TYPE]]:
         """
         Track address for the chains provided. If the address is already tracked on a
         chain, skips this chain.
@@ -1506,10 +1507,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def check_chains_and_add_accounts(
             self,
             account: ChecksumEvmAddress,
-            chains: list[SUPPORTED_EVM_CHAINS],
+            chains: list[SUPPORTED_EVM_CHAINS_TYPE],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
         bool,
     ]:
         """
@@ -1539,10 +1540,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             accounts: list[ChecksumEvmAddress],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
         list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
@@ -1558,11 +1559,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - RemoteError if an external service such as etherscan is queried and there
         is a problem with its query.
         """
-        all_evm_chains = get_args(SUPPORTED_EVM_CHAINS)
-        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
-        failed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
-        existed_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
-        no_activity_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        all_evm_chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)
+        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        failed_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        existed_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
+        no_activity_accounts: list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]] = []
         eth_contract_addresses: list[ChecksumEvmAddress] = []
 
         for account in accounts:
@@ -1597,8 +1598,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def detect_evm_accounts(
             self,
             progress_handler: Optional['ProgressUpdater'] = None,
-            chains: list[SUPPORTED_EVM_CHAINS] | None = None,
-    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+            chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None,
+    ) -> list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]]:
         """
         Detects user's EVM accounts on different chains and adds them to the tracked accounts.
         If chains is given then detection only happens for those given chains.

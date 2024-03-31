@@ -28,7 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
@@ -80,7 +80,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             base_url: str,
             service: Literal[
                 ExternalService.ETHERSCAN,

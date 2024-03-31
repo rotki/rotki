@@ -3,7 +3,7 @@ from typing import Any, Generic, NamedTuple, overload
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     AnyBlockchainAddress,
     BlockchainAddress,
     BTCAddress,
@@ -30,7 +30,7 @@ class BlockchainAccounts:
     zksync_lite: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
 
     @overload
-    def get(self, blockchain: SUPPORTED_EVM_CHAINS) -> tuple[ChecksumEvmAddress, ...]:
+    def get(self, blockchain: SUPPORTED_EVM_CHAINS_TYPE) -> tuple[ChecksumEvmAddress, ...]:
         ...
 
     @overload

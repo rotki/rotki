@@ -16,11 +16,12 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     DEFAULT_OFF_MODULES,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressNameSource,
-    ChainID,
     CostBasisMethod,
     ExchangeLocationID,
     ModuleName,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -189,7 +190,7 @@ class DBSettings:
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: Sequence[ExchangeLocationID] = field(default_factory=list)
-    evmchains_to_skip_detection: Sequence[ChainID] = field(default_factory=list)
+    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501
@@ -245,7 +246,7 @@ class ModifiableDBSettings(NamedTuple):
     pnl_csv_have_summary: bool | None = None
     ssf_graph_multiplier: int | None = None
     non_syncing_exchanges: list[ExchangeLocationID] | None = None
-    evmchains_to_skip_detection: list[ChainID] | None = None
+    evmchains_to_skip_detection: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None
     cost_basis_method: CostBasisMethod | None = None
     treat_eth2_as_eth: bool | None = None
     eth_staking_taxable_after_withdrawal_enabled: bool | None = None
@@ -329,7 +330,7 @@ def db_settings_from_dict(
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
-            specified_args[key] = [ChainID.deserialize_from_name(x) for x in values]
+            specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
         elif key == 'address_name_priority':
@@ -368,9 +369,9 @@ def serialize_db_setting(
         value = json.dumps(value)
     elif setting == 'evmchains_to_skip_detection':
         if is_modifiable is True:
-            value = json.dumps([x.to_name() for x in value])
+            value = json.dumps([x.value for x in value])
         else:
-            value = [x.to_name() for x in value]
+            value = [x.value for x in value]
     elif setting in JSON_KEYS:
         if is_modifiable is True:
             value = json.dumps([x.serialize() for x in value])

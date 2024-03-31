@@ -1,12 +1,17 @@
+import json
+import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.logging import enter_exit_debug_log
-from rotkehlchen.types import Location
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.types import ChainID, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
@@ -58,15 +63,35 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
+    """We used to have it only in EVM Chain IDs serialized as names.
+    Now turning it into all supported chains due to evmlike introduction"""
+    write_cursor.execute("SELECT value from settings WHERE name='evmchains_to_skip_detection'")
+    if (result := write_cursor.fetchone()) is None:
+        return
+    try:
+        evmchains_to_skip = json.loads(result[0])
+    except json.JSONDecodeError as e:
+        log.error(f'During Upgrade could not parse {result[0]} as JSON due to {e}')
+        return
+
+    evmchains_to_skip = [ChainID.deserialize_from_name(x) for x in evmchains_to_skip]
+    chains_to_skip = [x.to_blockchain().value for x in evmchains_to_skip]
+    write_cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('evmchains_to_skip_detection', json.dumps(chains_to_skip)),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v41 to v42. This was in v1.33 release.
-
-        - Create new tables for zksync lite
-    """
-    progress_handler.set_total_steps(2)
+    """Upgrades the DB from v41 to v42. This was in v1.33 release"""
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
+        progress_handler.new_step()
+        _upgrade_evmchains_to_skip_detection(write_cursor)
         progress_handler.new_step()
