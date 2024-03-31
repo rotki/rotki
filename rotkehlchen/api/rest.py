@@ -220,6 +220,7 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
@@ -1770,7 +1771,7 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        all_evm_chains_num = len(get_args(SUPPORTED_EVM_CHAINS))
+        all_evm_chains_num = len(SUPPORTED_EVM_CHAINS)
         result_dicts: dict[str, dict[ChecksumEvmAddress, list[str]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
 
         all_key = 'all'  # key used when all the evm chains are returned
@@ -1811,7 +1812,7 @@ class RestAPI:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         ...
@@ -3967,7 +3968,7 @@ class RestAPI:
             self,
             only_cache: bool,
             addresses: Sequence[ChecksumEvmAddress] | None,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:

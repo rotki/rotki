@@ -88,7 +88,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     ApiKey,
     ApiSecret,
@@ -653,10 +653,10 @@ class Rotkehlchen:
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_CHAINS_TYPE, ChecksumEvmAddress]],
         list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm addresses
@@ -714,7 +714,7 @@ class Rotkehlchen:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> None:
         ...

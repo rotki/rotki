@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     ChecksumEvmAddress,
     Location,
     SupportedBlockchain,
@@ -110,7 +110,7 @@ def assert_add_addresses_migration_ws_messages(
 
 
 def detect_accounts_migration_check(
-        expected_detected_addresses_per_chain: dict[SUPPORTED_EVM_CHAINS, list[ChecksumEvmAddress]],  # noqa: E501
+        expected_detected_addresses_per_chain: dict[SUPPORTED_EVM_CHAINS_TYPE, list[ChecksumEvmAddress]],  # noqa: E501
         migration_version: int,
         migration_steps: int,
         migration_list: list[MigrationRecord],

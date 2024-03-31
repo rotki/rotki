@@ -445,7 +445,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return self.value.lower()
 
     def is_evm(self) -> bool:
-        return self in get_args(SUPPORTED_EVM_CHAINS)
+        return self in SUPPORTED_EVM_CHAINS
 
     def is_evmlike(self) -> bool:
         return self == SupportedBlockchain.ZKSYNC_LITE
@@ -575,7 +575,7 @@ CHAIN_IDS_WITH_BALANCE_PROTOCOLS = Literal[
     ChainID.BASE,
 ]
 
-SUPPORTED_EVM_CHAINS = Literal[
+SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.AVALANCHE,
@@ -585,9 +585,13 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
 ]
+SUPPORTED_EVM_CHAINS: tuple[SUPPORTED_EVM_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVM_CHAINS_TYPE)  # noqa: E501
 
 SUPPORTED_EVMLIKE_CHAINS_TYPE = Literal[SupportedBlockchain.ZKSYNC_LITE]
 SUPPORTED_EVMLIKE_CHAINS: tuple[SUPPORTED_EVMLIKE_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVMLIKE_CHAINS_TYPE)  # noqa: E501
+
+SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE
+SUPPORTED_EVM_EVMLIKE_CHAINS: tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ...] = SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS  # noqa: E501
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,

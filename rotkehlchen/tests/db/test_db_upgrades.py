@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, SupportedBlockchain, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -2251,6 +2251,12 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
         assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
+        raw_list = cursor.execute(
+            'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
+        ).fetchone()[0]
+        assert [
+            ChainID.deserialize_from_name(x) for x in json.loads(raw_list)
+        ] == [ChainID.POLYGON_POS, ChainID.GNOSIS]
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2273,6 +2279,12 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
                 'SELECT location FROM location WHERE seq=?',
                 (new_loc.value,),
             ).fetchone()[0] == new_loc.serialize_for_db()
+        raw_list = cursor.execute(
+            'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
+        ).fetchone()[0]
+        assert [
+            SupportedBlockchain.deserialize(x) for x in json.loads(raw_list)
+        ] == [SupportedBlockchain.POLYGON_POS, SupportedBlockchain.GNOSIS]
 
 
 def test_latest_upgrade_correctness(user_data_dir):
