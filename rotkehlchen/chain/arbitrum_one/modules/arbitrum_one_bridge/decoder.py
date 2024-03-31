@@ -158,7 +158,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             from_event_subtype=HistoryEventSubType.NONE,
             asset=from_token,
             amount=amount,
-            to_event_type=HistoryEventType.WITHDRAWAL,
+            to_event_type=HistoryEventType.DEPOSIT,
             to_event_subtype=HistoryEventSubType.BRIDGE,
             to_notes=notes,
             to_counterparty=CPT_ARBITRUM_ONE,
@@ -197,7 +197,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     amount=amount,
                     asset=self.eth,
                     expected_event_type=HistoryEventType.SPEND,
-                    new_event_type=HistoryEventType.WITHDRAWAL,
+                    new_event_type=HistoryEventType.DEPOSIT,
                     counterparty=ARBITRUM_ONE_CPT_DETAILS,
                 )
                 break
@@ -231,7 +231,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.asset == A_ETH and
                     event.balance.amount == from_wei(FVal(transaction.value))
             ):
-                event.event_type = HistoryEventType.DEPOSIT
+                event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (
@@ -271,7 +271,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.address == ZERO_ADDRESS and
                     event.balance.amount == amount
             ):
-                event.event_type = HistoryEventType.DEPOSIT
+                event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (
