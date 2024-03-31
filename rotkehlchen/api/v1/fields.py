@@ -535,6 +535,44 @@ class EvmChainNameField(fields.Field):
         return chain_id
 
 
+class EvmChainLikeNameField(fields.Field):
+    """A special case of serializing to an enum. Using the string name of an evm
+    chain to serialize to SupportedBlockchain. Should be superset of EvmChainNameField"""
+
+    def __init__(self, *, limit_to: list[SupportedBlockchain] | None = None, **kwargs: Any) -> None:  # noqa: E501
+        self.limit_to = limit_to
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: SupportedBlockchain,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str | None:
+        return value.name.lower() if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> SupportedBlockchain:
+        try:
+            chain = SupportedBlockchain.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        if self.limit_to is not None and chain not in self.limit_to:
+            raise ValidationError(
+                f'Given chain {value} is not one of '
+                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
+            )
+
+        return chain
+
+
 class AssetField(fields.Field):
 
     def __init__(

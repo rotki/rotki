@@ -219,8 +219,8 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
@@ -1771,7 +1771,6 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        all_evm_chains_num = len(SUPPORTED_EVM_CHAINS)
         result_dicts: dict[str, dict[ChecksumEvmAddress, list[str]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
 
         all_key = 'all'  # key used when all the evm chains are returned
@@ -1783,7 +1782,7 @@ class RestAPI:
         ):
             for chain, address in list_of_accounts:
                 result_dicts[response_key][address].append(chain.serialize())
-                if len(result_dicts[response_key][address]) == all_evm_chains_num:
+                if len(result_dicts[response_key][address]) == len(SUPPORTED_EVM_EVMLIKE_CHAINS):
                     result_dicts[response_key][address] = [all_key]
 
         result: dict[str, Any] = result_dicts

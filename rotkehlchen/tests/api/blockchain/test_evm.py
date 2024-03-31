@@ -267,6 +267,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
             base_addresses=[common_account, failing_account],
             gnosis_addresses=[common_account, failing_account, already_added_to_all_chains],
             scroll_addresses=[common_account, failing_account],
+            zksync_lite_addresses=[common_account],
         )
         stack.enter_context(patched_modify_blockchain_accounts)
 
@@ -317,6 +318,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
                 'arbitrum_one',
                 'base',
                 'scroll',
+                'zksync_lite',
             ],
         },
         'eth_contracts': ['0x9008D19f58AAbD9eD0D60971565AA8510560ab41'],
@@ -387,6 +389,7 @@ def test_detect_evm_accounts(
         {'evm_chain': ChainID.ARBITRUM_ONE.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.BASE.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.GNOSIS.to_name(), 'address': ethereum_accounts[0]},
+        {'evm_chain': SupportedBlockchain.ZKSYNC_LITE.name.lower(), 'address': ethereum_accounts[0]},  # noqa: E501
     ], key=operator.itemgetter('evm_chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -499,6 +502,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
             base_addresses=[common_account],
             gnosis_addresses=[common_account],
             scroll_addresses=[common_account],
+            zksync_lite_addresses=[common_account],
         )
 
         # add an address with an invalid ens name

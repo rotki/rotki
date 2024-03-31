@@ -93,6 +93,7 @@ from rotkehlchen.types import (
     EVM_LOCATIONS,
     NON_EVM_CHAINS,
     SUPPORTED_CHAIN_IDS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -131,6 +132,7 @@ from .fields import (
     DerivationPathField,
     DirectoryField,
     EvmAddressField,
+    EvmChainLikeNameField,
     EvmChainNameField,
     EVMTransactionHashField,
     FeeField,
@@ -251,9 +253,9 @@ class DBOrderBySchema(Schema):
 
 class RequiredEvmAddressOptionalChainSchema(Schema):
     address = EvmAddressField(required=True)
-    evm_chain = EvmChainNameField(
+    evm_chain = EvmChainLikeNameField(
         required=False,
-        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
+        limit_to=SUPPORTED_EVM_EVMLIKE_CHAINS,  # type: ignore
         load_default=None,
     )
 
@@ -1247,7 +1249,7 @@ class ModifiableSettingsSchema(Schema):
         validate=lambda data: len(data) == len(set(data)),
     )
     evmchains_to_skip_detection = fields.List(
-        EvmChainNameField,
+        EvmChainLikeNameField,
         load_default=None,
         # Check that all values are unique
         validate=lambda data: len(data) == len(set(data)),

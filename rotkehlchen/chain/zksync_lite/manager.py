@@ -456,9 +456,7 @@ class ZksyncLiteManager:
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, dict[Asset, Balance]]:
-        """May raise:
-           - RemoteError if there is a problem contacting the API
-        """
+        """Get ZKSync Lite balances"""
         balances: defaultdict[ChecksumEvmAddress, dict[Asset, Balance]] = defaultdict(dict)
         for address in addresses:
             result = self._query_api(url=f'accounts/{address}')
