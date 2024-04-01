@@ -11667,6 +11667,8 @@ Get mappings from addressbook
 
     :reqjson int[optional] limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
     :reqjson int[optional] offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+    :reqjson list[string] order_by_attributes: This is the list of attributes of the addressbook entries by which to order the results.
+    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
     :reqjson str[optional] name_substring: The substring to use as filter for the name to be found in the addressbook.
     :reqjson str[optional] blockchain: The blockchain in which to use the provided name.
     :reqjson object[optional] addresses: List of addresses that the backend should find names for.

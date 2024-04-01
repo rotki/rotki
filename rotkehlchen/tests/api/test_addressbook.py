@@ -66,6 +66,7 @@ def test_get_addressbook(
     result = assert_proper_response_with_result(response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert deserialized_entries == entries_set
+    assert deserialized_entries != sorted(deserialized_entries, key=lambda x: x.name)  # not sorted
     assert result['entries_found'] == len(entries_set)
     assert result['entries_total'] == len(entries_set)
 
@@ -199,6 +200,23 @@ def test_get_addressbook(
     assert set(deserialized_entries) == set(generated_entries[0:3])
     assert result['entries_found'] == 3
     assert result['entries_total'] == len(entries_set)
+
+    # order by name/address in ascending order
+    for attribute in ('name', 'address'):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'addressbookresource',
+                book_type=book_type,
+            ),
+            json={
+                'order_by_attributes': [attribute],
+                'ascending': [True],
+            },
+        )
+        result = assert_proper_response_with_result(response=response)
+        entries = [raw_entry[attribute] for raw_entry in result['entries']]
+        assert entries == sorted(entries)
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])

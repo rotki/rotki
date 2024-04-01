@@ -2830,6 +2830,7 @@ class QueryAddressbookSchema(
     BaseAddressbookSchema,
     OptionalAddressesWithBlockchainsListSchema,
     DBPaginationSchema,
+    DBOrderBySchema,
 ):
     """Schema for querying addressbook entries"""
     name_substring = fields.String(load_default=None)
@@ -2847,6 +2848,7 @@ class QueryAddressbookSchema(
             blockchain=data['blockchain'],
             substring_search=data['name_substring'],
             optional_chain_addresses=data['addresses'],
+            order_by_rules=create_order_by_rules_list(data=data),
         )
         return {
             'filter_query': filter_query,
