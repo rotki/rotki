@@ -89,7 +89,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     save_velodrome_data_to_cache,
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -2705,13 +2705,13 @@ class RestAPI:
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            accounts: list[ChecksumEvmAddress] | None,
+            accounts: list[EvmlikeAccount] | None,
             chain: EvmlikeChain | None,  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
         """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
         message, status_code = '', HTTPStatus.OK
         # lazy mode. At the moment this can only be ZKSYnc lite
-        addresses = accounts if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
+        addresses = [x.address for x in accounts] if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
         for address in addresses:
             self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(
                 address=address,
