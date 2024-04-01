@@ -6,33 +6,31 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.optimism_superchain.node_inquirer import OptimismSuperchainInquirer
-    from rotkehlchen.chain.optimism_superchain.transactions import OptimismSuperchainTransactions
+    from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
+    from rotkehlchen.chain.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainTransactionDecoder(EVMTransactionDecoder, ABC):
+class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
     """
-    An intermediary decoder class to be inherited by chains based on the Optimism Superchain.
-
-    Provides support for handling the layer 1 fee structure common to optimism-based chains.
+    An intermediary decoder class to be inherited by L2 chains that have an extra L1 Fee structure.
     """
 
     def __init__(
             self,
             database: 'DBHandler',
-            node_inquirer: 'OptimismSuperchainInquirer',
-            transactions: 'OptimismSuperchainTransactions',
+            node_inquirer: 'L2WithL1FeesInquirer',
+            transactions: 'L2WithL1FeesTransactions',
             value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
@@ -50,5 +48,5 @@ class OptimismSuperchainTransactionDecoder(EVMTransactionDecoder, ABC):
             dbevmtx_class=dbevmtx_class,
         )
 
-    def _calculate_gas_burned(self, tx: OptimismTransaction) -> FVal:  # type: ignore[override]
+    def _calculate_gas_burned(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
         return from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))

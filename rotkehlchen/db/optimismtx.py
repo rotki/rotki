@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
@@ -21,10 +21,13 @@ class DBOptimismTx(DBEvmTx):
     def add_evm_transactions(
             self,
             write_cursor: 'DBCursor',
-            evm_transactions: list[OptimismTransaction],  # type: ignore[override]
+            evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:
-        """Adds optimism transactions to the database"""
+        """Adds optimism transactions to the database
+
+        These transactions are used by all L2 chains with an extra L1 fee structure
+        """
         super().add_evm_transactions(
             write_cursor,
             evm_transactions,  # type: ignore[arg-type]
@@ -51,8 +54,8 @@ class DBOptimismTx(DBEvmTx):
             [FREE_ETH_TX_LIMIT] + bindings,
         )
 
-    def _build_evm_transaction(self, result: tuple[Any, ...]) -> OptimismTransaction:
-        return OptimismTransaction(
+    def _build_evm_transaction(self, result: tuple[Any, ...]) -> L2WithL1FeesTransaction:
+        return L2WithL1FeesTransaction(
             tx_hash=deserialize_evm_tx_hash(result[0]),
             chain_id=ChainID.deserialize_from_db(result[1]),
             timestamp=deserialize_timestamp(result[2]),

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.optimism_superchain.transactions import OptimismSuperchainTransactions
+from rotkehlchen.chain.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .node_inquirer import ScrollInquirer
 
 
-class ScrollTransactions(OptimismSuperchainTransactions):
+class ScrollTransactions(L2WithL1FeesTransactions):
 
     def __init__(
             self,

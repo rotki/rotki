@@ -2,12 +2,11 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.optimism_superchain.decoding.decoder import OptimismSuperchainTransactionDecoder
+from rotkehlchen.chain.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ScrollTransactionDecoder(OptimismSuperchainTransactionDecoder):
+class ScrollTransactionDecoder(L2WithL1FeesTransactionDecoder):
 
     def __init__(
             self,

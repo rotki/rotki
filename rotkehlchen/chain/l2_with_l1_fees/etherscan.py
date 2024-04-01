@@ -2,10 +2,13 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import (
+    L2WithL1FeesTransaction,
+    SupportedL2WithL1FeesChain,
+)
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmInternalTransaction, ExternalService, SupportedBlockchain
+from rotkehlchen.types import EvmInternalTransaction, ExternalService
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -15,22 +18,17 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainEtherscan(Etherscan, ABC):
+class L2WithL1FeesEtherscan(Etherscan, ABC):
     """
-    An intermediary etherscan class to be inherited by chains based on the Optimism Superchain.
-
-    Provides support for handling the layer 1 fee structure common to optimism-based chains.
+    An intermediary etherscan class to be inherited by L2 chains
+    that have an extra L1 Fee structure.
     """
 
     def __init__(
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
-            chain: Literal[
-                SupportedBlockchain.OPTIMISM,
-                SupportedBlockchain.BASE,
-                SupportedBlockchain.SCROLL,
-            ],
+            chain: SupportedL2WithL1FeesChain,
             base_url: str,
             service: Literal[
                 ExternalService.OPTIMISM_ETHERSCAN,
@@ -48,8 +46,8 @@ class OptimismSuperchainEtherscan(Etherscan, ABC):
 
     def _additional_transaction_processing(
             self,
-            tx: OptimismTransaction | EvmInternalTransaction,  # type: ignore[override]
-    ) -> OptimismTransaction | EvmInternalTransaction:
+            tx: L2WithL1FeesTransaction | EvmInternalTransaction,  # type: ignore[override]
+    ) -> L2WithL1FeesTransaction | EvmInternalTransaction:
         if not isinstance(tx, EvmInternalTransaction):
             # TODO: write this tx_receipt to DB so it doesn't need to be queried again
             # https://github.com/rotki/rotki/pull/6359#discussion_r1252850465
@@ -63,7 +61,7 @@ class OptimismSuperchainEtherscan(Etherscan, ABC):
             else:
                 log.error(f'Could not query receipt for {self.chain.name.lower()} transaction {tx.tx_hash.hex()}. Using 0 l1 fee')  # noqa: E501
 
-            tx = OptimismTransaction(
+            tx = L2WithL1FeesTransaction(
                 tx_hash=tx.tx_hash,
                 chain_id=tx.chain_id,
                 timestamp=tx.timestamp,

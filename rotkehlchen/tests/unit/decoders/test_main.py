@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -254,7 +254,7 @@ def test_simple_erc20_transfer(
     accounts = ethereum_accounts if chain == ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -350,7 +350,7 @@ def test_eth_transfer(
     accounts = ethereum_accounts if chain is ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -434,7 +434,7 @@ def test_eth_spend(
     evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
     from_address = ethereum_accounts[0] if chain is ChainID.ETHEREUM else optimism_accounts[0]
     to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,

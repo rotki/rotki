@@ -409,6 +409,8 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
+# The table can be used by any L2 chain that has an extra L1 fee structure
+# It should be renamed, at some point, to something like `l2_with_l1_fees_transactions`
 DB_CREATE_OPTIMISM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS optimism_transactions (
     tx_id INTEGER NOT NULL PRIMARY KEY,

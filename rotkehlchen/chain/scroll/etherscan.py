@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.optimism_superchain.etherscan import OptimismSuperchainEtherscan
+from rotkehlchen.chain.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
 from rotkehlchen.types import ExternalService, SupportedBlockchain
 
 if TYPE_CHECKING:
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class ScrollEtherscan(OptimismSuperchainEtherscan):
+class ScrollEtherscan(L2WithL1FeesEtherscan):
 
     def __init__(
             self,
