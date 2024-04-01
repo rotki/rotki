@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now properly decode the transactions for bridging to and from Scroll.
 * :feature:`6636` Aave v3 positions and liabilities will now be properly shown in the dashboard.
 * :feature:`7423` Users will be able to sort address book entries by displayed name and address.
 
