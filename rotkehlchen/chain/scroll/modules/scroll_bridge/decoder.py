@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, final
+from typing import TYPE_CHECKING, Any, Final
 from eth_abi import decode as decode_abi
 from eth_utils import to_checksum_address
 
@@ -31,26 +31,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-L2_ETH_GATEWAY: final = string_to_evm_address('0x6EA73e05AdC79974B931123675ea8F78FfdacDF0')
-L2_ERC20_GATEWAY: final = string_to_evm_address('0xE2b4795039517653c5Ae8C2A9BFdd783b48f447A')
+L2_ETH_GATEWAY: Final = string_to_evm_address('0x6EA73e05AdC79974B931123675ea8F78FfdacDF0')
+L2_ERC20_GATEWAY: Final = string_to_evm_address('0xE2b4795039517653c5Ae8C2A9BFdd783b48f447A')
 # USDC has a special gateway
-L2_USDC_GATEWAY: final = string_to_evm_address('0x33B60d5Dd260d453cAC3782b0bDC01ce84672142')
-L2_MESSENGER_PROXY: final = string_to_evm_address('0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC')
+L2_USDC_GATEWAY: Final = string_to_evm_address('0x33B60d5Dd260d453cAC3782b0bDC01ce84672142')
+L2_MESSENGER_PROXY: Final = string_to_evm_address('0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC')
 
 # Topics
 # FinalizeDepositETH - 0x9e86c356e14e24e26e3ce769bf8b87de38e0faa0ed0ca946fa09659aa606bd2d
-FINALIZE_DEPOSIT_ETH: final = b'\x9e\x86\xc3V\xe1N$\xe2n<\xe7i\xbf\x8b\x87\xde8\xe0\xfa\xa0\xed\x0c\xa9F\xfa\te\x9a\xa6\x06\xbd-'  # noqa: E501
+FINALIZE_DEPOSIT_ETH: Final = b'\x9e\x86\xc3V\xe1N$\xe2n<\xe7i\xbf\x8b\x87\xde8\xe0\xfa\xa0\xed\x0c\xa9F\xfa\te\x9a\xa6\x06\xbd-'  # noqa: E501
 # WithdrawETH - 0xd8ed6eaa9a7a8980d7901e911fde6686810b989d3082182d1d3a3df6306ce20e
-WITHDRAW_ETH: final = b'\xd8\xedn\xaa\x9az\x89\x80\xd7\x90\x1e\x91\x1f\xdef\x86\x81\x0b\x98\x9d0\x82\x18-\x1d:=\xf60l\xe2\x0e'  # noqa: E501
+WITHDRAW_ETH: Final = b'\xd8\xedn\xaa\x9az\x89\x80\xd7\x90\x1e\x91\x1f\xdef\x86\x81\x0b\x98\x9d0\x82\x18-\x1d:=\xf60l\xe2\x0e'  # noqa: E501
 # FinalizeDepositERC20 - 0x165ba69f6ab40c50cade6f65431801e5f9c7d7830b7545391920db039133ba34
-FINALIZE_DEPOSIT_ERC20: final = b'\x16[\xa6\x9fj\xb4\x0cP\xca\xdeoeC\x18\x01\xe5\xf9\xc7\xd7\x83\x0buE9\x19 \xdb\x03\x913\xba4'  # noqa: E501
+FINALIZE_DEPOSIT_ERC20: Final = b'\x16[\xa6\x9fj\xb4\x0cP\xca\xdeoeC\x18\x01\xe5\xf9\xc7\xd7\x83\x0buE9\x19 \xdb\x03\x913\xba4'  # noqa: E501
 # WithdrawERC20 - 0xd8d3a3f4ab95694bef40475997598bcf8acd3ed9617a4c1013795429414c27e8
-WITHDRAW_ERC20: final = b"\xd8\xd3\xa3\xf4\xab\x95iK\xef@GY\x97Y\x8b\xcf\x8a\xcd>\xd9azL\x10\x13yT)AL'\xe8"  # noqa: E501
+WITHDRAW_ERC20: Final = b"\xd8\xd3\xa3\xf4\xab\x95iK\xef@GY\x97Y\x8b\xcf\x8a\xcd>\xd9azL\x10\x13yT)AL'\xe8"  # noqa: E501
 # RelayedMessage - 0x4641df4a962071e12719d8c8c8e5ac7fc4d97b927346a3d7a335b1f7517e133c
-RELAYED_MESSAGE: final = b"FA\xdfJ\x96 q\xe1'\x19\xd8\xc8\xc8\xe5\xac\x7f\xc4\xd9{\x92sF\xa3\xd7\xa35\xb1\xf7Q~\x13<"  # noqa: E501
+RELAYED_MESSAGE: Final = b"FA\xdfJ\x96 q\xe1'\x19\xd8\xc8\xc8\xe5\xac\x7f\xc4\xd9{\x92sF\xa3\xd7\xa35\xb1\xf7Q~\x13<"  # noqa: E501
 
 # Method signatures
-RELAY_MESSAGE: final = b'\x8e\xf13.'
+RELAY_MESSAGE: Final = b'\x8e\xf13.'
 
 
 class ScrollBridgeDecoder(DecoderInterface):
