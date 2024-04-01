@@ -480,7 +480,7 @@ class ZksyncLiteManager:
                         )
                         continue
 
-                    balances[address][asset] = Balance(amount, usd_price)
+                    balances[address][asset] = Balance(amount, usd_price * amount)
 
             except (KeyError, DeserializationError, RemoteError) as e:
                 msg = str(e)  # Catching RemoteError here too due to self._get_token_by_symbol

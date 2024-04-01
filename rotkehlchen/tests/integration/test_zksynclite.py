@@ -136,23 +136,25 @@ def test_fetch_transactions(zksync_lite_manager):
 def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
     lefty, rotki = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306'  # noqa: E501
     balances = zksync_lite_manager.get_balances(addresses=[lefty, rotki])
+    lefty_eth_amount = FVal('6.6308508258')
+    eth, mana, uni, wbtc, link, dai, frax, usdc, storj, lrc, snx, pan, usdt = FVal('0.20670353608092'), FVal('16.38'), FVal('2.1409'), FVal('0.00012076'), FVal('0.47523'), FVal('46.16024376'), FVal('2.4306'), FVal('98.233404'), FVal('4.1524'), FVal('0.95'), FVal('0.95'), FVal('9202.65'), FVal('4.1')  # noqa: E501
     assert balances == {
         lefty: {
-            A_ETH: Balance(FVal('6.6308508258'), CURRENT_PRICE_MOCK),
+            A_ETH: Balance(lefty_eth_amount, lefty_eth_amount * CURRENT_PRICE_MOCK),
         },
         rotki: {
-            A_ETH: Balance(FVal('0.20670353608092'), CURRENT_PRICE_MOCK),
-            A_MANA: Balance(FVal('16.38'), CURRENT_PRICE_MOCK),
-            A_UNI: Balance(FVal('2.1409'), CURRENT_PRICE_MOCK),
-            A_WBTC: Balance(FVal('0.00012076'), CURRENT_PRICE_MOCK),
-            A_LINK: Balance(FVal('0.47523'), CURRENT_PRICE_MOCK),
-            A_DAI: Balance(FVal('46.16024376'), CURRENT_PRICE_MOCK),
-            EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'): Balance(FVal('2.4306'), CURRENT_PRICE_MOCK),  # noqa: E501  # FRAX
-            A_USDC: Balance(FVal('98.233404'), CURRENT_PRICE_MOCK),
-            EvmToken('eip155:1/erc20:0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC'): Balance(FVal('4.1524'), CURRENT_PRICE_MOCK),  # noqa: E501  # STORJ
-            A_LRC: Balance(FVal('0.95'), CURRENT_PRICE_MOCK),
-            A_SNX: Balance(FVal('0.95'), CURRENT_PRICE_MOCK),
-            A_PAN: Balance(FVal('9202.65'), CURRENT_PRICE_MOCK),
-            A_USDT: Balance(FVal('4.1'), CURRENT_PRICE_MOCK),
+            A_ETH: Balance(eth, eth * CURRENT_PRICE_MOCK),
+            A_MANA: Balance(mana, mana * CURRENT_PRICE_MOCK),
+            A_UNI: Balance(uni, uni * CURRENT_PRICE_MOCK),
+            A_WBTC: Balance(wbtc, wbtc * CURRENT_PRICE_MOCK),
+            A_LINK: Balance(link, link * CURRENT_PRICE_MOCK),
+            A_DAI: Balance(dai, dai * CURRENT_PRICE_MOCK),
+            EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'): Balance(frax, frax * CURRENT_PRICE_MOCK),  # noqa: E501  # FRAX
+            A_USDC: Balance(usdc, usdc * CURRENT_PRICE_MOCK),
+            EvmToken('eip155:1/erc20:0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC'): Balance(storj, storj * CURRENT_PRICE_MOCK),  # noqa: E501  # STORJ
+            A_LRC: Balance(lrc, lrc * CURRENT_PRICE_MOCK),
+            A_SNX: Balance(snx, snx * CURRENT_PRICE_MOCK),
+            A_PAN: Balance(pan, pan * CURRENT_PRICE_MOCK),
+            A_USDT: Balance(usdt, usdt * CURRENT_PRICE_MOCK),
         },
     }
