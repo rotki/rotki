@@ -1445,11 +1445,13 @@ class AddressbookFilterQuery(DBFilterQuery):
             blockchain: SupportedBlockchain | None = None,
             optional_chain_addresses: list[OptionalChainAddress] | None = None,
             substring_search: str | None = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
     ) -> 'AddressbookFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
+            order_by_rules=order_by_rules,
         )
         filters: list[DBFilter] = []
         if substring_search is not None:
