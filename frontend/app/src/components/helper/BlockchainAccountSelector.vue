@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Account } from '@rotki/common/src/account';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
-type Account = BlockchainAccount<AddressData>;
+type AccountWithAddressData = BlockchainAccount<AddressData>;
 
 const props = withDefaults(
   defineProps<{
@@ -12,7 +13,7 @@ const props = withDefaults(
     loading?: boolean;
     usableAddresses?: string[];
     multiple?: boolean;
-    value: Account[];
+    value: AccountWithAddressData[];
     chains: string[];
     outlined?: boolean;
     dense?: boolean;
@@ -40,7 +41,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: Account[]): void;
+  (e: 'input', value: AccountWithAddressData[]): void;
 }>();
 
 const {
@@ -58,7 +59,7 @@ const { t } = useI18n();
 
 const { accounts: accounsPerChain } = storeToRefs(useBlockchainStore());
 
-const accounts = computed<Account[]>(
+const accounts = computed<AccountWithAddressData[]>(
   () => Object.values(get(accounsPerChain)).flatMap(x => x).filter(hasAccountAddress),
 );
 
@@ -73,10 +74,11 @@ const internalValue = computed(() => {
   return accounts[0];
 });
 
-const selectableAccounts = computed<Account[]>(() => {
+const selectableAccounts = computed<AccountWithAddressData[]>(() => {
   const filteredChains = get(chains);
   const accountData = get(accounts);
-  const blockchainAccounts: Account[] = get(unique)
+
+  const blockchainAccounts: AccountWithAddressData[] = get(unique)
     ? uniqBy(accountData, account => getAccountAddress(account))
     : accountData;
 
@@ -124,11 +126,11 @@ const hintText = computed(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<BlockchainAccount[]>(() => {
+const displayedAccounts = computed<Account[]>(() => {
   const addresses = get(usableAddresses);
-  const accounts = get(selectableAccounts);
+  const accounts = [...get(selectableAccounts)].map(item => ({ ...item, address: getAccountAddress(item) }));
   if (addresses.length > 0)
-    return accounts.filter(account => addresses.includes(getAccountAddress(account)));
+    return accounts.filter(account => addresses.includes(account.address));
 
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
@@ -155,9 +157,9 @@ function filter(item: BlockchainAccount, queryText: string) {
 }
 
 function filterOutElements(
-  lastElement: Account,
-  nextValue: Account[],
-): Account[] {
+  lastElement: AccountWithAddressData,
+  nextValue: AccountWithAddressData[],
+): AccountWithAddressData[] {
   if (lastElement.chain === 'ALL') {
     return nextValue.filter(
       x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL',
@@ -168,9 +170,9 @@ function filterOutElements(
   );
 }
 
-function input(nextValue: null | Account | Account[]) {
+function input(nextValue: null | AccountWithAddressData | AccountWithAddressData[]) {
   const previousValue = get(value);
-  let result: Account[];
+  let result: AccountWithAddressData[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
     if (lastElement && nextValue.length > previousValue.length)
@@ -185,7 +187,7 @@ function input(nextValue: null | Account | Account[]) {
   emit('input', result);
 }
 
-const getItemKey = (item: Account) => getAccountId(item);
+const getItemKey = (item: AccountWithAddressData) => getAccountId(item);
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 </script>

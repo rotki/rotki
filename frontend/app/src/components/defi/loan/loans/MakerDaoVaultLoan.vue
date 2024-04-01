@@ -65,9 +65,9 @@ const chain = Blockchain.ETH;
     />
     <HistoryEventsView
       v-else
+      use-external-account-filter
       :section-title="t('common.events')"
       :protocols="['makerdao', 'makerdao vault']"
-      :use-external-account-filter="true"
       :external-account-filter="[{ chain, address: owner }]"
       :only-chains="[chain]"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"
