@@ -13,19 +13,23 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 
+type Statuses = '' | 'available' | 'unclaimed' | 'claimed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
+const hideAvailableAlert = useLocalStorage('rotki.airdrops.hide_available_alert', false);
 
 const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts: Ref<BlockchainAccount<AddressData>[]> = ref([]);
-const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
-  { text: t('common.unclaimed'), value: false },
-  { text: t('common.claimed'), value: true },
+const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
+  { text: t('common.all'), value: '' },
+  { text: t('common.available'), value: 'available' },
+  { text: t('common.unclaimed'), value: 'unclaimed' },
+  { text: t('common.claimed'), value: 'claimed' },
 ]);
-const status: Ref<boolean> = ref(false);
+const status: Ref<Statuses> = ref('unclaimed');
 const loading: Ref<boolean> = ref(false);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
@@ -41,7 +45,19 @@ const entries = computed(() => {
   const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
   const airdrops = get(airdropList(addresses));
   return airdrops
-    .filter(airdrop => airdrop.claimed === get(status))
+    .filter((airdrop) => {
+      const currentStatus = get(status);
+      switch (currentStatus) {
+        case 'available':
+          return airdrop.missingDecoder;
+        case 'unclaimed':
+          return !airdrop.claimed && !airdrop.missingDecoder;
+        case 'claimed':
+          return airdrop.claimed;
+        default:
+          return true;
+      }
+    })
     .map((value, index) => ({
       ...value,
       index,
@@ -95,7 +111,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
           });
         }
         else {
-          const { amount, asset, link, claimed } = element as AirdropDetail;
+          const { amount, asset, link, claimed, missingDecoder } = element as AirdropDetail;
           result.push({
             address,
             amount,
@@ -103,6 +119,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
             source,
             asset,
             claimed,
+            missingDecoder,
           });
         }
       }
@@ -199,6 +216,16 @@ onMounted(async () => {
         />
       </div>
 
+      <RuiAlert
+        v-if="!hideAvailableAlert && status === 'available'"
+        type="info"
+        class="mb-4"
+        closeable
+        @close="hideAvailableAlert = true"
+      >
+        {{ t('airdrops.available_info') }}
+      </RuiAlert>
+
       <RuiDataTable
         outlined
         :rows="entries"
@@ -219,8 +246,26 @@ onMounted(async () => {
           />
           <span v-else>{{ row.details.length }}</span>
         </template>
-        <template #item.claimed="{ row: { claimed } }">
+        <template #item.claimed="{ row: { claimed, missingDecoder } }">
+          <RuiTooltip
+            v-if="missingDecoder"
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+            tooltip-class="max-w-[12rem]"
+          >
+            <template #activator>
+              <RuiChip
+                color="info"
+                size="sm"
+              >
+                {{ t('common.available') }}
+              </RuiChip>
+            </template>
+
+            {{ t('airdrops.available_tooltip') }}
+          </RuiTooltip>
           <RuiChip
+            v-else
             :color="claimed ? 'success' : 'grey'"
             size="sm"
           >

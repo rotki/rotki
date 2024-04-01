@@ -920,7 +920,9 @@
     "headers": {
       "source": "来源"
     },
-    "title": "空投"
+    "title": "空投",
+    "available_info": "这些地址可以进行空投，但我们还无法分析其是否已被认领。",
+    "available_tooltip": "地址符合空投条件，但我们还无法分析它是否已被认领。"
   },
   "alias_names": {
     "error": {

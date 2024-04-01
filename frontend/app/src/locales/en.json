@@ -1053,7 +1053,9 @@
     "headers": {
       "source": "Source"
     },
-    "title": "Airdrops"
+    "title": "Airdrops",
+    "available_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
+    "available_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
   },
   "alias_names": {
     "error": {
@@ -1661,7 +1663,9 @@
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}.",
-    "website": "website"
+    "website": "website",
+    "available": "Available",
+    "all": "All"
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
