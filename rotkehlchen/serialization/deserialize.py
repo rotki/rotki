@@ -523,7 +523,7 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(  # type: ignore[misc]
         data: dict[str, Any],
         internal: Literal[False],
-        chain_id: Literal[ChainID.OPTIMISM, ChainID.BASE],
+        chain_id: Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL],
         evm_inquirer: 'OptimismSuperchainInquirer',
         parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[OptimismTransaction, dict[str, Any]]:
@@ -599,7 +599,7 @@ def deserialize_evm_transaction(
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
 
-        if chain_id in {ChainID.OPTIMISM, ChainID.BASE} and evm_inquirer is not None:
+        if chain_id in {ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL} and evm_inquirer is not None:
             if not raw_receipt_data:
                 raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)

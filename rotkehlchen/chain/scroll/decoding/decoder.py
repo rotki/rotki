@@ -7,7 +7,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.optimism_superchain.decoding.decoder import OptimismSuperchainTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ScrollTransactionDecoder(EVMTransactionDecoder):
+class ScrollTransactionDecoder(OptimismSuperchainTransactionDecoder):
 
     def __init__(
             self,
@@ -31,7 +33,7 @@ class ScrollTransactionDecoder(EVMTransactionDecoder):
     ):
         super().__init__(
             database=database,
-            evm_inquirer=scroll_inquirer,
+            node_inquirer=scroll_inquirer,
             transactions=transactions,
             value_asset=A_ETH.resolve_to_asset_with_oracles(),
             event_rules=[],
@@ -42,6 +44,7 @@ class ScrollTransactionDecoder(EVMTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            dbevmtx_class=DBOptimismTx,
         )
 
     # -- methods that need to be implemented by child classes --

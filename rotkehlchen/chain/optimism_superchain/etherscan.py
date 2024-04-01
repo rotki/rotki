@@ -29,11 +29,13 @@ class OptimismSuperchainEtherscan(Etherscan, ABC):
             chain: Literal[
                 SupportedBlockchain.OPTIMISM,
                 SupportedBlockchain.BASE,
+                SupportedBlockchain.SCROLL,
             ],
             base_url: str,
             service: Literal[
                 ExternalService.OPTIMISM_ETHERSCAN,
                 ExternalService.BASE_ETHERSCAN,
+                ExternalService.SCROLL_ETHERSCAN,
             ],
     ) -> None:
         super().__init__(

@@ -5,8 +5,8 @@ from eth_typing import BlockNumber
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism_superchain.node_inquirer import OptimismSuperchainInquirer
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ScrollInquirer(EvmNodeInquirer):
+class ScrollInquirer(OptimismSuperchainInquirer):
 
     def __init__(
             self,
