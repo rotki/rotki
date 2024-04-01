@@ -50,7 +50,9 @@ def maybe_reshuffle_events(
 def bridge_prepare_data(
         tx_log: 'EvmTxReceiptLog',
         deposit_topics: Sequence[bytes],
+        # The chain of the current transaction
         source_chain: ChainID,
+        # The chain on the other side
         target_chain: ChainID,
         from_address: ChecksumEvmAddress,
         to_address: ChecksumEvmAddress,
