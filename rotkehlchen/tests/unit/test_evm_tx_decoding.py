@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
@@ -49,7 +49,7 @@ def _add_transactions_to_db(
     evmhash_opt = deserialize_evm_tx_hash('0x063d45910f29e0954a52aee39febba9be784d49af7588a590dc2fd7d156b4665')  # noqa: E501
     evmhash_eth = deserialize_evm_tx_hash('0x3f313e90ed07044fdbb1016ff7986fd26adaeb05e8e9d3252ae0a8318cb8100d')  # noqa: E501
     evmhash_eth_yabir = deserialize_evm_tx_hash('0x91016e7fb9f524449dd1a0b4faef9bc630e9c01c31b6d3383c94975269335afe')  # noqa: E501
-    transaction_opt = OptimismTransaction(
+    transaction_opt = L2WithL1FeesTransaction(
         tx_hash=evmhash_opt,
         chain_id=ChainID.OPTIMISM,
         timestamp=Timestamp(1646375440),

@@ -1,17 +1,17 @@
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, UpdatableCacheDataMixin
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.chain.optimism_superchain.etherscan import OptimismSuperchainEtherscan
+from rotkehlchen.chain.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
+from rotkehlchen.chain.l2_with_l1_fees.types import SupportedL2WithL1FeesChain
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -20,21 +20,17 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainInquirer(EvmNodeInquirer, ABC):
+class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
     """
-    An intermediary node inquirer class to be inherited by chains based on the Optimism Superchain.
-
-    Provides support for handling the layer 1 fee structure common to optimism-based chains.
+    An intermediary node inquirer class to be inherited by L2 chains
+    that have an extra L1 Fee structure.
     """
     def __init__(
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: OptimismSuperchainEtherscan,
-            blockchain: Literal[
-                SupportedBlockchain.OPTIMISM,
-                SupportedBlockchain.BASE,
-            ],
+            etherscan: L2WithL1FeesEtherscan,
+            blockchain: SupportedL2WithL1FeesChain,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
@@ -68,17 +64,14 @@ class OptimismSuperchainInquirer(EvmNodeInquirer, ABC):
         tx_receipt['l1Fee'] = maybe_read_integer(data=tx_receipt, key='l1Fee', api=f'web3 {self.blockchain.name.lower()}')  # noqa: E501
 
 
-class DSProxyOptimismSuperchainInquirerWithCacheData(OptimismSuperchainInquirer, UpdatableCacheDataMixin, ABC):  # noqa: E501
+class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, UpdatableCacheDataMixin, ABC):
 
     def __init__(
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: OptimismSuperchainEtherscan,
-            blockchain: Literal[
-                SupportedBlockchain.OPTIMISM,
-                SupportedBlockchain.BASE,
-            ],
+            etherscan: L2WithL1FeesEtherscan,
+            blockchain: SupportedL2WithL1FeesChain,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,

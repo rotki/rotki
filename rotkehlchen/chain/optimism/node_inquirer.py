@@ -6,8 +6,8 @@ from eth_typing import BlockNumber
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism_superchain.node_inquirer import (
-    DSProxyOptimismSuperchainInquirerWithCacheData,
+from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import (
+    DSProxyL2WithL1FeesInquirerWithCacheData,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismInquirer(DSProxyOptimismSuperchainInquirerWithCacheData):
+class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
 
     def __init__(
             self,

@@ -2,10 +2,9 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.evm.transactions import EvmTransactions
-from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
+from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -20,16 +19,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismSuperchainTransactions(EvmTransactions, ABC):
+class L2WithL1FeesTransactions(EvmTransactions, ABC):
     """
-    An intermediary transactions class to be inherited by chains based on the Optimism Superchain.
-
-    Provides support for handling the layer 1 fee structure common to optimism-based chains.
+    An intermediary transactions class to be inherited by L2 chains with an extra L1 Fee structure.
     """
 
     def __init__(
             self,
-            node_inquirer: OptimismInquirer | BaseInquirer,
+            node_inquirer: L2WithL1FeesInquirer,
             database: 'DBHandler',
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)
@@ -41,7 +38,7 @@ class OptimismSuperchainTransactions(EvmTransactions, ABC):
             tx_hash: 'EVMTxHash',
             relevant_address: Optional['ChecksumEvmAddress'],
     ) -> tuple[tuple[Any, ...], 'EvmTxReceipt']:
-        """In addition to the base class check, also checks that the optimism transaction has
+        """In addition to the base class check, also checks that the transaction has
         a corresponding l1_fee value in the database. If not, pulls it.
 
         May raise:
@@ -64,7 +61,7 @@ class OptimismSuperchainTransactions(EvmTransactions, ABC):
             return tx_data, tx_receipt  # all good, l1_fee is in the database
 
         transaction, _ = self.evm_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
-        transaction = cast(OptimismTransaction, transaction)
+        transaction = cast(L2WithL1FeesTransaction, transaction)
         tx_id = cursor.execute(
             'SELECT identifier FROM evm_transactions WHERE tx_hash = ?',
             (tx_hash,),

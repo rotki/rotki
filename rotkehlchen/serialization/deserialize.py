@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.l2_with_l1_fees.types import (
+    L2_CHAIN_IDS_WITH_L1_FEES,
+    L2WithL1FeesTransaction,
+    SupportedL2WithL1FeesChainId,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -30,7 +34,7 @@ from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_t
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.chain.optimism_superchain.node_inquirer import OptimismSuperchainInquirer
+    from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -523,10 +527,10 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(  # type: ignore[misc]
         data: dict[str, Any],
         internal: Literal[False],
-        chain_id: Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL],
-        evm_inquirer: 'OptimismSuperchainInquirer',
+        chain_id: SupportedL2WithL1FeesChainId,
+        evm_inquirer: 'L2WithL1FeesInquirer',
         parent_tx_hash: Optional['EVMTxHash'] = None,
-) -> tuple[OptimismTransaction, dict[str, Any]]:
+) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
     ...
 
 
@@ -599,11 +603,11 @@ def deserialize_evm_transaction(
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
 
-        if chain_id in {ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL} and evm_inquirer is not None:
+        if chain_id in L2_CHAIN_IDS_WITH_L1_FEES and evm_inquirer is not None:
             if not raw_receipt_data:
                 raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)
-            return OptimismTransaction(
+            return L2WithL1FeesTransaction(
                 timestamp=timestamp,
                 chain_id=chain_id,
                 block_number=block_number,
