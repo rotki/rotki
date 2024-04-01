@@ -253,6 +253,23 @@ class DBOrderBySchema(Schema):
 
 class RequiredEvmAddressOptionalChainSchema(Schema):
     address = EvmAddressField(required=True)
+    evm_chain = EvmChainNameField(
+        required=False,
+        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
+        load_default=None,
+    )
+
+    @post_load
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return EvmAccount(data['address'], chain_id=data['evm_chain'])
+
+
+class RequiredEvmlikeAddressOptionalChainSchema(Schema):
+    address = EvmAddressField(required=True)
     evm_chain = EvmChainLikeNameField(
         required=False,
         limit_to=SUPPORTED_EVM_EVMLIKE_CHAINS,  # type: ignore
@@ -322,7 +339,7 @@ class EvmlikeTransactionQuerySchema(
         TimestampRangeSchema,
 ):
     accounts = fields.List(
-        fields.Nested(RequiredEvmAddressOptionalChainSchema),
+        fields.Nested(RequiredEvmlikeAddressOptionalChainSchema),
         load_default=None,
         validate=lambda data: len(data) != 0,
     )
@@ -378,7 +395,7 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
 class EvmlikePendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
     evmlike_chains = fields.List(
         StrEnumField(enum_class=EvmlikeChain),
-        load_default=[EvmlikeChain.ZKSYNCLITE],
+        load_default=[EvmlikeChain.ZKSYNC_LITE],
     )
 
     @validates_schema
