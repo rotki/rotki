@@ -1045,7 +1045,9 @@
     "headers": {
       "source": "Source"
     },
-    "title": "Airdrops"
+    "title": "Airdrops",
+    "available_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
+    "available_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
   },
   "alias_names": {
     "error": {

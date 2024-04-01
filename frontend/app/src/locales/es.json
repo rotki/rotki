@@ -920,7 +920,9 @@
     "headers": {
       "source": "Source"
     },
-    "title": "Airdrops"
+    "title": "Airdrops",
+    "available_info": "Hay airdrops disponibles para estas direcciones, pero aún no podemos analizar si han sido reclamadas o no.",
+    "available_tooltip": "La dirección es elegible para este lanzamiento aéreo, pero aún no podemos analizar si ha sido reclamada o no."
   },
   "alias_names": {
     "error": {
