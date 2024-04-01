@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -224,13 +224,19 @@ def compare_events_without_id(e1: dict, e2: dict) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite_accounts) -> None:
     """Tests pulling and decoding evmlike (zksync lite) transactions
 
-    Also checks that removing an account clears the DB properly
+    Also checks:
+    - Redecoding a specific transaction for evmlike works
+    - removing an account clears the DB properly
     """
+    tx_hash1 = deserialize_evm_tx_hash('0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970')  # noqa: E501
+    tx_hash2 = deserialize_evm_tx_hash('0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb')  # noqa: E501
     user_address = zksync_lite_accounts[0]
     response = requests.post(
         api_url_for(
@@ -252,7 +258,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     assert len(result['entries']) == 17
     compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
         event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
-        tx_hash=deserialize_evm_tx_hash('0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970'),
+        tx_hash=tx_hash1,
         sequence_index=0,
         timestamp=TimestampMS(1708431030000),
         location=Location.ZKSYNC_LITE,
@@ -266,7 +272,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     ).serialize())
     compare_events_without_id(result['entries'][1]['entry'], EvmEvent(
         event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
-        tx_hash=deserialize_evm_tx_hash('0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970'),
+        tx_hash=tx_hash1,
         sequence_index=1,
         timestamp=TimestampMS(1708431030000),
         location=Location.ZKSYNC_LITE,
@@ -280,7 +286,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     ).serialize())
     compare_events_without_id(result['entries'][2]['entry'], EvmEvent(
         event_identifier='zkl331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
-        tx_hash=deserialize_evm_tx_hash('0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb'),
+        tx_hash=tx_hash2,
         sequence_index=0,
         timestamp=TimestampMS(1659010582000),
         location=Location.ZKSYNC_LITE,
@@ -376,6 +382,18 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             break
     else:
         raise AssertionError('Did not find the event')
+
+    # now let's try to redecode two transactions
+    response = requests.put(api_url_for(  # delete non-checksummed address
+        rotkehlchen_api_server,
+        'evmliketransactionsresource',
+    ), json={
+        'data': [{
+            'chain': 'zksync_lite',
+            'tx_hashes': [tx_hash1.hex(), tx_hash2.hex()],  # pylint: disable=no-member
+        }],
+    })
+    assert_proper_response(response)  # see all is fine
 
     # now let's check the DB contains the entries we will check against when deleting
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
