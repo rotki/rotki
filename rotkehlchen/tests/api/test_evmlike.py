@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -20,33 +21,50 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('zksync_lite_accounts', [[make_evm_address(), make_evm_address()]])
 def test_evmlike_transactions_refresh(
         rotkehlchen_api_server: 'APIServer',
-        number_of_eth_accounts: int,
+        zksync_lite_accounts,
 ) -> None:
     """Just tests the api part of refreshing evmlike transactions. Since at the moment
     this only concerns zksynclite, actual data check is in
     integration/test_zksynclite.py::test_get_transactions"""
+    now = ts_now()
+
+    def mock_fetch_transactions(address, start_ts, end_ts) -> None:
+        assert to_checksum_address(address)
+        assert start_ts == 0
+        assert end_ts >= now
+
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with patch.object(
-            rotki.chains_aggregator.zksync_lite,
-            'fetch_transactions',
-            wraps=rotki.chains_aggregator.zksync_lite.fetch_transactions,
-    ) as tx_query:
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'evmliketransactionsresource',
-            ), json={'async_query': False},
-        )
-        assert_simple_ok_response(response)
-        assert tx_query.call_count == number_of_eth_accounts
+
+    for json_args, expected_count in [
+            ({'async_query': False}, 2),
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}]}, 1),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}, {'address': zksync_lite_accounts[1], 'chain': 'zksync_lite'}]}, 2),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0]}, {'address': zksync_lite_accounts[1]}]}, 2),  # noqa: E501
+            ({'async_query': False, 'chain': 'zksync_lite'}, 2),
+    ]:
+        with patch.object(
+                rotki.chains_aggregator.zksync_lite,
+                'fetch_transactions',
+                wraps=mock_fetch_transactions,
+        ) as tx_query:
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'evmliketransactionsresource',
+                ), json=json_args,
+            )
+            assert_simple_ok_response(response)
+            assert tx_query.call_count == expected_count
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

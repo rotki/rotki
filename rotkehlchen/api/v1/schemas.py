@@ -30,7 +30,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatus
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
-from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.evm.types import EvmAccount, EvmlikeAccount
 from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
@@ -270,7 +270,7 @@ class RequiredEvmAddressOptionalChainSchema(Schema):
 
 class RequiredEvmlikeAddressOptionalChainSchema(Schema):
     address = EvmAddressField(required=True)
-    evm_chain = EvmChainLikeNameField(
+    chain = EvmChainLikeNameField(
         required=False,
         limit_to=SUPPORTED_EVM_EVMLIKE_CHAINS,  # type: ignore
         load_default=None,
@@ -282,7 +282,7 @@ class RequiredEvmlikeAddressOptionalChainSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return EvmAccount(data['address'], chain_id=data['evm_chain'])
+        return EvmlikeAccount(data['address'], chain=data['chain'])
 
 
 class EvmTransactionPurgingSchema(Schema):
