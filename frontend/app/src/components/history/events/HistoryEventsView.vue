@@ -50,7 +50,7 @@ const props = withDefaults(
     period: undefined,
     validators: undefined,
     externalAccountFilter: () => [],
-    useExternalAccountFilter: false,
+    useExternalAccountFilter: undefined,
     sectionTitle: '',
     mainPage: false,
     onlyChains: () => [],
