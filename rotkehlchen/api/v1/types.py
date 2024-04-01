@@ -3,12 +3,17 @@ from enum import auto
 from typing import Literal, TypedDict
 
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, EVMTxHash
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, EvmlikeChain, EVMTxHash
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
 class EvmTransactionDecodingApiData(TypedDict):
     evm_chain: SUPPORTED_CHAIN_IDS
+    tx_hashes: list[EVMTxHash] | None
+
+
+class EvmlikeTransactionDecodingApiData(TypedDict):
+    chain: EvmlikeChain
     tx_hashes: list[EVMTxHash] | None
 
 

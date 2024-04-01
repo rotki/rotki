@@ -2560,6 +2560,54 @@ Request EVM transactions event decoding
    :statuscode 500: Internal rotki error
    :statuscode 502: Problem contacting a remote service
 
+Request EVMLike transactions event decoding
+===================================================
+
+.. http:put:: /api/(version)/blockchains/evmlike/transactions
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PUT on the evmlike transactions endpoint will request a decoding of the given transactions and generation of decoded events. If events are already queried and ignore_cache is true they will be deleted and re-queried.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/evm/transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+          "data": [{
+              "chain": "zksync_lite",
+              "tx_hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]
+          }]
+      }
+
+   :reqjson list data[optional]: A list of data to decode. Each data entry consists of a ``"chain"`` key specifying the evmlike chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true,
+        "message": ""
+      }
+
+
+   :statuscode 200: Transactions successfully decoded.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: One of the given hashes does not correspond to a transaction according to the nodes we contacted.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
+
 Querying tags
 =================
 

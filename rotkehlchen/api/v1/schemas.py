@@ -364,12 +364,34 @@ class SingleEVMTransactionDecodingSchema(Schema):
             )
 
 
+class SingleEVMLikeTransactionDecodingSchema(Schema):
+    chain = StrEnumField(enum_class=EvmlikeChain, required=True)
+    tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        tx_hashes = data.get('tx_hashes')
+        if tx_hashes is not None and len(tx_hashes) == 0:
+            raise ValidationError(
+                message='Empty list of hashes is a noop. Did you mean to omit the list?',
+                field_name='tx_hashes',
+            )
+
+
 class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
     query_type = SerializableEnumField(enum_class=HistoryEventQueryType, required=True)
 
 
 class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     data = NonEmptyList(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
+
+
+class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    data = NonEmptyList(fields.Nested(SingleEVMLikeTransactionDecodingSchema), required=True)
 
 
 class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):

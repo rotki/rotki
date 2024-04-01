@@ -2804,6 +2804,62 @@ class RestAPI:
         return {'result': result, 'message': message, 'status_code': status_code}
 
     @async_api_call()
+    def decode_evmlike_transactions(
+            self,
+            data: list[EvmTransactionDecodingApiData],
+    ) -> dict[str, Any]:
+        """
+        Decode a set of transactions selected by their transaction hash. If the tx_hashes
+        value is None all the transactions for that chain in the database will be
+        attempted to be decoded. If the tx_hashes argument is provided then the USD
+        price for their events will be queried.
+        """
+        task_manager = self.rotkehlchen.task_manager
+        result = None
+        message = ''
+        status_code = HTTPStatus.OK
+
+        for entry in data:  # we cheat. Can only be zksync lite for now
+            if entry['tx_hashes'] is None:
+                transactions = self.rotkehlchen.chains_aggregator.zksync_lite.get_db_transactions()
+            else:
+                transactions = []
+                for tx_hash in entry['tx_hashes']:
+                    transactions.extend(  # yeah I know not performant but this getsalways called with 1 tx_hash  # noqa: E501
+                        self.rotkehlchen.chains_aggregator.zksync_lite.get_db_transactions(
+                            queryfilter=' WHERE tx_hash=?',
+                            bindings=(tx_hash,),
+                        ),
+                    )
+
+            tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
+            for transaction in transactions:
+                self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
+                    transaction=transaction,
+                    tracked_addresses=tracked_addresses,
+                )
+
+            if entry['tx_hashes'] is not None and task_manager is not None:
+                try:
+                    # Trigger the task to query the missing prices for the decoded events
+                    events_filter = EvmEventFilterQuery.make(
+                        tx_hashes=entry['tx_hashes'],
+                    )
+                    history_events_db = DBHistoryEvents(task_manager.database)
+                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
+                    query_missing_prices_of_base_entries(
+                        database=task_manager.database,
+                        entries_missing_prices=entries,
+                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                    )
+                except (RemoteError, DeserializationError) as e:
+                    status_code = HTTPStatus.BAD_GATEWAY
+                    message = f'Failed to request evm transaction decoding due to {e!s}'
+                    break
+
+        return {'result': result, 'message': message, 'status_code': status_code}
+
+    @async_api_call()
     def decode_pending_evm_transactions(
             self,
             evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],

@@ -80,6 +80,7 @@ from rotkehlchen.api.v1.schemas import (
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
     EvmlikePendingTransactionDecodingSchema,
+    EvmlikeTransactionDecodingSchema,
     EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
@@ -248,7 +249,12 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import EvmTransactionDecodingApiData, ModuleWithBalances, ModuleWithStats
+from .types import (
+    EvmlikeTransactionDecodingApiData,
+    EvmTransactionDecodingApiData,
+    ModuleWithBalances,
+    ModuleWithStats,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -631,6 +637,7 @@ class EvmTransactionsResource(BaseMethodView):
 
 class EvmlikeTransactionsResource(BaseMethodView):
     post_schema = EvmlikeTransactionQuerySchema()
+    put_schema = EvmlikeTransactionDecodingSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
@@ -648,6 +655,18 @@ class EvmlikeTransactionsResource(BaseMethodView):
             to_timestamp=to_timestamp,
             accounts=accounts,
             chain=chain,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            async_query: bool,
+            data: list[EvmlikeTransactionDecodingApiData],
+    ) -> Response:
+        return self.rest_api.decode_evmlike_transactions(
+            async_query=async_query,
+            data=data,
         )
 
 
