@@ -4,10 +4,13 @@ from unittest.mock import MagicMock, patch
 import gevent
 import pytest
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_YFI
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
@@ -596,3 +599,65 @@ def test_augmented_detection_pendle_transactions(
 
     updated_token = cast(EvmToken, globaldb.resolve_asset(identifier=token.identifier))
     assert updated_token.protocol is None
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_update_aave_v3_underlying_assets(
+        task_manager: TaskManager,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """Test that the task updating the aave v3 underlying assets in globaldb works"""
+    # check the aave v3 underlying assets table in globaldb before running the task
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(  # remove all the aave-v3 tokens
+            'DELETE FROM assets WHERE identifier IN '
+            '(SELECT identifier FROM evm_tokens WHERE protocol = ?);',
+            (CPT_AAVE_V3,),
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;', (CPT_AAVE_V3,),
+        ).fetchone()[0] == 0
+
+    task_manager.potential_tasks = [task_manager._maybe_update_aave_v3_underlying_assets]
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_aave_v3_underlying_assets])  # wait for the task to finish since it might context switch while running  # noqa: E501
+
+    # check the aave v3 underlying assets table in globaldb after running the task
+    with globaldb.conn.read_ctx() as write_cursor:
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;',
+            (CPT_AAVE_V3,),
+        ).fetchone()[0] > 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry IN '
+            '(SELECT identifier FROM evm_tokens WHERE protocol = ?);',
+            (CPT_AAVE_V3,),
+        ).fetchone()[0] > 0
+
+    # test some specific tokens for all the supported chains
+    for chain_id, token_address, underlying_token_address in (
+        (ChainID.ETHEREUM, '0x102633152313C81cD80419b6EcF66d14Ad68949A', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),  # noqa: E501
+        (ChainID.ETHEREUM, '0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),  # noqa: E501
+        (ChainID.OPTIMISM, '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5', '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),  # noqa: E501
+        (ChainID.OPTIMISM, '0xf329e36C7bF6E5E86ce2150875a84Ce77f477375', '0x76FB31fb4af56892A25e32cFC43De717950c9278'),  # noqa: E501
+        (ChainID.POLYGON_POS, '0xA4D94019934D8333Ef880ABFFbF2FDd611C762BD', '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),  # noqa: E501
+        (ChainID.POLYGON_POS, '0xf329e36C7bF6E5E86ce2150875a84Ce77f477375', '0xD6DF932A45C0f255f85145f286eA0b292B21C90B'),  # noqa: E501
+        (ChainID.ARBITRUM_ONE, '0x6533afac2E7BCCB20dca161449A13A32D391fb00', '0x912CE59144191C1204E64559FE8253a0e49E6548'),  # noqa: E501
+        (ChainID.ARBITRUM_ONE, '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5', '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'),  # noqa: E501
+        (ChainID.BASE, '0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),  # noqa: E501
+        (ChainID.BASE, '0x03506214379aA86ad1176af71c260278cfa10B38', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),  # noqa: E501
+        (ChainID.GNOSIS, '0xa818F1B57c201E092C4A2017A91815034326Efd1', '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),  # noqa: E501
+        (ChainID.GNOSIS, '0x23e4E76D01B2002BE436CE8d6044b0aA2f68B68a', '0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),  # noqa: E501
+        (ChainID.SCROLL, '0x1D738a3436A8C49CefFbaB7fbF04B660fb528CbD', '0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),  # noqa: E501
+        (ChainID.SCROLL, '0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a', '0x5300000000000000000000000000000000000004'),  # noqa: E501
+    ):
+        assert (db_token := globaldb.get_evm_token(
+            address=string_to_evm_address(token_address),
+            chain_id=chain_id,
+        )) is not None
+        assert UnderlyingToken(
+            address=string_to_evm_address(underlying_token_address),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        ) in db_token.underlying_tokens

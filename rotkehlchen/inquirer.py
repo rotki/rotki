@@ -152,7 +152,7 @@ def _check_curve_contract_call(decoded: tuple[Any, ...]) -> bool:
 
 
 def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPriceOracle]:
-    """Gets the underlying asset price for the given ethereum token
+    """Gets the underlying asset price for the given evm token
 
     TODO: This should be eventually pulled from the assets DB. All of these
     need to be updated, to contain proper protocol, and underlying assets.
@@ -193,14 +193,10 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     if price is not None:
         return price, oracle
 
-    custom_token = GlobalDBHandler.get_evm_token(
-        address=token.evm_address,
-        chain_id=ChainID.ETHEREUM,
-    )
-    if custom_token and custom_token.underlying_tokens is not None:
+    if token.underlying_tokens is not None:
         usd_price = ZERO
-        for underlying_token in custom_token.underlying_tokens:
-            token = EvmToken(underlying_token.get_identifier(parent_chain=custom_token.chain_id))
+        for underlying_token in token.underlying_tokens:
+            token = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))
             underlying_asset_price, oracle, _ = Inquirer.find_usd_price_and_oracle(token)
             usd_price += underlying_asset_price * underlying_token.weight
 

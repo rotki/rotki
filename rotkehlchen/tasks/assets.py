@@ -2,12 +2,31 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import check_if_spam_token
+from rotkehlchen.assets.utils import check_if_spam_token, get_or_create_evm_token
+from rotkehlchen.chain.base.modules.aave.v3.constants import (
+    AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_BASE,
+)
+from rotkehlchen.chain.ethereum.modules.aave.v3.constants import (
+    AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_ETH,
+)
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
+    AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_EVM,
+)
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
+    AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
+)
+from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
+    AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
+)
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
@@ -15,16 +34,25 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CHAINID_TO_SUPPORTED_BLOCKCHAIN, SPAM_PROTOCOL, CacheType, ChainID
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import (
+    CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    SPAM_PROTOCOL,
+    CacheType,
+    ChainID,
+    EvmTokenKind,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -244,3 +272,79 @@ def update_owned_assets(user_db: DBHandler) -> None:
             'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
             (DBCacheStatic.LAST_OWNED_ASSETS_UPDATE.value, str(ts_now())),
         )
+
+
+def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
+    """Fetch the Aave v3 underlying assets and populate `underlying_tokens_list` in globaldb"""
+    for chain_id, data_provider_address in (
+        (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH),
+        (ChainID.OPTIMISM, AAVE_V3_DATA_PROVIDER_EVM),
+        (ChainID.POLYGON_POS, AAVE_V3_DATA_PROVIDER_EVM),
+        (ChainID.ARBITRUM_ONE, AAVE_V3_DATA_PROVIDER_EVM),
+        (ChainID.BASE, AAVE_V3_DATA_PROVIDER_BASE),
+        (ChainID.GNOSIS, AAVE_V3_DATA_PROVIDER_GNO),
+        (ChainID.SCROLL, AAVE_V3_DATA_PROVIDER_SCRL),
+    ):
+        node_inquirer = chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer  # type: ignore[arg-type]  # all iterated ChainIDs are supported
+        aave_data_provider = node_inquirer.contracts.contract(address=data_provider_address)
+        underlying_tokens = []
+
+        try:
+            for _, token_address in aave_data_provider.call(
+                node_inquirer=node_inquirer,
+                method_name='getAllReservesTokens',
+            ):  # get all the underlying tokens in aave v3
+                try:
+                    underlying_tokens.append(deserialize_evm_address(token_address))
+                except DeserializationError as e:
+                    log.error(f'Failed to deserialize Aave v3 underlying token address: {token_address} due to {e!s}')  # noqa: E501
+                    continue
+
+            reserve_tokens_addresses = node_inquirer.multicall(
+                calls=[(  # get all the reserve tokens for each underlying token
+                    aave_data_provider.address,
+                    aave_data_provider.encode(
+                        method_name='getReserveTokensAddresses',
+                        arguments=[underlying_token],
+                    ),
+                ) for underlying_token in underlying_tokens],
+                calls_chunk_size=4 if chain_id == ChainID.ARBITRUM_ONE else MULTICALL_CHUNKS,  # arbiscan API breaks with chunk_size > 4  # noqa: E501
+            )
+        except RemoteError as e:
+            log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')
+            continue
+
+        # add the mappings of underlying tokens to the globaldb
+        for underlying_idx, underlying_token_address in enumerate(underlying_tokens):
+            for decoded_reserve_token_address in aave_data_provider.decode(
+                method_name='getReserveTokensAddresses',
+                arguments=[underlying_token_address],
+                result=reserve_tokens_addresses[underlying_idx],
+            ):
+                try:
+                    # calling get_or_create_evm_token along with the underlying_tokens attribute
+                    # will first ensure that both underlying and reserve tokens info is added,
+                    # then the mapping is saved. This order is necessary due to its FK relationship
+                    decoded_reserve_token = get_or_create_evm_token(
+                        evm_inquirer=node_inquirer,
+                        userdb=node_inquirer.database,
+                        evm_address=deserialize_evm_address(decoded_reserve_token_address),
+                        chain_id=chain_id,
+                        protocol=CPT_AAVE_V3,
+                        token_kind=EvmTokenKind.ERC20,
+                        underlying_tokens=[UnderlyingToken(
+                            address=underlying_token_address,
+                            token_kind=EvmTokenKind.ERC20,
+                            weight=ONE,
+                        )],
+                    )
+                except DeserializationError as e:
+                    log.error(
+                        'Failed to deserialize Aave v3 reserve token address: '
+                        f'{decoded_reserve_token_address} due to {e!s}',
+                    )
+                except NotERC20Conformant as e:
+                    log.error(
+                        f'Failed to add underlying token {underlying_token_address} for '
+                        f'{decoded_reserve_token.identifier} due to {e!s}',
+                    )
