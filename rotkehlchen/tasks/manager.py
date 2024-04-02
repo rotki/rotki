@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import has_tracked_addresses, should_update_protocol_cache
 from rotkehlchen.constants.timing import (
+    AAVE_V3_ASSETS_UPDATE,
     AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
@@ -38,6 +39,7 @@ from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     augmented_spam_detection,
     autodetect_spam_assets_in_db,
+    update_aave_v3_underlying_assets,
     update_owned_assets,
 )
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
@@ -159,6 +161,7 @@ class TaskManager:
             self._maybe_augmented_detect_new_spam_tokens,
             self._maybe_query_monerium,
             self._maybe_update_owned_assets,
+            self._maybe_update_aave_v3_underlying_assets,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -767,6 +770,22 @@ class TaskManager:
             exception_is_error=True,
             method=update_owned_assets,
             user_db=self.database,
+        )]
+
+    def _maybe_update_aave_v3_underlying_assets(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        This function runs the logic to query the aave v3 contracts to get all the
+        underlying assets supported by them and save them in the globaldb.
+        """
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE, AAVE_V3_ASSETS_UPDATE) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Update aave v3 underlying assets in globaldb',
+            exception_is_error=True,
+            method=update_aave_v3_underlying_assets,
+            chains_aggregator=self.chains_aggregator,
         )]
 
     def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
