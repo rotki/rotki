@@ -169,7 +169,7 @@ export class TradeHistoryPage {
     cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
     cy.get('[class*=_tbody__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
     cy.get(
-      '[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] label',
+      '[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] [data-id="activator"]',
     ).should('contain', range);
   }
 }
