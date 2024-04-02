@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`7423` Users will be able to sort address book entries by displayed name and address.
+
 * :feature:`7281` rotki will now properly decode the transactions done on Aave v2 and v3 on all the supported chains.
 * :feature:`2698` Users can now manually link assets on their exchanges to assets recognized by Rotki, without having to wait for a new release.
 * :feature:`-` rotki will now properly decode the swaps done via Uniswap V3 on other supported chains.
