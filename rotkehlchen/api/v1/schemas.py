@@ -90,7 +90,7 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
-    EVM_LOCATIONS,
+    EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
@@ -841,7 +841,7 @@ class CreateHistoryEventSchema(Schema):
         product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
         address = EvmAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
-        location = LocationField(required=True, limit_to=EVM_LOCATIONS)
+        location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
         @post_load
         def make_history_base_entry(

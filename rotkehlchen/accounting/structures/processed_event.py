@@ -21,7 +21,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    EVM_LOCATIONS,
+    EVM_EVMLIKE_LOCATIONS,
     AddressbookType,
     ChainAddress,
     ChainID,
@@ -145,7 +145,7 @@ class ProcessedAccountingEvent:
                 exported_dict['asset'] = ''
             if tx_hash is not None:
                 exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
-            if self.location in EVM_LOCATIONS and database is not None:
+            if self.location in EVM_EVMLIKE_LOCATIONS and database is not None:
                 # call _maybe_add_label_with_address on each address in the note
                 exported_dict['notes'] = EVM_ADDRESS_REGEX.sub(
                     repl=lambda matched_address: self._maybe_add_label_with_address(

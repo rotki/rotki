@@ -514,6 +514,16 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
+    @classmethod
+    def from_location(cls, location: 'EVM_EVMLIKE_LOCATIONS_TYPE') -> 'SupportedBlockchain':
+        """
+        Turns a location to a supported chain.
+        Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.
+
+        For now since we only got evm/evmlike Locations this works only for them.
+        """
+        return getattr(cls, location.name)
+
     def to_chain_id(self) -> ChainID:
         """Warning: Caller has to make sure this is an evm blockchain"""
         return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
@@ -784,8 +794,12 @@ class Location(DBCharEnumMixIn):
         return ChainID.POLYGON_POS.value
 
 
-EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL]  # noqa: E501
-EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.ZKSYNC_LITE]  # noqa: E501
+EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
+EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
+EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
+EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
+EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
 
 
 class AssetMovementCategory(DBCharEnumMixIn):
